@@ -21,7 +21,8 @@
 
 #include <string.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "platform.h"
 

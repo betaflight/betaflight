@@ -20,9 +20,10 @@
 #include <math.h>
 
 #include "platform.h"
-#include "version.h"
 
 #ifdef BLACKBOX
+
+#include "build/version.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -49,10 +50,12 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "io/beeper.h"
 #include "io/display.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -71,7 +74,6 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

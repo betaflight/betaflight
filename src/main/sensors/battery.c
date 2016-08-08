@@ -26,14 +26,16 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "sensors/battery.h"
 
 #include "rx/rx.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 #include "io/beeper.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10

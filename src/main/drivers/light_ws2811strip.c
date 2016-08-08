@@ -32,7 +32,8 @@
 
 #ifdef LED_STRIP
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "common/color.h"
 #include "common/colorconversion.h"

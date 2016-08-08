@@ -24,12 +24,14 @@
 
 #ifdef SONAR
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "common/maths.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 #include "drivers/io.h"
 #include "drivers/sonar_hcsr04.h"

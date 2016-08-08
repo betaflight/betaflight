@@ -20,7 +20,8 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "common/axis.h"
 
@@ -61,7 +62,8 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "sensors/sensors.h"

@@ -57,24 +57,29 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+
+
 
 #if defined(TELEMETRY) && defined(TELEMETRY_HOTT)
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
 #include "drivers/system.h"
-
 #include "drivers/serial.h"
+
+#include "fc/runtime_config.h"
+
 #include "io/serial.h"
+#include "io/gps.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 
 #include "flight/pid.h"
 #include "flight/navigation_rewrite.h"
-#include "io/gps.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/hott.h"

@@ -24,7 +24,8 @@
 
 #ifdef USE_MAG_MAG3110
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "common/axis.h"
 #include "common/maths.h"

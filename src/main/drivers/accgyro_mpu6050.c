@@ -20,8 +20,10 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+
+#include "build/debug.h"
+
 
 #include "common/maths.h"
 

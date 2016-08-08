@@ -40,7 +40,8 @@
 #include "platform.h"
 
 #include "common/utils.h"
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -61,7 +62,8 @@
 #endif //TELEMETRY
 
 
-#include "debug.h"
+#include "build/debug.h"
+
 #include "rx/rx.h"
 
 //

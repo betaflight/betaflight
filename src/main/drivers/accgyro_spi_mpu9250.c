@@ -38,7 +38,8 @@
 #include "exti.h"
 #include "bus_spi.h"
 #include "gyro_sync.h"
-#include "debug.h"
+#include "build/debug.h"
+
 
 #include "sensor.h"
 #include "accgyro.h"

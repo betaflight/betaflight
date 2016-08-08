@@ -21,9 +21,11 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
 #include "platform.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "scheduler/scheduler.h"
 
@@ -52,7 +54,8 @@
 #include "blackbox/blackbox.h"
 
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -79,16 +82,15 @@
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
-#include "mw.h"
+#include "fc/mw.h"
+#include "fc/runtime_config.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
 #include "blackbox/blackbox.h"
 
-#include "version.h"
 #ifdef NAZE
 #include "hardware_revision.h"
 #endif

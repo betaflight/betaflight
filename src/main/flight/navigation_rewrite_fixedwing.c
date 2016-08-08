@@ -19,12 +19,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "build_config.h"
 #include "platform.h"
 
 #if defined(NAV)
 
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -43,7 +43,7 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 #include "config/config.h"
 
 // If we are going slower than NAV_FW_MIN_VEL_SPEED_BOOST - boost throttle to fight against the wind

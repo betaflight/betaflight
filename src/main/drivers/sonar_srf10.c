@@ -22,7 +22,8 @@
 
 #if defined(SONAR) && defined(USE_SONAR_SRF10)
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "drivers/system.h"
 #include "drivers/bus_i2c.h"

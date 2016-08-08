@@ -19,7 +19,8 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -28,7 +29,8 @@
 #include "drivers/accgyro.h"
 #include "drivers/gyro_sync.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 extern gyro_t gyro;

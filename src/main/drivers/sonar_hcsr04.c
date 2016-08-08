@@ -22,7 +22,8 @@
 
 #if defined(SONAR)
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "system.h"
 #include "exti.h"

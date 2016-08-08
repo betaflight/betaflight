@@ -33,7 +33,8 @@
 #include "sensors/sensors.h"
 #include "io/beeper.h"
 #include "sensors/boardalignment.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "sensors/acceleration.h"
