@@ -133,7 +133,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], b[3], c[3], yawMaxVelocity, yawPreviousRate;
+    static float Kp[3], Ki[3], Kd[3], b[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -187,20 +187,22 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
             b[axis] = pidProfile->ptermSetpointWeight / 100.0f;
             c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-            yawMaxVelocity = pidProfile->pidMaxVelocityYaw * 1000 * getdT();
+            yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
+            rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
 
             configP[axis] = pidProfile->P8[axis];
             configI[axis] = pidProfile->I8[axis];
             configD[axis] = pidProfile->D8[axis];
         }
 
-        // Limit abrupt yaw inputs
-        if (axis == YAW && pidProfile->pidMaxVelocityYaw) {
-            float yawCurrentVelocity = setpointRate[axis] - yawPreviousRate;
-            if (ABS(yawCurrentVelocity) > yawMaxVelocity) {
-                setpointRate[axis] = (yawCurrentVelocity > 0) ? yawPreviousRate + yawMaxVelocity : yawPreviousRate - yawMaxVelocity;
+        // Limit abrupt yaw inputs / stops
+        float maxVelocity = (axis == YAW) ? yawMaxVelocity : rollPitchMaxVelocity;
+        if (maxVelocity) {
+            float currentVelocity = setpointRate[axis] - previousSetpoint[axis];
+            if (ABS(currentVelocity) > maxVelocity) {
+                setpointRate[axis] = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity : previousSetpoint[axis] - maxVelocity;
             }
-            yawPreviousRate = setpointRate[axis];
+            previousSetpoint[axis] = setpointRate[axis];
         }
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID

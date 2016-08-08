@@ -100,7 +100,8 @@ typedef struct pidProfile_s {
     uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
     uint8_t ptermSetpointWeight;            // Setpoint weight for Pterm (lower means more PV tracking)
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    uint16_t pidMaxVelocityYaw;             // velocity limiter for pid controller deg/sec/ms
+    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
+    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

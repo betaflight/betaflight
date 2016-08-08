@@ -467,7 +467,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "AIRMODE",
     "PIDLOOP",
     "NOTCH",
-    "RC_SMOOTHING",
+    "RC_INTERPOLATION",
     "VELOCITY",
     "DFILTER",
 };
@@ -492,8 +492,8 @@ static const char * const lookupTableDeltaMethod[] = {
     "ERROR", "MEASUREMENT"
 };
 
-static const char * const lookupTableRcSmoothing[] = {
-    "OFF", "DEFAULT", "AUTO", "MANUAL"
+static const char * const lookupTableRcInterpolation[] = {
+    "OFF", "PRESET", "AUTO", "MANUAL"
 };
 
 static const char * const lookupTableLowpassType[] = {
@@ -536,7 +536,7 @@ typedef enum {
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_DELTA_METHOD,
-    TABLE_RC_SMOOTHING,
+    TABLE_RC_INTERPOLATION,
     TABLE_LOWPASS_TYPE,
 #ifdef OSD
     TABLE_OSD,
@@ -574,7 +574,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableDeltaMethod, sizeof(lookupTableDeltaMethod) / sizeof(char *) },
-    { lookupTableRcSmoothing, sizeof(lookupTableRcSmoothing) / sizeof(char *) },
+    { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
@@ -635,8 +635,8 @@ const clivalue_t valueTable[] = {
     { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &masterConfig.rxConfig.rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT } },
     { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
-    { "rc_smoothing",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_RC_SMOOTHING } },
-    { "rc_smooth_interval_ms",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rcSmoothInterval, .config.minmax = { 1,  50 } },
+    { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.rxConfig.rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
+    { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rcInterpolationInterval, .config.minmax = { 1,  50 } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
     { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
@@ -773,8 +773,8 @@ const clivalue_t valueTable[] = {
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
 #endif
 
-    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  250 } },
-    { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  250 } },
+    { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  300 } },
+    { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  300 } },
     { "rc_expo",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcExpo8, .config.minmax = { 0,  100 } },
     { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
     { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
@@ -831,8 +831,9 @@ const clivalue_t valueTable[] = {
     { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
     { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
     { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {30, 100 } },
-    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 300 } },
-    { "max_yaw_acceleration",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidMaxVelocityYaw, .config.minmax = {0, 1000 } },
+    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 200 } },
+    { "yaw_rate_acceleration_limit",VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0, 1000 } },
+    { "rate_acceleration_limit",    VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0, 1000 } },
 
     { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_iterm_ignore_threshold", VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },

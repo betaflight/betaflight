@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 142;
+static const uint8_t EEPROM_CONF_VERSION = 143;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -203,10 +203,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 25;
+    pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 60;
-    pidProfile->D8[PITCH] = 30;
+    pidProfile->D8[PITCH] = 25;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -244,9 +244,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 200;
-    pidProfile->pidMaxVelocityYaw = 200;
-    pidProfile->toleranceBand = 20;
+    pidProfile->dtermSetpointWeight = 120;
+    pidProfile->yawRateAccelLimit = 220;
+    pidProfile->rateAccelLimit = 0;
+    pidProfile->toleranceBand = 15;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
@@ -475,14 +476,14 @@ static void resetConf(void)
     masterConfig.gyro_sync_denom = 8;
     masterConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
-    masterConfig.gyro_sync_denom = 8;
+    masterConfig.gyro_sync_denom = 1;
     masterConfig.pid_process_denom = 4;
 #else
     masterConfig.gyro_sync_denom = 4;
     masterConfig.pid_process_denom = 2;
 #endif
     masterConfig.gyro_soft_type = FILTER_PT1;
-    masterConfig.gyro_soft_lpf_hz = 100;
+    masterConfig.gyro_soft_lpf_hz = 90;
     masterConfig.gyro_soft_notch_hz = 0;
     masterConfig.gyro_soft_notch_cutoff = 150;
 
@@ -534,8 +535,8 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_AUTO;
-    masterConfig.rxConfig.rcSmoothInterval = 9;
+    masterConfig.rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
+    masterConfig.rxConfig.rcInterpolationInterval = 19;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
     masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;

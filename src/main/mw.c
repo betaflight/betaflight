@@ -217,15 +217,15 @@ void processRcCommand(void)
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
 
-    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
+    if (masterConfig.rxConfig.rcInterpolation || flightModeFlags) {
         if (isRXDataNew) {
             // Set RC refresh rate for sampling and channels to filter
-            switch (masterConfig.rxConfig.rcSmoothing) {
+            switch (masterConfig.rxConfig.rcInterpolation) {
                 case(RC_SMOOTHING_AUTO):
                     rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
                     break;
                 case(RC_SMOOTHING_MANUAL):
-                    rxRefreshRate = 1000 * masterConfig.rxConfig.rcSmoothInterval;
+                    rxRefreshRate = 1000 * masterConfig.rxConfig.rcInterpolationInterval;
                     break;
                 case(RC_SMOOTHING_OFF):
                 case(RC_SMOOTHING_DEFAULT):
@@ -235,7 +235,7 @@ void processRcCommand(void)
 
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
-            if (debugMode == DEBUG_RC_SMOOTHING) {
+            if (debugMode == DEBUG_RC_INTERPOLATION) {
                 for (int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
                 debug[3] = rxRefreshRate;
             }
@@ -263,9 +263,7 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        // Don't smooth yaw axis
-        int axisToCalculate = (isRXDataNew) ? 3 : 2;
-        for (int axis = 0; axis < axisToCalculate; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
 
