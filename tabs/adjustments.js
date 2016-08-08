@@ -57,14 +57,25 @@ TABS.adjustments.initialize = function (callback) {
         //
         // update selected function
         //
-        
+
         var functionList = $(newAdjustment).find('.functionSelection .function');
-        functionList.val(adjustmentRange.adjustmentFunction);
+        // update list of selected functions
+        var functionListOptions = $(functionList).find('option');
+        var availableFunctionCount = 21; // Available in betaflight 2.9
         
+        if (semver.gte(CONFIG.flightControllerVersion, '3.1.0')) {
+            availableFunctionCount += 1; // RC rate Yaw added to 3.1.0
+        }
+
+        var functionListOptions = $(functionListOptions).slice(0,availableFunctionCount);
+        functionList.empty().append(functionListOptions);
+
+        functionList.val(adjustmentRange.adjustmentFunction);
+
         //
         // populate function channel select box
         //
-        
+
         var channelList = $(newAdjustment).find('.functionSwitchChannel .channel');
         var channelOptionTemplate = $(channelList).find('option');
         channelOptionTemplate.remove();

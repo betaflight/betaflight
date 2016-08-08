@@ -1097,6 +1097,10 @@
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
     },
+    "adjustmentsFunction21": {
+        "message": "RC Rate Yaw"
+    },
+    
     "adjustmentsSave": {
         "message": "Save"
     },
