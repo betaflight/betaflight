@@ -1629,6 +1629,10 @@ MSP.crunch = function (code) {
             buffer.push(RC_deadband.deadband);
             buffer.push(RC_deadband.yaw_deadband); 
             buffer.push(RC_deadband.alt_hold_deadband);
+            if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+                buffer.push(lowByte(_3D.deadband3d_throttle));
+                buffer.push(highByte(_3D.deadband3d_throttle));
+            }
             break;
 
         case MSP_codes.MSP_SET_SENSOR_ALIGNMENT:
