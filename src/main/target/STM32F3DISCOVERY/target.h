@@ -31,18 +31,29 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
+
 #define GYRO
 #define USE_GYRO_L3GD20
-
-#define L3GD20_SPI                      SPI1
-#define L3GD20_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOE
-#define L3GD20_CS_GPIO                  GPIOE
-#define L3GD20_CS_PIN                   GPIO_Pin_3
-
+#define L3GD20_SPI              SPI1
+#define L3GD20_CS_PIN           PE3
 #define GYRO_L3GD20_ALIGN       CW270_DEG
+
+// Support the GY-91 MPU9250 dev board
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define MPU6500_CS_PIN          PC14
+#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
 
 #define ACC
 #define USE_ACC_LSM303DLHC
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
 
 #define MAG
 #define USE_MAG_HMC5883

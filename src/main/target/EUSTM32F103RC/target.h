@@ -25,13 +25,11 @@
 #define INVERTER                PB2
 #define INVERTER_USART          USART2
 
-#define MPU6000_CS_GPIO         GPIOB
-#define MPU6000_CS_PIN          GPIO_Pin_12
+#define MPU6000_CS_PIN          PB12
 #define MPU6000_SPI_INSTANCE    SPI2
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOB
-#define MPU6500_CS_GPIO         GPIOB
-#define MPU6500_CS_PIN          GPIO_Pin_12
+#define MPU6500_CS_PIN          PB12
 #define MPU6500_SPI_INSTANCE    SPI2
 
 #define GYRO

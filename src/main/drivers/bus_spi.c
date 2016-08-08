@@ -20,336 +20,222 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
-#include "gpio.h"
-
 #include "bus_spi.h"
+#include "exti.h"
+#include "io.h"
+#include "io_impl.h"
+#include "rcc.h"
 
-#ifdef USE_SPI_DEVICE_1
-
-#ifndef SPI1_GPIO
-#define SPI1_GPIO               GPIOA
-#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOA
-#define SPI1_NSS_PIN            GPIO_Pin_4
-#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource4
-#define SPI1_SCK_PIN            GPIO_Pin_5
-#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource5
-#define SPI1_MISO_PIN           GPIO_Pin_6
-#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource6
-#define SPI1_MOSI_PIN           GPIO_Pin_7
-#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource7
+/* for F30x processors */
+#if defined(STM32F303xC)
+#ifndef GPIO_AF_SPI1
+#define GPIO_AF_SPI1    GPIO_AF_5
+#endif
+#ifndef GPIO_AF_SPI2
+#define GPIO_AF_SPI2    GPIO_AF_5
+#endif
+#ifndef GPIO_AF_SPI3
+#define GPIO_AF_SPI3    GPIO_AF_6
+#endif
 #endif
 
-void initSpi1(void)
+#ifndef SPI1_SCK_PIN
+#define SPI1_NSS_PIN    PA4
+#define SPI1_SCK_PIN    PA5
+#define SPI1_MISO_PIN   PA6
+#define SPI1_MOSI_PIN   PA7
+#endif
+
+#ifndef SPI2_SCK_PIN
+#define SPI2_NSS_PIN    PB12
+#define SPI2_SCK_PIN    PB13
+#define SPI2_MISO_PIN   PB14
+#define SPI2_MOSI_PIN   PB15
+#endif
+
+#ifndef SPI3_SCK_PIN
+#define SPI3_NSS_PIN    PA15
+#define SPI3_SCK_PIN    PB3
+#define SPI3_MISO_PIN   PB4
+#define SPI3_MOSI_PIN   PB5
+#endif
+
+#ifndef SPI1_NSS_PIN
+#define SPI1_NSS_PIN NONE
+#endif
+#ifndef SPI2_NSS_PIN
+#define SPI2_NSS_PIN NONE
+#endif
+#ifndef SPI3_NSS_PIN
+#define SPI3_NSS_PIN NONE
+#endif
+
+static spiDevice_t spiHardwareMap[] = {
+#if defined(STM32F1)
+    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = 0, false },
+    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = 0, false },
+#else
+    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF_SPI1, false },
+    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = GPIO_AF_SPI2, false },
+#endif
+#if defined(STM32F3) || defined(STM32F4)
+    { .dev = SPI3, .nss = IO_TAG(SPI3_NSS_PIN), .sck = IO_TAG(SPI3_SCK_PIN), .miso = IO_TAG(SPI3_MISO_PIN), .mosi = IO_TAG(SPI3_MOSI_PIN), .rcc = RCC_APB1(SPI3), .af = GPIO_AF_SPI3, false }
+#endif
+};
+
+SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
-    // Specific to the STM32F103
-    // SPI1 Driver
-    // PA4    14    SPI1_NSS
-    // PA5    15    SPI1_SCK
-    // PA6    16    SPI1_MISO
-    // PA7    17    SPI1_MOSI
+    if (instance == SPI1)
+        return SPIDEV_1;
 
-    SPI_InitTypeDef spi;
+    if (instance == SPI2)
+        return SPIDEV_2;
 
-    // Enable SPI1 clock
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-    RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, ENABLE);
+    if (instance == SPI3)
+        return SPIDEV_3;
 
-#ifdef STM32F303xC
-    GPIO_InitTypeDef GPIO_InitStructure;
+    return SPIINVALID;
+}
 
-    RCC_AHBPeriphClockCmd(SPI1_GPIO_PERIPHERAL, ENABLE);
+void spiInitDevice(SPIDevice device)
+{
+    SPI_InitTypeDef spiInit;
 
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_SCK_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MISO_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_MOSI_PIN_SOURCE, GPIO_AF_5);
+    spiDevice_t *spi = &(spiHardwareMap[device]);
 
-#ifdef SPI1_NSS_PIN_SOURCE
-    GPIO_PinAFConfig(SPI1_GPIO, SPI1_NSS_PIN_SOURCE, GPIO_AF_5);
+#ifdef SDCARD_SPI_INSTANCE
+    if (spi->dev == SDCARD_SPI_INSTANCE) {
+        spi->sdcard = true;
+    }
+#endif
+#ifdef NRF24_SPI_INSTANCE
+    if (spi->dev == NRF24_SPI_INSTANCE) {
+        spi->nrf24l01 = true;
+    }
 #endif
 
-    // Init pins
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    // Enable SPI clock
+    RCC_ClockCmd(spi->rcc, ENABLE);
+    RCC_ResetCmd(spi->rcc, ENABLE);
 
-#ifdef USE_SDCARD_SPI1
-    // Configure pins and pullups for SD-card use
+    IOInit(IOGetByTag(spi->sck),  OWNER_SPI, RESOURCE_SPI_SCK,  device + 1);
+    IOInit(IOGetByTag(spi->miso), OWNER_SPI, RESOURCE_SPI_MISO, device + 1);
+    IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
 
-    // No pull-up needed since we drive this pin as an output
-    GPIO_InitStructure.GPIO_Pin = SPI1_MOSI_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+#if defined(STM32F3) || defined(STM32F4)
+    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
-    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
-    GPIO_InitStructure.GPIO_Pin = SPI1_MISO_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+    if (spi->nss) {
+        IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
+    }
+#endif
+#if defined(STM32F10X)
+    IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
+    IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
+    IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
 
-    // In clock-low mode, STM32 manual says we should enable a pulldown to match
-    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
-#else
-    // General-purpose pin config
-    GPIO_InitStructure.GPIO_Pin = SPI1_SCK_PIN | SPI1_MISO_PIN | SPI1_MOSI_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
+    if (spi->nss) {
+        IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
+    }
 #endif
 
-#ifdef SPI1_NSS_PIN
-    GPIO_InitStructure.GPIO_Pin = SPI1_NSS_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    // Init SPI hardware
+    SPI_I2S_DeInit(spi->dev);
 
-    GPIO_Init(SPI1_GPIO, &GPIO_InitStructure);
-#endif
-#endif
+    spiInit.SPI_Mode = SPI_Mode_Master;
+    spiInit.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    spiInit.SPI_DataSize = SPI_DataSize_8b;
+    spiInit.SPI_NSS = SPI_NSS_Soft;
+    spiInit.SPI_FirstBit = SPI_FirstBit_MSB;
+    spiInit.SPI_CRCPolynomial = 7;
+    spiInit.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
 
-#ifdef STM32F10X
-    gpio_config_t gpio;
-
-    // MOSI + SCK as output
-    gpio.mode = Mode_AF_PP;
-    gpio.pin = SPI1_MOSI_PIN | SPI1_SCK_PIN;
-    gpio.speed = Speed_50MHz;
-    gpioInit(SPI1_GPIO, &gpio);
-
-    // MISO as input
-    gpio.pin = SPI1_MISO_PIN;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(SPI1_GPIO, &gpio);
-
-#ifdef SPI1_NSS_PIN
-    // NSS as gpio slave select
-    gpio.pin = SPI1_NSS_PIN;
-    gpio.mode = Mode_Out_PP;
-    gpioInit(SPI1_GPIO, &gpio);
-#endif
-#endif
-
-    // Init SPI1 hardware
-    SPI_I2S_DeInit(SPI1);
-
-    spi.SPI_Mode = SPI_Mode_Master;
-    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    spi.SPI_DataSize = SPI_DataSize_8b;
-    spi.SPI_NSS = SPI_NSS_Soft;
-    spi.SPI_FirstBit = SPI_FirstBit_MSB;
-    spi.SPI_CRCPolynomial = 7;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
-
-#if (defined(USE_SDCARD_SPI1) || defined(USE_NRF24_SPI1))
-    spi.SPI_CPOL = SPI_CPOL_Low;
-    spi.SPI_CPHA = SPI_CPHA_1Edge;
-#else
-    spi.SPI_CPOL = SPI_CPOL_High;
-    spi.SPI_CPHA = SPI_CPHA_2Edge;
-#endif
+    if (spi->sdcard || spi->nrf24l01) {
+        spiInit.SPI_CPOL = SPI_CPOL_Low;
+        spiInit.SPI_CPHA = SPI_CPHA_1Edge;
+    } else {
+        spiInit.SPI_CPOL = SPI_CPOL_High;
+        spiInit.SPI_CPHA = SPI_CPHA_2Edge;
+    }
 
 #ifdef STM32F303xC
     // Configure for 8-bit reads.
-    SPI_RxFIFOThresholdConfig(SPI1, SPI_RxFIFOThreshold_QF);
+    SPI_RxFIFOThresholdConfig(spi->dev, SPI_RxFIFOThreshold_QF);
 #endif
 
-    SPI_Init(SPI1, &spi);
-    SPI_Cmd(SPI1, ENABLE);
+    SPI_Init(spi->dev, &spiInit);
+    SPI_Cmd(spi->dev, ENABLE);
 
-#ifdef SPI1_NSS_PIN
-    // Drive NSS high to disable connected SPI device.
-    GPIO_SetBits(SPI1_GPIO, SPI1_NSS_PIN);
-#endif
+    if (spi->nss) {
+        // Drive NSS high to disable connected SPI device.
+        IOHi(IOGetByTag(spi->nss));
+    }
 }
-#endif
 
-#ifdef USE_SPI_DEVICE_2
-
-#ifndef SPI2_GPIO
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            GPIO_Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            GPIO_Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           GPIO_Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           GPIO_Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
-#endif
-
-void initSpi2(void)
+bool spiInit(SPIDevice device)
 {
-    // Specific to the STM32F103 / STM32F303 (AF5)
-    // SPI2 Driver
-    // PB12     25      SPI2_NSS
-    // PB13     26      SPI2_SCK
-    // PB14     27      SPI2_MISO
-    // PB15     28      SPI2_MOSI
-
-    SPI_InitTypeDef spi;
-
-    // Enable SPI2 clock
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-    RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI2, ENABLE);
-
-#ifdef STM32F303xC
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    RCC_AHBPeriphClockCmd(SPI2_GPIO_PERIPHERAL, ENABLE);
-
-    GPIO_PinAFConfig(SPI2_GPIO, SPI2_SCK_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI2_GPIO, SPI2_MISO_PIN_SOURCE, GPIO_AF_5);
-    GPIO_PinAFConfig(SPI2_GPIO, SPI2_MOSI_PIN_SOURCE, GPIO_AF_5);
-
-#ifdef SPI2_NSS_PIN_SOURCE
-    GPIO_PinAFConfig(SPI2_GPIO, SPI2_NSS_PIN_SOURCE, GPIO_AF_5);
-#endif
-
-    // Init pins
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-
-#ifdef USE_SDCARD_SPI2
-    // Configure pins and pullups for SD-card use
-
-    // No pull-up needed since we drive this pin as an output
-    GPIO_InitStructure.GPIO_Pin = SPI2_MOSI_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
-
-    // Prevent MISO pin from floating when SDCard is deselected (high-Z) or not connected
-    GPIO_InitStructure.GPIO_Pin = SPI2_MISO_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
-
-    // In clock-low mode, STM32 manual says we should enable a pulldown to match
-    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
-#else
-    // General-purpose pin config
-    GPIO_InitStructure.GPIO_Pin = SPI2_SCK_PIN | SPI2_MISO_PIN | SPI2_MOSI_PIN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
-#endif
-
-#ifdef SPI2_NSS_PIN
-    GPIO_InitStructure.GPIO_Pin = SPI2_NSS_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-    GPIO_Init(SPI2_GPIO, &GPIO_InitStructure);
-#endif
-#endif
-
-#ifdef STM32F10X
-    gpio_config_t gpio;
-
-    // MOSI + SCK as output
-    gpio.mode = Mode_AF_PP;
-    gpio.pin = SPI2_SCK_PIN | SPI2_MOSI_PIN;
-    gpio.speed = Speed_50MHz;
-    gpioInit(SPI2_GPIO, &gpio);
-
-    // MISO as input
-    gpio.pin = SPI2_MISO_PIN;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(SPI2_GPIO, &gpio);
-
-#ifdef SPI2_NSS_PIN
-    // NSS as gpio slave select
-    gpio.pin = SPI2_NSS_PIN;
-    gpio.mode = Mode_Out_PP;
-    gpioInit(SPI2_GPIO, &gpio);
-#endif
-#endif
-
-    // Init SPI2 hardware
-    SPI_I2S_DeInit(SPI2);
-
-    spi.SPI_Mode = SPI_Mode_Master;
-    spi.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-    spi.SPI_DataSize = SPI_DataSize_8b;
-    spi.SPI_NSS = SPI_NSS_Soft;
-    spi.SPI_FirstBit = SPI_FirstBit_MSB;
-    spi.SPI_CRCPolynomial = 7;
-    spi.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
-
-#ifdef USE_SDCARD_SPI2
-    spi.SPI_CPOL = SPI_CPOL_Low;
-    spi.SPI_CPHA = SPI_CPHA_1Edge;
-#else
-    spi.SPI_CPOL = SPI_CPOL_High;
-    spi.SPI_CPHA = SPI_CPHA_2Edge;
-#endif
-
-#ifdef STM32F303xC
-    // Configure for 8-bit reads.
-    SPI_RxFIFOThresholdConfig(SPI2, SPI_RxFIFOThreshold_QF);
-#endif
-
-    SPI_Init(SPI2, &spi);
-    SPI_Cmd(SPI2, ENABLE);
-
-#ifdef SPI2_NSS_PIN
-    // Drive NSS high to disable connected SPI device.
-    GPIO_SetBits(SPI2_GPIO, SPI2_NSS_PIN);
-#endif
-}
-#endif
-
-bool spiInit(SPI_TypeDef *instance)
-{
-#if (!(defined(USE_SPI_DEVICE_1) && defined(USE_SPI_DEVICE_2)))
-    UNUSED(instance);
-#endif
-
+    switch (device)
+    {
+    case SPIINVALID:
+        return false;
+    case SPIDEV_1:
 #ifdef USE_SPI_DEVICE_1
-    if (instance == SPI1) {
-        initSpi1();
+        spiInitDevice(device);
         return true;
-    }
+#else
+        break;
 #endif
+    case SPIDEV_2:
 #ifdef USE_SPI_DEVICE_2
-    if (instance == SPI2) {
-        initSpi2();
+        spiInitDevice(device);
         return true;
-    }
+#else
+        break;
 #endif
+    case SPIDEV_3:
+#if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F4))
+        spiInitDevice(device);
+        return true;
+#else
+        break;
+#endif
+    }
     return false;
 }
 
+uint32_t spiTimeoutUserCallback(SPI_TypeDef *instance)
+{
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (device == SPIINVALID)
+        return -1;
+    spiHardwareMap[device].errorCount++;
+    return spiHardwareMap[device].errorCount;
+}
+
+// return uint8_t value or -1 when failure
 uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t data)
 {
     uint16_t spiTimeout = 1000;
 
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET)
         if ((spiTimeout--) == 0)
-            break;
-    }
+            return spiTimeoutUserCallback(instance);
 
 #ifdef STM32F303xC
     SPI_SendData8(instance, data);
-#endif
-#ifdef STM32F10X
+#else
     SPI_I2S_SendData(instance, data);
 #endif
     spiTimeout = 1000;
-    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET){
+    while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET)
         if ((spiTimeout--) == 0)
-            break;
-    }
+            return spiTimeoutUserCallback(instance);
 
 #ifdef STM32F303xC
     return ((uint8_t)SPI_ReceiveData8(instance));
-#endif
-#ifdef STM32F10X
+#else
     return ((uint8_t)SPI_I2S_ReceiveData(instance));
 #endif
 }
@@ -361,14 +247,13 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 {
 #ifdef STM32F303xC
     return SPI_GetTransmissionFIFOStatus(instance) != SPI_TransmissionFIFOStatus_Empty || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
-#endif
-#ifdef STM32F10X
+#else
     return SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET || SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_BSY) == SET;
 #endif
 
 }
 
-void spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
+bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
     uint16_t spiTimeout = 1000;
 
@@ -378,32 +263,29 @@ void spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
         b = in ? *(in++) : 0xFF;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_TXE) == RESET) {
             if ((spiTimeout--) == 0)
-                break;
+                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         SPI_SendData8(instance, b);
-        //SPI_I2S_SendData16(instance, b);
-#endif
-#ifdef STM32F10X
+#else
         SPI_I2S_SendData(instance, b);
 #endif
         spiTimeout = 1000;
         while (SPI_I2S_GetFlagStatus(instance, SPI_I2S_FLAG_RXNE) == RESET) {
             if ((spiTimeout--) == 0)
-                break;
+                return spiTimeoutUserCallback(instance);
         }
 #ifdef STM32F303xC
         b = SPI_ReceiveData8(instance);
-        //b = SPI_I2S_ReceiveData16(instance);
-#endif
-#ifdef STM32F10X
+#else
         b = SPI_I2S_ReceiveData(instance);
 #endif
         if (out)
             *(out++) = b;
     }
-}
 
+    return true;
+}
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
@@ -416,48 +298,63 @@ void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
     tempRegister = instance->CR1;
 
     switch (divisor) {
-        case 2:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_2;
-            break;
+    case 2:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_2;
+        break;
 
-        case 4:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_4;
-            break;
+    case 4:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_4;
+        break;
 
-        case 8:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_8;
-            break;
+    case 8:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_8;
+        break;
 
-        case 16:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_16;
-            break;
+    case 16:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_16;
+        break;
 
-        case 32:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_32;
-            break;
+    case 32:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_32;
+        break;
 
-        case 64:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_64;
-            break;
+    case 64:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_64;
+        break;
 
-        case 128:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_128;
-            break;
+    case 128:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_128;
+        break;
 
-        case 256:
-            tempRegister &= BR_CLEAR_MASK;
-            tempRegister |= SPI_BaudRatePrescaler_256;
-            break;
+    case 256:
+        tempRegister &= BR_CLEAR_MASK;
+        tempRegister |= SPI_BaudRatePrescaler_256;
+        break;
     }
 
     instance->CR1 = tempRegister;
 
     SPI_Cmd(instance, ENABLE);
+}
+
+uint16_t spiGetErrorCounter(SPI_TypeDef *instance)
+{
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (device == SPIINVALID)
+        return 0;
+    return spiHardwareMap[device].errorCount;
+}
+
+void spiResetErrorCounter(SPI_TypeDef *instance)
+{
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (device != SPIINVALID)
+        spiHardwareMap[device].errorCount = 0;
 }

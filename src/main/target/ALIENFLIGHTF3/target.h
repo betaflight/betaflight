@@ -86,13 +86,11 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_3
 
-#define M25P16_CS_GPIO          GPIOA
-#define M25P16_CS_PIN           GPIO_Pin_15
+#define M25P16_CS_PIN           PA15
 #define M25P16_SPI_INSTANCE     SPI3
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO                  GPIOA
-#define MPU6500_CS_PIN                   GPIO_Pin_15
+#define MPU6500_CS_PIN                   PA15
 #define MPU6500_SPI_INSTANCE             SPI3
 
 #define USE_ADC

@@ -171,4 +171,3 @@ bool lsm303dlhcAccDetect(acc_t *acc)
     return true;
 }
 #endif
-

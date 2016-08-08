@@ -37,12 +37,10 @@
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
-#define MPU6000_CS_GPIO         GPIOA
-#define MPU6000_CS_PIN          GPIO_Pin_4
+#define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define M25P16_CS_GPIO          GPIOB
-#define M25P16_CS_PIN           GPIO_Pin_12
+#define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
 #define USE_FLASHFS
@@ -58,7 +56,7 @@
 
 // External I2C BARO
 #define BARO
-#define USE_BARO_MS5611
+//#define USE_BARO_MS5611
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
@@ -106,18 +104,14 @@
 // RC8  PA1/TIM2    CE / RX_PPM
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CE_GPIO                   GPIOA
-#define NRF24_CE_PIN                    GPIO_Pin_1
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CSN_GPIO                  GPIOA
-#define NRF24_CSN_PIN                   GPIO_Pin_0
 #define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_SCK_GPIO                  GPIOB
-#define NRF24_SCK_PIN                   GPIO_Pin_5
-#define NRF24_MOSI_GPIO                 GPIOB
-#define NRF24_MOSI_PIN                  GPIO_Pin_1
-#define NRF24_MISO_GPIO                 GPIOB
-#define NRF24_MISO_PIN                  GPIO_Pin_0
+#define NRF24_CSN_PIN                   PA0
+#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
+#define NRF24_CE_PIN                    PA1
+#define NRF24_CSN_PIN                   PA0
+#define NRF24_SCK_PIN                   PB5
+#define NRF24_MOSI_PIN                  PB1
+#define NRF24_MISO_PIN                  PB0
 
 #define SERIAL_PORT_COUNT 3
 
@@ -162,7 +156,7 @@
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define SONAR
-#define USE_SONAR_SRF10
+//#define USE_SONAR_SRF10
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
 
@@ -195,12 +189,15 @@
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
 
+#else
+#define TARGET_MOTOR_COUNT 6
+#define DISABLE_UNCOMMON_MIXERS
 #endif //OPBL
 
 
+#define SKIP_RX_MSP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
-#define SKIP_RX_MSP
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
 #undef TELEMETRY

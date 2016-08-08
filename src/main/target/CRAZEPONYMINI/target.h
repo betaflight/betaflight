@@ -34,8 +34,8 @@
 #define BARO
 #define USE_BARO_MS5611
 
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define USE_UART1
 #define SERIAL_PORT_COUNT       1
@@ -48,6 +48,8 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
 #define USE_RX_NRF24
+//#define USE_RX_CX10
+//#define USE_RX_H8_3D
 #define USE_RX_SYMA
 #define USE_RX_V202
 #define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
@@ -59,14 +61,11 @@
 #define USE_NRF24_SPI1
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CE_GPIO                   GPIOA
-#define NRF24_CE_PIN                    GPIO_Pin_12
+#define NRF24_CE_PIN                    PA12
 #define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CSN_GPIO                  GPIOA
-#define NRF24_CSN_PIN                   GPIO_Pin_4
+#define NRF24_CSN_PIN                   PA4
 #define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_IRQ_GPIO                  GPIOA
-#define NRF24_IRQ_PIN                   GPIO_Pin_15
+#define NRF24_IRQ_PIN                   PA15
 #define NRF24_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 
 #define SKIP_RX_MSP

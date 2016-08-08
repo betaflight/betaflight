@@ -15,7 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -23,9 +22,10 @@
 
 #ifdef USE_FLASH_M25P16
 
-#include "drivers/flash_m25p16.h"
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "flash_m25p16.h"
+#include "io.h"
+#include "bus_spi.h"
+#include "system.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03
@@ -44,11 +44,12 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 
-#define DISABLE_M25P16       GPIO_SetBits(M25P16_CS_GPIO,   M25P16_CS_PIN)
-#define ENABLE_M25P16        GPIO_ResetBits(M25P16_CS_GPIO, M25P16_CS_PIN)
+#define DISABLE_M25P16       IOHi(m25p16CsPin)
+#define ENABLE_M25P16        IOLo(m25p16CsPin)
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6
@@ -58,6 +59,8 @@
 #define BULK_ERASE_TIMEOUT_MILLIS    21000
 
 static flashGeometry_t geometry = {.pageSize = M25P16_PAGESIZE};
+
+static IO_t m25p16CsPin = IO_NONE;
 
 /*
  * Whether we've performed an action that could have made the device busy for writes.
@@ -92,7 +95,7 @@ static void m25p16_writeEnable()
 
 static uint8_t m25p16_readStatus()
 {
-    uint8_t command[2] = {M25P16_INSTRUCTION_READ_STATUS_REG, 0};
+    uint8_t command[2] = { M25P16_INSTRUCTION_READ_STATUS_REG, 0 };
     uint8_t in[2];
 
     ENABLE_M25P16;
@@ -131,7 +134,7 @@ bool m25p16_waitForReady(uint32_t timeoutMillis)
  */
 static bool m25p16_readIdentification()
 {
-    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0};
+    uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
     uint32_t chipID;
 
@@ -161,6 +164,7 @@ static bool m25p16_readIdentification()
         break;
         case JEDEC_ID_MICRON_N25Q064:
         case JEDEC_ID_WINBOND_W25Q64:
+        case JEDEC_ID_MACRONIX_MX25L6406E:
             geometry.sectors = 128;
             geometry.pagesPerSector = 256;
         break;
@@ -193,10 +197,36 @@ static bool m25p16_readIdentification()
  * Attempts to detect a connected m25p16. If found, true is returned and device capacity can be fetched with
  * m25p16_getGeometry().
  */
-bool m25p16_init()
+bool m25p16_init(ioTag_t csTag)
 {
+    /* 
+        if we have already detected a flash device we can simply exit 
+        
+        TODO: change the init param in favour of flash CFG when ParamGroups work is done
+        then cs pin can be specified in hardware_revision.c or config.c (dependent on revision).
+    */
+    if (geometry.sectors) {
+        return true;
+    }
+    
+    if (csTag) {
+        m25p16CsPin = IOGetByTag(csTag);
+    } else {
+#ifdef M25P16_CS_PIN
+        m25p16CsPin = IOGetByTag(IO_TAG(M25P16_CS_PIN));
+#else
+        return false;
+#endif
+    }
+    IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(m25p16CsPin, SPI_IO_CS_CFG);
+
+    DISABLE_M25P16;
+
+#ifndef M25P16_SPI_SHARED
     //Maximum speed for standard READ command is 20mHz, other commands tolerate 25mHz
-    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(M25P16_SPI_INSTANCE, SPI_CLOCK_FAST);
+#endif
 
     return m25p16_readIdentification();
 }

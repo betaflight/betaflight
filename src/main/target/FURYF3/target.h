@@ -31,15 +31,11 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6000_CS_GPIO                  GPIOA
-#define MPU6000_CS_PIN                   GPIO_Pin_4
-#define MPU6000_SPI_INSTANCE             SPI1
+#define MPU6000_CS_PIN          PA4
+#define MPU6000_SPI_INSTANCE    SPI1
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_GPIO                  GPIOA
-#define MPU6500_CS_PIN                   GPIO_Pin_4
-#define MPU6500_SPI_INSTANCE             SPI1
+#define MPU6500_CS_PIN          PA4
+#define MPU6500_SPI_INSTANCE    SPI1
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -68,16 +64,10 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SPI2_GPIO               GPIOB
-#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI2_NSS_PIN            Pin_12
-#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
-#define SPI2_SCK_PIN            Pin_13
-#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
-#define SPI2_MISO_PIN           Pin_14
-#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
-#define SPI2_MOSI_PIN           Pin_15
-#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+#define SPI2_NSS_PIN            PB12
+#define SPI2_SCK_PIN            PB13
+#define SPI2_MISO_PIN           PB14
+#define SPI2_MOSI_PIN           PB15
 
 #ifdef FURYF3_SPIFLASH
 #define USE_FLASHFS
@@ -88,8 +78,7 @@
 
 #ifdef USE_FLASHFS
 #define USE_FLASH_M25P16
-#define M25P16_CS_GPIO          GPIOB
-#define M25P16_CS_PIN           GPIO_Pin_12
+#define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 #endif
@@ -99,11 +88,9 @@
 
 #define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN                   GPIO_Pin_2
+#define SDCARD_DETECT_PIN                   PB2
 #define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
 #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
-#define SDCARD_DETECT_GPIO_PORT             GPIOB
-#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
 #define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOB
 #define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
 
@@ -116,7 +103,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 #endif

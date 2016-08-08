@@ -40,6 +40,15 @@
 #define USE_ACC_MPU6050
 #define ACC_MPU6050_ALIGN       CW180_DEG
 
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW180_DEG
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
+
+#define MPU6000_CS_GPIO         GPIOB
+#define MPU6000_CS_PIN          PB12
+#define MPU6000_SPI_INSTANCE    SPI2
+
 //#define BARO
 //#define USE_BARO_MS5611
 
@@ -69,16 +78,11 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_2
 
-#define M25P16_CS_GPIO        GPIOB
-#define M25P16_CS_PIN         GPIO_Pin_12
-#define M25P16_SPI_INSTANCE   SPI2
+#define M25P16_CS_PIN           PB12
+#define M25P16_SPI_INSTANCE     SPI2
 
-#define MPU6000_CS_GPIO       GPIOB
-#define MPU6000_CS_PIN        GPIO_Pin_12
-#define MPU6000_SPI_INSTANCE  SPI2
-
-//#define SENSORS_SET (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
-#define SENSORS_SET (SENSOR_ACC)
+//#define SENSORS_SET             (SENSOR_ACC | SENSOR_BARO | SENSOR_GPS | SENSOR_MAG)
+#define SENSORS_SET             (SENSOR_ACC)
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

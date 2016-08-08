@@ -26,7 +26,7 @@
 
 #include "system.h"
 #include "exti.h"
-#include "gpio.h"
+#include "io.h"
 #include "bus_spi.h"
 
 #include "sensor.h"
@@ -35,8 +35,10 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
-#define DISABLE_MPU6500       GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN)
-#define ENABLE_MPU6500        GPIO_ResetBits(MPU6500_CS_GPIO, MPU6500_CS_PIN)
+#define DISABLE_MPU6500       IOHi(mpuSpi6500CsPin)
+#define ENABLE_MPU6500        IOLo(mpuSpi6500CsPin)
+
+static IO_t mpuSpi6500CsPin = IO_NONE;
 
 bool mpu6500WriteRegister(uint8_t reg, uint8_t data)
 {
@@ -66,46 +68,24 @@ static void mpu6500SpiInit(void)
         return;
     }
 
-#ifdef STM32F303xC
-    RCC_AHBPeriphClockCmd(MPU6500_CS_GPIO_CLK_PERIPHERAL, ENABLE);
+    mpuSpi6500CsPin = IOGetByTag(IO_TAG(MPU6500_CS_PIN));
+    IOInit(mpuSpi6500CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(mpuSpi6500CsPin, SPI_IO_CS_CFG);
 
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Pin = MPU6500_CS_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-    GPIO_Init(MPU6500_CS_GPIO, &GPIO_InitStructure);
-#endif
-
-#ifdef STM32F10X
-    RCC_APB2PeriphClockCmd(MPU6500_CS_GPIO_CLK_PERIPHERAL, ENABLE);
-
-    gpio_config_t gpio;
-    // CS as output
-    gpio.mode = Mode_Out_PP;
-    gpio.pin = MPU6500_CS_PIN;
-    gpio.speed = Speed_50MHz;
-    gpioInit(MPU6500_CS_GPIO, &gpio);
-#endif
-
-    GPIO_SetBits(MPU6500_CS_GPIO,   MPU6500_CS_PIN);
-
-    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);
 
     hardwareInitialised = true;
 }
 
 bool mpu6500SpiDetect(void)
 {
-    uint8_t sig;
+    uint8_t tmp;
 
     mpu6500SpiInit();
 
-    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &sig);
+    mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
 
-    if (sig == MPU6500_WHO_AM_I_CONST || sig == MPU9250_WHO_AM_I_CONST) {
+    if (tmp == MPU6500_WHO_AM_I_CONST || tmp == MPU9250_WHO_AM_I_CONST || tmp == ICM20608G_WHO_AM_I_CONST) {
         return true;
     }
 
