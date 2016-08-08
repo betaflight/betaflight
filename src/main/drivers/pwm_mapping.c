@@ -223,7 +223,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(SPRACINGF3)
+#if defined(SPRACINGF3) || defined(X_RACERSPI)
             // remap PWM15+16 as servos
             if ((timerIndex == PWM15 || timerIndex == PWM16) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
@@ -269,7 +269,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             } else
 #endif
 
-#if defined(SPRACINGF3) || defined(NAZE)
+#if defined(SPRACINGF3) || defined(NAZE) || defined(X_RACERSPI)
                 // remap PWM5..8 as servos when used in extended servo mode
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
