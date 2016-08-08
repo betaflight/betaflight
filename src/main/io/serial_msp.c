@@ -1501,13 +1501,13 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.deadband3d_low = read16();
         masterConfig.flight3DConfig.deadband3d_high = read16();
         masterConfig.flight3DConfig.neutral3d = read16();
-        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RC_DEADBAND:
         masterConfig.rcControlsConfig.deadband = read8();
         masterConfig.rcControlsConfig.yaw_deadband = read8();
         masterConfig.rcControlsConfig.alt_hold_deadband = read8();
+        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RESET_CURR_PID:
