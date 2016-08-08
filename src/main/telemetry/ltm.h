@@ -17,14 +17,47 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TELEMETRY_LTM_H_
-#define TELEMETRY_LTM_H_
+#pragma once
 
-void initLtmTelemetry(telemetryConfig_t *initialTelemetryConfig);
+struct telemetryConfig_s;
+void initLtmTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
 void handleLtmTelemetry(void);
 void checkLtmTelemetryState(void);
 
 void freeLtmTelemetryPort(void);
 void configureLtmTelemetryPort(void);
 
-#endif /* TELEMETRY_LTM_H_ */
+typedef enum {
+    LTM_FRAME_START = 0,
+    LTM_AFRAME = LTM_FRAME_START, // Attitude Frame
+    LTM_SFRAME, // Status Frame
+#if defined(GPS)
+    LTM_GFRAME, // GPS Frame
+    LTM_OFRAME, // Origin Frame
+    LTM_XFRAME, // Extended information data frame
+#endif
+#if defined(NAV)
+    LTM_NFRAME, // Navigation Frame (inav extension)
+#endif
+    LTM_FRAME_COUNT
+} ltm_frame_e;
+
+// payload size does not include the '$T' header, the frame type byte or the checksum byte
+#define LTM_GFRAME_PAYLOAD_SIZE 14
+#define LTM_AFRAME_PAYLOAD_SIZE  6
+#define LTM_SFRAME_PAYLOAD_SIZE  7
+#define LTM_OFRAME_PAYLOAD_SIZE 14
+#define LTM_NFRAME_PAYLOAD_SIZE  6
+#define LTM_XFRAME_PAYLOAD_SIZE  6
+
+#define LTM_MAX_PAYLOAD_SIZE 14
+#define LTM_MAX_MESSAGE_SIZE (LTM_MAX_PAYLOAD_SIZE+4)
+
+struct sbuf_s;
+void ltm_gframe(struct sbuf_s *dst);
+void ltm_sframe(struct sbuf_s *dst);
+void ltm_aframe(struct sbuf_s *dst);
+void ltm_oframe(struct sbuf_s *dst);
+void ltm_xframe(struct sbuf_s *dst);
+void ltm_nframe(struct sbuf_s *dst);
+

@@ -368,6 +368,7 @@ COMMON_SRC = \
             common/maths.c \
             common/printf.c \
             common/typeconversion.c \
+            common/streambuf.c \
             config/config.c \
             config/runtime_config.c \
             drivers/adc.c \
