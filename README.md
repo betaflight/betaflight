@@ -61,11 +61,9 @@ If what you need is not covered then refer to the baseflight documentation. If y
 
 ## IRC Support and Developers Channel
 
-There's a dedicated IRC channel here:
+There's a dedicated IRCgitter chat channel here:
 
-irc://irc.freenode.net/#cleanflight
-
-If you are using windows and don't have an IRC client installed then take a look at HydraIRC - here: http://hydrairc.com/
+https://gitter.im/betaflight/betaflight
 
 Etiquette: Don't ask to ask and please wait around long enough for a reply - sometimes people are out flying, asleep or at work and can't answer immediately.
 
@@ -79,13 +77,13 @@ Please subscribe and '+1' the videos if you find them useful.
 
 ## Configuration Tool
 
-To configure Cleanflight you should use the Cleanflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
+To configure Betaflight you should use the Betaflight-configurator GUI tool (Windows/OSX/Linux) that can be found here:
 
-https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
+https://chrome.google.com/webstore/detail/betaflight-configurator/kdaghagfopacdngbohiknlhcocjccjao
 
 The source for it is here:
 
-https://github.com/cleanflight/cleanflight-configurator
+https://github.com/betaflight/betaflight-configurator
 
 ## Contributing
 
@@ -97,10 +95,10 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 * New features.
 * Telling us your ideas and suggestions.
 
-The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
+The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
 
-https://github.com/cleanflight/cleanflight/issues
-https://github.com/cleanflight/cleanflight-configurator/issues
+https://github.com/betaflight/betaflight/issues
+https://github.com/betaflight/betaflight-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
 
