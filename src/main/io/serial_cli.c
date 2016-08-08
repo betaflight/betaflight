@@ -411,6 +411,9 @@ static const char * const lookupTableSerialRX[] = {
     "IBUS",
     "JETIEXBUS"
 };
+static const char * const lookupTableIbusModel[] = {
+    "IA6B", "IA6"
+};
 #endif
 
 static const char * const lookupTableGyroLpf[] = {
@@ -523,6 +526,7 @@ typedef enum {
     TABLE_PID_CONTROLLER,
 #ifdef SERIAL_RX
     TABLE_SERIAL_RX,
+    TABLE_IBUS_MODEL,
 #endif
     TABLE_GYRO_LPF,
     TABLE_ACC_HARDWARE,
@@ -561,6 +565,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
 #ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+    { lookupTableIbusModel, sizeof(lookupTableIbusModel) / sizeof(char *) },
 #endif
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
@@ -705,6 +710,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.serialrx_provider, .config.lookup = { TABLE_SERIAL_RX } },
+    { "ibus_model",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.ibus_model, .config.lookup = { TABLE_IBUS_MODEL } },
 #endif
     { "sbus_inversion",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.sbus_inversion, .config.lookup = { TABLE_OFF_ON } },
 #ifdef SPEKTRUM_BIND

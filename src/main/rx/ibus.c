@@ -42,11 +42,19 @@
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
-#define IBUS_MAX_CHANNEL 10
+#define IBUS_MAX_CHANNEL 14
 #define IBUS_BUFFSIZE 32
-#define IBUS_SYNCBYTE 0x20
+#define IBUS_MODEL_IA6B 0
+#define IBUS_MODEL_IA6 1
 
 #define IBUS_BAUDRATE 115200
+
+static uint8_t ibusModel = 0;
+static uint8_t ibusSyncByte = 0x20;
+static uint8_t ibusFrameSize = 32;
+static uint8_t ibusChannelOffset = 2;
+static uint32_t ibusInterframeGap = 3000;
+static uint16_t ibusChecksum = 0xFFFF;
 
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
@@ -56,7 +64,15 @@ static uint16_t ibusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
-    UNUSED(rxConfig);
+    //UNUSED(rxConfig);
+    if (rxConfig->ibus_model == IBUS_MODEL_IA6) {
+        ibusModel = 1;
+        ibusSyncByte = 0x55;
+        ibusFrameSize = 31;
+        ibusInterframeGap = 500;
+        ibusChecksum = 0x0000;
+        ibusChannelOffset = 1;
+    }
 
     if (callback)
         *callback = ibusReadRawRC;
@@ -96,22 +112,24 @@ static void ibusDataReceive(uint16_t c)
 
     ibusTime = micros();
 
-    if ((ibusTime - ibusTimeLast) > 3000)
+    if ((ibusTime - ibusTimeLast) > ibusInterframeGap)
         ibusFramePosition = 0;
 
     ibusTimeLast = ibusTime;
 
-    if (ibusFramePosition == 0 && c != IBUS_SYNCBYTE)
+    if (ibusFramePosition == 0 && c != ibusSyncByte)
         return;
 
     ibus[ibusFramePosition] = (uint8_t)c;
 
-    if (ibusFramePosition == IBUS_BUFFSIZE - 1) {
+    if (ibusFramePosition == ibusFrameSize - 1) {
         ibusFrameDone = true;
     } else {
         ibusFramePosition++;
     }
 }
+
+
 
 uint8_t ibusFrameStatus(void)
 {
@@ -125,18 +143,24 @@ uint8_t ibusFrameStatus(void)
 
     ibusFrameDone = false;
 
-    chksum = 0xFFFF;
-    for (i = 0; i < 30; i++)
-        chksum -= ibus[i];
-        
-    rxsum = ibus[30] + (ibus[31] << 8);
+    chksum = ibusChecksum;
+    rxsum = ibus[ibusFrameSize - 2] + (ibus[ibusFrameSize - 1] << 8);
+    
+    if (ibusModel == IBUS_MODEL_IA6) {
+	    for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_CHANNEL; i++, offset += 2)
+		chksum += ibus[offset] + (ibus[offset + 1] << 8);
+    } else { 
+	    for (i = 0; i < 30; i++)
+		chksum -= ibus[i];
+    }
 
     if (chksum == rxsum) {
-        for (i = 0, offset = 2; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
-            ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
-        }
-        frameStatus = SERIAL_RX_FRAME_COMPLETE;
+	for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
+	    ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
+	}
+	frameStatus = SERIAL_RX_FRAME_COMPLETE;
     }
+
 
     return frameStatus;
 }
