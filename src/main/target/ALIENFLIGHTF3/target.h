@@ -35,8 +35,6 @@
 
 #define BEEPER                  PA5
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define USE_EXTI
@@ -131,5 +129,6 @@
 #define TARGET_IO_PORTD         (BIT(2))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )
 

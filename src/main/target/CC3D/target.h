@@ -22,8 +22,8 @@
 #define INVERTER                PB2 // PB2 (BOOT1) used as inverter select GPIO
 #define INVERTER_USART          USART1
 
-#define BEEPER                  PB15
-#define BEEPER_OPT              PB2
+#define BEEPER                  PA15
+#define BEEPER_OPT              PA2
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PA3

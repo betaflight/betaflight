@@ -35,6 +35,8 @@
 #include "io/rc_controls.h"
 #include "io/beeper.h"
 
+#include "rx/rx.h"
+
 #define VBATT_PRESENT_THRESHOLD_MV    10
 #define VBATT_LPF_FREQ  0.4f
 

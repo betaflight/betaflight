@@ -15,6 +15,7 @@
  * along with Betaflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -24,6 +25,7 @@
 
 #include "barometer.h"
 #include "barometer_bmp280.h"
+#include "io.h"
 
 #ifdef USE_BARO_SPI_BMP280
 #define DISABLE_BMP280       IOHi(bmp280CsPin)

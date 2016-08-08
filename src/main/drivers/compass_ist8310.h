@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io.h"
+#include "io_types.h"
 
 typedef struct ist8310Config_s {
     ioTag_t intTag;

@@ -67,11 +67,6 @@
 #define M25P16_CS_PIN           PC15
 #define M25P16_SPI_INSTANCE     SPI2
 
-// timer definitions in drivers/timer.c
-// channel mapping in drivers/pwm_mapping.c
-// only 6 outputs available on hardware
-#define USABLE_TIMER_CHANNEL_COUNT 9
-
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
@@ -147,5 +142,9 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
+// timer definitions in drivers/timer.c
+// channel mapping in drivers/pwm_mapping.c
+// only 6 outputs available on hardware
+#define USABLE_TIMER_CHANNEL_COUNT 9
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
 

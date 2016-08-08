@@ -33,6 +33,7 @@
 #include "drivers/system.h"
 #include "drivers/dma.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/timer.h"

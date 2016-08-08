@@ -18,12 +18,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "io/rc_controls.h"
-#include "io/escservo.h"
-
-#include "io/rc_curves.h"
-
 #include "config/config.h"
+
+#include "io/escservo.h"
+#include "io/rc_curves.h"
+#include "io/rc_controls.h"
+
+#include "rx/rx.h"
+
 
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE

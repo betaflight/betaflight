@@ -25,7 +25,7 @@ typedef enum {
     MAG_AK8975 = 3,
     MAG_AK8963 = 4,
     MAG_IST8310 = 5,
-    MAG_MAX = MAG_IST8310
+    MAG_MAX = MAG_IST8310,
 } magSensor_e;
 
 void compassInit(void);

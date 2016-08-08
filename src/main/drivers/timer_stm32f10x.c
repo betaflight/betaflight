@@ -5,6 +5,13 @@
   http://www.st.com/software_license_agreement_liberty_v2
 */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/utils.h"
+
 #include "stm32f10x.h"
 #include "rcc.h"
 #include "timer.h"

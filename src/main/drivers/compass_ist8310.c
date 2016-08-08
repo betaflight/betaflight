@@ -39,8 +39,6 @@
 #include "sensor.h"
 #include "compass.h"
 
-#include "sensors/sensors.h"
-
 #include "compass_ist8310.h"
 
 //#define DEBUG_MAG_DATA_READY_INTERRUPT

@@ -101,8 +101,6 @@
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 
-#define USABLE_TIMER_CHANNEL_COUNT 5
-
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 #define VBUS_SENSING_ENABLED
@@ -167,5 +165,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
+#define USABLE_TIMER_CHANNEL_COUNT 5
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
 

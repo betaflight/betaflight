@@ -23,21 +23,23 @@
 #include <stdarg.h>
 
 #include "platform.h"
+
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
-#include "drivers/serial.h"
+
 #include "drivers/buf_writer.h"
-#include "drivers/gpio.h"
+#include "drivers/io.h"
+#include "drivers/serial.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
+
 #include "flight/mixer.h"
+
 #include "io/beeper.h"
 #include "io/serial_msp.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
-#include "io/serial_4way_impl.h"
 
 #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #include "io/serial_4way_avrootloader.h"

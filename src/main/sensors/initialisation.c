@@ -24,7 +24,7 @@
 
 #include "common/axis.h"
 
-#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
 
@@ -550,6 +550,18 @@ retry:
 #endif
             ; // fallthrough
 
+        case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+            if (ist8310Detect(&mag, ist8310Config)) {
+#ifdef MAG_IST8310_ALIGN
+                magAlign = MAG_IST8310_ALIGN;
+#endif
+                magHardware = MAG_IST8310;
+                break;
+            }
+#endif
+            ; // fallthrough
+
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
             if (ak8975Detect(&mag)) {
@@ -569,18 +581,6 @@ retry:
                 magAlign = MAG_AK8963_ALIGN;
 #endif
                 magHardware = MAG_AK8963;
-                break;
-            }
-#endif
-            ; // fallthrough
-
-        case MAG_IST8310:
-#ifdef USE_MAG_IST8310
-            if (ist8310Detect(&mag, ist8310Config)) {
-#ifdef MAG_IST8310_ALIGN
-                magAlign = MAG_IST8310_ALIGN;
-#endif
-                magHardware = MAG_IST8310;
                 break;
             }
 #endif

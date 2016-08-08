@@ -37,6 +37,7 @@
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/io.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"

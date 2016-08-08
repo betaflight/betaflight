@@ -25,7 +25,7 @@
 
 #include "nvic.h"
 
-#include "gpio.h"
+#include "io.h"
 #include "rcc.h"
 #include "system.h"
 

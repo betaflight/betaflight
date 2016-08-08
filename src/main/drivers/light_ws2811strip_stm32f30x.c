@@ -26,7 +26,7 @@
 #include "nvic.h"
 
 #include "common/color.h"
-#include "drivers/light_ws2811strip.h"
+#include "light_ws2811strip.h"
 #include "dma.h"
 #include "rcc.h"
 #include "timer.h"
