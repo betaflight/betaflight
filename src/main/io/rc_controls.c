@@ -470,6 +470,11 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
@@ -594,6 +599,11 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             newValue = constrain((int)pidProfile->D8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDYAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
+            break;
+        case ADJUSTMENT_RC_RATE_YAW:
+            newValue = constrain((int)controlRateConfig->rcYawRate8 + delta, 0, 300); // FIXME magic numbers repeated in serial_cli.c
+            controlRateConfig->rcYawRate8 = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
             break;
         default:
             break;
