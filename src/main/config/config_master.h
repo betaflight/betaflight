@@ -34,8 +34,8 @@ typedef struct master_t {
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
     uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t use_oneshot42;                  // Oneshot42
-    uint8_t use_multiShot;                  // multishot
+    uint8_t motor_pwm_protocol;             // Pwm Protocol
+    uint8_t use_unsyncedPwm;
 
 #ifdef USE_SERVOS
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
@@ -56,9 +56,12 @@ typedef struct master_t {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
-    float gyro_soft_lpf_hz;                 // Biqyad gyro lpf hz
+    uint8_t gyro_soft_type;                 // Gyro Filter Type
+    uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
+    uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_cutoff;        // Biquad gyro notch low cutoff
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -99,7 +102,7 @@ typedef struct master_t {
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
 
-    uint8_t retarded_arm;                   // allow disarm/arm on throttle down + roll left/right
+    uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
     uint8_t small_angle;
@@ -117,19 +120,40 @@ typedef struct master_t {
     telemetryConfig_t telemetryConfig;
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
+    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 
 #ifdef TRANSPONDER
     uint8_t transponderData[6];
 #endif
 
+#ifdef USE_RTC6705
+    uint8_t vtx_channel;
+    uint8_t vtx_power;
+#endif
+
+#ifdef OSD
+    osd_profile osdProfile;
+#endif
+
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
- 
+
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
+
+#ifdef VTX
+    uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
+    uint8_t vtx_channel; //1-8
+    uint8_t vtx_mode; //0=ch+band 1=mhz
+    uint16_t vtx_mhz; //5740
+
+    vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
+#endif
 
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
@@ -138,10 +162,13 @@ typedef struct master_t {
 #endif
 
     uint32_t beeper_off_flags;
-    uint32_t prefered_beeper_off_flags;
+    uint32_t preferred_beeper_off_flags;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
+   
+    char name[MAX_NAME_LENGTH+1];
+   
 } master_t;
 
 extern master_t masterConfig;

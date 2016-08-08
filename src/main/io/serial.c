@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -32,13 +31,12 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#if defined(USE_USART1) || defined(USE_USART2) || defined(USE_USART3)
+#if defined(USE_UART1) || defined(USE_UART2) || defined(USE_UART3) || defined(USE_UART4) || defined(USE_UART5) || defined(USE_UART6)
 #include "drivers/serial_uart.h"
 #endif
 
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
- 
+
 #if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
 #endif
@@ -47,7 +45,6 @@
 #include "serial_cli.h"
 #include "serial_msp.h"
 
-#include "config/config.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
@@ -60,14 +57,23 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_VCP
     SERIAL_PORT_USB_VCP,
 #endif
-#ifdef USE_USART1
+#ifdef USE_UART1
     SERIAL_PORT_USART1,
 #endif
-#ifdef USE_USART2
+#ifdef USE_UART2
     SERIAL_PORT_USART2,
 #endif
-#ifdef USE_USART3
+#ifdef USE_UART3
     SERIAL_PORT_USART3,
+#endif
+#ifdef USE_UART4
+    SERIAL_PORT_USART4,
+#endif
+#ifdef USE_UART5
+    SERIAL_PORT_USART5,
+#endif
+#ifdef USE_UART6
+    SERIAL_PORT_USART6,
 #endif
 #ifdef USE_SOFTSERIAL1
     SERIAL_PORT_SOFTSERIAL1,
@@ -185,7 +191,11 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     return NULL;
 }
 
-#define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM)
+#ifdef TELEMETRY
+#define ALL_TELEMETRY_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT)
+#else
+#define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
+#endif
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
 
 bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
@@ -194,7 +204,8 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
     /*
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
-     * - Only MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+     * - MSP is allowed to be shared with EITHER any telemetry OR blackbox.
+     * - serial RX and FrSky / LTM telemetry can be shared
      * - No other sharing combinations are valid.
      */
     uint8_t mspPortCount = 0;
@@ -214,12 +225,14 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
                 return false;
             }
 
-            if (!(portConfig->functionMask & FUNCTION_MSP)) {
-                return false;
-            }
-
-            if (!(portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
-                // some other bit must have been set.
+            if ((portConfig->functionMask & FUNCTION_MSP) && (portConfig->functionMask & ALL_FUNCTIONS_SHARABLE_WITH_MSP)) {
+                // MSP & telemetry
+#ifdef TELEMETRY
+            } else if (telemetryCheckRxPortShared(portConfig)) {
+                // serial RX & telemetry
+#endif
+            } else {
+                // some other combination
                 return false;
             }
         }
@@ -257,7 +270,7 @@ serialPort_t *openSerialPort(
     portMode_t mode,
     portOptions_t options)
 {
-#if (!defined(USE_VCP) && !defined(USE_USART1) && !defined(USE_USART2) && !defined(USE_USART3) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL1))
+#if (!defined(USE_VCP) && !defined(USE_UART1) && !defined(USE_UART2) && !defined(USE_UART3) && !defined(USE_UART4) && !defined(USE_UART5) && !defined(USE_UART6) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2))
     UNUSED(callback);
     UNUSED(baudRate);
     UNUSED(mode);
@@ -278,20 +291,35 @@ serialPort_t *openSerialPort(
             serialPort = usbVcpOpen();
             break;
 #endif
-#ifdef USE_USART1
+#ifdef USE_UART1
         case SERIAL_PORT_USART1:
             serialPort = uartOpen(USART1, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART2
+#ifdef USE_UART2
         case SERIAL_PORT_USART2:
             serialPort = uartOpen(USART2, callback, baudRate, mode, options);
             break;
 #endif
-#ifdef USE_USART3
+#ifdef USE_UART3
         case SERIAL_PORT_USART3:
             serialPort = uartOpen(USART3, callback, baudRate, mode, options);
             break;
+#endif
+#ifdef USE_UART4
+    case SERIAL_PORT_USART4:
+        serialPort = uartOpen(UART4, callback, baudRate, mode, options);
+        break;
+#endif
+#ifdef USE_UART5
+    case SERIAL_PORT_USART5:
+        serialPort = uartOpen(UART5, callback, baudRate, mode, options);
+        break;
+#endif
+#ifdef USE_UART6
+    case SERIAL_PORT_USART6:
+        serialPort = uartOpen(USART6, callback, baudRate, mode, options);
+        break;
 #endif
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
@@ -336,7 +364,7 @@ void closeSerialPort(serialPort_t *serialPort) {
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled)
+void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
     uint8_t index;
 
@@ -348,6 +376,12 @@ void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled)
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialPortUsageList[index].identifier = serialPortIdentifiers[index];
 
+        if (serialPortToDisable != SERIAL_PORT_NONE) {
+            if (serialPortUsageList[index].identifier == serialPortToDisable) {
+                serialPortUsageList[index].identifier = SERIAL_PORT_NONE;
+                serialPortCount--;
+            }
+        }
         if (!softserialEnabled) {
             if (0
 #ifdef USE_SOFTSERIAL1
@@ -437,7 +471,7 @@ static void nopConsumer(uint8_t data)
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
                        *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);

@@ -37,6 +37,8 @@
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
+#include "io/osd.h"
+#include "io/vtx.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -58,8 +60,6 @@
 
 #include "config/runtime_config.h"
 #include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 enum
 {
@@ -83,7 +83,7 @@ enum
     // remaining 3 bits are crc (according to comments in openTx code)
 };
 
-// these data identifiers are obtained from http://diydrones.com/forum/topics/amp-to-frsky-x8r-sport-converter
+// these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky.h
 enum
 {
     FSSP_DATAID_SPEED      = 0x0830 ,
@@ -106,6 +106,8 @@ enum
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
+    FSSP_DATAID_A3         = 0x0900 ,
+    FSSP_DATAID_A4         = 0x0910 ,
 };
 
 const uint16_t frSkyDataIdTable[] = {
@@ -130,6 +132,7 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_T1        ,
     FSSP_DATAID_T2        ,
     FSSP_DATAID_GPS_ALT   ,
+    FSSP_DATAID_A4        ,
     0
 };
 
@@ -145,8 +148,6 @@ static serialPortConfig_t *portConfig;
 static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
 static portSharing_e smartPortPortSharing;
-
-extern void serialInit(serialConfig_t *); // from main.c // FIXME remove this dependency
 
 char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
@@ -274,7 +275,7 @@ void checkSmartPortTelemetryState(void)
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
-    
+
     if (!smartPortTelemetryEnabled) {
         return;
     }
@@ -302,7 +303,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-         
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -471,6 +472,12 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
 #endif
+            case FSSP_DATAID_A4         :
+                if (feature(FEATURE_VBAT)) {
+                    smartPortSendPackage(id, vbat * 10 / batteryCellCount ); // given in 0.1V, convert to volts
+                    smartPortHasRequest = 0;
+                }
+                break;
             default:
                 break;
                 // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start

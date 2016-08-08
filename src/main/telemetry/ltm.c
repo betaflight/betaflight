@@ -33,9 +33,9 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #ifdef TELEMETRY
+
+#include "build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -62,6 +62,8 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/beeper.h"
+#include "io/osd.h"
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 
@@ -77,8 +79,6 @@
 
 #include "config/config.h"
 #include "config/runtime_config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100
@@ -298,12 +298,19 @@ void configureLtmTelemetryPort(void)
 
 void checkLtmTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
-    if (newTelemetryEnabledValue == ltmEnabled)
-        return;
-    if (newTelemetryEnabledValue)
-        configureLtmTelemetryPort();
-    else
-        freeLtmTelemetryPort();
+    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+        if (!ltmEnabled && telemetrySharedPort != NULL) {
+            ltmPort = telemetrySharedPort;
+            ltmEnabled = true;
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
+        if (newTelemetryEnabledValue == ltmEnabled)
+            return;
+        if (newTelemetryEnabledValue)
+            configureLtmTelemetryPort();
+        else
+            freeLtmTelemetryPort();
+    }
 }
 #endif

@@ -31,10 +31,12 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
+#ifndef STM32F4 /* already defined in /lib/main/CMSIS/CM4/CoreSupport/core_cmFunc.h for F4 targets */
 __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX(uint32_t basePri)
 {
     __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) : "memory" );
 }
+#endif
 
 // cleanup BASEPRI restore function, with global memory barrier
 static inline void __basepriRestoreMem(uint8_t *val)
@@ -83,7 +85,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // ideally this would only protect memory passed as parameter (any type should work), but gcc is curently creating almost full barrier
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
-#if (__GNUC__ > 4)
+#if (__GNUC__ > 5)
 #warning "Please verify that ATOMIC_BARRIER works as intended"
 // increment version number is BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead

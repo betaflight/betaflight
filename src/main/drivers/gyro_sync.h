@@ -5,8 +5,7 @@
  *      Author: borisb
  */
 
-extern uint32_t targetLooptime;
-
-bool gyroSyncCheckUpdate(void);
+struct gyro_s;
+bool gyroSyncCheckUpdate(const struct gyro_s *gyro);
 uint8_t gyroMPU6xxxGetDividerDrops(void);
-void gyroUpdateSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);
+uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);

@@ -20,26 +20,31 @@
 
 #include "platform.h"
 
-#ifdef INVERTER
+#ifdef INVERTER 
 
-#include "gpio.h"
+#include "io.h"
+#include "io_impl.h"
 
 #include "inverter.h"
 
+/* 
+    TODO: move this to support multiple inverters on different UARTs etc
+    possibly move to put it in the UART driver itself.
+*/
+static IO_t pin = IO_NONE;
+
 void initInverter(void)
 {
-    struct {
-        GPIO_TypeDef *gpio;
-        gpio_config_t cfg;
-    } gpio_setup = {
-        .gpio = INVERTER_GPIO,
-        // configure for Push-Pull
-        .cfg = { INVERTER_PIN, Mode_Out_PP, Speed_2MHz } 
-    };
+    pin = IOGetByTag(IO_TAG(INVERTER));
+    IOInit(pin, OWNER_INVERTER, RESOURCE_OUTPUT, 1);
+    IOConfigGPIO(pin, IOCFG_OUT_PP);
 
-    RCC_APB2PeriphClockCmd(INVERTER_PERIPHERAL, ENABLE);
+    inverterSet(false);
+}
 
-    gpioInit(gpio_setup.gpio, &gpio_setup.cfg);
+void inverterSet(bool on)
+{
+    IOWrite(pin, on);
 }
 
 #endif

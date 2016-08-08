@@ -13,13 +13,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ * Driver for IBUS (Flysky) receiver
+ *   - initial implementation for MultiWii by Cesco/Plüschi
+ *   - implementation for BaseFlight by Andreas (fiendie) Tacke
+ *   - ported to CleanFlight by Konstantin (digitalentity) Sharlaimov
  */
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "platform.h"
+#include <platform.h>
 
 #include "build_config.h"
 
@@ -29,12 +35,14 @@
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
 
+#ifdef TELEMETRY
+#include "telemetry/telemetry.h"
+#endif
+
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
-// Driver for IBUS (Flysky) receiver 
-
-#define IBUS_MAX_CHANNEL 8
+#define IBUS_MAX_CHANNEL 10
 #define IBUS_BUFFSIZE 32
 #define IBUS_SYNCBYTE 0x20
 
@@ -60,7 +68,19 @@ bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
         return false;
     }
 
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = ibusPort;
+    }
+#endif
 
     return ibusPort != NULL;
 }
@@ -95,7 +115,7 @@ static void ibusDataReceive(uint16_t c)
 
 uint8_t ibusFrameStatus(void)
 {
-    uint8_t i;
+    uint8_t i, offset;
     uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
     uint16_t chksum, rxsum;
 
@@ -112,15 +132,9 @@ uint8_t ibusFrameStatus(void)
     rxsum = ibus[30] + (ibus[31] << 8);
 
     if (chksum == rxsum) {
-        ibusChannelData[0] = (ibus[ 3] << 8) + ibus[ 2];
-        ibusChannelData[1] = (ibus[ 5] << 8) + ibus[ 4];
-        ibusChannelData[2] = (ibus[ 7] << 8) + ibus[ 6];
-        ibusChannelData[3] = (ibus[ 9] << 8) + ibus[ 8];
-        ibusChannelData[4] = (ibus[11] << 8) + ibus[10];
-        ibusChannelData[5] = (ibus[13] << 8) + ibus[12];
-        ibusChannelData[6] = (ibus[15] << 8) + ibus[14];
-        ibusChannelData[7] = (ibus[17] << 8) + ibus[16];
-        
+        for (i = 0, offset = 2; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
+            ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
+        }
         frameStatus = SERIAL_RX_FRAME_COMPLETE;
     }
 

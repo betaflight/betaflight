@@ -21,7 +21,6 @@
 #include <math.h>
 
 #include "platform.h"
-#include "scheduler.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -65,7 +64,9 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/osd.h"
 
+#include "io/vtx.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -86,6 +87,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "scheduler/scheduler.h"
+#include "scheduler/scheduler_tasks.h"
+
 // June 2013     V2.2-dev
 
 enum {
@@ -101,9 +105,9 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+#define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
-float dT;
+uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
 int16_t magHold;
 int16_t headFreeModeHold;
@@ -114,14 +118,13 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
-extern bool antiWindupProtection;
+extern uint8_t PIDweight[3];
 
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
-
-typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
-        uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);            // pid controller function prototype
+static bool armingCalibrationWasInitialised;
+float setpointRate[3];
+float rcInput[3];
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -170,130 +173,176 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-void filterRc(void){
+float calculateSetpointRate(int axis, int16_t rc) {
+    float angleRate;
+
+    if (isSuperExpoActive()) {
+        rcInput[axis] = (axis == YAW) ? (ABS(rc) / (500.0f * (currentControlRateProfile->rcYawRate8 / 100.0f))) : (ABS(rc) / (500.0f * (currentControlRateProfile->rcRate8 / 100.0f)));
+        float rcFactor = 1.0f / (constrainf(1.0f - (rcInput[axis] * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+
+        angleRate = rcFactor * ((27 * rc) / 16.0f);
+    } else {
+        angleRate = (float)((currentControlRateProfile->rates[axis] + 27) * rc) / 16.0f;
+    }
+
+    if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
+	    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+    else
+        return  constrainf(angleRate / 4.1f, -1997.0f, 1997.0f); // Rate limit protection (deg/sec)
+}
+
+void scaleRcCommandToFpvCamAngle(void) {
+    //recalculate sin/cos only when masterConfig.rxConfig.fpvCamAngleDegrees changed
+    static uint8_t lastFpvCamAngleDegrees = 0;
+    static float cosFactor = 1.0;
+    static float sinFactor = 0.0;
+
+    if (lastFpvCamAngleDegrees != masterConfig.rxConfig.fpvCamAngleDegrees){
+        lastFpvCamAngleDegrees = masterConfig.rxConfig.fpvCamAngleDegrees;
+        cosFactor = cos_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+        sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
+    }
+
+    int16_t roll = setpointRate[ROLL];
+    int16_t yaw = setpointRate[YAW];
+    setpointRate[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    setpointRate[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
+}
+
+void processRcCommand(void)
+{
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     uint16_t rxRefreshRate;
+    bool readyToCalculateRate = false;
 
-    // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
+    if (masterConfig.rxConfig.rcInterpolation || flightModeFlags) {
+        if (isRXDataNew) {
+            // Set RC refresh rate for sampling and channels to filter
+            switch (masterConfig.rxConfig.rcInterpolation) {
+                case(RC_SMOOTHING_AUTO):
+                    rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
+                    break;
+                case(RC_SMOOTHING_MANUAL):
+                    rxRefreshRate = 1000 * masterConfig.rxConfig.rcInterpolationInterval;
+                    break;
+                case(RC_SMOOTHING_OFF):
+                case(RC_SMOOTHING_DEFAULT):
+                default:
+                    initRxRefreshRate(&rxRefreshRate);
+            }
 
-    rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
+            rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
-    if (isRXDataNew) {
-        for (int channel=0; channel < 4; channel++) {
-            deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
-            lastCommand[channel] = rcCommand[channel];
+            if (debugMode == DEBUG_RC_INTERPOLATION) {
+                for (int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
+                debug[3] = rxRefreshRate;
+            }
+
+            for (int channel=0; channel < 4; channel++) {
+                deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+                lastCommand[channel] = rcCommand[channel];
+            }
+
+            factor = rcInterpolationFactor - 1;
+        } else {
+            factor--;
         }
+
+        // Interpolate steps of rcCommand
+        if (factor > 0) {
+            for (int channel=0; channel < 4; channel++) rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+        } else {
+            factor = 0;
+        }
+
+        readyToCalculateRate = true;
+    } else {
+        factor = 0; // reset factor in case of level modes flip flopping
+    }
+
+    if (readyToCalculateRate || isRXDataNew) {
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
-        factor = rcInterpolationFactor - 1;
-    } else {
-        factor--;
-    }
 
-    // Interpolate steps of rcCommand
-    if (factor > 0) {
-        for (int channel=0; channel < 4; channel++) {
-            rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-         }
-    } else {
-        factor = 0;
+        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
+        if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
+            scaleRcCommandToFpvCamAngle();
     }
 }
 
-void scaleRcCommandToFpvCamAngle(void) {
-    int16_t roll = rcCommand[ROLL];
-    int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll - sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
-    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
-}
-
-void annexCode(void)
+static void updateRcCommands(void)
 {
-    int32_t tmp, tmp2;
-    int32_t axis, prop1 = 0, prop2;
-
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
+    int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
-        prop2 = 100;
+        prop = 100;
     } else {
         if (rcData[THROTTLE] < 2000) {
-            prop2 = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
+            prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
-            prop2 = 100 - currentControlRateProfile->dynThrPID;
+            prop = 100 - currentControlRateProfile->dynThrPID;
         }
     }
 
-    for (axis = 0; axis < 3; axis++) {
-        tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
+    for (int axis = 0; axis < 3; axis++) {
+        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
+        PIDweight[axis] = prop;
+
+        int32_t tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
-            if (masterConfig.rcControlsConfig.deadband) {
-                if (tmp > masterConfig.rcControlsConfig.deadband) {
-                    tmp -= masterConfig.rcControlsConfig.deadband;
-                } else {
-                    tmp = 0;
-                }
+            if (tmp > masterConfig.rcControlsConfig.deadband) {
+                tmp -= masterConfig.rcControlsConfig.deadband;
+            } else {
+                tmp = 0;
             }
-
-            tmp2 = tmp / 100;
-            rcCommand[axis] = lookupPitchRollRC[tmp2] + (tmp - tmp2 * 100) * (lookupPitchRollRC[tmp2 + 1] - lookupPitchRollRC[tmp2]) / 100;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * tmp / 500;
-            prop1 = (uint16_t)prop1 * prop2 / 100;
+            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcExpo8, currentControlRateProfile->rcRate8);
         } else if (axis == YAW) {
-            if (masterConfig.rcControlsConfig.yaw_deadband) {
-                if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
-                    tmp -= masterConfig.rcControlsConfig.yaw_deadband;
-                } else {
-                    tmp = 0;
-                }
+            if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
+                tmp -= masterConfig.rcControlsConfig.yaw_deadband;
+            } else {
+                tmp = 0;
             }
-            tmp2 = tmp / 100;
-            rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
-            prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
+            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcYawExpo8, currentControlRateProfile->rcYawRate8) * -masterConfig.yaw_control_direction;;
         }
-        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
-
-        // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
-        if (axis == YAW) {
-            PIDweight[axis] = 100;
-        }
-        else {
-            PIDweight[axis] = prop2;
-        }
-
-        if (rcData[axis] < masterConfig.rxConfig.midrc)
+        if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
+        }
     }
 
-    tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
-    tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
-    tmp2 = tmp / 100;
-    rcCommand[THROTTLE] = lookupThrottleRC[tmp2] + (tmp - tmp2 * 100) * (lookupThrottleRC[tmp2 + 1] - lookupThrottleRC[tmp2]) / 100;    // [0;1000] -> expo -> [MINTHROTTLE;MAXTHROTTLE]
+    int32_t tmp;
+    if (feature(FEATURE_3D)) {
+        tmp = constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX);
+        tmp = (uint32_t)(tmp - PWM_RANGE_MIN);
+    } else {
+        tmp = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
+        tmp = (uint32_t)(tmp - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);
+    }
+    rcCommand[THROTTLE] = rcLookupThrottle(tmp);
+
+    if (feature(FEATURE_3D) && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH) && !failsafeIsActive()) {
+        fix12_t throttleScaler = qConstruct(rcCommand[THROTTLE] - 1000, 1000);
+        rcCommand[THROTTLE] = masterConfig.rxConfig.midrc + qMultiply(throttleScaler, PWM_RANGE_MAX - masterConfig.rxConfig.midrc);
+    }
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
-        float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
-        float cosDiff = cos_approx(radDiff);
-        float sinDiff = sin_approx(radDiff);
-        int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
+        const float radDiff = degreesToRadians(DECIDEGREES_TO_DEGREES(attitude.values.yaw) - headFreeModeHold);
+        const float cosDiff = cos_approx(radDiff);
+        const float sinDiff = sin_approx(radDiff);
+        const int16_t rcCommand_PITCH = rcCommand[PITCH] * cosDiff + rcCommand[ROLL] * sinDiff;
         rcCommand[ROLL] = rcCommand[ROLL] * cosDiff - rcCommand[PITCH] * sinDiff;
         rcCommand[PITCH] = rcCommand_PITCH;
     }
+}
 
-    // experimental scaling of RC command to FPV cam angle
-    if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
-        scaleRcCommandToFpvCamAngle();
-    }
-
-
+static void updateLEDs(void)
+{
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (IS_RC_MODE_ACTIVE(BOXARM) == 0 || armingCalibrationWasInitialised) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -314,14 +363,12 @@ void annexCode(void)
 
         warningLedUpdate();
     }
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
 }
 
 void mwDisarm(void)
 {
+    armingCalibrationWasInitialised = false;
+
     if (ARMING_FLAG(ARMED)) {
         DISABLE_ARMING_FLAG(ARMED);
 
@@ -347,6 +394,16 @@ void releaseSharedTelemetryPorts(void) {
 
 void mwArm(void)
 {
+    static bool firstArmingCalibrationWasCompleted;
+
+    if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
+        gyroSetCalibrationCycles();
+        armingCalibrationWasInitialised = true;
+        firstArmingCalibrationWasCompleted = true;
+    }
+
+    if (!isGyroCalibrationComplete()) return;  // prevent arming before gyro is calibrated
+
     if (ARMING_FLAG(OK_TO_ARM)) {
         if (ARMING_FLAG(ARMED)) {
             return;
@@ -356,6 +413,7 @@ void mwArm(void)
         }
         if (!ARMING_FLAG(PREVENT_ARMING)) {
             ENABLE_ARMING_FLAG(ARMED);
+            ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
 #ifdef BLACKBOX
@@ -411,7 +469,7 @@ void handleInflightCalibrationStickPosition(void)
     }
 }
 
-void updateInflightCalibrationState(void)
+static void updateInflightCalibrationState(void)
 {
     if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
@@ -445,6 +503,7 @@ void updateMagHold(void)
 void processRx(void)
 {
     static bool armedBeeperOn = false;
+    static bool airmodeIsActivated;
 
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
@@ -466,28 +525,23 @@ void processRx(void)
     }
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    rollPitchStatus_e rollPitchStatus =  calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+
+    if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
+        if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
+    } else {
+        airmodeIsActivated = false;
+    }
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
-    if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
-            if (rollPitchStatus == CENTERED) {
-                antiWindupProtection = true;
-            } else {
-                antiWindupProtection = false;
-            }
-        } else {
-            if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-                pidResetErrorGyroState(RESET_ITERM);
-            } else {
-                pidResetErrorGyroState(RESET_ITERM_AND_REDUCE_PID);
-            }
-            pidResetErrorAngle();
-        }
+    if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
+        pidResetErrorGyroState();
+        if (currentProfile->pidProfile.zeroThrottleStabilisation)
+            pidStabilisationState(PID_STABILISATION_ON);
+        else
+            pidStabilisationState(PID_STABILISATION_OFF);
     } else {
-        pidResetErrorGyroState(RESET_DISABLE);
-        antiWindupProtection = false;
+        pidStabilisationState(PID_STABILISATION_ON);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -534,7 +588,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.retarded_arm, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -630,36 +684,32 @@ void processRx(void)
     }
 #endif
 
+#ifdef VTX
+    vtxUpdateActivatedChannel();
+#endif
 }
 
-#if defined(BARO) || defined(SONAR)
-static bool haveProcessedAnnexCodeOnce = false;
-#endif
-
-void taskMainPidLoop(void)
+void subTaskPidController(void)
 {
-
+    const uint32_t startTime = micros();
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         &currentProfile->pidProfile,
-        currentControlRateProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
         &masterConfig.rxConfig
     );
-
-    mixTable();
+    if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
 
-void subTasksMainPidLoop(void) {
+void subTaskMainSubprocesses(void) {
 
-    if (masterConfig.rxConfig.rcSmoothing || flightModeFlags) {
-        filterRc();
+    const uint32_t startTime = micros();
+
+    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
+    if (gyro.temperature) {
+        gyro.temperature(&telemTemperature1);
     }
-
-    #if defined(BARO) || defined(SONAR)
-        haveProcessedAnnexCodeOnce = true;
-    #endif
 
     #ifdef MAG
             if (sensors(SENSOR_MAG)) {
@@ -672,6 +722,8 @@ void subTasksMainPidLoop(void) {
     #endif
 
     #if defined(BARO) || defined(SONAR)
+            // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+            updateRcCommands();
             if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
                 if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
                     applyAltHold(&masterConfig.airplaneConfig);
@@ -693,11 +745,14 @@ void subTasksMainPidLoop(void) {
     #endif
         ) {
             rcCommand[YAW] = 0;
+            setpointRate[YAW] = 0;
         }
 
         if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
         }
+
+        processRcCommand();
 
     #ifdef GPS
         if (sensors(SENSOR_GPS)) {
@@ -720,16 +775,21 @@ void subTasksMainPidLoop(void) {
     #ifdef TRANSPONDER
         updateTransponder();
     #endif
+    if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }
 
-void taskMotorUpdate(void) {
+void subTaskMotorUpdate(void)
+{
+    const uint32_t startTime = micros();
     if (debugMode == DEBUG_CYCLETIME) {
         static uint32_t previousMotorUpdateTime;
-        uint32_t currentDeltaTime = micros() - previousMotorUpdateTime;
+        const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
         debug[2] = currentDeltaTime;
         debug[3] = currentDeltaTime - targetPidLooptime;
-        previousMotorUpdateTime = micros();
+        previousMotorUpdateTime = startTime;
     }
+
+    mixTable(&currentProfile->pidProfile);
 
 #ifdef USE_SERVOS
     filterServos();
@@ -739,25 +799,24 @@ void taskMotorUpdate(void) {
     if (motorControlEnable) {
         writeMotors();
     }
+    if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
-// Check for oneshot125 protection. With fast looptimes oneshot125 pulse duration gets more near the pid looptime
-bool shouldUpdateMotorsAfterPIDLoop(void) {
-    if (targetPidLooptime > 375 ) {
-        return true;
-    } else if ((masterConfig.use_multiShot || masterConfig.use_oneshot42) && feature(FEATURE_ONESHOT125)) {
-        return true;
+uint8_t setPidUpdateCountDown(void) {
+    if (masterConfig.gyro_soft_lpf_hz) {
+        return masterConfig.pid_process_denom - 1;
     } else {
-        return false;
+        return 1;
     }
 }
 
 // Function for loop trigger
-void taskMainPidLoopCheck(void) {
+void taskMainPidLoopCheck(void)
+{
     static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
 
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     cycleTime = micros() - previousTime;
     previousTime = micros();
@@ -767,24 +826,25 @@ void taskMainPidLoopCheck(void) {
         debug[1] = averageSystemLoadPercent;
     }
 
+    const uint32_t startTime = micros();
     while (true) {
-        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - previousTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
             static uint8_t pidUpdateCountdown;
 
+            if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
             if (runTaskMainSubprocesses) {
-                if (!shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
-                subTasksMainPidLoop();
+                subTaskMainSubprocesses();
                 runTaskMainSubprocesses = false;
             }
 
-            imuUpdateGyro();
+            gyroUpdate();
 
             if (pidUpdateCountdown) {
                 pidUpdateCountdown--;
             } else {
-                pidUpdateCountdown = masterConfig.pid_process_denom - 1;
-                taskMainPidLoop();
-                if (shouldUpdateMotorsAfterPIDLoop()) taskMotorUpdate();
+                pidUpdateCountdown = setPidUpdateCountDown();
+                subTaskPidController();
+                subTaskMotorUpdate();
                 runTaskMainSubprocesses = true;
             }
 
@@ -814,16 +874,17 @@ void taskUpdateBeeper(void)
 
 void taskUpdateBattery(void)
 {
+#ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    static uint32_t ibatLastServiced = 0;
-
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
         }
     }
+#endif
 
+    static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
         int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
@@ -834,8 +895,9 @@ void taskUpdateBattery(void)
     }
 }
 
-bool taskUpdateRxCheck(void)
+bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
+    UNUSED(currentDeltaTime);
     updateRx(currentTime);
     return shouldProcessRx(currentTime);
 }
@@ -845,24 +907,23 @@ void taskUpdateRxMain(void)
     processRx();
     isRXDataNew = true;
 
+#if !defined(BARO) && !defined(SONAR)
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
+#endif
+    updateLEDs();
+
 #ifdef BARO
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
-        if (sensors(SENSOR_BARO)) {
-            updateAltHoldState();
-        }
+    if (sensors(SENSOR_BARO)) {
+        updateAltHoldState();
     }
 #endif
 
 #ifdef SONAR
-    // the 'annexCode' initialses rcCommand, updateAltHoldState depends on valid rcCommand data.
-    if (haveProcessedAnnexCodeOnce) {
-        if (sensors(SENSOR_SONAR)) {
-            updateSonarAltHoldState();
-        }
+    if (sensors(SENSOR_SONAR)) {
+        updateSonarAltHoldState();
     }
 #endif
-    annexCode();
 }
 
 #ifdef GPS
@@ -958,6 +1019,15 @@ void taskTransponder(void)
 {
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
+    }
+}
+#endif
+
+#ifdef OSD
+void taskUpdateOsd(void)
+{
+    if (feature(FEATURE_OSD)) {
+        updateOsd();
     }
 }
 #endif

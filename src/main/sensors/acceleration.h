@@ -29,13 +29,11 @@ typedef enum {
     ACC_MPU6000 = 7,
     ACC_MPU6500 = 8,
     ACC_FAKE = 9,
+    ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
-
-#define ACC_MAX  ACC_FAKE
 
 extern sensor_align_e accAlign;
 extern acc_t acc;
-extern uint16_t acc_1G;
 extern uint32_t accTargetLooptime;
 
 extern int32_t accSmooth[XYZ_AXIS_COUNT];
@@ -45,7 +43,7 @@ typedef struct rollAndPitchTrims_s {
     int16_t pitch;
 } rollAndPitchTrims_t_def;
 
-typedef union {
+typedef union rollAndPitchTrims_u {
     int16_t raw[2];
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;

@@ -250,6 +250,7 @@ void HRTIM_SimpleBase_Init(HRTIM_TypeDef* HRTIMx, uint32_t TimerIdx, HRTIM_BaseI
   */
 void HRTIM_DeInit(HRTIM_TypeDef* HRTIMx)
 {
+    (void)HRTIMx;
   /* Check the parameters */
     RCC_APB2PeriphResetCmd(RCC_APB2Periph_HRTIM1, ENABLE);
     RCC_APB2PeriphResetCmd(RCC_APB2Periph_HRTIM1, DISABLE);  
@@ -633,6 +634,7 @@ void HRTIM_SimpleCaptureStart(HRTIM_TypeDef * HRTIMx,
                                               uint32_t TimerIdx,
                                               uint32_t CaptureChannel)
 {
+    (void)CaptureChannel;
   /* Enable the timer counter */
   __HRTIM_ENABLE(HRTIMx, TimerIdxToTimerId[TimerIdx]);
 
@@ -3211,6 +3213,7 @@ uint32_t HRTIM_WaveformGetOutputState(HRTIM_TypeDef * HRTIMx,
                                           uint32_t TimerIdx,
                                           uint32_t Output)
 {
+    (void)(TimerIdx);
   uint32_t output_bit = 0;
   uint32_t output_state = HRTIM_OUTPUTSTATE_IDLE;
   

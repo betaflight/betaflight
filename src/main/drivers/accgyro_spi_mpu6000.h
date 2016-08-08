@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define MPU6000_CONFIG		    	0x1A
+#define MPU6000_CONFIG              0x1A
 
 #define BITS_DLPF_CFG_256HZ         0x00
 #define BITS_DLPF_CFG_188HZ         0x01

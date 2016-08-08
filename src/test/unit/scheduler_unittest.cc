@@ -19,7 +19,7 @@
 
 extern "C" {
     #include "platform.h"
-    #include "scheduler.h"
+    #include "scheduler/scheduler.h"
 }
 
 #include "unittest_macros.h"

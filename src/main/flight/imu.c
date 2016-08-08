@@ -28,7 +28,6 @@
 #include "debug.h"
 
 #include "common/axis.h"
-#include "common/filter.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -85,7 +84,7 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     float q1q1 = sq(q1);
     float q2q2 = sq(q2);
     float q3q3 = sq(q3);
-    
+
     float q0q1 = q0 * q1;
     float q0q2 = q0 * q2;
     float q0q3 = q0 * q3;
@@ -124,7 +123,7 @@ void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig->small_angle));
     gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
-    accVelScale = 9.80665f / acc_1G / 10000.0f;
+    accVelScale = 9.80665f / acc.acc_1G / 10000.0f;
 
     imuComputeRotationMatrix();
 }
@@ -189,7 +188,7 @@ void imuCalculateAcceleration(uint32_t deltaT)
         }
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
-        accel_ned.V.Z -= acc_1G;
+        accel_ned.V.Z -= acc.acc_1G;
 
     accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
@@ -362,7 +361,7 @@ static bool imuIsAccelerometerHealthy(void)
         accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc_1G));
+    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.acc_1G));
 
     // Accept accel readings only in range 0.90g - 1.10g
     return (81 < accMagnitude) && (accMagnitude < 121);
@@ -417,11 +416,6 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
         updateAccelerationReadings(accelerometerTrims);
         isAccelUpdatedAtLeastOnce = true;
     }
-}
-
-void imuUpdateGyro(void)
-{
-    gyroUpdate();
 }
 
 void imuUpdateAttitude(void)

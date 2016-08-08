@@ -1,6 +1,6 @@
 # Betaflight
 
-![Betaflight](https://dl.dropboxusercontent.com/u/31537757/betaflight%20logo.jpg)
+![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
 
@@ -42,6 +42,7 @@ Cleanflight also has additional features not found in baseflight.
 * Graupner HoTT telemetry.
 * Multiple simultaneous telemetry providers.
 * Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
+* Optional lost buzzer on port 6 for CC3D (set enable_buzzer_p6 = ON)
 * And many more minor bug fixes.
 
 For a list of features, changes and some discussion please review the thread on MultiWii forums and consult the documentation.

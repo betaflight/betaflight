@@ -34,6 +34,7 @@ typedef enum {
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
     FUNCTION_PASSTHROUGH         = (1 << 8), // 256
+    FUNCTION_TELEMETRY_MAVLINK   = (1 << 9), // 512
 } serialPortFunction_e;
 
 typedef enum {
@@ -56,6 +57,8 @@ typedef enum {
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
     SERIAL_PORT_USART4,
+    SERIAL_PORT_USART5,
+    SERIAL_PORT_USART6,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
@@ -98,6 +101,7 @@ typedef void serialConsumer(uint8_t);
 //
 // configuration
 //
+void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled, serialPortIdentifier_e serialPortToDisable);
 void serialRemovePort(serialPortIdentifier_e identifier);
 uint8_t serialGetAvailablePortCount(void);
 bool serialIsPortAvailable(serialPortIdentifier_e identifier);

@@ -56,7 +56,7 @@ void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
     }
 }
 
-uint8_t serialRxBytesWaiting(serialPort_t *instance)
+uint32_t serialRxBytesWaiting(serialPort_t *instance)
 {
     return instance->vTable->serialTotalRxWaiting(instance);
 }

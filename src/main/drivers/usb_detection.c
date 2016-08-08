@@ -15,39 +15,31 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "sdcard.h"
-
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
+#include "io.h"
+#include "system.h"
 
-#include "gpio.h"
-
-#include "drivers/system.h"
+static IO_t usbDetectPin = IO_NONE;
 
 void usbCableDetectDeinit(void)
 {
 #ifdef USB_DETECT_PIN
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = USB_DETECT_PIN;
-    GPIO_Init(USB_DETECT_GPIO_PORT, &GPIO_InitStructure);
+    IOInit(usbDetectPin, OWNER_FREE, RESOURCE_NONE);
+    IOConfigGPIO(usbDetectPin, IOCFG_IN_FLOATING);
+    usbDetectPin = IO_NONE;
 #endif
 }
 
 void usbCableDetectInit(void)
 {
 #ifdef USB_DETECT_PIN
-    RCC_AHBPeriphClockCmd(USB_DETECT_GPIO_CLK, ENABLE);
+    usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = USB_DETECT_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(USB_DETECT_GPIO_PORT, &GPIO_InitStructure);
+    IOInit(usbDetectPin, OWNER_USB, RESOURCE_INPUT);
+    IOConfigGPIO(usbDetectPin, IOCFG_OUT_PP);
 #endif
 }
 
@@ -56,7 +48,7 @@ bool usbCableIsInserted(void)
     bool result = false;
 
 #ifdef USB_DETECT_PIN
-    result = (GPIO_ReadInputData(USB_DETECT_GPIO_PORT) & USB_DETECT_PIN) != 0;
+    result = IORead(usbDetectPin) != 0;
 #endif
 
     return result;

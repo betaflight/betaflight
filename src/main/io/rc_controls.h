@@ -49,7 +49,8 @@ typedef enum {
     BOXBLACKBOX,
     BOXFAILSAFE,
     BOXAIRMODE,
-	BOXACROPLUS,
+    BOX3DDISABLESWITCH,
+    BOXFPVANGLEMIX,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -84,6 +85,13 @@ typedef enum {
     NOT_CENTERED = 0,
     CENTERED
 } rollPitchStatus_e;
+
+typedef enum {
+    RC_SMOOTHING_OFF = 0,
+    RC_SMOOTHING_DEFAULT,
+    RC_SMOOTHING_AUTO,
+    RC_SMOOTHING_MANUAL
+} rcSmoothing_t;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -136,6 +144,7 @@ typedef struct modeActivationCondition_s {
 
 typedef struct controlRateConfig_s {
     uint8_t rcRate8;
+    uint8_t rcYawRate8;
     uint8_t rcExpo8;
     uint8_t thrMid8;
     uint8_t thrExpo8;
@@ -146,6 +155,7 @@ typedef struct controlRateConfig_s {
 } controlRateConfig_t;
 
 extern int16_t rcCommand[4];
+extern int16_t rcCommandSmooth[4];
 
 typedef struct rcControlsConfig_s {
     uint8_t deadband;                       // introduce a deadband around the stick center for pitch and roll axis. Must be greater than zero.
@@ -158,8 +168,9 @@ bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
+bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
 
 
@@ -242,8 +253,9 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
+bool isAirmodeActive(void);
+bool isSuperExpoActive(void);
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 
@@ -251,4 +263,3 @@ bool isUsingSticksForArming(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);

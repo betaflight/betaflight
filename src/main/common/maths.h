@@ -71,9 +71,6 @@ typedef union {
 
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
-int constrain(int amt, int low, int high);
-float constrainf(float amt, float low, float high);
-
 void devClear(stdev_t *dev);
 void devPush(stdev_t *dev, float x);
 float devVariance(stdev_t *dev);
@@ -116,3 +113,23 @@ void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 int16_t qPercent(fix12_t q);
 int16_t qMultiply(fix12_t q, int16_t input);
 fix12_t qConstruct(int16_t num, int16_t den);
+
+static inline int constrain(int amt, int low, int high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
+
+static inline float constrainf(float amt, float low, float high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}

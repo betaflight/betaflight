@@ -59,6 +59,7 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength);  // HJI
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len);       // HJI
 uint8_t usbIsConfigured(void);  // HJI
 uint8_t usbIsConnected(void);   // HJI
+uint32_t CDC_BaudRate(void);
 /* External variables --------------------------------------------------------*/
 
 extern __IO uint32_t receiveLength;  // HJI

@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -32,14 +31,18 @@
 #include "common/maths.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "exti.h"
 #include "bus_spi.h"
+
 #include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
+
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(void);
@@ -48,12 +51,12 @@ static bool mpuSpi6000InitDone = false;
 
 
 // Bits
-#define BIT_SLEEP				    0x40
-#define BIT_H_RESET				    0x80
-#define BITS_CLKSEL				    0x07
-#define MPU_CLK_SEL_PLLGYROX	    0x01
-#define MPU_CLK_SEL_PLLGYROZ	    0x03
-#define MPU_EXT_SYNC_GYROX		    0x02
+#define BIT_SLEEP                   0x40
+#define BIT_H_RESET                 0x80
+#define BITS_CLKSEL                 0x07
+#define MPU_CLK_SEL_PLLGYROX        0x01
+#define MPU_CLK_SEL_PLLGYROZ        0x03
+#define MPU_EXT_SYNC_GYROX          0x02
 #define BITS_FS_250DPS              0x00
 #define BITS_FS_500DPS              0x08
 #define BITS_FS_1000DPS             0x10
@@ -73,9 +76,9 @@ static bool mpuSpi6000InitDone = false;
 #define BITS_DLPF_CFG_2100HZ_NOLPF  0x07
 #define BITS_DLPF_CFG_MASK          0x07
 #define BIT_INT_ANYRD_2CLEAR        0x10
-#define BIT_RAW_RDY_EN			    0x01
+#define BIT_RAW_RDY_EN              0x01
 #define BIT_I2C_IF_DIS              0x10
-#define BIT_INT_STATUS_DATA		    0x01
+#define BIT_INT_STATUS_DATA         0x01
 #define BIT_GYRO                    3
 #define BIT_ACC                     2
 #define BIT_TEMP                    1
@@ -96,9 +99,10 @@ static bool mpuSpi6000InitDone = false;
 #define MPU6000_REV_D9 0x59
 #define MPU6000_REV_D10 0x5A
 
-#define DISABLE_MPU6000       GPIO_SetBits(MPU6000_CS_GPIO,   MPU6000_CS_PIN)
-#define ENABLE_MPU6000        GPIO_ResetBits(MPU6000_CS_GPIO, MPU6000_CS_PIN)
+#define DISABLE_MPU6000       IOHi(mpuSpi6000CsPin)
+#define ENABLE_MPU6000        IOLo(mpuSpi6000CsPin)
 
+static IO_t mpuSpi6000CsPin = IO_NONE;
 
 bool mpu6000WriteRegister(uint8_t reg, uint8_t data)
 {
@@ -126,11 +130,13 @@ void mpu6000SpiGyroInit(uint8_t lpf)
 
     mpu6000AccAndGyroInit();
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     // Accel and Gyro DLPF Setting
     mpu6000WriteRegister(MPU6000_CONFIG, lpf);
     delayMicroseconds(1);
+
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);  // 18 MHz SPI clock
 
     int16_t data[3];
     mpuGyroRead(data);
@@ -140,11 +146,11 @@ void mpu6000SpiGyroInit(uint8_t lpf)
     }
 }
 
-void mpu6000SpiAccInit(void)
+void mpu6000SpiAccInit(acc_t *acc)
 {
     mpuIntExtiInit();
 
-    acc_1G = 512 * 4;
+    acc->acc_1G = 512 * 4;
 }
 
 bool mpu6000SpiDetect(void)
@@ -152,7 +158,13 @@ bool mpu6000SpiDetect(void)
     uint8_t in;
     uint8_t attemptsRemaining = 5;
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
+#ifdef MPU6000_CS_PIN
+    mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
+#endif
+    IOInit(mpuSpi6000CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
+
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
 
@@ -199,7 +211,7 @@ static void mpu6000AccAndGyroInit(void) {
         return;
     }
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_0_5625MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     // Device Reset
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
@@ -241,7 +253,7 @@ static void mpu6000AccAndGyroInit(void) {
     delayMicroseconds(15);
 #endif
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_18MHZ_CLOCK_DIVIDER);  // 18 MHz SPI clock
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 
     mpuSpi6000InitDone = true;
@@ -273,3 +285,5 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro)
 
     return true;
 }
+
+#endif

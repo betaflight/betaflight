@@ -18,15 +18,11 @@
 #pragma once
 
 #include "platform.h"
+#include "io.h"
 
 typedef struct sonarHardware_s {
-    uint16_t trigger_pin;
-	GPIO_TypeDef* trigger_gpio;
-    uint16_t echo_pin;
-	GPIO_TypeDef* echo_gpio;
-    uint32_t exti_line;
-    uint8_t exti_pin_source;
-    IRQn_Type exti_irqn;
+    ioTag_t triggerTag;
+    ioTag_t echoTag;
 } sonarHardware_t;
 
 typedef struct sonarRange_s {
@@ -42,6 +38,6 @@ typedef struct sonarRange_s {
 #define HCSR04_DETECTION_CONE_DECIDEGREES 300 // recommended cone angle30 degrees, from HC-SR04 spec sheet
 #define HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES 450 // in practice 45 degrees seems to work well
 
-void hcsr04_init(const sonarHardware_t *sonarHardware, sonarRange_t *sonarRange);
+void hcsr04_init(sonarRange_t *sonarRange);
 void hcsr04_start_reading(void);
 int32_t hcsr04_get_distance(void);

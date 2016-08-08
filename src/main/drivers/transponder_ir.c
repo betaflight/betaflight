@@ -21,9 +21,8 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
 #include "drivers/dma.h"
+#include "drivers/nvic.h"
 #include "drivers/transponder_ir.h"
 
 /*
@@ -38,19 +37,19 @@ uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-void transponderDMAHandler(DMA_Channel_TypeDef *channel)
+void transponderDMAHandler(dmaChannelDescriptor_t* descriptor)
 {
-    if (DMA_GetFlagStatus(TRANSPONDER_DMA_TC_FLAG)) {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         transponderIrDataTransferInProgress = 0;
-        DMA_Cmd(channel, DISABLE);
-        DMA_ClearFlag(TRANSPONDER_DMA_TC_FLAG);
+        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
 void transponderIrInit(void)
 {
     memset(&transponderIrDMABuffer, 0, TRANSPONDER_DMA_BUFFER_SIZE);
-    dmaSetHandler(TRANSPONDER_DMA_HANDLER_IDENTIFER, transponderDMAHandler);
+    dmaSetHandler(TRANSPONDER_DMA_HANDLER_IDENTIFER, transponderDMAHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
     transponderIrHardwareInit();
 }
 

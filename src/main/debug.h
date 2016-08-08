@@ -42,10 +42,17 @@ extern uint32_t sectionTimes[2][4];
 #endif
 
 typedef enum {
-    DEBUG_CYCLETIME = 1,
+    DEBUG_NONE,
+    DEBUG_CYCLETIME,
     DEBUG_BATTERY,
     DEBUG_GYRO,
     DEBUG_ACCELEROMETER,
     DEBUG_MIXER,
-    DEBUG_AIRMODE
+    DEBUG_AIRMODE,
+    DEBUG_PIDLOOP,
+    DEBUG_NOTCH,
+    DEBUG_RC_INTERPOLATION,
+    DEBUG_VELOCITY,
+    DEBUG_DTERM_FILTER,
+    DEBUG_COUNT
 } debugType_e;

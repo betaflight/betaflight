@@ -22,9 +22,9 @@
 #include "build_config.h"
 
 #include "system.h"
-#include "gpio.h"
 #include "nvic.h"
-
+#include "io.h"
+#include "exti.h"
 #include "sonar_hcsr04.h"
 
 /* HC-SR04 consists of ultrasonic transmitter, receiver, and control circuits.
@@ -39,104 +39,67 @@
 #if defined(SONAR)
 STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
-static sonarHardware_t const *sonarHardware;
+sonarHardware_t sonarHardwareHCSR04;
 
-#if !defined(UNIT_TEST)
-static void ECHO_EXTI_IRQHandler(void)
+extiCallbackRec_t hcsr04_extiCallbackRec;
+
+static IO_t echoIO;
+static IO_t triggerIO;
+
+void hcsr04_extiHandler(extiCallbackRec_t* cb)
 {
     static uint32_t timing_start;
     uint32_t timing_stop;
+    UNUSED(cb);
 
-    if (digitalIn(sonarHardware->echo_gpio, sonarHardware->echo_pin) != 0) {
+    if (IORead(echoIO) != 0) {
         timing_start = micros();
-    } else {
+    }
+    else {
         timing_stop = micros();
         if (timing_stop > timing_start) {
             measurement = timing_stop - timing_start;
         }
     }
-
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
 }
 
-void EXTI0_IRQHandler(void)
+void hcsr04_init(sonarRange_t *sonarRange)
 {
-    ECHO_EXTI_IRQHandler();
-}
-
-void EXTI1_IRQHandler(void)
-{
-    ECHO_EXTI_IRQHandler();
-}
-
-void EXTI9_5_IRQHandler(void)
-{
-    ECHO_EXTI_IRQHandler();
-}
-#endif
-
-void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sonarRange)
-{
-    sonarHardware = initialSonarHardware;
     sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
     sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
     sonarRange->detectionConeExtendedDeciDegrees = HCSR04_DETECTION_CONE_EXTENDED_DECIDEGREES;
 
 #if !defined(UNIT_TEST)
-    gpio_config_t gpio;
-    EXTI_InitTypeDef EXTIInit;
 
 #ifdef STM32F10X
     // enable AFIO for EXTI support
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
 
-#ifdef STM32F303xC
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
+#if defined(STM32F3) || defined(STM32F4)
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
 
     // trigger pin
-    gpio.pin = sonarHardware->trigger_pin;
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpioInit(sonarHardware->trigger_gpio, &gpio);
+    triggerIO = IOGetByTag(sonarHardwareHCSR04.triggerTag);
+    IOInit(triggerIO, OWNER_SONAR, RESOURCE_OUTPUT, 0);
+    IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
 
     // echo pin
-    gpio.pin = sonarHardware->echo_pin;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(sonarHardware->echo_gpio, &gpio);
+    echoIO = IOGetByTag(sonarHardwareHCSR04.echoTag);
+    IOInit(echoIO, OWNER_SONAR, RESOURCE_INPUT, 0);
+    IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 
-#ifdef STM32F10X
-    // setup external interrupt on echo pin
-    gpioExtiLineConfig(GPIO_PortSourceGPIOB, sonarHardware->exti_pin_source);
+#ifdef USE_EXTI
+    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
+    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
+    EXTIEnable(echoIO, true);
 #endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(EXTI_PortSourceGPIOB, sonarHardware->exti_pin_source);
-#endif
-
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
-
-    EXTIInit.EXTI_Line = sonarHardware->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = sonarHardware->exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SONAR_ECHO);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SONAR_ECHO);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
 #else
-    lastMeasurementAt = 0; // to avoid "unused" compiler warning
+    UNUSED(lastMeasurementAt); // to avoid "unused" compiler warning
 #endif
 }
 
@@ -154,10 +117,10 @@ void hcsr04_start_reading(void)
 
     lastMeasurementAt = now;
 
-    digitalHi(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
+    IOHi(triggerIO);
     //  The width of trig signal must be greater than 10us
     delayMicroseconds(11);
-    digitalLo(sonarHardware->trigger_gpio, sonarHardware->trigger_pin);
+    IOLo(triggerIO);
 #endif
 }
 

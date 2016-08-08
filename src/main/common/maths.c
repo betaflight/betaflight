@@ -111,26 +111,6 @@ int32_t applyDeadband(int32_t value, int32_t deadband)
     return value;
 }
 
-inline int constrain(int amt, int low, int high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
-
-inline float constrainf(float amt, float low, float high)
-{
-    if (amt < low)
-        return low;
-    else if (amt > high)
-        return high;
-    else
-        return amt;
-}
-
 void devClear(stdev_t *dev)
 {
     dev->m_n = 0;
@@ -251,7 +231,7 @@ int32_t quickMedianFilter5(int32_t * v)
 
     QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[4]); QMF_SORT(p[0], p[3]);
     QMF_SORT(p[1], p[4]); QMF_SORT(p[1], p[2]); QMF_SORT(p[2], p[3]);
-    QMF_SORT(p[1], p[2]); 
+    QMF_SORT(p[1], p[2]);
     return p[2];
 }
 
@@ -299,7 +279,7 @@ float quickMedianFilter5f(float * v)
 
     QMF_SORTF(p[0], p[1]); QMF_SORTF(p[3], p[4]); QMF_SORTF(p[0], p[3]);
     QMF_SORTF(p[1], p[4]); QMF_SORTF(p[1], p[2]); QMF_SORTF(p[2], p[3]);
-    QMF_SORTF(p[1], p[2]); 
+    QMF_SORTF(p[1], p[2]);
     return p[2];
 }
 

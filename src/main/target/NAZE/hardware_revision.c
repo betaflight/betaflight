@@ -26,6 +26,7 @@
 #include "drivers/system.h"
 #include "drivers/bus_spi.h"
 #include "drivers/sensor.h"
+#include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_mpu.h"
@@ -52,8 +53,8 @@ void detectHardwareRevision(void)
 
 #ifdef USE_SPI
 
-#define DISABLE_SPI_CS       GPIO_SetBits(NAZE_SPI_CS_GPIO,   NAZE_SPI_CS_PIN)
-#define ENABLE_SPI_CS        GPIO_ResetBits(NAZE_SPI_CS_GPIO, NAZE_SPI_CS_PIN)
+#define DISABLE_SPI_CS       IOLo(nazeSpiCsPin)
+#define ENABLE_SPI_CS        IOHi(nazeSpiCsPin)
 
 #define SPI_DEVICE_NONE (0)
 #define SPI_DEVICE_FLASH (1)
@@ -62,8 +63,14 @@ void detectHardwareRevision(void)
 #define M25P16_INSTRUCTION_RDID 0x9F
 #define FLASH_M25P16_ID (0x202015)
 
+static IO_t nazeSpiCsPin = IO_NONE;
+
 uint8_t detectSpiDevice(void)
 {
+#ifdef NAZE_SPI_CS_PIN
+    nazeSpiCsPin = IOGetByTag(IO_TAG(NAZE_SPI_CS_PIN));
+#endif
+
     uint8_t out[] = { M25P16_INSTRUCTION_RDID, 0, 0, 0 };
     uint8_t in[4];
     uint32_t flash_id;
@@ -101,5 +108,29 @@ void updateHardwareRevision(void)
 
     if (detectedSpiDevice == SPI_DEVICE_MPU && hardwareRevision == NAZE32_REV5)
         hardwareRevision = NAZE32_SP;
+#endif
+}
+
+const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
+{
+    // MPU_INT output on rev5 hardware PC13
+    static const extiConfig_t nazeRev5MPUIntExtiConfig = {
+        .tag = IO_TAG(PC13)
+    };
+
+#ifdef AFROMINI
+    return &nazeRev5MPUIntExtiConfig;
+#else
+    // MPU_INT output on rev4 PB13
+    static const extiConfig_t nazeRev4MPUIntExtiConfig = {
+        .tag = IO_TAG(PB13)
+    };
+
+    if (hardwareRevision < NAZE32_REV5) {
+        return &nazeRev4MPUIntExtiConfig;
+    }
+    else {
+        return &nazeRev5MPUIntExtiConfig;
+    }
 #endif
 }

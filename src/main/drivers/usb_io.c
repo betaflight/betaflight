@@ -15,43 +15,40 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "sdcard.h"
-
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "platform.h"
 
-#include "gpio.h"
-
-#include "drivers/system.h"
-
-#include "drivers/usb_io.h"
-
 #ifdef USB_IO
+
+#include "io.h"
+#include "system.h"
+#include "usb_io.h"
+#include "sdcard.h"
+
+
+
+#ifdef USB_DETECT_PIN
+static IO_t usbDetectPin = IO_NONE;
+#endif
 
 void usbCableDetectDeinit(void)
 {
-#ifdef USB_CABLE_DETECTION
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = USB_DETECT_PIN;
-    GPIO_Init(USB_DETECT_GPIO_PORT, &GPIO_InitStructure);
+#ifdef USB_DETECT_PIN
+    IOInit(usbDetectPin, OWNER_FREE, RESOURCE_NONE, 0);
+    IOConfigGPIO(usbDetectPin, IOCFG_IN_FLOATING);
+    usbDetectPin = IO_NONE;
 #endif
 }
 
 void usbCableDetectInit(void)
 {
-#ifdef USB_CABLE_DETECTION
-    RCC_AHBPeriphClockCmd(USB_DETECT_GPIO_CLK, ENABLE);
+#ifdef USB_DETECT_PIN
+    usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
 
-    GPIO_InitTypeDef  GPIO_InitStructure;
-
-    GPIO_InitStructure.GPIO_Pin = USB_DETECT_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(USB_DETECT_GPIO_PORT, &GPIO_InitStructure);
+    IOInit(usbDetectPin, OWNER_USB, RESOURCE_INPUT, 0);
+    IOConfigGPIO(usbDetectPin, IOCFG_OUT_PP);
 #endif
 }
 
@@ -59,8 +56,8 @@ bool usbCableIsInserted(void)
 {
     bool result = false;
 
-#ifdef USB_CABLE_DETECTION
-    result = (GPIO_ReadInputData(USB_DETECT_GPIO_PORT) & USB_DETECT_PIN) != 0;
+#ifdef USB_DETECT_PIN
+    result = IORead(usbDetectPin) != 0;
 #endif
 
     return result;
@@ -68,32 +65,15 @@ bool usbCableIsInserted(void)
 
 void usbGenerateDisconnectPulse(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-
     /* Pull down PA12 to create USB disconnect pulse */
-#if defined(STM32F303xC)
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    IO_t usbPin = IOGetByTag(IO_TAG(PA12));
+    IOConfigGPIO(usbPin, IOCFG_OUT_OD);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-#else
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
-#endif
-
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-    GPIO_ResetBits(GPIOA, GPIO_Pin_12);
+    IOHi(usbPin);
 
     delay(200);
 
-    GPIO_SetBits(GPIOA, GPIO_Pin_12);
+    IOLo(usbPin);
 }
 
 #endif

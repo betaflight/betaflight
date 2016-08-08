@@ -17,7 +17,9 @@
 
 #pragma once
 
-#if defined(STM32F10X)
+#include "platform.h"
+
+#ifdef STM32F1
 typedef enum
 {
     Mode_AIN = 0x0,
@@ -31,31 +33,7 @@ typedef enum
 } GPIO_Mode;
 #endif
 
-#ifdef STM32F303xC
-
-/*
-typedef enum
-{
-  GPIO_Mode_IN   = 0x00, // GPIO Input Mode
-  GPIO_Mode_OUT  = 0x01, // GPIO Output Mode
-  GPIO_Mode_AF   = 0x02, // GPIO Alternate function Mode
-  GPIO_Mode_AN   = 0x03  // GPIO Analog In/Out Mode
-}GPIOMode_TypeDef;
-
-typedef enum
-{
-  GPIO_OType_PP = 0x00,
-  GPIO_OType_OD = 0x01
-}GPIOOType_TypeDef;
-
-typedef enum
-{
-  GPIO_PuPd_NOPULL = 0x00,
-  GPIO_PuPd_UP     = 0x01,
-  GPIO_PuPd_DOWN   = 0x02
-}GPIOPuPd_TypeDef;
-*/
-
+#ifdef STM32F3
 typedef enum
 {
     Mode_AIN =          (GPIO_PuPd_NOPULL << 2) | GPIO_Mode_AN,
@@ -68,6 +46,22 @@ typedef enum
     Mode_AF_PP =        (GPIO_OType_PP << 4) | GPIO_Mode_AF,
     Mode_AF_PP_PD =     (GPIO_OType_PP << 4) | (GPIO_PuPd_DOWN  << 2) | GPIO_Mode_AF,
     Mode_AF_PP_PU =     (GPIO_OType_PP << 4) | (GPIO_PuPd_UP    << 2) | GPIO_Mode_AF
+} GPIO_Mode;
+#endif
+
+#ifdef STM32F4
+typedef enum
+{
+    Mode_AIN         = (GPIO_PuPd_NOPULL << 2) | GPIO_Mode_AN,
+    Mode_IN_FLOATING = (GPIO_PuPd_NOPULL << 2) | GPIO_Mode_IN,
+    Mode_IPD         = (GPIO_PuPd_DOWN   << 2) | GPIO_Mode_IN,
+    Mode_IPU         = (GPIO_PuPd_UP     << 2) | GPIO_Mode_IN,
+    Mode_Out_OD      = (GPIO_OType_OD    << 4) | GPIO_Mode_OUT,
+    Mode_Out_PP      = (GPIO_OType_PP    << 4) | GPIO_Mode_OUT,
+    Mode_AF_OD       = (GPIO_OType_OD    << 4) | GPIO_Mode_AF,
+    Mode_AF_PP       = (GPIO_OType_PP    << 4) | GPIO_Mode_AF,
+    Mode_AF_PP_PD    = (GPIO_OType_PP    << 4) | (GPIO_PuPd_DOWN  << 2) | GPIO_Mode_AF,
+    Mode_AF_PP_PU    = (GPIO_OType_PP    << 4) | (GPIO_PuPd_UP    << 2) | GPIO_Mode_AF
 } GPIO_Mode;
 #endif
 
@@ -107,11 +101,17 @@ typedef struct
 } gpio_config_t;
 
 #ifndef UNIT_TEST
+#ifdef STM32F4
+static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRRL = i; }
+static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BSRRH = i; }
+#else
 static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRR = i; }
-static inline void digitalLo(GPIO_TypeDef *p, uint16_t i)     { p->BRR = i; }
-static inline void digitalToggle(GPIO_TypeDef *p, uint16_t i) { p->ODR ^= i; }
-static inline uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) {return p->IDR & i; }
+static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BRR = i; }
 #endif
+static inline void digitalToggle(GPIO_TypeDef *p, uint16_t i) { p->ODR ^= i; }
+static inline uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) { return p->IDR & i; }
+#endif
+
 
 void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config);
 void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc);

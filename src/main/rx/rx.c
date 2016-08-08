@@ -41,7 +41,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/system.h"
-#include "drivers/gyro_sync.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -190,14 +189,18 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
     }
 #endif
 
+#ifndef SKIP_RX_MSP
     if (feature(FEATURE_RX_MSP)) {
         rxMspInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
     }
+#endif
 
+#ifndef SKIP_RX_PWM_PPM
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxRefreshRate = 20000;
         rxPwmInit(&rxRuntimeConfig, &rcReadRawFunc);
     }
+#endif
 
     rxRuntimeConfig.auxChannelCount = rxRuntimeConfig.channelCount - STICK_CHANNEL_COUNT;
 }
@@ -350,16 +353,18 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
+#ifndef SKIP_RX_MSP
     if (feature(FEATURE_RX_MSP)) {
         rxDataReceived = rxMspFrameComplete();
-
         if (rxDataReceived) {
             rxSignalReceived = true;
             rxIsInFailsafeMode = false;
             needRxSignalBefore = currentTime + DELAY_5_HZ;
         }
     }
+#endif
 
+#ifndef SKIP_RX_PWM_PPM
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;
@@ -376,7 +381,7 @@ void updateRx(uint32_t currentTime)
             needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
-
+#endif
 }
 
 bool shouldProcessRx(uint32_t currentTime)
@@ -591,12 +596,12 @@ void updateRSSIPWM(void)
     int16_t pwmRssi = 0;
     // Read value of AUX channel as rssi
     pwmRssi = rcData[rxConfig->rssi_channel - 1];
-	
-	// RSSI_Invert option	
-	if (rxConfig->rssi_ppm_invert) {
-	    pwmRssi = ((2000 - pwmRssi) + 1000);
-	}
-	
+
+    // RSSI_Invert option
+    if (rxConfig->rssi_ppm_invert) {
+        pwmRssi = ((2000 - pwmRssi) + 1000);
+    }
+
     // Range of rawPwmRssi is [1000;2000]. rssi should be in [0;1023];
     rssi = (uint16_t)((constrain(pwmRssi - 1000, 0, 1000) / 1000.0f) * 1023.0f);
 }

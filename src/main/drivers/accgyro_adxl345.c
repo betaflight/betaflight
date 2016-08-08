@@ -56,7 +56,7 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(void);
+static void adxl345Init(acc_t *acc);
 static bool adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
@@ -66,7 +66,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     bool ack = false;
     uint8_t sig = 0;
 
-    ack = i2cRead(ADXL345_ADDRESS, 0x00, 1, &sig);
+    ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
     if (!ack || sig != 0xE5)
         return false;
 
@@ -78,20 +78,20 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     return true;
 }
 
-static void adxl345Init(void)
+static void adxl345Init(acc_t *acc)
 {
     if (useFifo) {
         uint8_t fifoDepth = 16;
-        i2cWrite(ADXL345_ADDRESS, ADXL345_POWER_CTL, ADXL345_POWER_MEAS);
-        i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
-        i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_400);
-        i2cWrite(ADXL345_ADDRESS, ADXL345_FIFO_CTL, (fifoDepth & 0x1F) | ADXL345_FIFO_STREAM);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_POWER_CTL, ADXL345_POWER_MEAS);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_400);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_FIFO_CTL, (fifoDepth & 0x1F) | ADXL345_FIFO_STREAM);
     } else {
-        i2cWrite(ADXL345_ADDRESS, ADXL345_POWER_CTL, ADXL345_POWER_MEAS);
-        i2cWrite(ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
-        i2cWrite(ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_POWER_CTL, ADXL345_POWER_MEAS);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_DATA_FORMAT, ADXL345_FULL_RANGE | ADXL345_RANGE_8G);
+        i2cWrite(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_BW_RATE, ADXL345_RATE_100);
     }
-    acc_1G = 265; // 3.3V operation // FIXME verify this is supposed to be 265, not 256. Typo?
+    acc->acc_1G = 256; // 3.3V operation
 }
 
 uint8_t acc_samples = 0;
@@ -110,7 +110,7 @@ static bool adxl345Read(int16_t *accelData)
         do {
             i++;
 
-            if (!i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 8, buf)) {
+            if (!i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_DATA_OUT, 8, buf)) {
                 return false;
             }
 
@@ -125,7 +125,7 @@ static bool adxl345Read(int16_t *accelData)
         acc_samples = i;
     } else {
 
-        if (!i2cRead(ADXL345_ADDRESS, ADXL345_DATA_OUT, 6, buf)) {
+        if (!i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, ADXL345_DATA_OUT, 6, buf)) {
             return false;
         }
 
