@@ -156,7 +156,7 @@ STATIC_UNIT_TESTED uint16_t symaConvertToPwmSigned(uint8_t val)
     return (uint16_t)(PWM_RANGE_MIDDLE + ret);
 }
 
-void symaSetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
+void symaNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 {
     rcData[NRF24_THROTTLE] = symaConvertToPwmUnsigned(packet[0]); // throttle
     rcData[NRF24_ROLL] = symaConvertToPwmSigned(packet[3]); // aileron
@@ -200,7 +200,7 @@ static void symaHopToNextChannel(void)
 }
 
 // The SymaX hopping channels are determined by the low bits of rxTxAddress
-void setSymaXHoppingChannels(uint32_t addr)
+static void setSymaXHoppingChannels(uint32_t addr)
 {
     addr = addr & 0x1f;
     if (addr == 0x06) {
@@ -221,7 +221,7 @@ void setSymaXHoppingChannels(uint32_t addr)
     }
 }
 
-void symaSetBound(const uint8_t* rxTxAddr)
+static void symaSetBound(const uint8_t* rxTxAddr)
 {
     protocolState = STATE_DATA;
     // using protocol NRF24L01_SYMA_X, since NRF24L01_SYMA_X5C went straight into data mode
@@ -239,7 +239,7 @@ void symaSetBound(const uint8_t* rxTxAddr)
  * This is called periodically by the scheduler.
  * Returns NRF24_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t symaDataReceived(uint8_t *payload)
+nrf24_received_t symaNrf24DataReceived(uint8_t *payload)
 {
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
     uint32_t timeNowUs;
@@ -268,7 +268,7 @@ nrf24_received_t symaDataReceived(uint8_t *payload)
     return ret;
 }
 
-void symaNrf24Init(nrf24_protocol_t protocol)
+static void symaNrf24Setup(nrf24_protocol_t protocol)
 {
     symaProtocol = protocol;
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
@@ -302,10 +302,10 @@ void symaNrf24Init(nrf24_protocol_t protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void symaInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void symaNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    symaNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
+    symaNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
 }
 #endif
 

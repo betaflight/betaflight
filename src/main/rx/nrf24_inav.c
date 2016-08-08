@@ -21,7 +21,7 @@
 
 #include "platform.h"
 
-#ifdef USE_RX_REF
+#ifdef USE_RX_INAV
 
 #include "build_config.h"
 
@@ -29,12 +29,12 @@
 #include "drivers/system.h"
 
 #include "rx/nrf24.h"
-#include "rx/nrf24_ref.h"
+#include "rx/nrf24_inav.h"
 
 
 
 /*
- * Reference Protocol
+ * iNav Protocol
  * No auto acknowledgment
  * Data rate is 250Kbps - lower data rate for better reliability and range
  * Payload size is 16, static, small payload is read more quickly (marginal benefit)
@@ -80,8 +80,8 @@ typedef enum {
 
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
-#define REF_PROTOCOL_PAYLOAD_SIZE 16
-STATIC_UNIT_TESTED const uint8_t payloadSize = REF_PROTOCOL_PAYLOAD_SIZE;
+#define INAV_PROTOCOL_PAYLOAD_SIZE 16
+STATIC_UNIT_TESTED const uint8_t payloadSize = INAV_PROTOCOL_PAYLOAD_SIZE;
 
 #define RX_TX_ADDR_LEN 5
 // set rxTxAddr to the bind values
@@ -89,16 +89,16 @@ STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f}
 uint32_t *nrf24rxIdPtr;
 
 // radio channels for frequency hopping
-#define REF_RF_CHANNEL_COUNT 4
-STATIC_UNIT_TESTED const uint8_t refRfChannelCount = REF_RF_CHANNEL_COUNT;
-STATIC_UNIT_TESTED uint8_t refRfChannelIndex;
-STATIC_UNIT_TESTED uint8_t refRfChannels[REF_RF_CHANNEL_COUNT];
-#define REF_RF_BIND_CHANNEL 0x4c
+#define INAV_RF_CHANNEL_COUNT 4
+STATIC_UNIT_TESTED const uint8_t inavRfChannelCount = INAV_RF_CHANNEL_COUNT;
+STATIC_UNIT_TESTED uint8_t inavRfChannelIndex;
+STATIC_UNIT_TESTED uint8_t inavRfChannels[INAV_RF_CHANNEL_COUNT];
+#define INAV_RF_BIND_CHANNEL 0x4c
 
 static uint32_t timeOfLastHop;
 static const uint32_t hopTimeout = 5000; // 5ms
 
-STATIC_UNIT_TESTED bool refCheckBindPacket(const uint8_t *payload)
+STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
 {
     bool bindPacket = false;
     if (payload[0] == 0xae  && payload[1] == 0xc9) {
@@ -116,7 +116,7 @@ STATIC_UNIT_TESTED bool refCheckBindPacket(const uint8_t *payload)
     return bindPacket;
 }
 
-void refSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
+void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     // the AETR channels have 10 bit resolution
     uint8_t lowBits = payload[6]; // least significant bits for AETR
@@ -162,51 +162,51 @@ void refSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     rcData[NRF24_AUX12] = PWM_RANGE_MIN + (payload[15] << 2);
 }
 
-static void refHopToNextChannel(void)
+static void inavHopToNextChannel(void)
 {
-    ++refRfChannelIndex;
-    if (refRfChannelIndex >= refRfChannelCount) {
-        refRfChannelIndex = 0;
+    ++inavRfChannelIndex;
+    if (inavRfChannelIndex >= inavRfChannelCount) {
+        inavRfChannelIndex = 0;
     }
-    NRF24L01_SetChannel(refRfChannels[refRfChannelIndex]);
+    NRF24L01_SetChannel(inavRfChannels[inavRfChannelIndex]);
 }
 
 // The hopping channels are determined by the low bits of rxTxAddr
-STATIC_UNIT_TESTED void refSetHoppingChannels(uint8_t addr)
+STATIC_UNIT_TESTED void inavSetHoppingChannels(uint8_t addr)
 {
     addr &= 0x07;
-    refRfChannels[0] = 0x10 + addr;
-    refRfChannels[1] = 0x1C + addr;
-    refRfChannels[2] = 0x28 + addr;
-    refRfChannels[3] = 0x34 + addr;
+    inavRfChannels[0] = 0x10 + addr;
+    inavRfChannels[1] = 0x1C + addr;
+    inavRfChannels[2] = 0x28 + addr;
+    inavRfChannels[3] = 0x34 + addr;
 }
 
-void refSetBound(void)
+static void inavSetBound(void)
 {
     protocolState = STATE_DATA;
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
-    refSetHoppingChannels(rxTxAddr[0]);
+    inavSetHoppingChannels(rxTxAddr[0]);
     timeOfLastHop = micros();
-    refRfChannelIndex = 0;
-    NRF24L01_SetChannel(refRfChannels[0]);
+    inavRfChannelIndex = 0;
+    NRF24L01_SetChannel(inavRfChannels[0]);
 }
 
 /*
  * This is called periodically by the scheduler.
  * Returns NRF24L01_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t refDataReceived(uint8_t *payload)
+nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
 {
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
     uint32_t timeNowUs;
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            const bool bindPacket = refCheckBindPacket(payload);
+            const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
                 ret = NRF24_RECEIVED_BIND;
                 // got a bind packet, so set the hopping channels and the rxTxAddr and start listening for data
-                refSetBound();
+                inavSetBound();
             }
         }
         break;
@@ -217,7 +217,7 @@ nrf24_received_t refDataReceived(uint8_t *payload)
             ret = NRF24_RECEIVED_DATA;
         }
         if ((ret == NRF24_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
-            refHopToNextChannel();
+            inavHopToNextChannel();
             timeOfLastHop = timeNowUs;
         }
         break;
@@ -225,7 +225,7 @@ nrf24_received_t refDataReceived(uint8_t *payload)
     return ret;
 }
 
-void refNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
+static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
 {
     UNUSED(protocol);
 
@@ -235,11 +235,11 @@ void refNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
     nrf24rxIdPtr = (uint32_t*)nrf24rx_id;
     if (nrf24rx_id == NULL || *nrf24rx_id == 0) {
         protocolState = STATE_BIND;
-        NRF24L01_SetChannel(REF_RF_BIND_CHANNEL);
+        NRF24L01_SetChannel(INAV_RF_BIND_CHANNEL);
     } else {
         memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
         rxTxAddr[4] = 0xD2;
-        refSetBound();
+        inavSetBound();
     }
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
@@ -249,10 +249,10 @@ void refNrf24Init(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    refNrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
+    inavNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
 }
 #endif
 

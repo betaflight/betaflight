@@ -20,6 +20,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void h8_3dInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-void h8_3dSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-nrf24_received_t h8_3dDataReceived(uint8_t *payload);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void h8_3dNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void h8_3dNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
+nrf24_received_t h8_3dNrf24DataReceived(uint8_t *payload);

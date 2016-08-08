@@ -98,7 +98,7 @@ STATIC_UNIT_TESTED uint8_t txid[TXIDSIZE];
 static uint32_t rx_timeout;
 extern uint16_t nrf24RcData[];
 
-const unsigned char v2x2_channelindex[] = {NRF24_THROTTLE,NRF24_YAW,NRF24_PITCH,NRF24_ROLL,
+static const unsigned char v2x2_channelindex[] = {NRF24_THROTTLE,NRF24_YAW,NRF24_PITCH,NRF24_ROLL,
         NRF24_AUX1,NRF24_AUX2,NRF24_AUX3,NRF24_AUX4,NRF24_AUX5,NRF24_AUX6,NRF24_AUX7};
 
 static void prepare_to_bind(void)
@@ -116,7 +116,7 @@ static void switch_channel(void)
     if (++rf_ch_num >= V2X2_NFREQCHANNELS) rf_ch_num = 0;
 }
 
-void v2x2_set_tx_id(uint8_t *id)
+static void v2x2_set_tx_id(uint8_t *id)
 {
     uint8_t sum;
     txid[0] = id[0];
@@ -183,14 +183,14 @@ static nrf24_received_t decode_packet(uint8_t *packet)
     return NRF24_RECEIVED_DATA;
 }
 
-void v202SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
+void v202Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 {
     UNUSED(rcData);
     UNUSED(packet);
     // Ideally the decoding of the packet should be moved into here, to reduce the overhead of v202DataReceived function.
 }
 
-nrf24_received_t readrx(uint8_t *packet)
+static nrf24_received_t readrx(uint8_t *packet)
 {
     if (!(NRF24L01_ReadReg(NRF24L01_07_STATUS) & BV(NRF24L01_07_STATUS_RX_DR))) {
         uint32_t t = micros() - packet_timer;
@@ -213,12 +213,12 @@ nrf24_received_t readrx(uint8_t *packet)
  * This is called periodically by the scheduler.
  * Returns NRF24_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t v202DataReceived(uint8_t *packet)
+nrf24_received_t v202Nrf24DataReceived(uint8_t *packet)
 {
     return readrx(packet);
 }
 
-void v202Nrf24Init(nrf24_protocol_t protocol)
+static void v202Nrf24Setup(nrf24_protocol_t protocol)
 {
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // 2-bytes CRC
 
@@ -249,10 +249,10 @@ void v202Nrf24Init(nrf24_protocol_t protocol)
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
 }
 
-void v202Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void v202Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = V2X2_RC_CHANNEL_COUNT;
-    v202Nrf24Init((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
+    v202Nrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
 }
 
 #endif

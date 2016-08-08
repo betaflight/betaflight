@@ -30,7 +30,7 @@ typedef enum {
     NRF24RX_CX10,
     NRF24RX_CX10A,
     NRF24RX_H8_3D,
-    NRF24RX_REF,
+    NRF24RX_INAV,
     NRF24RX_PROTOCOL_COUNT
 } nrf24_protocol_t;
 
@@ -68,7 +68,9 @@ typedef enum {
 #define RC_CHANNEL_PICTURE     NRF24_AUX3
 #define RC_CHANNEL_VIDEO       NRF24_AUX4
 #define RC_CHANNEL_HEADLESS    NRF24_AUX5
-#define RC_CHANNEL_RTH         NRF24_AUX6
+#define RC_CHANNEL_RTH         NRF24_AUX6 // return to home
 
 bool rxNrf24DataReceived(void);
-bool rxNrf24Init(nfr24l01_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+bool rxNrf24Init(nfr24l01_spi_type_e spiType, const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig, rcReadRawDataPtr *callback);

@@ -20,7 +20,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void refInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-void refSetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-nrf24_received_t refDataReceived(uint8_t *payload);
+struct rxConfig_s;
+struct rxRuntimeConfig_s;
+void inavNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
+nrf24_received_t inavNrf24DataReceived(uint8_t *payload);
 
