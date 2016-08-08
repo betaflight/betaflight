@@ -500,6 +500,10 @@ static const char * const lookupTableLowpassType[] = {
     "NORMAL", "HIGH"
 };
 
+static const char * const lookupTableLedAux[] = {
+    "OFF", "1","2","3","4"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -541,6 +545,9 @@ typedef enum {
 #ifdef OSD
     TABLE_OSD,
 #endif
+#ifdef LED_STRIP
+	TABLE_LED_AUX
+#endif
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -578,6 +585,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+#endif
+#ifdef LED_STRIP
+	{ lookupTableLedAux, sizeof(lookupTableLedAux) / sizeof(char *) },
 #endif
 };
 
@@ -884,6 +894,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_aux_channel",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_aux_channel, .config.lookup = {TABLE_LED_AUX} },
 #endif
 #ifdef USE_RTC6705
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
