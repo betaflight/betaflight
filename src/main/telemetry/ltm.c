@@ -157,7 +157,7 @@ void ltm_gframe(sbuf_t *dst)
     ltm_alt = sensors(SENSOR_GPS) ? gpsSol.llh.alt : 0; // cm
 #endif
 
-    ltm_serialise_8(dst, 'G');
+    sbufWriteU8(dst, 'G');
     ltm_serialise_32(dst, ltm_lat);
     ltm_serialise_32(dst, ltm_lon);
     ltm_serialise_8(dst, (uint8_t)ltm_gs);
@@ -203,7 +203,7 @@ void ltm_sframe(sbuf_t *dst)
     uint8_t lt_statemode = (ARMING_FLAG(ARMED)) ? 1 : 0;
     if (failsafeIsActive())
         lt_statemode |= 2;
-    ltm_serialise_8(dst, 'S');
+    sbufWriteU8(dst, 'S');
     ltm_serialise_16(dst, vbat * 100);    //vbat converted to mv
     ltm_serialise_16(dst, 0);             //  current, not implemented
     ltm_serialise_8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
@@ -217,7 +217,7 @@ void ltm_sframe(sbuf_t *dst)
  */
 void ltm_aframe(sbuf_t *dst)
 {
-    ltm_serialise_8(dst, 'A');
+    sbufWriteU8(dst, 'A');
     ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.pitch));
     ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.roll));
     ltm_serialise_16(dst, DECIDEGREES_TO_DEGREES(attitude.values.yaw));
@@ -231,7 +231,7 @@ void ltm_aframe(sbuf_t *dst)
  */
 void ltm_oframe(sbuf_t *dst)
 {
-    ltm_serialise_8(dst, 'O');
+    sbufWriteU8(dst, 'O');
     ltm_serialise_32(dst, GPS_home.lat);
     ltm_serialise_32(dst, GPS_home.lon);
     ltm_serialise_32(dst, GPS_home.alt);
@@ -245,7 +245,7 @@ void ltm_oframe(sbuf_t *dst)
  */
 void ltm_xframe(sbuf_t *dst)
 {
-    ltm_serialise_8(dst, 'X');
+    sbufWriteU8(dst, 'X');
     ltm_serialise_16(dst, gpsSol.hdop);
     ltm_serialise_8(dst, 0);
     ltm_serialise_8(dst, 0);
@@ -259,7 +259,7 @@ void ltm_xframe(sbuf_t *dst)
  */
 void ltm_nframe(sbuf_t *dst)
 {
-    ltm_serialise_8(dst, 'N');
+    sbufWriteU8(dst, 'N');
     ltm_serialise_8(dst, NAV_Status.mode);
     ltm_serialise_8(dst, NAV_Status.state);
     ltm_serialise_8(dst, NAV_Status.activeWpAction);
