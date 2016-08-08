@@ -59,28 +59,8 @@ TABS.adjustments.initialize = function (callback) {
         //
         
         var functionList = $(newAdjustment).find('.functionSelection .function');
-        
-        // update list of selected functions        
-        var functionListOptions = $(functionList).find('option');
-        var availableFunctionCount = 13;
-        
-        if (semver.gte(CONFIG.flightControllerVersion, '1.8.0')) {
-            availableFunctionCount += 2; // pitch and roll rate
-            if (semver.gte(CONFIG.flightControllerVersion, '1.9.0')) {
-                availableFunctionCount += 6; // pitch p,i,d and roll p,i,d
-                if(semver.gte(CONFIG.apiVersion, "1.15.0")){
-                   availableFunctionCount += 18;
-                }
-            }
-        }
-        
-        var functionListOptions = $(functionListOptions).slice(0,availableFunctionCount);
-        functionList.empty().append(functionListOptions);
-        
         functionList.val(adjustmentRange.adjustmentFunction);
         
-        
-
         //
         // populate function channel select box
         //

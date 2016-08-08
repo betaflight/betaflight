@@ -1097,60 +1097,6 @@
     "adjustmentsFunction20": {
         "message": "Roll D Adjustment"
     },
-    "adjustmentsFunction21": {
-        "message": "Alt P Adjustment"
-    },
-    "adjustmentsFunction22": {
-        "message": "Alt I Adjustment"
-    },
-    "adjustmentsFunction23": {
-        "message": "Alt D Adjustment"
-    },
-    "adjustmentsFunction24": {
-        "message": "Vel P Adjustment"
-    },
-    "adjustmentsFunction25": {
-        "message": "Vel I Adjustment"
-    },
-    "adjustmentsFunction26": {
-        "message": "Vel D Adjustment"
-    },
-    "adjustmentsFunction27": {
-        "message": "MAG P Adjustment"
-    },
-    "adjustmentsFunction28": {
-        "message": "Pos P Adjustment"
-    },
-    "adjustmentsFunction29": {
-        "message": "Pos I Adjustment"
-    },
-    "adjustmentsFunction30": {
-        "message": "PosR P Adjustment"
-    },
-    "adjustmentsFunction31": {
-        "message": "PosR I Adjustment"
-    },
-    "adjustmentsFunction32": {
-        "message": "PosR D Adjustment"
-    },
-    "adjustmentsFunction33": {
-        "message": "NavR P Adjustment"
-    },
-    "adjustmentsFunction34": {
-        "message": "NavR I Adjustment"
-    },
-    "adjustmentsFunction35": {
-        "message": "NavR D Adjustment"
-    },
-    "adjustmentsFunction36": {
-        "message": "Level P Adjustment"
-    },
-    "adjustmentsFunction37": {
-        "message": "Level I Adjustment"
-    },
-    "adjustmentsFunction38": {
-        "message": "Level D Adjustment"
-    },
     "adjustmentsSave": {
         "message": "Save"
     },
