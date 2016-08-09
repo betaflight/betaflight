@@ -77,9 +77,9 @@
                         <tr class="ROLL">
                             <!-- 0 -->
                             <td bgcolor="#FF8080"></td>
-                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
                             <td rowspan="2" style="background-color:white;">
                                 <input type="number" name="rc_rate" step="0.01" min="0" max="2.5" />
                                 <div class="bracket"></div>
@@ -94,20 +94,30 @@
                         <tr class="PITCH">
                             <!-- 1 -->
                             <td bgcolor="#80FF80"></td>
-                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
                             <td class="pitch_rate"><input type="number" name="pitch_rate" step="0.01" min="0" max="1.00" /></td>
                         </tr>
                         <tr class="YAW">
                             <!-- 2 -->
                             <td bgcolor="#8080FF"></td>
-                            <td><input type="number" name="p" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="i" step="1" min="0" max="255" /></td>
-                            <td><input type="number" name="d" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="p" step="1" min="0" max="255" /></td>
+                            <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
+                            <td></td>
                             <td rowspan="1"><input type="number" name="rc_rate_yaw" step="0.01" min="0" max="2.5" /></td>
                             <td><input type="number" name="yaw_rate" step="0.01" min="0" max="2.55" /></td>
                             <td><input type="number" name="rc_yaw_expo" step="0.01" min="0" max="1" /></td>
+                        </tr>
+                        <tr class="YAW_JUMP_PREVENTION">
+                            <td colspan = 3>
+                                <div>
+				    <div i18n="pidTuningYawJumpPrevention" style="float:left;"></div>
+                                    <div class="helpicon cf_tip" i18n_title="pidTuningYawJumpPreventionHelp"></div>
+				</div>
+                            </td>
+                            <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
+                            <td colspan=3></td>
                         </tr>
                     </table>
                 </div>

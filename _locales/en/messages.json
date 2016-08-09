@@ -1590,6 +1590,12 @@
     "pidTuningBasic": {
         "message": "Basic/Acro"
     },
+    "pidTuningYawJumpPrevention": {
+        "message": "Yaw Jump Prevention"
+    },
+    "pidTuningYawJumpPreventionHelp": {
+        "message": "Keeps the craft from jumping up at the end of yaws."
+    },
     "pidTuningLevel": {
         "message": "Angle/Horizon"
     },
