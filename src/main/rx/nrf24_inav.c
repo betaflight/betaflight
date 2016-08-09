@@ -230,7 +230,7 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
     UNUSED(protocol);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
-    NRF24L01_Setup();
+    NRF24L01_SetupBasic();
 
     nrf24rxIdPtr = (uint32_t*)nrf24rx_id;
     if (nrf24rx_id == NULL || *nrf24rx_id == 0) {

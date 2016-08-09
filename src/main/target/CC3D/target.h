@@ -64,7 +64,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-#define USE_MAG_MAG3110
+//#define USE_MAG_MAG3110
 
 #define USE_VCP
 #define USE_UART1
@@ -85,7 +85,7 @@
 //#define USE_RX_V202
 #define USE_RX_CX10
 //#define USE_RX_H8_3D
-#define USE_RX_REF
+#define USE_RX_INAV
 #define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
 //#define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
@@ -190,7 +190,7 @@
 #undef SPEKTRUM_BIND
 
 #else
-#define TARGET_MOTOR_COUNT 6
+#define TARGET_MOTOR_COUNT 4
 #define DISABLE_UNCOMMON_MIXERS
 #endif //OPBL
 

@@ -1050,7 +1050,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(17);
+        headSerialReply(21);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
@@ -1058,6 +1058,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
+        serialize8(0); // for compatibillity with betaflight
+        serialize8(0); // for compatibillity with betaflight
+        serialize16(0); // for compatibillity with betaflight
         serialize8(masterConfig.rxConfig.nrf24rx_protocol);
         serialize32(masterConfig.rxConfig.nrf24rx_id);
         break;
@@ -1589,9 +1592,15 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_max_usec = read16();
         }
         if (currentPort->dataSize > 12) {
+            // for compatibility with betaflight
+            read8();
+            read8();
+            read16();
+        }
+        if (currentPort->dataSize > 16) {
             masterConfig.rxConfig.nrf24rx_protocol = read8();
         }
-        if (currentPort->dataSize > 13) {
+        if (currentPort->dataSize > 17) {
             masterConfig.rxConfig.nrf24rx_id = read32();
         }
         break;

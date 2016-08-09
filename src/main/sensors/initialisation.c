@@ -22,7 +22,6 @@
 
 #include "build/build_config.h"
 
-
 #include "common/axis.h"
 
 #include "drivers/io.h"
@@ -46,6 +45,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/gyro_sync.h"
 
 #include "drivers/barometer.h"
@@ -296,6 +296,20 @@ bool detectGyro(void)
 #endif
             ; // fallthrough
 
+    case GYRO_MPU9250:
+#ifdef USE_GYRO_SPI_MPU9250
+
+        if (mpu9250SpiGyroDetect(&gyro))
+        {
+            gyroHardware = GYRO_MPU9250;
+#ifdef GYRO_MPU9250_ALIGN
+            gyroAlign = GYRO_MPU9250_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
         case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
             if (fakeGyroDetect(&gyro)) {
