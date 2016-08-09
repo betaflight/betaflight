@@ -78,6 +78,7 @@ static void resetAltitudeController(void);
 static void resetPositionController(void);
 static void setupAltitudeController(void);
 void resetNavigation(void);
+void resetGCSFlags(void);
 
 static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint);
 static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos);
@@ -656,6 +657,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navi
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
+    resetGCSFlags();
+
     if ((prevFlags & NAV_CTL_ALT) == 0) {
         resetAltitudeController();
     }
@@ -672,6 +675,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(nav
 {
     UNUSED(previousState);
 
+    // If GCS was disabled - reset altitude setpoint
+    if (posControl.flags.isGCSAssistedNavigationReset) {
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        resetGCSFlags();
+    }
+
     // If we enable terrain mode and surface offset is not set yet - do it
     if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
         setDesiredSurfaceOffset(posControl.actualState.surface);
@@ -683,6 +692,8 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(nav
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(navigationFSMState_t previousState)
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    resetGCSFlags();
 
     if ((prevFlags & NAV_CTL_POS) == 0) {
         resetPositionController();
@@ -700,12 +711,23 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(n
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_IN_PROGRESS(navigationFSMState_t previousState)
 {
     UNUSED(previousState);
+
+    // If GCS was disabled - reset 2D pos setpoint
+    if (posControl.flags.isGCSAssistedNavigationReset) {
+        t_fp_vector targetHoldPos;
+        calculateInitialHoldPosition(&targetHoldPos);
+        setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        resetGCSFlags();
+    }
+
     return NAV_FSM_EVENT_NONE;
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(navigationFSMState_t previousState)
 {
     navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+
+    resetGCSFlags();
 
     if ((prevFlags & NAV_CTL_POS) == 0) {
         resetPositionController();
@@ -733,7 +755,16 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(
 {
     UNUSED(previousState);
 
-     // If we enable terrain mode and surface offset is not set yet - do it
+    // If GCS was disabled - reset 2D pos setpoint
+    if (posControl.flags.isGCSAssistedNavigationReset) {
+        t_fp_vector targetHoldPos;
+        calculateInitialHoldPosition(&targetHoldPos);
+        setDesiredPosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_Z);
+        setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
+        resetGCSFlags();
+    }
+
+    // If we enable terrain mode and surface offset is not set yet - do it
     if (posControl.flags.hasValidSurfaceSensor && posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface < 0) {
         setDesiredSurfaceOffset(posControl.actualState.surface);
     }
@@ -1850,6 +1881,12 @@ static bool adjustPositionFromRCInput(void)
 /*-----------------------------------------------------------
  * WP controller
  *-----------------------------------------------------------*/
+void resetGCSFlags(void)
+{
+    posControl.flags.isGCSAssistedNavigationReset = false;
+    posControl.flags.isGCSAssistedNavigationEnabled = false;
+}
+
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
 {
     /* Default waypoint to send */
@@ -2265,6 +2302,10 @@ static void updateReadyStatus(void)
 
 void updateFlightBehaviorModifiers(void)
 {
+    if (posControl.flags.isGCSAssistedNavigationEnabled && !IS_RC_MODE_ACTIVE(BOXGCSNAV)) {
+        posControl.flags.isGCSAssistedNavigationReset = true;
+    }
+
     posControl.flags.isGCSAssistedNavigationEnabled = IS_RC_MODE_ACTIVE(BOXGCSNAV);
     posControl.flags.isTerrainFollowEnabled = IS_RC_MODE_ACTIVE(BOXSURFACE);
 }
