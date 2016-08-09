@@ -25,7 +25,6 @@
 #define MAX_RATEPROFILES 3
 #define MAX_NAME_LENGTH 16
 
-
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
