@@ -1223,9 +1223,6 @@ void pgResetFn_specialColors(specialColorIndexes_t *instance)
 void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-    memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-
-    reevaluateLedConfig();
 }
 
 void applyDefaultColors(hsvColor_t *colors)
