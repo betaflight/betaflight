@@ -384,6 +384,20 @@ retry:
             }
 #endif
             ; // fallthrough
+	case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+
+        if (mpu9250SpiAccDetect(&acc))
+        {
+            accHardware = ACC_MPU9250;
+#ifdef ACC_MPU9250_ALIGN
+            accAlign = ACC_MPU9250_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
         case ACC_FAKE:
 #ifdef USE_FAKE_ACC
             if (fakeAccDetect(&acc)) {
