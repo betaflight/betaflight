@@ -113,7 +113,6 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
-#define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
 #define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
