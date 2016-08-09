@@ -1594,7 +1594,7 @@
         "message": "Yaw Jump Prevention"
     },
     "pidTuningYawJumpPreventionHelp": {
-        "message": "Keeps the craft from jumping up at the end of yaws."
+        "message": "Keeps the craft from jumping up at the end of yaws. Higher number gives more damping at the end of yaw moves (works like old yaw D, which was not a real D like on other axis)"
     },
     "pidTuningLevel": {
         "message": "Angle/Horizon"
