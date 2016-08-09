@@ -135,7 +135,7 @@ TABS.onboard_logging.initialize = function (callback) {
                     BLACKBOX.blackboxRateDenom = parseInt(rate[1], 10);
                     BLACKBOX.blackboxDevice = parseInt($(".blackboxDevice select").val(), 10);
                     
-                    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BLACKBOX_CONFIG), false, false, save_to_eeprom);
+                    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BLACKBOX_CONFIG), false, save_to_eeprom);
                 });
             }
             
