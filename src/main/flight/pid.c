@@ -49,7 +49,8 @@
 
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
-extern float angleRate[3], angleRateSmooth[3];
+extern float setpointRate[3];
+extern float rcInput[3];
 
 static bool pidStabilisationEnabled;
 
@@ -65,10 +66,16 @@ uint8_t PIDweight[3];
 static int32_t errorGyroI[3];
 static float errorGyroIf[3];
 
+
+static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+        const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
+#ifdef SKIP_PID_FLOAT
+pidControllerFuncPtr pid_controller = pidLegacy; // which pid controller are we using
+#else
 static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
-
 pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are we using
+#endif
 
 void setTargetPidLooptime(uint8_t pidProcessDenom)
 {
@@ -101,23 +108,23 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 
-// Experimental betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage
+#ifndef SKIP_PID_FLOAT
+// Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage. Based on 2DOF reference design (matlab)
 static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float RateError = 0, gyroRate = 0, RateErrorSmooth = 0;
+    float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
+    static int16_t axisPIDState[3];
+    static float velocityWindupFactor[3] = { 1.0f, 1.0f, 1.0f };
+
+    const float velocityFactor = getdT() * 1000.0f;
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
-
-    // Scaling factors for Pids for better tunable range in configurator
-    static const float PTermScale = 0.032029f;
-    static const float ITermScale = 0.244381f;
-    static const float DTermScale = 0.000529f;
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -136,7 +143,6 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     // Yet Highly experimental and under test and development
     // Throttle coupled to Igain like inverted TPA // 50hz calculation (should cover all rx protocols)
     static float kiThrottleGain = 1.0f;
-
     if (pidProfile->itermThrottleGain) {
         const uint16_t maxLoopCount = 20000 / targetPidLooptime;
         const float throttleItermGain = (float)pidProfile->itermThrottleGain * 0.001f;
@@ -155,125 +161,135 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
 
+        // Prepare all parameters for PID controller
+        float Kp = PTERM_SCALE * pidProfile->P8[axis];
+        float Ki = ITERM_SCALE * pidProfile->I8[axis];
+        float Kd = DTERM_SCALE * pidProfile->D8[axis];
+        float b = pidProfile->ptermSetpointWeight / 100.0f;
+        float c = pidProfile->dtermSetpointWeight / 100.0f;
+        float velocityMax = (axis == YAW) ? (float)pidProfile->pidMaxVelocityYaw * velocityFactor : (float)pidProfile->pidMaxVelocity * velocityFactor;
+
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
-                const float errorAngle = (constrain(2 * rcCommandSmooth[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+                const float errorAngle = (constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
-                const float errorAngle = (constrain(2 * rcCommandSmooth[axis], -((int) max_angle_inclination),
+                const float errorAngle = (constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                     +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
-                angleRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
+                setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
             } else {
                 // HORIZON mode - direct sticks control is applied to rate PID
                 // mix up angle error to desired AngleRate to add a little auto-level feel
-                angleRate[axis] = angleRateSmooth[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
+                setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
             }
         }
 
-        gyroRate = gyroADCf[axis] / 16.4f; // gyro output deg/sec
+        PVRate = gyroADCf[axis] / 16.4f; // Process variable from gyro output in deg/sec
 
-        // --------low-level gyro-based PID. ----------
+        // --------low-level gyro-based PID based on 2DOF PID controller. ----------
+        //  ---------- 2-DOF PID controller with optional filter on derivative term. b = 1 and only c can be tuned (amount derivative on measurement or error).  ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
-        // -----calculate scaled error.AngleRates
-        // multiplication of rcCommand corresponds to changing the sticks scaling here
-        RateError = angleRate[axis] - gyroRate;
+        // ----- calculate error / angle rates  ----------
+        errorRate = setpointRate[axis] - PVRate; // r - y
+        rP = b * setpointRate[axis] - PVRate;    // br - y
+        rD = c * setpointRate[axis] - PVRate;    // cr - y
 
-        float dynReduction = tpaFactor;
+        // Slowly restore original setpoint with more stick input
+        float diffRate = errorRate - rP;
+        rP += diffRate * rcInput[axis];
+
         // Reduce Hunting effect and jittering near setpoint. Limit multiple zero crossing within deadband and lower PID affect during low error amount
+        float dynReduction = tpaFactor;
         if (pidProfile->toleranceBand) {
             const float minReduction = (float)pidProfile->toleranceBandReduction / 100.0f;
             static uint8_t zeroCrossCount[3];
             static uint8_t currentErrorPolarity[3];
-            if (ABS(RateError) < pidProfile->toleranceBand) {
+            if (ABS(errorRate) < pidProfile->toleranceBand) {
                 if (zeroCrossCount[axis]) {
                     if (currentErrorPolarity[axis] == POSITIVE_ERROR) {
-                        if (RateError < 0 ) {
+                        if (errorRate < 0 ) {
                             zeroCrossCount[axis]--;
                             currentErrorPolarity[axis] = NEGATIVE_ERROR;
                         }
                     } else {
-                        if (RateError > 0 ) {
+                        if (errorRate > 0 ) {
                             zeroCrossCount[axis]--;
                             currentErrorPolarity[axis] = POSITIVE_ERROR;
                         }
                     }
                 } else {
-                    dynReduction *= constrainf(ABS(RateError) / pidProfile->toleranceBand, minReduction, 1.0f);
+                    dynReduction *= constrainf(ABS(errorRate) / pidProfile->toleranceBand, minReduction, 1.0f);
                 }
             } else {
                 zeroCrossCount[axis] =  pidProfile->zeroCrossAllowanceCount;
-                currentErrorPolarity[axis] = (RateError > 0) ? POSITIVE_ERROR : NEGATIVE_ERROR;
+                currentErrorPolarity[axis] = (errorRate > 0) ? POSITIVE_ERROR : NEGATIVE_ERROR;
             }
         }
 
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            // Smoothed Error for Derivative when delta from error selected
-            if (flightModeFlags && axis != YAW)
-                RateErrorSmooth = RateError;
-            else
-                RateErrorSmooth = angleRateSmooth[axis] - gyroRate;
-        }
-
         // -----calculate P component
-        PTerm = PTermScale * RateError * pidProfile->P8[axis] * dynReduction;
-
-        // Constrain YAW by yaw_p_limit value if not servo driven in that case servolimits apply
-        if((motorCount >= 4 && pidProfile->yaw_p_limit) && axis == YAW) {
-            PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
-        }
+        PTerm = Kp * rP * dynReduction;
 
         // -----calculate I component.
-        // Prevent strong Iterm accumulation during stick inputs
+        // Reduce strong Iterm accumulation during higher stick inputs
         float accumulationThreshold = (axis == YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
-        float antiWindupScaler = constrainf(1.0f - (1.5f * (ABS(angleRate[axis]) / accumulationThreshold)), 0.0f, 1.0f);
+        float setpointRateScaler = constrainf(1.0f - (1.5f * (ABS(setpointRate[axis]) / accumulationThreshold)), 0.0f, 1.0f);
 
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + ITermScale * RateError * getdT() * pidProfile->I8[axis] * antiWindupScaler * kiThrottleGain, -250.0f, 250.0f);
+        // Handle All windup Scenarios
+        // limit maximum integrator value to prevent WindUp
+        float itermScaler = setpointRateScaler * kiThrottleGain * velocityWindupFactor[axis];
 
-        // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + Ki * errorRate * getdT() * itermScaler, -250.0f, 250.0f);
+
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         ITerm = errorGyroIf[axis];
 
-        //-----calculate D-term
+        //-----calculate D-term (Yaw D not yet supported)
         if (axis == YAW) {
             if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
 
             axisPID[axis] = lrintf(PTerm + ITerm);
 
-            if (motorCount >= 4) {
-                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
-
-                // prevent "yaw jump" during yaw correction
-                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
-            }
-
             DTerm = 0.0f; // needed for blackbox
         } else {
-            if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateErrorSmooth - lastRateError[axis];
-                lastRateError[axis] = RateErrorSmooth;
-            } else {
-                delta = -(gyroRate - lastRateError[axis]);
-                lastRateError[axis] = gyroRate;
-            }
+            delta = rD - lastRateError[axis];
+            lastRateError[axis] = rD;
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
 
+            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd * delta * dynReduction;
+
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
 
-            DTerm = constrainf(DTermScale * delta * (float)pidProfile->D8[axis] * dynReduction, -300.0f, 300.0f);
+            DTerm = constrainf(Kd * delta * dynReduction, -300.0f, 300.0f);
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
         }
 
+        // Disable PID control at zero throttle
         if (!pidStabilisationEnabled) axisPID[axis] = 0;
+
+        // Velocity limit only active below 1000
+        if (velocityMax < 1000) {
+            int16_t currentVelocity = axisPID[axis] - axisPIDState[axis];
+            if (debugMode == DEBUG_VELOCITY) debug[axis] = currentVelocity;
+            if (ABS(currentVelocity) > velocityMax) {
+                axisPID[axis] = (currentVelocity > 0) ? axisPIDState[axis] + velocityMax : axisPIDState[axis] - velocityMax;
+                velocityWindupFactor[axis] = ABS(currentVelocity) / velocityMax;
+            }
+            else {
+                velocityWindupFactor[axis] = 1.0f;
+            }
+
+            axisPIDState[axis] = axisPID[axis];
+        }
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -288,6 +304,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 #endif
     }
 }
+#endif
 
 // Legacy pid controller betaflight evolved pid rewrite based on 2.9 releae. Good for fastest cycletimes for those who believe in that. Don't expect much development in the future
 static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
@@ -296,7 +313,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
     int axis;
     int32_t PTerm, ITerm, DTerm, delta;
     static int32_t lastRateError[3];
-    int32_t AngleRateTmp = 0, AngleRateTmpSmooth = 0, RateError = 0, gyroRate = 0, RateErrorSmooth = 0;
+    int32_t AngleRateTmp = 0, RateError = 0, gyroRate = 0;
 
     int8_t horizonLevelStrength = 100;
 
@@ -316,16 +333,15 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
     for (axis = 0; axis < 3; axis++) {
 
         // -----Get the desired angle rate depending on flight mode
-        AngleRateTmp = (int32_t)angleRate[axis];
-        if (axis != YAW) AngleRateTmpSmooth = (int32_t)angleRateSmooth[axis];
+        AngleRateTmp = (int32_t)setpointRate[axis];
 
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to max configured inclination
 #ifdef GPS
-            const int32_t errorAngle = constrain(2 * rcCommandSmooth[axis] + GPS_angle[axis], -((int) max_angle_inclination),
+            const int32_t errorAngle = constrain(2 * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
                 +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #else
-            const int32_t errorAngle = constrain(2 * rcCommandSmooth[axis], -((int) max_angle_inclination),
+            const int32_t errorAngle = constrain(2 * rcCommand[axis], -((int) max_angle_inclination),
                 +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis];
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
@@ -334,7 +350,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             } else {
                 // HORIZON mode - mix up angle error to desired AngleRateTmp to add a little auto-level feel,
                 // horizonLevelStrength is scaled to the stick input
-                AngleRateTmp =  AngleRateTmpSmooth + ((errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4);
+                AngleRateTmp =  AngleRateTmp + ((errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 100) >> 4);
             }
         }
 
@@ -345,14 +361,6 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
         gyroRate = gyroADC[axis] / 4;
 
         RateError = AngleRateTmp - gyroRate;
-
-        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-            // Smoothed Error for Derivative when delta from error selected
-            if (flightModeFlags && axis != YAW)
-                RateErrorSmooth = RateError;
-            else
-                RateErrorSmooth = AngleRateTmpSmooth - gyroRate;
-        }
 
         // -----calculate P component
         PTerm = (RateError * pidProfile->P8[axis] * PIDweight[axis] / 100) >> 7;
@@ -396,8 +404,8 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             DTerm = 0; // needed for blackbox
         } else {
             if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
-                delta = RateErrorSmooth - lastRateError[axis];
-                lastRateError[axis] = RateErrorSmooth;
+                delta = RateError - lastRateError[axis];
+                lastRateError[axis] = RateError;
             } else {
                 delta = -(gyroRate - lastRateError[axis]);
                 lastRateError[axis] = gyroRate;
@@ -405,6 +413,8 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
+
+            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
             // Filter delta
             if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, getdT());
@@ -438,8 +448,10 @@ void pidSetController(pidControllerType_e type)
         case PID_CONTROLLER_LEGACY:
             pid_controller = pidLegacy;
             break;
+#ifndef SKIP_PID_FLOAT
         case PID_CONTROLLER_BETAFLIGHT:
             pid_controller = pidBetaflight;
+#endif
     }
 }
 

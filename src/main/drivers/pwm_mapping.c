@@ -92,7 +92,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     int i = 0;
     const uint16_t *setup;
 
+#ifndef SKIP_RX_PWM_PPM
     int channelIndex = 0;
+#endif
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
   
@@ -289,15 +291,19 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
+#ifndef SKIP_RX_PWM_PPM
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
             if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif
             ppmInConfig(timerHardwarePtr);
+#endif
         } else if (type == MAP_TO_PWM_INPUT) {
+#ifndef SKIP_RX_PWM_PPM
             pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;
+#endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #ifdef CC3D

@@ -26,6 +26,12 @@
 
 #define DYNAMIC_PTERM_STICK_THRESHOLD 400
 
+
+// Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
+#define PTERM_SCALE 0.032029f
+#define ITERM_SCALE 0.244381f
+#define DTERM_SCALE 0.000529f
+
 typedef enum {
     PIDROLL,
     PIDPITCH,
@@ -88,8 +94,11 @@ typedef struct pidProfile_s {
     uint8_t toleranceBand;                  // Error tolerance area where toleranceBandReduction is applied under certain circumstances
     uint8_t toleranceBandReduction;         // Lowest possible P and D reduction in percentage
     uint8_t zeroCrossAllowanceCount;        // Amount of bouncebacks within tolerance band allowed before reduction kicks in
-    uint16_t accelerationLimitPercent;      // Percentage that motor is allowed to increase or decrease in a period of 1ms
     uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
+    uint8_t ptermSetpointWeight;            // Setpoint weight for Pterm (lower means more PV tracking)
+    uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
+    uint16_t pidMaxVelocity;                // velocity limiter for pid controller (per ms)
+    uint16_t pidMaxVelocityYaw;             // velocity limiter for pid controller (per ms) yaw
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

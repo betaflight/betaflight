@@ -180,7 +180,23 @@ static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
     accelerometerTrims->values.yaw = 0;
 }
 
-void resetPidProfile(pidProfile_t *pidProfile)
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+{
+    controlRateConfig->rcRate8 = 100;
+    controlRateConfig->rcYawRate8 = 100;
+    controlRateConfig->rcExpo8 = 10;
+    controlRateConfig->thrMid8 = 50;
+    controlRateConfig->thrExpo8 = 0;
+    controlRateConfig->dynThrPID = 20;
+    controlRateConfig->rcYawExpo8 = 10;
+    controlRateConfig->tpa_breakpoint = 1650;
+
+    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
+        controlRateConfig->rates[axis] = 70;
+    }
+}
+
+static void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 
@@ -188,8 +204,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 18;
     pidProfile->P8[PITCH] = 50;
-    pidProfile->I8[PITCH] = 40;
-    pidProfile->D8[PITCH] = 18;
+    pidProfile->I8[PITCH] = 55;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -223,10 +239,13 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
+    pidProfile->ptermSetpointWeight = 75;
+    pidProfile->dtermSetpointWeight = 0;
+    pidProfile->pidMaxVelocity = 1000;
+    pidProfile->pidMaxVelocityYaw = 50;
     pidProfile->toleranceBand = 15;
-    pidProfile->toleranceBandReduction = 35;
-    pidProfile->zeroCrossAllowanceCount = 3;
-    pidProfile->accelerationLimitPercent = 20;
+    pidProfile->toleranceBandReduction = 40;
+    pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 10;
 
 #ifdef GTUNE
@@ -242,6 +261,17 @@ void resetPidProfile(pidProfile_t *pidProfile)
 #endif
 }
 
+void resetProfile(profile_t *profile)
+{
+    resetPidProfile(&profile->pidProfile);
+
+    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
+        resetControlRateConfig(&profile->controlRateProfile[rI]);
+    }
+
+   profile->activeRateProfile = 0;
+}
+
 #ifdef GPS
 void resetGpsProfile(gpsProfile_t *gpsProfile)
 {
@@ -255,6 +285,7 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
+#ifdef BARO
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->baro_sample_count = 21;
@@ -262,6 +293,7 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->baro_cf_vel = 0.985f;
     barometerConfig->baro_cf_alt = 0.965f;
 }
+#endif
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
@@ -291,6 +323,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
     flight3DConfig->deadband3d_throttle = 50;
 }
 
+#ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 0;
@@ -303,6 +336,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
 }
+#endif
 
 void resetBatteryConfig(batteryConfig_t *batteryConfig)
 {
@@ -348,23 +382,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 #endif
 
     serialConfig->reboot_character = 'R';
-}
-
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcRate8 = 100;
-    controlRateConfig->rcYawRate8 = 100;
-    controlRateConfig->rcExpo8 = 10;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 10;
-    controlRateConfig->tpa_breakpoint = 1650;
-
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        controlRateConfig->rates[axis] = 70;
-    }
-
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
@@ -483,7 +500,9 @@ static void resetConf(void)
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
+#ifdef TELEMETRY
     resetTelemetryConfig(&masterConfig.telemetryConfig);
+#endif
 
 #ifdef SERIALRX_PROVIDER
     masterConfig.rxConfig.serialrx_provider = SERIALRX_PROVIDER;
@@ -508,13 +527,10 @@ static void resetConf(void)
     masterConfig.rxConfig.rssi_channel = 0;
     masterConfig.rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     masterConfig.rxConfig.rssi_ppm_invert = 0;
-    masterConfig.rxConfig.rcSmoothInterval = 0; // 0 is predefined
+    masterConfig.rxConfig.rcSmoothing = RC_SMOOTHING_OFF;
+    masterConfig.rxConfig.rcSmoothInterval = 9;
     masterConfig.rxConfig.fpvCamAngleDegrees = 0;
-#ifdef STM32F4
-    masterConfig.rxConfig.max_aux_channel = 99;
-#else
-    masterConfig.rxConfig.max_aux_channel = 6;
-#endif
+    masterConfig.rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
     masterConfig.rxConfig.airModeActivateThreshold = 1350;
 
     resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
@@ -560,11 +576,8 @@ static void resetConf(void)
 
     masterConfig.emf_avoidance = 0; // TODO - needs removal
 
-    resetPidProfile(&currentProfile->pidProfile);
+    resetProfile(currentProfile);
 
-    for (int rI = 0; rI<MAX_RATEPROFILES; rI++) {
-        resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
-    }
     resetRollAndPitchTrims(&masterConfig.accelerometerTrims);
 
     masterConfig.mag_declination = 0;
@@ -573,7 +586,9 @@ static void resetConf(void)
     masterConfig.accDeadband.z = 40;
     masterConfig.acc_unarmedcal = 1;
 
+#ifdef BARO
     resetBarometerConfig(&masterConfig.barometerConfig);
+#endif
 
     // Radio
     parseRcChannels("AETR1234", &masterConfig.rxConfig);

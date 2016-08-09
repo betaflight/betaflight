@@ -118,7 +118,6 @@ serialPort_t *loopbackPort;
 void printfSupportInit(void);
 void timerInit(void);
 void telemetryInit(void);
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled);
 void mspInit(serialConfig_t *serialConfig);
 void cliInit(serialConfig_t *serialConfig);
 void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
@@ -180,8 +179,7 @@ void init(void)
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
-    }
-    else {
+    } else {
         ledInit(true);
     }
 #else
@@ -248,7 +246,15 @@ void init(void)
 
     dmaInit();
 
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL));
+#if defined(AVOID_UART2_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
+#elif defined(AVOID_UART3_FOR_PWM_PPM)
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+            feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
+#else
+    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
 
 #ifdef USE_SERVOS
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
@@ -313,7 +319,7 @@ void init(void)
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
@@ -327,7 +333,9 @@ void init(void)
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
+#ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
@@ -572,10 +580,10 @@ void init(void)
 #ifdef USE_FLASHFS
 #ifdef NAZE
     if (hardwareRevision == NAZE32_REV5) {
-        m25p16_init();
+        m25p16_init(IOTAG_NONE);
     }
 #elif defined(USE_FLASH_M25P16)
-    m25p16_init();
+    m25p16_init(IOTAG_NONE);
 #endif
 
     flashfsInit();
@@ -590,7 +598,11 @@ void init(void)
 
 #if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
     // Ensure the SPI Tx DMA doesn't overlap with the led strip
+#ifdef STM32F4
+    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
+#else
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
+#endif
 #else
     sdcardUseDMA = true;
 #endif
@@ -688,26 +700,26 @@ void main_init(void)
     rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
-    if(sensors(SENSOR_ACC)) {
+    if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch(gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
-             case(500):
-             case(375):
-             case(250):
-             case(125):
-                 accTargetLooptime = 1000;
-                 break;
-             default:
-                 case(1000):
+        switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        case 500:
+        case 375:
+        case 250:
+        case 125:
+            accTargetLooptime = 1000;
+            break;
+        default:
+        case 1000:
 #ifdef STM32F10X
-                accTargetLooptime = 3000;
+            accTargetLooptime = 1000;
 #else
-                accTargetLooptime = 1000;
+            accTargetLooptime = 1000;
 #endif
         }
         rescheduleTask(TASK_ACCEL, accTargetLooptime);
     }
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER

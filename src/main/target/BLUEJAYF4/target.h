@@ -17,10 +17,14 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "BJF4"
+#define TARGET_CONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING     "BlueJayF4"
+
+#define USE_HARDWARE_REVISION_DETECTION
+#define HW_PIN                  PB2
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_EXTI
@@ -41,12 +45,12 @@
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define GYRO_MPU6500_ALIGN      CW0_DEG
 
 //#define MAG
 //#define USE_MAG_AK8963
@@ -76,11 +80,11 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-//#define M25P16_CS_PIN           PB3
-//#define M25P16_SPI_INSTANCE     SPI3
+#define M25P16_CS_PIN           PB7
+#define M25P16_SPI_INSTANCE     SPI3
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
 

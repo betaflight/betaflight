@@ -26,8 +26,16 @@
 #define BEEPER_OPT              PB2
 
 #define USE_EXTI
-#define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI            PA3
+#define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+#define USE_SPI_DEVICE_2
+
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 #define MPU6000_CS_GPIO         GPIOA
 #define MPU6000_CS_PIN          PA4
@@ -40,19 +48,12 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define USABLE_TIMER_CHANNEL_COUNT 12
-
-#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-
 #define ACC_MPU6000_ALIGN CW270_DEG
 
 // MPU6000 interrupts
@@ -85,13 +86,6 @@
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
-#define USE_SPI
-#define USE_SPI_DEVICE_1
-#define USE_SPI_DEVICE_2
-
-#define USE_I2C
-#define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
-
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PB1
 #define VBAT_ADC_PIN            PA0
@@ -109,20 +103,18 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define DISPLAY
 #define SONAR
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
 
 #undef GPS
 
+#ifdef CC3D_OPBL
+//#undef LED_STRIP
+#define SKIP_CLI_COMMAND_HELP
+#define SKIP_PID_FLOAT
 #undef BARO
 #undef MAG
-
-#ifdef CC3D_OPBL
-#define SKIP_CLI_COMMAND_HELP
-#undef LED_STRIP
-#undef DISPLAY
 #undef SONAR
 #endif
 
@@ -133,4 +125,5 @@
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         ( BIT(14) )
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )

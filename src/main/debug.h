@@ -51,5 +51,8 @@ typedef enum {
     DEBUG_AIRMODE,
     DEBUG_PIDLOOP,
     DEBUG_NOTCH,
+    DEBUG_RC_SMOOTHING,
+    DEBUG_VELOCITY,
+    DEBUG_DTERM_FILTER,
     DEBUG_COUNT
 } debugType_e;

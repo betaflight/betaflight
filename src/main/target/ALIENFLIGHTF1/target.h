@@ -17,18 +17,12 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
-#define USE_HARDWARE_REVISION_DETECTION
-
-#define BOARD_HAS_VOLTAGE_DIVIDER
+#define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
 
 #define LED0                    PB3
 #define LED1                    PB4
 
 #define BEEPER                  PA12
-#ifdef AFROMINI
-#define BEEPER_INVERTED
-#endif
 
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14
@@ -156,7 +150,19 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+// alternative defaults for AlienFlight F1 target
+#define TARGET_CONFIG
+
+#define BRUSHED_MOTORS
+#define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
+#define SERIALRX_UART           SERIAL_PORT_USART2
+
+#define HARDWARE_BIND_PLUG
+// Hardware bind plug at PB5 (Pin 41)
+#define BINDPLUG_PIN            PB5
+
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
