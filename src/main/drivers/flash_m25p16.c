@@ -43,6 +43,7 @@
 #define JEDEC_ID_MICRON_M25P16         0x202015
 #define JEDEC_ID_MICRON_N25Q064        0x20BA17
 #define JEDEC_ID_WINBOND_W25Q64        0xEF4017
+#define JEDEC_ID_MACRONIX_MX25L3206E   0xC22016
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
@@ -159,6 +160,10 @@ static bool m25p16_readIdentification()
     switch (chipID) {
         case JEDEC_ID_MICRON_M25P16:
             geometry.sectors = 32;
+            geometry.pagesPerSector = 256;
+        break;
+        case JEDEC_ID_MACRONIX_MX25L3206E:
+            geometry.sectors = 64;
             geometry.pagesPerSector = 256;
         break;
         case JEDEC_ID_MICRON_N25Q064:

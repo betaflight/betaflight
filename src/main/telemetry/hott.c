@@ -57,10 +57,11 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
 
 #ifdef TELEMETRY
+
+#include "build_config.h"
+#include "debug.h"
 
 #include "common/axis.h"
 

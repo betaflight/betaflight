@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef LED_STRIP
+
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "nvic.h"
@@ -28,8 +30,6 @@
 #include "system.h"
 #include "rcc.h"
 #include "timer.h"
-
-#ifdef LED_STRIP
 
 #if !defined(WS2811_PIN)
 #define WS2811_PIN                      PA0

@@ -77,7 +77,6 @@
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(void) {
-    featureClear(FEATURE_ONESHOT125);
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
@@ -92,7 +91,6 @@ void targetConfiguration(void) {
     currentProfile->pidProfile.P8[PITCH] = 90;
     currentProfile->pidProfile.I8[PITCH] = 44;
     currentProfile->pidProfile.D8[PITCH] = 60;
-    parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R

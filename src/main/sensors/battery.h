@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
 #include "common/maths.h"
 
 #ifndef VBAT_SCALE_DEFAULT
@@ -75,7 +74,8 @@ void updateBattery(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 batteryConfig_t *batteryConfig;
 
-void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+struct rxConfig_s;
+void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 fix12_t calculateVbatPidCompensation(void);

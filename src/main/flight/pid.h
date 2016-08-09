@@ -80,8 +80,11 @@ typedef struct pidProfile_s {
     uint8_t I8[PID_ITEM_COUNT];
     uint8_t D8[PID_ITEM_COUNT];
 
+    uint8_t dterm_filter_type;              // Filter selection for dterm
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t yaw_lpf_hz;                    // Additional yaw filter when yaw axis too noisy
+    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
+    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
     uint8_t deltaMethod;                    // Alternative delta Calculation
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
@@ -97,8 +100,8 @@ typedef struct pidProfile_s {
     uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
     uint8_t ptermSetpointWeight;            // Setpoint weight for Pterm (lower means more PV tracking)
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    uint16_t pidMaxVelocity;                // velocity limiter for pid controller (per ms)
-    uint16_t pidMaxVelocityYaw;             // velocity limiter for pid controller (per ms) yaw
+    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
+    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
 
 #ifdef GTUNE
     uint8_t  gtune_lolimP[3];               // [0..200] Lower limit of P during G tune

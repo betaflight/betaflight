@@ -5,8 +5,7 @@
  *      Author: Frank26080115
  */
 
-#ifndef TELEMETRY_SMARTPORT_H_
-#define TELEMETRY_SMARTPORT_H_
+#pragma once
 
 void initSmartPortTelemetry(telemetryConfig_t *);
 
@@ -18,4 +17,3 @@ void freeSmartPortTelemetryPort(void);
 
 bool isSmartPortTimedOut(void);
 
-#endif /* TELEMETRY_SMARTPORT_H_ */

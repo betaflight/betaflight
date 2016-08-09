@@ -471,15 +471,14 @@ void mspInit(serialConfig_t *serialConfig)
     activeBoxIdCount = 0;
     activeBoxIds[activeBoxIdCount++] = BOXARM;
 
+    if (!feature(FEATURE_AIRMODE)) {
+	activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    }
+
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
-
-    if (!feature(FEATURE_AIRMODE)) activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
-
-    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
 
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
@@ -491,9 +490,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
 
-    if (feature(FEATURE_SERVO_TILT))
-        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
-
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         activeBoxIds[activeBoxIdCount++] = BOXGPSHOME;
@@ -501,8 +497,19 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE)
+#ifdef SONAR
+    if (feature(FEATURE_SONAR)) {
+        activeBoxIds[activeBoxIdCount++] = BOXSONAR;
+    }
+#endif
+
+    if (feature(FEATURE_FAILSAFE)) {
+        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
+    }
+
+    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
+    }
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
@@ -512,19 +519,38 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
-    if (feature(FEATURE_INFLIGHT_ACC_CAL))
-        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
-
-    activeBoxIds[activeBoxIdCount++] = BOXOSD;
-
-#ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
-        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-#endif
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)){
-        activeBoxIds[activeBoxIdCount++] = BOXSONAR;
+#ifdef BLACKBOX
+    if (feature(FEATURE_BLACKBOX)) {
+        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
     }
+#endif
+
+    activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
+    
+    if (feature(FEATURE_3D)) {
+    	activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
+    }
+
+    if (feature(FEATURE_SERVO_TILT)) {
+        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
+    }
+
+    if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
+        activeBoxIds[activeBoxIdCount++] = BOXCALIB;
+    }
+	
+    if (feature(FEATURE_OSD)) {
+	activeBoxIds[activeBoxIdCount++] = BOXOSD;
+    }
+	
+#ifdef TELEMETRY
+    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch) {
+        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
+    }
+#endif
+
+#ifdef GTUNE
+    activeBoxIds[activeBoxIdCount++] = BOXGTUNE;
 #endif
 
 #ifdef USE_SERVOS
@@ -533,20 +559,6 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
     }
-#endif
-
-#ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)){
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
-    }
-#endif
-
-    if (feature(FEATURE_FAILSAFE)){
-        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
-    }
-
-#ifdef GTUNE
-    activeBoxIds[activeBoxIdCount++] = BOXGTUNE;
 #endif
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
@@ -1029,8 +1041,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.spektrum_sat_bind);
         serialize16(masterConfig.rxConfig.rx_min_usec);
         serialize16(masterConfig.rxConfig.rx_max_usec);
-        serialize8(masterConfig.rxConfig.rcSmoothing);
-        serialize8(masterConfig.rxConfig.rcSmoothInterval);
+        serialize8(masterConfig.rxConfig.rcInterpolation);
+        serialize8(masterConfig.rxConfig.rcInterpolationInterval);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
         break;
 
@@ -1227,8 +1239,13 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_ADVANCED_CONFIG :
         headSerialReply(6);
-        serialize8(masterConfig.gyro_sync_denom);
-        serialize8(masterConfig.pid_process_denom);
+        if (masterConfig.gyro_lpf) {
+            serialize8(8); // If gyro_lpf != OFF then looptime is set to 1000
+            serialize8(1);
+        } else {
+            serialize8(masterConfig.gyro_sync_denom);
+            serialize8(masterConfig.pid_process_denom);
+        }
         serialize8(masterConfig.use_unsyncedPwm);
         serialize8(masterConfig.motor_pwm_protocol);
         serialize16(masterConfig.motor_pwm_rate);
@@ -1251,8 +1268,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentProfile->pidProfile.toleranceBand);
         serialize8(currentProfile->pidProfile.toleranceBandReduction);
         serialize8(currentProfile->pidProfile.itermThrottleGain);
-        serialize16(currentProfile->pidProfile.pidMaxVelocity);
-        serialize16(currentProfile->pidProfile.pidMaxVelocityYaw);
+        serialize16(currentProfile->pidProfile.rateAccelLimit);
+        serialize16(currentProfile->pidProfile.yawRateAccelLimit);
         break;
     case MSP_SENSOR_CONFIG:
         headSerialReply(3);
@@ -1484,13 +1501,13 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.deadband3d_low = read16();
         masterConfig.flight3DConfig.deadband3d_high = read16();
         masterConfig.flight3DConfig.neutral3d = read16();
-        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RC_DEADBAND:
         masterConfig.rcControlsConfig.deadband = read8();
         masterConfig.rcControlsConfig.yaw_deadband = read8();
         masterConfig.rcControlsConfig.alt_hold_deadband = read8();
+        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RESET_CURR_PID:
@@ -1671,8 +1688,8 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rx_max_usec = read16();
         }
         if (currentPort->dataSize > 12) {
-            masterConfig.rxConfig.rcSmoothing = read8();
-            masterConfig.rxConfig.rcSmoothInterval = read8();
+            masterConfig.rxConfig.rcInterpolation = read8();
+            masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
         break;
@@ -1841,8 +1858,8 @@ static bool processInCommand(void)
         currentProfile->pidProfile.toleranceBand = read8();
         currentProfile->pidProfile.toleranceBandReduction = read8();
         currentProfile->pidProfile.itermThrottleGain = read8();
-        currentProfile->pidProfile.pidMaxVelocity = read16();
-        currentProfile->pidProfile.pidMaxVelocityYaw = read16();
+        currentProfile->pidProfile.rateAccelLimit = read16();
+        currentProfile->pidProfile.yawRateAccelLimit = read16();
         break;
     case MSP_SET_SENSOR_CONFIG:
         masterConfig.acc_hardware = read8();

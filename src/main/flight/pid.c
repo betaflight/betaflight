@@ -66,7 +66,6 @@ uint8_t PIDweight[3];
 static int32_t errorGyroI[3];
 static float errorGyroIf[3];
 
-
 static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
 #ifdef SKIP_PID_FLOAT
@@ -107,6 +106,24 @@ const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
 static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
+static biquadFilter_t dtermFilterLpf[3];
+static biquadFilter_t dtermFilterNotch[3];
+static bool dtermNotchInitialised, dtermBiquadLpfInitialised;
+
+void initFilters(const pidProfile_t *pidProfile) {
+    int axis;
+
+    if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
+        float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        for (axis = 0; axis < 3; axis++) biquadFilterInit(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, gyro.targetLooptime, notchQ, FILTER_NOTCH);
+    }
+
+    if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
+        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
+            for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, gyro.targetLooptime);
+        }
+    }
+}
 
 #ifndef SKIP_PID_FLOAT
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage. Based on 2DOF reference design (matlab)
@@ -116,15 +133,14 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
+    static float Kp[3], Ki[3], Kd[3], b[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
-    static int16_t axisPIDState[3];
-    static float velocityWindupFactor[3] = { 1.0f, 1.0f, 1.0f };
-
-    const float velocityFactor = getdT() * 1000.0f;
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
+
+    initFilters(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -161,13 +177,33 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
 
+        static uint8_t configP[3], configI[3], configD[3];
+
+        // Prevent unnecessary computing and check for changed PIDs. No need for individual checks. Only pids is fine for now
         // Prepare all parameters for PID controller
-        float Kp = PTERM_SCALE * pidProfile->P8[axis];
-        float Ki = ITERM_SCALE * pidProfile->I8[axis];
-        float Kd = DTERM_SCALE * pidProfile->D8[axis];
-        float b = pidProfile->ptermSetpointWeight / 100.0f;
-        float c = pidProfile->dtermSetpointWeight / 100.0f;
-        float velocityMax = (axis == YAW) ? (float)pidProfile->pidMaxVelocityYaw * velocityFactor : (float)pidProfile->pidMaxVelocity * velocityFactor;
+        if ((pidProfile->P8[axis] != configP[axis]) || (pidProfile->I8[axis] != configI[axis]) || (pidProfile->D8[axis] != configD[axis])) {
+            Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
+            Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
+            Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
+            b[axis] = pidProfile->ptermSetpointWeight / 100.0f;
+            c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
+            yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
+            rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
+
+            configP[axis] = pidProfile->P8[axis];
+            configI[axis] = pidProfile->I8[axis];
+            configD[axis] = pidProfile->D8[axis];
+        }
+
+        // Limit abrupt yaw inputs / stops
+        float maxVelocity = (axis == YAW) ? yawMaxVelocity : rollPitchMaxVelocity;
+        if (maxVelocity) {
+            float currentVelocity = setpointRate[axis] - previousSetpoint[axis];
+            if (ABS(currentVelocity) > maxVelocity) {
+                setpointRate[axis] = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity : previousSetpoint[axis] - maxVelocity;
+            }
+            previousSetpoint[axis] = setpointRate[axis];
+        }
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
@@ -195,9 +231,8 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         //  ---------- 2-DOF PID controller with optional filter on derivative term. b = 1 and only c can be tuned (amount derivative on measurement or error).  ----------
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // ----- calculate error / angle rates  ----------
-        errorRate = setpointRate[axis] - PVRate; // r - y
-        rP = b * setpointRate[axis] - PVRate;    // br - y
-        rD = c * setpointRate[axis] - PVRate;    // cr - y
+        errorRate = setpointRate[axis] - PVRate;       // r - y
+        rP = b[axis] * setpointRate[axis] - PVRate;    // br - y
 
         // Slowly restore original setpoint with more stick input
         float diffRate = errorRate - rP;
@@ -232,7 +267,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         }
 
         // -----calculate P component
-        PTerm = Kp * rP * dynReduction;
+        PTerm = Kp[axis] * rP * dynReduction;
 
         // -----calculate I component.
         // Reduce strong Iterm accumulation during higher stick inputs
@@ -241,9 +276,9 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
         // Handle All windup Scenarios
         // limit maximum integrator value to prevent WindUp
-        float itermScaler = setpointRateScaler * kiThrottleGain * velocityWindupFactor[axis];
+        float itermScaler = setpointRateScaler * kiThrottleGain;
 
-        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + Ki * errorRate * getdT() * itermScaler, -250.0f, 250.0f);
+        errorGyroIf[axis] = constrainf(errorGyroIf[axis] + Ki[axis] * errorRate * getdT() * itermScaler, -250.0f, 250.0f);
 
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         ITerm = errorGyroIf[axis];
@@ -256,40 +291,34 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
             DTerm = 0.0f; // needed for blackbox
         } else {
+            rD = c[axis] * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
 
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
 
-            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd * delta * dynReduction;
+            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd[axis] * delta * dynReduction;
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+            if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
 
-            DTerm = constrainf(Kd * delta * dynReduction, -300.0f, 300.0f);
+            if (pidProfile->dterm_lpf_hz) {
+                if (dtermBiquadLpfInitialised) {
+                    delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+                } else {
+                    delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+                }
+            }
+
+            DTerm = Kd[axis] * delta * dynReduction;
 
             // -----calculate total PID output
-            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
+            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);
         }
 
         // Disable PID control at zero throttle
         if (!pidStabilisationEnabled) axisPID[axis] = 0;
-
-        // Velocity limit only active below 1000
-        if (velocityMax < 1000) {
-            int16_t currentVelocity = axisPID[axis] - axisPIDState[axis];
-            if (debugMode == DEBUG_VELOCITY) debug[axis] = currentVelocity;
-            if (ABS(currentVelocity) > velocityMax) {
-                axisPID[axis] = (currentVelocity > 0) ? axisPIDState[axis] + velocityMax : axisPIDState[axis] - velocityMax;
-                velocityWindupFactor[axis] = ABS(currentVelocity) / velocityMax;
-            }
-            else {
-                velocityWindupFactor[axis] = 1.0f;
-            }
-
-            axisPIDState[axis] = axisPID[axis];
-        }
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
@@ -316,6 +345,8 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
     int32_t AngleRateTmp = 0, RateError = 0, gyroRate = 0;
 
     int8_t horizonLevelStrength = 100;
+
+    initFilters(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -417,7 +448,15 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
             // Filter delta
-            if (pidProfile->dterm_lpf_hz) delta = pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, getdT());
+            if (pidProfile->dterm_lpf_hz) {
+                float deltaf = delta;  // single conversion
+                if (dtermBiquadLpfInitialised) {
+                    delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+                } else {
+                    delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+                }
+                delta = lrintf(deltaf);
+            }
 
             DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 

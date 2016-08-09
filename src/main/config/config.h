@@ -26,7 +26,6 @@
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 #define MAX_NAME_LENGTH 16
 
-
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
     FEATURE_VBAT = 1 << 1,
@@ -46,16 +45,15 @@ typedef enum {
     FEATURE_RSSI_ADC = 1 << 15,
     FEATURE_LED_STRIP = 1 << 16,
     FEATURE_DISPLAY = 1 << 17,
-    FEATURE_ONESHOT125 = 1 << 18,
+    FEATURE_OSD = 1 << 18,
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SUPEREXPO_RATES = 1 << 23,
-    FEATURE_OSD = 1 << 24,
-    FEATURE_VTX = 1 << 25,
-    FEATURE_RX_NRF24 = 1 << 26,
-    FEATURE_SOFTSPI = 1 << 27,
+    FEATURE_VTX = 1 << 24,
+    FEATURE_RX_NRF24 = 1 << 25,
+    FEATURE_SOFTSPI = 1 << 26,
 } features_e;
 
 void latchActiveFeatures(void);

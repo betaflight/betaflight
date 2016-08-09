@@ -25,6 +25,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+#include "common/printf.h"
 
 #include "drivers/nvic.h"
 
@@ -61,6 +62,7 @@
 #endif
 
 #include "rx/rx.h"
+#include "rx/spektrum.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -72,6 +74,8 @@
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/serial_cli.h"
+#include "io/serial_msp.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
@@ -115,28 +119,6 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
-void printfSupportInit(void);
-void timerInit(void);
-void telemetryInit(void);
-void mspInit(serialConfig_t *serialConfig);
-void cliInit(serialConfig_t *serialConfig);
-void failsafeInit(rxConfig_t *intialRxConfig, uint16_t deadband3d_throttle);
-pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
-#ifdef USE_SERVOS
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
-#else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
-#endif
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm);
-void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationConditions);
-void gpsInit(serialConfig_t *serialConfig, gpsConfig_t *initialGpsConfig);
-void navigationInit(gpsProfile_t *initialGpsProfile, pidProfile_t *pidProfile);
-void imuInit(void);
-void displayInit(rxConfig_t *intialRxConfig);
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
-void spektrumBind(rxConfig_t *rxConfig);
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor);
-void osdInit(void);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -177,11 +159,7 @@ void init(void)
     latchActiveFeatures();
 
 #ifdef ALIENFLIGHTF3
-    if (hardwareRevision == AFF3_REV_1) {
-        ledInit(false);
-    } else {
-        ledInit(true);
-    }
+    ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
 #else
     ledInit(false);
 #endif
@@ -270,8 +248,8 @@ void init(void)
         const sonarHardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
         if (sonarHardware) {
             pwm_params.useSonar = true;
-            pwm_params.sonarConfig.triggerTag = sonarHardware->triggerTag;
-            pwm_params.sonarConfig.echoTag = sonarHardware->echoTag;
+            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
+            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
         }
     }
 #endif
@@ -309,12 +287,6 @@ void init(void)
     pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
-
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_ONESHOT125) {
-        featureSet(FEATURE_ONESHOT125);
-    } else {
-        featureClear(FEATURE_ONESHOT125);
-    }
 
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
@@ -360,6 +332,12 @@ void init(void)
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperConfig.isOD = false;
         beeperConfig.isInverted = true;
+    }
+#endif
+/* temp until PGs are implemented. */
+#ifdef BLUEJAYF4
+    if (hardwareRevision <= BJF4_REV2) {
+        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
     }
 #endif
 #ifdef CC3D
