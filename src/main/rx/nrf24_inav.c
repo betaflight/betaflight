@@ -86,9 +86,10 @@ STATIC_UNIT_TESTED uint8_t ackPayload[NRF24L01_MAX_PAYLOAD_SIZE];
 
 #define INAV_PROTOCOL_PAYLOAD_SIZE 16
 STATIC_UNIT_TESTED const uint8_t payloadSize = INAV_PROTOCOL_PAYLOAD_SIZE;
+uint8_t receivedPowerSnapshot;
 
 #define RX_TX_ADDR_LEN 5
-// set rxTxAddr to the bind values
+// set rxTxAddr to the bind address
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f};
 uint32_t *nrf24rxIdPtr;
 
@@ -191,6 +192,7 @@ static void inavSetBound(void)
 {
     protocolState = STATE_DATA;
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
+    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rxTxAddr, RX_TX_ADDR_LEN);
     inavSetHoppingChannels(rxTxAddr[0]);
     timeOfLastHop = micros();
     inavRfChannelIndex = 0;
@@ -228,6 +230,7 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
+            receivedPowerSnapshot = NRF24L01_ReadReg(NRF24L01_09_RPD); // set to 1 if received power > -64dBm
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
                 // transmitter may still continue to transmit bind packets after we have switched to data mode
