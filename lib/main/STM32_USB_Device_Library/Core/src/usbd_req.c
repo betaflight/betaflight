@@ -2,20 +2,26 @@
   ******************************************************************************
   * @file    usbd_req.c
   * @author  MCD Application Team
-  * @version V1.0.0
-  * @date    22-July-2011  
+  * @version V1.2.0
+  * @date    09-November-2015
   * @brief   This file provides the standard USB requests following chapter 9.
   ******************************************************************************
   * @attention
   *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
-  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
   ******************************************************************************
   */ 
 
@@ -63,6 +69,7 @@
 /** @defgroup USBD_REQ_Private_Variables
   * @{
   */ 
+extern __IO USB_OTG_DCTL_TypeDef SET_TEST_MODE;
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */
@@ -85,11 +92,6 @@ __ALIGN_BEGIN uint32_t  USBD_default_cfg __ALIGN_END  = 0;
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 __ALIGN_BEGIN uint32_t  USBD_cfg_status __ALIGN_END  = 0;  
 
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
-  #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-    #pragma data_alignment=4   
-  #endif
-#endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 __ALIGN_BEGIN uint8_t USBD_StrDesc[USB_MAX_STR_DESC_SIZ] __ALIGN_END ;
 /**
   * @}
@@ -233,10 +235,16 @@ USBD_Status  USBD_StdEPReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
   USBD_Status ret = USBD_OK; 
   
   ep_addr  = LOBYTE(req->wIndex);   
-  
-  switch (req->bRequest) 
+
+  /* Check the class specific requests before going to standard request */
+  if ((req->bmRequest & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS)
   {
-    
+    pdev->dev.class_cb->Setup (pdev, req);
+    return ret;
+  }
+
+  switch (req->bRequest) 
+  {  
   case USB_REQ_SET_FEATURE :
     
     switch (pdev->dev.device_status) 
@@ -333,6 +341,12 @@ USBD_Status  USBD_StdEPReq (USB_OTG_CORE_HANDLE  *pdev, USB_SETUP_REQ  *req)
           USBD_ep_status = 0x0000;     
         }      
       }
+      
+      else
+      {
+        /* Do Nothing */
+      }
+      
       USBD_CtlSendData (pdev,
                         (uint8_t *)&USBD_ep_status,
                         2);
@@ -361,15 +375,17 @@ static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev,
 {
   uint16_t len;
   uint8_t *pbuf;
-  
+  len = req->wLength ;
+    
   switch (req->wValue >> 8)
   {
+#if (USBD_LPM_ENABLED == 1)
+  case USB_DESC_TYPE_BOS:
+    pbuf = pdev->pDesc->GetBOSDescriptor(pdev->dev_speed, &len);
+    break;
+#endif
   case USB_DESC_TYPE_DEVICE:
     pbuf = pdev->dev.usr_device->GetDeviceDescriptor(pdev->cfg.speed, &len);
-    if ((req->wLength == 64) ||( pdev->dev.device_status == USB_OTG_DEFAULT))  
-    {                  
-      len = 8;
-    }
     break;
     
   case USB_DESC_TYPE_CONFIGURATION:
@@ -419,7 +435,7 @@ static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev,
 #else      
        USBD_CtlError(pdev , req);
       return;
-#endif /* USBD_CtlError(pdev , req); */      
+#endif /* USBD_CtlError(pdev , req)*/      
     }
     break;
   case USB_DESC_TYPE_DEVICE_QUALIFIER:                   
@@ -449,7 +465,7 @@ static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev,
 
   case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 #ifdef USB_OTG_HS_CORE   
-
+    
     if(pdev->cfg.speed == USB_OTG_SPEED_HIGH  )   
     {
       pbuf   = (uint8_t *)pdev->dev.class_cb->GetOtherConfigDescriptor(pdev->cfg.speed, &len);
@@ -465,8 +481,6 @@ static void USBD_GetDescriptor(USB_OTG_CORE_HANDLE  *pdev,
       USBD_CtlError(pdev , req);
       return;
 #endif     
-
-    
   default: 
      USBD_CtlError(pdev , req);
     return;
@@ -646,23 +660,26 @@ static void USBD_GetStatus(USB_OTG_CORE_HANDLE  *pdev,
                            USB_SETUP_REQ *req)
 {
   
+    
   switch (pdev->dev.device_status) 
   {
   case USB_OTG_ADDRESSED:
   case USB_OTG_CONFIGURED:
     
+#ifdef USBD_SELF_POWERED
+    USBD_cfg_status = USB_CONFIG_SELF_POWERED;                                    
+#else
+    USBD_cfg_status = 0x00;                                    
+#endif
+                      
     if (pdev->dev.DevRemoteWakeup) 
     {
-      USBD_cfg_status = USB_CONFIG_SELF_POWERED | USB_CONFIG_REMOTE_WAKEUP;                                
-    }
-    else
-    {
-      USBD_cfg_status = USB_CONFIG_SELF_POWERED;   
+      USBD_cfg_status |= USB_CONFIG_REMOTE_WAKEUP;                                
     }
     
     USBD_CtlSendData (pdev, 
                       (uint8_t *)&USBD_cfg_status,
-                      1);
+                      2);
     break;
     
   default :
@@ -701,30 +718,38 @@ static void USBD_SetFeature(USB_OTG_CORE_HANDLE  *pdev,
     test_mode = req->wIndex >> 8;
     switch (test_mode) 
     {
-    case 1: // TEST_J
+    case 1: /* TEST_J */
       dctl.b.tstctl = 1;
       break;
       
-    case 2: // TEST_K	
+    case 2: /* TEST_K */	
       dctl.b.tstctl = 2;
       break;
       
-    case 3: // TEST_SE0_NAK
+    case 3: /* TEST_SE0_NAK */
       dctl.b.tstctl = 3;
       break;
       
-    case 4: // TEST_PACKET
+    case 4: /* TEST_PACKET */
       dctl.b.tstctl = 4;
       break;
       
-    case 5: // TEST_FORCE_ENABLE
+    case 5: /* TEST_FORCE_ENABLE */
       dctl.b.tstctl = 5;
       break;
+      
+    default :
+      dctl.b.tstctl = 1;
+      break;
     }
-    USB_OTG_WRITE_REG32(&pdev->regs.DREGS->DCTL, dctl.d32);
+    SET_TEST_MODE = dctl;
+    pdev->dev.test_mode = 1;
     USBD_CtlSendStatus(pdev);
   }
-
+  else
+  {
+    /* Do Nothing */
+  }
 }
 
 
@@ -788,21 +813,9 @@ void USBD_ParseSetupRequest( USB_OTG_CORE_HANDLE  *pdev,
 void USBD_CtlError( USB_OTG_CORE_HANDLE  *pdev,
                             USB_SETUP_REQ *req)
 {
-  if((req->bmRequest & 0x80) == 0x80)
-  {
-    DCD_EP_Stall(pdev , 0x80);
-  }
-  else 
-  {
-    if(req->wLength == 0)
-    {
-       DCD_EP_Stall(pdev , 0x80);
-    }
-    else
-    {
-      DCD_EP_Stall(pdev , 0);
-    }
-  }
+  (void)req;
+  DCD_EP_Stall(pdev , 0x80);
+  DCD_EP_Stall(pdev , 0);
   USB_OTG_EP0_OutStart(pdev);  
 }
 
@@ -865,4 +878,4 @@ static uint8_t USBD_GetLen(uint8_t *buf)
   * @}
   */ 
 
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

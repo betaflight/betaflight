@@ -2,20 +2,26 @@
   ******************************************************************************
   * @file    usb_dcd_int.h
   * @author  MCD Application Team
-  * @version V2.0.0
-  * @date    22-July-2011
+  * @version V2.2.0
+  * @date    09-November-2015
   * @brief   Peripheral Device Interface Layer
   ******************************************************************************
-  * @attention 
+  * @attention
   *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
-  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
   ******************************************************************************
   */
 
@@ -57,7 +63,7 @@ typedef struct _USBD_DCD_INT
   uint8_t (* DevConnected) (USB_OTG_CORE_HANDLE *pdev);
   uint8_t (* DevDisconnected) (USB_OTG_CORE_HANDLE *pdev);   
   
-}USBD_DCD_INT_cb_TypeDef;
+} USBD_DCD_INT_cb_TypeDef;
 
 extern USBD_DCD_INT_cb_TypeDef *USBD_DCD_INT_fops;
 /**
@@ -84,7 +90,7 @@ extern USBD_DCD_INT_cb_TypeDef *USBD_DCD_INT_fops;
 #define CLEAR_OUT_EP_INTR(epnum,intr) \
   doepint.d32=0; \
   doepint.b.intr = 1; \
-  USB_OTG_WRITE_REG32(&pdev->regs.OUTEP_REGS[epnum]->DOEPINT,doepint.d32);
+  USB_OTG_WRITE_REG32(&pdev->regs.OUTEP_REGS[(epnum)]->DOEPINT,doepint.d32);
 
 /**
   * @}
@@ -102,13 +108,14 @@ extern USBD_DCD_INT_cb_TypeDef *USBD_DCD_INT_fops;
   */ 
 
 uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
-
+uint32_t USBD_OTG_EP1OUT_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
+uint32_t USBD_OTG_EP1IN_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
 /**
   * @}
   */ 
 
 
-#endif // USB_DCD_INT_H__
+#endif /* USB_DCD_INT_H__ */
 
 /**
   * @}
@@ -117,5 +124,5 @@ uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
 /**
   * @}
   */ 
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
