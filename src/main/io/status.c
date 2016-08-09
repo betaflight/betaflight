@@ -101,7 +101,7 @@ void composeStatus(char * buffer, uint8_t size)
   length = 2;
   uint8_t i;
   // iterate trough the flags
-  for (i=0;i<4;i++) {
+  for (i=0;i<3;i++) { // what is meaning of NARM? Let's skip it
     // check if flag is set
     if ((1<<i) & (armingFlags)) {
       // check if we have enough space in line

@@ -635,12 +635,14 @@ void init(void)
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
+/*
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
         displayShowFixedPage(PAGE_GPS);
 #else
         displayResetPageCycling();
         displayEnablePageCycling();
 #endif
+*/
     }
 #endif
 
