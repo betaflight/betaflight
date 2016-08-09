@@ -450,6 +450,7 @@ static const char * const lookupTableAccHardware[] = {
     "LSM303DLHC",
     "MPU6000",
     "MPU6500",
+    "MPU9250",
     "FAKE"
 };
 
@@ -926,7 +927,6 @@ const clivalue_t valueTable[] = {
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
 
-
 typedef union {
     int32_t int_value;
     float float_value;
@@ -938,8 +938,6 @@ static void cliPrintVarRange(const clivalue_t *var);
 static void cliPrint(const char *str);
 static void cliPrintf(const char *fmt, ...);
 static void cliWrite(uint8_t ch);
-
-#define printSectionBreak() cliPrintf((char *)sectionBreak)
 
 #define COMPARE_CONFIG(value) (masterConfig.value == defaultConfig.value)
 static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
@@ -1730,8 +1728,6 @@ static void printServo(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-    printSectionBreak();
-
     // print servo directions
     unsigned int channel;
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -2021,10 +2017,9 @@ static void cliSdInfo(char *cmdline) {
                     ; // Nothing more detailed to print
                 break;
             }
-
-            cliPrint("\r\n");
         break;
     }
+    cliPrint("\r\n");
 }
 
 #endif
@@ -2325,14 +2320,12 @@ static void printConfig(char *cmdline, bool doDiff)
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrint("\r\n# version\r\n");
         cliVersion(NULL);
-        cliPrint("\r\n");
 
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrint("\r\n# reset configuration to default settings\r\ndefaults\r\n");
         }
 
-        printSectionBreak();
-        cliPrint("# name\r\n");
+        cliPrint("\r\n# name\r\n");
         printName(dumpMask);
 
         cliPrint("\r\n# mixer\r\n");
@@ -2459,7 +2452,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrint("\r\n# adjrange\r\n");
         printAdjustmentRange(dumpMask, &defaultConfig);
 
-        cliPrintf("\r\n# rxrange\r\n");
+        cliPrint("\r\n# rxrange\r\n");
         printRxRange(dumpMask, &defaultConfig);
 
 #ifdef USE_SERVOS
@@ -2518,26 +2511,19 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
 {
     if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
         return;
-
     changeProfile(profileIndex);
     cliPrint("\r\n# profile\r\n");
     cliProfile("");
-
-    printSectionBreak();
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
-
-    cliRateProfile("");
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
 {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
-            return;
+        return;
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
-    printSectionBreak();
-
     dumpValues(PROFILE_RATE_VALUE, dumpMask, defaultConfig);
 }
 
@@ -3337,7 +3323,7 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)",
+    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
         targetName,
         FC_VERSION_STRING,
         buildDate,
