@@ -22,7 +22,8 @@
 
 #ifdef USE_SOFTSPI
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #include "io.h"
 #include "io_impl.h"

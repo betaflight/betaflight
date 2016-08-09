@@ -20,11 +20,11 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "build_config.h"
 
 #if defined(GPS) && defined(GPS_PROTO_I2C_NAV)
 
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -44,7 +44,7 @@
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #define GPS_I2C_POLL_RATE_HZ    20  // Poll I2C GPS at this rate
 

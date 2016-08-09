@@ -22,8 +22,10 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+
+#include "build/debug.h"
+
 
 
 #include "common/maths.h"
@@ -34,7 +36,8 @@
 #include "drivers/adc.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 
 #include "flight/failsafe.h"
 

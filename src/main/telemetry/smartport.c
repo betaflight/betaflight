@@ -30,8 +30,10 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "io/escservo.h"
-#include "io/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"

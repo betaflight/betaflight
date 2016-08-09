@@ -21,9 +21,11 @@
 #include <string.h>
 
 #include "platform.h"
-#include "version.h"
 
-#include "build_config.h"
+#ifdef DISPLAY
+
+#include "build/version.h"
+#include "build/build_config.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
@@ -37,8 +39,6 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
-#ifdef DISPLAY
-
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -48,7 +48,8 @@
 
 #include "rx/rx.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -59,7 +60,8 @@
 #include "flight/navigation_rewrite.h"
 #endif
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 #include "config/config.h"
 

@@ -45,7 +45,9 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "io/gps.h"
 
 #include "rx/rx.h"

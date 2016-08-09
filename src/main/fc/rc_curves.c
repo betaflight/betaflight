@@ -19,10 +19,10 @@
 #include <stdint.h>
 
 #include "rx/rx.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "io/escservo.h"
 
-#include "io/rc_curves.h"
 
 #define PITCH_LOOKUP_LENGTH 7
 #define YAW_LOOKUP_LENGTH 7

@@ -21,7 +21,7 @@
 
 #if defined(NAV)
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output

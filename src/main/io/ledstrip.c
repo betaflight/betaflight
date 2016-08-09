@@ -23,13 +23,13 @@
 
 #include <platform.h>
 
-#include <build_config.h>
-
 #ifdef LED_STRIP
 
-#include <common/color.h>
-#include <common/maths.h>
-#include <common/typeconversion.h>
+#include "build/build_config.h"
+
+#include "common/color.h"
+#include "common/maths.h"
+#include "common/typeconversion.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
@@ -44,7 +44,8 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -70,7 +71,8 @@
 
 #include "telemetry/telemetry.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

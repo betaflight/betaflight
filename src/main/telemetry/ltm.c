@@ -33,9 +33,11 @@
 
 #include "platform.h"
 
+
+
 #if defined(TELEMETRY_LTM)
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -59,7 +61,10 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"

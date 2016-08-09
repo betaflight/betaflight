@@ -20,7 +20,7 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/escservo.h"
 #include "io/gps.h"
 

@@ -21,9 +21,11 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "platform.h"
-#include "debug.h"
+#include "build/debug.h"
+
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -43,7 +45,8 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #ifdef HIL

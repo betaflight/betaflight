@@ -21,9 +21,11 @@
 #include <string.h>
 
 #include "platform.h"
-#include "debug.h"
+#include "build/debug.h"
 
-#include "build_config.h"
+
+#include "build/build_config.h"
+
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -40,7 +42,8 @@
 
 #include "io/gimbal.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -51,7 +54,8 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 

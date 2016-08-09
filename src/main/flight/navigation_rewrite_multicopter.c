@@ -19,12 +19,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "build_config.h"
 #include "platform.h"
 
 #if defined(NAV)
 
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -39,8 +39,10 @@
 #include "sensors/boardalignment.h"
 
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -48,7 +50,6 @@
 #include "flight/navigation_rewrite_private.h"
 #include "flight/failsafe.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 
 /*-----------------------------------------------------------

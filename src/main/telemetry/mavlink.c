@@ -26,9 +26,9 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #if defined(TELEMETRY) && defined(TELEMETRY_MAVLINK)
+
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -43,7 +43,8 @@
 #include "drivers/pwm_rx.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -69,11 +70,12 @@
 #include "mavlink/common/mavlink.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "mw.h"
+#include "fc/mw.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code

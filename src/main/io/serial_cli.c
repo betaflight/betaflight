@@ -24,11 +24,11 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "version.h"
+
+#include "build/version.h"
+#include "build/build_config.h"
 
 #include "scheduler/scheduler.h"
-
-#include "build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -55,7 +55,8 @@
 #include "io/escservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
+
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
@@ -82,7 +83,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

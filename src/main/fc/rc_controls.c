@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -43,8 +43,10 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
 
 #include "io/display.h"
 
@@ -53,7 +55,6 @@
 #include "flight/failsafe.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
 
 #include "blackbox/blackbox.h"
 

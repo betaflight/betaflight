@@ -21,11 +21,13 @@
 #include <math.h>
 
 #include "platform.h"
-#include "build_config.h"
+#include "build/build_config.h"
+
 
 #ifdef GPS
 
-#include "debug.h"
+#include "build/debug.h"
+
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -50,7 +52,7 @@
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2000 ms)
 #define GPS_TIMEOUT             (2000)

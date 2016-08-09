@@ -25,8 +25,10 @@ typedef enum {TEST_IRQ = 0 } IRQn_Type;
 #include "platform.h"
 
 #include "scheduler.h"
-#include "debug.h"
-#include "build_config.h"
+#include "build/debug.h"
+
+#include "build/build_config.h"
+
 
 #include "common/maths.h"
 
