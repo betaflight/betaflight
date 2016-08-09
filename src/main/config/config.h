@@ -47,10 +47,9 @@ typedef enum {
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
     FEATURE_SUPEREXPO_RATES = 1 << 23,
-    FEATURE_OSD = 1 << 24,
-    FEATURE_VTX = 1 << 25,
-    FEATURE_RX_NRF24 = 1 << 26,
-    FEATURE_SOFTSPI = 1 << 27,
+    FEATURE_VTX = 1 << 24,
+    FEATURE_RX_NRF24 = 1 << 25,
+    FEATURE_SOFTSPI = 1 << 26,
 } features_e;
 
 typedef enum {

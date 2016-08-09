@@ -93,10 +93,15 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
     delay(100);
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    delay(15);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    delay(15);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
+    delay(15);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    delay(100);
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG
@@ -104,9 +109,7 @@ void mpu6500GyroInit(uint8_t lpf)
 #else
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 #endif
-
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
-
 }

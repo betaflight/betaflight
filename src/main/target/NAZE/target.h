@@ -142,7 +142,7 @@
 
 #define USE_RX_CX10
 #define USE_RX_H8_3D
-#define USE_RX_REF
+#define USE_RX_INAV
 //#define USE_RX_SYMA
 //#define USE_RX_V202
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of Cleanflight.
  *
  * Cleanflight is free software: you can redistribute it and/or modify
@@ -20,10 +20,9 @@
 #include <stdlib.h>
 
 #include "platform.h"
+
 #include "build/build_config.h"
-
 #include "build/debug.h"
-
 
 #include "common/maths.h"
 
