@@ -110,7 +110,7 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_UART1
 #define USE_UART2
