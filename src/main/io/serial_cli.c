@@ -450,6 +450,7 @@ static const char * const lookupTableAccHardware[] = {
     "LSM303DLHC",
     "MPU6000",
     "MPU6500",
+    "MPU9250",
     "FAKE"
 };
 
