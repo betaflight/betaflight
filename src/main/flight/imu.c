@@ -308,11 +308,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         // using one-over-exact length (which needs a costly square root), we already 
         // know the vector is enough "roughly unit length" and since it is only weighted
         // in by a certain amount anyway later, having that exact is meaningless. (c) MasterZap
-        recipNorm = 1.0f / GRAVITY_CMSS;
-
-        ax *= recipNorm;
-        ay *= recipNorm;
-        az *= recipNorm;
+        ax *= (1.0f / GRAVITY_CMSS);
+        ay *= (1.0f / GRAVITY_CMSS);
+        az *= (1.0f / GRAVITY_CMSS);
 
         float fAccWeightScaler = accWeight / (float)MAX_ACC_SQ_NEARNESS;
 
