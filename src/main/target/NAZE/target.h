@@ -137,7 +137,7 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define USE_RX_NRF24
+//#define USE_RX_NRF24
 #ifdef USE_RX_NRF24
 
 #define USE_RX_CX10
@@ -196,7 +196,7 @@
 // USART2, PA3
 #define BIND_PIN                        PA3
 
-//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_MOTOR_COUNT      6
 #define DISABLE_UNCOMMON_MIXERS
@@ -204,10 +204,13 @@
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#undef TELEMETRY_FRSKY
+// Disable HOTT and S.Port telemetry
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 
+// Disable all GPS protocols except UBLOX
+#undef GPS_PROTO_NMEA
+#undef GPS_PROTO_I2C_NAV
 #undef GPS_PROTO_NAZA
 
 // IO - assuming all IOs on 48pin package
