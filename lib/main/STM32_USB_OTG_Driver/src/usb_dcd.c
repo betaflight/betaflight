@@ -2,20 +2,26 @@
   ******************************************************************************
   * @file    usb_dcd.c
   * @author  MCD Application Team
-  * @version V2.0.0
-  * @date    22-July-2011
+  * @version V2.2.0
+  * @date    09-November-2015
   * @brief   Peripheral Device Interface Layer
   ******************************************************************************
-  * @attention 
+  * @attention
   *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
   *
-  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
   ******************************************************************************
   */
 
@@ -101,7 +107,7 @@ void DCD_Init(USB_OTG_CORE_HANDLE *pdev ,
     ep->is_in = 1;
     ep->num = i;
     ep->tx_fifo_num = i;
-    /* Control until ep is actvated */
+    /* Control until ep is activated */
     ep->type = EP_TYPE_CTRL;
     ep->maxpacket =  USB_OTG_MAX_EP0_SIZE;
     ep->xfer_buff = 0;
@@ -123,17 +129,27 @@ void DCD_Init(USB_OTG_CORE_HANDLE *pdev ,
   }
   
   USB_OTG_DisableGlobalInt(pdev);
+
+#if defined (STM32F446xx) || defined (STM32F469_479xx)
+  
+  /* Force Device Mode*/
+  USB_OTG_SetCurrentMode(pdev, DEVICE_MODE);
   
   /*Init the Core (common init.) */
   USB_OTG_CoreInit(pdev);
 
+#else
+  
+    /*Init the Core (common init.) */
+  USB_OTG_CoreInit(pdev);
 
   /* Force Device Mode*/
   USB_OTG_SetCurrentMode(pdev, DEVICE_MODE);
+
+#endif
   
   /* Init Device */
   USB_OTG_CoreInitDev(pdev);
-  
   
   /* Enable USB Global interrupt */
   USB_OTG_EnableGlobalInt(pdev);
@@ -469,4 +485,4 @@ void DCD_SetEPStatus (USB_OTG_CORE_HANDLE *pdev , uint8_t epnum , uint32_t Statu
 * @}
 */
 
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
