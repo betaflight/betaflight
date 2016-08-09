@@ -90,7 +90,7 @@ typedef struct pidProfile_s {
     uint16_t yaw_p_limit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
-    uint8_t zeroThrottleStabilisation;      // Disable/Enable zero throttle stabilisation. Normally even without airmode P and D would be active.
+    uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
 
     // Betaflight PID controller parameters
     uint8_t toleranceBand;                  // Error tolerance area where toleranceBandReduction is applied under certain circumstances

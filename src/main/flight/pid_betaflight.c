@@ -211,7 +211,7 @@ void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         // -----calculate I component.
         // Reduce strong Iterm accumulation during higher stick inputs
         float accumulationThreshold = (axis == YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
-        float setpointRateScaler = constrainf(1.0f - (1.5f * (ABS(setpointRate[axis]) / accumulationThreshold)), 0.0f, 1.0f);
+        float setpointRateScaler = constrainf(1.0f - (ABS(setpointRate[axis]) / accumulationThreshold), 0.0f, 1.0f);
 
         // Handle All windup Scenarios
         // limit maximum integrator value to prevent WindUp
