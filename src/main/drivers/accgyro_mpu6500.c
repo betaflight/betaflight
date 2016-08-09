@@ -86,8 +86,6 @@ void mpu6500GyroInit(uint8_t lpf)
     }
 #endif
 
-    mpuIntExtiInit();
-
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
     mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
