@@ -3209,7 +3209,7 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            cliPrint("\n");
+            cliPrint("\r\n");
             cliPrintVarRange(val);
             cliPrint("\r\n");
 
