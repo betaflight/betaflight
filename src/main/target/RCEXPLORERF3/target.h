@@ -69,11 +69,10 @@
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_6   // RC_CH7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_TRIGGER_GPIO          GPIOA
+#define SONAR_TRIGGER_IO            PA6
 #define SONAR_ECHO_PIN              Pin_1   // RC_CH8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_ECHO_IO               PB1
 
 #define USB_IO
 
@@ -187,6 +186,7 @@
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -201,3 +201,9 @@
 #define S1W_TX_PIN          UART1_TX_PIN
 #define S1W_RX_GPIO         UART1_GPIO
 #define S1W_RX_PIN          UART1_RX_PIN
+
+// IO - now stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1))

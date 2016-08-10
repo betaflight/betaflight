@@ -101,6 +101,8 @@
 
 #define USE_MSP_CLIENT
 
+#define USE_EXTI
+
 #define USE_ADC
 
 #ifndef ADC_INSTANCE
@@ -136,4 +138,8 @@
 #define ADC_BATTERY ADC_CHANNEL2
 #define ADC_CURRENT ADC_CHANNEL3
 
-
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1))

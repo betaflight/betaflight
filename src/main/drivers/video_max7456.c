@@ -23,7 +23,9 @@
 
 #include "build/debug.h"
 
+#include "drivers/io.h"
 #include "drivers/exti.h"
+#include "drivers/nvic.h"
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
@@ -129,9 +131,13 @@ uint8_t max7456_videoModeMask;
 
 textScreen_t max7456Screen;
 max7456State_t max7456State;
-static const extiConfig_t *max7456LOSExtiConfig;
-static const extiConfig_t *max7456VSYNCExtiConfig;
-static const extiConfig_t *max7456HSYNCExtiConfig;
+
+static extiCallbackRec_t losExtiCallbackRec;
+static IO_t losIO;
+static extiCallbackRec_t vsyncExtiCallbackRec;
+static IO_t vsyncIO;
+static extiCallbackRec_t hsyncExtiCallbackRec;
+static IO_t hsyncIO;
 
 #if 0
 // for factory max7456 font
@@ -155,122 +161,43 @@ static const uint8_t max7456_defaultFont_fontToASCIIMapping[] = {
 };
 #endif
 
-
-static bool max7456ExtiHandler(const extiConfig_t *extiConfig)
-{
-    if (EXTI_GetITStatus(extiConfig->exti_line) == RESET) {
-        return false;
-    }
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    return true;
-}
-
-
 void max7456_updateLOSState(void)
 {
     // "LOS goes high when the VIN sync pulse is lost for 32 consecutive lines. LOS goes low when 32 consecutive valid sync pulses are received."
-    uint8_t status = GPIO_ReadInputDataBit(max7456LOSExtiConfig->gpioPort, max7456LOSExtiConfig->gpioPin);
-
+    bool status = IORead(losIO);
     max7456State.los = status != 0;
 
     //debug[0] = max7456State.los;
 }
 
-void LOS_EXTI_Handler(void)
+void LOS_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456LOSExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.losCounter++;
-
     max7456_updateLOSState();
 }
 
-void VSYNC_EXTI_Handler(void)
+void VSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456VSYNCExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.vSyncDetected = true;
-
     max7456State.frameCounter++;
     //debug[1] = max7456State.frameCounter;
 }
 
-void HSYNC_EXTI_Handler(void)
+void HSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456HSYNCExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.hSyncDetected = true;
 }
 
-
 typedef void (*handlerFuncPtr)(void);
-
-void max7456_extiInit(const extiConfig_t *extiConfig, handlerFuncPtr handlerFn, EXTITrigger_TypeDef trigger)
-{
-    gpio_config_t gpio;
-
-#ifdef STM32F303
-    if (extiConfig->gpioAHBPeripherals) {
-        RCC_AHBPeriphClockCmd(extiConfig->gpioAHBPeripherals, ENABLE);
-    }
-#endif
-#ifdef STM32F10X
-    if (extiConfig->gpioAPB2Peripherals) {
-        RCC_APB2PeriphClockCmd(extiConfig->gpioAPB2Peripherals, ENABLE);
-    }
-#endif
-
-    gpio.pin = extiConfig->gpioPin;
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(extiConfig->gpioPort, &gpio);
-
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#ifdef STM32F303xC
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-#ifdef STM32F10X
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-    registerExtiCallbackHandler(extiConfig->exti_irqn, handlerFn);
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = extiConfig->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = trigger;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-}
 
 void max7456_extiConfigure(
     const extiConfig_t *losExtiConfig,
@@ -278,13 +205,23 @@ void max7456_extiConfigure(
     const extiConfig_t *hSyncExtiConfig
 )
 {
-    max7456LOSExtiConfig = losExtiConfig;
-    max7456VSYNCExtiConfig = vSyncExtiConfig;
-    max7456HSYNCExtiConfig = hSyncExtiConfig;
+    losIO = IOGetByTag(losExtiConfig->io);
+    IOConfigGPIO(losIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&losExtiCallbackRec, LOS_EXTI_Handler);
+    EXTIConfig(losIO, &losExtiCallbackRec, NVIC_PRIO_OSD_LOS_EXTI, EXTI_Trigger_Rising_Falling);
+    EXTIEnable(losIO, true);
 
-    max7456_extiInit(max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
-    max7456_extiInit(max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Falling);
-    max7456_extiInit(max7456HSYNCExtiConfig, HSYNC_EXTI_Handler, EXTI_Trigger_Falling);
+    vsyncIO = IOGetByTag(vSyncExtiConfig->io);
+    IOConfigGPIO(vsyncIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&vsyncExtiCallbackRec, VSYNC_EXTI_Handler);
+    EXTIConfig(vsyncIO, &vsyncExtiCallbackRec, NVIC_PRIO_OSD_VSYNC_EXTI, EXTI_Trigger_Falling);
+    EXTIEnable(vsyncIO, true);
+
+    hsyncIO = IOGetByTag(hSyncExtiConfig->io);
+    IOConfigGPIO(hsyncIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&hsyncExtiCallbackRec, HSYNC_EXTI_Handler);
+    EXTIConfig(hsyncIO, &hsyncExtiCallbackRec, NVIC_PRIO_OSD_HSYNC_EXTI, EXTI_Trigger_Falling);
+    EXTIEnable(hsyncIO, true);
 }
 
 textScreen_t *max7456_getTextScreen(void)

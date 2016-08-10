@@ -186,3 +186,11 @@
 #define USE_CLI
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - 303 in 100pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0x00ff

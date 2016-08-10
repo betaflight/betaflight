@@ -68,6 +68,7 @@
 
 #define USE_MSP_CLIENT
 
+#define USE_EXTI
 #define USE_ADC
 //#define DEBUG_ADC_CHANNELS
 
@@ -103,3 +104,9 @@
 #define ADC_POWER_5V ADC_CHANNEL1
 #define ADC_BATTERY ADC_CHANNEL2
 #define ADC_CURRENT ADC_CHANNEL3
+
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+
