@@ -1604,7 +1604,7 @@ static bool processInCommand(void)
         if (currentPort->dataSize > 17) {
             masterConfig.rxConfig.nrf24rx_id = read32();
         }
-        if (currentPort->dataSize > 18) {
+        if (currentPort->dataSize > 21) {
             masterConfig.rxConfig.nrf24rx_channel_count = read8();
         }
         break;
