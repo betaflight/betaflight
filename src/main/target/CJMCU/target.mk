@@ -7,5 +7,7 @@ TARGET_SRC = \
             drivers/compass_hmc5883l.c \
             hardware_revision.c \
             blackbox/blackbox.c \
-            blackbox/blackbox_io.c
+            blackbox/blackbox_io.c \
+            telemetry/ltm.c \
+            telemetry/nrf24_ltm.c
 

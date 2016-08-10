@@ -24,6 +24,7 @@
 #ifdef USE_RX_INAV
 
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
@@ -31,6 +32,8 @@
 #include "rx/nrf24.h"
 #include "rx/nrf24_inav.h"
 
+#include "telemetry/ltm.h"
+#include "telemetry/nrf24_ltm.h"
 
 
 /*
@@ -80,19 +83,24 @@ typedef enum {
 
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
+STATIC_UNIT_TESTED uint8_t ackPayload[NRF24L01_MAX_PAYLOAD_SIZE];
+
 #define INAV_PROTOCOL_PAYLOAD_SIZE 16
 STATIC_UNIT_TESTED const uint8_t payloadSize = INAV_PROTOCOL_PAYLOAD_SIZE;
+uint8_t receivedPowerSnapshot;
 
 #define RX_TX_ADDR_LEN 5
-// set rxTxAddr to the bind values
+// set rxTxAddr to the bind address
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f};
 uint32_t *nrf24rxIdPtr;
 
 // radio channels for frequency hopping
-#define INAV_RF_CHANNEL_COUNT 4
-STATIC_UNIT_TESTED const uint8_t inavRfChannelCount = INAV_RF_CHANNEL_COUNT;
+#define INAV_RF_CHANNEL_COUNT_MAX 8
+#define INAV_RF_CHANNEL_HOPPING_COUNT_DEFAULT 4
+STATIC_UNIT_TESTED uint8_t inavRfChannelHoppingCount;
+STATIC_UNIT_TESTED uint8_t inavRfChannelCount;
 STATIC_UNIT_TESTED uint8_t inavRfChannelIndex;
-STATIC_UNIT_TESTED uint8_t inavRfChannels[INAV_RF_CHANNEL_COUNT];
+STATIC_UNIT_TESTED uint8_t inavRfChannels[INAV_RF_CHANNEL_COUNT_MAX];
 #define INAV_RF_BIND_CHANNEL 0x4c
 
 static uint32_t timeOfLastHop;
@@ -103,14 +111,20 @@ STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
     bool bindPacket = false;
     if (payload[0] == 0xae  && payload[1] == 0xc9) {
         bindPacket = true;
-        rxTxAddr[0] = payload[2];
-        rxTxAddr[1] = payload[3];
-        rxTxAddr[2] = payload[4];
-        rxTxAddr[3] = payload[5];
-        rxTxAddr[4] = payload[6];
-        if (nrf24rxIdPtr != NULL && *nrf24rxIdPtr == 0) {
-            // copy the rxTxAddr so it can be saved
-            memcpy(nrf24rxIdPtr, rxTxAddr, sizeof(uint32_t));
+        if (protocolState ==STATE_BIND) {
+            rxTxAddr[0] = payload[2];
+            rxTxAddr[1] = payload[3];
+            rxTxAddr[2] = payload[4];
+            rxTxAddr[3] = payload[5];
+            rxTxAddr[4] = payload[6];
+            inavRfChannelHoppingCount = payload[7];
+            if (inavRfChannelHoppingCount > INAV_RF_CHANNEL_COUNT_MAX) {
+                inavRfChannelHoppingCount = INAV_RF_CHANNEL_COUNT_MAX;
+            }
+            if (nrf24rxIdPtr != NULL && *nrf24rxIdPtr == 0) {
+                // copy the rxTxAddr so it can be saved
+                memcpy(nrf24rxIdPtr, rxTxAddr, sizeof(uint32_t));
+            }
         }
     }
     return bindPacket;
@@ -169,26 +183,40 @@ static void inavHopToNextChannel(void)
         inavRfChannelIndex = 0;
     }
     NRF24L01_SetChannel(inavRfChannels[inavRfChannelIndex]);
+#ifdef DEBUG_NRF24_INAV
+    debug[0] = inavRfChannels[inavRfChannelIndex];
+#endif
 }
 
 // The hopping channels are determined by the low bits of rxTxAddr
 STATIC_UNIT_TESTED void inavSetHoppingChannels(uint8_t addr)
 {
-    addr &= 0x07;
-    inavRfChannels[0] = 0x10 + addr;
-    inavRfChannels[1] = 0x1C + addr;
-    inavRfChannels[2] = 0x28 + addr;
-    inavRfChannels[3] = 0x34 + addr;
+    if (inavRfChannelHoppingCount == 0) {
+         // just stay on bind channel, useful for debugging
+        inavRfChannelCount = 1;
+        inavRfChannels[0] = INAV_RF_BIND_CHANNEL;
+        return;
+    }
+    inavRfChannelCount = inavRfChannelHoppingCount;
+    uint8_t ch = 0x10 + (addr & 0x07);
+    for (int ii = 0; ii < INAV_RF_CHANNEL_COUNT_MAX; ++ii) {
+        inavRfChannels[ii] = ch;
+        ch += 0x0c;
+    }
 }
 
 static void inavSetBound(void)
 {
     protocolState = STATE_DATA;
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
+    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rxTxAddr, RX_TX_ADDR_LEN);
     inavSetHoppingChannels(rxTxAddr[0]);
     timeOfLastHop = micros();
     inavRfChannelIndex = 0;
     NRF24L01_SetChannel(inavRfChannels[0]);
+#ifdef DEBUG_NRF24_INAV
+    debug[0] = inavRfChannels[0];
+#endif
 }
 
 /*
@@ -197,6 +225,13 @@ static void inavSetBound(void)
  */
 nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
 {
+#if defined(TELEMETRY_NRF24_LTM)
+    static ltm_frame_e ltmFrameType = LTM_FRAME_START;
+#endif
+#ifdef DEBUG_NRF24_INAV
+    debug[1] = protocolState;
+#endif
+
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
     uint32_t timeNowUs;
     switch (protocolState) {
@@ -204,6 +239,10 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
+                // send back the payload with the first two bytes set to zero as the ack
+                payload[0] = 0;
+                payload[1] = 0;
+                NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
                 ret = NRF24_RECEIVED_BIND;
                 // got a bind packet, so set the hopping channels and the rxTxAddr and start listening for data
                 inavSetBound();
@@ -214,7 +253,31 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
-            ret = NRF24_RECEIVED_DATA;
+            receivedPowerSnapshot = NRF24L01_ReadReg(NRF24L01_09_RPD); // set to 1 if received power > -64dBm
+            const bool bindPacket = inavCheckBindPacket(payload);
+            if (bindPacket) {
+                // transmitter may still continue to transmit bind packets after we have switched to data mode
+                // send back the payload with the first two bytes set to zero as the ack
+                payload[0] = 0;
+                payload[1] = 0;
+                NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
+                ret = NRF24_RECEIVED_BIND;
+            } else {
+                ret = NRF24_RECEIVED_DATA;
+#if defined(TELEMETRY_NRF24_LTM)
+                // set up telemetry data, send back telemetry data in the ACK packet
+                const int ackPayloadSize = getNrf24LtmDatagram(ackPayload, ltmFrameType);
+                ++ltmFrameType;
+                if (ltmFrameType > LTM_FRAME_COUNT) {
+                    ltmFrameType = LTM_FRAME_START;
+                }
+                NRF24L01_WriteAckPayload(ackPayload, ackPayloadSize, NRF24L01_PIPE0);
+#ifdef DEBUG_NRF24_INAV
+                debug[2] = ackPayload[1]; // frame type, 'A', 'S' etc
+                debug[3] = ackPayload[2]; // pitch for AFrame
+#endif
+#endif
+            }
         }
         if ((ret == NRF24_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
             inavHopToNextChannel();
@@ -225,34 +288,46 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
     return ret;
 }
 
-static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id)
+static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id, int rfChannelHoppingCount)
 {
     UNUSED(protocol);
 
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
-    NRF24L01_SetupBasic();
+    NRF24L01_WriteReg(NRF24L01_01_EN_AA, NRF24L01_01_EN_AA_ALL_PIPES); // auto acknowledgment on all pipes
+    NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0x00); // auto retransmit disabled
 
     nrf24rxIdPtr = (uint32_t*)nrf24rx_id;
     if (nrf24rx_id == NULL || *nrf24rx_id == 0) {
         protocolState = STATE_BIND;
+        inavRfChannelCount = 1;
+        inavRfChannelIndex = 0;
         NRF24L01_SetChannel(INAV_RF_BIND_CHANNEL);
     } else {
         memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
         rxTxAddr[4] = 0xD2;
+        inavRfChannelHoppingCount = rfChannelHoppingCount;
         inavSetBound();
     }
     NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
     // RX_ADDR for pipes P1-P5 are left at default values
     NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
+    NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rxTxAddr, RX_TX_ADDR_LEN);
 
     NRF24L01_WriteReg(NRF24L01_11_RX_PW_P0, payloadSize);
+    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, NRF24L01_1C_DYNPD_ALL_PIPES); // dynamic payload length on all pipes
+    NRF24L01_WriteReg(NRF24L01_1D_FEATURE, BV(NRF24L01_1D_FEATURE_EN_DPL) | BV(NRF24L01_1D_FEATURE_EN_ACK_PAY));
+
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
+    // put a null packet in the transmit buffer to be sent as ACK on first receive
+    NRF24L01_WriteAckPayload(ackPayload, payloadSize, NRF24L01_PIPE0);
 }
 
 void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    inavNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id);
+    inavNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id, rxConfig->nrf24rx_channel_count);
 }
 #endif
 
