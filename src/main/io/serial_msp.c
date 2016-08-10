@@ -1033,7 +1033,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_RX_CONFIG:
-        headSerialReply(16);
+        headSerialReply(22);
         serialize8(masterConfig.rxConfig.serialrx_provider);
         serialize16(masterConfig.rxConfig.maxcheck);
         serialize16(masterConfig.rxConfig.midrc);
@@ -1044,6 +1044,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.rxConfig.rcInterpolation);
         serialize8(masterConfig.rxConfig.rcInterpolationInterval);
         serialize16(masterConfig.rxConfig.airModeActivateThreshold);
+        serialize8(masterConfig.rxConfig.nrf24rx_protocol);
+        serialize32(masterConfig.rxConfig.nrf24rx_id);
+        serialize8(masterConfig.rxConfig.nrf24rx_channel_count);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1692,8 +1695,12 @@ static bool processInCommand(void)
             masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
+        if (currentPort->dataSize > 16) {
+            masterConfig.rxConfig.nrf24rx_protocol = read8();
+            masterConfig.rxConfig.nrf24rx_id = read32();
+            masterConfig.rxConfig.nrf24rx_channel_count = read8();
+        }
         break;
-
     case MSP_SET_FAILSAFE_CONFIG:
         masterConfig.failsafeConfig.failsafe_delay = read8();
         masterConfig.failsafeConfig.failsafe_off_delay = read8();
