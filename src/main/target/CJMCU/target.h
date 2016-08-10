@@ -82,3 +82,8 @@
 //#undef USE_CLI
 //#define GTUNE
 //#define BLACKBOX
+
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))

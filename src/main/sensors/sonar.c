@@ -61,9 +61,8 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMet
         .trigger_gpio = SONAR_PWM_TRIGGER_GPIO,
         .echo_pin = SONAR_PWM_ECHO_PIN,
         .echo_gpio = SONAR_PWM_ECHO_GPIO,
-        .exti_line = SONAR_PWM_EXTI_LINE,
-        .exti_pin_source = SONAR_PWM_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_PWM_EXTI_IRQN
+        .triggerIO = IO_TAG(SONAR_PWM_TRIGGER_IO),
+        .echoIO = IO_TAG(SONAR_PWM_ECHO_IO),
     };
 #endif
 #if !defined(UNIT_TEST)
@@ -72,9 +71,8 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMet
         .trigger_gpio = SONAR_TRIGGER_GPIO,
         .echo_pin = SONAR_ECHO_PIN,
         .echo_gpio = SONAR_ECHO_GPIO,
-        .exti_line = SONAR_EXTI_LINE,
-        .exti_pin_source = SONAR_EXTI_PIN_SOURCE,
-        .exti_irqn = SONAR_EXTI_IRQN
+        .triggerIO = IO_TAG(SONAR_TRIGGER_IO),
+        .echoIO = IO_TAG(SONAR_ECHO_IO),
     };
 #endif
 #if defined(SONAR_PWM_TRIGGER_PIN)

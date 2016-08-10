@@ -61,6 +61,8 @@
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -265,6 +267,14 @@ void init(void)
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_EXTI
+    EXTIInit();
+#endif
+
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);

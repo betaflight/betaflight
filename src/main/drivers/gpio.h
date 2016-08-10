@@ -111,6 +111,8 @@ static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRR = i; }
 static inline void digitalLo(GPIO_TypeDef *p, uint16_t i)     { p->BRR = i; }
 static inline void digitalToggle(GPIO_TypeDef *p, uint16_t i) { p->ODR ^= i; }
 static inline uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) {return p->IDR & i; }
+#else
+uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i);
 #endif
 
 void gpioInit(GPIO_TypeDef *gpio, const gpio_config_t *config);

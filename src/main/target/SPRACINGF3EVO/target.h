@@ -30,8 +30,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
 
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
-
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -132,12 +130,9 @@
 #define SDCARD_DETECT_INVERTED
 
 #define SDCARD_DETECT_PIN                   GPIO_Pin_14
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
 #define SDCARD_DETECT_GPIO_PORT             GPIOC
 #define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
-#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
+#define SDCARD_DETECT_IO                    PC14
 
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
@@ -225,6 +220,7 @@
 #define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -232,3 +228,9 @@
 #define BIND_PIN   Pin_11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1))

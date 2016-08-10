@@ -68,9 +68,9 @@
 #define SONAR_TRIGGER_GPIO          GPIOB
 #define SONAR_ECHO_PIN              Pin_1   // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_IO            PB0
+#define SONAR_ECHO_IO               PB1
+
 
 #define USE_UART1
 #define USE_UART2
@@ -134,3 +134,10 @@
 #define BLACKBOX
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
+
+// IO - assuming all IOs on smt32f103rb LQFP64 package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))

@@ -19,6 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
 #define USE_CLI
+#define USE_EXTI
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_5 // Blue LEDs - PB5
@@ -36,7 +37,6 @@
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
 // MPU6050 interrupts
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -172,3 +172,13 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_6
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_7
+
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1))

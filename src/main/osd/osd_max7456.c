@@ -63,30 +63,21 @@ static const extiConfig_t max7456LOSExtiConfig = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_13,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource13,
-        .exti_line = EXTI_Line13,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC13),
 };
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_14,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource14,
-        .exti_line = EXTI_Line14,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC14),
 };
 
 static const extiConfig_t max7456HSYNCExtiConfig = {
         .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_15,
-        .exti_port_source = EXTI_PortSourceGPIOC,
-        .exti_pin_source = EXTI_PinSource15,
-        .exti_line = EXTI_Line15,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC15),
 };
 #endif
 
@@ -95,30 +86,21 @@ static const extiConfig_t max7456LOSExtiConfig = {
         .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_13,
-        .exti_port_source = GPIO_PortSourceGPIOC,
-        .exti_pin_source = GPIO_PinSource13,
-        .exti_line = EXTI_Line13,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC13),
 };
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
         .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_14,
-        .exti_port_source = GPIO_PortSourceGPIOC,
-        .exti_pin_source = GPIO_PinSource14,
-        .exti_line = EXTI_Line14,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC14),
 };
 
 static const extiConfig_t max7456HSYNCExtiConfig = {
         .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
         .gpioPort = GPIOC,
         .gpioPin = Pin_15,
-        .exti_port_source = GPIO_PortSourceGPIOC,
-        .exti_pin_source = GPIO_PinSource15,
-        .exti_line = EXTI_Line15,
-        .exti_irqn = EXTI15_10_IRQn
+        .io = IO_TAG(PC15),
 };
 #endif
 
@@ -141,25 +123,6 @@ void osdHardwareInit(void)
 
     max7456_extiConfigure(&max7456LOSExtiConfig, &max7456VSYNCExtiConfig, &max7456HSYNCExtiConfig);
 
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-
-    NVIC_InitStructure.NVIC_IRQChannel = max7456LOSExtiConfig.exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_OSD_LOS);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_OSD_LOS);
-    NVIC_Init(&NVIC_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel = max7456VSYNCExtiConfig.exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_OSD_VSYNC);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_OSD_VSYNC);
-    NVIC_Init(&NVIC_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel = max7456HSYNCExtiConfig.exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_OSD_HSYNC);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_OSD_HSYNC);
-    NVIC_Init(&NVIC_InitStructure);
-
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
         max7456_showFont();
@@ -176,7 +139,7 @@ void osdHardwareInit(void)
 
     	max7456_clearScreen();
     	max7456_ensureDisplayClearIsComplete();
-	}
+    }
 }
 
 void osdHardwareUpdate(void)

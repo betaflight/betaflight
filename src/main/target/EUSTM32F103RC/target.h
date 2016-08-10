@@ -83,16 +83,15 @@
 #define SONAR_PWM_TRIGGER_GPIO      GPIOB
 #define SONAR_PWM_ECHO_PIN          Pin_9   // PWM6 (PB9) - 5v tolerant
 #define SONAR_PWM_ECHO_GPIO         GPIOB
-#define SONAR_PWM_EXTI_LINE         EXTI_Line9
-#define SONAR_PWM_EXTI_PIN_SOURCE   GPIO_PinSource9
-#define SONAR_PWM_EXTI_IRQN         EXTI9_5_IRQn
+#define SONAR_PWM_TRIGGER_IO        PB8
+#define SONAR_PWM_ECHO_IO           PB9
+
 #define SONAR_TRIGGER_PIN           Pin_0   // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_TRIGGER_GPIO          GPIOB
 #define SONAR_ECHO_PIN              Pin_1   // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       GPIO_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_IO            PB0
+#define SONAR_ECHO_IO               PB1
 
 #define USE_UART1
 #define USE_UART2
@@ -159,8 +158,15 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SPEKTRUM_BIND
 // UART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
+
+// IO - stm32f103RCT6 in 64pin package (TODO)
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(0)|BIT(1)|BIT(2))

@@ -284,6 +284,9 @@ FC_COMMON_SRC = \
 		   flight/mixer.c \
 		   flight/servos.c \
 		   drivers/bus_i2c_soft.c \
+		   drivers/exti.c \
+		   drivers/io.c \
+		   drivers/rcc.c \
 		   drivers/sound_beeper.c \
 		   drivers/gyro_sync.c \
 		   io/beeper.c \
@@ -778,6 +781,9 @@ SPRACINGF1OSD_SRC = \
 		   drivers/bus_spi.c \
 		   drivers/video_max7456.c \
 		   drivers/flash_m25p16.c \
+		   drivers/io.c \
+		   drivers/exti.c \
+		   drivers/rcc.c \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
@@ -789,6 +795,9 @@ SPRACINGF3OSD_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/video_max7456.c \
 		   drivers/flash_m25p16.c \
+		   drivers/io.c \
+		   drivers/exti.c \
+		   drivers/rcc.c \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \

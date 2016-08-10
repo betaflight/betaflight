@@ -54,12 +54,9 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_PIN                    GPIO_Pin_14
-#define SDCARD_DETECT_EXTI_LINE              EXTI_Line14
-#define SDCARD_DETECT_EXTI_PIN_SOURCE        EXTI_PinSource14
 #define SDCARD_DETECT_GPIO_PORT              GPIOC
 #define SDCARD_DETECT_GPIO_CLK               RCC_AHBPeriph_GPIOC
-#define SDCARD_DETECT_EXTI_PORT_SOURCE       EXTI_PortSourceGPIOC
-#define SDCARD_DETECT_EXTI_IRQn              EXTI15_10_IRQn
+#define SDCARD_DETECT_IO                     PC14
 
 #define SDCARD_SPI_INSTANCE                  SPI2
 #define SDCARD_SPI_CS_GPIO                   SPI2_GPIO
@@ -206,3 +203,10 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+
+// IO - assuming 303 in 64pin package, TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
