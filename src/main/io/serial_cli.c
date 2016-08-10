@@ -2976,6 +2976,10 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
+
 	return true;
     }
 
