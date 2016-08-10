@@ -242,7 +242,7 @@ static void mpu6000AccAndGyroInit(void)
     delayMicroseconds(15);
 
     // Accel +/- 8 G Full Scale
-    mpu6000WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    mpu6000WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     delayMicroseconds(15);
 
 
