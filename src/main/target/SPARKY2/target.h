@@ -77,18 +77,18 @@
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA8
 
-#define USE_USART1
-#define USART1_RX_PIN           PA10
-#define USART1_TX_PIN           PA9
-#define USART1_AHB1_PERIPHERALS RCC_AHB1Periph_DMA2
+#define USE_UART1
+#define UART1_RX_PIN            PA10
+#define UART1_TX_PIN            PA9
+#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
-#define USE_USART3
-#define USART3_RX_PIN           PB11
-#define USART3_TX_PIN           PB10
+#define USE_UART3
+#define UART3_RX_PIN            PB11
+#define UART3_TX_PIN            PB10
 
-#define USE_USART6
-#define USART6_RX_PIN           PC7
-#define USART6_TX_PIN           PC6 //inverter
+#define USE_UART6
+#define UART6_RX_PIN            PC7
+#define UART6_TX_PIN            PC6 //inverter
 
 #define SERIAL_PORT_COUNT 4
 
