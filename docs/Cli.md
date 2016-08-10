@@ -254,5 +254,4 @@ Re-apply any new defaults as desired.
 | `mag_hold_rate_limit`   | This setting limits yaw rotation rate that MAG_HOLD controller can request from PID inner loop controller. It is independent from manual yaw rate and used only when MAG_HOLD flight mode is enabled by pilot, RTH or WAYPOINT modes.| 10     | 255    | 40           | Profile       | UINT8    |
 | `nav_max_climb_rate`           | Maximum climb/descent rate that UAV is allowed to reach during navigation modes. In cm/s                                                                                                                             | 10      | 2000     | 500             | Master       | UINT16    |  
 | `flaperon_throw_offset`           | Defines throw range in us for both ailerons that will be applied (before scaling) when FLAPERON mode is activated. | 100      | 400     | 250             | Profile       | UINT16    |  
-
 | `flaperon_throw_inverted`           | Inverts throw offset on both ailerons. Can be used to create SPOILERON or just to change throw direction | OFF      | ON     | OFF             | Profile       | UINT8    |  
