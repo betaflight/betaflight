@@ -2305,16 +2305,18 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
+    } else {
+        options = cmdline;
     }
 
     master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
-	createDefaultConfig(&defaultConfig);
-    }
+        createDefaultConfig(&defaultConfig);
 
-    if (checkCommand(options, "commented")) {
-        dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        if (checkCommand(cmdline, "commented")) {
+            dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        }
     }
 
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
