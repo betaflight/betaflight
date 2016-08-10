@@ -63,6 +63,15 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
     }
 
     function process_html() {
+        // fill stage 2 fields
+        function toggleStage2(doShow) {
+            if (doShow) {
+                $('div.stage2').show();
+            } else {
+                $('div.stage2').hide();
+            }
+        }
+        
         // Conditionally hide the old or the new control pane's
         if(apiVersionGte1_15_0) {
             var oldPane = $('div.oldpane');
@@ -200,15 +209,6 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             }
 
             BF_CONFIG.features.generateElements($('.tab-failsafe .featuresNew'));
-
-            // fill stage 2 fields
-            function toggleStage2(doShow) {
-                if (doShow) {
-                    $('div.stage2').show();
-                } else {
-                    $('div.stage2').hide();
-                }
-            }
 
             var failsafeFeature = $('input[name="FAILSAFE"]');
             failsafeFeature.change(function () {
