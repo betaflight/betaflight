@@ -49,6 +49,8 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/usb_io.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
 
 #include "fc/rc_controls.h" // FIXME for throttle status, not needed by OSD.
 
@@ -133,6 +135,13 @@ void init(void)
     i2cSetOverclock(systemConfig()->i2c_highspeed);
 
     systemInit();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_EXTI
+    EXTIInit();
+#endif
 
     ledInit(false);
 
