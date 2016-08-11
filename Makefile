@@ -366,6 +366,7 @@ COMMON_SRC = \
             common/printf.c \
             common/typeconversion.c \
             config/config.c \
+            config/config_eeprom.c \
             fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \
