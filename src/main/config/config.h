@@ -55,13 +55,6 @@ typedef enum {
     FEATURE_SOFTSPI = 1 << 26,
 } features_e;
 
-void latchActiveFeatures(void);
-bool featureConfigured(uint32_t mask);
-bool feature(uint32_t mask);
-void featureSet(uint32_t mask);
-void featureClear(uint32_t mask);
-void featureClearAll(void);
-uint32_t featureMask(void);
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);

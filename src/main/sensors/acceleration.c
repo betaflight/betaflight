@@ -34,6 +34,7 @@
 #include "io/beeper.h"
 #include "sensors/boardalignment.h"
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "sensors/acceleration.h"
 

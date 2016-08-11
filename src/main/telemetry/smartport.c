@@ -61,9 +61,7 @@
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
-#include "config/config_profile.h"
-extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
+#include "config/feature.h"
 
 enum
 {
