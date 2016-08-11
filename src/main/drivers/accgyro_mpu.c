@@ -21,10 +21,9 @@
 #include <string.h>
 
 #include "platform.h"
+
 #include "build/build_config.h"
-
 #include "build/debug.h"
-
 
 #include "common/maths.h"
 

@@ -20,12 +20,11 @@
 
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef USE_MAG_AK8975
 
 #include "build/build_config.h"
-
 
 #include "common/axis.h"
 #include "common/maths.h"

@@ -25,7 +25,6 @@
 
 #include "build/build_config.h"
 
-
 #include "system.h"
 #include "sensor.h"
 #include "accgyro.h"

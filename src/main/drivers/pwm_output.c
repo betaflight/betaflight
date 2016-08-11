@@ -26,9 +26,7 @@
 #include "io.h"
 #include "io_impl.h"
 #include "timer.h"
-
 #include "pwm_mapping.h"
-
 #include "pwm_output.h"
 
 #if (MAX_MOTORS > MAX_SERVOS)
@@ -36,6 +34,7 @@
 #else
 #define MAX_PWM_OUTPUT_PORTS MAX_SERVOS
 #endif
+
 
 typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 

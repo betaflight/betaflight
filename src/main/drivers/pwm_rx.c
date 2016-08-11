@@ -23,9 +23,7 @@
 #ifndef SKIP_RX_PWM_PPM
 
 #include "build/build_config.h"
-
 #include "build/debug.h"
-
 
 #include "common/utils.h"
 

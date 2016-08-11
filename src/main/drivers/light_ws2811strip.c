@@ -34,7 +34,6 @@
 
 #include "build/build_config.h"
 
-
 #include "common/color.h"
 #include "common/colorconversion.h"
 #include "dma.h"
