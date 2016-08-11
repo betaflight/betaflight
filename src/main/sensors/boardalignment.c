@@ -30,12 +30,12 @@
 static bool standardBoardAlignment = true;     // board orientation correction
 static float boardRotation[3][3];              // matrix
 
-static bool isBoardAlignmentStandard(boardAlignment_t *boardAlignment)
+static bool isBoardAlignmentStandard(const boardAlignment_t *boardAlignment)
 {
     return !boardAlignment->rollDegrees && !boardAlignment->pitchDegrees && !boardAlignment->yawDegrees;
 }
 
-void initBoardAlignment(boardAlignment_t *boardAlignment)
+void initBoardAlignment(const boardAlignment_t *boardAlignment)
 {
     if (isBoardAlignmentStandard(boardAlignment)) {
         return;
@@ -62,7 +62,7 @@ static void alignBoard(int32_t *vec)
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation)
+void alignSensors(const int32_t *src, int32_t *dest, uint8_t rotation)
 {
     static uint32_t swap[3];
     memcpy(swap, src, sizeof(swap));
