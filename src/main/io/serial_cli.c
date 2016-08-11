@@ -2309,7 +2309,7 @@ static void printConfig(char *cmdline, bool doDiff)
         options = cmdline;
     }
 
-    master_t defaultConfig;
+    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
         createDefaultConfig(&defaultConfig);
