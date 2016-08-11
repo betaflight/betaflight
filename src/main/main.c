@@ -337,7 +337,7 @@ void init(void)
 /* temp until PGs are implemented. */
 #ifdef BLUEJAYF4
     if (hardwareRevision <= BJF4_REV2) {
-        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+        beeperConfig.ioTag = IO_TAG(BEEPER_BJF4_REV2);
     }
 #endif
 #ifdef BEEPER_OPT
