@@ -167,7 +167,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
     }
 }
 
-static void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
+static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
     accSmooth[X] -= accelerationTrims->raw[X];
     accSmooth[Y] -= accelerationTrims->raw[Y];
