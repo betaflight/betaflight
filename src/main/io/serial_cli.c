@@ -2305,16 +2305,18 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
+    } else {
+        options = cmdline;
     }
 
     master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
-	createDefaultConfig(&defaultConfig);
-    }
+        createDefaultConfig(&defaultConfig);
 
-    if (checkCommand(options, "commented")) {
-        dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        if (checkCommand(cmdline, "commented")) {
+            dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        }
     }
 
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
@@ -2975,7 +2977,11 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
-	return true;
+#ifdef USE_SLOW_SERIAL_CLI
+        delay(1);
+#endif
+
+	    return true;
     }
 
     return false;
@@ -3205,7 +3211,7 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            cliPrint("\n");
+            cliPrint("\r\n");
             cliPrintVarRange(val);
             cliPrint("\r\n");
 
