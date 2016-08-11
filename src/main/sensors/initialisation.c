@@ -218,8 +218,8 @@ bool detectGyro(void)
         case GYRO_MPU6050:
 #ifdef USE_GYRO_MPU6050
             if (mpu6050GyroDetect(&gyro)) {
-#ifdef GYRO_MPU6050_ALIGN
                 gyroHardware = GYRO_MPU6050;
+#ifdef GYRO_MPU6050_ALIGN
                 gyroAlign = GYRO_MPU6050_ALIGN;
 #endif
                 break;
@@ -229,8 +229,8 @@ bool detectGyro(void)
         case GYRO_L3G4200D:
 #ifdef USE_GYRO_L3G4200D
             if (l3g4200dDetect(&gyro)) {
-#ifdef GYRO_L3G4200D_ALIGN
                 gyroHardware = GYRO_L3G4200D;
+#ifdef GYRO_L3G4200D_ALIGN
                 gyroAlign = GYRO_L3G4200D_ALIGN;
 #endif
                 break;
@@ -241,8 +241,8 @@ bool detectGyro(void)
         case GYRO_MPU3050:
 #ifdef USE_GYRO_MPU3050
             if (mpu3050Detect(&gyro)) {
-#ifdef GYRO_MPU3050_ALIGN
                 gyroHardware = GYRO_MPU3050;
+#ifdef GYRO_MPU3050_ALIGN
                 gyroAlign = GYRO_MPU3050_ALIGN;
 #endif
                 break;
@@ -253,8 +253,8 @@ bool detectGyro(void)
         case GYRO_L3GD20:
 #ifdef USE_GYRO_L3GD20
             if (l3gd20Detect(&gyro)) {
-#ifdef GYRO_L3GD20_ALIGN
                 gyroHardware = GYRO_L3GD20;
+#ifdef GYRO_L3GD20_ALIGN
                 gyroAlign = GYRO_L3GD20_ALIGN;
 #endif
                 break;
