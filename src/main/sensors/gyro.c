@@ -38,6 +38,8 @@
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 
+#include "flight/pid.h"
+
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
 
@@ -67,13 +69,13 @@ void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz
 
 void gyroInit(void)
 {
-    if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+    if (gyroSoftLpfHz && gyro.gyroSamplingRate) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, gyroSoftNotchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.gyroSamplingRate, gyroSoftNotchQ, FILTER_NOTCH);
             if (gyroSoftLpfType == FILTER_BIQUAD)
-                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.gyroSamplingRate);
             else
-                gyroDt = (float) gyro.targetLooptime * 0.000001f;
+                gyroDt = (float) gyro.gyroSamplingRate * 0.000001f;
         }
     }
 }
@@ -90,7 +92,7 @@ static bool isOnFinalGyroCalibrationCycle(void)
 
 static uint16_t gyroCalculateCalibratingCycles(void)
 {
-    return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime) * CALIBRATING_GYRO_CYCLES;
+    return (CALIBRATING_GYRO_CYCLES / targetPidLooptime) * CALIBRATING_GYRO_CYCLES;
 }
 
 static bool isOnFirstGyroCalibrationCycle(void)
@@ -149,14 +151,7 @@ static void applyGyroZero(void)
     }
 }
 
-void gyroUpdate(void)
-{
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-
-    // range: +/- 8192; +/- 2000 deg/sec
-    if (!gyro.read(gyroADCRaw)) {
-        return;
-    }
+void processGyroData(int16_t *gyroADCRaw) {
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (debugMode == DEBUG_GYRO) debug[axis] = gyroADC[axis];
@@ -196,3 +191,4 @@ void gyroUpdate(void)
         }
     }
 }
+

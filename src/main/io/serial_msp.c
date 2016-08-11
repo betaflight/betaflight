@@ -821,7 +821,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
     case MSP_LOOP_TIME:
         headSerialReply(2);
-        serialize16((uint16_t)gyro.targetLooptime);
+        serialize16((uint16_t)targetPidLooptime);
         break;
     case MSP_RC_TUNING:
         headSerialReply(12);

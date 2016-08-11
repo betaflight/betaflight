@@ -473,7 +473,8 @@ void init(void)
             masterConfig.baro_hardware,
             masterConfig.mag_declination,
             masterConfig.gyro_lpf,
-            masterConfig.gyro_sync_denom)) {
+            masterConfig.gyro_sync_denom,
+            masterConfig.pid_process_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -678,12 +679,12 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_PID, targetPidLooptime);
+    setTaskEnabled(TASK_PID, true);
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        switch (targetPidLooptime) {  // Switch statement kept in place to change acc rates in the future
         case 500:
         case 375:
         case 250:

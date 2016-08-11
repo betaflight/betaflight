@@ -803,20 +803,10 @@ void subTaskMotorUpdate(void)
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
-uint8_t setPidUpdateCountDown(void) {
-    if (masterConfig.gyro_soft_lpf_hz) {
-        return masterConfig.pid_process_denom - 1;
-    } else {
-        return 1;
-    }
-}
-
 // Function for loop trigger
 void taskMainPidLoopCheck(void)
 {
     static uint32_t previousTime;
-    static bool runTaskMainSubprocesses;
-
     const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     cycleTime = micros() - previousTime;
@@ -829,29 +819,14 @@ void taskMainPidLoopCheck(void)
 
     const uint32_t startTime = micros();
     while (true) {
-        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            static uint8_t pidUpdateCountdown;
-
+        if (pidScheduledToRun() || ((currentDeltaTime + (micros() - previousTime)) >= (targetPidLooptime + GYRO_WATCHDOG_DELAY))) {
             if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
-            if (runTaskMainSubprocesses) {
-                subTaskMainSubprocesses();
-                runTaskMainSubprocesses = false;
-            }
-
-            gyroUpdate();
-
-            if (pidUpdateCountdown) {
-                pidUpdateCountdown--;
-            } else {
-                pidUpdateCountdown = setPidUpdateCountDown();
-                subTaskPidController();
-                subTaskMotorUpdate();
-                runTaskMainSubprocesses = true;
-            }
-
             break;
         }
     }
+    subTaskMainSubprocesses();
+    subTaskPidController();
+    subTaskMotorUpdate();
 }
 
 void taskUpdateAccelerometer(void)
