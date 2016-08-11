@@ -302,7 +302,7 @@ void init(void)
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
     }
-#ifdef CC3D
+#ifdef BEEPER_OPT
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
 #ifndef SKIP_RX_PWM_PPM
@@ -340,7 +340,7 @@ void init(void)
         beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
     }
 #endif
-#ifdef CC3D
+#ifdef BEEPER_OPT
     if (masterConfig.use_buzzer_p6 == 1)
         beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
 #endif

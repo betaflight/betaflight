@@ -85,6 +85,68 @@ const uint16_t airPWM[] = {
     0xFFFF
 };
 
+#ifdef BEEPER_OPT
+const uint16_t multiPPM_BP6[] = {
+    PWM6  | (MAP_TO_PPM_INPUT     << 8),  // PPM input
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM4  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM5  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM1  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    0xFFFF
+};
+
+const uint16_t multiPWM_BP6[] = {
+    PWM1  | (MAP_TO_PWM_INPUT     << 8), // input #1
+    PWM2  | (MAP_TO_PWM_INPUT     << 8),
+    PWM3  | (MAP_TO_PWM_INPUT     << 8),
+    PWM4  | (MAP_TO_PWM_INPUT     << 8),
+    PWM5  | (MAP_TO_PWM_INPUT     << 8),
+    PWM6  | (MAP_TO_PWM_INPUT     << 8), // input #6
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or servo #1 (swap to servo if needed)
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2 or servo #2 (swap to servo if needed)
+    PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or #3
+    PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT  << 8),
+    0xFFFF
+};
+
+const uint16_t airPPM_BP6[] = {
+    PWM6  | (MAP_TO_PPM_INPUT     << 8), // PPM input
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM2  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM4  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM5  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM1  | (MAP_TO_SERVO_OUTPUT  << 8),
+    0xFFFF
+};
+
+const uint16_t airPWM_BP6[] = {
+    PWM1  | (MAP_TO_PWM_INPUT     << 8), // input #1
+    PWM2  | (MAP_TO_PWM_INPUT     << 8),
+    PWM3  | (MAP_TO_PWM_INPUT     << 8),
+    PWM4  | (MAP_TO_PWM_INPUT     << 8),
+    PWM5  | (MAP_TO_PWM_INPUT     << 8),
+    PWM6  | (MAP_TO_PWM_INPUT     << 8), // input #6
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #2
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #3
+    0xFFFF
+};
+#endif
+
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM12 },  // PPM (5th pin on FlexiIO port)
     { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM12 },  // S2_IN - GPIO_PartialRemap_TIM3

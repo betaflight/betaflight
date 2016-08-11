@@ -71,7 +71,7 @@ const uint16_t * const hardwareMaps[] = {
     airPPM,
 };
 
-#ifdef CC3D
+#ifdef BEEPER_OPT
 const uint16_t * const hardwareMapsBP6[] = {
     multiPWM_BP6,
     multiPPM_BP6,
@@ -104,7 +104,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
     if (init->usePPM || init->useSerialRx)
         i++; // next index is for PPM
 
-#ifdef CC3D
+#ifdef BEEPER_OPT
     setup = init->useBuzzerP6 ? hardwareMapsBP6[i] : hardwareMaps[i];
 #else
     setup = hardwareMaps[i];
