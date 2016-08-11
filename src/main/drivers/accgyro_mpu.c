@@ -43,6 +43,7 @@
 #include "accgyro_spi_mpu6500.h"
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
+#include "gyro_sync.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
@@ -50,8 +51,6 @@ static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
 static void mpu6050FindRevision(void);
-
-static volatile bool mpuDataReady;
 
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(void);
@@ -215,15 +214,7 @@ extiCallbackRec_t mpuIntCallbackRec;
 void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
-    mpuDataReady = true;
-
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static uint32_t lastCalledAt = 0;
-    uint32_t now = micros();
-    uint32_t callDelta = now - lastCalledAt;
-    debug[0] = callDelta;
-    lastCalledAt = now;
-#endif
+    gyroHandleInterrupt();
 }
 
 void mpuIntExtiInit(void)
@@ -298,16 +289,4 @@ bool mpuGyroRead(int16_t *gyroADC)
     gyroADC[2] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
-}
-
-bool checkMPUDataReady(void)
-{
-    bool ret;
-    if (mpuDataReady) {
-        ret = true;
-        mpuDataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
 }
