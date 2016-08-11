@@ -6,6 +6,8 @@
  */
 
 struct gyro_s;
-bool gyroSyncCheckUpdate(const struct gyro_s *gyro);
+extern uint32_t lastGyroInterruptCallDelta;
+bool pidScheduledToRun(void);
 uint8_t gyroMPU6xxxGetDividerDrops(void);
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);
+uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSyncDenominator, uint8_t pidDenom);
+void gyroHandleInterrupt(void);

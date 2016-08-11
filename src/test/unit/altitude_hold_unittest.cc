@@ -167,7 +167,7 @@ uint16_t disableFlightMode(flightModeFlags_e mask)
     return flightModeFlags &= ~(mask);
 }
 
-void gyroUpdate(void) {};
+void gyroHandleInterrupt(void) {};
 bool sensors(uint32_t mask)
 {
     UNUSED(mask);
