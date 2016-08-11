@@ -3,6 +3,7 @@
 TABS.adjustments = {};
 
 TABS.adjustments.initialize = function (callback) {
+    var self = this;
     GUI.active_tab_ref = this;
     GUI.active_tab = 'adjustments';
     
@@ -19,6 +20,7 @@ TABS.adjustments.initialize = function (callback) {
     }
 
     function load_html() {
+        self.adjust_template();
         $('#content').load("./tabs/adjustments.html", process_html);
     }
 
@@ -60,15 +62,6 @@ TABS.adjustments.initialize = function (callback) {
 
         var functionList = $(newAdjustment).find('.functionSelection .function');
         // update list of selected functions
-        var functionListOptions = $(functionList).find('option');
-        var availableFunctionCount = 21; // Available in betaflight 2.9
-        
-        if (semver.gte(CONFIG.flightControllerVersion, '3.1.0')) {
-            availableFunctionCount += 1; // RC rate Yaw added to 3.1.0
-        }
-
-        var functionListOptions = $(functionListOptions).slice(0,availableFunctionCount);
-        functionList.empty().append(functionListOptions);
 
         functionList.val(adjustmentRange.adjustmentFunction);
 
@@ -277,4 +270,15 @@ TABS.adjustments.initialize = function (callback) {
 
 TABS.adjustments.cleanup = function (callback) {
     if (callback) callback();
+};
+
+TABS.adjustments.adjust_template = function () {
+    var availableFunctionCount = 21; // Available in betaflight 2.9
+    if (semver.gte(CONFIG.flightControllerVersion, '3.1.0')) {
+        availableFunctionCount += 1; // RC rate Yaw added to 3.1.0
+    }
+    var template = $('#tab-adjustments-templates .adjustments .adjustment');
+    var functionList = $(template).find('.functionSelection .function');
+    var functionListOptions = $(functionList).find('option').slice(0,availableFunctionCount);;
+    functionList.empty().append(functionListOptions);
 };
