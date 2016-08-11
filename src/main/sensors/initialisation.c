@@ -265,8 +265,8 @@ bool detectGyro(void)
         case GYRO_MPU6000:
 #ifdef USE_GYRO_SPI_MPU6000
             if (mpu6000SpiGyroDetect(&gyro)) {
-#ifdef GYRO_MPU6000_ALIGN
                 gyroHardware = GYRO_MPU6000;
+#ifdef GYRO_MPU6000_ALIGN
                 gyroAlign = GYRO_MPU6000_ALIGN;
 #endif
                 break;
@@ -275,22 +275,17 @@ bool detectGyro(void)
             ; // fallthrough
 
         case GYRO_MPU6500:
-#ifdef USE_GYRO_MPU6500
+#if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
+#ifdef USE_GYRO_SPI_MPU6500
+            if (mpu6500GyroDetect(&gyro) || mpu6500SpiGyroDetect(&gyro)) {
+#else
             if (mpu6500GyroDetect(&gyro)) {
+#endif
                 gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
                 gyroAlign = GYRO_MPU6500_ALIGN;
-#endif
-                break;
-            }
 #endif
 
-#ifdef USE_GYRO_SPI_MPU6500
-            if (mpu6500SpiGyroDetect(&gyro)) {
-                gyroHardware = GYRO_MPU6500;
-#ifdef GYRO_MPU6500_ALIGN
-                gyroAlign = GYRO_MPU6500_ALIGN;
-#endif
                 break;
             }
 #endif
@@ -298,7 +293,6 @@ bool detectGyro(void)
 
     case GYRO_MPU9250:
 #ifdef USE_GYRO_SPI_MPU9250
-
         if (mpu9250SpiGyroDetect(&gyro))
         {
             gyroHardware = GYRO_MPU9250;
@@ -424,18 +418,12 @@ retry:
 #endif
             ; // fallthrough
         case ACC_MPU6500:
-#ifdef USE_ACC_MPU6500
-            if (mpu6500AccDetect(&acc)) {
-#ifdef ACC_MPU6500_ALIGN
-                accAlign = ACC_MPU6500_ALIGN;
-#endif
-                accHardware = ACC_MPU6500;
-                break;
-            }
-#endif
-
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-            if (mpu6500SpiAccDetect(&acc)) {
+            if (mpu6500AccDetect(&acc) || mpu6500SpiAccDetect(&acc)) {
+#else
+            if (mpu6500AccDetect(&acc)) {
+#endif
 #ifdef ACC_MPU6500_ALIGN
                 accAlign = ACC_MPU6500_ALIGN;
 #endif
@@ -443,8 +431,8 @@ retry:
                 break;
             }
 #endif
-            ; // fallthrough
 
+            ; // fallthrough
         case ACC_FAKE:
 #ifdef USE_FAKE_ACC
             if (fakeAccDetect(&acc)) {
@@ -715,15 +703,19 @@ static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentC
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t gyroLpf, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse,
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
+        uint8_t gyroLpf,
+        uint8_t accHardwareToUse,
+        uint8_t magHardwareToUse,
+        uint8_t baroHardwareToUse,
         int16_t magDeclinationFromConfig) {
 
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
-    const extiConfig_t *mpuExtiConfig = selectMPUIntExtiConfig();
-    detectMpu(mpuExtiConfig);
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250)
+    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
+    detectMpu(extiConfig);
 #endif
 
     if (!detectGyro()) {

@@ -22,7 +22,6 @@
 
 #include "build/build_config.h"
 
-
 #include "barometer.h"
 
 #include "system.h"

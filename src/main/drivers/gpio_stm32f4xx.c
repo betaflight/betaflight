@@ -22,7 +22,6 @@
 
 #include "build/build_config.h"
 
-
 #include "gpio.h"
 
 #define MODE_OFFSET 0

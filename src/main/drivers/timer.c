@@ -26,6 +26,7 @@
 #include "common/utils.h"
 
 #include "nvic.h"
+
 #include "io.h"
 #include "rcc.h"
 #include "system.h"
