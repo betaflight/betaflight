@@ -77,12 +77,12 @@ void targetConfiguration(void)
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentProfile->pidProfile.P8[ROLL] = 90;
-    currentProfile->pidProfile.I8[ROLL] = 44;
-    currentProfile->pidProfile.D8[ROLL] = 60;
-    currentProfile->pidProfile.P8[PITCH] = 90;
-    currentProfile->pidProfile.I8[PITCH] = 44;
-    currentProfile->pidProfile.D8[PITCH] = 60;
+    masterConfig.profile[0].pidProfile.P8[ROLL] = 90;
+    masterConfig.profile[0].pidProfile.I8[ROLL] = 44;
+    masterConfig.profile[0].pidProfile.D8[ROLL] = 60;
+    masterConfig.profile[0].pidProfile.P8[PITCH] = 90;
+    masterConfig.profile[0].pidProfile.I8[PITCH] = 44;
+    masterConfig.profile[0].pidProfile.D8[PITCH] = 60;
 
     masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
     masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
