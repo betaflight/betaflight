@@ -75,29 +75,12 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-// alternative defaults settings for AlienFlight targets
+// alternative defaults settings for FURYF4 targets
 void targetConfiguration(void) {
     masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-    masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    masterConfig.gyro_sync_denom = 2;
+    masterConfig.gyro_sync_denom = 1;
     masterConfig.pid_process_denom = 1;
-    masterConfig.profile[0].pidProfile.P8[ROLL] = 90;
-    masterConfig.profile[0].pidProfile.I8[ROLL] = 44;
-    masterConfig.profile[0].pidProfile.D8[ROLL] = 60;
-    masterConfig.profile[0].pidProfile.P8[PITCH] = 90;
-    masterConfig.profile[0].pidProfile.I8[PITCH] = 44;
-    masterConfig.profile[0].pidProfile.D8[PITCH] = 60;
-
-    masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    masterConfig.customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    masterConfig.customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    masterConfig.customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
 }
