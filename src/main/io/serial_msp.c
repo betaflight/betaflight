@@ -1258,10 +1258,14 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.motor_pwm_rate);
         break;
     case MSP_FILTER_CONFIG :
-        headSerialReply(5);
+        headSerialReply(13);
         serialize8(masterConfig.gyro_soft_lpf_hz);
         serialize16(currentProfile->pidProfile.dterm_lpf_hz);
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
+        serialize16(masterConfig.gyro_soft_notch_hz);
+        serialize16(masterConfig.gyro_soft_notch_cutoff);
+        serialize16(currentProfile->pidProfile.dterm_notch_hz);
+        serialize16(currentProfile->pidProfile.dterm_notch_cutoff);
         break;
     case MSP_PID_ADVANCED:
         headSerialReply(17);
@@ -1857,6 +1861,12 @@ static bool processInCommand(void)
         masterConfig.gyro_soft_lpf_hz = read8();
         currentProfile->pidProfile.dterm_lpf_hz = read16();
         currentProfile->pidProfile.yaw_lpf_hz = read16();
+        if (currentPort->dataSize > 5) {
+            masterConfig.gyro_soft_notch_hz = read16();
+            masterConfig.gyro_soft_notch_cutoff = read16();
+            currentProfile->pidProfile.dterm_notch_hz = read16();
+            currentProfile->pidProfile.dterm_notch_cutoff = read16();
+        }
         break;
     case MSP_SET_PID_ADVANCED:
         currentProfile->pidProfile.rollPitchItermIgnoreRate = read16();
