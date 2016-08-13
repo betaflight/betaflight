@@ -177,33 +177,38 @@ uint32_t millis(void) {
 
 uint32_t micros(void) { return 0; }
 
-uint8_t serialRxBytesWaiting(serialPort_t *instance) {
+uint32_t serialRxBytesWaiting(serialPort_t *instance)
+{
     UNUSED(instance);
     return 0;
 }
 
-uint8_t serialTxBytesFree(serialPort_t *instance) {
+uint32_t serialTxBytesFree(serialPort_t *instance)
+{
     UNUSED(instance);
     return 0;
 }
 
-uint8_t serialRead(serialPort_t *instance) {
+uint8_t serialRead(serialPort_t *instance)
+{
     UNUSED(instance);
     return 0;
 }
 
-void serialWrite(serialPort_t *instance, uint8_t ch) {
+void serialWrite(serialPort_t *instance, uint8_t ch)
+{
     UNUSED(instance);
     UNUSED(ch);
 }
 
-void serialSetMode(serialPort_t *instance, portMode_t mode) {
+void serialSetMode(serialPort_t *instance, portMode_t mode)
+{
     UNUSED(instance);
     UNUSED(mode);
 }
 
-
-serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options) {
+serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+{
     UNUSED(identifier);
     UNUSED(functionMask);
     UNUSED(baudRate);
@@ -214,30 +219,36 @@ serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFuncti
     return NULL;
 }
 
-void closeSerialPort(serialPort_t *serialPort) {
+void closeSerialPort(serialPort_t *serialPort)
+{
     UNUSED(serialPort);
 }
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
+{
     UNUSED(function);
 
     return NULL;
 }
 
-bool sensors(uint32_t mask) {
+bool sensors(uint32_t mask)
+{
     UNUSED(mask);
     return false;
 }
 
-bool telemetryDetermineEnabledState(portSharing_e) {
+bool telemetryDetermineEnabledState(portSharing_e)
+{
     return true;
 }
 
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
+portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e)
+{
     return PORTSHARING_NOT_SHARED;
 }
 
-batteryState_e getBatteryState(void) {
+batteryState_e getBatteryState(void)
+{
 	return BATTERY_OK;
 }
 
