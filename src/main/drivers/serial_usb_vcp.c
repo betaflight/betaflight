@@ -69,7 +69,7 @@ static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
-	return CDC_Receive_BytesAvailable();
+    return CDC_Receive_BytesAvailable();
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)

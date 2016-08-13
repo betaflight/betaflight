@@ -165,7 +165,13 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
 
 uint32_t CDC_Send_FreeBytes(void)
 {
-	/* return the bytes free in the circular buffer */
+    /* 
+        return the bytes free in the circular buffer 
+        
+        functionally equivalent to:
+        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
+        but without the impact of the condition check.
+    */
     return ((APP_Rx_ptr_out - APP_Rx_ptr_in) + (-((int)(APP_Rx_ptr_out <= APP_Rx_ptr_in)) & APP_RX_DATA_SIZE)) - 1;
 }
 
@@ -183,13 +189,13 @@ static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
         could just check for: USB_CDC_ZLP, but better to be safe
         and wait for any existing transmission to complete.
     */
-    while (USB_Tx_State);
+    while (USB_Tx_State != 0);
     
     for (uint32_t i = 0; i < Len; i++) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
         
-        while (!CDC_Send_FreeBytes());
+        while (CDC_Send_FreeBytes() <= 0);
     }
 
     return USBD_OK;

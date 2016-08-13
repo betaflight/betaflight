@@ -1000,8 +1000,8 @@ static void printRxFail(uint8_t dumpMask, master_t *defaultConfig)
     for (uint8_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
         channelFailsafeConfigurationDefault = &defaultConfig->rxConfig.failsafe_channel_configurations[channel];
-	equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-	    && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
+        equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
+            && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
         requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
         modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
         if (requireValue) {
@@ -1113,9 +1113,9 @@ static void printAux(uint8_t dumpMask, master_t *defaultConfig)
         mac = &masterConfig.modeActivationConditions[i];
         macDefault = &defaultConfig->modeActivationConditions[i];
         equalsDefault = mac->modeId == macDefault->modeId
-	    && mac->auxChannelIndex == macDefault->auxChannelIndex
-	    && mac->range.startStep == macDefault->range.startStep
-	    && mac->range.endStep == macDefault->range.endStep;
+            && mac->auxChannelIndex == macDefault->auxChannelIndex
+            && mac->range.startStep == macDefault->range.startStep
+            && mac->range.endStep == macDefault->range.endStep;
         cliDumpPrintf(dumpMask, equalsDefault, "aux %u %u %u %u %u\r\n",
             i,
             mac->modeId,
@@ -1172,17 +1172,17 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
     serialConfig_t *serialConfigDefault;
     bool equalsDefault;
     for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-	serialConfig = &masterConfig.serialConfig;
+        serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-	serialConfigDefault = &defaultConfig->serialConfig;
-	equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
-            && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
-            && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
-            && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
-            && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
-            && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
+        serialConfigDefault = &defaultConfig->serialConfig;
+        equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+                && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
+                && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
+                && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
+                && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
+                && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
         cliDumpPrintf(dumpMask, equalsDefault, "serial %d %d %ld %ld %ld %ld\r\n" ,
             serialConfig->portConfigs[i].identifier,
             serialConfig->portConfigs[i].functionMask,
@@ -1190,7 +1190,7 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
-        );
+            );
     }
 }
 
@@ -1202,7 +1202,7 @@ static void cliSerial(char *cmdline)
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, &masterConfig);
 
-	return;
+    return;
     }
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
@@ -1358,11 +1358,11 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         ar = &masterConfig.adjustmentRanges[i];
         arDefault = &defaultConfig->adjustmentRanges[i];
-	equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-	    && ar->range.startStep == arDefault->range.startStep
-	    && ar->range.endStep == arDefault->range.endStep
-	    && ar->adjustmentFunction == arDefault->adjustmentFunction
-	    && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
+    equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
+        && ar->range.startStep == arDefault->range.startStep
+        && ar->range.endStep == arDefault->range.endStep
+        && ar->adjustmentFunction == arDefault->adjustmentFunction
+        && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
             && ar->adjustmentIndex == arDefault->adjustmentIndex;
         cliDumpPrintf(dumpMask, equalsDefault, "adjrange %u %u %u %u %u %u %u\r\n",
             i,
@@ -1525,8 +1525,8 @@ static void printRxRange(uint8_t dumpMask, master_t *defaultConfig)
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
         channelRangeConfigurationDefault = &defaultConfig->rxConfig.channelRanges[i];
-	equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
-	    && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
+        equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
+            && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
         cliDumpPrintf(dumpMask, equalsDefault, "rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
     }
 }
@@ -1619,8 +1619,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
         color = &masterConfig.colors[i];
         colorDefault = &defaultConfig->colors[i];
         equalsDefault = color->h == colorDefault->h
-	    && color->s == colorDefault->s
-	    && color->v == colorDefault->v;
+            && color->s == colorDefault->s
+            && color->v == colorDefault->v;
         cliDumpPrintf(dumpMask, equalsDefault, "color %u %d,%u,%u\r\n",
             i,
             color->h,
@@ -2121,11 +2121,11 @@ static void printVtx(uint8_t dumpMask, master_t *defaultConfig)
     for (int i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
         cac = &masterConfig.vtxChannelActivationConditions[i];
         cacDefault = &defaultConfig->vtxChannelActivationConditions[i];
-	equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
+        equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
             && cac->band == cacDefault->band
-	    && cac->channel == cacDefault->channel
-	    && cac->range.startStep == cacDefault->range.startStep
-	    && cac->range.endStep == cacDefault->range.endStep;
+            && cac->channel == cacDefault->channel
+            && cac->range.startStep == cacDefault->range.startStep
+            && cac->range.endStep == cacDefault->range.endStep;
         cliDumpPrintf(dumpMask, equalsDefault, "vtx %u %u %u %u %u %u\r\n",
             i,
             cac->auxChannelIndex,
@@ -2246,7 +2246,7 @@ static bool valueEqualsDefault(const clivalue_t *value, master_t *defaultConfig)
 
         case VAR_FLOAT:
             result = *(float *)ptr == *(float *)ptrDefault;
-	    break;
+        break;
     }
     return result;
 }
@@ -2378,11 +2378,11 @@ static void printConfig(char *cmdline, bool doDiff)
 
             equalsDefault = masterConfig.customServoMixer[i].targetChannel == defaultConfig.customServoMixer[i].targetChannel
                 && masterConfig.customServoMixer[i].inputSource == defaultConfig.customServoMixer[i].inputSource
-		&& masterConfig.customServoMixer[i].rate == defaultConfig.customServoMixer[i].rate
-		&& masterConfig.customServoMixer[i].speed == defaultConfig.customServoMixer[i].speed
-		&& masterConfig.customServoMixer[i].min == defaultConfig.customServoMixer[i].min
-		&& masterConfig.customServoMixer[i].max == defaultConfig.customServoMixer[i].max
-		&& masterConfig.customServoMixer[i].box == masterConfig.customServoMixer[i].box;
+                && masterConfig.customServoMixer[i].rate == defaultConfig.customServoMixer[i].rate
+                && masterConfig.customServoMixer[i].speed == defaultConfig.customServoMixer[i].speed
+                && masterConfig.customServoMixer[i].min == defaultConfig.customServoMixer[i].min
+                && masterConfig.customServoMixer[i].max == defaultConfig.customServoMixer[i].max
+                && masterConfig.customServoMixer[i].box == masterConfig.customServoMixer[i].box;
 
             cliDumpPrintf(dumpMask, equalsDefault,"smix %d %d %d %d %d %d %d %d\r\n",
                 i,
@@ -2431,7 +2431,7 @@ static void printConfig(char *cmdline, bool doDiff)
         equalsDefault = true;
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
-	    equalsDefault = equalsDefault && (masterConfig.rxConfig.rcmap[i] == defaultConfig.rxConfig.rcmap[i]);
+            equalsDefault = equalsDefault && (masterConfig.rxConfig.rcmap[i] == defaultConfig.rxConfig.rcmap[i]);
         }
         buf[i] = '\0';
         cliDumpPrintf(dumpMask, equalsDefault, "map %s\r\n", buf);
@@ -2483,8 +2483,9 @@ static void printConfig(char *cmdline, bool doDiff)
 
                 uint8_t currentRateIndex = currentProfile->activeRateProfile;
                 uint8_t rateCount;
-                for (rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
+                for (rateCount = 0; rateCount < MAX_RATEPROFILES; rateCount++) {
                     cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
+                }
 
                 cliPrint("\r\n# restore original rateprofile selection\r\n");
                 changeControlRateProfile(currentRateIndex);
@@ -2513,8 +2514,10 @@ static void printConfig(char *cmdline, bool doDiff)
 
 static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *defaultConfig)
 {
-    if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
+    if (profileIndex >= MAX_PROFILE_COUNT) {
+        // Faulty values
         return;
+    }
     changeProfile(profileIndex);
     cliPrint("\r\n# profile\r\n");
     cliProfile("");
@@ -2523,8 +2526,10 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
 {
-    if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
+    if (rateProfileIndex >= MAX_RATEPROFILES) {
+        // Faulty values
         return;
+    }
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
@@ -2744,8 +2749,9 @@ static void cliMap(char *cmdline)
 
     if (len == 8) {
         // uppercase it
-        for (i = 0; i < 8; i++)
+        for (i = 0; i < 8; i++) {
             cmdline[i] = toupper((unsigned char)cmdline[i]);
+        }
         for (i = 0; i < 8; i++) {
             if (strchr(rcChannelLetters, cmdline[i]) && !strchr(cmdline + i + 1, cmdline[i]))
                 continue;
@@ -2755,8 +2761,9 @@ static void cliMap(char *cmdline)
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Map: ");
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++) {
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
+    }
     out[i] = '\0';
     cliPrintf("%s\r\n", out);
 }
@@ -2952,9 +2959,9 @@ static void cliDefaults(char *cmdline)
 
 static void cliPrint(const char *str)
 {
-	while (*str) {
-		bufWriterAppend(cliWriter, *str++);
-	}
+    while (*str) {
+        bufWriterAppend(cliWriter, *str++);
+    }
 }
 
 static void cliPutp(void *p, char ch)
@@ -2976,7 +2983,7 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
-	    return true;
+        return true;
     }
 
     return false;
@@ -3404,11 +3411,11 @@ void cliProcess(void)
                 cliBuffer[bufferIndex] = 0; // null terminate
 
                 const clicmd_t *cmd;
-		char *options;
+                char *options;
                 for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
                     if ((options = checkCommand(cliBuffer, cmd->name))) {
                         break;
-		    }
+            }
                 }
                 if(cmd < cmdTable + CMD_COUNT)
                     cmd->func(options);
