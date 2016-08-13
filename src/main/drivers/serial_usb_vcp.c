@@ -69,7 +69,7 @@ static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    return receiveLength;
+	return CDC_Receive_BytesAvailable();
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
@@ -150,10 +150,9 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint8_t usbTxBytesFree()
+uint32_t usbTxBytesFree()
 {
-    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
-    return 255;
+    return CDC_Send_FreeBytes();
 }
 
 static void usbVcpEndWrite(serialPort_t *instance)

@@ -61,7 +61,7 @@ uint32_t serialRxBytesWaiting(serialPort_t *instance)
     return instance->vTable->serialTotalRxWaiting(instance);
 }
 
-uint8_t serialTxBytesFree(serialPort_t *instance)
+uint32_t serialTxBytesFree(serialPort_t *instance)
 {
     return instance->vTable->serialTotalTxFree(instance);
 }

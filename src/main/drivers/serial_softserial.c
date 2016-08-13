@@ -412,7 +412,7 @@ uint32_t softSerialRxBytesWaiting(serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
-uint8_t softSerialTxBytesFree(serialPort_t *instance)
+uint32_t softSerialTxBytesFree(serialPort_t *instance)
 {
     if ((instance->mode & MODE_TX) == 0) {
         return 0;
