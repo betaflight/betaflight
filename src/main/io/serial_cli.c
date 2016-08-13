@@ -1358,11 +1358,11 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         ar = &masterConfig.adjustmentRanges[i];
         arDefault = &defaultConfig->adjustmentRanges[i];
-    equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-        && ar->range.startStep == arDefault->range.startStep
-        && ar->range.endStep == arDefault->range.endStep
-        && ar->adjustmentFunction == arDefault->adjustmentFunction
-        && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
+        equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
+            && ar->range.startStep == arDefault->range.startStep
+            && ar->range.endStep == arDefault->range.endStep
+            && ar->adjustmentFunction == arDefault->adjustmentFunction
+            && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
             && ar->adjustmentIndex == arDefault->adjustmentIndex;
         cliDumpPrintf(dumpMask, equalsDefault, "adjrange %u %u %u %u %u %u %u\r\n",
             i,
@@ -2246,7 +2246,7 @@ static bool valueEqualsDefault(const clivalue_t *value, master_t *defaultConfig)
 
         case VAR_FLOAT:
             result = *(float *)ptr == *(float *)ptrDefault;
-        break;
+            break;
     }
     return result;
 }
