@@ -146,7 +146,7 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
 static void cliResource(char *cmdline);
 #endif
 #ifdef GPS
@@ -231,7 +231,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -322,7 +322,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -1446,7 +1446,9 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("Motor\tThr\tRoll\tPitch\tYaw\r\n");
+#endif
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             if (masterConfig.customMotorMixer[i].throttle == 0.0f)
                 break;
@@ -1831,7 +1833,9 @@ static void cliServoMix(char *cmdline)
 
     if (len == 0) {
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("Rule\tServo\tSource\tRate\tSpeed\tMin\tMax\tBox\r\n");
+#endif
 
         for (i = 0; i < MAX_SERVO_RULES; i++) {
             if (masterConfig.customServoMixer[i].rate == 0)
@@ -2320,18 +2324,24 @@ static void printConfig(char *cmdline, bool doDiff)
     }
 
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# version\r\n");
+#endif
         cliVersion(NULL);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
             cliPrint("\r\n# reset configuration to default settings\r\ndefaults\r\n");
         }
 
         cliPrint("\r\n# name\r\n");
+#endif
         printName(dumpMask);
 
-        cliPrint("\r\n# mixer\r\n");
 #ifndef USE_QUAD_MIXER_ONLY
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrint("\r\n# mixer\r\n");
+#endif
         cliDumpPrintf(dumpMask, COMPARE_CONFIG(mixerMode), "mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
 
         cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "mmix reset\r\n");
@@ -2396,7 +2406,9 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 #endif
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# feature\r\n");
+#endif
 
         mask = featureMask();
         defaultMask = defaultConfig.enabledFeatures;
@@ -2413,7 +2425,9 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 
 #ifdef BEEPER
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# beeper\r\n");
+#endif
         uint8_t beeperCount = beeperTableEntryCount();
         mask = getBeeperOffMask();
         defaultMask = defaultConfig.beeper_off_flags;
@@ -2425,7 +2439,9 @@ static void printConfig(char *cmdline, bool doDiff)
         }
 #endif
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
+#endif
         equalsDefault = true;
         for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
@@ -2434,43 +2450,65 @@ static void printConfig(char *cmdline, bool doDiff)
         buf[i] = '\0';
         cliDumpPrintf(dumpMask, equalsDefault, "map %s\r\n", buf);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");
+#endif
         printSerial(dumpMask, &defaultConfig);
 
 #ifdef LED_STRIP
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# led\r\n");
+#endif
         printLed(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# color\r\n");
+#endif
         printColor(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mode_color\r\n");
+#endif
         printModeColor(dumpMask, &defaultConfig);
 #endif
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# aux\r\n");
+#endif
         printAux(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# adjrange\r\n");
+#endif
         printAdjustmentRange(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# rxrange\r\n");
+#endif
         printRxRange(dumpMask, &defaultConfig);
 
 #ifdef USE_SERVOS
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo\r\n");
+#endif
         printServo(dumpMask, &defaultConfig);
 #endif
 
 #ifdef VTX
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# vtx\r\n");
+#endif
         printVtx(dumpMask, &defaultConfig);
 #endif
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# rxfail\r\n");
+#endif
         printRxFail(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# master\r\n");
+#endif
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
 
         if (dumpMask & DUMP_ALL) {
@@ -2484,16 +2522,20 @@ static void printConfig(char *cmdline, bool doDiff)
                 for (rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
                     cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
 
-                cliPrint("\r\n# restore original rateprofile selection\r\n");
                 changeControlRateProfile(currentRateIndex);
+#ifndef CLI_MINIMAL_VERBOSITY
+                cliPrint("\r\n# restore original rateprofile selection\r\n");
                 cliRateProfile("");
+#endif
             }
 
-            cliPrint("\r\n# restore original profile selection\r\n");
             changeProfile(activeProfile);
+#ifndef CLI_MINIMAL_VERBOSITY
+            cliPrint("\r\n# restore original profile selection\r\n");
             cliProfile("");
 
             cliPrint("\r\n# save configuration\r\nsave\r\n");
+#endif
         } else {
             cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
             cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
@@ -2514,7 +2556,9 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
     if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
         return;
     changeProfile(profileIndex);
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\n# profile\r\n");
+#endif
     cliProfile("");
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
 }
@@ -2524,7 +2568,9 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, maste
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
         return;
     changeControlRateProfile(rateProfileIndex);
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\n# rateprofile\r\n");
+#endif
     cliRateProfile("");
     dumpValues(PROFILE_RATE_VALUE, dumpMask, defaultConfig);
 }
@@ -2537,7 +2583,9 @@ void cliEnter(serialPort_t *serialPort)
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
                               (bufWrite_t)serialWriteBufShim, serialPort);
 
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
+#endif
     cliPrompt();
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
@@ -2546,7 +2594,9 @@ static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
 
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
+#endif
     bufWriterFlush(cliWriter);
 
     *cliBuffer = '\0';
@@ -2842,7 +2892,7 @@ static void cliMotor(char *cmdline)
 
 static void cliPlaySound(char *cmdline)
 {
-#if FLASH_SIZE <= 64
+#if (FLASH_SIZE <= 64) && !defined(CLI_MINIMAL_VERBOSITY)
     UNUSED(cmdline);
 #else
     int i;
@@ -2934,7 +2984,6 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("Saving");
-    //copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
     writeEEPROM();
     cliReboot();
 }
@@ -3241,7 +3290,7 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
     uint8_t i;
     uint32_t mask;
     uint32_t detectedSensorsMask = sensorsMask();
@@ -3287,7 +3336,9 @@ static void cliTasks(char *cmdline)
     int maxLoadSum = 0;
     int averageLoadSum = 0;
 
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrintf("Task list          rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+#endif
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
         cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
@@ -3448,7 +3499,7 @@ void cliProcess(void)
     }
 }
 
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
 static void cliResource(char *cmdline)
 {
     UNUSED(cmdline);
