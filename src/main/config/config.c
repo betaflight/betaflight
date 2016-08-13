@@ -402,7 +402,7 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;     // default profile
     config->dcm_kp = 2500;                // 1.0 * 10000
     config->dcm_ki = 0;                    // 0.003 * 10000
-    config->gyro_lpf = 0;                 // 256HZ default
+
 #ifdef STM32F10X
     config->gyro_sync_denom = 8;
     config->pid_process_denom = 1;
@@ -413,6 +413,14 @@ void createDefaultConfig(master_t *config)
     config->gyro_sync_denom = 4;
     config->pid_process_denom = 2;
 #endif
+
+// I2c MPU6500 targets cannot do High speed gyro sampling on EXTI so those are limited to 1k 188hz (non working MPU divider)
+#if defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_MPU6500)
+    config->gyro_lpf = 1;
+    config->pid_process_denom = 1;
+    config->gyro_sync_denom = 1;
+#endif
+
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
     config->gyro_soft_notch_hz = 0;
