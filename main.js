@@ -27,13 +27,32 @@ $(document).ready(function () {
             break;
     }
 
-    // check release time to inform people in case they are running old release
-    if (CONFIGURATOR.releaseDate > (new Date().getTime() - (86400000 * 91))) { // 1 day = 86400000 miliseconds, * 91 = 3 month window
-        console.log('Application version is valid for another: ' + Math.round((CONFIGURATOR.releaseDate - (new Date().getTime() - (86400000 * 60))) / 86400000) + ' days');
-    } else {
-        console.log('Application version expired');
-        GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. There may be a more recent version with improvements and fixes.');
-    }
+    // check for newer releases online to inform people in case they are running an old release
+    
+    chrome.storage.local.get(['lastVersionChecked', 'lastVersionAvailableOnline'], function(result) {
+        if (typeof result.lastVersionChecked === undefined || ($.now() - result.lastVersionChecked) > 3600*1000) {
+            try {
+                var url = 'https://api.github.com/repos/betaflight/betaflight-configurator/tags';
+                $.get(url).done(function (data) {
+                  var versions = data.sort(function (v1, v2) {
+                      try {
+                          return semver.compare(v2.name, v1.name);
+                      } catch (e) {
+                          return false;
+                      }
+                  });
+                  chrome.storage.local.set({'lastVersionChecked': $.now(), 'lastVersionAvailableOnline': versions[0].name}, function(result) {
+                      console.log("Latest version available online: "+ versions[0].name);
+                  });
+                  notifyOutdatedVersion(versions[0].name);
+                });
+            } catch (e) {
+                // Just to catch and supress warnings if no internet connection is available
+            }
+        } else if (result.lastVersionAvailableOnline) {
+            notifyOutdatedVersion(result.lastVersionAvailableOnline);
+        }
+    });
 
     chrome.storage.local.get('logopen', function (result) {
         if (result.logopen) {
@@ -317,6 +336,12 @@ $(document).ready(function () {
 
     });
 });
+
+function notifyOutdatedVersion (version) {
+    if (semver.lt(chrome.runtime.getManifest().version, version)) {
+        GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. Version ' + version + ' is available online with possible improvements and fixes.');
+    }
+}
 
 function update_packet_error(caller) {
     $('span.packet-error').html(caller.packet_error);
