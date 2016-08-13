@@ -180,7 +180,6 @@ static void ppmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t ca
     if (capture == PPM_TIMER_PERIOD - 1) {
         ppmDev.overflowed = true;
     }
-
 }
 
 static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture)
