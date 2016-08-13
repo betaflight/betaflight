@@ -379,10 +379,15 @@ OSD.GUI.preview = {
   onDrop: function(e) {
     var ev = e.originalEvent;
     var position = $(this).removeAttr('style').data('position');
+    var field_id = parseInt(ev.dataTransfer.getData('text').split('field-')[1])
+    var display_item = OSD.data.display_items[field_id];
+    var overflows_line = FONT.constants.SIZES.LINE - ((position % FONT.constants.SIZES.LINE) + display_item.preview.length);
+    if (overflows_line < 0) {
+      position += overflows_line;
+    }
     if (position > OSD.data.display_size.total/2) {
       position = position - OSD.data.display_size.total;
     }
-    var field_id = parseInt(ev.dataTransfer.getData('text').split('field-')[1])
     $('input.'+field_id+'.position').val(position).change();
   },
 };
