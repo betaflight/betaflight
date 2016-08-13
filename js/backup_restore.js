@@ -706,15 +706,15 @@ function configuration_restore(callback) {
                 }
 
                 function upload_servo_configuration() {
-                    MspHelper.sendServoConfigurations(upload_mode_ranges);
+                    mspHelper.sendServoConfigurations(upload_mode_ranges);
                 }
 
                 function upload_mode_ranges() {
-                    MspHelper.sendModeRanges(upload_adjustment_ranges);
+                    mspHelper.sendModeRanges(upload_adjustment_ranges);
                 }
                 
                 function upload_adjustment_ranges() {
-                    MspHelper.sendAdjustmentRanges(upload_using_specific_commands);
+                    mspHelper.sendAdjustmentRanges(upload_using_specific_commands);
                 }
                 // start uploading
                 load_objects(0);
@@ -783,23 +783,23 @@ function configuration_restore(callback) {
             }
 
             function send_led_strip_config() {
-                MspHelper.sendLedStripConfig(send_led_strip_colors);
+                mspHelper.sendLedStripConfig(send_led_strip_colors);
             }
 
             function send_led_strip_colors() {
-                MspHelper.sendLedStripColors(send_led_strip_mode_colors);
+                mspHelper.sendLedStripColors(send_led_strip_mode_colors);
             }
 
             function send_led_strip_mode_colors() {
                 if (semver.gte(CONFIG.apiVersion, "1.19.0"))
-                    MspHelper.sendLedStripModeColors(send_rxfail_config);
+                    mspHelper.sendLedStripModeColors(send_rxfail_config);
                 else
                     send_rxfail_config();
             }
             
             function send_rxfail_config() {
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                    MspHelper.sendRxFailConfig(save_to_eeprom);
+                    mspHelper.sendRxFailConfig(save_to_eeprom);
                 } else {
                     save_to_eeprom();
                 }

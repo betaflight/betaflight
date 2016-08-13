@@ -212,7 +212,7 @@ TABS.auxiliary.initialize = function (callback) {
             //
             // send data to FC
             //
-            MspHelper.sendModeRanges(save_to_eeprom);
+            mspHelper.sendModeRanges(save_to_eeprom);
 
             function save_to_eeprom() {
                 MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {

@@ -141,10 +141,10 @@ TABS.servos.initialize = function (callback) {
             //
             // send data to FC
             //
-            MspHelper.sendServoConfigurations(send_servo_mixer_rules);
+            mspHelper.sendServoConfigurations(send_servo_mixer_rules);
 
             function send_servo_mixer_rules() {
-                MspHelper.sendServoConfigurations(save_to_eeprom);
+                mspHelper.sendServoConfigurations(save_to_eeprom);
             }
             
             function save_to_eeprom() {

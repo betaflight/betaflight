@@ -2,8 +2,8 @@
 
 
 function MspHelper () {
-        
 }
+
 MspHelper.prototype.process_data = function(dataHandler) {
     var self = this;
     var data = dataHandler.dataView; // DataView (allowing us to view arrayBuffer as struct/union)
