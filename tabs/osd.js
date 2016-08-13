@@ -225,83 +225,83 @@ OSD.constants = {
   // order matters, so these are going in an array... pry could iterate the example map instead
   DISPLAY_FIELDS: [
     {
-      name: 'Battery Voltage',
+      name: 'MAIN_BATT_VOLTAGE',
       default_position: -29,
       positionable: true,
       preview: FONT.symbol(SYM.VOLT) + '16.8'
     },
     {
-      name: 'RSSI Value',
+      name: 'RSSI_VALUE',
       default_position: -59,
       positionable: true,
       preview: FONT.symbol(SYM.RSSI) + '99'
     },
     {
-      name: 'Timer',
+      name: 'TIMER',
       default_position: -39,
       positionable: true,
       preview: FONT.symbol(SYM.ON_M) + ' 11:11'
     },
     {
-      name: 'Throttle Position',
+      name: 'THROTTLE_POSITION',
       default_position: -9,
       positionable: true,
       preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + ' 69'
     },
     {
-      name: 'CPU Load',
+      name: 'CPU_LOAD',
       default_position: 26,
       positionable: true,
       preview: '15'
     },
     {
-      name: 'VTX Channel',
+      name: 'VTX_CHANNEL',
       default_position: 1,
       positionable: true,
       preview: 'CH:1'
     },
     {
-      name: 'Voltage Warning',
+      name: 'VOLTAGE_WARNING',
       default_position: -80,
       positionable: true,
       preview: 'LOW VOLTAGE'
     },
     {
-      name: 'Armed',
+      name: 'ARMED',
       default_position: -107,
       positionable: true,
       preview: 'ARMED'
     },
     {
-      name: 'Diasrmed',
+      name: 'DIASRMED',
       default_position: -109,
       positionable: true,
       preview: 'DISARMED'
     },
     {
-      name: 'Artificial Horizon',
+      name: 'ARTIFICIAL_HORIZON',
       default_position: -1,
       positionable: false
     },
     {
-      name: 'Horizon Sidebars',
+      name: 'HORIZON_SIDEBARS',
       default_position: -1,
       positionable: false
     },
     {
-      name: 'Current Draw',
+      name: 'CURRENT_DRAW',
       default_position: -23,
       positionable: true,
       preview: FONT.symbol(SYM.AMP) + '42.0'
     },
     {
-      name: 'mAh Drawn',
+      name: 'MAH_DRAWN',
       default_position: -18,
       positionable: true,
       preview: FONT.symbol(SYM.MAH) + '690'
     },
     {
-      name: 'Craft Name',
+      name: 'CRAFT_NAME',
       default_position: -77,
       positionable: true,
       preview: '[CRAFT_NAME]'
@@ -468,7 +468,7 @@ TABS.osd.initialize = function (callback) {
                   });
                 })
               );
-              $field.append('<label for="'+field.name+'">'+field.name+'</label>');
+              $field.append('<label for="'+field.name+'">'+inflection.titleize(field.name)+'</label>');
               if (field.positionable && field.position != -1) {
                 $field.append(
                   $('<input type="number" class="'+field.index+' position"></input>')
@@ -522,7 +522,7 @@ TABS.osd.initialize = function (callback) {
             }
             var centerishPosition = 194;
             // artificial horizon
-            if ($('input[name="Artificial Horizon"]').prop('checked')) {
+            if ($('input[name="ARTIFICIAL_HORIZON"]').prop('checked')) {
               for (var i = 0; i < 9; i++) {
                 OSD.data.preview[centerishPosition - 4 + i] = SYM.AH_BAR9_0 + 4;
               }
@@ -531,7 +531,7 @@ TABS.osd.initialize = function (callback) {
               OSD.data.preview[centerishPosition]     = SYM.AH_CENTER;
             }
             // sidebars
-            if ($('input[name="Horizon Sidebars"]').prop('checked')) {
+            if ($('input[name="HORIZON_SIDEBARS"]').prop('checked')) {
               var hudwidth  = OSD.constants.AHISIDEBARWIDTHPOSITION;
               var hudheight = OSD.constants.AHISIDEBARHEIGHTPOSITION;
               for (var i = -hudheight; i <= hudheight; i++) {

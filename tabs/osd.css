@@ -1,276 +1,276 @@
 .tab-osd .info {
-    margin: 10px 0 0 0;
-    position: relative;
+  margin: 10px 0 0 0;
+  position: relative;
 }
 
 .tab-osd .info .progressLabel {
-    position: absolute;
-    width: 100%;
-    height: 26px;
-    top: 0px;
-    left: 0;
-    text-align: center;
-    line-height: 24px;
-    color: white;
-    font-weight: bold;
+  position: absolute;
+  width: 100%;
+  height: 26px;
+  top: 0px;
+  left: 0;
+  text-align: center;
+  line-height: 24px;
+  color: white;
+  font-weight: bold;
 
-    /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
+  /* text-shadow: 1px 0px 2px rgba(0, 0, 0, 0.9);*/
 }
- 
+
 
 .darkgrey {
-    background-color: #575757;
+  background-color: #575757;
 }
 
 .tab-osd .spacer_box_title {
-    float: none;
+  float: none;
 }
 
 .tab-osd .info {
-    float: left;
-    width: 100%;
+  float: left;
+  width: 100%;
 }
 
 .info .progressLabel a {
-    color: white;
+  color: white;
 }
 
 .info .progressLabel a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .info .progress {
-    width: 100%;
-    height: 26px;
-    border-radius: 5px;
-    border: 1px solid silver;
+  width: 100%;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid silver;
 }
 
 .info .progress {
-    -webkit-appearance: none;
+  -webkit-appearance: none;
 }
 
 .info .progress::-webkit-progress-bar {
-    background-color: #4f4f4f;
-    border-radius: 4px;
-    box-shadow: inset 0px 0px 5px #2f2f2f;
+  background-color: #4f4f4f;
+  border-radius: 4px;
+  box-shadow: inset 0px 0px 5px #2f2f2f;
 }
 
 .info .progress::-webkit-progress-value {
-    background-color: #F86008;
-    border-radius: 4px;
+  background-color: #F86008;
+  border-radius: 4px;
 }
 
 .info .progress.valid::-webkit-progress-bar {
-    background-color: #56ac1d;
-    border-radius: 4px;
+  background-color: #56ac1d;
+  border-radius: 4px;
 }
 
 .info .progress.valid::-webkit-progress-value {
-    background-color: #56ac1d;
-    border-radius: 4px;
+  background-color: #56ac1d;
+  border-radius: 4px;
 }
 
 .info .progress.invalid::-webkit-progress-bar {
-    background-color: #A62E32;
-    border-radius: 4px;
+  background-color: #A62E32;
+  border-radius: 4px;
 }
 
 .info .progress.invalid::-webkit-progress-value {
-    background-color: #A62E32;
-    border-radius: 4px;
+  background-color: #A62E32;
+  border-radius: 4px;
 }
 
 .tab-osd ul li {
-    list-style: initial;
-    list-style-type: circle;
-    margin-left: 30px;
+  list-style: initial;
+  list-style-type: circle;
+  margin-left: 30px;
 }
 
 .tab-osd .options {
-    position: relative;
-    margin-bottom: 10px;
-    line-height: 18px;
-    text-align: left;
+  position: relative;
+  margin-bottom: 10px;
+  line-height: 18px;
+  text-align: left;
 }
 
 .tab-osd td {
-    text-align: left;
+  text-align: left;
 }
 
 .tab-osd .options label input {
-    float: left;
-    margin-top: 2px;
+  float: left;
+  margin-top: 2px;
 }
 
 .tab-osd .options label span {
-    font-weight: bold;
-    margin-left: 6px;
+  font-weight: bold;
+  margin-left: 6px;
 }
 
 .tab-osd .options select {
-    width: 300px;
-    height: 20px;
-    border: 1px solid silver;
+  width: 300px;
+  height: 20px;
+  border: 1px solid silver;
 }
 
 .tab-osd .options .releases select {
-    width: 280px;
+  width: 280px;
 }
 
 .tab-osd .option.releases {
-    margin: 0 0 2px 0;
-    line-height: 20px;
+  margin: 0 0 2px 0;
+  line-height: 20px;
 }
 
 .tab-osd .options .description {
-    position: relative;
-    left: 0px;
-    font-style: italic;
-    color: #818181;
+  position: relative;
+  left: 0px;
+  font-style: italic;
+  color: #818181;
 }
 
 .tab-osd .cf_table td:last-child {
-    text-align: left;
+  text-align: left;
 }
 
 .tab-osd .options .flash_on_connect_wrapper {
-    display: none;
+  display: none;
 }
 
 .tab-osd .options .manual_baud_rate select {
-    width: 75px;
-    margin-left: 19px;
+  width: 75px;
+  margin-left: 19px;
 }
 
 .tab-osd .release_info {
-    display: none;
+  display: none;
 }
 
 .tab-osd .release_info .title {
-    line-height: 20px;
-    text-align: center;
-    font-weight: bold;
-    color: white;
-    border-bottom: 1px solid silver;
-    background-color: #3f4241;
+  line-height: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  border-bottom: 1px solid silver;
+  background-color: #3f4241;
 }
 
 .tab-osd .release_info .target {
-    color: blue;
+  color: blue;
 }
 
 .tab-osd .release_info p {
-    padding: 5px;
+  padding: 5px;
 }
 
 .tab-osd .release_info p a {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .tab-osd .release_info p a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .tab-osd .release_info .notes {
-    padding: 5px;
+  padding: 5px;
 }
 
 .tab-osd .git_info {
-    display: none;
-    margin-bottom: 10px;
-    border: 1px solid silver;
+  display: none;
+  margin-bottom: 10px;
+  border: 1px solid silver;
 }
 
 .tab-osd .git_info .title {
-    line-height: 20px;
-    text-align: center;
-    font-weight: bold;
-    color: white;
-    border-bottom: 1px solid silver;
-    background-color: #3f4241;
+  line-height: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  border-bottom: 1px solid silver;
+  background-color: #3f4241;
 }
 
 .tab-osd .git_info p {
-    padding: 5px;
+  padding: 5px;
 }
 
 .tab-osd .git_info p a {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .tab-osd .git_info p a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .tab-osd .buttons {
-    width: calc(100% - 20px);
-    margin-top: 10px;
-    bottom: 10px;
+  width: calc(100% - 20px);
+  margin-top: 10px;
+  bottom: 10px;
 }
 
 .tab-osd .buttons a {
-    display: block;
-    float: left;
-    margin: 0 10px 0 0;
-    padding: 0 15px 0 15px;
-    height: 28px;
-    line-height: 28px;
-    text-align: center;
-    font-weight: bold;
-    border: 1px solid silver;
-    background-color: #ececec;
+  display: block;
+  float: left;
+  margin: 0 10px 0 0;
+  padding: 0 15px 0 15px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid silver;
+  background-color: #ececec;
 }
 
 .tab-osd .buttons a:hover {
-    background-color: #dedcdc;
+  background-color: #dedcdc;
 }
 
 .tab-osd .buttons a.flash_font.locked {
-    background-color: #b8b8b8;
+  background-color: #b8b8b8;
 }
 
 .tab-osd .buttons a.flash_font.locked:hover {
-    cursor: default;
-    background-color: #b8b8b8;
+  cursor: default;
+  background-color: #b8b8b8;
 }
 
 .tab-osd .buttons a.load_remote_file.locked {
-    background-color: #b8b8b8;
+  background-color: #b8b8b8;
 }
 
 .tab-osd .buttons a.load_remote_file.locked:hover {
-    cursor: default;
-    background-color: #b8b8b8;
+  cursor: default;
+  background-color: #b8b8b8;
 }
 
 .tab-osd .buttons .back {
-    float: right;
-    margin: 0;
+  float: right;
+  margin: 0;
 }
 
 .tab-osd .btn .disabled {
-    cursor: default;
-    color: #fff;
-    background-color: #AFAFAF;
-    border: none;
-    pointer-events: none;
-    text-shadow: none;
-    opacity: 0.5;
+  cursor: default;
+  color: #fff;
+  background-color: #AFAFAF;
+  border: none;
+  pointer-events: none;
+  text-shadow: none;
+  opacity: 0.5;
 }
 
 .tab-osd .display-layout label {
-    margin: .25em .1em;
-    display: inline-block;
+  margin: .25em .1em;
+  display: inline-block;
 }
 
 .tab-osd .display-layout input {
-    margin: .1em 1em;
+  margin: .1em 1em;
 }
 
 .tab-osd .display-layout input.position{
-    width: 5em;
-    border-bottom: 1px solid #ccc
+  width: 5em;
+  border-bottom: 1px solid #ccc
 }
 
 .tab-osd .hide {
@@ -278,125 +278,128 @@
 }
 
 .tab-osd .note {
-    padding: 1em;
+  padding: 1em;
 }
 
 .tab-osd .col {
-    display: inline-block;
+  display: inline-block;
 }
 
 .tab-osd .left {
-    float: left;
+  float: left;
 }
 
 .tab-osd .right {
-    float: right;
-    margin-top: -7px;
+  float: right;
+  margin-top: -7px;
 }
 
 .tab-osd .preview .char {
-    display: inline-block;
-    padding: 0;
-    margin: 0;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
 }
 
 .tab-osd .preview .char[draggable="true"] {
-    cursor: move;
+  cursor: move;
 }
 
 .tab-osd .preview .row {
-    height: 18px;
+  height: 18px;
 }
 
 .tab-osd .content_wrapper {
-    height: calc(100% - 41px);
+  height: calc(100% - 41px);
 }
 
 .tab-osd .content_toolbar {
-    text-align: right;
+  text-align: right;
 }
 
 .tab-osd .content_toolbar button {
-    margin-right: 1em;
+  margin-right: 1em;
 }
 
 button {
-    padding: 4px 10px !important;
-    font-family: 'open_sanssemibold', Arial;
-    font-size: 9pt !important;
-    cursor: pointer;
+  padding: 4px 10px !important;
+  font-family: 'open_sanssemibold', Arial;
+  font-size: 9pt !important;
+  cursor: pointer;
 }
 
 .fontbuttons {
-    display: inline-block;
-    position: absolute;
-    right: 1.2em;
-    top: .8em;
+  display: inline-block;
+  position: absolute;
+  right: 1.2em;
+  top: .8em;
 }
 
 .tab-osd .display-field {
-    padding-bottom: 4px;
-    padding-top: 4px;
-    border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+  padding-top: 4px;
+  border-bottom: 1px solid #ddd;
 }
 
 .tab-osd .display-field input {
-    float: right;
-    width: 50px;
-    border-radius: 3px;
-    border: 1px solid #ddd;
-    padding:2px;
-    margin-top: -2px;
-    display: none;
+  float: right;
+  width: 50px;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  padding:2px;
+  margin-top: -2px;
+  display: none;
 
 }
 
 .tab-osd .display-field label {
-    margin-left: 5px;
+  margin-left: 5px;
 
 }
 
 .tab-osd .display-fields {
-    float: left;
-    margin-top: 5px;
-    margin-bottom: 8px;
-    width: 100%;
+  float: left;
+  margin-top: 5px;
+  margin-bottom: 8px;
+  width: 100%;
 
 }
 
 .spacer_box_title span {
-    font-size: 11px;
-    font-weight: normal;
-    font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 11px;
+  font-weight: normal;
+  font-family: 'open_sansregular', 'Segoe UI', Tahoma, sans-serif;
 }
 
 .video-types input {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 
 .video-types label {
-    margin-right: 10px;
+  margin-right: 10px;
 }
 
 
 .tab-osd .display-field:last-child {
-    border-bottom: 0px;
+  border-bottom: 0px;
 }
 
 .tab-osd .preview {
-    width: 360px;
+  width: 360px;
 }
 
 .tab-osd .preview {
-    background: url(/images/osd-bg-1.png);
-    background-size: cover;
-    border-bottom-left-radius: 3px;
-    border-bottom-right-radius: 3px;
+  /* please don't copy the generic background image from another project
+   * and replace the one that @nathantsoi took :)
+   */
+  background: url(/images/osd-bg-1.jpg);
+  background-size: cover;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
 }
 
 
 @media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
-.tab-osd .content_wrapper {
+  .tab-osd .content_wrapper {
     height: calc(100% - 30px);
-}
+  }
 }
