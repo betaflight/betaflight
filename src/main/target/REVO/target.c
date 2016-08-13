@@ -87,7 +87,7 @@ const uint16_t airPWM[] = {
 
 #ifdef BEEPER_OPT
 const uint16_t multiPPM_BP6[] = {
-    PWM6  | (MAP_TO_PPM_INPUT     << 8),  // PPM input
+    PWM1  | (MAP_TO_PPM_INPUT     << 8),  // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
     PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
     PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),
@@ -97,7 +97,7 @@ const uint16_t multiPPM_BP6[] = {
     PWM3  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
     PWM4  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
     PWM5  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
-    PWM1  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
+    PWM6  | (MAP_TO_MOTOR_OUTPUT  << 8),  // Swap to servo if needed
     0xFFFF
 };
 
@@ -117,7 +117,7 @@ const uint16_t multiPWM_BP6[] = {
 };
 
 const uint16_t airPPM_BP6[] = {
-    PWM6  | (MAP_TO_PPM_INPUT     << 8), // PPM input
+    PWM1  | (MAP_TO_PPM_INPUT     << 8), // PPM input
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8),
     PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
@@ -127,7 +127,7 @@ const uint16_t airPPM_BP6[] = {
     PWM3  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM4  | (MAP_TO_SERVO_OUTPUT  << 8),
     PWM5  | (MAP_TO_SERVO_OUTPUT  << 8),
-    PWM1  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM6  | (MAP_TO_SERVO_OUTPUT  << 8),
     0xFFFF
 };
 
