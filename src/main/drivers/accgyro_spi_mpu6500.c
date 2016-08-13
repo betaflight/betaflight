@@ -107,7 +107,7 @@ void mpu6500SpiGyroInit(uint8_t lpf)
     mpu6500WriteRegister(MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
     
-    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_ULTRAFAST);
+    spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 }
 
