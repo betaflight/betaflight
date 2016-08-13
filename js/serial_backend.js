@@ -322,6 +322,8 @@ function onClosed(result) {
     
     var battery = $('#quad-status_wrapper');
     battery.hide();
+    
+    MSP.clearListeners();
 }
 
 function read_serial(info) {

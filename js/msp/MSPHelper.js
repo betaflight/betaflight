@@ -683,6 +683,9 @@ MspHelper.prototype.process_data = function(dataHandler) {
             FILTER_CONFIG.yaw_lpf_hz = data.getUint16(offset, 1);
             break;
 
+        case MSPCodes.MSP_SET_PID_ADVANCED:
+            console.log("Advanced PID settings saved");
+            break;
         case MSPCodes.MSP_PID_ADVANCED:
             var offset = 0;
             if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {

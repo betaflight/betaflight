@@ -108,12 +108,12 @@ var MSP = {
         });
     },
     listen: function(listener) {
-        if (this.listeners[0] == undefined) {
-            this.listeners[0] = listener;
-        }
-        else if (this.listeners.indexOf(listener) == -1) {
+        if (this.listeners.indexOf(listener) == -1) {
             this.listeners.push(listener);
         }
+    },
+    clearListeners: function() {
+        this.listeners = [];  
     },
     send_message: function (code, data, callback_sent, callback_msp) {
         var bufferOut,
