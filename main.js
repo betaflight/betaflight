@@ -41,7 +41,6 @@ $(document).ready(function () {
          }
     });
 
-
     // log webgl capability
     // it would seem the webgl "enabling" through advanced settings will be ignored in the future
     // and webgl will be supported if gpu supports it by default (canary 40.0.2175.0), keep an eye on this one
@@ -195,14 +194,6 @@ $(document).ready(function () {
 
                     chrome.storage.local.set({'update_notify': check});
                 });
-
-                // if tracking is enabled, check the statistics checkbox
-                //if (googleAnalyticsConfig.isTrackingPermitted()) {
-                //    $('div.statistics input').prop('checked', false);
-                //}
-                //$('div.statistics input').change(function () {
-                //    var check = $(this).is(':checked');
-                //});
 
                 function close_and_cleanup(e) {
                     if (e.type == 'click' && !$.contains($('div#options-window')[0], e.target) || e.type == 'keyup' && e.keyCode == 27) {
