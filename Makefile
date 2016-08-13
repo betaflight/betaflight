@@ -37,7 +37,9 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-# Decide on a verbosity level based on the V= parameter
+## Set verbosity level based on the V= parameter
+## V=0 Low
+## v=1 High
 export AT := @
 
 ifndef V
@@ -684,9 +686,9 @@ all: $(VALID_TARGETS)
 
 $(VALID_TARGETS):
 		$(V0) echo "" && \
-		$(V0) echo "Building $@" && \
-		$(V0) $(MAKE) binary hex TARGET=$@ && \
-		$(V0) echo "Building $@ succeeded."
+		echo "Building $@" && \
+		$(MAKE) binary hex TARGET=$@ && \
+		echo "Building $@ succeeded."
 
 
 
@@ -759,9 +761,9 @@ help: Makefile
 	$(V0) @echo "Makefile for the $(FORKNAME) firmware"
 	$(V0) @echo ""
 	$(V0) @echo "Usage:"
-	$(V0) @echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	$(V0) @echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
 	$(V0) @echo "Or:"
-	$(V0) @echo "        make <target> [OPTIONS=\"<options>\"]"
+	$(V0) @echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
 	$(V0) @echo ""
 	$(V0) @echo "Valid TARGET values are: $(VALID_TARGETS)"
 	$(V0) @echo ""
