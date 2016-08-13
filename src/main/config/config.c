@@ -240,9 +240,9 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 #ifdef BRUSHED_MOTORS
     escAndServoConfig->minthrottle = 1000;
 #else
-    escAndServoConfig->maxthrottle = 2000;
     escAndServoConfig->minthrottle = 1070;
 #endif
+    escAndServoConfig->maxthrottle = 2000;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
 }

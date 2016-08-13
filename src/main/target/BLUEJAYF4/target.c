@@ -67,12 +67,12 @@ const uint16_t airPWM[] = {
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM8, IO_TAG(PC7), TIM_Channel_2, TIM8_CC_IRQn,       0, IOCFG_IPD,    GPIO_AF_TIM8 }, // PPM IN
-    { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM5_IRQn,          1, IOCFG_AF_PP,  GPIO_AF_TIM5 }, // S1_OUT
-    { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM5_IRQn,          1, IOCFG_AF_PP,  GPIO_AF_TIM5 }, // S2_OUT
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,          1, IOCFG_AF_PP,  GPIO_AF_TIM2 }, // S3_OUT
-    { TIM9, IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, IOCFG_AF_PP,  GPIO_AF_TIM9 }, // S4_OUT
-    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,          1, IOCFG_AF_PP,  GPIO_AF_TIM3 }, // S5_OUT
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,          1, IOCFG_AF_PP,  GPIO_AF_TIM3 }, // S6_OUT
+    { TIM8, IO_TAG(PC7), TIM_Channel_2, TIM8_CC_IRQn,       0, IOCFG_AF_PP, GPIO_AF_TIM8 }, // PPM IN
+    { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM5_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM5 }, // S1_OUT
+    { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM5_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM5 }, // S2_OUT
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM2 }, // S3_OUT
+    { TIM9, IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM9 }, // S4_OUT
+    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3 }, // S5_OUT
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3 }, // S6_OUT
 };
 
