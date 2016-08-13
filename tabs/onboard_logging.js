@@ -24,13 +24,13 @@ TABS.onboard_logging.initialize = function (callback) {
             return;
         }
         
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, function() {
+        MSP.send_message(MSPCodes.MSP_BF_CONFIG, false, false, function() {
             if (semver.gte(CONFIG.flightControllerVersion, "1.8.0")) {
-                MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
+                MSP.send_message(MSPCodes.MSP_DATAFLASH_SUMMARY, false, false, function() {
                     if (semver.gte(CONFIG.flightControllerVersion, "1.11.0")) {
-                        MSP.send_message(MSP_codes.MSP_SDCARD_SUMMARY, false, false, function() {
-                            MSP.send_message(MSP_codes.MSP_BLACKBOX_CONFIG, false, false, function() { 
-                            	MSP.send_message(MSP_codes.MSP_ADVANCED_CONFIG, false, false, load_html);
+                        MSP.send_message(MSPCodes.MSP_SDCARD_SUMMARY, false, false, function() {
+                            MSP.send_message(MSPCodes.MSP_BLACKBOX_CONFIG, false, false, function() { 
+                            	MSP.send_message(MSPCodes.MSP_ADVANCED_CONFIG, false, false, load_html);
                             });
                         });
                     } else {
@@ -51,14 +51,14 @@ TABS.onboard_logging.initialize = function (callback) {
     }
     
     function save_to_eeprom() {
-        MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+        MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, reboot);
     }
 
     function reboot() {
         GUI.log(chrome.i18n.getMessage('configurationEepromSaved'));
 
         GUI.tab_switch_cleanup(function() {
-            MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+            MSP.send_message(MSPCodes.MSP_SET_REBOOT, false, false, reinitialize);
         });
     }
 
@@ -73,7 +73,7 @@ TABS.onboard_logging.initialize = function (callback) {
         } else {
 
             GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
+                MSP.send_message(MSPCodes.MSP_STATUS, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('deviceReady'));
                     TABS.onboard_logging.initialize(false, $('#content').scrollTop());
                 });
@@ -135,7 +135,7 @@ TABS.onboard_logging.initialize = function (callback) {
                     BLACKBOX.blackboxRateDenom = parseInt(rate[1], 10);
                     BLACKBOX.blackboxDevice = parseInt($(".blackboxDevice select").val(), 10);
                     
-                    MSP.send_message(MSP_codes.MSP_SET_BLACKBOX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BLACKBOX_CONFIG), false, save_to_eeprom);
+                    MSP.send_message(MSPCodes.MSP_SET_BLACKBOX_CONFIG, mspHelper.crunch(MSP_codes.MSP_SET_BLACKBOX_CONFIG), false, save_to_eeprom);
                 });
             }
             
@@ -278,7 +278,7 @@ TABS.onboard_logging.initialize = function (callback) {
             sdcardTimer = setTimeout(function() {
                 sdcardTimer = false;
                 if (CONFIGURATOR.connectionValid) {
-                    MSP.send_message(MSP_codes.MSP_SDCARD_SUMMARY, false, false, function() {
+                    MSP.send_message(MSPCodes.MSP_SDCARD_SUMMARY, false, false, function() {
                         update_html();
                     });
                 }
@@ -318,7 +318,7 @@ TABS.onboard_logging.initialize = function (callback) {
     }
     
     function flash_update_summary(onDone) {
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_SUMMARY, false, false, function() {
+        MSP.send_message(MSPCodes.MSP_DATAFLASH_SUMMARY, false, false, function() {
             update_html();
             
             if (onDone) {
@@ -347,7 +347,7 @@ TABS.onboard_logging.initialize = function (callback) {
                                 nextAddress += chunkDataView.byteLength;
                                 
                                 $(".dataflash-saving progress").attr("value", nextAddress / maxBytes * 100);
-        
+
                                 var 
                                     blob = new Blob([chunkDataView]);
                                 
@@ -359,7 +359,7 @@ TABS.onboard_logging.initialize = function (callback) {
                                             mark_saving_dialog_done();
                                         }
                                     } else {
-                                        MSP.dataflashRead(nextAddress, onChunkRead);
+                                        MspHelper.dataflashRead(nextAddress, onChunkRead);
                                     }
                                 };
                                 
@@ -370,12 +370,12 @@ TABS.onboard_logging.initialize = function (callback) {
                             }
                         } else {
                             // There was an error with the received block (address didn't match the one we asked for), retry
-                            MSP.dataflashRead(nextAddress, onChunkRead);
+                            MspHelper.dataflashRead(nextAddress, onChunkRead);
                         }
                     }
-                    
+
                     // Fetch the initial block
-                    MSP.dataflashRead(nextAddress, onChunkRead);
+                    MspHelper.dataflashRead(nextAddress, onChunkRead);
                 });
             });
         }
@@ -444,7 +444,7 @@ TABS.onboard_logging.initialize = function (callback) {
     function flash_erase() {
         $(".dataflash-confirm-erase").addClass('erasing');
         
-        MSP.send_message(MSP_codes.MSP_DATAFLASH_ERASE, false, false, poll_for_erase_completion);
+        MSP.send_message(MSPCodes.MSP_DATAFLASH_ERASE, false, false, poll_for_erase_completion);
     }
     
     function flash_erase_cancel() {

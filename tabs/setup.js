@@ -12,22 +12,22 @@ TABS.setup.initialize = function (callback) {
     }
 
     function load_status() {
-        MSP.send_message(MSP_codes.MSP_STATUS, false, false, load_config);
+        MSP.send_message(MSPCodes.MSP_STATUS, false, false, load_config);
     }
 
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_misc_data);
+        MSP.send_message(MSPCodes.MSP_BF_CONFIG, false, false, load_misc_data);
     }
 
     function load_misc_data() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, load_html);
+        MSP.send_message(MSPCodes.MSP_MISC, false, false, load_html);
     }
 
     function load_html() {
         $('#content').load("./tabs/setup.html", process_html);
     }
 
-    MSP.send_message(MSP_codes.MSP_ACC_TRIM, false, false, load_status);
+    MSP.send_message(MSPCodes.MSP_ACC_TRIM, false, false, load_status);
 
     function process_html() {
         // translate to user-selected language
@@ -73,7 +73,7 @@ TABS.setup.initialize = function (callback) {
                 // During this period MCU won't be able to process any serial commands because its locked in a for/while loop
                 // until this operation finishes, sending more commands through data_poll() will result in serial buffer overflow
                 GUI.interval_pause('setup_data_pull');
-                MSP.send_message(MSP_codes.MSP_ACC_CALIBRATION, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_ACC_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupAccelCalibStarted'));
                     $('#accel_calib_running').show();
                     $('#accel_calib_rest').hide();
@@ -96,7 +96,7 @@ TABS.setup.initialize = function (callback) {
             if (!self.hasClass('calibrating') && !self.hasClass('disabled')) {
                 self.addClass('calibrating');
 
-                MSP.send_message(MSP_codes.MSP_MAG_CALIBRATION, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_MAG_CALIBRATION, false, false, function () {
                     GUI.log(chrome.i18n.getMessage('initialSetupMagCalibStarted'));
                     $('#mag_calib_running').show();
                     $('#mag_calib_rest').hide();
@@ -112,7 +112,7 @@ TABS.setup.initialize = function (callback) {
         });
 
         $('a.resetSettings').click(function () {
-            MSP.send_message(MSP_codes.MSP_RESET_CONF, false, false, function () {
+            MSP.send_message(MSPCodes.MSP_RESET_CONF, false, false, function () {
                 GUI.log(chrome.i18n.getMessage('initialSetupSettingsRestored'));
 
                 GUI.tab_switch_cleanup(function () {
@@ -169,9 +169,9 @@ TABS.setup.initialize = function (callback) {
             heading_e = $('dd.heading');
 
         function get_slow_data() {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
 
-            MSP.send_message(MSP_codes.MSP_ANALOG, false, false, function () {
+            MSP.send_message(MSPCodes.MSP_ANALOG, false, false, function () {
                 bat_voltage_e.text(chrome.i18n.getMessage('initialSetupBatteryValue', [ANALOG.voltage]));
                 bat_mah_drawn_e.text(chrome.i18n.getMessage('initialSetupBatteryMahValue', [ANALOG.mAhdrawn]));
                 bat_mah_drawing_e.text(chrome.i18n.getMessage('initialSetupBatteryAValue', [ANALOG.amperage.toFixed(2)]));
@@ -179,7 +179,7 @@ TABS.setup.initialize = function (callback) {
             });
 
             if (have_sensor(CONFIG.activeSensors, 'gps')) {
-                MSP.send_message(MSP_codes.MSP_RAW_GPS, false, false, function () {
+                MSP.send_message(MSPCodes.MSP_RAW_GPS, false, false, function () {
                     gpsFix_e.html((GPS_DATA.fix) ? chrome.i18n.getMessage('gpsFixTrue') : chrome.i18n.getMessage('gpsFixFalse'));
                     gpsSats_e.text(GPS_DATA.numSat);
                     gpsLat_e.text((GPS_DATA.lat / 10000000).toFixed(4) + ' deg');
@@ -189,7 +189,7 @@ TABS.setup.initialize = function (callback) {
         }
 
         function get_fast_data() {
-            MSP.send_message(MSP_codes.MSP_ATTITUDE, false, false, function () {
+            MSP.send_message(MSPCodes.MSP_ATTITUDE, false, false, function () {
 	            roll_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[0]]));
 	            pitch_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[1]]));
                 heading_e.text(chrome.i18n.getMessage('initialSetupAttitude', [SENSOR_DATA.kinematics[2]]));

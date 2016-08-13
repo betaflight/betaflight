@@ -24,7 +24,7 @@ TABS.transponder.initialize = function (callback, scrollPosition) {
     }
 
     // get the transponder data and a flag to see if transponder support is enabled on the FC
-    MSP.send_message(MSP_codes.MSP_TRANSPONDER_CONFIG, false, false, load_html);
+    MSP.send_message(MSPCodes.MSP_TRANSPONDER_CONFIG, false, false, load_html);
 
     // Convert a hex string to a byte array
     function hexToBytes(hex) {
@@ -79,10 +79,10 @@ TABS.transponder.initialize = function (callback, scrollPosition) {
                 // send data to FC
                 //
                 function save_transponder_config() {
-                    MSP.send_message(MSP_codes.MSP_SET_TRANSPONDER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_TRANSPONDER_CONFIG), false, save_to_eeprom);
+                    MSP.send_message(MSPCodes.MSP_SET_TRANSPONDER_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_TRANSPONDER_CONFIG), false, save_to_eeprom);
                 }
                 function save_to_eeprom() {
-                    MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function () {
+                    MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function () {
                         GUI.log(chrome.i18n.getMessage('transponderEepromSaved')); 
                     });
                 }
@@ -92,7 +92,7 @@ TABS.transponder.initialize = function (callback, scrollPosition) {
         }
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);

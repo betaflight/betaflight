@@ -17,34 +17,34 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     // requesting MSP_STATUS manually because it contains CONFIG.profile
-    MSP.promise(MSP_codes.MSP_STATUS).then(function() {
+    MSP.promise(MSPCodes.MSP_STATUS).then(function() {
         if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
-            return MSP.promise(MSP_codes.MSP_PID_CONTROLLER);
+            return MSP.promise(MSPCodes.MSP_PID_CONTROLLER);
         }
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_PIDNAMES)
+        return MSP.promise(MSPCodes.MSP_PIDNAMES)
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_PID);
+        return MSP.promise(MSPCodes.MSP_PID);
     }).then(function () {
         if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lt(CONFIG.flightControllerVersion, "2.9.1")) {
-          return MSP.promise(MSP_codes.MSP_SPECIAL_PARAMETERS);
+          return MSP.promise(MSPCodes.MSP_SPECIAL_PARAMETERS);
         }
     }).then(function() {
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-          return MSP.promise(MSP_codes.MSP_PID_ADVANCED);
+          return MSP.promise(MSPCodes.MSP_PID_ADVANCED);
         }
     }).then(function() {
         if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-          return MSP.promise(MSP_codes.MSP_RX_CONFIG);
+          return MSP.promise(MSPCodes.MSP_RX_CONFIG);
         }
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_RC_TUNING);
+        return MSP.promise(MSPCodes.MSP_RC_TUNING);
     }).then(function() {
-        return MSP.promise(MSP_codes.MSP_FILTER_CONFIG);
+        return MSP.promise(MSPCodes.MSP_FILTER_CONFIG);
     }).then(function() {
         var promise = true;
         if (CONFIG.flightControllerIdentifier === "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-            promise = MSP.promise(MSP_codes.MSP_BF_CONFIG);
+            promise = MSP.promise(MSPCodes.MSP_BF_CONFIG);
         }
 
         return promise;
@@ -506,7 +506,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         $('#resetProfile').on('click', function(){
             self.updating = true;
-            MSP.promise(MSP_codes.MSP_SET_RESET_CURR_PID).then(function () {
+            MSP.promise(MSPCodes.MSP_SET_RESET_CURR_PID).then(function () {
                 self.refresh(function () {
                     self.updating = false;
 
@@ -518,7 +518,7 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.tab-pid_tuning select[name="profile"]').change(function () {
             self.currentProfile = parseInt($(this).val());
             self.updating = true;
-            MSP.promise(MSP_codes.MSP_SELECT_SETTING, [self.currentProfile]).then(function () {
+            MSP.promise(MSPCodes.MSP_SELECT_SETTING, [self.currentProfile]).then(function () {
                 self.refresh(function () {
                     self.updating = false;
 
@@ -531,7 +531,7 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.tab-pid_tuning select[name="rate_profile"]').change(function () {
                 self.currentRateProfile = parseInt($(this).val());
                 self.updating = true;
-                MSP.promise(MSP_codes.MSP_SELECT_SETTING, [self.currentRateProfile + self.RATE_PROFILE_MASK]).then(function () {
+                MSP.promise(MSPCodes.MSP_SELECT_SETTING, [self.currentRateProfile + self.RATE_PROFILE_MASK]).then(function () {
                     self.refresh(function () {
                         self.updating = false;
 
@@ -797,35 +797,35 @@ TABS.pid_tuning.initialize = function (callback) {
                 var promise;
                 if (semver.gte(CONFIG.apiVersion, CONFIGURATOR.pidControllerChangeMinApiVersion)) {
                     PID.controller = pidController_e.val();
-                    promise = MSP.promise(MSP_codes.MSP_SET_PID_CONTROLLER, MSP.crunch(MSP_codes.MSP_SET_PID_CONTROLLER));
+                    promise = MSP.promise(MSPCodes.MSP_SET_PID_CONTROLLER, mspHelper.crunch(MSPCodes.MSP_SET_PID_CONTROLLER));
                 }
                 return promise;
             }).then(function () {
-                return MSP.promise(MSP_codes.MSP_SET_PID, MSP.crunch(MSP_codes.MSP_SET_PID));
+                return MSP.promise(MSPCodes.MSP_SET_PID, mspHelper.crunch(MSPCodes.MSP_SET_PID));
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.9.0") && semver.lt(CONFIG.flightControllerVersion, "3.0.0")) {
-                  return MSP.promise(MSP_codes.MSP_SET_SPECIAL_PARAMETERS, MSP.crunch(MSP_codes.MSP_SET_SPECIAL_PARAMETERS));
+                  return MSP.promise(MSPCodes.MSP_SET_SPECIAL_PARAMETERS, mspHelper.crunch(MSPCodes.MSP_SET_SPECIAL_PARAMETERS));
                 }
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                  return MSP.promise(MSP_codes.MSP_SET_PID_ADVANCED, MSP.crunch(MSP_codes.MSP_SET_PID_ADVANCED));
+                  return MSP.promise(MSPCodes.MSP_SET_PID_ADVANCED, mspHelper.crunch(MSPCodes.MSP_SET_PID_ADVANCED));
                 }
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-                  return MSP.promise(MSP_codes.MSP_SET_RX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_RX_CONFIG));
+                  return MSP.promise(MSPCodes.MSP_SET_RX_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_RX_CONFIG));
                 }
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-                    return MSP.promise(MSP_codes.MSP_SET_FILTER_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FILTER_CONFIG));
+                    return MSP.promise(MSPCodes.MSP_SET_FILTER_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_FILTER_CONFIG));
                 }
             }).then(function () {
-                return MSP.promise(MSP_codes.MSP_SET_RC_TUNING, MSP.crunch(MSP_codes.MSP_SET_RC_TUNING));
+                return MSP.promise(MSPCodes.MSP_SET_RC_TUNING, mspHelper.crunch(MSPCodes.MSP_SET_RC_TUNING));
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
-                    return MSP.promise(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG));
+                    return MSP.promise(MSPCodes.MSP_SET_BF_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_BF_CONFIG));
                 }
             }).then(function () {
-                return MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
+                return MSP.promise(MSPCodes.MSP_EEPROM_WRITE);
             }).then(function () {
                 self.updating = false;
                 self.setDirty(false);
@@ -845,7 +845,7 @@ TABS.pid_tuning.initialize = function (callback) {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);
@@ -853,7 +853,7 @@ TABS.pid_tuning.initialize = function (callback) {
 };
 
 TABS.pid_tuning.getRecieverData = function () {
-    MSP.send_message(MSP_codes.MSP_RC, false, false);
+    MSP.send_message(MSPCodes.MSP_RC, false, false);
 };
 
 TABS.pid_tuning.initRatesPreview = function () {

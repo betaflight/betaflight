@@ -28,16 +28,16 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
     }
 
     function load_led_config() {
-        MSP.send_message(MSP_codes.MSP_LED_STRIP_CONFIG, false, false, load_led_colors);
+        MSP.send_message(MSPCodes.MSP_LED_STRIP_CONFIG, false, false, load_led_colors);
     }
 
     function load_led_colors() {
-        MSP.send_message(MSP_codes.MSP_LED_COLORS, false, false, load_led_mode_colors);
+        MSP.send_message(MSPCodes.MSP_LED_COLORS, false, false, load_led_mode_colors);
     }
 
     function load_led_mode_colors() {
         if (semver.gte(CONFIG.apiVersion, "1.19.0"))
-            MSP.send_message(MSP_codes.MSP_LED_STRIP_MODECOLOR, false, false, load_html);
+            MSP.send_message(MSPCodes.MSP_LED_STRIP_MODECOLOR, false, false, load_html);
         else
             load_html();
     }
@@ -541,21 +541,21 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         
         $('a.save').click(function () {
 
-            MSP.sendLedStripConfig(send_led_strip_colors);
+            MspHelper.sendLedStripConfig(send_led_strip_colors);
              
             function send_led_strip_colors() {
-                MSP.sendLedStripColors(send_led_strip_mode_colors);
+                MspHelper.sendLedStripColors(send_led_strip_mode_colors);
             }
             
             function send_led_strip_mode_colors() {
                 if (semver.gte(CONFIG.apiVersion, "1.19.0"))
-                    MSP.sendLedStripModeColors(save_to_eeprom);
+                    MspHelper.sendLedStripModeColors(save_to_eeprom);
                 else
                     save_to_eeprom();
             }
             
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, function() {
+                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, function() {
                     GUI.log(chrome.i18n.getMessage('ledStripEepromSaved'));
                 });
             }

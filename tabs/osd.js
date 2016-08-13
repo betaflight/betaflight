@@ -174,10 +174,10 @@ FONT.msp = {
 FONT.upload = function($progress) {
   return Promise.mapSeries(FONT.data.characters, function(data, i) {
     $progress.val((i / FONT.data.characters.length) * 100);
-    return MSP.promise(MSP_codes.MSP_OSD_CHAR_WRITE, FONT.msp.encode(i));
+    return MSP.promise(MSPCodes.MSP_OSD_CHAR_WRITE, FONT.msp.encode(i));
   })
   .then(function() {
-    return MSP.promise(MSP_codes.MSP_SET_REBOOT);
+    return MSP.promise(MSPCodes.MSP_SET_REBOOT);
   });
 };
 
@@ -419,7 +419,7 @@ TABS.osd.initialize = function (callback) {
         // 2 way binding... sorta
         function updateOsdView() {
           // ask for the OSD config data
-          MSP.promise(MSP_codes.MSP_OSD_CONFIG)
+          MSP.promise(MSPCodes.MSP_OSD_CONFIG)
           .then(function(info) {
             if (!info.length) {
               $('.unsupported').fadeIn();
@@ -440,7 +440,7 @@ TABS.osd.initialize = function (callback) {
             }
             $videoTypes.find(':radio').click(function(e) {
               OSD.data.video_system = $(this).data('type');
-              MSP.promise(MSP_codes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
+              MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
               .then(function() {
                 updateOsdView();
               });
@@ -467,7 +467,7 @@ TABS.osd.initialize = function (callback) {
                     OSD.data.last_positions[field.name] = field.position
                     field.position = -1
                   }
-                  MSP.promise(MSP_codes.MSP_SET_OSD_CONFIG, OSD.msp.encode(field))
+                  MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encode(field))
                   .then(function() {
                     updateOsdView();
                   });
@@ -483,7 +483,7 @@ TABS.osd.initialize = function (callback) {
                     var field = $(this).data('field');
                     var position = parseInt($(this).val());
                     field.position = position;
-                    MSP.promise(MSP_codes.MSP_SET_OSD_CONFIG, OSD.msp.encode(field))
+                    MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encode(field))
                     .then(function() {
                       updateOsdView();
                     });
@@ -581,7 +581,7 @@ TABS.osd.initialize = function (callback) {
 
         $('a.save').click(function() {
           var self = this;
-          MSP.promise(MSP_codes.MSP_EEPROM_WRITE);
+          MSP.promise(MSPCodes.MSP_EEPROM_WRITE);
           GUI.log('OSD settings saved');
           var oldText = $(this).text();
           $(this).html("Saved");

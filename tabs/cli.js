@@ -174,7 +174,7 @@ TABS.cli.read = function (readInfo) {
                 } else {
 
                     GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                        MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
+                        MSP.send_message(MSPCodes.MSP_STATUS, false, false, function() {
                             GUI.log(chrome.i18n.getMessage('deviceReady'));
                             if (!GUI.tab_switch_in_progress) {
                                 $('#tabs ul.mode-connected .tab_setup a').click();

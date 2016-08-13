@@ -10,40 +10,40 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
     }
 
     function load_rx_config() {
-        MSP.send_message(MSP_codes.MSP_RX_CONFIG, false, false, load_failssafe_config);
+        MSP.send_message(MSPCodes.MSP_RX_CONFIG, false, false, load_failssafe_config);
     }
 
     function load_failssafe_config() {
-        MSP.send_message(MSP_codes.MSP_FAILSAFE_CONFIG, false, false, load_rxfail_config);
+        MSP.send_message(MSPCodes.MSP_FAILSAFE_CONFIG, false, false, load_rxfail_config);
     }
     
     function load_rxfail_config() {
-        MSP.send_message(MSP_codes.MSP_RXFAIL_CONFIG, false, false, get_box_names);
+        MSP.send_message(MSPCodes.MSP_RXFAIL_CONFIG, false, false, get_box_names);
     }
 
     function get_box_names() {
-        MSP.send_message(MSP_codes.MSP_BOXNAMES, false, false, get_mode_ranges);
+        MSP.send_message(MSPCodes.MSP_BOXNAMES, false, false, get_mode_ranges);
     }
 
     function get_mode_ranges() {
-        MSP.send_message(MSP_codes.MSP_MODE_RANGES, false, false, get_box_ids);
+        MSP.send_message(MSPCodes.MSP_MODE_RANGES, false, false, get_box_ids);
     }
 
     function get_box_ids() {
-        MSP.send_message(MSP_codes.MSP_BOXIDS, false, false, get_rc_data);
+        MSP.send_message(MSPCodes.MSP_BOXIDS, false, false, get_rc_data);
     }
 
     function get_rc_data() {
-        MSP.send_message(MSP_codes.MSP_RC, false, false, load_config);
+        MSP.send_message(MSPCodes.MSP_RC, false, false, load_config);
     }
 
     // BEGIN Support for pre API version 1.15.0
     function load_config() {
-        MSP.send_message(MSP_codes.MSP_BF_CONFIG, false, false, load_misc);
+        MSP.send_message(MSPCodes.MSP_BF_CONFIG, false, false, load_misc);
     }
 
     function load_misc() {
-        MSP.send_message(MSP_codes.MSP_MISC, false, false, load_html);
+        MSP.send_message(MSPCodes.MSP_MISC, false, false, load_html);
     }
     // END (Support for pre API version 1.15.0
 
@@ -293,32 +293,32 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             }
 
             function save_failssafe_config() {
-                MSP.send_message(MSP_codes.MSP_SET_FAILSAFE_CONFIG, MSP.crunch(MSP_codes.MSP_SET_FAILSAFE_CONFIG), false, save_rxfail_config);
+                MSP.send_message(MSPCodes.MSP_SET_FAILSAFE_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_FAILSAFE_CONFIG), false, save_rxfail_config);
             }
 
             function save_rxfail_config() {
-                MSP.sendRxFailConfig(save_bf_config);
+                MspHelper.sendRxFailConfig(save_bf_config);
             }
 
             function save_bf_config() {
-                MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_to_eeprom);
+                MSP.send_message(MSPCodes.MSP_SET_BF_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_BF_CONFIG), false, save_to_eeprom);
             }
 
             // BEGIN pre API 1.15.0 save functions
             function save_misc() {
-                MSP.send_message(MSP_codes.MSP_SET_MISC, MSP.crunch(MSP_codes.MSP_SET_MISC), false, save_to_eeprom);
+                MSP.send_message(MSPCodes.MSP_SET_MISC, mspHelper.crunch(MSPCodes.MSP_SET_MISC), false, save_to_eeprom);
             }
             // END pre API 1.15.0 save functions
 
             function save_to_eeprom() {
-                MSP.send_message(MSP_codes.MSP_EEPROM_WRITE, false, false, reboot);
+                MSP.send_message(MSPCodes.MSP_EEPROM_WRITE, false, false, reboot);
             }
 
             function reboot() {
                 GUI.log(chrome.i18n.getMessage('configurationEepromSaved'));
 
                 GUI.tab_switch_cleanup(function() {
-                    MSP.send_message(MSP_codes.MSP_SET_REBOOT, false, false, reinitialize);
+                    MSP.send_message(MSPCodes.MSP_SET_REBOOT, false, false, reinitialize);
                 });
             }
 
@@ -333,7 +333,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                 } else {
 
                     GUI.timeout_add('waiting_for_bootup', function waiting_for_bootup() {
-                        MSP.send_message(MSP_codes.MSP_STATUS, false, false, function() {
+                        MSP.send_message(MSPCodes.MSP_STATUS, false, false, function() {
                             GUI.log(chrome.i18n.getMessage('deviceReady'));
                             TABS.failsafe.initialize(false, $('#content').scrollTop());
                         });
@@ -342,9 +342,9 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             }
 
             if(apiVersionGte1_15_0) {
-                MSP.send_message(MSP_codes.MSP_SET_RX_CONFIG, MSP.crunch(MSP_codes.MSP_SET_RX_CONFIG), false, save_failssafe_config);
+                MSP.send_message(MSPCodes.MSP_SET_RX_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_RX_CONFIG), false, save_failssafe_config);
             } else {
-                MSP.send_message(MSP_codes.MSP_SET_BF_CONFIG, MSP.crunch(MSP_codes.MSP_SET_BF_CONFIG), false, save_misc);
+                MSP.send_message(MSPCodes.MSP_SET_BF_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_BF_CONFIG), false, save_misc);
             }
         });
 
@@ -353,7 +353,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
 
         // status data pulled via separate timer with static speed
         GUI.interval_add('status_pull', function status_pull() {
-            MSP.send_message(MSP_codes.MSP_STATUS);
+            MSP.send_message(MSPCodes.MSP_STATUS);
         }, 250, true);
 
         GUI.content_ready(callback);
