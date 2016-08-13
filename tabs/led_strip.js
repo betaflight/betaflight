@@ -541,15 +541,15 @@ TABS.led_strip.initialize = function (callback, scrollPosition) {
         
         $('a.save').click(function () {
 
-            MspHelper.sendLedStripConfig(send_led_strip_colors);
+            mspHelper.sendLedStripConfig(send_led_strip_colors);
              
             function send_led_strip_colors() {
-                MspHelper.sendLedStripColors(send_led_strip_mode_colors);
+                mspHelper.sendLedStripColors(send_led_strip_mode_colors);
             }
             
             function send_led_strip_mode_colors() {
                 if (semver.gte(CONFIG.apiVersion, "1.19.0"))
-                    MspHelper.sendLedStripModeColors(save_to_eeprom);
+                    mspHelper.sendLedStripModeColors(save_to_eeprom);
                 else
                     save_to_eeprom();
             }

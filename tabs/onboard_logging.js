@@ -359,7 +359,7 @@ TABS.onboard_logging.initialize = function (callback) {
                                             mark_saving_dialog_done();
                                         }
                                     } else {
-                                        MspHelper.dataflashRead(nextAddress, onChunkRead);
+                                        mspHelper.dataflashRead(nextAddress, onChunkRead);
                                     }
                                 };
                                 
@@ -370,12 +370,12 @@ TABS.onboard_logging.initialize = function (callback) {
                             }
                         } else {
                             // There was an error with the received block (address didn't match the one we asked for), retry
-                            MspHelper.dataflashRead(nextAddress, onChunkRead);
+                            mspHelper.dataflashRead(nextAddress, onChunkRead);
                         }
                     }
 
                     // Fetch the initial block
-                    MspHelper.dataflashRead(nextAddress, onChunkRead);
+                    mspHelper.dataflashRead(nextAddress, onChunkRead);
                 });
             });
         }

@@ -259,7 +259,7 @@ TABS.receiver.initialize = function (callback) {
                 // Give the window a callback it can use to send the channels (otherwise it can't see those objects)
                 createdWindow.contentWindow.setRawRx = function(channels) {
                     if (CONFIGURATOR.connectionValid && GUI.active_tab != 'cli') {
-                        MspHelper.setRawRx(channels);
+                        mspHelper.setRawRx(channels);
                         return true;
                     } else {
                         return false;

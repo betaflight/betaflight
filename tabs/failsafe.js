@@ -297,7 +297,7 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             }
 
             function save_rxfail_config() {
-                MspHelper.sendRxFailConfig(save_bf_config);
+                mspHelper.sendRxFailConfig(save_bf_config);
             }
 
             function save_bf_config() {
