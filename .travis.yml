@@ -38,3 +38,5 @@ script: ./.travis.sh
 
 cache: apt
 
+notifications:
+  email: false
