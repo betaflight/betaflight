@@ -40,3 +40,9 @@ cache: apt
 
 notifications:
   email: false
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/34e795df229478ac3a3b
+    on_success: change
+    on_failure: always
+    on_start: never
