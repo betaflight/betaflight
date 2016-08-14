@@ -104,7 +104,6 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_GPIO_PIN       PA0 // Todo: Check. Conflicts with motor 6 out and thus also BEEPER_OPT.
 
 
 #define SENSORS_SET (SENSOR_ACC)
