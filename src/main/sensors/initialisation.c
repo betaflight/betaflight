@@ -623,7 +623,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         acc.init(&acc);
     }
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.gyroSamplingRate = gyroSetSampleRate(gyroLpf, gyroSyncDenominator, pidDenom);    // Set gyro sample rate before initialisation
+    gyro.gyroSamplingInvterval = gyroSetSamplingInterval(gyroLpf, gyroSyncDenominator, pidDenom);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf);
     gyroInit();
 

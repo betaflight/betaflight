@@ -69,13 +69,13 @@ void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz
 
 void gyroInit(void)
 {
-    if (gyroSoftLpfHz && gyro.gyroSamplingRate) {  // Initialisation needs to happen once samplingrate is known
+    if (gyroSoftLpfHz && gyro.gyroSamplingInvterval) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.gyroSamplingRate, gyroSoftNotchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.gyroSamplingInvterval, gyroSoftNotchQ, FILTER_NOTCH);
             if (gyroSoftLpfType == FILTER_BIQUAD)
-                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.gyroSamplingRate);
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.gyroSamplingInvterval);
             else
-                gyroDt = (float) gyro.gyroSamplingRate * 0.000001f;
+                gyroDt = (float) gyro.gyroSamplingInvterval * 0.000001f;
         }
     }
 }

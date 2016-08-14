@@ -46,7 +46,7 @@ bool pidScheduledToRun(void)
     return ret;
 }
 
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator, uint8_t pidDenom)
+uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSyncDenominator, uint8_t pidDenom)
 {
     int gyroSamplePeriod;
     pidProcessDenom = pidDenom;

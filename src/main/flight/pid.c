@@ -74,7 +74,7 @@ pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are
 
 void setTargetPidLooptime(uint8_t pidProcessDenom)
 {
-    targetPidLooptime = gyro.gyroSamplingRate * pidProcessDenom;
+    targetPidLooptime = gyro.gyroSamplingInvterval * pidProcessDenom;
 }
 
 void pidResetErrorGyroState(void)
