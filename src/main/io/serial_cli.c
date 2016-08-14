@@ -2309,7 +2309,7 @@ static void printConfig(char *cmdline, bool doDiff)
         options = cmdline;
     }
 
-    master_t defaultConfig;
+    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
         createDefaultConfig(&defaultConfig);
@@ -2516,7 +2516,9 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
     changeProfile(profileIndex);
     cliPrint("\r\n# profile\r\n");
     cliProfile("");
+    cliPrint("\r\n");
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
+    cliRateProfile("");
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
@@ -2526,6 +2528,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, maste
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
+    cliPrint("\r\n");
     dumpValues(PROFILE_RATE_VALUE, dumpMask, defaultConfig);
 }
 
