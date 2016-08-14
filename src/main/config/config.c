@@ -573,7 +573,7 @@ void createDefaultConfig(master_t *config)
 
     config->servo_pwm_rate = 50;
 
-#ifdef CC3D
+#ifdef BUZZERM6
     config->use_buzzer_p6 = 0;
 #endif
 

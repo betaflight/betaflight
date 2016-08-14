@@ -44,7 +44,7 @@ typedef struct master_t {
     gimbalConfig_t gimbalConfig;
 #endif
 
-#ifdef CC3D
+#ifdef BUZZERM6
     uint8_t use_buzzer_p6;
 #endif
 
