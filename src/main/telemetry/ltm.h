@@ -19,14 +19,6 @@
 
 #pragma once
 
-struct telemetryConfig_s;
-void initLtmTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
-void handleLtmTelemetry(void);
-void checkLtmTelemetryState(void);
-
-void freeLtmTelemetryPort(void);
-void configureLtmTelemetryPort(void);
-
 typedef enum {
     LTM_FRAME_START = 0,
     LTM_AFRAME = LTM_FRAME_START, // Attitude Frame
@@ -53,11 +45,13 @@ typedef enum {
 #define LTM_MAX_PAYLOAD_SIZE 14
 #define LTM_MAX_MESSAGE_SIZE (LTM_MAX_PAYLOAD_SIZE+4)
 
-struct sbuf_s;
-void ltm_gframe(struct sbuf_s *dst);
-void ltm_sframe(struct sbuf_s *dst);
-void ltm_aframe(struct sbuf_s *dst);
-void ltm_oframe(struct sbuf_s *dst);
-void ltm_xframe(struct sbuf_s *dst);
-void ltm_nframe(struct sbuf_s *dst);
+struct telemetryConfig_s;
+void initLtmTelemetry(struct telemetryConfig_s *initialTelemetryConfig);
+void handleLtmTelemetry(void);
+void checkLtmTelemetryState(void);
+
+void freeLtmTelemetryPort(void);
+void configureLtmTelemetryPort(void);
+
+int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType);
 

@@ -21,14 +21,7 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
-
-
-#include "drivers/system.h"
-#include "drivers/bus_spi.h"
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/accgyro_spi_mpu6500.h"
 #include "drivers/exti.h"
 
 #include "hardware_revision.h"

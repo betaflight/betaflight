@@ -1,3 +1,4 @@
+
 /*
  * This file is part of Cleanflight.
  *
@@ -33,34 +34,45 @@
 #include "rx/nrf24_inav.h"
 
 #include "telemetry/ltm.h"
-#include "telemetry/nrf24_ltm.h"
 
 
 /*
  * iNav Protocol
- * No auto acknowledgment
  * Data rate is 250Kbps - lower data rate for better reliability and range
- * Payload size is 16, static, small payload is read more quickly (marginal benefit)
+ *
+ * Uses auto acknowledgment and dynamic payload size
+ *     ACK payload is used for handshaking in bind phase and telemetry in data phase
+ *
+ * Bind payload size is 16 bytes
+ * Data payload size is 8, 16 or 20 bytes dependent on variant of protocol, (small payload is read more quickly (marginal benefit))
  *
  * Bind Phase
  * uses address {0x4b,0x5c,0x6d,0x7e,0x8f}
- * uses channel 0x4c
+ * uses channel 0x4c (76)
  *
  * Data Phase
- * uses the address received in bind packet
- * hops between 4 RF channels generated from the address received in bind packet
+ * 1) uses the address received in bind packet
  *
- * There are 16 channels: eight 10-bit analog channels, two 8-bit analog channels, and six digital channels as follows:
+ * 2) hops between RF channels generated from the address received in bind packet
+ * number of RF hopping channels is set during bind handshaking:
+ *    the transmitter requests a number of bind channels in payload[7]
+ *    the receiver sets ackPayload[7] with the number of hopping channels actually allocated - the transmitter must use this value.
  *
- * Channels 0 to 3, are the AETR channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
- * Channel AUX1 by deviation convention is used for rate, values 1000, 1500, 2000
- * Channels AUX2 to AUX6 are binary channels, values 1000 or 2000,
- *     by deviation convention used for flip, picture, video, headless, and return to home
- * Channels AUX7 to AUX10 are analog channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
- * Channels AUX11 and AUX12 are analog channels, values 1000 to 2000 with resolution of 4 (8-bit channels)
+ * 3) Uses the payload size negotiated in the bind phase, payload size may be 8, 16 or 18 bytes
+ * i) for 8 byte payload there are 6 channels: AETR with resolution of 1 (10-bit channels), and AUX1 and AUX2 with resolution of 4 (8-bit) channels
+ * ii) for 16 byte payload there are 16 channels: eight 10-bit analog channels, two 8-bit analog channels, and six digital channels as follows:
+ *     Channels 0 to 3, are the AETR channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
+ *     Channel AUX1 by deviation convention is used for rate, values 1000, 1500, 2000
+ *     Channels AUX2 to AUX6 are binary channels, values 1000 or 2000,
+ *         by deviation convention used for flip, picture, video, headless, and return to home
+ *     Channels AUX7 to AUX10 are analog channels, values 1000 to 2000 with resolution of 1 (10-bit channels)
+ *     Channels AUX11 and AUX12 are analog channels, values 1000 to 2000 with resolution of 4 (8-bit channels)
+ * iii) For 18 byte payload there are 18 channels, the first 16 channelsar are as for 16 byte payload, and then there are two additional channels,
+ *      AUX13 and AUX14 both with resolution of 4 (8-bit channels)
  */
 
-#define RC_CHANNEL_COUNT 16
+#define RC_CHANNEL_COUNT 16 // standard variant of the protocol has 16 RC channels
+#define RC_CHANNEL_COUNT_MAX MAX_SUPPORTED_RC_CHANNEL_COUNT // up to 18 RC channels are supported
 
 enum {
     RATE_LOW = 0,
@@ -86,13 +98,15 @@ STATIC_UNIT_TESTED protocol_state_t protocolState;
 STATIC_UNIT_TESTED uint8_t ackPayload[NRF24L01_MAX_PAYLOAD_SIZE];
 
 #define INAV_PROTOCOL_PAYLOAD_SIZE 16
-STATIC_UNIT_TESTED const uint8_t payloadSize = INAV_PROTOCOL_PAYLOAD_SIZE;
+#define INAV_PROTOCOL_PAYLOAD_SIZE_MAX 20
+STATIC_UNIT_TESTED const uint8_t payloadSize = INAV_PROTOCOL_PAYLOAD_SIZE_MAX;
 uint8_t receivedPowerSnapshot;
 
 #define RX_TX_ADDR_LEN 5
 // set rxTxAddr to the bind address
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f};
 uint32_t *nrf24rxIdPtr;
+#define RX_TX_ADDR_4 0xD2 // rxTxAddr[4] always set to this value in
 
 // radio channels for frequency hopping
 #define INAV_RF_CHANNEL_COUNT_MAX 8
@@ -132,6 +146,8 @@ STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
 
 void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
+    memset(rcData, 0, MAX_SUPPORTED_RC_CHANNEL_COUNT * sizeof(uint16_t));
+    // payload[0] and payload[1] are zero in DATA state
     // the AETR channels have 10 bit resolution
     uint8_t lowBits = payload[6]; // least significant bits for AETR
     rcData[NRF24_ROLL]     = PWM_RANGE_MIN + ((payload[2] << 2) | (lowBits & 0x03)); // Aileron
@@ -142,38 +158,51 @@ void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     lowBits >>= 2;
     rcData[NRF24_YAW]      = PWM_RANGE_MIN + ((payload[5] << 2) | (lowBits & 0x03)); // Rudder
 
-    // channel AUX1 is used for rate, as per the deviation convention
-    const uint8_t rate = payload[7];
-    if (rate == RATE_HIGH) {
-        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MAX;
-    } else if (rate == RATE_MID) {
-        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIDDLE;
+    if (payloadSize == 8) {
+        // small payload variant of protocol, supports 6 channels
+        rcData[NRF24_AUX1] = PWM_RANGE_MIN + (payload[7] << 2);
+        rcData[NRF24_AUX2] = PWM_RANGE_MIN + (payload[1] << 2);
     } else {
-        rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIN;
+        // channel AUX1 is used for rate, as per the deviation convention
+        const uint8_t rate = payload[7];
+        // AUX1
+        if (rate == RATE_HIGH) {
+            rcData[RC_CHANNEL_RATE] = PWM_RANGE_MAX;
+        } else if (rate == RATE_MID) {
+            rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIDDLE;
+        } else {
+            rcData[RC_CHANNEL_RATE] = PWM_RANGE_MIN;
+        }
+
+        // channels AUX2 to AUX7 use the deviation convention
+        const uint8_t flags = payload[8];
+        rcData[RC_CHANNEL_FLIP]= (flags & FLAG_FLIP) ? PWM_RANGE_MAX : PWM_RANGE_MIN; // AUX2
+        rcData[RC_CHANNEL_PICTURE]= (flags & FLAG_PICTURE) ? PWM_RANGE_MAX : PWM_RANGE_MIN; // AUX3
+        rcData[RC_CHANNEL_VIDEO]= (flags & FLAG_VIDEO) ? PWM_RANGE_MAX : PWM_RANGE_MIN; // AUX4
+        rcData[RC_CHANNEL_HEADLESS]= (flags & FLAG_HEADLESS) ? PWM_RANGE_MAX : PWM_RANGE_MIN; //AUX5
+        rcData[RC_CHANNEL_RTH]= (flags & FLAG_RTH) ? PWM_RANGE_MAX : PWM_RANGE_MIN; // AUX6
+
+        // channels AUX7 to AUX10 have 10 bit resolution
+        lowBits = payload[13]; // least significant bits for AUX7 to AUX10
+        rcData[NRF24_AUX7] = PWM_RANGE_MIN + ((payload[9] << 2) | (lowBits & 0x03));
+        lowBits >>= 2;
+        rcData[NRF24_AUX8] = PWM_RANGE_MIN + ((payload[10] << 2) | (lowBits & 0x03));
+        lowBits >>= 2;
+        rcData[NRF24_AUX9] = PWM_RANGE_MIN + ((payload[11] << 2) | (lowBits & 0x03));
+        lowBits >>= 2;
+        rcData[NRF24_AUX10] = PWM_RANGE_MIN + ((payload[12] << 2) | (lowBits & 0x03));
+        lowBits >>= 2;
+
+        // channels AUX11 and AUX12 have 8 bit resolution
+        rcData[NRF24_AUX11] = PWM_RANGE_MIN + (payload[14] << 2);
+        rcData[NRF24_AUX12] = PWM_RANGE_MIN + (payload[15] << 2);
     }
-
-    // channels AUX2 to AUX7 use the deviation convention
-    const uint8_t flags = payload[8];
-    rcData[RC_CHANNEL_FLIP]= (flags & FLAG_FLIP) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[RC_CHANNEL_PICTURE]= (flags & FLAG_PICTURE) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[RC_CHANNEL_VIDEO]= (flags & FLAG_VIDEO) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[RC_CHANNEL_HEADLESS]= (flags & FLAG_HEADLESS) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-    rcData[RC_CHANNEL_RTH]= (flags & FLAG_RTH) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
-
-    // channels AUX7 to AUX10 have 10 bit resolution
-    lowBits = payload[13]; // least significant bits for AUX7 to AUX10
-    rcData[NRF24_AUX7] = PWM_RANGE_MIN + ((payload[9] << 2) | (lowBits & 0x03));
-    lowBits >>= 2;
-    rcData[NRF24_AUX8] = PWM_RANGE_MIN + ((payload[10] << 2) | (lowBits & 0x03));
-    lowBits >>= 2;
-    rcData[NRF24_AUX9] = PWM_RANGE_MIN + ((payload[11] << 2) | (lowBits & 0x03));
-    lowBits >>= 2;
-    rcData[NRF24_AUX10] = PWM_RANGE_MIN + ((payload[12] << 2) | (lowBits & 0x03));
-    lowBits >>= 2;
-
-    // channels AUX11 and AUX12 have 8 bit resolution
-    rcData[NRF24_AUX11] = PWM_RANGE_MIN + (payload[14] << 2);
-    rcData[NRF24_AUX12] = PWM_RANGE_MIN + (payload[15] << 2);
+    if (payloadSize == 18) {
+        // large payload variant of protocol
+        // channels AUX13 to AUX16 have 8 bit resolution
+        rcData[NRF24_AUX13] = PWM_RANGE_MIN + (payload[16] << 2);
+        rcData[NRF24_AUX14] = PWM_RANGE_MIN + (payload[17] << 2);
+    }
 }
 
 static void inavHopToNextChannel(void)
@@ -219,15 +248,55 @@ static void inavSetBound(void)
 #endif
 }
 
+#if defined(TELEMETRY_NRF24_LTM)
+static void writeTelemetryAckPayload(void)
+{
+    // set up telemetry data, send back telemetry data in the ACK packet
+    static uint8_t sequenceNumber = 0;
+    static ltm_frame_e ltmFrameType = LTM_FRAME_START;
+
+    ackPayload[0] = sequenceNumber++;
+    const int ackPayloadSize = getLtmFrame(&ackPayload[1], ltmFrameType) + 1;
+    ++ltmFrameType;
+    if (ltmFrameType > LTM_FRAME_COUNT) {
+        ltmFrameType = LTM_FRAME_START;
+    }
+    NRF24L01_WriteAckPayload(ackPayload, ackPayloadSize, NRF24L01_PIPE0);
+#ifdef DEBUG_NRF24_INAV
+    debug[2] = ackPayload[1]; // frame type, 'A', 'S' etc
+    debug[3] = ackPayload[2]; // pitch for AFrame
+#endif
+
+}
+#endif
+
+static void writeBindAckPayload(uint8_t *payload)
+{
+    // send back the payload with the first two bytes set to zero as the ack
+    payload[0] = 0;
+    payload[1] = 0;
+    // respond to request for rfChannelCount;
+    payload[7] = inavRfChannelHoppingCount;
+    // respond to request for payloadSize
+    switch (payloadSize) {
+    case 8:
+    case 16:
+    case 18:
+        payload[8] = payloadSize;
+        break;
+    default:
+        payload[8] = 16;
+        break;
+    }
+    NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
+}
+
 /*
  * This is called periodically by the scheduler.
  * Returns NRF24L01_RECEIVED_DATA if a data packet was received.
  */
 nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
 {
-#if defined(TELEMETRY_NRF24_LTM)
-    static ltm_frame_e ltmFrameType = LTM_FRAME_START;
-#endif
 #ifdef DEBUG_NRF24_INAV
     debug[1] = protocolState;
 #endif
@@ -239,10 +308,7 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
-                // send back the payload with the first two bytes set to zero as the ack
-                payload[0] = 0;
-                payload[1] = 0;
-                NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
+                writeBindAckPayload(payload);
                 ret = NRF24_RECEIVED_BIND;
                 // got a bind packet, so set the hopping channels and the rxTxAddr and start listening for data
                 inavSetBound();
@@ -257,25 +323,12 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
                 // transmitter may still continue to transmit bind packets after we have switched to data mode
-                // send back the payload with the first two bytes set to zero as the ack
-                payload[0] = 0;
-                payload[1] = 0;
-                NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
+                writeBindAckPayload(payload);
                 ret = NRF24_RECEIVED_BIND;
             } else {
                 ret = NRF24_RECEIVED_DATA;
 #if defined(TELEMETRY_NRF24_LTM)
-                // set up telemetry data, send back telemetry data in the ACK packet
-                const int ackPayloadSize = getNrf24LtmDatagram(ackPayload, ltmFrameType);
-                ++ltmFrameType;
-                if (ltmFrameType > LTM_FRAME_COUNT) {
-                    ltmFrameType = LTM_FRAME_START;
-                }
-                NRF24L01_WriteAckPayload(ackPayload, ackPayloadSize, NRF24L01_PIPE0);
-#ifdef DEBUG_NRF24_INAV
-                debug[2] = ackPayload[1]; // frame type, 'A', 'S' etc
-                debug[3] = ackPayload[2]; // pitch for AFrame
-#endif
+                writeTelemetryAckPayload();
 #endif
             }
         }
@@ -306,7 +359,7 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
         NRF24L01_SetChannel(INAV_RF_BIND_CHANNEL);
     } else {
         memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
-        rxTxAddr[4] = 0xD2;
+        rxTxAddr[4] = RX_TX_ADDR_4;
         inavRfChannelHoppingCount = rfChannelHoppingCount;
         inavSetBound();
     }
@@ -326,7 +379,7 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
 
 void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
+    rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_MAX;
     inavNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id, rxConfig->nrf24rx_channel_count);
 }
 #endif
