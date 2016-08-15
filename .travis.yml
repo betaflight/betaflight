@@ -40,6 +40,7 @@ addons:
       - wkhtmltopdf
       - libxml2-dev
       - libxslt-dev
+      - ccache
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
