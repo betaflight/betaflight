@@ -43,7 +43,7 @@ typedef struct {
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
-    TASK_GYROPID,
+    TASK_PID,
     TASK_ACCEL,
     TASK_ATTITUDE,
     TASK_RX,
@@ -97,7 +97,6 @@ typedef enum {
 typedef struct {
     /* Configuration */
     const char * taskName;
-    const char * subTaskName;
     bool (*checkFunc)(uint32_t currentDeltaTime);
     void (*taskFunc)(void);
     uint32_t desiredPeriod;         // target period of execution

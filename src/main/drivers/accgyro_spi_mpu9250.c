@@ -234,7 +234,6 @@ bool mpu9250SpiGyroDetect(gyro_t *gyro)
 
     gyro->init = mpu9250SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

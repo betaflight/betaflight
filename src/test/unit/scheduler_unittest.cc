@@ -88,7 +88,7 @@ TEST(SchedulerUnittest, TestPriorites)
     EXPECT_EQ(14, TASK_COUNT);
           // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
-    EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
+    EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_PID].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_ACCEL].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_LOW, cfTasks[TASK_SERIAL].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_MEDIUM, cfTasks[TASK_BATTERY].staticPriority);
@@ -117,16 +117,16 @@ TEST(SchedulerUnittest, TestQueue)
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueFirst());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
-    queueAdd(&cfTasks[TASK_GYROPID]); // TASK_PRIORITY_REALTIME
+    queueAdd(&cfTasks[TASK_PID]); // TASK_PRIORITY_REALTIME
     EXPECT_EQ(2, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_PID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(NULL, queueNext());
     EXPECT_EQ(deadBeefPtr, taskQueueArray[TASK_COUNT + 1]);
 
     queueAdd(&cfTasks[TASK_SERIAL]); // TASK_PRIORITY_LOW
     EXPECT_EQ(3, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_PID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
     EXPECT_EQ(NULL, queueNext());
@@ -134,7 +134,7 @@ TEST(SchedulerUnittest, TestQueue)
 
     queueAdd(&cfTasks[TASK_BATTERY]); // TASK_PRIORITY_MEDIUM
     EXPECT_EQ(4, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_PID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
@@ -143,7 +143,7 @@ TEST(SchedulerUnittest, TestQueue)
 
     queueAdd(&cfTasks[TASK_RX]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(5, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_PID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], queueNext());
     EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
@@ -153,7 +153,7 @@ TEST(SchedulerUnittest, TestQueue)
 
     queueRemove(&cfTasks[TASK_SYSTEM]); // TASK_PRIORITY_HIGH
     EXPECT_EQ(4, queueSize());
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], queueFirst());
+    EXPECT_EQ(&cfTasks[TASK_PID], queueFirst());
     EXPECT_EQ(&cfTasks[TASK_RX], queueNext());
     EXPECT_EQ(&cfTasks[TASK_BATTERY], queueNext());
     EXPECT_EQ(&cfTasks[TASK_SERIAL], queueNext());
@@ -282,18 +282,18 @@ TEST(SchedulerUnittest, TestSingleTask)
     for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
-    setTaskEnabled(TASK_GYROPID, true);
-    cfTasks[TASK_GYROPID].lastExecutedAt = 1000;
+    setTaskEnabled(TASK_PID, true);
+    cfTasks[TASK_PID].lastExecutedAt = 1000;
     simulatedTime = 4000;
     // run the scheduler and check the task has executed
     scheduler();
     EXPECT_NE(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
-    EXPECT_EQ(3000, cfTasks[TASK_GYROPID].taskLatestDeltaTime);
-    EXPECT_EQ(4000, cfTasks[TASK_GYROPID].lastExecutedAt);
-    EXPECT_EQ(pidLoopCheckerTime, cfTasks[TASK_GYROPID].totalExecutionTime);
+    EXPECT_EQ(&cfTasks[TASK_PID], unittest_scheduler_selectedTask);
+    EXPECT_EQ(3000, cfTasks[TASK_PID].taskLatestDeltaTime);
+    EXPECT_EQ(4000, cfTasks[TASK_PID].lastExecutedAt);
+    EXPECT_EQ(pidLoopCheckerTime, cfTasks[TASK_PID].totalExecutionTime);
     // task has run, so its dynamic priority should have been set to zero
-    EXPECT_EQ(0, cfTasks[TASK_GYROPID].dynamicPriority);
+    EXPECT_EQ(0, cfTasks[TASK_PID].dynamicPriority);
 }
 
 TEST(SchedulerUnittest, TestTwoTasks)
@@ -303,13 +303,13 @@ TEST(SchedulerUnittest, TestTwoTasks)
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
     setTaskEnabled(TASK_ACCEL, true);
-    setTaskEnabled(TASK_GYROPID, true);
+    setTaskEnabled(TASK_PID, true);
 
     // set it up so that TASK_ACCEL ran just before TASK_GYROPID
     static const uint32_t startTime = 4000;
     simulatedTime = startTime;
-    cfTasks[TASK_GYROPID].lastExecutedAt = simulatedTime;
-    cfTasks[TASK_ACCEL].lastExecutedAt = cfTasks[TASK_GYROPID].lastExecutedAt - updateAccelerometerTime;
+    cfTasks[TASK_PID].lastExecutedAt = simulatedTime;
+    cfTasks[TASK_ACCEL].lastExecutedAt = cfTasks[TASK_PID].lastExecutedAt - updateAccelerometerTime;
     EXPECT_EQ(0, cfTasks[TASK_ACCEL].taskAgeCycles);
     // run the scheduler
     scheduler();
@@ -330,14 +330,14 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime += 500;
     // TASK_GYROPID should now run
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&cfTasks[TASK_PID], unittest_scheduler_selectedTask);
     EXPECT_EQ(1, unittest_scheduler_waitingTasks);
     EXPECT_EQ(5000 + pidLoopCheckerTime, simulatedTime);
 
     simulatedTime += 1000 - pidLoopCheckerTime;
     scheduler();
     // TASK_GYROPID should run again
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&cfTasks[TASK_PID], unittest_scheduler_selectedTask);
 
     scheduler();
     EXPECT_EQ(static_cast<cfTask_t*>(0), unittest_scheduler_selectedTask);
@@ -346,7 +346,7 @@ TEST(SchedulerUnittest, TestTwoTasks)
     simulatedTime = startTime + 10500; // TASK_GYROPID and TASK_ACCEL desiredPeriods have elapsed
     // of the two TASK_GYROPID should run first
     scheduler();
-    EXPECT_EQ(&cfTasks[TASK_GYROPID], unittest_scheduler_selectedTask);
+    EXPECT_EQ(&cfTasks[TASK_PID], unittest_scheduler_selectedTask);
     // and finally TASK_ACCEL should now run
     scheduler();
     EXPECT_EQ(&cfTasks[TASK_ACCEL], unittest_scheduler_selectedTask);
@@ -358,8 +358,8 @@ TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
     for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
-    setTaskEnabled(TASK_GYROPID, true);
-    cfTasks[TASK_GYROPID].lastExecutedAt = 200000;
+    setTaskEnabled(TASK_PID, true);
+    cfTasks[TASK_PID].lastExecutedAt = 200000;
     simulatedTime = 200700;
 
     setTaskEnabled(TASK_SYSTEM, true);
@@ -374,7 +374,7 @@ TEST(SchedulerUnittest, TestRealTimeGuardInNoTaskRun)
     EXPECT_EQ(NULL, unittest_scheduler_selectedTask);
     EXPECT_EQ(100000, cfTasks[TASK_SYSTEM].lastExecutedAt);
 
-    EXPECT_EQ(200000, cfTasks[TASK_GYROPID].lastExecutedAt);
+    EXPECT_EQ(200000, cfTasks[TASK_PID].lastExecutedAt);
 }
 
 TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
@@ -383,8 +383,8 @@ TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
     for (int taskId=0; taskId < TASK_COUNT; ++taskId) {
         setTaskEnabled(static_cast<cfTaskId_e>(taskId), false);
     }
-    setTaskEnabled(TASK_GYROPID, true);
-    cfTasks[TASK_GYROPID].lastExecutedAt = 200000;
+    setTaskEnabled(TASK_PID, true);
+    cfTasks[TASK_PID].lastExecutedAt = 200000;
     simulatedTime = 200699;
 
     setTaskEnabled(TASK_SYSTEM, true);
@@ -399,7 +399,7 @@ TEST(SchedulerUnittest, TestRealTimeGuardOutTaskRun)
     EXPECT_EQ(&cfTasks[TASK_SYSTEM], unittest_scheduler_selectedTask);
     EXPECT_EQ(200699, cfTasks[TASK_SYSTEM].lastExecutedAt);
 
-    EXPECT_EQ(200000, cfTasks[TASK_GYROPID].lastExecutedAt);
+    EXPECT_EQ(200000, cfTasks[TASK_PID].lastExecutedAt);
 }
 
 // STUBS

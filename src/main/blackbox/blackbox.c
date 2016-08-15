@@ -1170,7 +1170,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         targetPidLooptime);
         BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom:%d",                  masterConfig.gyro_sync_denom);
         BLACKBOX_PRINT_HEADER_LINE("pid_process_denom:%d",                masterConfig.pid_process_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);

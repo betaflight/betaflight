@@ -57,7 +57,6 @@ bool mpu3050Detect(gyro_t *gyro)
     gyro->init = mpu3050Init;
     gyro->read = mpuGyroRead;
     gyro->temperature = mpu3050ReadTemp;
-    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
