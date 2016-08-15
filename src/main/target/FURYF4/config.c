@@ -76,11 +76,11 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for FURYF4 targets
-void targetConfiguration(void) {
-    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-    masterConfig.motor_pwm_rate = 32000;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    masterConfig.gyro_sync_denom = 1;
-    masterConfig.pid_process_denom = 1;
+void targetConfiguration(master_t *config) {
+    config->mag_hardware = MAG_NONE;            // disabled by default
+    config->motor_pwm_rate = 32000;
+    config->failsafeConfig.failsafe_delay = 2;
+    config->failsafeConfig.failsafe_off_delay = 0;
+    config->gyro_sync_denom = 1;
+    config->pid_process_denom = 1;
 }
