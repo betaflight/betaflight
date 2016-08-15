@@ -1608,6 +1608,7 @@ MspHelper.prototype.sendLedStripConfig = function(onCompleteCallback) {
         var ledDirectionLetters =        ['n', 'e', 's', 'w', 'u', 'd'];      // in LSB bit order
         var ledFunctionLetters =         ['i', 'w', 'f', 'a', 't', 'r', 'c', 'g', 's', 'b', 'l']; // in LSB bit order
         var ledBaseFunctionLetters =     ['c', 'f', 'a', 'l', 's', 'g', 'r']; // in LSB bit 
+        var ledOverlayLetters =         ['t', 'o', 'b', 'n', 'i', 'w']; // in LSB bit 
 
         /*
         var led = {
