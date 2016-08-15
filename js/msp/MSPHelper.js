@@ -681,6 +681,17 @@ MspHelper.prototype.process_data = function(dataHandler) {
             FILTER_CONFIG.dterm_lpf_hz = data.getUint16(offset, 1);
             offset += 2;
             FILTER_CONFIG.yaw_lpf_hz = data.getUint16(offset, 1);
+            offset += 2;
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                FILTER_CONFIG.gyro_soft_notch_hz = data.getUint16(offset, 1);
+                offset += 2;
+                FILTER_CONFIG.gyro_soft_notch_cutoff = data.getUint16(offset, 1);
+                offset += 2;
+                FILTER_CONFIG.dterm_notch_hz = data.getUint16(offset, 1);
+                offset += 2;
+                FILTER_CONFIG.dterm_notch_cutoff = data.getUint16(offset, 1);
+                offset += 2;
+            }
             break;
 
         case MSPCodes.MSP_SET_PID_ADVANCED:
@@ -1316,6 +1327,12 @@ MspHelper.prototype.crunch = function(code) {
             buffer.push8(FILTER_CONFIG.gyro_soft_lpf_hz)
               .push16(FILTER_CONFIG.dterm_lpf_hz)
               .push16(FILTER_CONFIG.yaw_lpf_hz);
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                buffer.push16(FILTER_CONFIG.gyro_soft_notch_hz)
+                    .push16(FILTER_CONFIG.gyro_soft_notch_cutoff)
+                    .push16(FILTER_CONFIG.dterm_notch_hz)
+                    .push16(FILTER_CONFIG.dterm_notch_cutoff);
+            }
             break;
         case MSPCodes.MSP_SET_PID_ADVANCED:
             if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
