@@ -93,7 +93,7 @@
 #endif
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
-void targetConfiguration(void);
+void targetConfiguration(master_t *config);
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
@@ -618,12 +618,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #if defined(TARGET_CONFIG)
-    // Don't look at target specific config settings when getting default
-    // values for a CLI diff. This is suboptimal, but it doesn't break the
-    // public API
-    if (config == &masterConfig) {
-        targetConfiguration();
-    }
+    targetConfiguration(config);
 #endif
 
    
