@@ -108,7 +108,6 @@
 #include "hardware_revision.h"
 #endif
 
-
 extern uint8_t motorControlEnable;
 
 #ifdef SOFTSERIAL_LOOPBACK
@@ -349,12 +348,10 @@ void init(void)
 #endif
 #endif
 
-#if defined(SONAR) && defined(USE_SOFTSERIAL2)
-#if defined(SPRACINGF3)
+#if defined(SONAR) && defined(USE_SOFTSERIAL2) && defined(SPRACINGF3)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
-#endif
 #endif
 
 #ifdef USE_I2C
@@ -424,18 +421,7 @@ void init(void)
 
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
-    LED1_ON;
-    LED0_OFF;
-    for (int i = 0; i < 10; i++) {
-        LED1_TOGGLE;
-        LED0_TOGGLE;
-        delay(25);
-        BEEP_ON;
-        delay(25);
-        BEEP_OFF;
-    }
-    LED0_OFF;
-    LED1_OFF;
+    flashLedsAndBeep();
 
 #ifdef MAG
     if (sensors(SENSOR_MAG))
@@ -628,12 +614,88 @@ int main(void)
     }
 }
 
+#ifdef DEBUG_HARDFAULTS
+
+//from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/
+/**
+ * hard_fault_handler_c:
+ * This is called from the HardFault_HandlerAsm with a pointer the Fault stack
+ * as the parameter. We can then read the values from the stack and place them
+ * into local variables for ease of reading.
+ * We then read the various Fault Status and Address Registers to help decode
+ * cause of the fault.
+ * The function ends with a BKPT instruction to force control back into the debugger
+ */
+void hard_fault_handler_c(unsigned long *hardfault_args)
+{
+  volatile unsigned long stacked_r0 ;
+  volatile unsigned long stacked_r1 ;
+  volatile unsigned long stacked_r2 ;
+  volatile unsigned long stacked_r3 ;
+  volatile unsigned long stacked_r12 ;
+  volatile unsigned long stacked_lr ;
+  volatile unsigned long stacked_pc ;
+  volatile unsigned long stacked_psr ;
+  volatile unsigned long _CFSR ;
+  volatile unsigned long _HFSR ;
+  volatile unsigned long _DFSR ;
+  volatile unsigned long _AFSR ;
+  volatile unsigned long _BFAR ;
+  volatile unsigned long _MMAR ;
+
+  stacked_r0 = ((unsigned long)hardfault_args[0]) ;
+  stacked_r1 = ((unsigned long)hardfault_args[1]) ;
+  stacked_r2 = ((unsigned long)hardfault_args[2]) ;
+  stacked_r3 = ((unsigned long)hardfault_args[3]) ;
+  stacked_r12 = ((unsigned long)hardfault_args[4]) ;
+  stacked_lr = ((unsigned long)hardfault_args[5]) ;
+  stacked_pc = ((unsigned long)hardfault_args[6]) ;
+  stacked_psr = ((unsigned long)hardfault_args[7]) ;
+
+  // Configurable Fault Status Register
+  // Consists of MMSR, BFSR and UFSR
+  _CFSR = (*((volatile unsigned long *)(0xE000ED28))) ;
+
+  // Hard Fault Status Register
+  _HFSR = (*((volatile unsigned long *)(0xE000ED2C))) ;
+
+  // Debug Fault Status Register
+  _DFSR = (*((volatile unsigned long *)(0xE000ED30))) ;
+
+  // Auxiliary Fault Status Register
+  _AFSR = (*((volatile unsigned long *)(0xE000ED3C))) ;
+
+  // Read the Fault Address Registers. These may not contain valid values.
+  // Check BFARVALID/MMARVALID to see if they are valid values
+  // MemManage Fault Address Register
+  _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+  // Bus Fault Address Register
+  _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
+
+  __asm("BKPT #0\n") ; // Break into the debugger
+}
+
+#else
+
 void HardFault_Handler(void)
 {
+    LED2_ON;
+
     // fall out of the sky
-    uint8_t requiredState = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
-    if ((systemState & requiredState) == requiredState) {
+    const uint8_t requiredStateForMotors = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_MOTORS_READY;
+    if ((systemState & requiredStateForMotors) == requiredStateForMotors) {
         stopMotors();
     }
-    while (1);
+
+    LED1_OFF;
+    LED0_OFF;
+
+    while (1) {
+#ifdef LED2
+        delay(50);
+        LED2_TOGGLE;
+#endif
+    }
 }
+
+#endif
