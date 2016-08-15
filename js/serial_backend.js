@@ -177,7 +177,7 @@ function onOpen(openInfo) {
             if (!CONFIGURATOR.connectionValid) {
                 GUI.log(chrome.i18n.getMessage('noConfigurationReceived'));
 
-                $('div.connect_controls ').click(); // disconnect
+                $('div.connect_controls a.connect').click(); // disconnect
             }
         }, 10000);
 
