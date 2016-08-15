@@ -160,7 +160,7 @@ PG_DECLARE(specialColorIndexes_t, specialColors);
 bool parseColor(int index, const char *colorConfig);
 
 bool parseLedStripConfig(int ledIndex, const char *config);
-void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize);
+void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
