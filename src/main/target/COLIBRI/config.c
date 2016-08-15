@@ -79,21 +79,20 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for Colibri/Gemini targets
-void targetConfiguration(void) 
+void targetConfiguration(master_t *config)
 {
-    masterConfig.mixerMode = MIXER_HEX6X;
-    masterConfig.rxConfig.serialrx_provider = 2;
-    featureSet(FEATURE_RX_SERIAL);
+    config->mixerMode = MIXER_HEX6X;
+    config->rxConfig.serialrx_provider = 2;
 
-    masterConfig.escAndServoConfig.minthrottle = 1070;
-    masterConfig.escAndServoConfig.maxthrottle = 2000;
+    config->escAndServoConfig.minthrottle = 1070;
+    config->escAndServoConfig.maxthrottle = 2000;
 
-    masterConfig.boardAlignment.pitchDegrees = 10;
-    //masterConfig.rcControlsConfig.deadband = 10;
-    //masterConfig.rcControlsConfig.yaw_deadband = 10;
-    masterConfig.mag_hardware = 1;
+    config->boardAlignment.pitchDegrees = 10;
+    //config->rcControlsConfig.deadband = 10;
+    //config->rcControlsConfig.yaw_deadband = 10;
+    config->mag_hardware = 1;
 
-    masterConfig.profile[0].controlRateProfile[0].dynThrPID = 45;
-    masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint = 1700;
-    masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    config->profile[0].controlRateProfile[0].dynThrPID = 45;
+    config->profile[0].controlRateProfile[0].tpa_breakpoint = 1700;
+    config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 }

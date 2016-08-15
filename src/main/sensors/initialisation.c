@@ -599,7 +599,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         uint8_t baroHardwareToUse,
         int16_t magDeclinationFromConfig,
         uint8_t gyroLpf,
-        uint8_t gyroSyncDenominator)
+        uint8_t gyroSyncDenominator,
+        uint8_t pidDenom)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -618,7 +619,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
     // Now time to init things
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
+    gyro.gyroSamplingInterval = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf); // driver initialisation
     gyroInit(); // sensor initialisation
 

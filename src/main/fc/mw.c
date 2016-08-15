@@ -204,10 +204,10 @@ void scaleRcCommandToFpvCamAngle(void) {
         sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
     }
 
-    int16_t roll = setpointRate[ROLL];
-    int16_t yaw = setpointRate[YAW];
-    setpointRate[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
-    setpointRate[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
+    int16_t roll = rcCommand[ROLL];
+    int16_t yaw = rcCommand[YAW];
+    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
 void processRcCommand(void)
@@ -264,13 +264,13 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
-
-        isRXDataNew = false;
-
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
+
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+
+        isRXDataNew = false;
     }
 }
 
@@ -803,20 +803,10 @@ void subTaskMotorUpdate(void)
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
-uint8_t setPidUpdateCountDown(void) {
-    if (masterConfig.gyro_soft_lpf_hz) {
-        return masterConfig.pid_process_denom - 1;
-    } else {
-        return 1;
-    }
-}
-
 // Function for loop trigger
 void taskMainPidLoopCheck(void)
 {
     static uint32_t previousTime;
-    static bool runTaskMainSubprocesses;
-
     const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     cycleTime = micros() - previousTime;
@@ -829,29 +819,14 @@ void taskMainPidLoopCheck(void)
 
     const uint32_t startTime = micros();
     while (true) {
-        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            static uint8_t pidUpdateCountdown;
-
+        if (pidScheduledToRun() || ((currentDeltaTime + (micros() - previousTime)) >= (targetPidLooptime + GYRO_WATCHDOG_DELAY))) {
             if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
-            if (runTaskMainSubprocesses) {
-                subTaskMainSubprocesses();
-                runTaskMainSubprocesses = false;
-            }
-
-            gyroUpdate();
-
-            if (pidUpdateCountdown) {
-                pidUpdateCountdown--;
-            } else {
-                pidUpdateCountdown = setPidUpdateCountDown();
-                subTaskPidController();
-                subTaskMotorUpdate();
-                runTaskMainSubprocesses = true;
-            }
-
             break;
         }
     }
+    subTaskMainSubprocesses();
+    subTaskPidController();
+    subTaskMotorUpdate();
 }
 
 void taskUpdateAccelerometer(void)

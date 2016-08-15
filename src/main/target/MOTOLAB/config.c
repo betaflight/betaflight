@@ -77,7 +77,7 @@
 #include "config/config_master.h"
 
 // Motolab target supports 2 different type of boards Tornado / Cyclone.
-void targetConfiguration(void) {
-    masterConfig.gyro_sync_denom = 4;
-    masterConfig.pid_process_denom = 1;
+void targetConfiguration(master_t *config) {
+    config->gyro_sync_denom = 4;
+    config->pid_process_denom = 1;
 }

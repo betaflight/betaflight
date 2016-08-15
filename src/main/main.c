@@ -425,6 +425,15 @@ void init(void)
 #endif
 #endif
 
+#if defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_MPU6500)
+    if (!masterConfig.gyro_lpf) masterConfig.gyro_lpf  = 1;                 // Limit i2c MPU6500 targets to 188hz LPF
+#endif
+
+// MPU6500 does not support divider
+#if defined(USE_GYRO_SPI_MPU6500)
+    masterConfig.gyro_sync_denom = 1;
+#endif
+
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
@@ -473,7 +482,8 @@ void init(void)
             masterConfig.baro_hardware,
             masterConfig.mag_declination,
             masterConfig.gyro_lpf,
-            masterConfig.gyro_sync_denom)) {
+            masterConfig.gyro_sync_denom,
+            masterConfig.pid_process_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -602,7 +612,6 @@ void init(void)
 
     setTargetPidLooptime(masterConfig.pid_process_denom); // Initialize pid looptime
 
-
 #ifdef BLACKBOX
     initBlackbox();
 #endif
@@ -678,8 +687,8 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_PID, targetPidLooptime);
+    setTaskEnabled(TASK_PID, true);
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
