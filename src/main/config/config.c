@@ -206,7 +206,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 60;
-    pidProfile->D8[PITCH] = 25;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -232,22 +232,22 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->yaw_lpf_hz = 80;
-    pidProfile->rollPitchItermIgnoreRate = 200;
-    pidProfile->yawItermIgnoreRate = 50;
+    pidProfile->rollPitchItermIgnoreRate = 130;
+    pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 0;
     pidProfile->dterm_notch_cutoff = 150;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
-    pidProfile->zeroThrottleStabilisation = PID_STABILISATION_OFF;
+    pidProfile->pidAtMinThrottle = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
     pidProfile->dtermSetpointWeight = 120;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->toleranceBand = 15;
+    pidProfile->toleranceBand = 0;
     pidProfile->toleranceBandReduction = 40;
     pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
@@ -310,10 +310,9 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
 #ifdef BRUSHED_MOTORS
     escAndServoConfig->minthrottle = 1000;
-    escAndServoConfig->maxthrottle = 2000;
 #else
-    escAndServoConfig->minthrottle = 1150;
-    escAndServoConfig->maxthrottle = 1850;
+    escAndServoConfig->maxthrottle = 2000;
+    escAndServoConfig->minthrottle = 1070;
 #endif
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
