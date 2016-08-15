@@ -53,8 +53,8 @@ void detectHardwareRevision(void)
 
 #ifdef USE_SPI
 
-#define DISABLE_SPI_CS       IOLo(nazeSpiCsPin)
-#define ENABLE_SPI_CS        IOHi(nazeSpiCsPin)
+#define DISABLE_SPI_CS       IOHi(nazeSpiCsPin)
+#define ENABLE_SPI_CS        IOLo(nazeSpiCsPin)
 
 #define SPI_DEVICE_NONE (0)
 #define SPI_DEVICE_FLASH (1)
