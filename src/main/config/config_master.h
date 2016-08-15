@@ -78,7 +78,7 @@ typedef struct master_t {
 
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
-    float acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    uint16_t acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
