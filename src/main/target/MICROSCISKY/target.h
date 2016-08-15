@@ -22,6 +22,8 @@
 #define LED0                    PB3
 #define LED1                    PB4
 
+#define BEEPER                  PA12
+
 #define BARO_XCLR_PIN           PC13
 #define BARO_EOC_PIN            PC14
 
