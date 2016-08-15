@@ -53,19 +53,23 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #ifndef I2C1_SDA
 #define I2C1_SDA PB9
 #endif
+
 #else
+
 #ifndef I2C1_SCL
 #define I2C1_SCL PB6
 #endif
 #ifndef I2C1_SDA
 #define I2C1_SDA PB7
 #endif
+#define IOCFG_I2C   IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
 
 #endif
 
 #ifndef I2C2_SCL
 #define I2C2_SCL PB10
 #endif
+
 #ifndef I2C2_SDA
 #define I2C2_SDA PB11
 #endif
@@ -414,8 +418,8 @@ void i2cInit(I2CDevice device)
     IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_I2C);
     IOConfigGPIOAF(sda, IOCFG_I2C, GPIO_AF_I2C);
 #else
-    IOConfigGPIO(scl, IOCFG_AF_OD);
-    IOConfigGPIO(sda, IOCFG_AF_OD);
+    IOConfigGPIO(scl, IOCFG_I2C);
+    IOConfigGPIO(sda, IOCFG_I2C);
 #endif
 
     I2C_DeInit(i2c->dev);
