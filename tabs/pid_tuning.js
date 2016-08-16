@@ -59,7 +59,7 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            $('input[name="vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
+            $('input[name="#vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
@@ -227,7 +227,6 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.pid_tuning input[name="yaw_rate"]').val(RC_tuning.yaw_rate.toFixed(2));
         $('.pid_tuning input[name="rc_expo"]').val(RC_tuning.RC_EXPO.toFixed(2));
         $('.pid_tuning input[name="rc_yaw_expo"]').val(RC_tuning.RC_YAW_EXPO.toFixed(2));
-        $('.pid_tuning input[name="rc_rate_yaw"]').val(RC_tuning.rcYawRate.toFixed(2));
 
         $('.throttle input[name="mid"]').val(RC_tuning.throttle_MID.toFixed(2));
         $('.throttle input[name="expo"]').val(RC_tuning.throttle_EXPO.toFixed(2));
@@ -240,13 +239,24 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_expo"]').attr("rowspan", "3");
         }
 
-        $('.pid_tuning input[name="gyro"]').val(FILTER_CONFIG.gyro_soft_lpf_hz);
-        $('.pid_tuning input[name="dterm"]').val(FILTER_CONFIG.dterm_lpf_hz);
-        $('.pid_tuning input[name="yaw"]').val(FILTER_CONFIG.yaw_lpf_hz);
-
-        if (semver.lt(CONFIG.flightControllerVersion, "2.9.0")) {
-            $('.pid_filter').hide();
+        if (semver.gte(CONFIG.flightControllerVersion, '2.9.0')) {
+            $('.pid_tuning input[name="rc_rate_yaw"]').val(RC_tuning.rcYawRate.toFixed(2));
+            $('.pid_filter input[name="gyroLowpassFrequency"]').val(FILTER_CONFIG.gyro_soft_lpf_hz);
+            $('.pid_filter input[name="dtermLowpassFrequency"]').val(FILTER_CONFIG.dterm_lpf_hz);
+            $('.pid_filter input[name="yawLowpassFrequency"]').val(FILTER_CONFIG.yaw_lpf_hz);
+        } else {
+            $('.tab-pid_tuning .subtab-filter').hide();
+            $('.tab-pid_tuning .tab_container').hide();
             $('.pid_tuning input[name="rc_rate_yaw"]').hide();
+        }
+
+        if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
+            $('.pid_filter input[name="gyroNotchFrequency"]').val(FILTER_CONFIG.gyro_soft_notch_hz);
+            $('.pid_filter input[name="gyroNotchCutoff"]').val(FILTER_CONFIG.gyro_soft_notch_cutoff);
+            $('.pid_filter input[name="dTermNotchFrequency"]').val(FILTER_CONFIG.dterm_notch_hz);
+            $('.pid_filter input[name="dTermNotchCutoff"]').val(FILTER_CONFIG.dterm_notch_cutoff);
+        } else {
+            $('.pid_filter .newFilter').hide();
         }
     }
 
@@ -256,7 +266,7 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            ADVANCED_TUNING.vbatPidCompensation = $('input[name="vbatpidcompensation"]').is(':checked') ? 1 : 0;
+            ADVANCED_TUNING.vbatPidCompensation = $('input[name="#vbatpidcompensation"]').is(':checked') ? 1 : 0;
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
@@ -346,9 +356,16 @@ TABS.pid_tuning.initialize = function (callback) {
 
         RC_tuning.dynamic_THR_PID = parseFloat($('.tpa input[name="tpa"]').val());
         RC_tuning.dynamic_THR_breakpoint = parseInt($('.tpa input[name="tpa-breakpoint"]').val());
-        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.pid_tuning input[name="gyro"]').val());
-        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.pid_tuning input[name="dterm"]').val());
-        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_tuning input[name="yaw"]').val());
+        FILTER_CONFIG.gyro_soft_lpf_hz = parseInt($('.pid_filter input[name="gyroLowpassFrequency"]').val());
+        FILTER_CONFIG.dterm_lpf_hz = parseInt($('.pid_filter input[name="dtermLowpassFrequency"]').val());
+        FILTER_CONFIG.yaw_lpf_hz = parseInt($('.pid_filter input[name="yawLowpassFrequency"]').val());
+
+        if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
+            FILTER_CONFIG.gyro_soft_notch_hz = parseInt($('.pid_filter input[name="gyroNotchFrequency"]').val());
+            FILTER_CONFIG.gyro_soft_notch_cutoff = parseInt($('.pid_filter input[name="gyroNotchCutoff"]').val());
+            FILTER_CONFIG.dterm_notch_hz = parseInt($('.pid_filter input[name="dTermNotchFrequency"]').val());
+            FILTER_CONFIG.dterm_notch_cutoff = parseInt($('.pid_filter input[name="dTermNotchCutoff"]').val());
+        }
     }
 
     function showAllPids() {
@@ -359,10 +376,6 @@ TABS.pid_tuning.initialize = function (callback) {
         $('.tab-pid_tuning .pid_tuning').hide();
 
         $('#pid_main').show();
-
-        if (semver.gte(CONFIG.flightControllerVersion, "2.9.0")) {
-            $('#pid_filter').show();
-        }
 
         if (have_sensor(CONFIG.activeSensors, 'acc')) {
             $('#pid_accel').show();
@@ -481,6 +494,22 @@ TABS.pid_tuning.initialize = function (callback) {
             self.currentRates.roll_rate = RC_tuning.roll_pitch_rate;
             self.currentRates.pitch_rate = RC_tuning.roll_pitch_rate;
         }
+
+        $('.tab-pid_tuning .tab_container .pid').on('click', function () {
+            $('.tab-pid_tuning .subtab-pid').show();
+            $('.tab-pid_tuning .subtab-filter').hide();
+
+            $('.tab-pid_tuning .tab_container td').removeClass('active');
+            $(this).addClass('active');
+        });
+
+        $('.tab-pid_tuning .tab_container .filter').on('click', function () {
+            $('.tab-pid_tuning .subtab-filter').show();
+            $('.tab-pid_tuning .subtab-pid').hide();
+
+            $('.tab-pid_tuning .tab_container td').removeClass('active');
+            $(this).addClass('active');
+        });
 
         var showAllButton = $('#showAllPids');
 
