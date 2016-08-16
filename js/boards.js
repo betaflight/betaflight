@@ -22,12 +22,9 @@ var BOARD_DEFINITIONS = [
         identifier: "AFNA",
         vcp: false
     }, {
-        name: "Naze32Pro",
-        identifier: "AFF3",
-        vcp: false
-    }, {
         name: "Olimexino",
-        identifier: "OLI1"
+        identifier: "OLI1",
+        vcp: false
     }, {
         name: "Port103R",
         identifier: "103R",
@@ -67,6 +64,110 @@ var BOARD_DEFINITIONS = [
     }, {
         name: "MotoLab",
         identifier: "MOTO",
+        vcp: true
+    }, {
+        name: "Lux Race",
+        identifier: "LUX",
+        vcp: true
+    }, {
+        name: "KISS FC",
+        identifier: "KISS",
+        vcp: true
+    }, {
+        name: "Singularity",
+        identifier: "SING",
+        vcp: true 
+    }, {
+        name: "VRRACE",
+        identifier: "VRRA",
+        vcp: true
+    }, {
+        name: "Colibri",
+        identifier: "COLI",
+        vcp: true
+    }, {
+        name: "Sparky 2",
+        identifier: "SPK2",
+        vcp: true
+    }, {
+        name: "Air Hero F3",
+        identifier: "AIR3",
+        vcp: false
+    }, {
+        name: "AIORACERF3",
+        identifier: "ARF3",
+        vcp: true
+    }, {
+        name: "ALIENFLIGHTF4",
+        identifier: "AFF4",
+        vcp: true
+    }, {
+        name: "F4BY",
+        identifier: "F4BY",
+        vcp: true
+    }, {
+        name: "X_RACERSPI",
+        identifier: "XRC3",
+        vcp: false
+    }, {
+        name: "AIR32",
+        identifier: "AR32",
+        vcp: true
+    }, {
+        name: "FURYF3",
+        identifier: "FYF3",
+        vcp: true
+    }, {
+        name: "ALIENFLIGHTF1",
+        identifier: "AFF1",
+        vcp: false
+    }, {
+        name: "PIKOBLX",
+        identifier: "PIKO",
+        vcp: true
+    }, {
+        name: "OMNIBUSF4",
+        identifier: "OBF4",
+        vcp: true
+    }, {
+        name: "REVONANO",
+        identifier: "REVN",
+        vcp: true
+    }, {
+        name: "DOGE",
+        identifier: "DOGE",
+        vcp: true
+    }, {
+        name: "BLUEJAYF4",
+        identifier: "BJF4",
+        vcp: true
+    }, {
+        name: "SIRINFPV",
+        identifier: "SIRF",
+        vcp: false
+    }, {
+        name: "OMNIBUS",
+        identifier: "OMNI",
+        vcp: true
+    }, {
+        name: "FURYF4",
+        identifier: "FYF4",
+        vcp: true
+    }, {
+        name: "ZCOREF3",
+        identifier: "ZCF3",
+        vcp: false
+    }, {
+        name: "MICROSCISKY",
+        identifier: "MSKY",
+        vcp: false
+    }, {
+        name: "RMDO",
+        identifier: "RMDO",
+        vcp: false
+    }, {
+        name: "REVO",
+        identifier: "REVO",
         vcp: true
     }
 ];
