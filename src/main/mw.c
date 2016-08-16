@@ -203,10 +203,10 @@ void scaleRcCommandToFpvCamAngle(void) {
         sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
     }
 
-    int16_t roll = setpointRate[ROLL];
-    int16_t yaw = setpointRate[YAW];
-    setpointRate[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
-    setpointRate[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
+    int16_t roll = rcCommand[ROLL];
+    int16_t yaw = rcCommand[YAW];
+    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
 void processRcCommand(void)
@@ -263,13 +263,13 @@ void processRcCommand(void)
     }
 
     if (readyToCalculateRate || isRXDataNew) {
-        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
-
-        isRXDataNew = false;
-
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
+
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+
+        isRXDataNew = false;
     }
 }
 
