@@ -170,7 +170,8 @@ var FC = {
             voltage:    0,
             mAhdrawn:   0,
             rssi:       0,
-            amperage:   0
+            amperage:   0,
+            last_received_timestamp: Date.now()
         };
         
         ARMING_CONFIG = {

@@ -115,7 +115,7 @@ MspHelper.prototype.process_data = function(dataHandler) {
             ANALOG.mAhdrawn = data.getUint16(1, 1);
             ANALOG.rssi = data.getUint16(3, 1); // 0-1023
             ANALOG.amperage = data.getInt16(5, 1) / 100; // A
-            // this.analog_last_received_timestamp = Date.now(); //TODO, fix this
+            ANALOG.last_received_timestamp = Date.now();
             break;
         case MSPCodes.MSP_RC_TUNING:
             var offset = 0;

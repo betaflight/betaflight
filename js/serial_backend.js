@@ -475,7 +475,7 @@ function update_live_status() {
         MSP.send_message(MSPCodes.MSP_ANALOG, false, false);
     }
     
-    var active = ((Date.now() - MSP.analog_last_received_timestamp) < 300);
+    var active = ((Date.now() - ANALOG.last_received_timestamp) < 300);
 
     for (var i = 0; i < AUX_CONFIG.length; i++) {
        if (AUX_CONFIG[i] == 'ARM') {
