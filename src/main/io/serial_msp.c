@@ -1135,7 +1135,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_LED_STRIP_MODECOLOR:
-        headSerialReply(((LED_MODE_COUNT * LED_DIRECTION_COUNT) + LED_SPECIAL_COLOR_COUNT) * 3);
+        headSerialReply(((LED_MODE_COUNT * LED_DIRECTION_COUNT) + LED_SPECIAL_COLOR_COUNT + 1) * 3);
         for (int i = 0; i < LED_MODE_COUNT; i++) {
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 serialize8(i);
@@ -1149,6 +1149,10 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(j);
             serialize8(masterConfig.specialColors.color[j]);
         }
+
+        serialize8(LED_AUX_CHANNEL);
+        serialize8(0);
+        serialize8(masterConfig.ledstrip_aux_channel);
         break;
 #endif
 

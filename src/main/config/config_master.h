@@ -125,6 +125,7 @@ typedef struct master_t {
     modeColorIndexes_t modeColors[LED_MODE_COUNT];
     specialColorIndexes_t specialColors;
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    rc_alias_e ledstrip_aux_channel;
 #endif
 
 #ifdef TRANSPONDER
