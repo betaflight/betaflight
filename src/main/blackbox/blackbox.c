@@ -893,6 +893,63 @@ void finishBlackbox(void)
     }
 }
 
+/**
+ * Test Motors Blackbox Logging
+ */
+bool startedLoggingInTestMode = false;
+
+void startInTestMode(void)
+{
+  if(!startedLoggingInTestMode) {
+      if (masterConfig.blackbox_device == BLACKBOX_DEVICE_SERIAL) {
+          serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+          if (sharedBlackboxAndMspPort) {
+              return; // When in test mode, we cannot share the MSP and serial logger port!
+          }
+      }
+      startBlackbox();
+      startedLoggingInTestMode = true;
+  }
+}
+void stopInTestMode(void)
+{
+  if(startedLoggingInTestMode) {
+      finishBlackbox();
+      startedLoggingInTestMode = false;
+  }
+}
+/**
+ * We are going to monitor the MSP_SET_MOTOR target variables motor_disarmed[] for values other than minthrottle
+ * on reading a value (i.e. the user is testing the motors), then we enable test mode logging;
+ * we monitor when the values return to minthrottle and start a delay timer (5 seconds); if
+ * the test motors are left at minimum throttle for this delay timer, then we assume we are done testing and
+ * shutdown the logger.
+ *
+ * Of course, after the 5 seconds and shutdown of the logger, the system will be re-enabled to allow the
+ * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
+ */
+bool inMotorTestMode(void) {
+  static uint32_t resetTime = 0;
+  int i;
+  bool motorsNotAtMin = false;
+  // set disarmed motor values
+  for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+      motorsNotAtMin |= (motor_disarmed[i] != (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand));
+
+  if(motorsNotAtMin) {
+      resetTime = micros() + 5000000; // add 5 seconds
+      return true;
+  } else {
+      // Monitor the duration at minimum
+      if(micros() >= resetTime) {
+          return false;
+      } else {
+          return true;
+      };
+  }
+  return false;
+}
+
 #ifdef GPS
 static void writeGPSHomeFrame()
 {
@@ -1434,6 +1491,17 @@ void handleBlackbox(void)
 
     if (blackboxState >= BLACKBOX_FIRST_HEADER_SENDING_STATE && blackboxState <= BLACKBOX_LAST_HEADER_SENDING_STATE) {
         blackboxReplenishHeaderBudget();
+    }
+
+     // Handle Motor Test Mode
+    if(inMotorTestMode()) {
+        if(blackboxState==BLACKBOX_STATE_STOPPED) {
+            startInTestMode();
+        }
+    } else {
+        if(blackboxState!=BLACKBOX_STATE_STOPPED) {
+            stopInTestMode();
+        }
     }
 
     switch (blackboxState) {
