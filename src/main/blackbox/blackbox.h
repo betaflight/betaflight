@@ -23,7 +23,10 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
 void handleBlackbox(void);
+void startInTestMode(void);
+void stopInTestMode(void);
 void startBlackbox(void);
 void finishBlackbox(void);
+bool inMotorTestMode(void);
 
 bool blackboxMayEditConfig();

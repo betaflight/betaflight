@@ -159,6 +159,7 @@ typedef struct master_t {
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
     uint8_t blackbox_device;
+    uint8_t blackbox_on_motor_test;
 #endif
 
     uint32_t beeper_off_flags;
