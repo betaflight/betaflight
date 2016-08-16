@@ -171,6 +171,7 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
 };
 
 static int scaledThrottle;
+static int scaledAux;
 
 static void updateLedRingCounts(void);
 
@@ -254,7 +255,7 @@ bool parseLedStripConfig(int ledIndex, const char *config)
         RING_COLORS,
         PARSE_STATE_COUNT
     };
-    static const char chunkSeparators[PARSE_STATE_COUNT] = {',', ':', ':',':', '\0'};
+    static const char chunkSeparators[PARSE_STATE_COUNT] = {',', ':', ':', ':', '\0'};
 
     ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
     memset(ledConfig, 0, sizeof(ledConfig_t));
@@ -493,7 +494,7 @@ static void applyLedFixedLayers()
         }
 
         if (ledGetOverlayBit(ledConfig, LED_OVERLAY_THROTTLE)) {
-            hOffset += ((scaledThrottle - 10) * 4) / 3;
+            hOffset += scaledAux;
         }
 
         color.h = (color.h + hOffset) % (HSV_HUE_MAX + 1);
@@ -963,6 +964,7 @@ void updateLedStrip(uint32_t currentTime)
     // apply all layers; triggered timed functions has to update timers
 
     scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 10, 100) : 10;
+    scaledAux = scaleRange(rcData[masterConfig.ledstrip_aux_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
 
     applyLedFixedLayers();
 
@@ -1036,6 +1038,10 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
         if (modeColorIndex < 0 || modeColorIndex >= LED_SPECIAL_COLOR_COUNT)
             return false;
         masterConfig.specialColors.color[modeColorIndex] = colorIndex;
+    } else if (modeIndex == LED_AUX_CHANNEL) {
+        if (modeColorIndex < 0 || modeColorIndex >= 1)
+            return false;
+        masterConfig.ledstrip_aux_channel = colorIndex;
     } else {
         return false;
     }

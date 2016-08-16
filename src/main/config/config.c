@@ -590,6 +590,7 @@ void createDefaultConfig(master_t *config)
     applyDefaultModeColors(config->modeColors);
     applyDefaultSpecialColors(&(config->specialColors));
     config->ledstrip_visual_beeper = 0;
+    config->ledstrip_aux_channel = THROTTLE;
 #endif
 
 #ifdef VTX

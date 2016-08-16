@@ -1796,6 +1796,10 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
+
+    int ledStripAuxChannel = masterConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultConfig->ledstrip_aux_channel;
+    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, "mode_color %u %u %u\r\n", LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
