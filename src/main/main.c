@@ -482,8 +482,7 @@ void init(void)
             masterConfig.baro_hardware,
             masterConfig.mag_declination,
             masterConfig.gyro_lpf,
-            masterConfig.gyro_sync_denom,
-            masterConfig.pid_process_denom)) {
+            masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -689,6 +688,7 @@ void main_init(void)
     schedulerInit();
     rescheduleTask(TASK_PID, targetPidLooptime);
     setTaskEnabled(TASK_PID, true);
+    gyro.gyroSamplingEnabled = true;
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);

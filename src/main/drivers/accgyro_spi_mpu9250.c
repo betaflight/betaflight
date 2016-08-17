@@ -38,7 +38,6 @@
 #include "system.h"
 #include "exti.h"
 #include "bus_spi.h"
-#include "gyro_sync.h"
 #include "light_led.h"
 
 #include "sensor.h"
@@ -119,7 +118,7 @@ void mpu9250SpiGyroInit(uint8_t lpf)
 
 void mpu9250SpiAccInit(acc_t *acc)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
     acc->acc_1G = 512 * 8;
 }
@@ -168,7 +167,7 @@ static void mpu9250AccAndGyroInit(uint8_t lpf) {
         verifympu9250WriteRegister(MPU_RA_CONFIG, 0); //8KHz, 250DLPF
     }
 
-    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    verifympu9250WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPUGetDividerDrops()); // Get Divider Drops
 
     verifympu9250WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN

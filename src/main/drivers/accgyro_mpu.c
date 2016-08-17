@@ -26,6 +26,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/axis.h"
 
 #include "nvic.h"
 
@@ -43,12 +44,37 @@
 #include "accgyro_spi_mpu6500.h"
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
-#include "gyro_sync.h"
+
+#include "sensors/gyro.h"
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
+
+static int mpuDividerDrops;
+
+uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSamplingDenom)
+{
+    int gyroSamplePeriod;
+
+    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
+        gyroSamplePeriod = GYRO_8KHZ_INTERVAL;
+    } else {
+        gyroSamplePeriod = GYRO_1KHZ_INTERVAL;
+        gyroSamplingDenom = 1; // Always full Sampling 1khz
+    }
+
+    // calculate gyro divider and targetLooptime (expected cycleTime)
+    mpuDividerDrops  = gyroSamplingDenom - 1;
+    const uint32_t targetLooptime = gyroSamplingDenom * gyroSamplePeriod;
+    return targetLooptime;
+}
+
+uint8_t gyroMPUGetDividerDrops(void)
+{
+    return mpuDividerDrops;
+}
 
 static void mpu6050FindRevision(void);
 

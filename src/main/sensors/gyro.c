@@ -57,10 +57,19 @@ static float gyroSoftNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 static float gyroDt;
+uint32_t lastGyroInterruptCallDelta;
+static uint8_t pidProcessDenom;
+static bool isPidScheduledToRun;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint16_t gyro_soft_notch_cutoff, uint8_t gyro_soft_lpf_type)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
+        uint8_t gyro_soft_lpf_hz,
+        uint16_t gyro_soft_notch_hz,
+        uint16_t gyro_soft_notch_cutoff,
+        uint8_t gyro_soft_lpf_type,
+        uint8_t pid_process_denom)
 {
     gyroConfig = gyroConfigToUse;
+    pidProcessDenom = pid_process_denom;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
     gyroSoftNotchHz = gyro_soft_notch_hz;
     gyroSoftLpfType = gyro_soft_lpf_type;
@@ -151,6 +160,32 @@ static void applyGyroZero(void)
     }
 }
 
+void gyroHandleInterrupt(void) {
+    static uint32_t lastGyroInterruptCallAt = 0;
+    uint32_t now = micros();
+    lastGyroInterruptCallDelta = now - lastGyroInterruptCallAt;
+    debug[0] = lastGyroInterruptCallDelta;
+    lastGyroInterruptCallAt = now;
+
+	if (gyro.gyroSamplingEnabled) {
+        static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+        static int pidProcessCountDown;
+
+        if (!gyro.read(gyroADCRaw)) {
+            return;
+        }
+
+        processGyroData(gyroADCRaw);
+
+        if (pidProcessCountDown) {
+            pidProcessCountDown--;
+        } else {
+            pidProcessCountDown = pidProcessDenom - 1;
+            isPidScheduledToRun = true;
+        }
+	}
+}
+
 void processGyroData(int16_t *gyroADCRaw) {
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -190,5 +225,17 @@ void processGyroData(int16_t *gyroADCRaw) {
             gyroADCf[axis] = gyroADC[axis];
         }
     }
+}
+
+bool pidScheduledToRun(void)
+{
+    bool ret;
+    if (isPidScheduledToRun) {
+        ret = true;
+        isPidScheduledToRun= false;
+    } else {
+        ret = false;
+    }
+    return ret;
 }
 

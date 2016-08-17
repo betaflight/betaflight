@@ -33,6 +33,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
+#include "drivers/accgyro_mpu.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
 #include "drivers/io.h"
@@ -42,7 +43,6 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
-#include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -669,7 +669,12 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_cutoff, masterConfig.gyro_soft_type);
+    gyroUseConfig(&masterConfig.gyroConfig,
+            masterConfig.gyro_soft_lpf_hz,
+            masterConfig.gyro_soft_notch_hz,
+            masterConfig.gyro_soft_notch_cutoff,
+            masterConfig.gyro_soft_type,
+            masterConfig.pid_process_denom);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

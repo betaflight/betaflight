@@ -46,7 +46,6 @@
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro_spi_mpu9250.h"
-#include "drivers/gyro_sync.h"
 
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
@@ -599,8 +598,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         uint8_t baroHardwareToUse,
         int16_t magDeclinationFromConfig,
         uint8_t gyroLpf,
-        uint8_t gyroSyncDenominator,
-        uint8_t pidDenom)
+        uint8_t gyroSamplingDenom)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -619,7 +617,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
     // Now time to init things
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.gyroSamplingInterval = gyroSetSamplingInterval(gyroLpf, gyroSyncDenominator, pidDenom);    // Set gyro sample rate before initialisation
+    gyro.gyroSamplingInterval = gyroSetSamplingInterval(gyroLpf, gyroSamplingDenom);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf); // driver initialisation
     gyroInit(); // sensor initialisation
 

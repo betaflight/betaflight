@@ -27,7 +27,6 @@
 #include "system.h"
 #include "exti.h"
 #include "gpio.h"
-#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -63,7 +62,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
 void mpu6500AccInit(acc_t *acc)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
     acc->acc_1G = 512 * 4;
 }
@@ -86,7 +85,7 @@ void mpu6500GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
     delay(15);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPUGetDividerDrops()); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration
