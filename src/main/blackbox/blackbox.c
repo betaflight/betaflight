@@ -932,6 +932,8 @@ bool inMotorTestMode(void) {
   static uint32_t resetTime = 0;
   int i;
   bool motorsNotAtMin = false;
+
+ if(!masterConfig.blackbox_on_motor_test) return false;
   // set disarmed motor values
   for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
       motorsNotAtMin |= (motor_disarmed[i] != (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand));
@@ -941,11 +943,7 @@ bool inMotorTestMode(void) {
       return true;
   } else {
       // Monitor the duration at minimum
-      if(micros() >= resetTime) {
-          return false;
-      } else {
-          return true;
-      };
+      return (micros() < resetTime);
   }
   return false;
 }
@@ -1493,17 +1491,6 @@ void handleBlackbox(void)
         blackboxReplenishHeaderBudget();
     }
 
-     // Handle Motor Test Mode
-    if(inMotorTestMode()) {
-        if(blackboxState==BLACKBOX_STATE_STOPPED) {
-            startInTestMode();
-        }
-    } else {
-        if(blackboxState!=BLACKBOX_STATE_STOPPED) {
-            stopInTestMode();
-        }
-    }
-
     switch (blackboxState) {
         case BLACKBOX_STATE_PREPARE_LOG_FILE:
             if (blackboxDeviceBeginLog()) {
@@ -1631,6 +1618,21 @@ void handleBlackbox(void)
     // Did we run out of room on the device? Stop!
     if (isBlackboxDeviceFull()) {
         blackboxSetState(BLACKBOX_STATE_STOPPED);
+        // ensure we reset the test mode flag if we stop due to full memory card
+        if (startedLoggingInTestMode) startedLoggingInTestMode = false;
+    } else { // Only log in test mode if there is room!
+
+        // Handle Motor Test Mode
+       if(inMotorTestMode()) {
+           if(blackboxState==BLACKBOX_STATE_STOPPED) {
+               startInTestMode();
+           }
+       } else {
+           if(blackboxState!=BLACKBOX_STATE_STOPPED) {
+               stopInTestMode();
+           }
+       }
+
     }
 }
 
