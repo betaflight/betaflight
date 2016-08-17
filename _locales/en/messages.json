@@ -272,13 +272,13 @@
         "message": "Documentation / Manual"
     },
     "defaultDocumentation": {
-        "message": "Betaflight documentation is available in Markdown and PDF formats.<br /><br />"
+        "message": "Betaflight documentation is available in release notes and wiki.<br /><br />"
     },
     "defaultDocumentation1": {
-        "message": "The PDF manual appropriate to the firmware can be downloaded from the github releases page, <a href=\"https://github.com/Betaflight/Betaflight/releases\" target=\"_blank\">here</a>."
+        "message": "The Betaflight wiki is a great resource for information, it can be found <a href=\"https://github.com/betaflight/betaflight/wiki\" target=\"_blank\">here</a>."
     },
     "defaultDocumentation2": {
-        "message": "The Markdown latest online documentation is available <a href=\"https://github.com/Betaflight/Betaflight/tree/master/docs\" target=\"_blank\">here</a> - you can switch to the appropriate version of the documentation by selecting the tag."
+        "message": "The release notes for the firmware can be read at github releases page, <a href=\"https://github.com/Betaflight/Betaflight/releases\" target=\"_blank\">here</a>."
     },
     "defaultSupportHead": {
         "message": "Support"
@@ -293,7 +293,7 @@
         "message": "For support please search the forums first or contact your vendor.<br /><br />"
     },
     "defaultSupport1": {
-        "message": "<a href=\"http://www.rcgroups.com/forums/showthread.php?t=2249574&page=1\" target=\"_blank\">RC Groups thread</a>"
+        "message": "<a href=\"http://www.rcgroups.com/forums/showthread.php?t=2464844&page=1\" target=\"_blank\">RC Groups thread</a>"
     },
     "defaultSupport2": {
         "message": "<a href=\"http://www.multiwii.com/forum/viewtopic.php?f=23&t=5149\" target=\"_blank\">MultiWii forums thread</a>"
