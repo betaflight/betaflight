@@ -109,12 +109,12 @@
 
 #undef GPS
 #define CLI_MINIMAL_VERBOSITY
+#undef MAG
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_FLOAT
 #undef BARO
-#undef MAG
 #undef SONAR
 #undef USE_SOFTSERIAL1
 #undef LED_STRIP
