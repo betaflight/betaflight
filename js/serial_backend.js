@@ -416,14 +416,6 @@ function have_sensor(sensors_detected, sensor_code) {
     return false;
 }
 
-function highByte(num) {
-    return num >> 8;
-}
-
-function lowByte(num) {
-    return 0x00FF & num;
-}
-
 function update_dataflash_global() {
     var supportsDataflash = DATAFLASH.totalSize > 0;
     if (supportsDataflash){

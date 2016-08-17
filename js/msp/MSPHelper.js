@@ -913,165 +913,117 @@ MspHelper.prototype.crunch = function(code) {
     switch (code) {
         case MSPCodes.MSP_SET_BF_CONFIG:
             var featureMask = BF_CONFIG.features.getMask();
-            buffer.push(BF_CONFIG.mixerConfiguration);
-            buffer.push(specificByte(featureMask, 0));
-            buffer.push(specificByte(featureMask, 1));
-            buffer.push(specificByte(featureMask, 2));
-            buffer.push(specificByte(featureMask, 3));
-            buffer.push(BF_CONFIG.serialrx_type);
-            buffer.push(specificByte(BF_CONFIG.board_align_roll, 0));
-            buffer.push(specificByte(BF_CONFIG.board_align_roll, 1));
-            buffer.push(specificByte(BF_CONFIG.board_align_pitch, 0));
-            buffer.push(specificByte(BF_CONFIG.board_align_pitch, 1));
-            buffer.push(specificByte(BF_CONFIG.board_align_yaw, 0));
-            buffer.push(specificByte(BF_CONFIG.board_align_yaw, 1));
-            buffer.push(lowByte(BF_CONFIG.currentscale));
-            buffer.push(highByte(BF_CONFIG.currentscale));
-            buffer.push(lowByte(BF_CONFIG.currentoffset));
-            buffer.push(highByte(BF_CONFIG.currentoffset));
+            buffer.push8(BF_CONFIG.mixerConfiguration)
+                .push32(featureMask)
+                .push8(BF_CONFIG.serialrx_type)
+                .push16(BF_CONFIG.board_align_roll)
+                .push16(BF_CONFIG.board_align_pitch)
+                .push16(BF_CONFIG.board_align_yaw)
+                .push16(BF_CONFIG.currentscale)
+                .push16(BF_CONFIG.currentoffset);
             break;
         case MSPCodes.MSP_SET_PID_CONTROLLER:
-            buffer.push(PID.controller);
+            buffer.push8(PID.controller);
             break;
         case MSPCodes.MSP_SET_PID:
             for (var i = 0; i < PIDs.length; i++) {
-                switch (i) {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 7:
-                    case 8:
-                    case 9:
-                        buffer.push(parseInt(PIDs[i][0]));
-                        buffer.push(parseInt(PIDs[i][1]));
-                        buffer.push(parseInt(PIDs[i][2]));
-                        break;
-                    case 4:
-                        buffer.push(parseInt(PIDs[i][0]));
-                        buffer.push(parseInt(PIDs[i][1]));
-                        buffer.push(parseInt(PIDs[i][2]));
-                        break;
-                    case 5:
-                    case 6:
-                        buffer.push(parseInt(PIDs[i][0]));
-                        buffer.push(parseInt(PIDs[i][1]));
-                        buffer.push(parseInt(PIDs[i][2]));
-                        break;
+                for (var j = 0; j < 3; j++) {
+                    buffer.push8(parseInt(PIDs[i][j]));
                 }
             }
             break;
         case MSPCodes.MSP_SET_RC_TUNING:
-            buffer.push(Math.round(RC_tuning.RC_RATE * 100));
-            buffer.push(Math.round(RC_tuning.RC_EXPO * 100));
+            buffer.push8(Math.round(RC_tuning.RC_RATE * 100))
+                .push8(Math.round(RC_tuning.RC_EXPO * 100));
             if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
-                buffer.push(Math.round(RC_tuning.roll_pitch_rate * 100));
+                buffer.push8(Math.round(RC_tuning.roll_pitch_rate * 100));
             } else {
-                buffer.push(Math.round(RC_tuning.roll_rate * 100));
-                buffer.push(Math.round(RC_tuning.pitch_rate * 100));
+                buffer.push8(Math.round(RC_tuning.roll_rate * 100))
+                    .push8(Math.round(RC_tuning.pitch_rate * 100));
             }
-            buffer.push(Math.round(RC_tuning.yaw_rate * 100));
-            buffer.push(Math.round(RC_tuning.dynamic_THR_PID * 100));
-            buffer.push(Math.round(RC_tuning.throttle_MID * 100));
-            buffer.push(Math.round(RC_tuning.throttle_EXPO * 100));
+            buffer.push8(Math.round(RC_tuning.yaw_rate * 100))
+                .push8(Math.round(RC_tuning.dynamic_THR_PID * 100))
+                .push8(Math.round(RC_tuning.throttle_MID * 100))
+                .push8(Math.round(RC_tuning.throttle_EXPO * 100));
             if (semver.gte(CONFIG.apiVersion, "1.7.0")) {
-                buffer.push(lowByte(RC_tuning.dynamic_THR_breakpoint));
-                buffer.push(highByte(RC_tuning.dynamic_THR_breakpoint));
+                buffer.push16(RC_tuning.dynamic_THR_breakpoint);
             }
             if (semver.gte(CONFIG.apiVersion, "1.10.0")) {
-                buffer.push(Math.round(RC_tuning.RC_YAW_EXPO * 100));
+                buffer.push8(Math.round(RC_tuning.RC_YAW_EXPO * 100));
                 if (semver.gte(CONFIG.flightControllerVersion, "2.9.1")) {
-                    buffer.push(Math.round(RC_tuning.rcYawRate * 100));
+                    buffer.push8(Math.round(RC_tuning.rcYawRate * 100));
                 }
             }
             break;
         case MSPCodes.MSP_SET_RX_MAP:
             for (var i = 0; i < RC_MAP.length; i++) {
-                buffer.push(RC_MAP[i]);
+                buffer.push8(RC_MAP[i]);
             }
             break;
         case MSPCodes.MSP_SET_ACC_TRIM:
-            buffer.push(lowByte(CONFIG.accelerometerTrims[0]));
-            buffer.push(highByte(CONFIG.accelerometerTrims[0]));
-            buffer.push(lowByte(CONFIG.accelerometerTrims[1]));
-            buffer.push(highByte(CONFIG.accelerometerTrims[1]));
+            buffer.push16(CONFIG.accelerometerTrims[0])
+                .push16(CONFIG.accelerometerTrims[1]);
             break;
         case MSPCodes.MSP_SET_ARMING_CONFIG:
-            buffer.push(ARMING_CONFIG.auto_disarm_delay);
-            buffer.push(ARMING_CONFIG.disarm_kill_switch);
+            buffer.push8(ARMING_CONFIG.auto_disarm_delay)
+                .push8(ARMING_CONFIG.disarm_kill_switch);
             break;
         case MSPCodes.MSP_SET_LOOP_TIME:
-            buffer.push(lowByte(FC_CONFIG.loopTime));
-            buffer.push(highByte(FC_CONFIG.loopTime));
+            buffer.push16(FC_CONFIG.loopTime);
             break;
         case MSPCodes.MSP_SET_MISC:
-            buffer.push(lowByte(MISC.midrc));
-            buffer.push(highByte(MISC.midrc));
-            buffer.push(lowByte(MISC.minthrottle));
-            buffer.push(highByte(MISC.minthrottle));
-            buffer.push(lowByte(MISC.maxthrottle));
-            buffer.push(highByte(MISC.maxthrottle));
-            buffer.push(lowByte(MISC.mincommand));
-            buffer.push(highByte(MISC.mincommand));
-            buffer.push(lowByte(MISC.failsafe_throttle));
-            buffer.push(highByte(MISC.failsafe_throttle));
-            buffer.push(MISC.gps_type);
-            buffer.push(MISC.gps_baudrate);
-            buffer.push(MISC.gps_ubx_sbas);
-            buffer.push(MISC.multiwiicurrentoutput);
-            buffer.push(MISC.rssi_channel);
-            buffer.push(MISC.placeholder2);
+            buffer.push16(MISC.midrc)
+                .push16(MISC.minthrottle)
+                .push16(MISC.maxthrottle)
+                .push16(MISC.mincommand)
+                .push16(MISC.failsafe_throttle)
+                .push8(MISC.gps_type)
+                .push8(MISC.gps_baudrate)
+                .push8(MISC.gps_ubx_sbas)
+                .push8(MISC.multiwiicurrentoutput)
+                .push8(MISC.rssi_channel)
+                .push8(MISC.placeholder2);
             if (semver.lt(CONFIG.apiVersion, "1.18.0")) {
-                buffer.push(lowByte(Math.round(MISC.mag_declination * 10)));
-                buffer.push(highByte(Math.round(MISC.mag_declination * 10)));
+                buffer.push16(Math.round(MISC.mag_declination * 10));
             } else {            
-                buffer.push(lowByte(Math.round(MISC.mag_declination * 100)));
-                buffer.push(highByte(Math.round(MISC.mag_declination * 100)));
+                buffer.push16(Math.round(MISC.mag_declination * 100));
             }
-            buffer.push(MISC.vbatscale);
-            buffer.push(Math.round(MISC.vbatmincellvoltage * 10));
-            buffer.push(Math.round(MISC.vbatmaxcellvoltage * 10));
-            buffer.push(Math.round(MISC.vbatwarningcellvoltage * 10));
+            buffer.push8(MISC.vbatscale)
+                .push8(Math.round(MISC.vbatmincellvoltage * 10))
+                .push8(Math.round(MISC.vbatmaxcellvoltage * 10))
+                .push8(Math.round(MISC.vbatwarningcellvoltage * 10));
             break;
 
         case MSPCodes.MSP_SET_RX_CONFIG:
-            buffer.push(RX_CONFIG.serialrx_provider);
-            buffer.push(lowByte(RX_CONFIG.maxcheck));
-            buffer.push(highByte(RX_CONFIG.maxcheck));
-            buffer.push(lowByte(RX_CONFIG.midrc));
-            buffer.push(highByte(RX_CONFIG.midrc));
-            buffer.push(lowByte(RX_CONFIG.mincheck));
-            buffer.push(highByte(RX_CONFIG.mincheck));
-            buffer.push(RX_CONFIG.spektrum_sat_bind);
-            buffer.push(lowByte(RX_CONFIG.rx_min_usec));
-            buffer.push(highByte(RX_CONFIG.rx_min_usec));
-            buffer.push(lowByte(RX_CONFIG.rx_max_usec));
-            buffer.push(highByte(RX_CONFIG.rx_max_usec));
+            buffer.push8(RX_CONFIG.serialrx_provider)
+                .push16(RX_CONFIG.maxcheck)
+                .push16(RX_CONFIG.midrc)
+                .push16(RX_CONFIG.mincheck)
+                .push8(RX_CONFIG.spektrum_sat_bind)
+                .push16(RX_CONFIG.rx_min_usec)
+                .push16(RX_CONFIG.rx_max_usec);
             if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
-                buffer.push(RX_CONFIG.rcInterpolation);
-                buffer.push(RX_CONFIG.rcInterpolationInterval);
-                buffer.push(lowByte(RX_CONFIG.airModeActivateThreshold));
-                buffer.push(highByte(RX_CONFIG.airModeActivateThreshold));
+                buffer.push8(RX_CONFIG.rcInterpolation)
+                    .push8(RX_CONFIG.rcInterpolationInterval)
+                    .push16(RX_CONFIG.airModeActivateThreshold);
             }
 
             break;
 
         case MSPCodes.MSP_SET_FAILSAFE_CONFIG:
-            buffer.push(FAILSAFE_CONFIG.failsafe_delay);
-            buffer.push(FAILSAFE_CONFIG.failsafe_off_delay);
-            buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle));
-            buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle));
+            buffer.push8(FAILSAFE_CONFIG.failsafe_delay)
+                .push8(FAILSAFE_CONFIG.failsafe_off_delay)
+                .push16(FAILSAFE_CONFIG.failsafe_throttle);
             if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                buffer.push(FAILSAFE_CONFIG.failsafe_kill_switch);
-                buffer.push(lowByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-                buffer.push(highByte(FAILSAFE_CONFIG.failsafe_throttle_low_delay));
-                buffer.push(FAILSAFE_CONFIG.failsafe_procedure);
+                buffer.push8(FAILSAFE_CONFIG.failsafe_kill_switch)
+                    .push16(FAILSAFE_CONFIG.failsafe_throttle_low_delay)
+                    .push8(FAILSAFE_CONFIG.failsafe_procedure);
             }
             break;
 
         case MSPCodes.MSP_SET_TRANSPONDER_CONFIG:
             for (var i = 0; i < TRANSPONDER.data.length; i++) {
-                buffer.push(TRANSPONDER.data[i]);
+                buffer.push8(TRANSPONDER.data[i]);
             }
             break;
 
@@ -1081,7 +1033,7 @@ MspHelper.prototype.crunch = function(code) {
                 if (out == undefined) {
                     out = 255; // Cleanflight defines "CHANNEL_FORWARDING_DISABLED" as "(uint8_t)0xFF"
                 }
-                buffer.push(out);
+                buffer.push8(out);
             }
             break;
         case MSPCodes.MSP_SET_CF_SERIAL_CONFIG:
@@ -1111,85 +1063,62 @@ MspHelper.prototype.crunch = function(code) {
             if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
 
                 for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
-                    buffer.push(SERIAL_CONFIG.ports[i].scenario);
+                    buffer.push8(SERIAL_CONFIG.ports[i].scenario);
                 }
-                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 0));
-                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 1));
-                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 2));
-                buffer.push(specificByte(SERIAL_CONFIG.mspBaudRate, 3));
-    
-                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 0));
-                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 1));
-                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 2));
-                buffer.push(specificByte(SERIAL_CONFIG.cliBaudRate, 3));
-    
-                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 0));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 1));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 2));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsBaudRate, 3));
-    
-                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 0));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 1));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 2));
-                buffer.push(specificByte(SERIAL_CONFIG.gpsPassthroughBaudRate, 3));
+                buffer.push32(SERIAL_CONFIG.mspBaudRate)
+                    .push32(SERIAL_CONFIG.cliBaudRate)
+                    .push32(SERIAL_CONFIG.gpsBaudRate)
+                    .push32(SERIAL_CONFIG.gpsPassthroughBaudRate);
             } else {
                 for (var i = 0; i < SERIAL_CONFIG.ports.length; i++) {
                     var serialPort = SERIAL_CONFIG.ports[i];
                     
-                    buffer.push(serialPort.identifier);
+                    buffer.push8(serialPort.identifier);
                     
                     var functionMask = self.serialPortFunctionsToMask(serialPort.functions);
-                    buffer.push(specificByte(functionMask, 0));
-                    buffer.push(specificByte(functionMask, 1));
-                    
-                    buffer.push(supportedBaudRates.indexOf(serialPort.msp_baudrate));
-                    buffer.push(supportedBaudRates.indexOf(serialPort.gps_baudrate));
-                    buffer.push(supportedBaudRates.indexOf(serialPort.telemetry_baudrate));
-                    buffer.push(supportedBaudRates.indexOf(serialPort.blackbox_baudrate));
+                    buffer.push16(functionMask)
+                        .push8(supportedBaudRates.indexOf(serialPort.msp_baudrate))
+                        .push8(supportedBaudRates.indexOf(serialPort.gps_baudrate))
+                        .push8(supportedBaudRates.indexOf(serialPort.telemetry_baudrate))
+                        .push8(supportedBaudRates.indexOf(serialPort.blackbox_baudrate));
                 }
             }
             break;
 
         case MSPCodes.MSP_SET_3D:
-            buffer.push(lowByte(_3D.deadband3d_low));
-            buffer.push(highByte(_3D.deadband3d_low));
-            buffer.push(lowByte(_3D.deadband3d_high));
-            buffer.push(highByte(_3D.deadband3d_high));
-            buffer.push(lowByte(_3D.neutral3d));
-            buffer.push(highByte(_3D.neutral3d));
+            buffer.push16(_3D.deadband3d_low)
+                .push16(_3D.deadband3d_high)
+                .push16(_3D.neutral3d);
             if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
-                buffer.push(lowByte(_3D.deadband3d_throttle));
-                buffer.push(highByte(_3D.deadband3d_throttle));
+                buffer.push16(_3D.deadband3d_throttle);
             }
             break;    
 
         case MSPCodes.MSP_SET_RC_DEADBAND:
-            buffer.push(RC_deadband.deadband);
-            buffer.push(RC_deadband.yaw_deadband); 
-            buffer.push(RC_deadband.alt_hold_deadband);
+            buffer.push8(RC_deadband.deadband)
+                .push8(RC_deadband.yaw_deadband) 
+                .push8(RC_deadband.alt_hold_deadband);
             if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
-                buffer.push(lowByte(_3D.deadband3d_throttle));
-                buffer.push(highByte(_3D.deadband3d_throttle));
+                buffer.push16(_3D.deadband3d_throttle);
             }
             break;
 
         case MSPCodes.MSP_SET_SENSOR_ALIGNMENT:
-            buffer.push(SENSOR_ALIGNMENT.align_gyro);
-            buffer.push(SENSOR_ALIGNMENT.align_acc);
-            buffer.push(SENSOR_ALIGNMENT.align_mag);
+            buffer.push8(SENSOR_ALIGNMENT.align_gyro)
+                .push8(SENSOR_ALIGNMENT.align_acc)
+                .push8(SENSOR_ALIGNMENT.align_mag);
             break
         case MSPCodes.MSP_SET_ADVANCED_CONFIG:
-            buffer.push(PID_ADVANCED_CONFIG.gyro_sync_denom);
-            buffer.push(PID_ADVANCED_CONFIG.pid_process_denom);
-            buffer.push(PID_ADVANCED_CONFIG.use_unsyncedPwm);
-            buffer.push(PID_ADVANCED_CONFIG.fast_pwm_protocol);
-            buffer.push(lowByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
-            buffer.push(highByte(PID_ADVANCED_CONFIG.motor_pwm_rate));
+            buffer.push8(PID_ADVANCED_CONFIG.gyro_sync_denom)
+                .push8(PID_ADVANCED_CONFIG.pid_process_denom)
+                .push8(PID_ADVANCED_CONFIG.use_unsyncedPwm)
+                .push8(PID_ADVANCED_CONFIG.fast_pwm_protocol)
+                .push16(PID_ADVANCED_CONFIG.motor_pwm_rate);
             break;
         case MSPCodes.MSP_SET_FILTER_CONFIG:
             buffer.push8(FILTER_CONFIG.gyro_soft_lpf_hz)
-              .push16(FILTER_CONFIG.dterm_lpf_hz)
-              .push16(FILTER_CONFIG.yaw_lpf_hz);
+                .push16(FILTER_CONFIG.dterm_lpf_hz)
+                .push16(FILTER_CONFIG.yaw_lpf_hz);
             if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                 buffer.push16(FILTER_CONFIG.gyro_soft_notch_hz)
                     .push16(FILTER_CONFIG.gyro_soft_notch_cutoff)
@@ -1200,54 +1129,54 @@ MspHelper.prototype.crunch = function(code) {
         case MSPCodes.MSP_SET_PID_ADVANCED:
             if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
-                .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-                .push16(ADVANCED_TUNING.yaw_p_limit)
-                .push8(ADVANCED_TUNING.deltaMethod)
-                .push8(ADVANCED_TUNING.vbatPidCompensation)
-                .push8(ADVANCED_TUNING.ptermSetpointWeight)
-                .push8(ADVANCED_TUNING.dtermSetpointWeight)
-                .push8(ADVANCED_TUNING.toleranceBand)
-                .push8(ADVANCED_TUNING.toleranceBandReduction)
-                .push8(ADVANCED_TUNING.itermThrottleGain)
-                .push16(ADVANCED_TUNING.pidMaxVelocity)
-                .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
+                    .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                    .push16(ADVANCED_TUNING.yaw_p_limit)
+                    .push8(ADVANCED_TUNING.deltaMethod)
+                    .push8(ADVANCED_TUNING.vbatPidCompensation)
+                    .push8(ADVANCED_TUNING.ptermSetpointWeight)
+                    .push8(ADVANCED_TUNING.dtermSetpointWeight)
+                    .push8(ADVANCED_TUNING.toleranceBand)
+                    .push8(ADVANCED_TUNING.toleranceBandReduction)
+                    .push8(ADVANCED_TUNING.itermThrottleGain)
+                    .push16(ADVANCED_TUNING.pidMaxVelocity)
+                    .push16(ADVANCED_TUNING.pidMaxVelocityYaw);
             }
             // only supports 1 version pre bf 3.0
             else {
                 buffer.push16(ADVANCED_TUNING.rollPitchItermIgnoreRate)
-                      .push16(ADVANCED_TUNING.yawItermIgnoreRate)
-                      .push16(ADVANCED_TUNING.yaw_p_limit)
-                      .push8(ADVANCED_TUNING.deltaMethod)
-                      .push8(ADVANCED_TUNING.vbatPidCompensation);
+                   .push16(ADVANCED_TUNING.yawItermIgnoreRate)
+                   .push16(ADVANCED_TUNING.yaw_p_limit)
+                   .push8(ADVANCED_TUNING.deltaMethod)
+                   .push8(ADVANCED_TUNING.vbatPidCompensation);
             }
             break;
         case MSPCodes.MSP_SET_SPECIAL_PARAMETERS:
             if (semver.lt(CONFIG.flightControllerVersion, "2.9.1")) {
-                buffer.push(Math.round(RC_tuning.rcYawRate * 100));
+                buffer.push8(Math.round(RC_tuning.rcYawRate * 100));
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                    buffer.push16(RX_CONFIG.airModeActivateThreshold);
-                    buffer.push(RX_CONFIG.rcSmoothInterval);
-                    buffer.push16(SPECIAL_PARAMETERS.escDesyncProtection);
+                    buffer.push16(RX_CONFIG.airModeActivateThreshold)
+                        .push8(RX_CONFIG.rcSmoothInterval)
+                        .push16(SPECIAL_PARAMETERS.escDesyncProtection);
                 }
             }
             break;
         case MSPCodes.MSP_SET_SENSOR_CONFIG:
-            buffer.push(SENSOR_CONFIG.acc_hardware);
-            buffer.push(SENSOR_CONFIG.baro_hardware);
-            buffer.push(SENSOR_CONFIG.mag_hardware);
+            buffer.push8(SENSOR_CONFIG.acc_hardware)
+                .push8(SENSOR_CONFIG.baro_hardware)
+                .push8(SENSOR_CONFIG.mag_hardware);
             break;
             
         case MSPCodes.MSP_SET_NAME:
             var MSP_BUFFER_SIZE = 64;
             for (var i = 0; i<CONFIG.name.length && i<MSP_BUFFER_SIZE; i++) {
-                buffer.push(CONFIG.name.charCodeAt(i));
+                buffer.push8(CONFIG.name.charCodeAt(i));
             }
             break;
         
         case MSPCodes.MSP_SET_BLACKBOX_CONFIG:
-            buffer.push(BLACKBOX.blackboxDevice); 
-            buffer.push(BLACKBOX.blackboxRateNum);
-            buffer.push(BLACKBOX.blackboxRateDenom);
+            buffer.push8(BLACKBOX.blackboxDevice) 
+                .push8(BLACKBOX.blackboxRateNum)
+                .push8(BLACKBOX.blackboxRateDenom);
             break;     
         
         default:
@@ -1266,8 +1195,7 @@ MspHelper.prototype.setRawRx = function(channels) {
     var buffer = [];
     
     for (var i = 0; i < channels.length; i++) {
-        buffer.push(specificByte(channels[i], 0));
-        buffer.push(specificByte(channels[i], 1));
+        buffer.push16(channels[i]);
     }
     
     MSP.send_message(MSPCodes.MSP_SET_RAW_RC, buffer, false);
@@ -1315,50 +1243,31 @@ MspHelper.prototype.sendServoConfigurations = function(onCompleteCallback) {
             // send all in one go
             // 1.9.0 had a bug where the MSP input buffer was too small, limit to 8.
             for (var i = 0; i < SERVO_CONFIG.length && i < 8; i++) {
-                buffer.push(lowByte(SERVO_CONFIG[i].min));
-                buffer.push(highByte(SERVO_CONFIG[i].min));
-
-                buffer.push(lowByte(SERVO_CONFIG[i].max));
-                buffer.push(highByte(SERVO_CONFIG[i].max));
-
-                buffer.push(lowByte(SERVO_CONFIG[i].middle));
-                buffer.push(highByte(SERVO_CONFIG[i].middle));
-
-                buffer.push(lowByte(SERVO_CONFIG[i].rate));
+                buffer.push16(SERVO_CONFIG[i].min)
+                    .push16(SERVO_CONFIG[i].max)
+                    .push16(SERVO_CONFIG[i].middle)
+                    .push8(SERVO_CONFIG[i].rate);
             }
-            
             nextFunction = send_channel_forwarding;
         } else {
             // send one at a time, with index
             
             var servoConfiguration = SERVO_CONFIG[servoIndex];
             
-            buffer.push(servoIndex);
-            
-            buffer.push(lowByte(servoConfiguration.min));
-            buffer.push(highByte(servoConfiguration.min));
-
-            buffer.push(lowByte(servoConfiguration.max));
-            buffer.push(highByte(servoConfiguration.max));
-
-            buffer.push(lowByte(servoConfiguration.middle));
-            buffer.push(highByte(servoConfiguration.middle));
-
-            buffer.push(lowByte(servoConfiguration.rate));
-            
-            buffer.push(servoConfiguration.angleAtMin);
-            buffer.push(servoConfiguration.angleAtMax);
+            buffer.push8(servoIndex)
+                .push16(servoConfiguration.min)
+                .push16(servoConfiguration.max)
+                .push16(servoConfiguration.middle)
+                .push8(servoConfiguration.rate)
+                .push8(servoConfiguration.angleAtMin)
+                .push8(servoConfiguration.angleAtMax);
 
             var out = servoConfiguration.indexOfChannelToForward;
             if (out == undefined) {
                 out = 255; // Cleanflight defines "CHANNEL_FORWARDING_DISABLED" as "(uint8_t)0xFF"
             }
-            buffer.push(out);
-
-            buffer.push(specificByte(servoConfiguration.reversedInputSources, 0));
-            buffer.push(specificByte(servoConfiguration.reversedInputSources, 1));
-            buffer.push(specificByte(servoConfiguration.reversedInputSources, 2));
-            buffer.push(specificByte(servoConfiguration.reversedInputSources, 3));
+            buffer.push8(out)
+                .push32(servoConfiguration.reversedInputSources);
             
             // prepare for next iteration
             servoIndex++;
@@ -1377,7 +1286,7 @@ MspHelper.prototype.sendServoConfigurations = function(onCompleteCallback) {
             if (out == undefined) {
                 out = 255; // Cleanflight defines "CHANNEL_FORWARDING_DISABLED" as "(uint8_t)0xFF"
             }
-            buffer.push(out);
+            buffer.push8(out);
         }
 
         nextFunction = onCompleteCallback;
@@ -1402,11 +1311,11 @@ MspHelper.prototype.sendModeRanges = function(onCompleteCallback) {
         var modeRange = MODE_RANGES[modeRangeIndex];
                         
         var buffer = [];
-        buffer.push(modeRangeIndex);
-        buffer.push(modeRange.id);
-        buffer.push(modeRange.auxChannelIndex);
-        buffer.push((modeRange.range.start - 900) / 25);
-        buffer.push((modeRange.range.end - 900) / 25);
+        buffer.push8(modeRangeIndex)
+            .push8(modeRange.id)
+            .push8(modeRange.auxChannelIndex)
+            .push8((modeRange.range.start - 900) / 25)
+            .push8((modeRange.range.end - 900) / 25);
         
         // prepare for next iteration
         modeRangeIndex++;
@@ -1435,13 +1344,13 @@ MspHelper.prototype.sendAdjustmentRanges = function(onCompleteCallback) {
         var adjustmentRange = ADJUSTMENT_RANGES[adjustmentRangeIndex];
                         
         var buffer = [];
-        buffer.push(adjustmentRangeIndex);
-        buffer.push(adjustmentRange.slotIndex);
-        buffer.push(adjustmentRange.auxChannelIndex);
-        buffer.push((adjustmentRange.range.start - 900) / 25);
-        buffer.push((adjustmentRange.range.end - 900) / 25);
-        buffer.push(adjustmentRange.adjustmentFunction);
-        buffer.push(adjustmentRange.auxSwitchChannelIndex);
+        buffer.push8(adjustmentRangeIndex)
+            .push8(adjustmentRange.slotIndex)
+            .push8(adjustmentRange.auxChannelIndex)
+            .push8((adjustmentRange.range.start - 900) / 25)
+            .push8((adjustmentRange.range.end - 900) / 25)
+            .push8(adjustmentRange.adjustmentFunction)
+            .push8(adjustmentRange.auxSwitchChannelIndex);
         
         // prepare for next iteration
         adjustmentRangeIndex++;
@@ -1485,8 +1394,7 @@ MspHelper.prototype.sendLedStripConfig = function(onCompleteCallback) {
                     directionMask = bit_set(directionMask, bitIndex);
                 }
             }
-            buffer.push(specificByte(directionMask, 0));
-            buffer.push(specificByte(directionMask, 1));
+            buffer.push16(directionMask);
     
             var functionMask = 0;
             for (var functionLetterIndex = 0; functionLetterIndex < led.functions.length; functionLetterIndex++) {
@@ -1495,13 +1403,12 @@ MspHelper.prototype.sendLedStripConfig = function(onCompleteCallback) {
                     functionMask = bit_set(functionMask, bitIndex);
                 }
             }
-            buffer.push(specificByte(functionMask, 0));
-            buffer.push(specificByte(functionMask, 1));
+            buffer.push16(functionMask)
+            
+                .push8(led.x)
+                .push8(led.y)
     
-            buffer.push(led.x);
-            buffer.push(led.y);
-    
-            buffer.push(led.color);
+                .push8(led.color);
         } else {
             var mask = 0;
 
@@ -1535,10 +1442,7 @@ MspHelper.prototype.sendLedStripConfig = function(onCompleteCallback) {
             mask |= (0 << 28); // parameters
             
             
-            buffer.push(specificByte(mask, 0));
-            buffer.push(specificByte(mask, 1));
-            buffer.push(specificByte(mask, 2));
-            buffer.push(specificByte(mask, 3));
+            buffer.push32(mask);
         }
         
         // prepare for next iteration
@@ -1560,10 +1464,9 @@ MspHelper.prototype.sendLedStripColors = function(onCompleteCallback) {
         for (var colorIndex = 0; colorIndex < LED_COLORS.length; colorIndex++) {
             var color = LED_COLORS[colorIndex];
             
-            buffer.push(specificByte(color.h, 0));
-            buffer.push(specificByte(color.h, 1));
-            buffer.push(color.s);
-            buffer.push(color.v);
+            buffer.push16(color.h)
+                .push8(color.s)
+                .push8(color.v);
         }
         MSP.send_message(MSPCodes.MSP_SET_LED_COLORS, buffer, false, onCompleteCallback);
     }
@@ -1585,9 +1488,9 @@ MspHelper.prototype.sendLedStripModeColors = function(onCompleteCallback) {
         
         var mode_color = LED_MODE_COLORS[index];
         
-        buffer.push(mode_color.mode);
-        buffer.push(mode_color.direction);
-        buffer.push(mode_color.color);
+        buffer.push8(mode_color.mode)
+            .push8(mode_color.direction)
+            .push8(mode_color.color);
 
         // prepare for next iteration
         index++;
@@ -1667,10 +1570,10 @@ MspHelper.prototype.sendRxFailConfig = function(onCompleteCallback) {
         var rxFail = RXFAIL_CONFIG[rxFailIndex];
 
         var buffer = [];
-        buffer.push(rxFailIndex);
-        buffer.push(rxFail.mode);
-        buffer.push(lowByte(rxFail.value));
-        buffer.push(highByte(rxFail.value));
+        buffer.push8(rxFailIndex)
+            .push8(rxFail.mode)
+            .push16(rxFail.value);
+        
 
         // prepare for next iteration
         rxFailIndex++;
