@@ -900,23 +900,23 @@ bool startedLoggingInTestMode = false;
 
 void startInTestMode(void)
 {
-  if(!startedLoggingInTestMode) {
-      if (masterConfig.blackbox_device == BLACKBOX_DEVICE_SERIAL) {
-          serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
-          if (sharedBlackboxAndMspPort) {
-              return; // When in test mode, we cannot share the MSP and serial logger port!
-          }
-      }
-      startBlackbox();
-      startedLoggingInTestMode = true;
-  }
+    if(!startedLoggingInTestMode) {
+        if (masterConfig.blackbox_device == BLACKBOX_DEVICE_SERIAL) {
+            serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
+            if (sharedBlackboxAndMspPort) {
+                return; // When in test mode, we cannot share the MSP and serial logger port!
+            }
+        }
+        startBlackbox();
+        startedLoggingInTestMode = true;
+    }
 }
 void stopInTestMode(void)
 {
-  if(startedLoggingInTestMode) {
-      finishBlackbox();
-      startedLoggingInTestMode = false;
-  }
+    if(startedLoggingInTestMode) {
+        finishBlackbox();
+        startedLoggingInTestMode = false;
+    }
 }
 /**
  * We are going to monitor the MSP_SET_MOTOR target variables motor_disarmed[] for values other than minthrottle
@@ -929,23 +929,23 @@ void stopInTestMode(void)
  * test mode to trigger again; its just that the data will be in a second, third, fourth etc log file.
  */
 bool inMotorTestMode(void) {
-  static uint32_t resetTime = 0;
-  int i;
-  bool motorsNotAtMin = false;
+    static uint32_t resetTime = 0;
+    uint16_t activeMinimumCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand);
+    int i;
+    bool motorsNotAtMin = false;
 
- if(!masterConfig.blackbox_on_motor_test) return false;
-  // set disarmed motor values
-  for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-      motorsNotAtMin |= (motor_disarmed[i] != (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand));
+    // set disarmed motor values
+        for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+            motorsNotAtMin |= (motor_disarmed[i] != activeMinimumCommand);
 
-  if(motorsNotAtMin) {
-      resetTime = millis() + 5000; // add 5 seconds
-      return true;
-  } else {
-      // Monitor the duration at minimum
-      return (micros() < resetTime);
-  }
-  return false;
+    if(motorsNotAtMin) {
+        resetTime = millis() + 5000; // add 5 seconds
+        return true;
+    } else {
+        // Monitor the duration at minimum
+        return (millis() < resetTime);
+    }
+    return false;
 }
 
 #ifdef GPS
@@ -1622,17 +1622,18 @@ void handleBlackbox(void)
         if (startedLoggingInTestMode) startedLoggingInTestMode = false;
     } else { // Only log in test mode if there is room!
 
-        // Handle Motor Test Mode
-       if(inMotorTestMode()) {
-           if(blackboxState==BLACKBOX_STATE_STOPPED) {
-               startInTestMode();
+        if(masterConfig.blackbox_on_motor_test) {
+            // Handle Motor Test Mode
+            if(inMotorTestMode()) {
+                if(blackboxState==BLACKBOX_STATE_STOPPED) {
+                    startInTestMode();
+                }
+           } else {
+               if(blackboxState!=BLACKBOX_STATE_STOPPED) {
+                   stopInTestMode();
+               }
            }
-       } else {
-           if(blackboxState!=BLACKBOX_STATE_STOPPED) {
-               stopInTestMode();
-           }
-       }
-
+        }
     }
 }
 
