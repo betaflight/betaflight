@@ -12,7 +12,7 @@ var Features = function (config) {
         {bit: 5, group: 'other', name: 'SERVO_TILT'},
         {bit: 6, group: 'other', name: 'SOFTSERIAL', haveTip: true},
         {bit: 7, group: 'gps', name: 'GPS', haveTip: true},
-        {bit: 8, group: 'rxFailsafe', name: 'FAILSAFE', haveTip: true},
+        {bit: 8, group: 'other', name: 'FAILSAFE', haveTip: true},
         {bit: 9, group: 'other', name: 'SONAR'},
         {bit: 10, group: 'other', name: 'TELEMETRY'},
         {bit: 11, group: 'batteryCurrent', name: 'CURRENT_METER'},

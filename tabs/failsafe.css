@@ -252,37 +252,6 @@
     height: 90px;
 }
 
-.tab-failsafe .featuresNew {
-    width: 100%;
-}
-
-.tab-failsafe .featuresNew tr {
-    width: 100%;
-    border-bottom: 1px solid #ddd;
-    float: left;
-    padding: 0px;
-    padding-bottom: 6px;
-    margin-bottom: 3px;
-}
-
-.tab-failsafe .featuresNew td:first-child {
-    width: 52px;
-}
-
-.tab-failsafe .featuresNew td:last-child {
-    width: calc(100% - 125px);
-    margin-right: 0px;
-}
-
-.tab-failsafe .featuresNew td {
-    float: left;
-    margin-right: 10px;
-}
-
-.tab-failsafe .featuresNew .helpicon {
-    margin-right: -2px;
-}
-
 .tab-failsafe table {
     width: 100%;
 }

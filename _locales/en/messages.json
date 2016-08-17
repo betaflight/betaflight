@@ -544,10 +544,10 @@
         "message": "On Screen Display"
     },
     "featureFAILSAFE": {
-        "message": "Apply failsafe on RX signal loss"
+        "message": "Override failsafe behaviour on RX signal loss"
     },
     "featureFAILSAFETip": {
-        "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
+        "message": "<strong>Warning:</strong> Use this only if you know what you are doing. The default behaviour on RX signal loss (deactivate all motors to bring craft to the ground) is the safest option in most situations."
     },
     "configurationFeatureEnabled": {
         "message": "Enabled"
