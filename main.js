@@ -406,6 +406,12 @@ function updateTabList(features) {
         $('#tabs ul.mode-connected li.tab_gps').hide();
     }
 
+    if (features.isEnabled('FAILSAFE')) {
+        $('#tabs ul.mode-connected li.tab_failsafe').show();
+    } else {
+        $('#tabs ul.mode-connected li.tab_failsafe').hide();
+    }
+
     if (features.isEnabled('LED_STRIP')) {
         $('#tabs ul.mode-connected li.tab_led_strip').show();
     } else {
