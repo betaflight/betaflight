@@ -1,5 +1,9 @@
 'use strict';
 
+// This list has been extracted from the firmware source with:
+// grep TARGET_BOARD_IDENTIFIER src/main/target/*/target.h | sed -n "s/^src\/main\/target\/\([^\/]*\).*#define TARGET_BOARD_IDENTIFIER \"\([^\"]*\).*$/{name: '\1', identifier: '\2', vcp: false},/p" | sort
+// and then manually setting vcp to true for boards that use VCP
+
 var BOARD_DEFINITIONS = [
     {
         name: "CC3D",
