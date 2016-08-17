@@ -430,8 +430,8 @@ void init(void)
 #endif
 
 // MPU6500 does not support divider
-#if defined(USE_GYRO_SPI_MPU6500)
-    masterConfig.gyro_sync_denom = 1;
+#if !defined(NAZE) && defined(USE_GYRO_SPI_MPU6500)
+   masterConfig.gyro_sync_denom = 1;
 #endif
 
 #ifdef USE_ADC
