@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 143;
+static const uint8_t EEPROM_CONF_VERSION = 144;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -680,6 +680,7 @@ void createDefaultConfig(master_t *config)
 
     config->blackbox_rate_num = 1;
     config->blackbox_rate_denom = 1;
+    config->blackbox_on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART
