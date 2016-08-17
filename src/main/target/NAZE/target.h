@@ -143,7 +143,6 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-
 #define LED_STRIP
 #define WS2811_TIMER                    TIM3
 #define WS2811_PIN                      PA6
