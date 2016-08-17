@@ -335,20 +335,12 @@ static servoMixer_t *customServoMixers;
 static motorMixer_t *customMixers;
 
 void mixerUseConfigs(
-#ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
-        gimbalConfig_t *gimbalConfigToUse,
-#endif
         flight3DConfig_t *flight3DConfigToUse,
         escAndServoConfig_t *escAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse,
         rxConfig_t *rxConfigToUse)
 {
-#ifdef USE_SERVOS
-    servoConf = servoConfToUse;
-    gimbalConfig = gimbalConfigToUse;
-#endif
     flight3DConfig = flight3DConfigToUse;
     escAndServoConfig = escAndServoConfigToUse;
     mixerConfig = mixerConfigToUse;
@@ -357,6 +349,12 @@ void mixerUseConfigs(
 }
 
 #ifdef USE_SERVOS
+void servoUseConfigs(servoParam_t *servoConfToUse, gimbalConfig_t *gimbalConfigToUse)
+{
+    servoConf = servoConfToUse;
+    gimbalConfig = gimbalConfigToUse;
+}
+
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
     uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
@@ -377,7 +375,30 @@ int servoDirection(int servoIndex, int inputSource)
     else
         return 1;
 }
+
+void servoInit(servoMixer_t *initialCustomServoMixers)
+{
+    customServoMixers = initialCustomServoMixers;
+
+    // enable servos for mixes that require them. note, this shifts motor counts.
+    useServo = mixers[currentMixerMode].useServo;
+    // if we want camstab/trig, that also enables servos, even if mixer doesn't
+    if (feature(FEATURE_SERVO_TILT))
+        useServo = 1;
+
+    // give all servos a default command
+    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = DEFAULT_SERVO_MIDDLE;
+    }
+}
 #endif
+
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
+{
+    currentMixerMode = mixerMode;
+
+    customMixers = initialCustomMixers;
+}
 
 #ifndef USE_QUAD_MIXER_ONLY
 
@@ -397,25 +418,6 @@ void loadCustomServoMixer(void)
 
         currentServoMixer[i] = customServoMixers[i];
         servoRuleCount++;
-    }
-}
-
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers)
-{
-    currentMixerMode = mixerMode;
-
-    customMixers = initialCustomMotorMixers;
-    customServoMixers = initialCustomServoMixers;
-
-    // enable servos for mixes that require them. note, this shifts motor counts.
-    useServo = mixers[currentMixerMode].useServo;
-    // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    if (feature(FEATURE_SERVO_TILT))
-        useServo = 1;
-
-    // give all servos a default command
-    for (uint8_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = DEFAULT_SERVO_MIDDLE;
     }
 }
 
@@ -519,13 +521,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 }
 
 #else
-
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
-{
-    currentMixerMode = mixerMode;
-
-    customMixers = initialCustomMixers;
-}
 
 void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
 {
