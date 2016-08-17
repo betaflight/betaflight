@@ -939,7 +939,7 @@ bool inMotorTestMode(void) {
       motorsNotAtMin |= (motor_disarmed[i] != (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand));
 
   if(motorsNotAtMin) {
-      resetTime = micros() + 5000000; // add 5 seconds
+      resetTime = millis() + 5000; // add 5 seconds
       return true;
   } else {
       // Monitor the duration at minimum
