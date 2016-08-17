@@ -680,6 +680,7 @@ void createDefaultConfig(master_t *config)
 
     config->blackbox_rate_num = 1;
     config->blackbox_rate_denom = 1;
+    config->blackbox_on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART
