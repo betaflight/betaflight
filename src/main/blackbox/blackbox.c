@@ -930,15 +930,15 @@ void stopInTestMode(void)
  */
 bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
-    uint16_t activeMinimumCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand);
+    uint16_t inactiveMotorCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand);
     int i;
-    bool motorsNotAtMin = false;
+    bool atLeastOneMotorActivated = false;
 
     // set disarmed motor values
-        for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-            motorsNotAtMin |= (motor_disarmed[i] != activeMinimumCommand);
+    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+        atLeastOneMotorActivated |= (motor_disarmed[i] != inactiveMotorCommand);
 
-    if(motorsNotAtMin) {
+    if(atLeastOneMotorActivated) {
         resetTime = millis() + 5000; // add 5 seconds
         return true;
     } else {
@@ -1625,14 +1625,12 @@ void handleBlackbox(void)
         if(masterConfig.blackbox_on_motor_test) {
             // Handle Motor Test Mode
             if(inMotorTestMode()) {
-                if(blackboxState==BLACKBOX_STATE_STOPPED) {
+                if(blackboxState==BLACKBOX_STATE_STOPPED)
                     startInTestMode();
-                }
-           } else {
-               if(blackboxState!=BLACKBOX_STATE_STOPPED) {
-                   stopInTestMode();
-               }
-           }
+            } else {
+                if(blackboxState!=BLACKBOX_STATE_STOPPED)
+                    stopInTestMode();
+            }
         }
     }
 }
