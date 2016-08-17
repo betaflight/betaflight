@@ -503,9 +503,11 @@ void mspInit(serialConfig_t *serialConfig)
     }
 #endif
 
+#ifdef FAILSAFE
     if (feature(FEATURE_FAILSAFE)) {
         activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
     }
+#endif
 
     if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
