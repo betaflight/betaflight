@@ -803,12 +803,12 @@ void mixTable(void *pidProfilePtr)
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
             throttlePrevious = rcCommand[THROTTLE];
-			throttle = rcCommand[THROTTLE] + flight3DConfig->deadband3d_throttle;
+		    throttle = rcCommand[THROTTLE] + flight3DConfig->deadband3d_throttle;
         } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
             throttleMax = escAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
             throttlePrevious = rcCommand[THROTTLE];
-			throttle = rcCommand[THROTTLE] - flight3DConfig->deadband3d_throttle;
+		    throttle = rcCommand[THROTTLE] - flight3DConfig->deadband3d_throttle;
         } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
             throttle = throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
