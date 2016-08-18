@@ -102,6 +102,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    10
+
 // IO - stm32f103RCT6 in 64pin package (TODO)
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

@@ -204,6 +204,8 @@
 #undef TELEMETRY_LTM
 #endif
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    11
 
 // DEBUG
 //#define HIL

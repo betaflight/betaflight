@@ -319,6 +319,10 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             channelIndex++;
 #endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
+            /* Check if we already configured maximum supported number of motors and skip the rest */
+            if (pwmIOConfiguration.motorCount >= MAX_MOTORS) {
+                continue;
+            }
 
 #if defined(CC3D) && !defined(CC3D_PPM1)
             if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
@@ -349,6 +353,10 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             pwmIOConfiguration.motorCount++;
 
         } else if (type == MAP_TO_SERVO_OUTPUT) {
+            if (pwmIOConfiguration.servoCount >=  MAX_SERVOS) {
+                continue;
+            }
+
 #ifdef USE_SERVOS
             pwmServoConfig(timerHardwarePtr, pwmIOConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
 

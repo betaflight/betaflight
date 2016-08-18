@@ -78,6 +78,8 @@
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    4
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA         0xffff

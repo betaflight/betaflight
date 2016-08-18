@@ -89,6 +89,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    11
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

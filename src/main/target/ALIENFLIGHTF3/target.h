@@ -127,6 +127,9 @@
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART3
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    10
+
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

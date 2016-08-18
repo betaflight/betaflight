@@ -164,6 +164,9 @@
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    6
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

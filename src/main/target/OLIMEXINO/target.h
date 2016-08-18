@@ -88,6 +88,8 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    10
 
 // IO - assuming all IOs on smt32f103rb LQFP64 package
 #define TARGET_IO_PORTA         0xffff

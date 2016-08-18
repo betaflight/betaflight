@@ -104,6 +104,9 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_VBAT
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    10
+
 // IO - assuming 303 in 64pin package, TODO
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

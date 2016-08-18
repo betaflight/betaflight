@@ -109,6 +109,8 @@
 #undef BLACKBOX
 #endif
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    4
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA         0xffff

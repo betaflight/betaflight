@@ -125,6 +125,9 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    12
+
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
