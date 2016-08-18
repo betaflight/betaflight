@@ -2764,13 +2764,6 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
         printRxRange(dumpMask, &defaultConfig);
 
-#ifdef USE_SERVOS
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# servo\r\n");
-#endif
-        printServo(dumpMask, &defaultConfig);
-#endif
-
 #ifdef VTX
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# vtx\r\n");
