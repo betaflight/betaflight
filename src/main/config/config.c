@@ -351,7 +351,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
     batteryConfig->currentMeterOffset = 0;
-    batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
+    batteryConfig->currentMeterScale = CURRENT_METER_SCALE_DEFAULT; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
 }
