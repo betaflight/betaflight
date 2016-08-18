@@ -21,6 +21,7 @@
 #define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define TARGET_CONFIG
 
 #define LED0                    PB9
 #define LED1                    PB5
