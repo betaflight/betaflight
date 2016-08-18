@@ -353,10 +353,8 @@ TABS.motors.initialize = function (callback) {
                $('div.values li').eq(index).text($(this).val());
 
                for (i = 0; i < 8; i++) {
-               var val = parseInt($('div.sliders input').eq(i).val());
-
-               buffer.push(lowByte(val));
-               buffer.push(highByte(val));
+                   var val = parseInt($('div.sliders input').eq(i).val());
+                   buffer.push16(val);
                }
              
                buffering_set_motor.push(buffer);

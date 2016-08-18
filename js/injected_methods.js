@@ -10,6 +10,13 @@ Array.prototype.push16 = function(val) {
   // chainable
   return this;
 };
+Array.prototype.push32 = function(val) {
+    this.push8(val)
+        .push8(val >> 8)
+        .push8(val >> 16)
+        .push8(val >> 24);
+    return this;
+}
 DataView.prototype.offset = 0;
 DataView.prototype.readU8 = function() {
     if (this.byteLength >= this.offset+1) {
