@@ -118,7 +118,7 @@ bool mpu6500SpiAccDetect(acc_t *acc)
     }
 
     acc->init = mpu6500SpiAccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }

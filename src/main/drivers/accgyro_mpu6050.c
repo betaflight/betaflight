@@ -59,7 +59,7 @@ bool mpu6050AccDetect(acc_t *acc)
     }
 
     acc->init = mpu6050AccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
     acc->revisionCode = (mpuDetectionResult.resolution == MPU_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
 
     return true;

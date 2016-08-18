@@ -220,7 +220,7 @@ bool mpu9250SpiAccDetect(acc_t *acc)
     }
 
     acc->init = mpu9250SpiAccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }

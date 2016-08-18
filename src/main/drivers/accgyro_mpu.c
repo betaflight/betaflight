@@ -53,22 +53,24 @@ static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
 static int mpuDividerDrops;
+static int accDividerDrops;
 
 uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSamplingDenom)
 {
     int gyroSamplePeriod;
 
     if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        gyroSamplePeriod = GYRO_8KHZ_INTERVAL;
+        gyroSamplePeriod = INTERVAL_8KHZ;
     } else {
-        gyroSamplePeriod = GYRO_1KHZ_INTERVAL;
+        gyroSamplePeriod = INTERVAL_1KHZ;
         gyroSamplingDenom = 1; // Always full Sampling 1khz
     }
 
     // calculate gyro divider and targetLooptime (expected cycleTime)
     mpuDividerDrops  = gyroSamplingDenom - 1;
-    const uint32_t targetLooptime = gyroSamplingDenom * gyroSamplePeriod;
-    return targetLooptime;
+    const uint32_t targetSamplingTime = gyroSamplingDenom * gyroSamplePeriod;
+
+    return targetSamplingTime;
 }
 
 uint8_t gyroMPUGetDividerDrops(void)
@@ -285,11 +287,11 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
     return ack;
 }
 
-bool mpuAccRead(int16_t *accData)
+bool mpuGyroAccRead(int16_t *gyroADC, int16_t *accData)
 {
-    uint8_t data[6];
+    uint8_t data[12];
 
-    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 6, data);
+    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 14, data);
     if (!ack) {
         return false;
     }
@@ -298,9 +300,12 @@ bool mpuAccRead(int16_t *accData)
     accData[1] = (int16_t)((data[2] << 8) | data[3]);
     accData[2] = (int16_t)((data[4] << 8) | data[5]);
 
+    gyroADC[0] = (int16_t)((data[8] << 8) | data[9]);
+    gyroADC[1] = (int16_t)((data[10]<< 8) | data[11]);
+    gyroADC[2] = (int16_t)((data[12]<< 8) | data[13]);
+
     return true;
 }
-
 bool mpuGyroRead(int16_t *gyroADC)
 {
     uint8_t data[6];

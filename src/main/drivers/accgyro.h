@@ -32,7 +32,7 @@ typedef struct gyro_s {
 
 typedef struct acc_s {
     sensorAccInitFuncPtr init;                              // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
+    sensorMultiReadFuncPtr read;                            // Read gyro + acc
     uint16_t acc_1G;
     char revisionCode;                                      // a revision code for the sensor, if known
 } acc_t;

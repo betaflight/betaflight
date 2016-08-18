@@ -689,6 +689,7 @@ void main_init(void)
     rescheduleTask(TASK_PID, targetPidLooptime);
     setTaskEnabled(TASK_PID, true);
     gyro.gyroSamplingEnabled = true;
+    setAccDividerDrops((sensors(SENSOR_ACC)) ? true : false);
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);

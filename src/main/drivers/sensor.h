@@ -18,7 +18,8 @@
 #pragma once
 
 struct acc_s;
-typedef void (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read and align prototype
-typedef void (*sensorAccInitFuncPtr)(struct acc_s *acc);    // sensor init prototype
-typedef void (*sensorGyroInitFuncPtr)(uint8_t lpf);         // gyro sensor init prototype
+typedef void (*sensorInitFuncPtr)(void);                               // sensor init prototype
+typedef bool (*sensorReadFuncPtr)(int16_t *data);                      // sensor read and align prototype
+typedef bool (*sensorMultiReadFuncPtr)(int16_t *data, int16_t *data2); // double sensor read and align prototype
+typedef void (*sensorAccInitFuncPtr)(struct acc_s *acc);               // sensor init prototype
+typedef void (*sensorGyroInitFuncPtr)(uint8_t lpf);                    // gyro sensor init prototype

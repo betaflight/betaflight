@@ -31,8 +31,8 @@
 #define GYRO_LPF_NONE       7
 
 // Available full sampling intervals for divider
-#define GYRO_8KHZ_INTERVAL  125
-#define GYRO_1KHZ_INTERVAL  1000
+#define INTERVAL_8KHZ     125
+#define INTERVAL_1KHZ     1000
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
@@ -202,6 +202,6 @@ extern mpuDetectionResult_t mpuDetectionResult;
 
 void configureMPUDataReadyInterruptHandling(void);
 void mpuIntExtiInit(void);
-bool mpuAccRead(int16_t *accData);
+bool mpuGyroAccRead(int16_t *gyroADC, int16_t *accData);
 bool mpuGyroRead(int16_t *gyroADC);
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);

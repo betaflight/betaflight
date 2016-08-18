@@ -53,4 +53,5 @@ bool isGyroCalibrationComplete(void);
 extern uint32_t lastGyroInterruptCallDelta;
 bool pidScheduledToRun(void);
 void gyroHandleInterrupt(void);
+void setAccDividerDrops(bool accEnabled);
 

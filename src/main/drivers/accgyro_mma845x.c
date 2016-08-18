@@ -82,7 +82,7 @@
 static uint8_t device_id;
 
 static void mma8452Init(acc_t *acc);
-static bool mma8452Read(int16_t *accelData);
+//static bool mma8452Read(int16_t *accelData);
 
 bool mma8452Detect(acc_t *acc)
 {
@@ -94,7 +94,7 @@ bool mma8452Detect(acc_t *acc)
         return false;
 
     acc->init = mma8452Init;
-    acc->read = mma8452Read;
+    //acc->read = mma8452Read; Fix later
     device_id = sig;
     return true;
 }
@@ -129,7 +129,7 @@ static void mma8452Init(acc_t *acc)
     acc->acc_1G = 256;
 }
 
-static bool mma8452Read(int16_t *accelData)
+/*static bool mma8452Read(int16_t *accelData)
 {
     uint8_t buf[6];
 
@@ -142,4 +142,4 @@ static bool mma8452Read(int16_t *accelData)
     accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 
     return true;
-}
+}*/

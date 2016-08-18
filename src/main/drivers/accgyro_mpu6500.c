@@ -40,7 +40,7 @@ bool mpu6500AccDetect(acc_t *acc)
     }
 
     acc->init = mpu6500AccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }

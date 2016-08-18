@@ -30,6 +30,7 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/accgyro.h"
+#include "drivers/accgyro_mpu.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -39,6 +40,8 @@
 #include "sensors/gyro.h"
 
 #include "flight/pid.h"
+
+#include "acceleration.h"
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
@@ -60,6 +63,7 @@ static float gyroDt;
 uint32_t lastGyroInterruptCallDelta;
 static uint8_t pidProcessDenom;
 static bool isPidScheduledToRun;
+static uint8_t accDividerDrops;
 
 void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
         uint8_t gyro_soft_lpf_hz,
@@ -86,6 +90,15 @@ void gyroInit(void)
             else
                 gyroDt = (float) gyro.gyroSamplingInterval * 0.000001f;
         }
+    }
+}
+
+void setAccDividerDrops(bool accEnabled) {
+    if (accEnabled){
+        if (gyro.gyroSamplingInterval < INTERVAL_1KHZ)
+            accDividerDrops = INTERVAL_1KHZ / gyro.gyroSamplingInterval;
+        else
+            accDividerDrops = 1;
     }
 }
 
@@ -166,14 +179,23 @@ void gyroHandleInterrupt(void) {
     lastGyroInterruptCallDelta = now - lastGyroInterruptCallAt;
     debug[0] = lastGyroInterruptCallDelta;
     lastGyroInterruptCallAt = now;
+    static int accReadCountDown;
 
 	if (gyro.gyroSamplingEnabled) {
         static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
         static int pidProcessCountDown;
 
-        if (!gyro.read(gyroADCRaw)) {
-            return;
-        }
+        if (accDividerDrops) {
+            if (accReadCountDown) {
+                accReadCountDown--;
+                if (!gyro.read(gyroADCRaw)) return;
+            } else {
+                accReadCountDown = accDividerDrops - 1;
+                if (!acc.read(gyroADCRaw, accADCRaw)) return;
+            }
+	    } else {
+	        if (!gyro.read(gyroADCRaw)) return;
+	    }
 
         processGyroData(gyroADCRaw);
 
