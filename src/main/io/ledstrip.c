@@ -394,12 +394,10 @@ bool parseLedStripConfig(int ledIndex, const char *config)
     return true;
 }
 
-void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize)
+void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize)
 {
     char directions[LED_DIRECTION_COUNT + 1];
     char baseFunctionOverlays[LED_OVERLAY_COUNT + 2];
-
-    ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
 
     memset(ledConfigBuffer, 0, bufferSize);
 
