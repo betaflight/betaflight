@@ -46,6 +46,7 @@
 #include "io/serial.h"
 #include "io/rc_controls.h"
 #include "io/gps.h"
+#include "io/status.h"
 
 #include "rx/rx.h"
 
@@ -118,6 +119,11 @@ extern int16_t telemTemperature1; // FIXME dependency on mw.c
 #define ID_GYRO_Z             0x42
 
 #define ID_VERT_SPEED         0x30 //opentx vario
+
+#define ID_TEXT               0x50 // text stream (parity 0)
+#define ID_TEXT_1             0x51 // text stream (parity 1)
+#define ID_TEXT_2             0x52 // text stream (parity 2)
+#define ID_TEXT_3             0x53 // text stream (parity 3)
 
 #define GPS_BAD_QUALITY       300
 #define GPS_MAX_HDOP_VAL      9999
@@ -495,6 +501,60 @@ void checkFrSkyTelemetryState(void)
     }
 }
 
+#define textTransmitBufferSize 5  // max pos+char duplets
+static uint8_t textTransmitBuffer[2*textTransmitBufferSize]; // lower byte pos, upper byte char - "FIFO"
+static uint8_t countTextTransmitBuffer = 0; // number of pairs of pos+char in buffer
+static uint8_t lastTransmittedCharPos = 0; // position of last char from text buffer which was added to transmit buffer - in fact it is next char to be transmitted :)
+
+unsigned char getOddParity(uint8_t p)
+{
+      p = p ^ (p >> 4 | p << 4);
+      p = p ^ (p >> 2);
+      p = p ^ (p >> 1);
+      return p & 1;
+}
+
+static void sendTelemetryTextTransmitBuffer(void)
+{
+    uint8_t i;
+    i = 0;
+    uint8_t parity;
+    while (countTextTransmitBuffer) {
+      parity = (getOddParity(textTransmitBuffer[2*i]) << 1) | getOddParity(textTransmitBuffer[2*i+1]);
+      sendDataHead(ID_TEXT+parity);
+      serializeFrsky(textTransmitBuffer[2*i]);
+      serializeFrsky(textTransmitBuffer[2*i+1]);
+      countTextTransmitBuffer--;
+      i++;
+    }
+}
+
+static void fillUpTelemetryTextTransmitBuffer(char* telemetryText, uint16_t telemetryTextSize)
+{
+    while (countTextTransmitBuffer < textTransmitBufferSize) {
+      if (lastTransmittedCharPos>= telemetryTextSize) lastTransmittedCharPos = 0;
+      textTransmitBuffer[2*countTextTransmitBuffer] = lastTransmittedCharPos+1; // 1 based position of char in text
+      textTransmitBuffer[2*countTextTransmitBuffer+1] = telemetryText[lastTransmittedCharPos]; // char itself
+      countTextTransmitBuffer++;
+      lastTransmittedCharPos++;
+    }
+}
+
+static void clearTelemetryText(void)
+{
+  countTextTransmitBuffer = 1; //whatever was in transmit buffer discard it
+  textTransmitBuffer[0] = 0; // command prefix
+  textTransmitBuffer[1] = 0; // clear command
+  /*
+  telemetryText[telemetryTextSize] = 0; // string termination just to be sure
+  lastTransmittedCharPos = telemetryTextSize;
+  while(lastTransmittedCharPos) {
+    lastTransmittedCharPos--;
+    telemetryText[lastTransmittedCharPos] = ' '; // fill up text buffer with spaces
+  }
+  */
+}
+
 void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
     if (!frskyTelemetryEnabled) {
@@ -550,6 +610,35 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 #endif
 
         sendTelemetryTail();
+    } else {
+
+    /* Telemetry text stream
+
+    Added to the HUB stream as last item (if there is a buffer
+    overrun the text is disposable)
+
+    Sends all chars from a small FIFO every transmission cycle.
+
+    FIFO is (could be) filled up elsewhere by high priority text.
+    If FIFO is not fully filled then spare place is filled up
+    by the text from buffer. This way the display is gradually
+    refreshed.
+
+    Note: the speed of text link is 5 chars per transmittion.
+    Approximately 40 chars a second at maximum.
+
+    Telemetry text stream is not beeing send when long 1/1s message
+    has already been composed and put into queue
+
+    */
+
+    // temporary hack - create text here (should be moved elsewhere shared by all users of status line)
+    composeStatus(statusLine,sizeof(statusLine));
+
+    fillUpTelemetryTextTransmitBuffer(statusLine,sizeof(statusLine));
+    sendTelemetryTextTransmitBuffer();
+
+    sendTelemetryTail();
     }
 
     if (cycleNum == 40) {     //Frame 3: Sent every 5s

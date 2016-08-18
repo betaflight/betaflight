@@ -1078,13 +1078,13 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
-
+/*
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayShowFixedPage(PAGE_GPS);
     }
 #endif
-
+*/
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
 }
 

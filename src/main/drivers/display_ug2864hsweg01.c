@@ -35,7 +35,8 @@
 unsigned char CHAR_FORMAT = NORMAL_CHAR_FORMAT;
 
 static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Database... 5 x 7 font
-        { 0x00, 0x00, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0x4F, 0x00, 0x00 }, //   (  1)  ! - 0x0021 Exclamation Mark
+                { 0x00, 0x00, 0x00, 0x00, 0x00 },
+                { 0x00, 0x00, 0x4F, 0x00, 0x00 }, //   (  1)  ! - 0x0021 Exclamation Mark
                 { 0x00, 0x07, 0x00, 0x07, 0x00 }, //   (  2)  " - 0x0022 Quotation Mark
                 { 0x14, 0x7F, 0x14, 0x7F, 0x14 }, //   (  3)  # - 0x0023 Number Sign
                 { 0x24, 0x2A, 0x7F, 0x2A, 0x12 }, //   (  4)  $ - 0x0024 Dollar Sign
@@ -166,9 +167,9 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
                 { 0x5A, 0x40, 0x40, 0x40, 0x5A }, //   (129)    - 0x00C6 Vertical Bargraph - 1
                 { 0x7A, 0x60, 0x60, 0x60, 0x7A }, //   (130)    - 0x00C7 Vertical Bargraph - 2
                 { 0x7A, 0x70, 0x70, 0x70, 0x7A }, //   (131)    - 0x00C8 Vertical Bargraph - 3
-                { 0x7A, 0x78, 0x78, 0x78, 0x7A }, //   (131)    - 0x00C8 Vertical Bargraph - 4
-                { 0x7A, 0x7C, 0x7C, 0x7C, 0x7A }, //   (131)    - 0x00C8 Vertical Bargraph - 5
-                { 0x7A, 0x7E, 0x7E, 0x7E, 0x7A }, //   (131)    - 0x00C8 Vertical Bargraph - 6 (full)
+                { 0x7A, 0x78, 0x78, 0x78, 0x7A }, //   (132)    - 0x00C8 Vertical Bargraph - 4
+                { 0x7A, 0x7C, 0x7C, 0x7C, 0x7A }, //   (133)    - 0x00C8 Vertical Bargraph - 5
+                { 0x7A, 0x7E, 0x7E, 0x7E, 0x7A }, //   (134)    - 0x00C8 Vertical Bargraph - 6 (full)
         };
 
 #define OLED_address   0x3C     // OLED at address 0x3C in 7bit
@@ -246,6 +247,128 @@ void i2c_OLED_send_string(const char *string)
         string++;
     }
 }
+
+void i2c_OLED_send_string_formatted(const char *string)
+{
+    // Sends a string of chars until null terminator
+    while (*string) {
+        if (*string & 0x80) { // MSB indicates inverted char
+          CHAR_FORMAT = INVERSE_CHAR_FORMAT;
+          i2c_OLED_send_char(*string & 0x7f); // strip MSB
+          CHAR_FORMAT = NORMAL_CHAR_FORMAT;
+        } else {
+          i2c_OLED_send_char(*string);
+        }
+        string++;
+    }
+}
+
+void i2c_OLED_send_line(const char *string)
+{
+    // Sends a line (string of chars) until null terminator or line length
+    //
+    uint8_t i = 0;
+    while (*string && (i<SCREEN_CHARACTER_COLUMN_COUNT)) {
+        i2c_OLED_send_char(*string);
+        string++;
+        i++;
+    }
+}
+
+void i2c_OLED_send_line_inverted(const char *string)
+{
+    // Sends a line (string of chars) until null terminator or line length
+    //
+    uint8_t i = 0;
+    CHAR_FORMAT = INVERSE_CHAR_FORMAT;
+    while (*string && (i<SCREEN_CHARACTER_COLUMN_COUNT)) {
+        i2c_OLED_send_char(*string);
+        string++;
+        i++;
+    }
+    CHAR_FORMAT = NORMAL_CHAR_FORMAT;
+}
+
+void i2c_OLED_send_line_formatted(const char *string)
+{
+    // Sends a string of chars until null terminator
+    uint8_t i = 0;
+    while (*string && (i<SCREEN_CHARACTER_COLUMN_COUNT)) {
+        if (*string & 0x80) { // MSB indicates inverted char
+          CHAR_FORMAT = INVERSE_CHAR_FORMAT;
+          i2c_OLED_send_char(*string & 0x7f); // strip MSB
+          CHAR_FORMAT = NORMAL_CHAR_FORMAT;
+        } else {
+          i2c_OLED_send_char(*string);
+        }
+        string++;
+    }
+}
+
+
+/*
+ Crude and untested line drawing with almost integer arithmetics
+*/
+void i2c_OLED_draw_line(uint8_t x1,uint8_t y1,uint8_t x2,uint8_t y2) {
+  // Draws a line from 1 to 2
+  // x: 0 - 127 , y: 0 63
+  uint8_t x, xs; // line segment start, x step
+  uint8_t y, yy; // line segment start, next line segment start
+  uint8_t dx;
+  uint8_t dy;
+  uint8_t i;
+
+  if (y2<y1) {
+    // swap 1 and 2
+    i = x2; x2 = x1; x1 = i;
+    i = y2; y2 = y1; y1 = i;
+  }
+  x = x1;
+  y = y1;
+  dx = x2 - x1;
+  dy = y2 - y1;
+
+  if (x2<x1) {
+    // backward line
+    xs = -1;
+  } else {
+    // forward line
+    xs = 1;
+  }
+
+
+  while (x*xs <= x2*xs) {
+    // calculate line segment end (y pos of next segment actually)
+    if (dx != 0) {
+        yy = y1 + (x+1-x1)*dy/dx;
+    } else {
+        yy = y2 + 1; // vertical line
+    }
+
+    uint8_t tmp, row, nibble;
+    row = y >> 3;
+    while(row <= ((yy-1) >> 3)) {           // go trough all pages (rows) and draw vertical line segments
+        nibble = 0xff >> (yy - (row << 3)); // num of pixels (upper end) - 0 means active pixels; i.e. first draw linw from "0" to line segment end
+        nibble = !nibble;                   // invert to get pixels
+        if ((y - (row << 3))>0) {           // nuber of black pixels - lower end; i.e. clear from "0" to line start
+          tmp = 0xff >> (y - (row << 3));
+        } else {
+          tmp = 0xff;
+        }
+        nibble = nibble & tmp;              // mask lower bits off
+        i2c_OLED_send_cmd(0xb0 + row);                      //set page address
+        i2c_OLED_send_cmd(0x00 + ((x) & 0x0f));         //set low col address
+        i2c_OLED_send_cmd(0x10 + (((x) >> 4) & 0x0f));  //set high col address
+        i2c_OLED_send_byte(nibble);         // write nibble into page
+        row++;
+    }
+
+    y = yy;
+    x += xs;
+  }
+
+}
+
 
 /**
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15

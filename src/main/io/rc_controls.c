@@ -294,7 +294,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         rcDelayCommand = 0; // allow autorepetition
         return;
     }
-
+/*
 #ifdef DISPLAY
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
         displayDisablePageCycling();
@@ -304,7 +304,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         displayEnablePageCycling();
     }
 #endif
-
+*/
 #ifdef VTX
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
@@ -713,4 +713,3 @@ void resetAdjustmentStates(void)
 {
     memset(adjustmentStates, 0, sizeof(adjustmentStates));
 }
-
