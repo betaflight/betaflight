@@ -91,7 +91,7 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-//#define LED_STRIP
+#define LED_STRIP
 #define WS2811_PIN                      PB4
 #define WS2811_TIMER                    TIM3
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
@@ -108,15 +108,16 @@
 //#define SONAR_TRIGGER_PIN       PB5
 
 #undef GPS
+#define CLI_MINIMAL_VERBOSITY
+#undef MAG
 
 #ifdef CC3D_OPBL
-#undef LED_STRIP
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_FLOAT
 #undef BARO
-#undef MAG
 #undef SONAR
 #undef USE_SOFTSERIAL1
+#undef LED_STRIP
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
