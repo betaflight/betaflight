@@ -20,11 +20,11 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 
-#include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
 
@@ -60,7 +60,7 @@
 
 #include "drivers/sonar_hcsr04.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -384,20 +384,6 @@ retry:
             }
 #endif
             ; // fallthrough
-	case ACC_MPU9250:
-#ifdef USE_ACC_SPI_MPU9250
-
-        if (mpu9250SpiAccDetect(&acc))
-        {
-            accHardware = ACC_MPU9250;
-#ifdef ACC_MPU9250_ALIGN
-            accAlign = ACC_MPU9250_ALIGN;
-#endif
-
-            break;
-        }
-#endif
-        ; // fallthrough
         case ACC_FAKE:
 #ifdef USE_FAKE_ACC
             if (fakeAccDetect(&acc)) {

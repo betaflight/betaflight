@@ -23,9 +23,10 @@
 
 #include "common/maths.h"
 
-#include "build_config.h"
 #include "platform.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
@@ -47,7 +48,8 @@
 
 #include "io/gps.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'

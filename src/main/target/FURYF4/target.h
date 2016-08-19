@@ -18,8 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "FYF4"
-#define TARGET_CONFIG
-
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING     "FuryF4"
@@ -38,7 +36,6 @@
 #define MPU_INT_EXTI            PC4
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
 #define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -46,17 +43,14 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define GYRO
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
-
-#define ACC
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -74,6 +68,17 @@
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_PIN                   PB12
 
+/*
+#define SDCARD_DETECT_PIN                   PD2
+#define SDCARD_DETECT_EXTI_LINE             EXTI_Line2
+#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource2
+#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOD
+#define SDCARD_DETECT_EXTI_IRQn             EXTI2_IRQn
+
+#define SDCARD_SPI_INSTANCE                 SPI3
+#define SDCARD_SPI_CS_PIN                   PB3
+*/
+
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
 // Divide to under 25MHz for normal operation:
@@ -90,12 +95,11 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
+
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
-
-#define USABLE_TIMER_CHANNEL_COUNT 5
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
@@ -104,6 +108,7 @@
 #define USE_UART1
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
+#define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
 #define UART3_RX_PIN            PB11
@@ -160,5 +165,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
+#define USABLE_TIMER_CHANNEL_COUNT 5
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
 

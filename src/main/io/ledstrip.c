@@ -23,13 +23,13 @@
 
 #include <platform.h>
 
-#include <build_config.h>
-
 #ifdef LED_STRIP
 
-#include <common/color.h>
-#include <common/maths.h>
-#include <common/typeconversion.h>
+#include "build/build_config.h"
+
+#include "common/color.h"
+#include "common/maths.h"
+#include "common/typeconversion.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/system.h"
@@ -44,7 +44,7 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -72,7 +72,8 @@
 
 #include "telemetry/telemetry.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -90,7 +91,6 @@ static bool ledStripEnabled = true;
 static void ledStripDisable(void);
 
 //#define USE_LED_ANIMATION
-//#define USE_LED_RING_DEFAULT_CONFIG
 
 #define LED_STRIP_HZ(hz) ((int32_t)((1000 * 1000) / (hz)))
 #define LED_STRIP_MS(ms) ((int32_t)(1000 * (ms)))
@@ -146,73 +146,6 @@ STATIC_UNIT_TESTED uint8_t lowestXValueForEast;
 
 STATIC_UNIT_TESTED ledCounts_t ledCounts;
 
-// macro for initializer
-#define LF(name) LED_FUNCTION_ ## name
-#define LO(name) LED_FLAG_OVERLAY(LED_OVERLAY_ ## name)
-#define LD(name) LED_FLAG_DIRECTION(LED_DIRECTION_ ## name)
-
-#ifdef USE_LED_RING_DEFAULT_CONFIG
-static const ledConfig_t defaultLedStripConfig[] = {
-    DEFINE_LED( 2,  2, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 2,  1, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 2,  0, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  0, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 0,  0, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 0,  1, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 0,  2, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  2, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
-};
-#else
-static const ledConfig_t defaultLedStripConfig[] = {
-    DEFINE_LED(15, 15, 0, LD(SOUTH) | LD(EAST), LF(ARM_STATE),   LO(INDICATOR), 0),
-
-    DEFINE_LED(15,  8, 0, LD(EAST)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED(15,  7, 0, LD(EAST)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-
-    DEFINE_LED(15,  0, 0, LD(NORTH) | LD(EAST), LF(ARM_STATE)  , LO(INDICATOR), 0),
-
-    DEFINE_LED( 8,  0, 0, LD(NORTH)           , LF(FLIGHT_MODE), 0, 0),
-    DEFINE_LED( 7,  0, 0, LD(NORTH)           , LF(FLIGHT_MODE), 0, 0),
-
-    DEFINE_LED( 0,  0, 0, LD(NORTH) | LD(WEST), LF(ARM_STATE)  , LO(INDICATOR), 0),
-
-    DEFINE_LED( 0,  7, 0, LD(WEST)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED( 0,  8, 0, LD(WEST)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-
-    DEFINE_LED( 0, 15, 0, LD(SOUTH) | LD(WEST), LF(ARM_STATE)  , LO(INDICATOR), 0),
-
-    DEFINE_LED( 7, 15, 0, LD(SOUTH)           , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED( 8, 15, 0, LD(SOUTH)           , LF(FLIGHT_MODE), LO(WARNING), 0),
-
-    DEFINE_LED( 7,  7, 0, LD(UP)              , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED( 8,  7, 0, LD(UP)              , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED( 7,  8, 0, LD(DOWN)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-    DEFINE_LED( 8,  8, 0, LD(DOWN)            , LF(FLIGHT_MODE), LO(WARNING), 0),
-
-    DEFINE_LED( 8,  9, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 9, 10, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED(10, 11, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED(10, 12, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 9, 13, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 8, 14, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 7, 14, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 6, 13, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 5, 12, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 5, 11, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 6, 10, 3, 0, LF(THRUST_RING), 0, 0),
-    DEFINE_LED( 7,  9, 3, 0, LF(THRUST_RING), 0, 0),
-
-};
-#endif
-
-#undef LD
-#undef LF
-#undef LO
-
 static const modeColorIndexes_t defaultModeColors[] = {
     //                          NORTH             EAST               SOUTH            WEST             UP          DOWN
     [LED_MODE_ORIENTATION] = {{ COLOR_WHITE,      COLOR_DARK_VIOLET, COLOR_RED,       COLOR_DEEP_PINK, COLOR_BLUE, COLOR_ORANGE }},
@@ -234,7 +167,6 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
        [LED_SCOLOR_GPSLOCKED]       = COLOR_GREEN,
     }}
 };
-
 
 static int scaledThrottle;
 
@@ -425,7 +357,6 @@ void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize)
     sprintf(ledConfigBuffer, "%u,%u:%s:%s:%u", ledGetX(ledConfig), ledGetY(ledConfig), directions, baseFunctionOverlays, ledGetColor(ledConfig));
 }
 
-
 typedef enum {
     // the ordering is important, see below how NSEW is mapped to  NE/SE/NW/SW
     QUADRANT_NORTH      = 1 << 0,
@@ -498,7 +429,6 @@ static hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeColorIn
     }
     return NULL;
 }
-
 
 // map flight mode to led mode, in order of priority
 // flightMode == 0 is always active
@@ -583,7 +513,6 @@ typedef enum {
     WARNING_LOW_BATTERY,
     WARNING_FAILSAFE,
 } warningFlags_e;
-
 
 static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
 {
@@ -731,7 +660,6 @@ static void applyLedGpsLayer(bool updateNow, uint32_t *timer)
 }
 
 #endif
-
 
 #define INDICATOR_DEADBAND 25
 
@@ -920,9 +848,7 @@ static void applyLedBlinkLayer(bool updateNow, uint32_t *timer)
     }
 }
 
-
 #ifdef USE_LED_ANIMATION
-
 static void applyLedAnimationLayer(bool updateNow, uint32_t *timer)
 {
     static uint8_t frameCounter = 0;
@@ -973,14 +899,12 @@ typedef enum {
 
 static uint32_t timerVal[timTimerCount];
 
-
 // function to apply layer.
 // function must replan self using timer pointer
 // when updateNow is true (timer triggered), state must be updated first,
 //  before calculating led state. Otherwise update started by different trigger
 //  may modify LED state.
 typedef void applyLayerFn_timed(bool updateNow, uint32_t *timer);
-
 
 static applyLayerFn_timed* layerTable[] = {
     [timBlink] = &applyLedBlinkLayer,
@@ -1164,8 +1088,6 @@ void applyDefaultSpecialColors(specialColorIndexes_t *specialColors)
 {
     memcpy_fn(specialColors, &defaultSpecialColors, sizeof(defaultSpecialColors));
 }
-
-
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse)
 {

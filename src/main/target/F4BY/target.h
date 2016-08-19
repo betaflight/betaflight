@@ -74,8 +74,6 @@
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9
 
@@ -156,5 +154,6 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTE         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) |TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

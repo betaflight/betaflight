@@ -23,7 +23,7 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#include <build/build_config.h>
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"

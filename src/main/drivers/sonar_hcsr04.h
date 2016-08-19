@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "platform.h"
-#include "io.h"
+#include "io_types.h"
 
 typedef struct sonarHardware_s {
     ioTag_t triggerTag;

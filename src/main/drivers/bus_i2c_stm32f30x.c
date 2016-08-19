@@ -20,9 +20,10 @@
 
 #include <platform.h>
 
-#include "gpio.h"
 #include "system.h"
-#include "drivers/io_impl.h"
+#include "io.h"
+#include "io_impl.h"
+#include "rcc.h"
 
 #include "bus_i2c.h"
 

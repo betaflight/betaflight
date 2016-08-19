@@ -122,9 +122,9 @@ endif
 
 REVISION = $(shell git log -1 --format="%h")
 
-FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/version.h | awk '{print $$3}' )
-FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/version.h | awk '{print $$3}' )
-FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/version.h | awk '{print $$3}' )
+FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
 
 FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
@@ -179,6 +179,7 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
+TARGET_FLAGS    = -D$(TARGET)
 # End F3 targets
 #
 # Start F4 targets
@@ -272,6 +273,7 @@ $(error Unknown MCU for F4 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
+TARGET_FLAGS = -D$(TARGET)
 # End F4 targets
 #
 # Start F1 targets
@@ -311,6 +313,7 @@ endif
 
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
+TARGET_FLAGS   := -D$(TARGET) -pedantic $(TARGET_FLAGS)
 
 ifeq ($(DEVICE_FLAGS),)
 DEVICE_FLAGS    = -DSTM32F10X_MD
@@ -354,19 +357,19 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 COMMON_SRC = \
-            build_config.c \
-            debug.c \
-            version.c \
+            build/build_config.c \
+            build/debug.c \
+            build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            mw.c \
+            fc/mw.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/printf.c \
             common/typeconversion.c \
             config/config.c \
-            config/runtime_config.c \
+            fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -389,9 +392,11 @@ COMMON_SRC = \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
+            flight/pid_legacy.c \
+            flight/pid_betaflight.c \
             io/beeper.c \
-            io/rc_controls.c \
-            io/rc_curves.c \
+            fc/rc_controls.c \
+            fc/rc_curves.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -579,10 +584,8 @@ CFLAGS      += $(ARCH_FLAGS) \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
-              -pedantic \
               $(DEVICE_FLAGS) \
               -DUSE_STDPERIPH_DRIVER \
-              -D$(TARGET) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \

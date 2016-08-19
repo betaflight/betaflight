@@ -23,7 +23,7 @@
 
 #ifdef USE_ADC
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "system.h"
 #include "sensor.h"

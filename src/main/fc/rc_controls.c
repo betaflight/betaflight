@@ -23,13 +23,14 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+
+#include "fc/runtime_config.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -46,8 +47,8 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "io/vtx.h"
 
 #include "io/display.h"
@@ -58,7 +59,7 @@
 
 #include "blackbox/blackbox.h"
 
-#include "mw.h"
+#include "fc/mw.h"
 
 static escAndServoConfig_t *escAndServoConfig;
 static pidProfile_t *pidProfile;
@@ -470,6 +471,11 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_ROLL_D,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
@@ -594,6 +600,11 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             newValue = constrain((int)pidProfile->D8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDYAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
+            break;
+        case ADJUSTMENT_RC_RATE_YAW:
+            newValue = constrain((int)controlRateConfig->rcYawRate8 + delta, 0, 300); // FIXME magic numbers repeated in serial_cli.c
+            controlRateConfig->rcYawRate8 = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
             break;
         default:
             break;

@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -22,16 +23,16 @@
 
 #ifdef TELEMETRY
 
-#include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "telemetry/telemetry.h"

@@ -19,16 +19,17 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "version.h"
 
 #ifdef USE_MAX7456
 
 #include "common/printf.h"
-#include "drivers/bus_spi.h"
-#include "drivers/light_led.h"
-#include "drivers/system.h"
-#include "drivers/nvic.h"
-#include "drivers/dma.h"
+
+#include "bus_spi.h"
+#include "light_led.h"
+#include "io.h"
+#include "system.h"
+#include "nvic.h"
+#include "dma.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"

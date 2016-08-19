@@ -22,9 +22,9 @@
 #include <math.h>
 
 #include "platform.h"
-#include "debug.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -41,7 +41,7 @@
 
 #include "io/gimbal.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -52,7 +52,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 uint8_t motorCount;

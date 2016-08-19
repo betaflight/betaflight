@@ -19,6 +19,8 @@
  * Initial FrSky Telemetry implementation by silpstream @ rcgroups.
  * Addition protocol work by airmamaf @ github.
  */
+
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -44,7 +46,7 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/status.h"
 
@@ -55,7 +57,8 @@
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "telemetry/telemetry.h"

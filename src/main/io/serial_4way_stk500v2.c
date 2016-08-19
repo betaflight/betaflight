@@ -23,7 +23,10 @@
 #include <stdlib.h>
 
 #include "platform.h"
+
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
+
+#include "drivers/io.h"
 #include "drivers/serial.h"
 #include "config/config.h"
 #include "io/serial.h"

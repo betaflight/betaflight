@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "io_types.h"
 #include "exti.h"
 
 // MPU6050

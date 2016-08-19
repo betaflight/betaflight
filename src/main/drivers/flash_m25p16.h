@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include "flash.h"
-#include "io.h"
+#include "io_types.h"
 
 #define M25P16_PAGESIZE 256
 

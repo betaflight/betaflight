@@ -20,9 +20,10 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "common/utils.h"
-#include "drivers/io.h"
+#include "io.h"
 
 #include "usb_core.h"
 #ifdef STM32F4
@@ -32,7 +33,7 @@
 #include "hw_config.h"
 #endif
 
-#include "drivers/system.h"
+#include "system.h"
 
 #include "serial.h"
 #include "serial_usb_vcp.h"

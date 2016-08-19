@@ -22,9 +22,9 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
 
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
@@ -32,15 +32,18 @@
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
-#include "io/serial.h"
-#include "io/rc_controls.h"
-
-#include "flight/failsafe.h"
-
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/system.h"
+
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+
+#include "io/serial.h"
+
+#include "rx/rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -50,8 +53,6 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
-
-#include "rx/rx.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS

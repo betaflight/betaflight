@@ -20,12 +20,14 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build/atomic.h"
+
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 
-#include "gpio.h"
+#include "io.h"
 #include "rcc.h"
 #include "system.h"
 

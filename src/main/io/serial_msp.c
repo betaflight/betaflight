@@ -21,9 +21,11 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
 #include "platform.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -37,6 +39,7 @@
 
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/io.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
@@ -49,7 +52,7 @@
 
 #include "io/beeper.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -83,14 +86,14 @@
 
 #include "blackbox/blackbox.h"
 
-#include "mw.h"
+#include "fc/mw.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "version.h"
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -1501,13 +1504,13 @@ static bool processInCommand(void)
         masterConfig.flight3DConfig.deadband3d_low = read16();
         masterConfig.flight3DConfig.deadband3d_high = read16();
         masterConfig.flight3DConfig.neutral3d = read16();
+        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RC_DEADBAND:
         masterConfig.rcControlsConfig.deadband = read8();
         masterConfig.rcControlsConfig.yaw_deadband = read8();
         masterConfig.rcControlsConfig.alt_hold_deadband = read8();
-        masterConfig.flight3DConfig.deadband3d_throttle = read16();
         break;
 
     case MSP_SET_RESET_CURR_PID:

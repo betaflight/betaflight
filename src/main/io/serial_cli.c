@@ -24,10 +24,10 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "version.h"
-#include "debug.h"
 
-#include "build_config.h"
+#include "build/version.h"
+#include "build/debug.h"
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -54,7 +54,7 @@
 #include "io/escservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
@@ -83,7 +83,8 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -241,7 +242,7 @@ static const char * const sensorTypeNames[] = {
 
 static const char * const sensorHardwareNames[4][12] = {
     { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE", NULL },
+    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", "BMP280", NULL },
     { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
 };

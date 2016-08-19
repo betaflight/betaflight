@@ -22,15 +22,15 @@
 
 #ifndef SKIP_RX_PWM_PPM
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/utils.h"
 
 #include "system.h"
 
 #include "nvic.h"
-#include "gpio.h"
+#include "io.h"
 #include "timer.h"
 
 #include "pwm_output.h"

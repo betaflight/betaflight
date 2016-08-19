@@ -33,6 +33,7 @@
 #include "drivers/system.h"
 #include "drivers/dma.h"
 #include "drivers/gpio.h"
+#include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/timer.h"
@@ -69,7 +70,7 @@
 #include "io/flashfs.h"
 #include "io/gps.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
@@ -101,7 +102,8 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -110,8 +112,8 @@
 #include "hardware_revision.h"
 #endif
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 extern uint8_t motorControlEnable;
 

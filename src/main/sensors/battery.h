@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "common/maths.h"
+#include "common/maths.h" // for fix12_t
 
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110

@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "rx/rx.h"
 
 #pragma once
 
@@ -118,10 +117,18 @@ struct rxConfig_s;
 typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
 
+void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);
+void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
+        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);
+
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
+
+// PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
+extern uint8_t PIDweight[3];
 
 void pidSetController(pidControllerType_e type);
 void pidResetErrorGyroState(void);
