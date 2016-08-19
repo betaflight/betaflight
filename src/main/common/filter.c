@@ -116,29 +116,9 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    int32_t averageSum = 0;
-
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
-
-    return averageSum / averageCount;
-}
-
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    float averageSum = 0.0f;
-
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
-
-    return averageSum / averageCount;
-}
-
-// FIR filter
+/*
+ * FIR filter
+ */
 void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
 {
     filter->buf = buf;
@@ -148,6 +128,10 @@ void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const fl
     memset(filter->buf, 0, sizeof(float) * filter->bufLength);
 }
 
+/*
+ * FIR filter initialisation
+ * If FIR filter is just used for averaging, coeffs can be set to NULL
+ */
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
 {
     firFilterInit2(filter, buf, bufLength, coeffs, bufLength);
@@ -155,11 +139,11 @@ void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const flo
 
 void firFilterUpdate(firFilter_t *filter, float input)
 {
-    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(float));
+    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(input));
     filter->buf[0] = input;
 }
 
-float firFilterApply(firFilter_t *filter)
+float firFilterApply(const firFilter_t *filter)
 {
     float ret = 0.0f;
     for (int ii = 0; ii < filter->coeffsLength; ++ii) {
@@ -167,3 +151,89 @@ float firFilterApply(firFilter_t *filter)
     }
     return ret;
 }
+
+float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
+{
+    float ret = 0.0f;
+    for (int ii = 0; ii < count; ++ii) {
+        ret += filter->buf[ii];
+    }
+    return ret / count;
+}
+
+float firFilterCalcAverage(const firFilter_t *filter)
+{
+    return firFilterCalcPartialAverage(filter, filter->coeffsLength);
+}
+
+float firFilterLastInput(const firFilter_t *filter)
+{
+    return filter->buf[0];
+}
+
+float firFilterGet(const firFilter_t *filter, int index)
+{
+    return filter->buf[index];
+}
+
+/*
+ *  int16_t based FIR filter
+ *  Can be directly updated from devices that produce 16-bit data, eg gyros and accelerometers
+ */
+void firFilterInt16Init2(firFilterInt16_t *filter, int16_t *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+{
+    filter->buf = buf;
+    filter->bufLength = bufLength;
+    filter->coeffs = coeffs;
+    filter->coeffsLength = coeffsLength;
+    memset(filter->buf, 0, sizeof(int16_t) * filter->bufLength);
+}
+
+/*
+ * FIR filter initialisation
+ * If FIR filter is just used for averaging, coeffs can be set to NULL
+ */
+void firFilterInt16Init(firFilterInt16_t *filter, int16_t *buf, uint8_t bufLength, const float *coeffs)
+{
+    firFilterInt16Init2(filter, buf, bufLength, coeffs, bufLength);
+}
+
+void firFilterInt16Update(firFilterInt16_t *filter, int16_t input)
+{
+    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(input));
+    filter->buf[0] = input;
+}
+
+float firFilterInt16Apply(const firFilterInt16_t *filter)
+{
+    float ret = 0.0f;
+    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
+        ret += filter->coeffs[ii] * filter->buf[ii];
+    }
+    return ret;
+}
+
+float firFilterInt16CalcPartialAverage(const firFilterInt16_t *filter, uint8_t count)
+{
+    float ret = 0;
+    for (int ii = 0; ii < count; ++ii) {
+        ret += filter->buf[ii];
+    }
+    return ret / count;
+}
+
+float firFilterInt16CalcAverage(const firFilterInt16_t *filter)
+{
+    return firFilterInt16CalcPartialAverage(filter, filter->coeffsLength);
+}
+
+int16_t firFilterInt16LastInput(const firFilterInt16_t *filter)
+{
+    return filter->buf[0];
+}
+
+int16_t firFilterInt16Get(const firFilter_t *filter, int index)
+{
+    return filter->buf[index];
+}
+
