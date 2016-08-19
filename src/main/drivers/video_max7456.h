@@ -34,6 +34,9 @@ typedef struct max7456State_s {
 
     volatile bool vSyncDetected;
     volatile bool hSyncDetected;
+    videoMode_e configuredVideoMode;
+    videoMode_e detectedVideoMode;
+    bool useSync;
 } max7456State_t;
 
 extern max7456State_t max7456State;
@@ -47,6 +50,7 @@ void max7456_extiConfigure(
 );
 void max7456_resetFont(void);
 void max7456_updateLOSState(void);
+void max7456_updateStatus(void);
 
 //
 // These methods talk to the hardware directly, ignoring the OSD screen buffer.

@@ -176,7 +176,7 @@ void osdInit(void)
 
 void osdApplyConfiguration(void)
 {
-    osdHardwareApplyConfiguration();
+    osdHardwareApplyConfiguration(osdVideoConfig()->videoMode);
 }
 
 #define OSD_HZ(hz) ((int32_t)((1000 * 1000) / (hz)))

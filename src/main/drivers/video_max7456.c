@@ -257,17 +257,38 @@ static void max7456_setVideoMode(videoMode_e videoMode)
 {
     switch(videoMode)
     {
+        case VIDEO_AUTO:
+            // assume NTSC rather than leaving using an unknown state
         case VIDEO_NTSC:
             max7456_videoModeMask = MAX7456_MODE_MASK_NTSC;
             max7456Screen.height = MAX7456_NTSC_ROW_COUNT;
+            max7456State.configuredVideoMode = VIDEO_NTSC;
             break;
          case VIDEO_PAL:
             max7456_videoModeMask = MAX7456_MODE_MASK_PAL;
             max7456Screen.height = MAX7456_PAL_ROW_COUNT;
+            max7456State.configuredVideoMode = VIDEO_PAL;
             break;
     }
 
     max7456Screen.width = MAX7456_COLUMN_COUNT;
+}
+
+static videoMode_e max7456_statusToVideoMode(uint8_t status)
+{
+    if (status & MAX7456_STAT_BIT_PAL_DETECTED) {
+        return VIDEO_PAL;
+    }
+    if (status & MAX7456_STAT_BIT_NTSC_DETECTED) {
+        return VIDEO_NTSC;
+    }
+    return VIDEO_AUTO;
+}
+
+static videoMode_e max7456_detectVideoMode(void)
+{
+    uint8_t status = max7456_read(MAX7456_REG_STAT_READ);
+    return max7456_statusToVideoMode(status);
 }
 
 bool max7456_isOSDEnabled(void)
@@ -320,17 +341,24 @@ void max7456_disableOSD(void)
     max7456_write(MAX7456_REG_VM0, max7456_videoModeMask); // MAX7456_VM0_BIT_OSD_ENABLE unset.
 }
 
-void max7456_init(videoMode_e videoMode)
+void max7456_init(videoMode_e desiredVideoMode)
 {
     spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
 
-    max7456_setVideoMode(videoMode);
-
     max7456_softReset();
+
+    delay(100); // allow time to detect video signal
+
+    videoMode_e detectedVideoMode = max7456_detectVideoMode();
+    videoMode_e videoMode = detectedVideoMode;
+    if (desiredVideoMode != VIDEO_AUTO) {
+        videoMode = desiredVideoMode;
+    }
+    max7456_setVideoMode(videoMode);
 
     max7456_write(MAX7456_REG_OSDM, 0x00);
 
-    // set black/white level fo each row
+    // set black/white level for each row
     uint8_t row;
     for(row = 0; row < max7456Screen.height; row++) {
 		max7456_write(MAX7456_REG_RB0 + row, BWBRIGHTNESS(BLACKBRIGHTNESS, WHITEBRIGHTNESS));
@@ -399,6 +427,16 @@ uint8_t max7456_readStatus(void)
     return result;
 }
 
+void max7456_updateStatus(void)
+{
+    uint8_t status = max7456_readStatus();
+    if (status & MAX7456_STAT_BIT_LOS_OF_SYNC) {
+        max7456State.los = true;
+    }
+
+    max7456State.detectedVideoMode = max7456_statusToVideoMode(status);
+}
+
 //#define DEBUG_MAX7456_DM_UPDATE
 
 #ifdef DEBUG_MAX7456_DM_UPDATE
@@ -438,8 +476,16 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
             max7456State.vSyncDetected = false;
         }
 
-        while (!max7456State.vSyncDetected) {
+        uint32_t start = millis();
+        bool vSyncTimeout = false;
+        while (max7456State.useSync && !max7456State.vSyncDetected && !vSyncTimeout) {
             // Wait for VSYNC pulse and ISR to update the state.
+
+            uint32_t now = millis();
+            if (cmp32(now, start) > 5) {
+                vSyncTimeout = true;
+            }
+            delay(1);
         }
 
         if (y == 0) {

@@ -104,9 +104,9 @@ static const extiConfig_t max7456HSYNCExtiConfig = {
 };
 #endif
 
-void osdHardwareApplyConfiguration(void)
+void osdHardwareApplyConfiguration(videoMode_e videoMode)
 {
-    max7456_init(osdVideoConfig()->videoMode);
+    max7456_init(videoMode);
 
     textScreen_t *max7456TextScreen = max7456_getTextScreen();
     osdSetTextScreen(max7456TextScreen);
@@ -119,7 +119,7 @@ void osdHardwareInit(void)
     max7456_hardwareReset();
     LED0_OFF;
 
-    osdHardwareApplyConfiguration();
+    osdHardwareApplyConfiguration(osdVideoConfig()->videoMode);
 
     max7456_extiConfigure(&max7456LOSExtiConfig, &max7456VSYNCExtiConfig, &max7456HSYNCExtiConfig);
 
@@ -144,31 +144,47 @@ void osdHardwareInit(void)
 
 void osdHardwareUpdate(void)
 {
-
-#if 0
-    debug[3] = max7456_readStatus();
-#endif
+    max7456_updateStatus();
 
     max7456_writeScreen(&osdTextScreen, textScreenBuffer);
 }
 
 void osdHardwareCheck(void)
 {
+    videoMode_e desiredVideoMode = osdVideoConfig()->videoMode;
+    if (!max7456_isOSDEnabled()) {
+        max7456_init(desiredVideoMode);
+    }
+
+    max7456_updateStatus();
+
+    debug[2]++;
+    debug[3] = max7456State.los;
+
+    bool correctVideoMode = max7456State.configuredVideoMode == max7456State.detectedVideoMode;
+
+    if (correctVideoMode && !max7456State.los) {
+        max7456State.useSync = true;
+    } else {
+        max7456State.useSync = false;
+    }
+
+    if (!max7456State.los && max7456State.detectedVideoMode != VIDEO_AUTO) {
+        // there is a valid video mode
+        if (desiredVideoMode == VIDEO_AUTO && !correctVideoMode) {
+            osdHardwareApplyConfiguration(max7456State.detectedVideoMode);
+        };
+    }
+
+#ifdef FACTORY_TEST
     static int checkCount = 0;
 
     checkCount++;
 
-    if (!max7456_isOSDEnabled()) {
-        max7456_init(osdVideoConfig()->videoMode);
-    }
-
-#ifdef FACTORY_TEST
     if (checkCount == 10) {
-        max7456_init(osdVideoConfig()->videoMode);
+        max7456_init(desiredVideoMode);
     }
 #endif
-
-    max7456_updateLOSState();
 }
 
 static const uint8_t logoElement[] = {

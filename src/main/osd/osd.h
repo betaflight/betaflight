@@ -52,7 +52,7 @@ void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
 // To be implemented by hardware specific OSD code using hardware drivers.
 //
 void osdHardwareInit(void);
-void osdHardwareApplyConfiguration(void);
+void osdHardwareApplyConfiguration(videoMode_e videoMode);
 void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);

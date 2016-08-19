@@ -48,6 +48,7 @@
 #include "drivers/bus_spi.h"
 #include "drivers/flash_m25p16.h"
 #include "drivers/video_textscreen.h"
+#include "drivers/video.h"
 #include "drivers/usb_io.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
