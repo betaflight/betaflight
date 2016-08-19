@@ -52,7 +52,7 @@ cfTask_t cfTasks[] = {
         .taskName = "MSP_SERVER",
         .taskFunc = taskMSP,
         .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_STATUS_LED] = {
@@ -66,13 +66,13 @@ cfTask_t cfTasks[] = {
         .taskName = "HW_WATCHDOG",
         .taskFunc = taskHardwareWatchdog,
         .desiredPeriod = 1000000 / 1,      // 1 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
+        .desiredPeriod = 1000000 / 30,      // 30 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
