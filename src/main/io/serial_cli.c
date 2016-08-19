@@ -27,6 +27,7 @@
 
 #include "build/version.h"
 #include "build/build_config.h"
+#include "build/assert.h"
 
 #include "scheduler/scheduler.h"
 
@@ -107,6 +108,10 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 static serialPort_t *cliPort;
 static bufWriter_t *cliWriter;
 static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 16];
+
+#if defined(USE_ASSERT)
+static void cliAssert(char *cmdline);
+#endif
 
 static void cliAux(char *cmdline);
 static void cliRxFail(char *cmdline);
@@ -260,6 +265,9 @@ typedef struct {
 // should be sorted a..z for bsearch()
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
+#if defined(USE_ASSERT)
+    CLI_COMMAND_DEF("assert", "", NULL, cliAssert),
+#endif
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
@@ -993,6 +1001,25 @@ static void cliRxFail(char *cmdline)
         }
     }
 }
+
+#if defined(USE_ASSERT)
+static void cliAssert(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    if (assertFailureLine) {
+        if (assertFailureFile) {
+            cliPrintf("Assertion failed at line %d, file %s\r\n", assertFailureLine, assertFailureFile);
+        }
+        else {
+            cliPrintf("Assertion failed at line %d\r\n", assertFailureLine);
+        }
+    }
+    else {
+        cliPrintf("No assert() failed\r\n");
+    }
+}
+#endif
 
 static void cliAux(char *cmdline)
 {

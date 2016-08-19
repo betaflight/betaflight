@@ -360,6 +360,7 @@ COMMON_SRC = \
             build/build_config.c \
             build/debug.c \
             build/version.c \
+            build/assert.c \
             $(TARGET_DIR_SRC) \
             main.c \
             fc/mw.c \

@@ -162,7 +162,7 @@
 
 #define NAV
 //#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
+//#define NAV_GPS_GLITCH_DETECTION
 #define NAV_MAX_WAYPOINTS       30
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
@@ -208,6 +208,11 @@
 #define MAX_PWM_OUTPUT_PORTS    11
 
 // DEBUG
+#define USE_ASSERT          // include assertion support code
+#define USE_ASSERT_FULL     // Provide file information
+//#define USE_ASSERT_STOP   // stop on failed assertion
+//#define USE_ASSERT_CHECK    // include assertion check code (should in general a per-file define)
+
 //#define HIL
 //#define USE_FAKE_MAG
 //#define USE_FAKE_BARO

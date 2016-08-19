@@ -23,6 +23,7 @@
 
 #include "build/atomic.h"
 #include "build/build_config.h"
+#include "build/assert.h"
 #include "build/debug.h"
 
 #include "common/axis.h"

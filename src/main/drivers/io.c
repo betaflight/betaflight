@@ -5,6 +5,7 @@
 #include "rcc.h"
 
 #include "target.h"
+#include "build/assert.h"
 
 // io ports defs are stored in array by index now
 struct ioPortDef_s {
@@ -69,6 +70,10 @@ const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
 
 ioRec_t* IO_Rec(IO_t io)
 {
+    ASSERT(io != NULL);
+    ASSERT((ioRec_t*)io >= &ioRecs[0]);
+    ASSERT((ioRec_t*)io < &ioRecs[DEFIO_IO_USED_COUNT]);
+
     return io;
 }
 
