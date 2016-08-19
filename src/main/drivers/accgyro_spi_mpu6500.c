@@ -118,7 +118,7 @@ bool mpu6500SpiAccDetect(acc_t *acc)
     }
 
     acc->init = mpu6500SpiAccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }
@@ -131,7 +131,6 @@ bool mpu6500SpiGyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

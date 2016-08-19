@@ -26,6 +26,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/axis.h"
 
 #include "nvic.h"
 
@@ -44,14 +45,40 @@
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
 
+#include "sensors/gyro.h"
+
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data);
 static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
-static void mpu6050FindRevision(void);
+static int mpuDividerDrops;
+static int accDividerDrops;
 
-static volatile bool mpuDataReady;
+uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSamplingDenom)
+{
+    int gyroSamplePeriod;
+
+    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
+        gyroSamplePeriod = INTERVAL_8KHZ;
+    } else {
+        gyroSamplePeriod = INTERVAL_1KHZ;
+        gyroSamplingDenom = 1; // Always full Sampling 1khz
+    }
+
+    // calculate gyro divider and targetLooptime (expected cycleTime)
+    mpuDividerDrops  = gyroSamplingDenom - 1;
+    const uint32_t targetSamplingTime = gyroSamplingDenom * gyroSamplePeriod;
+
+    return targetSamplingTime;
+}
+
+uint8_t gyroMPUGetDividerDrops(void)
+{
+    return mpuDividerDrops;
+}
+
+static void mpu6050FindRevision(void);
 
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(void);
@@ -215,15 +242,7 @@ extiCallbackRec_t mpuIntCallbackRec;
 void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
-    mpuDataReady = true;
-
-#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static uint32_t lastCalledAt = 0;
-    uint32_t now = micros();
-    uint32_t callDelta = now - lastCalledAt;
-    debug[0] = callDelta;
-    lastCalledAt = now;
-#endif
+    gyroHandleInterrupt();
 }
 
 void mpuIntExtiInit(void)
@@ -268,11 +287,11 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
     return ack;
 }
 
-bool mpuAccRead(int16_t *accData)
+bool mpuGyroAccRead(int16_t *gyroADC, int16_t *accData)
 {
-    uint8_t data[6];
+    uint8_t data[12];
 
-    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 6, data);
+    bool ack = mpuConfiguration.read(MPU_RA_ACCEL_XOUT_H, 14, data);
     if (!ack) {
         return false;
     }
@@ -281,9 +300,12 @@ bool mpuAccRead(int16_t *accData)
     accData[1] = (int16_t)((data[2] << 8) | data[3]);
     accData[2] = (int16_t)((data[4] << 8) | data[5]);
 
+    gyroADC[0] = (int16_t)((data[8] << 8) | data[9]);
+    gyroADC[1] = (int16_t)((data[10]<< 8) | data[11]);
+    gyroADC[2] = (int16_t)((data[12]<< 8) | data[13]);
+
     return true;
 }
-
 bool mpuGyroRead(int16_t *gyroADC)
 {
     uint8_t data[6];
@@ -298,16 +320,4 @@ bool mpuGyroRead(int16_t *gyroADC)
     gyroADC[2] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
-}
-
-bool checkMPUDataReady(void)
-{
-    bool ret;
-    if (mpuDataReady) {
-        ret = true;
-        mpuDataReady= false;
-    } else {
-        ret = false;
-    }
-    return ret;
 }

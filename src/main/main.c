@@ -425,6 +425,15 @@ void init(void)
 #endif
 #endif
 
+#if defined(USE_GYRO_MPU6500) && !defined(USE_GYRO_SPI_MPU6500)
+    if (!masterConfig.gyro_lpf) masterConfig.gyro_lpf  = 1;                 // Limit i2c MPU6500 targets to 188hz LPF
+#endif
+
+// MPU6500 does not support divider
+#if !defined(NAZE) && defined(USE_GYRO_SPI_MPU6500)
+   masterConfig.gyro_sync_denom = 1;
+#endif
+
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
@@ -602,7 +611,6 @@ void init(void)
 
     setTargetPidLooptime(masterConfig.pid_process_denom); // Initialize pid looptime
 
-
 #ifdef BLACKBOX
     initBlackbox();
 #endif
@@ -678,8 +686,10 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_PID, targetPidLooptime);
+    setTaskEnabled(TASK_PID, true);
+    gyro.gyroSamplingEnabled = true;
+    setAccDividerDrops((sensors(SENSOR_ACC)) ? true : false);
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);

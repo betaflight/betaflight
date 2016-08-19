@@ -25,14 +25,14 @@ typedef struct gyro_s {
     sensorGyroInitFuncPtr init;                             // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
-    sensorInterruptFuncPtr intStatus;
     float scale;                                            // scalefactor
-    uint32_t targetLooptime;
+    uint32_t gyroSamplingInterval;                          // Sampling interval for gyro filtering / processing
+    bool gyroSamplingEnabled;                               // Enable gyro sampling / processing
 } gyro_t;
 
 typedef struct acc_s {
-    sensorAccInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
+    sensorAccInitFuncPtr init;                              // initialize function
+    sensorMultiReadFuncPtr read;                            // Read gyro + acc
     uint16_t acc_1G;
     char revisionCode;                                      // a revision code for the sensor, if known
 } acc_t;

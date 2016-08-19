@@ -20,6 +20,20 @@
 #include "io_types.h"
 #include "exti.h"
 
+// Gyro LPF settings
+#define GYRO_LPF_256HZ      0
+#define GYRO_LPF_188HZ      1
+#define GYRO_LPF_98HZ       2
+#define GYRO_LPF_42HZ       3
+#define GYRO_LPF_20HZ       4
+#define GYRO_LPF_10HZ       5
+#define GYRO_LPF_5HZ        6
+#define GYRO_LPF_NONE       7
+
+// Available full sampling intervals for divider
+#define INTERVAL_8KHZ     125
+#define INTERVAL_1KHZ     1000
+
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
@@ -181,11 +195,13 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
+uint8_t gyroMPUGetDividerDrops(void);
+uint32_t gyroSetSamplingInterval(uint8_t lpf, uint8_t gyroSamplingDenom);
+
 extern mpuDetectionResult_t mpuDetectionResult;
 
 void configureMPUDataReadyInterruptHandling(void);
 void mpuIntExtiInit(void);
-bool mpuAccRead(int16_t *accData);
+bool mpuGyroAccRead(int16_t *gyroADC, int16_t *accData);
 bool mpuGyroRead(int16_t *gyroADC);
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-bool checkMPUDataReady(void);

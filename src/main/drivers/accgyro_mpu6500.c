@@ -27,7 +27,6 @@
 #include "system.h"
 #include "exti.h"
 #include "gpio.h"
-#include "gyro_sync.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -41,7 +40,7 @@ bool mpu6500AccDetect(acc_t *acc)
     }
 
     acc->init = mpu6500AccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }
@@ -54,7 +53,6 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -64,7 +62,7 @@ bool mpu6500GyroDetect(gyro_t *gyro)
 
 void mpu6500AccInit(acc_t *acc)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
     acc->acc_1G = 512 * 4;
 }
@@ -87,7 +85,7 @@ void mpu6500GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
     delay(15);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPUGetDividerDrops()); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration
@@ -97,7 +95,6 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);  // INT_ANYRD_2CLEAR
 #endif
     delay(15);
-    
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
 #endif

@@ -198,13 +198,10 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
+int16_t accADCRaw[XYZ_AXIS_COUNT];
+
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    int16_t accADCRaw[XYZ_AXIS_COUNT];
-
-    if (!acc.read(accADCRaw)) {
-        return;
-    }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];

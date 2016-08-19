@@ -30,6 +30,7 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/accgyro.h"
+#include "drivers/accgyro_mpu.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -37,6 +38,10 @@
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+
+#include "flight/pid.h"
+
+#include "acceleration.h"
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
@@ -55,10 +60,20 @@ static float gyroSoftNotchQ;
 static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 static float gyroDt;
+uint32_t lastGyroInterruptCallDelta;
+static uint8_t pidProcessDenom;
+static bool isPidScheduledToRun;
+static uint8_t accDividerDrops;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint16_t gyro_soft_notch_cutoff, uint8_t gyro_soft_lpf_type)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
+        uint8_t gyro_soft_lpf_hz,
+        uint16_t gyro_soft_notch_hz,
+        uint16_t gyro_soft_notch_cutoff,
+        uint8_t gyro_soft_lpf_type,
+        uint8_t pid_process_denom)
 {
     gyroConfig = gyroConfigToUse;
+    pidProcessDenom = pid_process_denom;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
     gyroSoftNotchHz = gyro_soft_notch_hz;
     gyroSoftLpfType = gyro_soft_lpf_type;
@@ -67,14 +82,23 @@ void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz
 
 void gyroInit(void)
 {
-    if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+    if (gyroSoftLpfHz && gyro.gyroSamplingInterval) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.targetLooptime, gyroSoftNotchQ, FILTER_NOTCH);
+            biquadFilterInit(&gyroFilterNotch[axis], gyroSoftNotchHz, gyro.gyroSamplingInterval, gyroSoftNotchQ, FILTER_NOTCH);
             if (gyroSoftLpfType == FILTER_BIQUAD)
-                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.gyroSamplingInterval);
             else
-                gyroDt = (float) gyro.targetLooptime * 0.000001f;
+                gyroDt = (float) gyro.gyroSamplingInterval * 0.000001f;
         }
+    }
+}
+
+void setAccDividerDrops(bool accEnabled) {
+    if (accEnabled){
+        if (gyro.gyroSamplingInterval < INTERVAL_1KHZ)
+            accDividerDrops = INTERVAL_1KHZ / gyro.gyroSamplingInterval;
+        else
+            accDividerDrops = 1;
     }
 }
 
@@ -90,7 +114,7 @@ static bool isOnFinalGyroCalibrationCycle(void)
 
 static uint16_t gyroCalculateCalibratingCycles(void)
 {
-    return (CALIBRATING_GYRO_CYCLES / gyro.targetLooptime) * CALIBRATING_GYRO_CYCLES;
+    return (CALIBRATING_GYRO_CYCLES / targetPidLooptime) * CALIBRATING_GYRO_CYCLES;
 }
 
 static bool isOnFirstGyroCalibrationCycle(void)
@@ -149,14 +173,42 @@ static void applyGyroZero(void)
     }
 }
 
-void gyroUpdate(void)
-{
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+void gyroHandleInterrupt(void) {
+    static uint32_t lastGyroInterruptCallAt = 0;
+    uint32_t now = micros();
+    lastGyroInterruptCallDelta = now - lastGyroInterruptCallAt;
+    debug[0] = lastGyroInterruptCallDelta;
+    lastGyroInterruptCallAt = now;
+    static int accReadCountDown;
 
-    // range: +/- 8192; +/- 2000 deg/sec
-    if (!gyro.read(gyroADCRaw)) {
-        return;
-    }
+	if (gyro.gyroSamplingEnabled) {
+        static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+        static int pidProcessCountDown;
+
+        if (accDividerDrops) {
+            if (accReadCountDown) {
+                accReadCountDown--;
+                if (!gyro.read(gyroADCRaw)) return;
+            } else {
+                accReadCountDown = accDividerDrops - 1;
+                if (!acc.read(gyroADCRaw, accADCRaw)) return;
+            }
+	    } else {
+	        if (!gyro.read(gyroADCRaw)) return;
+	    }
+
+        processGyroData(gyroADCRaw);
+
+        if (pidProcessCountDown) {
+            pidProcessCountDown--;
+        } else {
+            pidProcessCountDown = pidProcessDenom - 1;
+            isPidScheduledToRun = true;
+        }
+	}
+}
+
+void processGyroData(int16_t *gyroADCRaw) {
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         if (debugMode == DEBUG_GYRO) debug[axis] = gyroADC[axis];
@@ -196,3 +248,16 @@ void gyroUpdate(void)
         }
     }
 }
+
+bool pidScheduledToRun(void)
+{
+    bool ret;
+    if (isPidScheduledToRun) {
+        ret = true;
+        isPidScheduledToRun= false;
+    } else {
+        ret = false;
+    }
+    return ret;
+}
+

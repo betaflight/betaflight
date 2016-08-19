@@ -35,8 +35,6 @@
 #include "exti.h"
 #include "bus_spi.h"
 
-#include "gyro_sync.h"
-
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
@@ -148,7 +146,7 @@ void mpu6000SpiGyroInit(uint8_t lpf)
 
 void mpu6000SpiAccInit(acc_t *acc)
 {
-    mpuIntExtiInit();
+    //mpuIntExtiInit();
 
     acc->acc_1G = 512 * 4;
 }
@@ -233,7 +231,7 @@ static void mpu6000AccAndGyroInit(void)
 
     // Accel Sample Rate 1kHz
     // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops());
+    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPUGetDividerDrops());
     delayMicroseconds(15);
 
     // Gyro +/- 1000 DPS Full Scale
@@ -266,7 +264,7 @@ bool mpu6000SpiAccDetect(acc_t *acc)
     }
 
     acc->init = mpu6000SpiAccInit;
-    acc->read = mpuAccRead;
+    acc->read = mpuGyroAccRead;
 
     return true;
 }
@@ -279,7 +277,6 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro)
 
     gyro->init = mpu6000SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 
