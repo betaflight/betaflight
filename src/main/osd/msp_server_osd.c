@@ -230,6 +230,11 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, osdVideoConfig()->videoMode); // 0 = NTSC, 1 = PAL
             break;
 
+        case MSP_OSD_VIDEO_STATUS:
+            sbufWriteU8(dst, osdState.videoMode);
+            sbufWriteU8(dst, osdState.cameraConnected);
+            break;
+
         case MSP_RESET_CONF:
             resetEEPROM();
             readEEPROM();

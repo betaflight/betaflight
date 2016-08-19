@@ -28,6 +28,13 @@ typedef struct osdVideoConfig_s {
 
 PG_DECLARE(osdVideoConfig_t, osdVideoConfig);
 
+typedef struct osdState_s {
+    videoMode_e videoMode;
+    bool cameraConnected;
+} osdState_t;
+
+extern osdState_t osdState;
+
 extern const uint8_t *asciiToFontMapping;
 
 extern textScreen_t osdTextScreen;

@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 #include "build/debug.h"
@@ -71,6 +72,7 @@ PG_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig,
     .videoMode = DEFAULT_VIDEO_MODE,
 );
 
+osdState_t osdState;
 textScreen_t osdTextScreen;
 
 typedef struct osdCursor_s {
@@ -166,6 +168,8 @@ void osdClearScreen(void)
 
 void osdInit(void)
 {
+    memset(&osdState, 0, sizeof(osdState));
+
     osdHardwareInit();
 
     osdClearScreen();
@@ -220,6 +224,11 @@ struct quadMotorCoordinateOffset_s {
     {0, 3},
     {0, 1}
 };
+
+bool osdIsCameraConnected(void)
+{
+    return osdState.cameraConnected;
+}
 
 void osdDisplayMotors(void)
 {

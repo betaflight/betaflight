@@ -146,6 +146,9 @@ void osdHardwareUpdate(void)
 {
     max7456_updateStatus();
 
+    osdState.videoMode = max7456State.detectedVideoMode;
+    osdState.cameraConnected = !max7456State.los;
+
     max7456_writeScreen(&osdTextScreen, textScreenBuffer);
 }
 
@@ -221,8 +224,4 @@ void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
     osdSetRawCharacterAtPosition(13 + x, osdTextScreen.height - 4 + y, c);
 }
 
-bool osdIsCameraConnected(void)
-{
-    return !max7456State.los;
-}
 
