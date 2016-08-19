@@ -160,6 +160,10 @@ TABS.firmware_flasher.initialize = function (callback) {
         localize();
 
         // bind events
+        $('input.show_development_releases').click(function () {
+            loadReleaseData();
+        });
+
         $('select[name="board"]').change(function() {
             $("a.load_remote_file").addClass('disabled');
             var target = $(this).val();
@@ -529,11 +533,11 @@ TABS.firmware_flasher.initialize = function (callback) {
                 $('input.show_development_releases').prop('checked', false);
             }
 
-            $('input.show_development_releases').click(function () {
-                loadReleaseData();
+            loadReleaseData();
 
+            $('input.show_development_releases').change(function () {
                 chrome.storage.local.set({'show_development_releases': $(this).is(':checked')});
-            }).click();
+            }).change();
         });
 
         $(document).keypress(function (e) {
