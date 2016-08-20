@@ -816,8 +816,6 @@ void taskMainPidLoopCheck(void)
     static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
 
-    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-
     cycleTime = micros() - previousTime;
     previousTime = micros();
 
@@ -827,29 +825,30 @@ void taskMainPidLoopCheck(void)
     }
 
     const uint32_t startTime = micros();
+
     while (true) {
-        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            static uint8_t pidUpdateCountdown;
-
+        if (gyroSyncCheckUpdate(&gyro)) {
             if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
-            if (runTaskMainSubprocesses) {
-                subTaskMainSubprocesses();
-                runTaskMainSubprocesses = false;
-            }
-
-            gyroUpdate();
-
-            if (pidUpdateCountdown) {
-                pidUpdateCountdown--;
-            } else {
-                pidUpdateCountdown = setPidUpdateCountDown();
-                subTaskPidController();
-                subTaskMotorUpdate();
-                runTaskMainSubprocesses = true;
-            }
-
             break;
         }
+    }
+
+    static uint8_t pidUpdateCountdown;
+
+    if (runTaskMainSubprocesses) {
+        subTaskMainSubprocesses();
+        runTaskMainSubprocesses = false;
+    }
+
+    gyroUpdate();
+
+    if (pidUpdateCountdown) {
+        pidUpdateCountdown--;
+    } else {
+        pidUpdateCountdown = setPidUpdateCountDown();
+        subTaskPidController();
+        subTaskMotorUpdate();
+        runTaskMainSubprocesses = true;
     }
 }
 
