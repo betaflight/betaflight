@@ -52,7 +52,7 @@
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8963
 //#define USE_MAG_MAG3110 // External
-//#define USE_MAG_HMC5883 // External
+#define USE_MAG_HMC5883 // External
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
