@@ -284,8 +284,10 @@ void osdUpdate(void)
 
     row++;
 
-    tfp_sprintf(lineBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
-    osdPrintAt(2, row, lineBuffer);
+    const element_t amperageElement = {
+        2, row, true, OSD_ELEMENT_AMPERAGE
+    };
+    osdDrawTextElement(&amperageElement);
 
     const element_t mahDrawnElement = {
         18, row, true, OSD_ELEMENT_MAH_DRAWN

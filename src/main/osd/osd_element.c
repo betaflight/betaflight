@@ -47,9 +47,15 @@ intptr_t osdElementData_mAhDrawn(void)
     return (intptr_t)mAhDrawn;
 }
 
+intptr_t osdElementData_amperage(void)
+{
+    return (intptr_t)amperage;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime},
-    {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn}
+    {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn},
+    {OSD_ELEMENT_AMPERAGE, osdElementRender_amperage, osdElementData_amperage}
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)

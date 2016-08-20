@@ -52,3 +52,10 @@ void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn d
     tfp_sprintf(elementAsciiBuffer, "mAh: %5d", mAhDrawn);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
+
+void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn)
+{
+    int32_t amperage = (int32_t) dataFn();
+    tfp_sprintf(elementAsciiBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
+    osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}

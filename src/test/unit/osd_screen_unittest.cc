@@ -47,6 +47,7 @@ extern "C" {
     const uint8_t *asciiToFontMapping = &font_test_asciiToFontMapping[0];
 
     int32_t mAhDrawn;
+    int32_t amperage;
 }
 
 #include "unittest_macros.h"
@@ -142,6 +143,25 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
     compareScreen(0, 0, expectedContent, 5 );
 }
 
+
+TEST_F(OsdScreenTest, TestOsdElement_Amperage)
+{
+    // given
+    amperage = 9876;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_AMPERAGE
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "AMP:98.76A";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, 5 );
+}
 // STUBS
 extern "C" {
     uint32_t millis(void) { return testMillis; }
