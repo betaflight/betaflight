@@ -161,9 +161,6 @@ void osdHardwareCheck(void)
 
     max7456_updateStatus();
 
-    debug[2]++;
-    debug[3] = max7456State.los;
-
     bool correctVideoMode = max7456State.configuredVideoMode == max7456State.detectedVideoMode;
 
     if (correctVideoMode && !max7456State.los) {

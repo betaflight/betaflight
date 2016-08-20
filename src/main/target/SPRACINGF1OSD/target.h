@@ -85,7 +85,6 @@
 
 #define USE_EXTI
 #define USE_ADC
-//#define DEBUG_ADC_CHANNELS
 
 #define ADC_INSTANCE                ADC1
 #define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
