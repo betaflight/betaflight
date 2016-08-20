@@ -447,6 +447,20 @@ void max7456_updateStatus(void)
 #define MAX7456_TIME_SECTION_BEGIN(index) do {} while(0)
 #endif
 
+void max7456_waitForVSync(void)
+{
+    uint32_t start = millis();
+    while (max7456State.useSync && !max7456State.vSyncDetected) {
+        // Wait for VSYNC pulse and ISR to update the state.
+
+        delay(1);
+        uint32_t now = millis();
+        if (cmp32(now, start) > 17) {  // 1000/60fps = 16.666
+            break;
+        }
+    }
+}
+
 void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
 {
     ENABLE_MAX7456;
@@ -476,17 +490,7 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
             max7456State.vSyncDetected = false;
         }
 
-        uint32_t start = millis();
-        bool vSyncTimeout = false;
-        while (max7456State.useSync && !max7456State.vSyncDetected && !vSyncTimeout) {
-            // Wait for VSYNC pulse and ISR to update the state.
-
-            uint32_t now = millis();
-            if (cmp32(now, start) > 5) {
-                vSyncTimeout = true;
-            }
-            delay(1);
-        }
+        max7456_waitForVSync();
 
         if (y == 0) {
             MAX7456_TIME_SECTION_BEGIN(1);
