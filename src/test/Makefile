@@ -955,6 +955,30 @@ $(OBJECT_DIR)/config_streamer_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
+$(OBJECT_DIR)/osd/osd_screen.o : \
+	$(USER_DIR)/osd/osd_screen.c \
+	$(USER_DIR)/osd/osd_screen.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/osd/osd_screen.c -o $@
+
+$(OBJECT_DIR)/osd_screen_unittest.o : \
+	$(TEST_DIR)/osd_screen_unittest.cc \
+	$(USER_DIR)/osd/osd_screen.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/osd_screen_unittest.cc -o $@
+
+$(OBJECT_DIR)/osd_screen_unittest : \
+	$(OBJECT_DIR)/osd/osd_screen.o \
+	$(OBJECT_DIR)/osd_screen_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 
