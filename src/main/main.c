@@ -109,7 +109,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#define LOOPTIME_SUSPEND_TIME 5  // Prevent too long busy wait times
+#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
