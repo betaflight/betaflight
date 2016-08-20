@@ -1943,8 +1943,6 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-	cliPrint("\r\n");
-
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         servoParam_t *servoConf = &masterConfig.servoConf[i];
@@ -2699,7 +2697,7 @@ static void printConfig(char *cmdline, bool doDiff)
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
 
-        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "mmix reset\r\n");
 
         printMotorMix(dumpMask, &defaultConfig);
 
@@ -2709,7 +2707,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
         cliPrint("\r\n# servo mix\r\n");
         // print custom servo mixer if exists
-        cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n");
 		printServoMix(dumpMask, &defaultConfig);
 
 #endif
