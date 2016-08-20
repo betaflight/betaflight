@@ -185,11 +185,11 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
     controlRateConfig->rcYawRate8 = 100;
-    controlRateConfig->rcExpo8 = 10;
+    controlRateConfig->rcExpo8 = 0;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 20;
-    controlRateConfig->rcYawExpo8 = 10;
+    controlRateConfig->dynThrPID = 10;
+    controlRateConfig->rcYawExpo8 = 0;
     controlRateConfig->tpa_breakpoint = 1650;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
@@ -205,7 +205,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 60;
-    pidProfile->I8[PITCH] = 60;
+    pidProfile->I8[PITCH] = 65;
     pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 80;
     pidProfile->I8[YAW] = 45;
@@ -236,11 +236,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
-    pidProfile->dterm_notch_hz = 0;
-    pidProfile->dterm_notch_cutoff = 150;
+    pidProfile->dterm_notch_hz = 260;
+    pidProfile->dterm_notch_cutoff = 160;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
-    pidProfile->pidAtMinThrottle = PID_STABILISATION_OFF;
+    pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
     pidProfile->ptermSetpointWeight = 75;
@@ -504,9 +504,9 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
-    config->mag_hardware = 0;
+    config->mag_hardware = 1;
 
-    config->baro_hardware = 0;
+    config->baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
@@ -585,8 +585,6 @@ void createDefaultConfig(master_t *config)
 
     resetSerialConfig(&config->serialConfig);
 
-    config->emf_avoidance = 0; // TODO - needs removal
-
     resetProfile(&config->profile[0]);
 
     resetRollAndPitchTrims(&config->accelerometerTrims);
@@ -614,12 +612,12 @@ void createDefaultConfig(master_t *config)
     config->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
-    config->failsafeConfig.failsafe_delay = 10;              // 1sec
-    config->failsafeConfig.failsafe_off_delay = 10;          // 1sec
-    config->failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
-    config->failsafeConfig.failsafe_kill_switch = 0;         // default failsafe switch action is identical to rc link loss
-    config->failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
-    config->failsafeConfig.failsafe_procedure = 0;           // default full failsafe procedure is 0: auto-landing
+    config->failsafeConfig.failsafe_delay = 10;                            // 1sec
+    config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
+    config->failsafeConfig.failsafe_throttle = 1000;                       // default throttle off.
+    config->failsafeConfig.failsafe_kill_switch = 0;                       // default failsafe switch action is identical to rc link loss
+    config->failsafeConfig.failsafe_throttle_low_delay = 100;              // default throttle low delay for "just disarm" on failsafe condition
+    config->failsafeConfig.failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;// default full failsafe procedure is 0: auto-landing
 
 #ifdef USE_SERVOS
     // servos
