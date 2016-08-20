@@ -678,7 +678,7 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime + 5); // Add a littlebit of extra time to reduce busy wait
     setTaskEnabled(TASK_GYROPID, true);
 
     if (sensors(SENSOR_ACC)) {
