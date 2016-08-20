@@ -76,9 +76,9 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are we using
 #endif
 
-void setTargetPidLooptime(uint8_t pidProcessDenom)
+void setTargetPidLooptime(uint32_t pidLooptime)
 {
-    targetPidLooptime = gyro.targetLooptime * pidProcessDenom;
+    targetPidLooptime = pidLooptime;
 }
 
 void pidResetErrorGyroState(void)
