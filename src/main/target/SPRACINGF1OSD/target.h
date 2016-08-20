@@ -50,6 +50,21 @@
 #define MAX7456_NRST_GPIO               GPIOB
 #define MAX7456_NRST_PIN                Pin_2
 
+#define MAX7456_LOS_GPIO_PERIPHERAL     RCC_APB2Periph_GPIOC
+#define MAX7456_LOS_GPIO                GPIOC
+#define MAX7456_LOS_PIN                 Pin_13
+#define MAX7456_LOS_IO                  PC13
+
+#define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_APB2Periph_GPIOC
+#define MAX7456_VSYNC_GPIO              GPIOC
+#define MAX7456_VSYNC_PIN               Pin_14
+#define MAX7456_VSYNC_IO                PC14
+
+#define MAX7456_HSYNC_GPIO_PERIPHERAL   RCC_APB2Periph_GPIOC
+#define MAX7456_HSYNC_GPIO              GPIOC
+#define MAX7456_HSYNC_PIN               Pin_15
+#define MAX7456_HSYNC_IO                PC15
+
 #define EXTI_CALLBACK_HANDLER_COUNT 3 // LOS, HSYNC, VSYNC
 
 #define USE_FLASHFS

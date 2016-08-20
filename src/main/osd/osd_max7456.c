@@ -60,47 +60,47 @@ const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
 #ifdef STM32F303
 static const extiConfig_t max7456LOSExtiConfig = {
-        .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_13,
-        .io = IO_TAG(PC13),
+        .gpioAHBPeripherals = MAX7456_LOS_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_LOS_GPIO,
+        .gpioPin = MAX7456_LOS_PIN,
+        .io = IO_TAG(MAX7456_LOS_IO),
 };
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
-        .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_14,
-        .io = IO_TAG(PC14),
+        .gpioAHBPeripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_VSYNC_GPIO,
+        .gpioPin = MAX7456_VSYNC_PIN,
+        .io = IO_TAG(MAX7456_VSYNC_IO),
 };
 
 static const extiConfig_t max7456HSYNCExtiConfig = {
-        .gpioAHBPeripherals = RCC_AHBPeriph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_15,
-        .io = IO_TAG(PC15),
+        .gpioAHBPeripherals = MAX7456_HSYNC_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_HSYNC_GPIO,
+        .gpioPin = MAX7456_HSYNC_PIN,
+        .io = IO_TAG(MAX7456_HSYNC_IO),
 };
 #endif
 
 #ifdef STM32F10X
 static const extiConfig_t max7456LOSExtiConfig = {
-        .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_13,
-        .io = IO_TAG(PC13),
+        .gpioAPB2Peripherals = MAX7456_LOS_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_LOS_GPIO,
+        .gpioPin = MAX7456_LOS_PIN,
+        .io = IO_TAG(MAX7456_LOS_IO),
 };
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
-        .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_14,
-        .io = IO_TAG(PC14),
+        .gpioAPB2Peripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_VSYNC_GPIO,
+        .gpioPin = MAX7456_VSYNC_PIN,
+        .io = IO_TAG(MAX7456_VSYNC_IO),
 };
 
 static const extiConfig_t max7456HSYNCExtiConfig = {
-        .gpioAPB2Peripherals = RCC_APB2Periph_GPIOC,
-        .gpioPort = GPIOC,
-        .gpioPin = Pin_15,
-        .io = IO_TAG(PC15),
+        .gpioAPB2Peripherals = MAX7456_HSYNC_GPIO_PERIPHERAL,
+        .gpioPort = MAX7456_HSYNC_GPIO,
+        .gpioPin = MAX7456_HSYNC_PIN,
+        .io = IO_TAG(MAX7456_HSYNC_IO),
 };
 #endif
 
