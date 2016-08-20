@@ -246,6 +246,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     {"navVel",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navVel",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navVel",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navAcc",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navAcc",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navAcc",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtVel",  0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtVel",  1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navTgtVel",  2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -342,6 +345,7 @@ typedef struct blackboxMainState_s {
     uint16_t navFlags;
     int32_t navPos[XYZ_AXIS_COUNT];
     int16_t navRealVel[XYZ_AXIS_COUNT];
+    int16_t navAccNEU[XYZ_AXIS_COUNT];
     int16_t navTargetVel[XYZ_AXIS_COUNT];
     int16_t navTargetPos[XYZ_AXIS_COUNT];
     int16_t navHeading;
@@ -649,6 +653,10 @@ static void writeIntraframe(void)
     }
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxCurrent->navAccNEU[x]);
+    }
+
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navTargetVel[x]);
     }
 
@@ -797,6 +805,10 @@ static void writeInterframe(void)
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxHistory[0]->navRealVel[x] - (blackboxHistory[1]->navRealVel[x] + blackboxHistory[2]->navRealVel[x]) / 2);
+    }
+
+    for (x = 0; x < XYZ_AXIS_COUNT; x++) {
+        blackboxWriteSignedVB(blackboxHistory[0]->navAccNEU[x] - (blackboxHistory[1]->navAccNEU[x] + blackboxHistory[2]->navAccNEU[x]) / 2);
     }
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
@@ -1117,6 +1129,7 @@ static void loadMainState(void)
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->navPos[i] = navLatestActualPosition[i];
         blackboxCurrent->navRealVel[i] = navActualVelocity[i];
+        blackboxCurrent->navAccNEU[i] = navAccNEU[i];
         blackboxCurrent->navTargetVel[i] = navDesiredVelocity[i];
         blackboxCurrent->navTargetPos[i] = navTargetPosition[i];
     }
