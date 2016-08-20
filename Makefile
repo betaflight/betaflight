@@ -321,6 +321,7 @@ OSD_COMMON_SRC = \
 		   osd/fc_state.c \
 		   osd/config.c \
 		   osd/osd.c \
+		   osd/osd_screen.c \
 		   osd/osd_serial.c \
 		   osd/msp_server_osd.c \
 		   osd/msp_client_osd.c \
