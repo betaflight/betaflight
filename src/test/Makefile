@@ -956,6 +956,14 @@ $(OBJECT_DIR)/config_streamer_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
+$(OBJECT_DIR)/common/printf.o : \
+	$(USER_DIR)/common/printf.c \
+	$(USER_DIR)/common/printf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/printf.c -o $@
+
 $(OBJECT_DIR)/osd/osd_screen.o : \
 	$(USER_DIR)/osd/osd_screen.c \
 	$(USER_DIR)/osd/osd_screen.h \
@@ -990,6 +998,8 @@ $(OBJECT_DIR)/osd_screen_unittest.o : \
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/osd_screen_unittest.cc -o $@
 
 $(OBJECT_DIR)/osd_screen_unittest : \
+	$(OBJECT_DIR)/common/printf.o \
+	$(OBJECT_DIR)/common/typeconversion.o \
 	$(OBJECT_DIR)/osd/osd_screen.o \
 	$(OBJECT_DIR)/osd/osd_element.o \
 	$(OBJECT_DIR)/osd/osd_element_render.o \

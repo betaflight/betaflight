@@ -25,6 +25,7 @@
 
 extern "C" {
     #include "build/build_config.h"
+    #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
     #include "osd/osd_element.h"
     #include "osd/osd_element_render.h"
@@ -45,6 +46,7 @@ extern "C" {
 
     const uint8_t *asciiToFontMapping = &font_test_asciiToFontMapping[0];
 
+    int32_t mAhDrawn;
 }
 
 #include "unittest_macros.h"
@@ -103,26 +105,47 @@ void compareScreen(uint8_t x, uint8_t y, uint8_t *content, uint8_t contentLength
 
 uint32_t testMillis;
 
-TEST_F(OsdScreenTest, TestOsdElementTime)
+TEST_F(OsdScreenTest, TestOsdElement_OnTime)
 {
     // given
     testMillis = ((12 * 1000) * 60) + (34 * 1000);
-    element_t timeElement = {
+    element_t element = {
         0, 0, true, OSD_ELEMENT_ON_TIME
     };
 
     // when
-    osdDrawTextElement(&timeElement);
+    osdDrawTextElement(&element);
 
     // then
-    char expectedTime[] = "12:34";
-    uint8_t *expectedMappedTime = asciiToFontMap(expectedTime);
+    char expectedAscii[] = "12:34";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedMappedTime, 5 );
+    compareScreen(0, 0, expectedContent, 5 );
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
+{
+    // given
+    mAhDrawn = 99999;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_MAH_DRAWN
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "MAH: 99999";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, 5 );
 }
 
 // STUBS
 extern "C" {
     uint32_t millis(void) { return testMillis; }
+    bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
+    void serialWrite(serialPort_t *, uint8_t ) {};
 }
 

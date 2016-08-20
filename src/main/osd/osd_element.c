@@ -23,21 +23,33 @@
 #include <platform.h>
 #include "build/debug.h"
 
-#include "drivers/system.h"
+// only required for data providers
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "drivers/system.h"  // only required for data providers
 #include "drivers/video_textscreen.h"
+#include "fc/rc_controls.h" // only required for data providers
+#include "sensors/battery.h" // only required for data providers
 #include "common/utils.h"
 
 
 #include "osd/osd_element.h"
 #include "osd/osd_element_render.h"
 
-uint32_t *osdElementData_onTime(void)
+intptr_t osdElementData_onTime(void)
 {
-    return (uint32_t *)millis();
+    return (intptr_t)millis();
+}
+
+intptr_t osdElementData_mAhDrawn(void)
+{
+    return (intptr_t)mAhDrawn;
 }
 
 elementHandlerConfig_t elementHandlers[] = {
-    {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime}
+    {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime},
+    {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn}
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)
@@ -51,7 +63,7 @@ static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)
     return NULL;
 }
 
-void osdDrawTextElement(element_t *element)
+void osdDrawTextElement(const element_t *element)
 {
     if (!element->enabled) {
         return;

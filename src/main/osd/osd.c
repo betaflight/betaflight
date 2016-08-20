@@ -286,15 +286,18 @@ void osdUpdate(void)
 
     tfp_sprintf(lineBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
     osdPrintAt(2, row, lineBuffer);
-    tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
-    osdPrintAt(18, row, lineBuffer);
 
+    const element_t mahDrawnElement = {
+        18, row, true, OSD_ELEMENT_MAH_DRAWN
+    };
+    osdDrawTextElement(&mahDrawnElement);
 
-    element_t timeElement = {
+    const element_t timeElement = {
         5, 2, true, OSD_ELEMENT_ON_TIME
     };
-
     osdDrawTextElement(&timeElement);
+
+
 
 
     osdDisplayMotors();

@@ -17,7 +17,8 @@
 
 enum osdElementIds {
     OSD_ELEMENT_ON_TIME = 1,
-    OSD_ELEMENT_ARMED_TIME = 2
+    OSD_ELEMENT_ARMED_TIME = 2,
+    OSD_ELEMENT_MAH_DRAWN = 3
 };
 
 typedef struct element_s {
@@ -27,8 +28,8 @@ typedef struct element_s {
     uint8_t id;
 } element_t;
 
-typedef uint32_t* (*elementDataProviderFn)(void);
-typedef void (*elementRenderFn)(element_t *element, elementDataProviderFn dataFn);
+typedef intptr_t (*elementDataProviderFn)(void);
+typedef void (*elementRenderFn)(const element_t *element, elementDataProviderFn dataFn);
 
 typedef struct elementHandlerConfig_s {
     uint8_t id;
@@ -36,4 +37,4 @@ typedef struct elementHandlerConfig_s {
     elementDataProviderFn dataFn;
 } elementHandlerConfig_t;
 
-void osdDrawTextElement(element_t *element);
+void osdDrawTextElement(const element_t *element);

@@ -31,9 +31,9 @@
 #include "osd/osd_element_render.h"
 #include "osd/osd_screen.h"
 
-static char elementTextBuffer[31];
+static char elementAsciiBuffer[31];
 
-void osdElementRender_onTime(element_t *element, elementDataProviderFn dataFn)
+void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn)
 {
     uint32_t millis = (uint32_t) dataFn();
 
@@ -41,6 +41,14 @@ void osdElementRender_onTime(element_t *element, elementDataProviderFn dataFn)
     uint8_t minutes = totalSeconds / 60;
     uint8_t seconds = totalSeconds % 60;
 
-    sprintf(elementTextBuffer, "%02d:%02d", minutes, seconds);
-    osdPrintAt(element->x, element->y, elementTextBuffer);
+    sprintf(elementAsciiBuffer, "%02d:%02d", minutes, seconds);
+    osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}
+
+void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn)
+{
+    int32_t mAhDrawn = (int32_t) dataFn();
+
+    tfp_sprintf(elementAsciiBuffer, "mAh: %5d", mAhDrawn);
+    osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }

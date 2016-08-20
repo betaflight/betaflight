@@ -15,4 +15,5 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void osdElementRender_onTime(element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn);
