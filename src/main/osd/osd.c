@@ -58,6 +58,7 @@
 #include "osd/msp_client_osd.h"
 
 #include "osd/osd_screen.h"
+#include "osd/osd_element.h"
 #include "osd/osd.h"
 
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
@@ -287,6 +288,13 @@ void osdUpdate(void)
     osdPrintAt(2, row, lineBuffer);
     tfp_sprintf(lineBuffer, "mAh:%5d", mAhDrawn);
     osdPrintAt(18, row, lineBuffer);
+
+
+    element_t timeElement = {
+        5, 2, true, OSD_ELEMENT_ON_TIME
+    };
+
+    osdDrawTextElement(&timeElement);
 
 
     osdDisplayMotors();

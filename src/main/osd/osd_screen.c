@@ -24,7 +24,9 @@
 #include "build/debug.h"
 
 #include "drivers/video_textscreen.h"
+#include "common/utils.h"
 
+#include "osd/osd_element.h"
 #include "osd/osd_screen.h"
 
 

@@ -964,6 +964,23 @@ $(OBJECT_DIR)/osd/osd_screen.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/osd/osd_screen.c -o $@
 
+$(OBJECT_DIR)/osd/osd_element.o : \
+	$(USER_DIR)/osd/osd_element.c \
+	$(USER_DIR)/osd/osd_element.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/osd/osd_element.c -o $@
+
+
+$(OBJECT_DIR)/osd/osd_element_render.o : \
+	$(USER_DIR)/osd/osd_element_render.c \
+	$(USER_DIR)/osd/osd_element_render.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -D'FLASH_SIZE = 128' -DSTM32F10X_MD -c $(USER_DIR)/osd/osd_element_render.c -o $@
+
 $(OBJECT_DIR)/osd_screen_unittest.o : \
 	$(TEST_DIR)/osd_screen_unittest.cc \
 	$(USER_DIR)/osd/osd_screen.h \
@@ -974,6 +991,8 @@ $(OBJECT_DIR)/osd_screen_unittest.o : \
 
 $(OBJECT_DIR)/osd_screen_unittest : \
 	$(OBJECT_DIR)/osd/osd_screen.o \
+	$(OBJECT_DIR)/osd/osd_element.o \
+	$(OBJECT_DIR)/osd/osd_element_render.o \
 	$(OBJECT_DIR)/osd_screen_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

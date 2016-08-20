@@ -15,16 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-extern textScreen_t osdTextScreen;
-extern char textScreenBuffer[];
+enum osdElementIds {
+    OSD_ELEMENT_ON_TIME = 1,
+    OSD_ELEMENT_ARMED_TIME = 2
+};
 
-extern const uint8_t *asciiToFontMapping;
+typedef struct element_s {
+    uint8_t x;
+    uint8_t y;
+    bool enabled;
+    uint8_t id;
+} element_t;
 
-void osdSetTextScreen(textScreen_t *textScreen);
-void osdClearScreen(void);
-void osdResetCursor(void);
-void osdSetCursor(uint8_t x, uint8_t y);
-void osdPrint(char *message);
-void osdPrintAt(uint8_t x, uint8_t y, char *message);
-void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
+typedef uint32_t* (*elementDataProviderFn)(void);
+typedef void (*elementRenderFn)(element_t *element, elementDataProviderFn dataFn);
 
+typedef struct elementHandlerConfig_s {
+    uint8_t id;
+    elementRenderFn renderFn;
+    elementDataProviderFn dataFn;
+} elementHandlerConfig_t;
+
+void osdDrawTextElement(element_t *element);

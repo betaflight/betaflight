@@ -26,6 +26,8 @@
 extern "C" {
     #include "build/build_config.h"
     #include "drivers/video_textscreen.h"
+    #include "osd/osd_element.h"
+    #include "osd/osd_element_render.h"
     #include "osd/osd_screen.h"
 
     char textScreenBuffer[TEST_SCREEN_CHARACTER_COUNT]; // PAL has more characters than NTSC.
@@ -60,6 +62,8 @@ protected:
     }
 };
 
+#define SCREEN_BUFFER_OFFSET(x, y) (((y) * TEST_COLUMN_COUNT) + (x))
+
 TEST_F(OsdScreenTest, TestClearScreen)
 {
     // given
@@ -71,14 +75,54 @@ TEST_F(OsdScreenTest, TestClearScreen)
     for (int y = 0; y < TEST_ROW_COUNT; y++) {
         for (int x = 0; x < TEST_COLUMN_COUNT; x++) {
 
-            int offset = (y * TEST_COLUMN_COUNT) + x;
+            int offset = SCREEN_BUFFER_OFFSET(x,y);
 
-            EXPECT_EQ(textScreenBuffer[offset], expectedMappedSpaceCharacter);
+            EXPECT_EQ(expectedMappedSpaceCharacter, textScreenBuffer[offset]);
         }
     }
 }
 
+static uint8_t fontMapBuffer[256];
+
+static uint8_t* asciiToFontMap(char *ascii) {
+    int i = 0;
+    do {
+        fontMapBuffer[i++] = asciiToFontMapping[(uint8_t)*ascii++];
+    } while (*ascii);
+
+    return fontMapBuffer;
+}
+
+void compareScreen(uint8_t x, uint8_t y, uint8_t *content, uint8_t contentLength)
+{
+    for (uint8_t i = 0; i < contentLength; i++) {
+        int offset = SCREEN_BUFFER_OFFSET(x + i, y);
+        EXPECT_EQ(content[i], textScreenBuffer[offset]);
+    }
+}
+
+uint32_t testMillis;
+
+TEST_F(OsdScreenTest, TestOsdElementTime)
+{
+    // given
+    testMillis = ((12 * 1000) * 60) + (34 * 1000);
+    element_t timeElement = {
+        0, 0, true, OSD_ELEMENT_ON_TIME
+    };
+
+    // when
+    osdDrawTextElement(&timeElement);
+
+    // then
+    char expectedTime[] = "12:34";
+    uint8_t *expectedMappedTime = asciiToFontMap(expectedTime);
+
+    compareScreen(0, 0, expectedMappedTime, 5 );
+}
+
 // STUBS
 extern "C" {
+    uint32_t millis(void) { return testMillis; }
 }
 
