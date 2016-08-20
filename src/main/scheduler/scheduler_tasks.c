@@ -73,7 +73,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
         .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
 #ifdef BEEPER
