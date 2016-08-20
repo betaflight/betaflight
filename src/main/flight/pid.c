@@ -72,9 +72,9 @@ pidControllerFuncPtr pid_controller = pidLegacy; // which pid controller are we 
 pidControllerFuncPtr pid_controller = pidBetaflight; // which pid controller are we using
 #endif
 
-void setTargetPidLooptime(uint8_t pidProcessDenom)
+void setTargetPidLooptime(uint32_t pidLooptime)
 {
-    targetPidLooptime = gyro.targetLooptime * pidProcessDenom;
+    targetPidLooptime = pidLooptime;
 }
 
 void pidResetErrorGyroState(void)

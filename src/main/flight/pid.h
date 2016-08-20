@@ -133,5 +133,5 @@ extern uint8_t PIDweight[3];
 void pidSetController(pidControllerType_e type);
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void setTargetPidLooptime(uint8_t pidProcessDenom);
+void setTargetPidLooptime(uint32_t pidLooptime);
 
