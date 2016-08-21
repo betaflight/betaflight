@@ -35,7 +35,7 @@ extern "C" {
     #include "osd/osd_element_render.h"
     #include "osd/osd_screen.h"
 
-    char textScreenBuffer[TEST_SCREEN_CHARACTER_COUNT]; // PAL has more characters than NTSC.
+    TEXT_SCREEN_CHAR textScreenBuffer[TEST_SCREEN_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 
     const uint8_t font_test_asciiToFontMapping[128] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //    0 -  15
@@ -52,6 +52,7 @@ extern "C" {
 
     int32_t mAhDrawn;
     int32_t amperage;
+    uint16_t vbat;
 
     uint16_t testAdcChannels[ADC_CHANNEL_COUNT];
 
@@ -64,11 +65,13 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
+#define TEST_INITIAL_CHARACTER (TEXT_SCREEN_CHAR)(0xFF)
+
 class OsdScreenTest : public ::testing::Test {
 protected:
 
     virtual void SetUp() {
-        memset(textScreenBuffer, 0xFF, sizeof(textScreenBuffer));
+        memset(textScreenBuffer, TEST_INITIAL_CHARACTER, sizeof(textScreenBuffer));
         memset(testVoltages, 0, sizeof(testVoltages));
         memset(testAdcChannels, 0, sizeof(testAdcChannels));
 
@@ -92,7 +95,7 @@ TEST_F(OsdScreenTest, TestClearScreen)
 
             int offset = SCREEN_BUFFER_OFFSET(x,y);
 
-            EXPECT_EQ(expectedMappedSpaceCharacter, textScreenBuffer[offset]);
+            EXPECT_EQ((TEXT_SCREEN_CHAR)expectedMappedSpaceCharacter, textScreenBuffer[offset]);
         }
     }
 }
@@ -116,6 +119,18 @@ void compareScreen(uint8_t x, uint8_t y, uint8_t *content, uint8_t contentLength
     }
 }
 
+void expectUnmodifiedScreen(void)
+{
+    for (int y = 0; y < TEST_ROW_COUNT; y++) {
+        for (int x = 0; x < TEST_COLUMN_COUNT; x++) {
+
+            int offset = SCREEN_BUFFER_OFFSET(x,y);
+
+            EXPECT_EQ(TEST_INITIAL_CHARACTER, textScreenBuffer[offset]);
+        }
+    }
+}
+
 uint32_t testMillis;
 
 TEST_F(OsdScreenTest, TestOsdElement_OnTime)
@@ -133,7 +148,7 @@ TEST_F(OsdScreenTest, TestOsdElement_OnTime)
     char expectedAscii[] = "12:34";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
@@ -152,7 +167,7 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
     char expectedAscii[] = "MAH: 99999";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
 
@@ -172,7 +187,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Amperage)
     char expectedAscii[] = "AMP:98.76A";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
 
@@ -190,10 +205,30 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "5V:  5.1V";
+    char expectedAscii[] = " 5V:  5.1V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_Voltage12V)
+{
+    // given
+    testAdcChannels[ADC_POWER_12V] = TEST_VOLTAGE_0;
+    testVoltages[TEST_VOLTAGE_0] = 126;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VOLTAGE_12V
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "12V: 12.6V";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_VoltageFCVBAT)
@@ -202,18 +237,166 @@ TEST_F(OsdScreenTest, TestOsdElement_VoltageFCVBAT)
     fcStatus.vbat = 168;
 
     element_t element = {
-        0, 0, true, OSD_ELEMENT_VOLTAGE_FC_VBAT
+        0, 0, true, OSD_ELEMENT_VOLTAGE_BATTERY_FC
     };
 
     // when
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "FC: 16.8V";
+    char expectedAscii[] = " FC: 16.8V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
+
+TEST_F(OsdScreenTest, TestOsdElement_VoltageVBAT)
+{
+    // given
+    vbat = 168;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VOLTAGE_BATTERY
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "BAT: 16.8V";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_FlightMode_Horizon)
+{
+    // given
+    fcStatus.fcState = (1 << FC_STATE_HORIZON);
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_FLIGHT_MODE
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "HRZN";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_FlightMode_Angle)
+{
+    // given
+    fcStatus.fcState = (1 << FC_STATE_ANGLE);
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_FLIGHT_MODE
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "ANGL";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_FlightMode_Acro)
+{
+    // given
+    fcStatus.fcState = 0; // no mode flag exists for acro, it's the default mode when ANGLE and HORIZON are OFF.
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_FLIGHT_MODE
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "ACRO";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_Indicator_Baro_On)
+{
+    // given
+    fcStatus.fcState = (1 << FC_STATE_BARO);
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_INDICATOR_BARO
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "B";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_Indicator_Baro_Off)
+{
+    // given
+    fcStatus.fcState = 0;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_INDICATOR_BARO
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    expectUnmodifiedScreen();
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_On)
+{
+    // given
+    fcStatus.fcState = (1 << FC_STATE_MAG);
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_INDICATOR_MAG
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "M";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_Off)
+{
+    // given
+    fcStatus.fcState = 0;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_INDICATOR_MAG
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    expectUnmodifiedScreen();
+}
+
+
 
 // STUBS
 extern "C" {

@@ -78,4 +78,4 @@ void max7456_fillScreen(void);
 //
 
 textScreen_t *max7456_getTextScreen(void);
-void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer);
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer);

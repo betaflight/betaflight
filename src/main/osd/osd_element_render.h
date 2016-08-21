@@ -15,8 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define OSD_FLIGHT_MODE_ACRO    (1 << 0)
+#define OSD_FLIGHT_MODE_HORIZON (1 << 1)
+#define OSD_FLIGHT_MODE_ANGLE   (1 << 2)
+
+typedef struct voltageAndName_s {
+    char *name;
+    int16_t voltage;
+} voltageAndName_t;
+
 void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn);
-void osdElementRender_voltage5V(const element_t *element, elementDataProviderFn dataFn);
-void osdElementRender_voltageFCVBAT(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_voltage(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_flightMode(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_indicatorBaro(const element_t *element, elementDataProviderFn dataFn);

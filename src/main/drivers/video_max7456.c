@@ -461,7 +461,7 @@ void max7456_waitForVSync(void)
     }
 }
 
-void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
 {
     ENABLE_MAX7456;
 
@@ -482,7 +482,7 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
 
     for (int y = 0; y < textScreen->height; y++) {
         unsigned int rowOffset = (y * textScreen->width);
-        char *buffer = &screenBuffer[rowOffset];
+        TEXT_SCREEN_CHAR *buffer = &screenBuffer[rowOffset];
 
         if (y == 8) {
             MAX7456_TIME_SECTION_END(1);

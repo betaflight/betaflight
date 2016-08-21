@@ -21,3 +21,5 @@ typedef struct textScreen_s {
     uint8_t width;
     uint8_t height;
 } textScreen_t;
+
+#define TEXT_SCREEN_CHAR uint8_t

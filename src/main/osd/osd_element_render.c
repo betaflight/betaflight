@@ -61,18 +61,45 @@ void osdElementRender_amperage(const element_t *element, elementDataProviderFn d
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
 
-void osdElementRender_voltage5V(const element_t *element, elementDataProviderFn dataFn)
+void osdElementRender_voltage(const element_t *element, elementDataProviderFn dataFn)
 {
-    uint8_t voltage = (int32_t) dataFn();
+    voltageAndName_t *voltageAndName= (voltageAndName_t *) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "5V: %2d.%1dV", voltage / 10, voltage % 10);
+    tfp_sprintf(elementAsciiBuffer, "%3s:%3d.%dV", voltageAndName->name, voltageAndName->voltage / 10, voltageAndName->voltage % 10);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
 
-void osdElementRender_voltageFCVBAT(const element_t *element, elementDataProviderFn dataFn)
+void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn)
 {
-    uint8_t voltage = (int32_t) dataFn();
+   bool on = (bool) dataFn();
+   if (!on)
+       return;
 
-    tfp_sprintf(elementAsciiBuffer, "FC:%3d.%dV", voltage / 10, voltage % 10);
-    osdPrintAt(element->x, element->y, elementAsciiBuffer);
+    osdSetCharacterAtPosition(element->x, element->y, 'M');
 }
+
+void osdElementRender_indicatorBaro(const element_t *element, elementDataProviderFn dataFn)
+{
+   bool on = (bool) dataFn();
+   if (!on)
+       return;
+
+    osdSetCharacterAtPosition(element->x, element->y, 'B');
+}
+
+void osdElementRender_flightMode(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint8_t modes = (int8_t) dataFn();
+
+    char *flightMode = "";
+    if (modes & OSD_FLIGHT_MODE_ACRO) {
+        flightMode = "ACRO";
+    } else if (modes & OSD_FLIGHT_MODE_ANGLE) {
+        flightMode = "ANGL";
+    } else if (modes & OSD_FLIGHT_MODE_HORIZON) {
+        flightMode = "HRZN";
+    }
+
+    osdPrintAt(element->x, element->y, flightMode);
+}
+

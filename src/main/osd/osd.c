@@ -41,14 +41,7 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "fc/rc_controls.h" // FIXME dependency on FC code for throttle status
-
-#include "sensors/battery.h"
-
-#include "drivers/adc.h"
 #include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 
@@ -209,24 +202,21 @@ void osdUpdate(void)
         osdPrintAt(2, row, lineBuffer);
     }
 
-    char *flightMode;
-    if (fcStatus.fcState & (1 << FC_STATE_ANGLE)) {
-        flightMode = "ANGL";
-    } else if (fcStatus.fcState & (1 << FC_STATE_HORIZON)) {
-        flightMode = "HORI";
-    } else if (fcStatus.fcState & (1 << FC_STATE_ARM)) {
-        flightMode  = "ACRO";
-    } else  {
-        flightMode  = " OFF";
-    }
-
     if (showNowOrFlashWhenFCTimeoutOccured) {
-        tfp_sprintf(lineBuffer, "%1s %1s %4s",
-            fcStatus.fcState & (1 << FC_STATE_MAG) ? "M" : "",
-            fcStatus.fcState & (1 << FC_STATE_BARO) ? "B" : "",
-            flightMode
-        );
-        osdPrintAt(20, row, lineBuffer);
+        const element_t magElement = {
+            20, row, true, OSD_ELEMENT_INDICATOR_MAG
+        };
+        osdDrawTextElement(&magElement);
+
+        const element_t baroElement = {
+            22, row, true, OSD_ELEMENT_INDICATOR_BARO
+        };
+        osdDrawTextElement(&baroElement);
+
+        const element_t flightModeElement = {
+            24, row, true, OSD_ELEMENT_FLIGHT_MODE
+        };
+        osdDrawTextElement(&flightModeElement);
     }
 
     //
@@ -264,23 +254,26 @@ void osdUpdate(void)
 
     row = osdTextScreen.height - 3;
 
-    uint8_t voltage12v = batteryAdcToVoltage(adcGetChannel(ADC_POWER_12V));
-    tfp_sprintf(lineBuffer, "12V:%3d.%dV", voltage12v / 10, voltage12v % 10);
-    osdPrintAt(2, row, lineBuffer);
+    const element_t voltage12VElement = {
+        2, row, true, OSD_ELEMENT_VOLTAGE_12V
+    };
+    osdDrawTextElement(&voltage12VElement);
 
-    tfp_sprintf(lineBuffer, "BAT:%3d.%dV", vbat / 10, vbat % 10);
-    osdPrintAt(18, row, lineBuffer);
+    const element_t voltageBatteryElement = {
+        18, row, true, OSD_ELEMENT_VOLTAGE_BATTERY
+    };
+    osdDrawTextElement(&voltageBatteryElement);
 
     row++;
 
     const element_t voltage5VElement = {
-        3, row, true, OSD_ELEMENT_VOLTAGE_5V
+        2, row, true, OSD_ELEMENT_VOLTAGE_5V
     };
     osdDrawTextElement(&voltage5VElement);
 
     if (showNowOrFlashWhenFCTimeoutOccured) {
         const element_t voltageFCVBATElement = {
-            19, row, true, OSD_ELEMENT_VOLTAGE_FC_VBAT
+            18, row, true, OSD_ELEMENT_VOLTAGE_BATTERY_FC
         };
         osdDrawTextElement(&voltageFCVBATElement);
     }
