@@ -37,7 +37,6 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "common/printf.h"
 #include "common/maths.h"
 #include "common/utils.h"
 
@@ -155,9 +154,7 @@ void osdDisplayMotors(void)
 
 void osdUpdate(void)
 {
-    char lineBuffer[31];
-
-    //TIME_SECTION_BEGIN(0);
+    TIME_SECTION_BEGIN(0);
 
     osdClearScreen();
 
@@ -198,8 +195,10 @@ void osdUpdate(void)
     int row = 1; // zero based.
 
     if (showNowOrFlashWhenFCTimeoutOccured) {
-        tfp_sprintf(lineBuffer, "RSSI:%3d%%", fcStatus.rssi / 10);
-        osdPrintAt(2, row, lineBuffer);
+        const element_t rssiElement = {
+            2, row, true, OSD_ELEMENT_RSSI_FC
+        };
+        osdDrawTextElement(&rssiElement);
     }
 
     if (showNowOrFlashWhenFCTimeoutOccured) {
@@ -298,7 +297,7 @@ void osdUpdate(void)
 
     osdDisplayMotors();
 
-    //TIME_SECTION_END(0);
+    TIME_SECTION_END(0);
 
     osdHardwareUpdate();
 

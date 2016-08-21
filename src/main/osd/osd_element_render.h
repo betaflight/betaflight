@@ -31,3 +31,4 @@ void osdElementRender_voltage(const element_t *element, elementDataProviderFn da
 void osdElementRender_flightMode(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_indicatorBaro(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataFn);

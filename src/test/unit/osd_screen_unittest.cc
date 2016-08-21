@@ -231,7 +231,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage12V)
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
-TEST_F(OsdScreenTest, TestOsdElement_VoltageFCVBAT)
+TEST_F(OsdScreenTest, TestOsdElement_VoltagBattery_FC)
 {
     // given
     fcStatus.vbat = 168;
@@ -250,7 +250,7 @@ TEST_F(OsdScreenTest, TestOsdElement_VoltageFCVBAT)
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
-TEST_F(OsdScreenTest, TestOsdElement_VoltageVBAT)
+TEST_F(OsdScreenTest, TestOsdElement_VoltageBattery)
 {
     // given
     vbat = 168;
@@ -394,6 +394,25 @@ TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_Off)
 
     // then
     expectUnmodifiedScreen();
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
+{
+    // given
+    fcStatus.rssi = 1000;  // 0.1% steps
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_RSSI_FC
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "RSSI:100";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
 

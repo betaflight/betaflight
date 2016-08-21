@@ -121,6 +121,11 @@ intptr_t osdElementData_indicatorMagFC(void)
     return (intptr_t) fcStatus.fcState & (1 << FC_STATE_MAG);
 }
 
+intptr_t osdElementData_rssiFC(void)
+{
+    return (intptr_t) fcStatus.rssi;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime},
     {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn},
@@ -132,6 +137,7 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_FLIGHT_MODE, osdElementRender_flightMode, osdElementData_flightModeFC},
     {OSD_ELEMENT_INDICATOR_MAG, osdElementRender_indicatorMag, osdElementData_indicatorMagFC},
     {OSD_ELEMENT_INDICATOR_BARO, osdElementRender_indicatorBaro, osdElementData_indicatorBaroFC},
+    {OSD_ELEMENT_RSSI_FC, osdElementRender_rssi, osdElementData_rssiFC},
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)

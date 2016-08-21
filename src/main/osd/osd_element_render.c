@@ -103,3 +103,11 @@ void osdElementRender_flightMode(const element_t *element, elementDataProviderFn
     osdPrintAt(element->x, element->y, flightMode);
 }
 
+void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint16_t rssi = (uint16_t) dataFn();
+
+    tfp_sprintf(elementAsciiBuffer, "RSSI:%3d%%", rssi / 10);
+    osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}
+
