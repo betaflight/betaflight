@@ -29,7 +29,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1

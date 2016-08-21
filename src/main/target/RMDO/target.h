@@ -28,7 +28,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 //#define USE_MAG_DATA_READY_SIGNAL       // XXX Do RMDO has onboard mag???

@@ -34,10 +34,9 @@
 
 
 // MPU6000 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PB0
 #define USE_EXTI
+#define MPU_INT_EXTI            PB0
+#define USE_MPU_DATA_READY_SIGNAL
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
