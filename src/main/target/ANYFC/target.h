@@ -100,7 +100,6 @@
 
 //#define HIL
 
-#define GPS_PROTO_UBLOX_NEO7PLUS
 #define MAG_GPS_ALIGN           CW180_DEG_FLIP
 
 #define NAV
