@@ -301,7 +301,10 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             channelIndex++;
 #endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
-
+            // Check if we already configured maximum supported number of motors or output ports and skip the rest
+            if (pwmOutputConfiguration.motorCount >= MAX_MOTORS  || pwmOutputConfiguration.outputCount >= MAX_PWM_OUTPUT_PORTS) {
+                continue;
+            }
 #ifdef CC3D
             if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
@@ -331,6 +334,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             pwmOutputConfiguration.outputCount++;
         } else if (type == MAP_TO_SERVO_OUTPUT) {
 #ifdef USE_SERVOS
+            if (pwmOutputConfiguration.servoCount >=  MAX_SERVOS || pwmOutputConfiguration.outputCount >= MAX_PWM_OUTPUT_PORTS) {
+                continue;
+            }
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].index = pwmOutputConfiguration.servoCount;
             pwmServoConfig(timerHardwarePtr, pwmOutputConfiguration.servoCount, init->servoPwmRate, init->servoCenterPulse);
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_SERVO | PWM_PF_OUTPUT_PROTOCOL_PWM;
