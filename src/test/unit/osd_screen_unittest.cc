@@ -133,12 +133,12 @@ void expectUnmodifiedScreen(void)
 
 uint32_t testMillis;
 
-TEST_F(OsdScreenTest, TestOsdElement_OnTime)
+TEST_F(OsdScreenTest, TestOsdElement_OnDuration)
 {
     // given
     testMillis = ((12 * 1000) * 60) + (34 * 1000);
     element_t element = {
-        0, 0, true, OSD_ELEMENT_ON_TIME
+        0, 0, true, OSD_ELEMENT_ON_DURATION
     };
 
     // when
@@ -150,6 +150,25 @@ TEST_F(OsdScreenTest, TestOsdElement_OnTime)
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
+
+TEST_F(OsdScreenTest, TestOsdElement_ArmedDuration)
+{
+    // given
+    fcStatus.armedDuration = ((43 * 1000) * 60) + (21 * 1000);
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_ARMED_DURATION
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "43:21";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
 
 TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
 {

@@ -156,9 +156,29 @@ void osdUpdate(void)
 {
     TIME_SECTION_BEGIN(0);
 
+    uint32_t now = micros();
+
+    static bool armed = false;
+    static uint32_t armedAt = 0;
+
+    bool armedNow = fcStatus.fcState & (1 << FC_STATE_ARM);
+    if (armed != armedNow) {
+        if (armedNow) {
+            armedAt = now;
+        }
+
+        armed = armedNow;
+    }
+
+    if (armed) {
+        if (now > armedAt) {
+
+            fcStatus.armedDuration = (now - armedAt) / 1000;
+        }
+    }
+
     osdClearScreen();
 
-    uint32_t now = micros();
 
     // test all timers, setting corresponding bits
     uint32_t timActive = 0;
@@ -251,7 +271,20 @@ void osdUpdate(void)
     // bottom
     //
 
-    row = osdTextScreen.height - 3;
+    row = osdTextScreen.height - 4;
+
+    const element_t onDurationElement = {
+        7, row, true, OSD_ELEMENT_ON_DURATION
+    };
+    osdDrawTextElement(&onDurationElement);
+
+    const element_t armedDurationElement = {
+        18, row, true, OSD_ELEMENT_ARMED_DURATION
+    };
+    osdDrawTextElement(&armedDurationElement);
+
+
+    row++;
 
     const element_t voltage12VElement = {
         2, row, true, OSD_ELEMENT_VOLTAGE_12V
@@ -288,12 +321,6 @@ void osdUpdate(void)
         18, row, true, OSD_ELEMENT_MAH_DRAWN
     };
     osdDrawTextElement(&mahDrawnElement);
-
-    const element_t timeElement = {
-        5, 2, true, OSD_ELEMENT_ON_TIME
-    };
-    osdDrawTextElement(&timeElement);
-
 
     osdDisplayMotors();
 

@@ -24,7 +24,7 @@ typedef struct voltageAndName_s {
     int16_t voltage;
 } voltageAndName_t;
 
-void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_duration(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_voltage(const element_t *element, elementDataProviderFn dataFn);

@@ -33,7 +33,7 @@
 
 static char elementAsciiBuffer[31];
 
-void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn)
+void osdElementRender_duration(const element_t *element, elementDataProviderFn dataFn)
 {
     uint32_t millis = (uint32_t) dataFn();
 

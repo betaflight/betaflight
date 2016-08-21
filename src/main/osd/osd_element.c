@@ -39,9 +39,14 @@
 #include "osd/osd_element.h"
 #include "osd/osd_element_render.h"
 
-intptr_t osdElementData_onTime(void)
+intptr_t osdElementData_onDuration(void)
 {
     return (intptr_t)millis();
+}
+
+intptr_t osdElementData_armedDuration(void)
+{
+    return (intptr_t)fcStatus.armedDuration;
 }
 
 intptr_t osdElementData_mAhDrawn(void)
@@ -127,7 +132,8 @@ intptr_t osdElementData_rssiFC(void)
 }
 
 elementHandlerConfig_t elementHandlers[] = {
-    {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime},
+    {OSD_ELEMENT_ON_DURATION, osdElementRender_duration, osdElementData_onDuration},
+    {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
     {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn},
     {OSD_ELEMENT_AMPERAGE, osdElementRender_amperage, osdElementData_amperage},
     {OSD_ELEMENT_VOLTAGE_5V, osdElementRender_voltage, osdElementData_voltage5V},
