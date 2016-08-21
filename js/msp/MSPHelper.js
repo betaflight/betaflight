@@ -545,7 +545,7 @@ MspHelper.prototype.process_data = function(dataHandler) {
             if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
                 RX_CONFIG.rcInterpolation = data.readU8();
                 RX_CONFIG.rcInterpolationInterval = data.readU8();
-                RX_CONFIG.airModeActivateThreshold = data.readU8();
+                RX_CONFIG.airModeActivateThreshold = data.readU16();
             } else {
                 RX_CONFIG.rcInterpolation = 0;
                 RX_CONFIG.rcInterpolationInterval = 0;
