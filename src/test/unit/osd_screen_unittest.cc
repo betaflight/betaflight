@@ -25,8 +25,12 @@
 
 extern "C" {
     #include "build/build_config.h"
+
+    #include <platform.h>
+    #include "drivers/adc.h"
     #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
+    #include "osd/fc_state.h"
     #include "osd/osd_element.h"
     #include "osd/osd_element_render.h"
     #include "osd/osd_screen.h"
@@ -48,17 +52,25 @@ extern "C" {
 
     int32_t mAhDrawn;
     int32_t amperage;
+
+    uint16_t testAdcChannels[ADC_CHANNEL_COUNT];
+
+    #define TEST_VOLTAGE_0  0
+    uint16_t testVoltages[1];
+
+    fcStatus_t fcStatus;
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
-
 
 class OsdScreenTest : public ::testing::Test {
 protected:
 
     virtual void SetUp() {
         memset(textScreenBuffer, 0xFF, sizeof(textScreenBuffer));
+        memset(testVoltages, 0, sizeof(testVoltages));
+        memset(testAdcChannels, 0, sizeof(testAdcChannels));
 
         osdTextScreen.height = TEST_ROW_COUNT;
         osdTextScreen.width = TEST_COLUMN_COUNT;
@@ -121,7 +133,7 @@ TEST_F(OsdScreenTest, TestOsdElement_OnTime)
     char expectedAscii[] = "12:34";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, 5 );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
@@ -140,7 +152,7 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
     char expectedAscii[] = "MAH: 99999";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, 5 );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
 }
 
 
@@ -160,12 +172,62 @@ TEST_F(OsdScreenTest, TestOsdElement_Amperage)
     char expectedAscii[] = "AMP:98.76A";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, 5 );
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
 }
+
+
+TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
+{
+    // given
+    testAdcChannels[ADC_POWER_5V] = TEST_VOLTAGE_0;
+    testVoltages[TEST_VOLTAGE_0] = 51;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VOLTAGE_5V
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "5V:  5.1V";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_VoltageFCVBAT)
+{
+    // given
+    fcStatus.vbat = 168;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VOLTAGE_FC_VBAT
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "FC: 16.8V";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii) );
+}
+
 // STUBS
 extern "C" {
+    uint16_t adcGetChannel(uint8_t channel) {
+        return testAdcChannels[channel];
+    }
+
+    uint16_t batteryAdcToVoltage(uint16_t src) {
+        return testVoltages[src];
+    }
+
     uint32_t millis(void) { return testMillis; }
     bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
     void serialWrite(serialPort_t *, uint8_t ) {};
-}
 
+
+}

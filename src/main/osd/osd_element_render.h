@@ -18,3 +18,5 @@
 void osdElementRender_onTime(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_voltage5V(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_voltageFCVBAT(const element_t *element, elementDataProviderFn dataFn);

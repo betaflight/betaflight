@@ -273,13 +273,16 @@ void osdUpdate(void)
 
     row++;
 
-    uint8_t voltage5v = batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V));
-    tfp_sprintf(lineBuffer, " 5V:%3d.%dV", voltage5v / 10, voltage5v % 10);
-    osdPrintAt(2, row, lineBuffer);
+    const element_t voltage5VElement = {
+        3, row, true, OSD_ELEMENT_VOLTAGE_5V
+    };
+    osdDrawTextElement(&voltage5VElement);
 
     if (showNowOrFlashWhenFCTimeoutOccured) {
-        tfp_sprintf(lineBuffer, " FC:%3d.%dV", fcStatus.vbat / 10, fcStatus.vbat % 10);
-        osdPrintAt(18, row, lineBuffer);
+        const element_t voltageFCVBATElement = {
+            19, row, true, OSD_ELEMENT_VOLTAGE_FC_VBAT
+        };
+        osdDrawTextElement(&voltageFCVBATElement);
     }
 
     row++;
@@ -298,8 +301,6 @@ void osdUpdate(void)
         5, 2, true, OSD_ELEMENT_ON_TIME
     };
     osdDrawTextElement(&timeElement);
-
-
 
 
     osdDisplayMotors();

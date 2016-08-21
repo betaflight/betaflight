@@ -19,7 +19,9 @@ enum osdElementIds {
     OSD_ELEMENT_ON_TIME = 1,
     OSD_ELEMENT_ARMED_TIME = 2,
     OSD_ELEMENT_MAH_DRAWN = 3,
-    OSD_ELEMENT_AMPERAGE = 4
+    OSD_ELEMENT_AMPERAGE = 4,
+    OSD_ELEMENT_VOLTAGE_5V = 6,
+    OSD_ELEMENT_VOLTAGE_FC_VBAT = 7
 };
 
 typedef struct element_s {

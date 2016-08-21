@@ -27,9 +27,11 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
-#include "drivers/system.h"  // only required for data providers
 #include "drivers/video_textscreen.h"
+#include "drivers/system.h"  // only required for data providers
+#include "drivers/adc.h"  // only required for data providers
 #include "fc/rc_controls.h" // only required for data providers
+#include "osd/fc_state.h" // only required for data providers
 #include "sensors/battery.h" // only required for data providers
 #include "common/utils.h"
 
@@ -52,10 +54,22 @@ intptr_t osdElementData_amperage(void)
     return (intptr_t)amperage;
 }
 
+intptr_t osdElementData_voltage5V(void)
+{
+    return (intptr_t) batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V));
+}
+
+intptr_t osdElementData_voltageFCVBAT(void)
+{
+    return (intptr_t) fcStatus.vbat;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_TIME, osdElementRender_onTime, osdElementData_onTime},
     {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn},
-    {OSD_ELEMENT_AMPERAGE, osdElementRender_amperage, osdElementData_amperage}
+    {OSD_ELEMENT_AMPERAGE, osdElementRender_amperage, osdElementData_amperage},
+    {OSD_ELEMENT_VOLTAGE_5V, osdElementRender_voltage5V, osdElementData_voltage5V},
+    {OSD_ELEMENT_VOLTAGE_FC_VBAT, osdElementRender_voltageFCVBAT, osdElementData_voltageFCVBAT}
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)

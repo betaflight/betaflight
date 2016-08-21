@@ -87,11 +87,13 @@ void DMA_ClearFlag(uint32_t);
 
 #define USE_ADC
 
-#define ADC_CHANNEL_COUNT 3
+#define ADC_CHANNEL_COUNT 5
 
 #define ADC_BATTERY     ADC_CHANNEL0
 #define ADC_CURRENT     ADC_CHANNEL1
 #define ADC_EXTERNAL    ADC_CHANNEL2
+#define ADC_POWER_12V   ADC_CHANNEL3
+#define ADC_POWER_5V    ADC_CHANNEL4
 
 typedef enum
 {
