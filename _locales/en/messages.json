@@ -776,8 +776,11 @@
     "pidTuningUpgradeFirmwareToChangePidController": {
         "message": "<span style=\"color: red\">Changing PID controller disabled - you can change it via the CLI.</span>  You have firmware with API version <span style=\"color: red\">$1</span>, but this functionality requires requires <span style=\"color: #ffbb00\">$2</span>."
     },
-    "pidTuningName": {
-        "message": "Name"
+    "pidTuningSubTabPid": {
+        "message": "PID Settings"
+    },
+    "pidTuningSubTabFilter": {
+        "message": "Filter Settings"
     },
     "pidTuningShowAllPids": {
         "message": "Show all PIDs"
@@ -1623,18 +1626,54 @@
     "pidTuningLevelHelp": {
         "message": "The values below change the behaviour of the ANGLE and HORIZON flight modes. Different PID controllers handle the values differently. Please check the documentation."
     },
-    "pidTuningLfpFilters": {
-        "message": "LFP Filters"
-    },
-    "pidTuningGyro": {
-        "message": "Gyro Soft (Hz)"
-    },
-    "pidTuningDTerm": {
-        "message": "D Term (Hz)"
-    },
-    "pidTuningYaw": {
-        "message": "Yaw (Hz)"
-    },
+  "pidTuningNonProfileFilterSettings": {
+    "message": "Profile independent Filter Settings"
+  },
+  "pidTuningGyroLowpassFrequency": {
+    "message": "Gyro Soft Lowpass Frequency (Hz)"
+  },
+  "pidTuningGyroLowpassFrequencyHelp": {
+    "message": "Gyro Soft Lowpass Frequency (Hz)"
+  },
+  "pidTuningGyroNotchFrequency": {
+    "message": "Gyro Notch Filter Frequency (Hz)"
+  },
+  "pidTuningGyroNotchFrequencyHelp": {
+    "message": "Gyro Notch Filter Frequency (Hz)"
+  },
+  "pidTuningGyroNotchCutoff": {
+    "message": "Gyro Notch Filter Cutoff Frequency (Hz)"
+  },
+  "pidTuningGyroNotchCutoffHelp": {
+    "message": "Gyro Notch Filter Cutoff Frequency (Hz)"
+  },
+  "pidTuningFilterSettings": {
+    "message": "Filter Settings"
+  },
+  "pidTuningDTermLowpassFrequency": {
+    "message": "D Term Lowpass Frequency (Hz)"
+  },
+  "pidTuningDTermLowpassFrequencyHelp": {
+    "message": "D Term Lowpass Frequency (Hz)"
+  },
+  "pidTuningDTermNotchFrequency": {
+    "message": "D Term Notch Filter Frequency (Hz)"
+  },
+  "pidTuningDTermNotchFrequencyHelp": {
+    "message": "D Term Notch Filter Frequency (Hz)"
+  },
+  "pidTuningDTermNotchCutoff": {
+    "message": "D Term Notch Filter Cutoff (Hz)"
+  },
+  "pidTuningDTermNotchCutoffHelp": {
+    "message": "D Term Notch Filter Cutoff (Hz)"
+  },
+  "pidTuningYawLowpassFrequency": {
+    "message": "Yaw Lowpass Frequency (Hz)"
+  },
+  "pidTuningYawLowpassFrequencyHelp": {
+    "message": "Yaw Lowpass Frequency (Hz)"
+  },
     "pidTuningVbatPidCompensation": {
         "message": "Vbat PID Compensation"
     },

@@ -242,7 +242,7 @@
     padding: 5px;
     text-align: left;
     border-right: 1px solid #ccc;
-    width: calc(100% -1px);
+    width: calc(100% - 1px);
 }
 
 .tab-pid_tuning .pid_titlebar th:first-child {
@@ -303,6 +303,33 @@
     text-align: right;
     border: 0px solid #ccc;
     border-radius: 0px;
+}
+
+.tab-pid_tuning .tab_container {
+    float: top;
+    width: 300px;
+    height: 20px;
+    border-right-width: 0px;
+}
+
+.tab-pid_tuning .tab_container td {
+    background-color: #2e2e2e;
+}
+
+.tab-pid_tuning .tab_container td a {
+    color: #999999;
+}
+
+.tab-pid_tuning .tab_container td.active {
+    background-color: #ffbb00;
+    color: #000;
+    transition: none;
+}
+
+.tab-pid_tuning .tab_container td.active a {
+    background-color: #ffbb00;
+    color: #000;
+    text-shadow: 0px 1px rgba(255, 255, 255, 0.45);
 }
 
 .tab-pid_tuning .single-field {
@@ -374,7 +401,7 @@
   border-bottom: 1px solid #ccc;
   color: #828282;
   /* font-family: 'open_sans', Arial; */
-  background-image: linear-gradient(-45deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%, rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%, rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%, rgba(255, 255, 255, .2) 80%, rgba(255, 255, 255, .2) 90%, transparent 90%, transparent 100%, rgba(255, 255, 255, .2) 100%, transparent);
+  background-image: linear-gradient(315deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%, rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%, rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%, rgba(255, 255, 255, .2) 80%, rgba(255, 255, 255, .2) 90%, transparent 90%, transparent 100%, rgba(255, 255, 255, .2) 100%, transparent);
 }
 
 .fancy.header th {
@@ -382,7 +409,6 @@
     padding-top: 4px;
     padding-left: 5px;
 }
-
 
 .pid_mode {
     width: calc(100% - 5px);
@@ -399,7 +425,7 @@
     border-bottom: 1px solid #ccc;
     color: #828282;
     font-family: 'open_sans', Arial;
-    background-image: linear-gradient(-45deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%,
+    background-image: linear-gradient(315deg, rgba(255, 255, 255, .2) 10%, transparent 10%, transparent 20%,
         rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .2) 30%, transparent 30%, transparent 40%,
         rgba(255, 255, 255, .2) 40%, rgba(255, 255, 255, .2) 50%, transparent 50%, transparent 60%,
         rgba(255, 255, 255, .2) 60%, rgba(255, 255, 255, .2) 70%, transparent 70%, transparent 80%,
