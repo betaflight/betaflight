@@ -85,7 +85,7 @@ protected:
 TEST_F(OsdScreenTest, TestClearScreen)
 {
     // given
-    uint8_t expectedMappedSpaceCharacter = font_test_asciiToFontMapping[' '];
+    uint8_t expectedMappedSpaceCharacter = font_test_asciiToFontMapping[(uint8_t)' '];
     // when
     osdClearScreen();
 
