@@ -653,8 +653,8 @@ static void detectMag(magSensor_e magHardwareToUse)
             break;
     }
 
-    // Nothing was found - disregard the compass
-    if (magHardware == MAG_NONE) {
+    // If not in autodetect mode and detected the wrong chip - disregard the compass even if detected
+    if ((magHardwareToUse != MAG_DEFAULT && magHardware != magHardwareToUse) || (magHardware == MAG_NONE)) {
         return;
     }
 
