@@ -413,4 +413,44 @@ void checkLtmTelemetryState(void)
     else
         freeLtmTelemetryPort();
 }
+
+int getLtmFrame(uint8_t *frame, ltm_frame_e ltmFrameType)
+{
+    static uint8_t ltmPayload[LTM_MAX_MESSAGE_SIZE];
+
+    sbuf_t ltmPayloadBuf = { .ptr = ltmPayload, .end =ARRAYEND(ltmPayload) };
+    sbuf_t * const sbuf = &ltmPayloadBuf;
+
+    switch (ltmFrameType) {
+    default:
+    case LTM_AFRAME:
+        ltm_aframe(sbuf);
+        break;
+    case LTM_SFRAME:
+        ltm_sframe(sbuf);
+        break;
+#if defined(GPS)
+    case LTM_GFRAME:
+        ltm_gframe(sbuf);
+        break;
+    case LTM_OFRAME:
+        ltm_oframe(sbuf);
+        break;
+    case LTM_XFRAME:
+        ltm_xframe(sbuf);
+        break;
+#endif
+#if defined(NAV)
+    case LTM_NFRAME:
+        ltm_nframe(sbuf);
+        break;
+#endif
+    }
+    sbufSwitchToReader(sbuf, ltmPayload);
+    const int frameSize = sbufBytesRemaining(sbuf);
+    for (int ii = 0; sbufBytesRemaining(sbuf); ++ii) {
+        frame[ii] = sbufReadU8(sbuf);
+    }
+    return frameSize;
+}
 #endif
