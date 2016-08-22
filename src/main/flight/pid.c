@@ -422,20 +422,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
-
-            axisPID[axis] = PTerm + ITerm;
-
-            if (motorCount >= 4) {
-                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
-
-                // prevent "yaw jump" during yaw correction
-                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
-            }
-
-            DTerm = 0; // needed for blackbox
-        } else {
+        if (axis != YAW) {
             if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
                 delta = RateError - lastRateError[axis];
                 lastRateError[axis] = RateError;
@@ -464,6 +451,19 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
 
             // -----calculate total PID output
             axisPID[axis] = PTerm + ITerm + DTerm;
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = PTerm + ITerm;
+
+            if (motorCount >= 4) {
+                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
+
+                // prevent "yaw jump" during yaw correction
+                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+            }
+
+            DTerm = 0; // needed for blackbox
         }
 
         if (!pidStabilisationEnabled) axisPID[axis] = 0;
