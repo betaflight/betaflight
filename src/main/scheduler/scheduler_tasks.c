@@ -81,7 +81,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BEEPER",
         .taskFunc = taskUpdateBeeper,
         .desiredPeriod = 1000000 / 100,     // 100 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 
@@ -90,7 +90,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "GPS",
         .taskFunc = taskProcessGPS,
         .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -169,7 +169,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
         .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 
