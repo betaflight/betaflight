@@ -286,13 +286,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term (Yaw D not yet supported)
-        if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
-
-            axisPID[axis] = lrintf(PTerm + ITerm);
-
-            DTerm = 0.0f; // needed for blackbox
-        } else {
+        if (axis != YAW) {
             rD = c[axis] * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
@@ -317,6 +311,12 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = lrintf(PTerm + ITerm);
+
+            DTerm = 0.0f; // needed for blackbox
         }
 
         // Disable PID control at zero throttle
