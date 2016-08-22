@@ -109,7 +109,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #else
     setup = hardwareMaps[i];
 #endif
-
+	TIM_TypeDef* ppmTimer = NULL;
     for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT && setup[i] != 0xFFFF; i++) {
         uint8_t timerIndex = setup[i] & 0x00FF;
         uint8_t type = (setup[i] & 0xFF00) >> 8;
@@ -162,13 +162,13 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef RSSI_ADC_GPIO
+#ifdef RSSI_ADC_PIN
         if (init->useRSSIADC && timerHardwarePtr->tag == IO_TAG(RSSI_ADC_PIN)) {
             continue;
         }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
+#ifdef CURRENT_METER_ADC_PIN
         if (init->useCurrentMeterADC && timerHardwarePtr->tag == IO_TAG(CURRENT_METER_ADC_PIN)) {
             continue;
         }
@@ -292,11 +292,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
         if (type == MAP_TO_PPM_INPUT) {
 #ifndef SKIP_RX_PWM_PPM
-#if defined(SPARKY) || defined(ALIENFLIGHTF3)
-            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
-                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2, init->pwmProtocolType);
-            }
-#endif
+            ppmTimer = timerHardwarePtr->tim;
             ppmInConfig(timerHardwarePtr);
 #endif
         } else if (type == MAP_TO_PWM_INPUT) {
@@ -313,9 +309,15 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                     continue;
             }
 #endif
+            if (init->usePPM) {
+                if (init->pwmProtocolType != PWM_TYPE_CONVENTIONAL && timerHardwarePtr->tim == ppmTimer) {
+                    ppmAvoidPWMTimerClash(timerHardwarePtr, ppmTimer, init->pwmProtocolType);
+                }
+            }
+
             if (init->useFastPwm) {
                 pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->pwmProtocolType);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM  | PWM_PF_OUTPUT_PROTOCOL_ONESHOT;
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_OUTPUT_PROTOCOL_ONESHOT;
             } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_MOTOR_MODE_BRUSHED;
