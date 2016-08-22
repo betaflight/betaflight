@@ -133,8 +133,8 @@
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-#define I2C1_SCL_PIN            PB8
-#define I2C1_SDA_PIN            PB9
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
