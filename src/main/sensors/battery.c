@@ -39,7 +39,7 @@
 
 #include "rx/rx.h"
 
-#define VBATT_PRESENT_THRESHOLD_MV    10
+#define VBATT_PRESENT_THRESHOLD    10
 #define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
@@ -90,7 +90,7 @@ void updateBattery(void)
     updateBatteryVoltage();
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
+    if (batteryState == BATTERY_NOT_PRESENT && vbat > MAX(VBATT_PRESENT_THRESHOLD, batteryConfig->batterynotpresentlevel))
     {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
@@ -110,8 +110,8 @@ void updateBattery(void)
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD_MV */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= VBATT_PRESENT_THRESHOLD_MV)
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD */
+    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= MAX(VBATT_PRESENT_THRESHOLD, batteryConfig->batterynotpresentlevel))
     {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
