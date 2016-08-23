@@ -40,7 +40,7 @@ bool m25p16_waitForReady(uint32_t timeoutMillis);
 
 const flashGeometry_t* m25p16_getGeometry();
 
-#ifndef NO_CUSTOM_FLASHCHIP
+#ifdef CUSTOM_FLASHCHIP
 typedef struct flashchipConfig_s {
     uint32_t flashchip_id;
     uint16_t flashchip_nsect;

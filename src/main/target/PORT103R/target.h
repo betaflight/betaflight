@@ -53,7 +53,7 @@
 #define PORT103R_SPI_CS_GPIO      GPIOB
 #define PORT103R_SPI_CS_PIN       GPIO_Pin_12
 
-// We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
+#define CUSTOM_FLASHCHIP
 #define M25P16_CS_GPIO        PORT103R_SPI_CS_GPIO
 #define M25P16_CS_PIN         PORT103R_SPI_CS_PIN
 #define M25P16_SPI_INSTANCE   PORT103R_SPI_INSTANCE
