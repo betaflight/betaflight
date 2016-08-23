@@ -100,6 +100,34 @@ TEST_F(OsdScreenTest, TestClearScreen)
     }
 }
 
+TEST_F(OsdScreenTest, TestTopLeftCharacter)
+{
+    // given
+    char testChar = ' ';
+    uint8_t expectedMappedChar = font_test_asciiToFontMapping[(uint8_t)testChar];
+
+    // when
+    osdSetCharacterAtPosition(0, 0, testChar);
+
+    // then
+    int offset = SCREEN_BUFFER_OFFSET(0, 0);
+    EXPECT_EQ((TEXT_SCREEN_CHAR)expectedMappedChar, textScreenBuffer[offset]);
+}
+
+TEST_F(OsdScreenTest, TestBottomRightCharacter)
+{
+    // given
+    char testChar = ' ';
+    uint8_t expectedMappedChar = font_test_asciiToFontMapping[(uint8_t)testChar];
+
+    // when
+    osdSetCharacterAtPosition(TEST_COLUMN_COUNT - 1, -1, testChar); // -1 on Y axis indicates bottom justified.
+
+    // then
+    int offset = SCREEN_BUFFER_OFFSET(TEST_COLUMN_COUNT - 1, TEST_ROW_COUNT - 1);
+    EXPECT_EQ((TEXT_SCREEN_CHAR)expectedMappedChar, textScreenBuffer[offset]);
+}
+
 static uint8_t fontMapBuffer[256];
 
 static uint8_t* asciiToFontMap(char *ascii) {

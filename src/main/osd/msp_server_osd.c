@@ -54,6 +54,7 @@
 #include "scheduler/scheduler.h"
 
 #include "osd/config.h"
+#include "osd/osd_element.h"
 #include "osd/osd.h"
 #include "osd/osd_serial.h"
 #include "osd/msp_server_osd.h"

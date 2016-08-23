@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-enum osdElementIds {
+enum osdElementIds_e {
     OSD_ELEMENT_ON_DURATION = 1,
     OSD_ELEMENT_ARMED_DURATION = 2,
     OSD_ELEMENT_MAH_DRAWN = 3,
@@ -30,10 +30,15 @@ enum osdElementIds {
     OSD_ELEMENT_RSSI_FC = 13,
 };
 
+enum osdElementFlags_e {
+    EF_ENABLED = (1 << 0),
+    EF_FLASH_ON_DISCONNECT = (1 << 1)
+};
+
 typedef struct element_s {
     uint8_t x;
     uint8_t y;
-    bool enabled;
+    uint8_t flags;
     uint8_t id;
 } element_t;
 
@@ -46,4 +51,8 @@ typedef struct elementHandlerConfig_s {
     elementDataProviderFn dataFn;
 } elementHandlerConfig_t;
 
+// state - update state before drawing elements.
+void osdSetElementFlashOnDisconnectState(bool flashWhenDisconnected);
+
+// draw
 void osdDrawTextElement(const element_t *element);

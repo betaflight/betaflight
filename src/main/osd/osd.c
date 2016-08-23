@@ -56,15 +56,36 @@
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 PG_REGISTER_WITH_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig, PG_OSD_VIDEO_CONFIG, 0);
 
+PG_REGISTER_WITH_RESET_FN(osdElementConfig_t, osdElementConfig, PG_OSD_ELEMENT_CONFIG, 0);
+
 #ifndef DEFAULT_VIDEO_MODE
-// the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
-// Also most PAL screens can also display NTSC but not vice-versa.  PAL = more lines, less FPS.  NTSC = fewer lines, more FPS.
-#define DEFAULT_VIDEO_MODE VIDEO_NTSC
+#define DEFAULT_VIDEO_MODE VIDEO_AUTO
 #endif
 
 PG_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig,
     .videoMode = DEFAULT_VIDEO_MODE,
 );
+
+
+static const element_t osdDefaultElements[] = {
+    {  2,  1, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_RSSI_FC },
+    { 20,  1, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_INDICATOR_MAG },
+    { 22,  1, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_INDICATOR_BARO },
+    { 24,  1, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_FLIGHT_MODE },
+    {  7, -4, EF_ENABLED, OSD_ELEMENT_ON_DURATION },
+    { 18, -4, EF_ENABLED, OSD_ELEMENT_ARMED_DURATION },
+    {  2, -3, EF_ENABLED, OSD_ELEMENT_VOLTAGE_12V },
+    { 18, -3, EF_ENABLED, OSD_ELEMENT_VOLTAGE_BATTERY },
+    {  2, -2, EF_ENABLED, OSD_ELEMENT_VOLTAGE_5V },
+    { 18, -2, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_VOLTAGE_BATTERY_FC },
+    {  2, -1, EF_ENABLED, OSD_ELEMENT_AMPERAGE },
+    { 18, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
+};
+
+void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {
+    memset(osdElementConfig, 0, sizeof(osdElementConfig_t));
+    memcpy_fn(&osdElementConfig->elements, &osdDefaultElements, sizeof(osdDefaultElements));
+}
 
 osdState_t osdState;
 
@@ -208,39 +229,13 @@ void osdUpdate(void)
 
     bool showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
 
-    //
-    // top
-    //
+    osdSetElementFlashOnDisconnectState(showNowOrFlashWhenFCTimeoutOccured);
 
-    int row = 1; // zero based.
+    for (uint8_t elementIndex = 0; elementIndex < MAX_OSD_ELEMENT_COUNT; elementIndex++) {
+        element_t *element = &osdElementConfig()->elements[elementIndex];
 
-    if (showNowOrFlashWhenFCTimeoutOccured) {
-        const element_t rssiElement = {
-            2, row, true, OSD_ELEMENT_RSSI_FC
-        };
-        osdDrawTextElement(&rssiElement);
+        osdDrawTextElement(element);
     }
-
-    if (showNowOrFlashWhenFCTimeoutOccured) {
-        const element_t magElement = {
-            20, row, true, OSD_ELEMENT_INDICATOR_MAG
-        };
-        osdDrawTextElement(&magElement);
-
-        const element_t baroElement = {
-            22, row, true, OSD_ELEMENT_INDICATOR_BARO
-        };
-        osdDrawTextElement(&baroElement);
-
-        const element_t flightModeElement = {
-            24, row, true, OSD_ELEMENT_FLIGHT_MODE
-        };
-        osdDrawTextElement(&flightModeElement);
-    }
-
-    //
-    // middle
-    //
 
     //
     // flash the logo for a few seconds
@@ -266,61 +261,6 @@ void osdUpdate(void)
             osdPrintAt(11, 4, "NO CAMERA");
         }
     }
-
-    //
-    // bottom
-    //
-
-    row = osdTextScreen.height - 4;
-
-    const element_t onDurationElement = {
-        7, row, true, OSD_ELEMENT_ON_DURATION
-    };
-    osdDrawTextElement(&onDurationElement);
-
-    const element_t armedDurationElement = {
-        18, row, true, OSD_ELEMENT_ARMED_DURATION
-    };
-    osdDrawTextElement(&armedDurationElement);
-
-
-    row++;
-
-    const element_t voltage12VElement = {
-        2, row, true, OSD_ELEMENT_VOLTAGE_12V
-    };
-    osdDrawTextElement(&voltage12VElement);
-
-    const element_t voltageBatteryElement = {
-        18, row, true, OSD_ELEMENT_VOLTAGE_BATTERY
-    };
-    osdDrawTextElement(&voltageBatteryElement);
-
-    row++;
-
-    const element_t voltage5VElement = {
-        2, row, true, OSD_ELEMENT_VOLTAGE_5V
-    };
-    osdDrawTextElement(&voltage5VElement);
-
-    if (showNowOrFlashWhenFCTimeoutOccured) {
-        const element_t voltageFCVBATElement = {
-            18, row, true, OSD_ELEMENT_VOLTAGE_BATTERY_FC
-        };
-        osdDrawTextElement(&voltageFCVBATElement);
-    }
-
-    row++;
-
-    const element_t amperageElement = {
-        2, row, true, OSD_ELEMENT_AMPERAGE
-    };
-    osdDrawTextElement(&amperageElement);
-
-    const element_t mahDrawnElement = {
-        18, row, true, OSD_ELEMENT_MAH_DRAWN
-    };
-    osdDrawTextElement(&mahDrawnElement);
 
     osdDisplayMotors();
 

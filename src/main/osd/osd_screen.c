@@ -39,19 +39,31 @@ typedef struct osdCursor_s {
 
 static osdCursor_t cursor = {0, 0};
 
+static uint16_t osdCalculateBufferOffset(osdCoordVal_t x, osdCoordVal_t y) {
+    osdCoordVal_t yy;
+    if (y >= 0) {
+        // positive y = top aligned
+        yy = y;
+    } else {
+        // negative y = bottom aligned
+        yy = osdTextScreen.height + y;
+    }
+    uint16_t offset = (yy * osdTextScreen.width) + x;
+    return offset;
+}
 // Does not move the cursor.
-void osdSetCharacterAtPosition(uint8_t x, uint8_t y, char c)
+void osdSetCharacterAtPosition(osdCoordVal_t x, osdCoordVal_t y, char c)
 {
     uint8_t mappedCharacter = asciiToFontMapping[(uint8_t)c];
 
-    unsigned int offset = (y * osdTextScreen.width) + x;
+    uint16_t offset = osdCalculateBufferOffset(x,y);
     textScreenBuffer[offset] = mappedCharacter;
 }
 
 // Does not move the cursor.
-void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c)
+void osdSetRawCharacterAtPosition(osdCoordVal_t x, osdCoordVal_t y, char c)
 {
-    unsigned int offset = (y * osdTextScreen.width) + x;
+    uint16_t offset = osdCalculateBufferOffset(x,y);
     textScreenBuffer[offset] = c;
 }
 
@@ -61,7 +73,7 @@ void osdResetCursor(void)
     cursor.y = 0;
 }
 
-void osdSetCursor(uint8_t x, uint8_t y)
+void osdSetCursor(osdCoordVal_t x, osdCoordVal_t y)
 {
     cursor.x = x;
     cursor.y = y;
@@ -92,7 +104,7 @@ void osdPrint(char *message)
     }
 }
 
-void osdPrintAt(uint8_t x, uint8_t y, char *message)
+void osdPrintAt(osdCoordVal_t x, osdCoordVal_t y, char *message)
 {
     osdSetCursor(x, y);
     osdPrint(message);

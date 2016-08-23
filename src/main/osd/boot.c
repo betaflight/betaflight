@@ -55,6 +55,7 @@
 
 #include "fc/rc_controls.h" // FIXME for throttle status, not needed by OSD.
 
+#include "osd/osd_element.h"
 #include "osd/osd.h"
 #include "osd/osd_serial.h"
 

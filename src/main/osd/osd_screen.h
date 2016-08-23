@@ -22,12 +22,14 @@ extern TEXT_SCREEN_CHAR textScreenBuffer[];
 
 extern const uint8_t *asciiToFontMapping;
 
+typedef int8_t osdCoordVal_t;
+
 void osdSetTextScreen(textScreen_t *textScreen);
 void osdClearScreen(void);
 void osdResetCursor(void);
-void osdSetCursor(uint8_t x, uint8_t y);
+void osdSetCursor(osdCoordVal_t x, osdCoordVal_t y);
 void osdPrint(char *message);
-void osdPrintAt(uint8_t x, uint8_t y, char *message);
-void osdSetCharacterAtPosition(uint8_t x, uint8_t y, char c);
-void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
+void osdPrintAt(osdCoordVal_t x, osdCoordVal_t y, char *message);
+void osdSetCharacterAtPosition(osdCoordVal_t x, osdCoordVal_t y, char c);
+void osdSetRawCharacterAtPosition(osdCoordVal_t x, osdCoordVal_t y, char c);
 

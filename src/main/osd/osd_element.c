@@ -157,9 +157,23 @@ static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)
     return NULL;
 }
 
+typedef struct osdElementState_s {
+    bool flashWhenDisconnected;
+} osdElementState_t;
+
+static osdElementState_t osdElementState;
+
+// set showNow parameter to true when the element should be drawn, flash frequency and state defined by caller.
+void osdSetElementFlashOnDisconnectState(bool showNow) {
+    osdElementState.flashWhenDisconnected = showNow;
+}
+
 void osdDrawTextElement(const element_t *element)
 {
-    if (!element->enabled) {
+    if (!element->flags & EF_ENABLED) {
+        return;
+    }
+    if (element->flags & EF_FLASH_ON_DISCONNECT && !osdElementState.flashWhenDisconnected) {
         return;
     }
 

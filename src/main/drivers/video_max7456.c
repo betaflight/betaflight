@@ -259,6 +259,10 @@ static void max7456_setVideoMode(videoMode_e videoMode)
     {
         case VIDEO_AUTO:
             // assume NTSC rather than leaving using an unknown state
+
+            // the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
+            // Also most PAL screens can also display NTSC but not vice-versa.  PAL = more lines, less FPS.  NTSC = fewer lines, more FPS.
+
         case VIDEO_NTSC:
             max7456_videoModeMask = MAX7456_MODE_MASK_NTSC;
             max7456Screen.height = MAX7456_NTSC_ROW_COUNT;

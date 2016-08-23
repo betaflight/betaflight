@@ -21,6 +21,14 @@ typedef struct osdFontConfig_s {
 
 PG_DECLARE(osdFontConfig_t, osdFontConfig);
 
+#define MAX_OSD_ELEMENT_COUNT 32
+
+typedef struct osdElementConfig_s {
+    element_t elements[MAX_OSD_ELEMENT_COUNT];
+} osdElementConfig_t;
+
+PG_DECLARE(osdElementConfig_t, osdElementConfig);
+
 typedef struct osdVideoConfig_s {
     uint8_t videoMode;
     // other settings like horizontal/vertical offsets, sync modes, etc probably belong here in the future.

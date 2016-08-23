@@ -49,6 +49,7 @@
 #include "drivers/video_max7456.h"
 
 #include "osd/config.h"
+#include "osd/osd_element.h"
 #include "osd/osd_screen.h"
 
 #include "osd/fonts/font_max7456_12x18.h"
