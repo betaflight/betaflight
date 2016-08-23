@@ -815,6 +815,7 @@ void taskMainPidLoopCheck(void)
 {
     static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
+    static uint8_t pidUpdateCountdown;
 
     cycleTime = micros() - previousTime;
     previousTime = micros();
@@ -823,17 +824,6 @@ void taskMainPidLoopCheck(void)
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;
     }
-
-    const uint32_t startTime = micros();
-
-    while (true) {
-        if (gyroSyncCheckUpdate(&gyro)) {
-            if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
-            break;
-        }
-    }
-
-    static uint8_t pidUpdateCountdown;
 
     if (runTaskMainSubprocesses) {
         subTaskMainSubprocesses();

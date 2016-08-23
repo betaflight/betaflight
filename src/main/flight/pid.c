@@ -286,13 +286,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term (Yaw D not yet supported)
-        if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
-
-            axisPID[axis] = lrintf(PTerm + ITerm);
-
-            DTerm = 0.0f; // needed for blackbox
-        } else {
+        if (axis != YAW) {
             rD = c[axis] * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
@@ -317,6 +311,12 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = lrintf(PTerm + ITerm);
+
+            DTerm = 0.0f; // needed for blackbox
         }
 
         // Disable PID control at zero throttle
@@ -422,20 +422,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (axis == YAW) {
-            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
-
-            axisPID[axis] = PTerm + ITerm;
-
-            if (motorCount >= 4) {
-                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
-
-                // prevent "yaw jump" during yaw correction
-                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
-            }
-
-            DTerm = 0; // needed for blackbox
-        } else {
+        if (axis != YAW) {
             if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
                 delta = RateError - lastRateError[axis];
                 lastRateError[axis] = RateError;
@@ -464,6 +451,19 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
 
             // -----calculate total PID output
             axisPID[axis] = PTerm + ITerm + DTerm;
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = PTerm + ITerm;
+
+            if (motorCount >= 4) {
+                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
+
+                // prevent "yaw jump" during yaw correction
+                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+            }
+
+            DTerm = 0; // needed for blackbox
         }
 
         if (!pidStabilisationEnabled) axisPID[axis] = 0;

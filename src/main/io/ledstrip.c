@@ -257,10 +257,10 @@ STATIC_UNIT_TESTED void determineLedStripDimensions(void)
 
 STATIC_UNIT_TESTED void determineOrientationLimits(void)
 {
-    highestYValueForNorth = (ledGridHeight / 2) - 1;
-    lowestYValueForSouth = ((ledGridHeight + 1) / 2);
-    highestXValueForWest = (ledGridWidth / 2) - 1;
-    lowestXValueForEast = ((ledGridWidth + 1) / 2);
+    highestYValueForNorth = MIN((ledGridHeight / 2) - 1, 0);
+    lowestYValueForSouth = (ledGridHeight + 1) / 2;
+    highestXValueForWest = MIN((ledGridWidth / 2) - 1, 0);
+    lowestXValueForEast = (ledGridWidth + 1) / 2;
 }
 
 STATIC_UNIT_TESTED void updateLedCount(void)
@@ -533,7 +533,11 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        color = *getDirectionalModeColor(ledIndex, &masterConfig.modeColors[flightModeToLed[i].ledMode]);
+                        hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &masterConfig.modeColors[flightModeToLed[i].ledMode]);
+                        if (directionalColor) {
+                            color = *directionalColor;
+                        }
+
                         break; // stop on first match
                     }
                 break;
