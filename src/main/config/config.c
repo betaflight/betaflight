@@ -243,8 +243,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 120;
+    pidProfile->ptermSetpointWeight = 80;
+    pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
     pidProfile->toleranceBand = 0;
