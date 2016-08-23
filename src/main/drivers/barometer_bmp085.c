@@ -342,7 +342,7 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
 
 static void bmp085_get_cal_param(void)
 {
-    uint8_t data[22];
+    uint8_t data[BMP085_PROM_DATA__LEN];
     i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
 
     /*parameters AC1-AC6*/

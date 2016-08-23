@@ -262,7 +262,7 @@ float getEstimatedActualPosition(int axis);
 
 /* Waypoint list access functions */
 void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
-void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData);
+void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData);
 void resetWaypointList(void);
 
 /* Geodetic functions */
@@ -271,9 +271,9 @@ typedef enum {
     GEO_ALT_RELATIVE
 } geoAltitudeConversionMode_e;
 
-void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv);
-void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh);
-float geoCalculateMagDeclination(gpsLocation_t * llh); // degrees units
+void geoConvertGeodeticToLocal(gpsOrigin_s * origin, const gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv);
+void geoConvertLocalToGeodetic(const gpsOrigin_s * origin, const t_fp_vector * pos, gpsLocation_t * llh);
+float geoCalculateMagDeclination(const gpsLocation_t * llh); // degrees units
 
 /* Failsafe-forced RTH mode */
 void activateForcedRTH(void);
