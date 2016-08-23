@@ -353,7 +353,7 @@ static void sendGPSLatLong(void)
 static void sendVario(void)
 {
     sendDataHead(ID_VERT_SPEED);
-    serialize16((uint16_t)getEstimatedActualVelocity(Z));
+    serialize16((int16_t)lrintf(getEstimatedActualVelocity(Z)));
 }
 
 /*
