@@ -63,6 +63,15 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
     }
 
     function process_html() {
+        // fill stage 2 fields
+        function toggleStage2(doShow) {
+            if (doShow) {
+                $('div.stage2').show();
+            } else {
+                $('div.stage2').hide();
+            }
+        }
+        
         // Conditionally hide the old or the new control pane's
         if(apiVersionGte1_15_0) {
             var oldPane = $('div.oldpane');
@@ -199,6 +208,14 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
                 channel_mode_array[i].change();
             }
 
+            BF_CONFIG.features.generateElements($('.tab-failsafe .featuresNew'));
+
+            var failsafeFeature = $('input[name="FAILSAFE"]');
+            failsafeFeature.change(function () {
+                toggleStage2($(this).is(':checked'));
+            });
+            toggleStage2(BF_CONFIG.features.isEnabled('FAILSAFE'));
+
             $('input[name="failsafe_throttle"]').val(FAILSAFE_CONFIG.failsafe_throttle);
             $('input[name="failsafe_off_delay"]').val(FAILSAFE_CONFIG.failsafe_off_delay);
             $('input[name="failsafe_throttle_low_delay"]').val(FAILSAFE_CONFIG.failsafe_throttle_low_delay);
@@ -244,12 +261,15 @@ TABS.failsafe.initialize = function (callback, scrollPosition) {
             $('input[name="failsafe_kill_switch"]').prop('checked', FAILSAFE_CONFIG.failsafe_kill_switch);
 
         } else {
+            BF_CONFIG.features.generateElements($('.tab-failsafe .featuresOld'));
             // fill failsafe_throttle field (pre API 1.15.0)
             $('input[name="failsafe_throttle_old"]').val(MISC.failsafe_throttle);
         }
 
         $('a.save').click(function () {
             // gather data that doesn't have automatic change event bound
+
+            BF_CONFIG.features.updateData($('input[name="FAILSAFE"]'));
 
             if(apiVersionGte1_15_0) {
                 RX_CONFIG.rx_min_usec = parseInt($('input[name="rx_min_usec"]').val());

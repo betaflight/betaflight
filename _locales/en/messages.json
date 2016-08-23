@@ -11,10 +11,6 @@
     "options_receive_app_notifications": {
         "message": "Receive desktop <strong>notification</strong> when application updates"
     },
-    "options_improve_configurator": {
-        "message": "Send anonymous usage data to the developer team"
-    },
-
     "connect": {
         "message": "Connect"
     },
@@ -32,6 +28,12 @@
     },
     "autoConnectDisabled": {
         "message": "Auto-Connect: Disabled - User needs to select the correct serial port and click \"Connect\" button on its own"
+    },
+    "expertMode": {
+        "message": "Enable Expert Mode"
+    },
+    "permanentExpertMode": {
+        "message": "Permanently enable Expert Mode"
     },
     "deviceRebooting": {
         "message": "Device - <span style=\"color: red\">Rebooting</span>"
@@ -544,10 +546,16 @@
         "message": "On Screen Display"
     },
     "featureFAILSAFE": {
-        "message": "Override failsafe behaviour on RX signal loss"
+        "message": "Enable Failsafe Stage 2"
+    },
+    "featureFAILSAFEOld": {
+        "message": "Enable Failsafe"
     },
     "featureFAILSAFETip": {
-        "message": "<strong>Warning:</strong> Use this only if you know what you are doing. The default behaviour on RX signal loss (deactivate all motors to bring craft to the ground) is the safest option in most situations."
+        "message": "<strong>Note:</strong> When Stage 2 is DISABLED, the fallback setting <strong>Auto</strong> is used instead of the user settings for all flightchannels (Roll, Pitch, Yaw and Throttle)."
+    },
+    "featureFAILSAFEOldTip": {
+        "message": "Apply Failsafe settings on RX signal loss"
     },
     "configurationFeatureEnabled": {
         "message": "Enabled"

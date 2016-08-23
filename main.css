@@ -1581,6 +1581,14 @@ dialog {
     display:none;
 }
 
+#expertMode {
+    color: #ddd;
+    margin-top: 16px;
+    width:125px;
+    float: right;
+    margin-right: 0px;
+    line-height: 12px;
+}
 
 /* Battery element styling*/
 

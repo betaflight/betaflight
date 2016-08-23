@@ -28,23 +28,26 @@ $(document).ready(function () {
     }
 
     // check for newer releases online to inform people in case they are running an old release
-    
-    chrome.storage.local.get(['lastVersionChecked', 'lastVersionAvailableOnline'], function(result) {
-        if (typeof result.lastVersionChecked === undefined || ($.now() - result.lastVersionChecked) > 3600*1000) {
+
+    chrome.storage.local.get(['lastVersionChecked', 'lastVersionAvailableOnline'], function (result) {
+        if (typeof result.lastVersionChecked === undefined || ($.now() - result.lastVersionChecked) > 3600 * 1000) {
             try {
                 var url = 'https://api.github.com/repos/betaflight/betaflight-configurator/tags';
                 $.get(url).done(function (data) {
-                  var versions = data.sort(function (v1, v2) {
-                      try {
-                          return semver.compare(v2.name, v1.name);
-                      } catch (e) {
-                          return false;
-                      }
-                  });
-                  chrome.storage.local.set({'lastVersionChecked': $.now(), 'lastVersionAvailableOnline': versions[0].name}, function(result) {
-                      console.log("Latest version available online: "+ versions[0].name);
-                  });
-                  notifyOutdatedVersion(versions[0].name);
+                    var versions = data.sort(function (v1, v2) {
+                        try {
+                            return semver.compare(v2.name, v1.name);
+                        } catch (e) {
+                            return false;
+                        }
+                    });
+                    chrome.storage.local.set({
+                        'lastVersionChecked': $.now(),
+                        'lastVersionAvailableOnline': versions[0].name
+                    }, function (result) {
+                        console.log("Latest version available online: " + versions[0].name);
+                    });
+                    notifyOutdatedVersion(versions[0].name);
                 });
             } catch (e) {
                 // Just to catch and supress warnings if no internet connection is available
@@ -57,7 +60,7 @@ $(document).ready(function () {
     chrome.storage.local.get('logopen', function (result) {
         if (result.logopen) {
             $("#showlog").trigger('click');
-         }
+        }
     });
 
     // log webgl capability
@@ -206,12 +209,30 @@ $(document).ready(function () {
                     if (typeof result.update_notify === 'undefined' || result.update_notify) {
                         $('div.notifications input').prop('checked', true);
                     }
+
+                    $('div.notifications input').change(function () {
+                        var check = $(this).is(':checked');
+
+                        chrome.storage.local.set({'update_notify': check});
+                    });
                 });
 
-                $('div.notifications input').change(function () {
-                    var check = $(this).is(':checked');
+                chrome.storage.local.get('permanentExpertMode', function (result) {
+                    if (result.permanentExpertMode) {
+                        $('div.permanentExpertMode input').prop('checked', true);
+                    }
 
-                    chrome.storage.local.set({'update_notify': check});
+                    $('div.permanentExpertMode input').change(function () {
+                        var checked = $(this).is(':checked');
+
+                        chrome.storage.local.set({'permanentExpertMode': checked});
+
+                        $('input[name="expertModeCheckbox"]').prop('checked', checked).change();
+                        if (BF_CONFIG) {
+                            updateTabList(BF_CONFIG.features);
+                        }
+
+                    }).change();
                 });
 
                 function close_and_cleanup(e) {
@@ -307,37 +328,48 @@ $(document).ready(function () {
         }
     });
 
-    $("#showlog").on('click', function() {
-    var state = $(this).data('state');
-    if ( state ) {
-        $("#log").animate({height: 27}, 200, function() {
-             var command_log = $('div#log');
-             command_log.scrollTop($('div.wrapper', command_log).height());
-        });
-        $("#log").removeClass('active');
-        $("#content").removeClass('logopen');
-        $(".tab_container").removeClass('logopen');
-        $("#scrollicon").removeClass('active');
-        chrome.storage.local.set({'logopen': false});
+    $("#showlog").on('click', function () {
+        var state = $(this).data('state');
+        if (state) {
+            $("#log").animate({height: 27}, 200, function () {
+                var command_log = $('div#log');
+                command_log.scrollTop($('div.wrapper', command_log).height());
+            });
+            $("#log").removeClass('active');
+            $("#content").removeClass('logopen');
+            $(".tab_container").removeClass('logopen');
+            $("#scrollicon").removeClass('active');
+            chrome.storage.local.set({'logopen': false});
 
-        state = false;
-    }else{
-        $("#log").animate({height: 111}, 200);
-        $("#log").addClass('active');
-        $("#content").addClass('logopen');
-        $(".tab_container").addClass('logopen');
-        $("#scrollicon").addClass('active');
-        chrome.storage.local.set({'logopen': true});
+            state = false;
+        } else {
+            $("#log").animate({height: 111}, 200);
+            $("#log").addClass('active');
+            $("#content").addClass('logopen');
+            $(".tab_container").addClass('logopen');
+            $("#scrollicon").addClass('active');
+            chrome.storage.local.set({'logopen': true});
 
-        state = true;
-    }
-    $(this).text(state ? 'Hide Log' : 'Show Log');
-    $(this).data('state', state);
+            state = true;
+        }
+        $(this).text(state ? 'Hide Log' : 'Show Log');
+        $(this).data('state', state);
+    });
 
+    chrome.storage.local.get('permanentExpertMode', function (result) {
+        if (result.permanentExpertMode) {
+            $('input[name="expertModeCheckbox"]').prop('checked', true);
+        }
+
+        $('input[name="expertModeCheckbox"]').change(function () {
+            if (BF_CONFIG) {
+                updateTabList(BF_CONFIG.features);
+            }
+        }).change();
     });
 });
 
-function notifyOutdatedVersion (version) {
+function notifyOutdatedVersion(version) {
     if (semver.lt(chrome.runtime.getManifest().version, version)) {
         GUI.log('You are using an old version of ' + chrome.runtime.getManifest().name + '. Version ' + version + ' is available online with possible improvements and fixes.');
     }
@@ -379,43 +411,50 @@ function bytesToSize(bytes) {
     return bytes;
 }
 
-Number.prototype.clamp = function(min, max) {
-    return Math.min(Math.max(this, min), max);
-};
-
-/**
- * String formatting now supports currying (partial application).
- * For a format string with N replacement indices, you can call .format
- * with M <= N arguments. The result is going to be a format string
- * with N-M replacement indices, properly counting from 0 .. N-M.
- * The following Example should explain the usage of partial applied format:
- *  "{0}:{1}:{2}".format("a","b","c") === "{0}:{1}:{2}".format("a","b").format("c")
- *  "{0}:{1}:{2}".format("a").format("b").format("c") === "{0}:{1}:{2}".format("a").format("b", "c")
- **/
-String.prototype.format = function () {
-    var args = arguments;
-    return this.replace(/\{(\d+)\}/g, function (t, i) {
-        return args[i] !== void 0 ? args[i] : "{"+(i-args.length)+"}";
-    });
-};
-
+function isExpertModeEnabled() {
+    return $('input[name="expertModeCheckbox"]').is(':checked');
+}
 function updateTabList(features) {
-    if (features.isEnabled('GPS')) {
+    if (features.isEnabled('GPS') && isExpertModeEnabled()) {
         $('#tabs ul.mode-connected li.tab_gps').show();
     } else {
         $('#tabs ul.mode-connected li.tab_gps').hide();
     }
 
-    if (features.isEnabled('FAILSAFE')) {
+    if (isExpertModeEnabled()) {
         $('#tabs ul.mode-connected li.tab_failsafe').show();
     } else {
         $('#tabs ul.mode-connected li.tab_failsafe').hide();
+    }
+
+    if (isExpertModeEnabled()) {
+        $('#tabs ul.mode-connected li.tab_adjustments').show();
+    } else {
+        $('#tabs ul.mode-connected li.tab_adjustments').hide();
+    }
+
+    if (isExpertModeEnabled()) {
+        $('#tabs ul.mode-connected li.tab_servos').show();
+    } else {
+        $('#tabs ul.mode-connected li.tab_servos').hide();
     }
 
     if (features.isEnabled('LED_STRIP')) {
         $('#tabs ul.mode-connected li.tab_led_strip').show();
     } else {
         $('#tabs ul.mode-connected li.tab_led_strip').hide();
+    }
+
+    if (isExpertModeEnabled()) {
+        $('#tabs ul.mode-connected li.tab_sensors').show();
+    } else {
+        $('#tabs ul.mode-connected li.tab_sensors').hide();
+    }
+
+    if (isExpertModeEnabled()) {
+        $('#tabs ul.mode-connected li.tab_logging').show();
+    } else {
+        $('#tabs ul.mode-connected li.tab_logging').hide();
     }
 
     if (features.isEnabled('BLACKBOX')) {
