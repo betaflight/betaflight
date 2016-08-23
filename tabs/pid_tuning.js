@@ -59,7 +59,7 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            $('input[name="#vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
+            $('input[id="vbatpidcompensation"]').prop('checked', ADVANCED_TUNING.vbatPidCompensation !== 0);
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
@@ -266,7 +266,7 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
-            ADVANCED_TUNING.vbatPidCompensation = $('input[name="#vbatpidcompensation"]').is(':checked') ? 1 : 0;
+            ADVANCED_TUNING.vbatPidCompensation = $('input[id="vbatpidcompensation"]').is(':checked') ? 1 : 0;
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
