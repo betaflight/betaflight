@@ -199,7 +199,11 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
+#if defined(SKIP_PID_FLOAT)
+    pidProfile->pidController = PID_CONTROLLER_LEGACY;
+#else
     pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
+#endif
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;

@@ -1353,8 +1353,10 @@ static bool processInCommand(void)
         read16();
         break;
     case MSP_SET_PID_CONTROLLER:
+#ifndef SKIP_PID_FLOAT
         currentProfile->pidProfile.pidController = constrain(read8(), 0, 1);
         pidSetController(currentProfile->pidProfile.pidController);
+#endif
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
