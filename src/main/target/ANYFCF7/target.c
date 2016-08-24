@@ -23,21 +23,21 @@
 
 const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),		// USART2
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),     // USART2 // Swap to servo if needed
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM5  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
-    PWM6  | (MAP_TO_SERVO_OUTPUT << 8),      // Swap to servo if needed
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM5  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM6  | (MAP_TO_SERVO_OUTPUT << 8),
     0xFFFF
 };
 
@@ -54,10 +54,10 @@ const uint16_t multiPWM[] = {
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
-    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 
@@ -122,7 +122,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM4,  IO_TAG(PB8),  TIM_CHANNEL_3, TIM4_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF2_TIM4 }, // S10_OUT
 };
 
-//
+// ALTERNATE LAYOUT
 //const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 //    { TIM12, IO_TAG(PB14), TIM_CHANNEL_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_IPD,      GPIO_AF9_TIM12 }, // S1_IN
 //    { TIM12, IO_TAG(PB15), TIM_CHANNEL_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_IPD,      GPIO_AF9_TIM12 }, // S2_IN
