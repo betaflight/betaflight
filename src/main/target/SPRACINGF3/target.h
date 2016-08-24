@@ -51,7 +51,6 @@
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
-#define MAG_INT_EXTI            PC14
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
