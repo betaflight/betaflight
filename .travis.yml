@@ -55,7 +55,9 @@ install:
 before_script: arm-none-eabi-gcc --version
 script: ./.travis.sh
 
-cache: apt
+cache:
+  - apt
+  - ccache
 
 notifications:
   irc: "chat.freenode.net#cleanflight"
