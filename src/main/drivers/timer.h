@@ -170,3 +170,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);
+
+#if defined(USE_HAL_DRIVER)
+TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+#endif

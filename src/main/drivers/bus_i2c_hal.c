@@ -34,8 +34,6 @@
 
 #define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
-static void i2c_er_handler(I2CDevice device);
-static void i2c_ev_handler(I2CDevice device);
 static void i2cUnstick(IO_t scl, IO_t sda);
 
 #define IOCFG_I2C IOCFG_AF_OD
@@ -132,6 +130,7 @@ void i2cSetOverclock(uint8_t OverClock) {
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
+    (void)device;
     i2cErrorCount++;
     // reinit peripheral + clock out garbage
     //i2cInit(device);
@@ -203,7 +202,7 @@ void i2cInit(I2CDevice device)
         i2cDevice_t *i2c;
         i2c = &(i2cHardwareMap[device]);
 
-        I2C_InitTypeDef i2cInit;
+        //I2C_InitTypeDef i2cInit;
 
         IO_t scl = IOGetByTag(i2c->scl);
         IO_t sda = IOGetByTag(i2c->sda);

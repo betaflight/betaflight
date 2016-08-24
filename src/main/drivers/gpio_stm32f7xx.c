@@ -65,5 +65,7 @@ void gpioInit(GPIO_TypeDef *gpio, gpio_config_t *config)
 
 void gpioExtiLineConfig(uint8_t portsrc, uint8_t pinsrc)
 {
+    (void)portsrc;
+    (void)pinsrc;
     //SYSCFG_EXTILineConfig(portsrc, pinsrc);
 }

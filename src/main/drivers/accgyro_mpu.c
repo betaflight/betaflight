@@ -259,7 +259,7 @@ void mpuIntExtiInit(void)
 #if defined (STM32F7)
     IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);
     EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_IT_RISING,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
 
     IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);

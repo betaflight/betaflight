@@ -214,6 +214,7 @@ void IOToggle(IO_t io)
     // high in the mask value rather than all pins. XORing ODR directly risks
     // setting other pins incorrectly because it change all pins' state.
 #if defined(USE_HAL_DRIVER)
+    (void)mask;
     HAL_GPIO_TogglePin(IO_GPIO(io),IO_Pin(io));
 #elif defined(STM32F4)
     if (IO_GPIO(io)->ODR & mask) {

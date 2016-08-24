@@ -69,6 +69,7 @@ void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
 #if defined(STM32F7)
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config)
 {
+    (void)config;
     int chIdx;
     chIdx = IO_GPIOPinIdx(io);
     if(chIdx < 0)
@@ -85,7 +86,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t conf
     HAL_GPIO_Init(IO_GPIO(io), &init);
 
     rec->handler = cb;
-    uint32_t extiLine = IO_EXTI_Line(io);
+    //uint32_t extiLine = IO_EXTI_Line(io);
 
     //EXTI_ClearITPendingBit(extiLine);
 
@@ -164,6 +165,8 @@ void EXTIEnable(IO_t io, bool enable)
     else
         EXTI->IMR &= ~extiLine;
 #elif defined(STM32F7)
+    (void)io;
+    (void)enable;
 #elif defined(STM32F303xC)
     int extiLine = IO_EXTI_Line(io);
     if(extiLine < 0)
@@ -203,7 +206,7 @@ void EXTI_IRQHandler(void)
 
 _EXTI_IRQ_HANDLER(EXTI0_IRQHandler);
 _EXTI_IRQ_HANDLER(EXTI1_IRQHandler);
-#if defined(STM32F1)
+#if defined(STM32F1) || defined(STM32F7)
 _EXTI_IRQ_HANDLER(EXTI2_IRQHandler);
 #elif defined(STM32F3) || defined(STM32F4)
 _EXTI_IRQ_HANDLER(EXTI2_TS_IRQHandler);

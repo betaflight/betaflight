@@ -57,7 +57,7 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 
 static void uartReconfigure(uartPort_t *uartPort)
 {
-    HAL_StatusTypeDef status;
+    HAL_StatusTypeDef status = HAL_ERROR;
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3|
             RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5|RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART8;
@@ -176,7 +176,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
             /* Associate the initialized DMA handle to the UART handle */
             __HAL_LINKDMA(&s->Handle, hdmarx, s->rxDMAHandle);
             
-            HAL_UART_Receive_DMA(&s->Handle, (uint32_t)s->port.rxBuffer, s->port.rxBufferSize);
+            HAL_UART_Receive_DMA(&s->Handle, (uint8_t*)s->port.rxBuffer, s->port.rxBufferSize);
 
             s->rxDMAPos = __HAL_DMA_GET_COUNTER(&s->rxDMAHandle);
 
@@ -185,7 +185,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
         {
 //            __HAL_UART_CLEAR_IT(&cfg.uartport->Handle, UART_FLAG_RXNE);
 //            __HAL_UART_ENABLE_IT(&cfg.uartport->Handle, UART_IT_RXNE);
-            HAL_UART_Receive_IT(&s->Handle, (uint32_t)s->port.rxBuffer, s->port.rxBufferSize);
+            HAL_UART_Receive_IT(&s->Handle, (uint8_t*)s->port.rxBuffer, s->port.rxBufferSize);
         }
     }
 
