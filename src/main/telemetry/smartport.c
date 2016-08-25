@@ -469,7 +469,8 @@ void handleSmartPortTelemetry(void)
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
                 }
-                else {
+
+                else if (telemetryConfig->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
                             tmp2 = currentProfile->pidProfile.P8[ROLL];
