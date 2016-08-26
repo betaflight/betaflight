@@ -199,7 +199,11 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
+#if defined(SKIP_PID_FLOAT)
+    pidProfile->pidController = PID_CONTROLLER_LEGACY;
+#else
     pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
+#endif
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
@@ -243,8 +247,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 75;
-    pidProfile->dtermSetpointWeight = 120;
+    pidProfile->ptermSetpointWeight = 80;
+    pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
     pidProfile->toleranceBand = 0;
@@ -450,7 +454,7 @@ void createDefaultConfig(master_t *config)
     memset(config, 0, sizeof(master_t));
 
     intFeatureClearAll(config);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES, config);
+    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , config);
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, config);
 #endif

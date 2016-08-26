@@ -487,6 +487,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "RC_INTERPOLATION",
     "VELOCITY",
     "DFILTER",
+    "ANGLERATE",
 };
 
 #ifdef OSD
@@ -801,9 +802,9 @@ const clivalue_t valueTable[] = {
     { "rc_yaw_expo",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawExpo8, .config.minmax = { 0,  100 } },
     { "thr_mid",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrMid8, .config.minmax = { 0,  100 } },
     { "thr_expo",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].thrExpo8, .config.minmax = { 0,  100 } },
-    { "roll_rate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "pitch_rate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
-    { "yaw_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
+    { "roll_srate",                 VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_ROLL], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "pitch_srate",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_PITCH], .config.minmax = { 0,  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX } },
+    { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.rxConfig.airModeActivateThreshold, .config.minmax = {1000, 2000 } },
@@ -853,7 +854,7 @@ const clivalue_t valueTable[] = {
     { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
     { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
     { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {30, 100 } },
-    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 200 } },
+    { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 255 } },
     { "yaw_rate_accel_limit",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0, 1000 } },
     { "rate_accel_limit",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0, 1000 } },
 
@@ -862,7 +863,9 @@ const clivalue_t valueTable[] = {
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
 
+#ifndef SKIP_PID_FLOAT
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
+#endif
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 } },

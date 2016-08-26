@@ -75,10 +75,6 @@ bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
 }
 
-bool isSuperExpoActive(void) {
-    return (feature(FEATURE_SUPEREXPO_RATES));
-}
-
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);

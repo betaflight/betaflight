@@ -104,11 +104,11 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN_PWM   PB8
-#define SONAR_ECHO_PIN_PWM      PB9
+//#define SONAR
+//#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR_ECHO_PIN          PB1
+//#define SONAR_TRIGGER_PIN_PWM   PB8
+//#define SONAR_ECHO_PIN_PWM      PB9
 
 //#define DISPLAY
 
