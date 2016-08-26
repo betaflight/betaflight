@@ -128,28 +128,28 @@ Origins for this fork (Thanks!):
 * **Dominic Clifton** (for Cleanflight), and
 * **Sambas** (for the original STM32F4 port).
 
-The Baseflight  Configurator is forked from Cleanflight Configurator and its origins. 
+The Betaflight Configurator is forked from Cleanflight Configurator and its origins. 
 
 Origins for Betaflight Configurator:
 * **Dominic Clifton** (for Cleanflight configurator), and
 * **ctn** (for the original Configurator). 
 
 Big thanks to current and past contributors:
-Budden, Martin (martinbudden)
-Bardwell, Joshua (joshuabardwell)
-Blackman, Jason (blckmn)
-ctzsnooze
-Höglund, Anders (andershoglund) 
-Ledvin, Peter (ledvinap) **IO code awesomeness!**
-kc10kevin
-Keeble, Gary (MadmanK)
-Keller, Michael (mikeller)
-Kravcov, Albert (skaman82)
-MJ666
-Nathan (nathantsoi)
-ravnav
-sambas
-savaga
-Stålheim, Anton (KiteAnton)
+* Budden, Martin (martinbudden)
+* Bardwell, Joshua (joshuabardwell)
+* Blackman, Jason (blckmn)
+* ctzsnooze
+* Höglund, Anders (andershoglund) 
+* Ledvin, Peter (ledvinap) **IO code awesomeness!**
+* kc10kevin
+* Keeble, Gary (MadmanK)
+* Keller, Michael (mikeller) **Configurator brilliance**
+* Kravcov, Albert (skaman82) **Configurator brilliance**
+* MJ666
+* Nathan (nathantsoi)
+* ravnav
+* sambas **bringing us the F4**
+* savaga
+* Stålheim, Anton (KiteAnton)
 
 And many many others who haven't been mentioned....
