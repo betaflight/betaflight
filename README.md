@@ -140,15 +140,15 @@ Big thanks to current and past contributors:
 * Blackman, Jason (blckmn)
 * ctzsnooze
 * Höglund, Anders (andershoglund) 
-* Ledvin, Peter (ledvinap) **IO code awesomeness!**
+* Ledvin, Peter (ledvinap) - **IO code awesomeness!**
 * kc10kevin
 * Keeble, Gary (MadmanK)
-* Keller, Michael (mikeller) **Configurator brilliance**
-* Kravcov, Albert (skaman82) **Configurator brilliance**
+* Keller, Michael (mikeller) - **Configurator brilliance**
+* Kravcov, Albert (skaman82) - **Configurator brilliance**
 * MJ666
 * Nathan (nathantsoi)
 * ravnav
-* sambas **bringing us the F4**
+* sambas - **bringing us the F4**
 * savaga
 * Stålheim, Anton (KiteAnton)
 
