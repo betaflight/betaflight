@@ -129,4 +129,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = 1000000 / 10,          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
 };

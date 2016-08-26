@@ -608,6 +608,9 @@ int main(void)
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
 #endif
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
 
     while (true) {
         scheduler();
