@@ -65,7 +65,6 @@ const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
     "SDA", "SCK","MOSI","MISO","CS","BATTERY","RSSI","EXT","CURRENT"
 };
 
-
 ioRec_t* IO_Rec(IO_t io)
 {
     return io;
