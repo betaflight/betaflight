@@ -125,6 +125,25 @@ void initFilters(const pidProfile_t *pidProfile)
     }
 }
 
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = lrintf(PTerm + ITerm);
+
+            DTerm = 0.0f; // needed for blackbox
+        } else {
+            if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
+
+            axisPID[axis] = PTerm + ITerm;
+
+            if (motorCount >= 4) {
+                int16_t yaw_jump_prevention_limit = constrain(YAW_JUMP_PREVENTION_LIMIT_HIGH - (pidProfile->D8[axis] << 3), YAW_JUMP_PREVENTION_LIMIT_LOW, YAW_JUMP_PREVENTION_LIMIT_HIGH);
+
+                // prevent "yaw jump" during yaw correction
+                axisPID[YAW] = constrain(axisPID[YAW], -yaw_jump_prevention_limit - ABS(rcCommand[YAW]), yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+            }
+
+            DTerm = 0; // needed for blackbox
 void pidSetController(pidControllerType_e type)
 {
     switch (type) {

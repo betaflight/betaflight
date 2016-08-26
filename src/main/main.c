@@ -604,7 +604,6 @@ void init(void)
 
     setTargetPidLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
 
-
 #ifdef BLACKBOX
     initBlackbox();
 #endif

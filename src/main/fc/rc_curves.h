@@ -21,6 +21,5 @@ struct controlRateConfig_s;
 struct escAndServoConfig_s;
 void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct escAndServoConfig_s *escAndServoConfig);
 
-int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate);
 int16_t rcLookupThrottle(int32_t tmp);
 

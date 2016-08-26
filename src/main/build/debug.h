@@ -56,5 +56,6 @@ typedef enum {
     DEBUG_RC_INTERPOLATION,
     DEBUG_VELOCITY,
     DEBUG_DTERM_FILTER,
+    DEBUG_ANGLERATE,
     DEBUG_COUNT
 } debugType_e;
