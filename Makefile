@@ -816,10 +816,17 @@ VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 # Things that might need changing to use different tools
 #
 
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
 # Tool names
-CC		 = arm-none-eabi-gcc
-OBJCOPY		 = arm-none-eabi-objcopy
-SIZE		 = arm-none-eabi-size
+CC          := $(CCACHE) arm-none-eabi-gcc
+OBJCOPY     := arm-none-eabi-objcopy
+SIZE        := arm-none-eabi-size
 
 #
 # Tool options.
