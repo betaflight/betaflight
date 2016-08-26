@@ -813,12 +813,10 @@ uint8_t setPidUpdateCountDown(void) {
 // Function for loop trigger
 void taskMainPidLoopCheck(void)
 {
-    static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
-    cycleTime = micros() - previousTime;
-    previousTime = micros();
+    cycleTime = getTaskDeltaTime(TASK_SELF);
 
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = cycleTime;

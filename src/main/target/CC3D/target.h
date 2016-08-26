@@ -118,6 +118,7 @@
 #undef SONAR
 #undef USE_SOFTSERIAL1
 #undef LED_STRIP
+#define SKIP_PID_FLOAT
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

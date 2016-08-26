@@ -106,8 +106,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -599,8 +597,7 @@ void init(void)
         masterConfig.gyro_sync_denom = 1;
     }
 
-    setTargetPidLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
-
+    setTargetPidLooptime(gyro.targetLooptime * masterConfig.pid_process_denom); // Initialize pid looptime
 
 #ifdef BLACKBOX
     initBlackbox();
@@ -677,7 +674,7 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime + LOOPTIME_SUSPEND_TIME); // Add a littlebit of extra time to reduce busy wait
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime); // Add a littlebit of extra time to reduce busy wait
     setTaskEnabled(TASK_GYROPID, true);
 
     if (sensors(SENSOR_ACC)) {
