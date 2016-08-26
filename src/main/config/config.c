@@ -454,7 +454,7 @@ void createDefaultConfig(master_t *config)
     memset(config, 0, sizeof(master_t));
 
     intFeatureClearAll(config);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE | FEATURE_SUPEREXPO_RATES, config);
+    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , config);
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, config);
 #endif

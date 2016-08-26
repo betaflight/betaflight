@@ -254,7 +254,6 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 bool isAirmodeActive(void);
-bool isSuperExpoActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
