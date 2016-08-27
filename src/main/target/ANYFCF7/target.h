@@ -123,10 +123,10 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 8 // 27MHz
 
-//#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
-#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1
+#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream1
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF1_5
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
-#define SDCARD_DMA_CHANNEL                  DMA_Channel_4
+#define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_4)
@@ -134,7 +134,7 @@
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
-//#define USE_ADC
+#define USE_ADC
 #define VBAT_ADC_PIN                PC0
 #define CURRENT_METER_ADC_PIN       PC1
 #define RSSI_ADC_GPIO_PIN           PC2

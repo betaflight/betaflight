@@ -92,3 +92,7 @@ uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 
+#if defined(USE_HAL_DRIVER)
+SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
+DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
+#endif

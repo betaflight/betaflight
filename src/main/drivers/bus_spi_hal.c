@@ -23,8 +23,10 @@
 #include "build_config.h"
 
 #include "bus_spi.h"
+#include "dma.h"
 #include "io.h"
 #include "io_impl.h"
+#include "nvic.h"
 #include "rcc.h"
 
 #ifndef SPI1_SCK_PIN
@@ -81,6 +83,10 @@ typedef struct{
 }spiHandle_t;
 static spiHandle_t spiHandle[SPIDEV_MAX+1];
 
+typedef struct{
+    DMA_HandleTypeDef Handle;
+}dmaHandle_t;
+static dmaHandle_t dmaHandle[SPIDEV_MAX+1];
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
@@ -97,6 +103,16 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
         return SPIDEV_4;
 
     return SPIINVALID;
+}
+
+SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance)
+{
+    return &spiHandle[spiDeviceByInstance(instance)].Handle;
+}
+
+DMA_HandleTypeDef* dmaHandleByInstance(SPI_TypeDef *instance)
+{
+    return &dmaHandle[spiDeviceByInstance(instance)].Handle;
 }
 
 void SPI1_IRQHandler(void)
@@ -341,4 +357,72 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
     SPIDevice device = spiDeviceByInstance(instance);
     if (device != SPIINVALID)
         spiHardwareMap[device].errorCount = 0;
+}
+
+void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
+{
+    DMA_HandleTypeDef * hdma = &dmaHandle[(descriptor->userParam)].Handle;
+
+    HAL_DMA_IRQHandler(hdma);
+
+    //SCB_InvalidateDCache_by_Addr();
+
+    /*if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
+        {
+            DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+        }
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
+    {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
+    }*/
+}
+
+
+DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size)
+{
+    SPI_HandleTypeDef* hspi = &spiHandle[spiDeviceByInstance(Instance)].Handle;
+    DMA_HandleTypeDef* hdma = &dmaHandle[spiDeviceByInstance(Instance)].Handle;
+
+    hdma->Instance = Stream;
+    hdma->Init.Channel = Channel;
+    hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma->Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma->Init.MemInc = DMA_MINC_ENABLE;
+    hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma->Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma->Init.Mode = DMA_NORMAL;
+    hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    hdma->Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+    hdma->Init.PeriphBurst = DMA_PBURST_SINGLE;
+    hdma->Init.MemBurst = DMA_MBURST_SINGLE;
+    hdma->Init.Priority = DMA_PRIORITY_LOW;
+
+
+    HAL_DMA_DeInit(hdma);
+    HAL_DMA_Init(hdma);
+
+    __HAL_DMA_ENABLE(hdma);
+    __HAL_SPI_ENABLE(hspi);
+    /* Associate the initialized DMA handle to the spi handle */
+    __HAL_LINKDMA(hspi, hdmatx, (*hdma));
+
+    // DMA TX Interrupt
+    dmaSetHandler(DMA2_ST1_HANDLER, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)spiDeviceByInstance(Instance));
+
+   // SCB_CleanDCache_by_Addr((uint32_t) pData, Size);
+
+    HAL_SPI_Transmit_DMA(hspi, pData, Size);
+
+    //HAL_DMA_Start(&hdma, (uint32_t) pData, (uint32_t) &(Instance->DR), Size);
+
+    return hdma;
 }
