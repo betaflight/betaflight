@@ -21,8 +21,8 @@ targets=("PUBLISHMETA=True" \
     "TARGET=DOGE" \
     "TARGET=SINGULARITY" \
     "TARGET=SIRINFPV" \
-    "TARGET=X_RACERSPI")
-
+    "TARGET=X_RACERSPI" \
+    "TARGET=RCEXPLORERF3")
 
 
 #fake a travis build environment
