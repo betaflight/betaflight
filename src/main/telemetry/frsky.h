@@ -36,7 +36,7 @@ typedef struct frskyTelemetryConfig_s {
 PG_DECLARE(frskyTelemetryConfig_t, frskyTelemetryConfig);
 
 void handleFrSkyTelemetry(uint16_t deadband3d_throttle);
-void checkFrSkyTelemetryState(void);
+bool checkFrSkyTelemetryState(void);
 
 void initFrSkyTelemetry(void);
 void configureFrSkyTelemetryPort(void);

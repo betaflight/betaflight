@@ -487,18 +487,20 @@ static inline bool shouldCheckForHoTTRequest()
     return true;
 }
 
-void checkHoTTTelemetryState(void)
+bool checkHoTTTelemetryState(void)
 {
     bool newTelemetryEnabledValue = telemetryDetermineEnabledState(hottPortSharing);
 
     if (newTelemetryEnabledValue == hottTelemetryEnabled) {
-        return;
+        return false;
     }
 
     if (newTelemetryEnabledValue)
         configureHoTTTelemetryPort();
     else
         freeHoTTTelemetryPort();
+
+    return true;
 }
 
 void handleHoTTTelemetry(void)
