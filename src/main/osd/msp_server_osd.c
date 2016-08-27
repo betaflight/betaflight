@@ -57,6 +57,7 @@
 #include "osd/osd_element.h"
 #include "osd/osd.h"
 #include "osd/osd_serial.h"
+#include "osd/osd_screen.h"
 #include "osd/msp_server_osd.h"
 
 #define MAX_VOLTAGE_METERS 4 // FIXME move this
@@ -234,7 +235,47 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_OSD_VIDEO_STATUS:
             sbufWriteU8(dst, osdState.videoMode);
             sbufWriteU8(dst, osdState.cameraConnected);
+            sbufWriteU8(dst, osdTextScreen.width);
+            sbufWriteU8(dst, osdTextScreen.height);
             break;
+
+        case MSP_OSD_ELEMENT_SUMMARY: {
+            for (int i = 0; i < osdSupportedElementIdsCount; i++) {
+                sbufWriteU16(dst, osdSupportedElementIds[i]);
+            }
+            break;
+        }
+
+        case MSP_OSD_LAYOUT_CONFIG:
+            sbufWriteU8(dst, MAX_OSD_ELEMENT_COUNT);
+            for (int i = 0; i < MAX_OSD_ELEMENT_COUNT; i++) {
+                element_t *element = &osdElementConfig()->elements[i];
+
+                // use 16bit to allow for current and future element IDs
+                sbufWriteU16(dst, element->id);
+
+                // use 16bit to allow for current future flags
+                sbufWriteU16(dst, element->flags);
+
+                sbufWriteU8(dst, element->x);
+                sbufWriteU8(dst, element->y);
+            }
+            break;
+
+        case MSP_SET_OSD_LAYOUT_CONFIG: {
+            uint8_t elementIndex = sbufReadU8(src);
+            if (elementIndex >= MAX_OSD_ELEMENT_COUNT) {
+                return -1;
+            }
+
+            element_t *element = &osdElementConfig()->elements[elementIndex];
+
+            element->id = sbufReadU16(src);
+            element->flags = sbufReadU16(src);
+            element->x = sbufReadU8(src);
+            element->y = sbufReadU8(src);;
+            break;
+        }
 
         case MSP_RESET_CONF:
             resetEEPROM();

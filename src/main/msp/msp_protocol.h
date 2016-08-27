@@ -219,7 +219,9 @@
 #define MSP_OSD_VIDEO_CONFIG            180
 #define MSP_SET_OSD_VIDEO_CONFIG        181
 #define MSP_OSD_VIDEO_STATUS            182
-
+#define MSP_OSD_ELEMENT_SUMMARY         183
+#define MSP_OSD_LAYOUT_CONFIG           184
+#define MSP_SET_OSD_LAYOUT_CONFIG       185
 //
 // Multwii original MSP commands
 //

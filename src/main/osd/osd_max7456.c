@@ -148,7 +148,7 @@ void osdHardwareUpdate(void)
 {
     max7456_updateStatus();
 
-    osdState.videoMode = max7456State.detectedVideoMode;
+    osdState.videoMode = max7456State.configuredVideoMode;
     osdState.cameraConnected = !max7456State.los;
 
     max7456_writeScreen(&osdTextScreen, textScreenBuffer);

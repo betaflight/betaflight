@@ -15,24 +15,36 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// 0 - 65535 / 16 bits.
 enum osdElementIds_e {
+    // durations
     OSD_ELEMENT_ON_DURATION = 1,
     OSD_ELEMENT_ARMED_DURATION = 2,
+
+    // current
     OSD_ELEMENT_MAH_DRAWN = 3,
     OSD_ELEMENT_AMPERAGE = 4,
+
+    // voltages
     OSD_ELEMENT_VOLTAGE_5V = 6,
     OSD_ELEMENT_VOLTAGE_12V = 7,
     OSD_ELEMENT_VOLTAGE_BATTERY = 8,
     OSD_ELEMENT_VOLTAGE_BATTERY_FC = 9,
+
+    // flight modes
     OSD_ELEMENT_FLIGHT_MODE = 10,
     OSD_ELEMENT_INDICATOR_MAG = 11,
     OSD_ELEMENT_INDICATOR_BARO = 12,
+
+    // rx
     OSD_ELEMENT_RSSI_FC = 13,
 };
 
+// 16 bits.
 enum osdElementFlags_e {
     EF_ENABLED = (1 << 0),
-    EF_FLASH_ON_DISCONNECT = (1 << 1)
+    EF_POSITIONABLE = (1 << 1),
+    EF_FLASH_ON_DISCONNECT = (1 << 2),
 };
 
 typedef struct element_s {

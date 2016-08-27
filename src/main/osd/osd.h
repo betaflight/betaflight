@@ -15,6 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+extern const uint16_t osdSupportedElementIds[];
+extern const uint8_t osdSupportedElementIdsCount;
+
 typedef struct osdFontConfig_s {
     uint16_t fontVersion;
 } osdFontConfig_t;

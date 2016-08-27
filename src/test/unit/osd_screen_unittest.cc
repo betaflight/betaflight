@@ -252,7 +252,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = " 5V:  5.1V";
+    char expectedAscii[] = "5V:  5.1V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
@@ -291,7 +291,7 @@ TEST_F(OsdScreenTest, TestOsdElement_VoltagBattery_FC)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = " FC: 16.8V";
+    char expectedAscii[] = "FC: 16.8V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));

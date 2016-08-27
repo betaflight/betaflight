@@ -92,7 +92,7 @@ intptr_t osdElementData_voltageBattery(void)
 intptr_t osdElementData_voltageBatteryFC(void)
 {
     voltageAndName = (voltageAndName_t){
-        .name = " FC",
+        .name = "FC",
         .voltage = fcStatus.vbat
     };
     return (intptr_t) &voltageAndName;

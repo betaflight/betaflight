@@ -65,7 +65,7 @@ void osdElementRender_voltage(const element_t *element, elementDataProviderFn da
 {
     voltageAndName_t *voltageAndName= (voltageAndName_t *) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "%3s:%3d.%dV", voltageAndName->name, voltageAndName->voltage / 10, voltageAndName->voltage % 10);
+    tfp_sprintf(elementAsciiBuffer, "%s:%3d.%dV", voltageAndName->name, voltageAndName->voltage / 10, voltageAndName->voltage % 10);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
 
