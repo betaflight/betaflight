@@ -35,6 +35,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/streambuf.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -223,4 +224,16 @@ void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
     osdSetRawCharacterAtPosition(13 + x, osdTextScreen.height - 4 + y, c);
 }
 
+void osdSetFontCharacter(uint8_t address, sbuf_t *src)
+{
+    if (sbufBytesRemaining(src) != MAX7456_CHARACTER_BUFFER_SIZE) {
+        return;
+    }
+
+    uint8_t characterBitmap[MAX7456_CHARACTER_BUFFER_SIZE];
+    for (int i = 0; i < MAX7456_CHARACTER_BUFFER_SIZE; i++) {
+        characterBitmap[i] = sbufReadU8(src);
+    }
+    max7456_setFontCharacter(address, characterBitmap);
+}
 

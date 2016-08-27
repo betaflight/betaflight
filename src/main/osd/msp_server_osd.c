@@ -277,6 +277,18 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
 
+        case MSP_SET_OSD_VIDEO_CONFIG:
+            osdVideoConfig()->videoMode = sbufReadU8(src);
+            mspPostProcessFn = mspApplyVideoConfigurationFn;
+            break;
+
+        case MSP_OSD_CHAR_WRITE: {
+            uint8_t address = sbufReadU8(src);
+
+            osdSetFontCharacter(address, src);
+            break;
+        }
+
         case MSP_RESET_CONF:
             resetEEPROM();
             readEEPROM();
@@ -332,11 +344,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_REBOOT:
             mspPostProcessFn = mspRebootFn;
-            break;
-
-        case MSP_SET_OSD_VIDEO_CONFIG:
-            osdVideoConfig()->videoMode = sbufReadU8(src);
-            mspPostProcessFn = mspApplyVideoConfigurationFn;
             break;
 
         default:

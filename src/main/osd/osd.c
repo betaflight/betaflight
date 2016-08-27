@@ -39,6 +39,7 @@
 
 #include "common/maths.h"
 #include "common/utils.h"
+#include "common/streambuf.h"
 
 #include "drivers/system.h"
 #include "drivers/video.h"

@@ -19,6 +19,8 @@
 #define MAX7456_SPI_CLOCK_DIVIDER SPI_9MHZ_CLOCK_DIVIDER // rated for 10mhz but using 9mhz due to available prescalers.
 #endif
 
+#define MAX7456_CHARACTER_BUFFER_SIZE 54
+
 #define MAX7456_COLUMN_COUNT 30
 
 #define MAX7456_PAL_ROW_COUNT 16
@@ -72,6 +74,8 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c);
 void max7456_setCharacterAtCursor(uint8_t c);
 
 void max7456_fillScreen(void);
+
+void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap);
 
 //
 // Text Screen API

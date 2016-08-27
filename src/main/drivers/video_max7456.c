@@ -378,8 +378,7 @@ void max7456_init(videoMode_e desiredVideoMode)
     max7456_write(MAX7456_REG_OSDBL, blackLevelValue);
 }
 
-#define MAX7456_CHARACTER_BUFFER_SIZE 54
-static void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
+void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
 {
     // cannot update font NVM with OSD enabled.
     max7456_disableOSD();
