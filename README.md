@@ -116,7 +116,7 @@ https://travis-ci.org/betaflight/betaflight
 https://github.com/betaflight/betaflight/releases
 
 
-## Open Source Notice
+## Open Source / Contributors
 
 Betaflight is software that is **open source** and is available free of charge without warranty to all users.
 
