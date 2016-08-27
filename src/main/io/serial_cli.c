@@ -1552,34 +1552,34 @@ static void cliMotorMix(char *cmdline)
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = strchr(ptr, ' ');
             if (ptr) {
-            	// although fastA2F skips leading spaces, it does not increment pointer accordingly, so while loop below is required
-            	while (*ptr == ' ') {
-            		++ptr;
-            	}
+                // although fastA2F skips leading spaces, it does not increment pointer accordingly, so while loop below is required
+                while (*ptr == ' ') {
+                    ++ptr;
+                }
                 masterConfig.customMotorMixer[i].throttle = fastA2F(ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-            	while (*ptr == ' ') {
-            		++ptr;
-            	}
+                while (*ptr == ' ') {
+                    ++ptr;
+                }
                 masterConfig.customMotorMixer[i].roll = fastA2F(ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-            	while (*ptr == ' ') {
-            		++ptr;
-            	}
+                while (*ptr == ' ') {
+                    ++ptr;
+                }
                 masterConfig.customMotorMixer[i].pitch = fastA2F(ptr);
                 check++;
             }
             ptr = strchr(ptr, ' ');
             if (ptr) {
-            	while (*ptr == ' ') {
-            		++ptr;
-            	}
+                while (*ptr == ' ') {
+                    ++ptr;
+                }
                 masterConfig.customMotorMixer[i].yaw = fastA2F(ptr);
                 check++;
             }
