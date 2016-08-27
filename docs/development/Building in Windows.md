@@ -94,6 +94,9 @@ Navigate to the local cleanflight repository and use the following steps to pull
 cd /cygdrive/c/dev/cleanflight
 git reset --hard
 git pull
-make clean TARGET=NAZE
+make clean TARGET=NAZE -j16 -l
 make
 ```
+
+You may want to remove -j16 -l if your having a hard time narrowing down errors.  It does multithreaded make, however it makes it harder to know which warning or error comes from which file.
+
