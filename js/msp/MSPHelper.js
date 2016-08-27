@@ -140,6 +140,11 @@ MspHelper.prototype.process_data = function(dataHandler) {
             } else {
                 RC_tuning.RC_YAW_EXPO = 0;
             }
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                RC_tuning.rcExpoPower = data.readU8();
+            } else {
+                RC_tuning.rcExpoPower = 3;
+            }
             break;
         case MSPCodes.MSP_PID:
             // PID data arrived, we need to scale it and save to appropriate bank / array
@@ -953,6 +958,9 @@ MspHelper.prototype.crunch = function(code) {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.9.1")) {
                     buffer.push8(Math.round(RC_tuning.rcYawRate * 100));
                 }
+            }
+            if (semver.gte(CONFIG.apiVersion, "1.20.0")) {
+                buffer.push8(RC_tuning.rcExpoPower);
             }
             break;
         case MSPCodes.MSP_SET_RX_MAP:
