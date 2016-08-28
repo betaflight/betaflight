@@ -40,6 +40,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
+#include "accgyro_spi_icm20689.h"
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
 
@@ -139,6 +140,16 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6500ReadRegister;
         mpuConfiguration.write = mpu6500WriteRegister;
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20689
+    if (icm20689SpiDetect()) {
+        mpuDetectionResult.sensor = ICM_20689_SPI;
+        mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        mpuConfiguration.read = icm20689ReadRegister;
+        mpuConfiguration.write = icm20689WriteRegister;
         return true;
     }
 #endif
