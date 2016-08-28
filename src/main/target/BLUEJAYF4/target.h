@@ -17,10 +17,14 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "BJF4"
+#define TARGET_CONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING     "BlueJayF4"
+
+#define USE_HARDWARE_REVISION_DETECTION
+#define HW_PIN                  PB2
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_EXTI
@@ -29,24 +33,31 @@
 #define LED1                    PB5
 #define LED2                    PB4
 
-#define BEEPER                  PB7
+#define BEEPER                  PC1
+#define BEEPER_OPT              PB7
 #define BEEPER_INVERTED
 
 #define INVERTER                PB15
 #define INVERTER_USART          USART6
 
+// MPU6500 interrupt
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define MPU_INT_EXTI PC5
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
+#define ACC_MPU6500_ALIGN       CW0_DEG
 
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
+#define GYRO_MPU6500_ALIGN      CW0_DEG
 
 //#define MAG
 //#define USE_MAG_AK8963
@@ -76,20 +87,11 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-//#define M25P16_CS_PIN           PB3
-//#define M25P16_SPI_INSTANCE     SPI3
+#define M25P16_CS_PIN           PB7
+#define M25P16_SPI_INSTANCE     SPI3
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
-
-#define USABLE_TIMER_CHANNEL_COUNT 7
-
-// MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-//#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-#define MPU_INT_EXTI PC5
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN PA8
@@ -159,10 +161,14 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define SPEKTRUM_BIND
+#define BIND_PIN                PB11
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
+#define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

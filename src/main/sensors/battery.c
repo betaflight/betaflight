@@ -52,7 +52,7 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 
 static batteryState_e batteryState;
 
-uint16_t batteryAdcToVoltage(uint16_t src)
+static uint16_t batteryAdcToVoltage(uint16_t src)
 {
     // calculate battery voltage based on ADC reading
     // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 0xFFF = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
@@ -127,14 +127,14 @@ void updateBattery(void)
             if (vbat <= (batteryCriticalVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_CRITICAL;
                 beeper(BEEPER_BAT_CRIT_LOW);
-            } else if (vbat > (batteryWarningVoltage + batteryConfig->vbathysteresis)){
+            } else if (vbat > batteryWarningVoltage) {
                 batteryState = BATTERY_OK;
             } else {
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if (vbat > (batteryCriticalVoltage + batteryConfig->vbathysteresis)){
+            if (vbat > batteryCriticalVoltage) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             } else {

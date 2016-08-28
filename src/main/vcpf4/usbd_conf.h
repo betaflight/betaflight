@@ -53,8 +53,8 @@
  #define CDC_CMD_PACKET_SZE             8    /* Control Endpoint Packet size */
 
  #define CDC_IN_FRAME_INTERVAL          15    /* Number of frames between IN transfers */
- #define APP_RX_DATA_SIZE               2048 /* Total size of IN buffer:
-                                                APP_RX_DATA_SIZE*8/MAX_BAUDARATE*1000 should be > CDC_IN_FRAME_INTERVAL */
+ #define APP_RX_DATA_SIZE               1024  /* Total size of IN buffer: 
+                                                 APP_RX_DATA_SIZE*8/MAX_BAUDARATE*1000 should be > CDC_IN_FRAME_INTERVAL */
 #endif /* USE_USB_OTG_HS */
 
 #define APP_FOPS                        VCP_fops

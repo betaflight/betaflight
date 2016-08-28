@@ -104,13 +104,13 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN_PWM   PB8
-#define SONAR_ECHO_PIN_PWM      PB9
+//#define SONAR
+//#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR_ECHO_PIN          PB1
+//#define SONAR_TRIGGER_PIN_PWM   PB8
+//#define SONAR_ECHO_PIN_PWM      PB9
 
-#define DISPLAY
+//#define DISPLAY
 
 #define USE_UART1
 #define USE_UART2
@@ -143,7 +143,6 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-
 #define LED_STRIP
 #define WS2811_TIMER                    TIM3
 #define WS2811_PIN                      PA6
@@ -157,26 +156,6 @@
 #define BIND_PIN                PA3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#ifdef ALIENFLIGHTF1
-// alternative defaults for AlienFlight F1 target
-#undef TARGET_BOARD_IDENTIFIER
-#define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
-#define TARGET_CONFIG
-
-#undef BOARD_HAS_VOLTAGE_DIVIDER
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define BRUSHED_MOTORS
-#define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART2
-
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
-#define BINDPLUG_PIN            PB5
-#endif // ALIENFLIGHTF1
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff

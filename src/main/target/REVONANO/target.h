@@ -92,6 +92,10 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PIN                PA3
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

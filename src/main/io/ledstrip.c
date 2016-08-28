@@ -238,85 +238,6 @@ static const specialColorIndexes_t defaultSpecialColors[] = {
 
 static int scaledThrottle;
 
-
-
-
-/*
-#ifdef USE_LED_RING_DEFAULT_CONFIG
-const ledConfig_t defaultLedStripConfig[] = {
-    { CALCULATE_LED_XY( 2,  2), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 2,  1), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 2,  0), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  0), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 0,  0), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 0,  1), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 0,  2), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  2), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 1,  1), 3, LED_FUNCTION_THRUST_RING},
-};
-#elif defined(USE_COLIBTI_RACE_LED_DEFAULT_CONFIG)
-const ledConfig_t defaultLedStripConfig[] = {
-	{ CALCULATE_LED_XY( 0,  0), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 0,  1), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 0,  8), 6, LED_DIRECTION_WEST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 7,  15), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 8,  15), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 7,  14), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 8,  14), 6, LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  8), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  1), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-	{ CALCULATE_LED_XY( 15,  0), 6, LED_DIRECTION_EAST | LED_FUNCTION_WARNING | LED_FUNCTION_COLOR },
-};
-#else
-const ledConfig_t defaultLedStripConfig[] = {
-    { CALCULATE_LED_XY(15, 15), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_EAST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-
-    { CALCULATE_LED_XY(15,  8), 0, LED_DIRECTION_EAST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY(15,  7), 0, LED_DIRECTION_EAST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-
-    { CALCULATE_LED_XY(15,  0), 0, LED_DIRECTION_NORTH | LED_DIRECTION_EAST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-
-    { CALCULATE_LED_XY( 8,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE },
-    { CALCULATE_LED_XY( 7,  0), 0, LED_DIRECTION_NORTH | LED_FUNCTION_FLIGHT_MODE },
-
-    { CALCULATE_LED_XY( 0,  0), 0, LED_DIRECTION_NORTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-
-    { CALCULATE_LED_XY( 0,  7), 0, LED_DIRECTION_WEST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY( 0,  8), 0, LED_DIRECTION_WEST | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-
-    { CALCULATE_LED_XY( 0, 15), 0, LED_DIRECTION_SOUTH | LED_DIRECTION_WEST | LED_FUNCTION_INDICATOR | LED_FUNCTION_ARM_STATE },
-
-    { CALCULATE_LED_XY( 7, 15), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY( 8, 15), 0, LED_DIRECTION_SOUTH | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-
-    { CALCULATE_LED_XY( 7,  7), 0, LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY( 8,  7), 0, LED_DIRECTION_UP | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY( 7,  8), 0, LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-    { CALCULATE_LED_XY( 8,  8), 0, LED_DIRECTION_DOWN | LED_FUNCTION_FLIGHT_MODE | LED_FUNCTION_WARNING },
-
-    { CALCULATE_LED_XY( 8,  9), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 9, 10), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY(10, 11), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY(10, 12), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 9, 13), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 8, 14), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 7, 14), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 6, 13), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 5, 12), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 5, 11), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 6, 10), 3, LED_FUNCTION_THRUST_RING},
-    { CALCULATE_LED_XY( 7,  9), 3, LED_FUNCTION_THRUST_RING},
-
-};
-#endif
-*/
-
-
-
-
 static void updateLedRingCounts(void);
 
 STATIC_UNIT_TESTED void determineLedStripDimensions(void)
@@ -336,10 +257,10 @@ STATIC_UNIT_TESTED void determineLedStripDimensions(void)
 
 STATIC_UNIT_TESTED void determineOrientationLimits(void)
 {
-    highestYValueForNorth = (ledGridHeight / 2) - 1;
-    lowestYValueForSouth = ((ledGridHeight + 1) / 2);
-    highestXValueForWest = (ledGridWidth / 2) - 1;
-    lowestXValueForEast = ((ledGridWidth + 1) / 2);
+    highestYValueForNorth = MIN((ledGridHeight / 2) - 1, 0);
+    lowestYValueForSouth = (ledGridHeight + 1) / 2;
+    highestXValueForWest = MIN((ledGridWidth / 2) - 1, 0);
+    lowestXValueForEast = (ledGridWidth + 1) / 2;
 }
 
 STATIC_UNIT_TESTED void updateLedCount(void)
@@ -473,12 +394,10 @@ bool parseLedStripConfig(int ledIndex, const char *config)
     return true;
 }
 
-void generateLedConfig(int ledIndex, char *ledConfigBuffer, size_t bufferSize)
+void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize)
 {
     char directions[LED_DIRECTION_COUNT + 1];
     char baseFunctionOverlays[LED_OVERLAY_COUNT + 2];
-
-    ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
 
     memset(ledConfigBuffer, 0, bufferSize);
 
@@ -614,7 +533,11 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        color = *getDirectionalModeColor(ledIndex, &masterConfig.modeColors[flightModeToLed[i].ledMode]);
+                        hsvColor_t *directionalColor = getDirectionalModeColor(ledIndex, &masterConfig.modeColors[flightModeToLed[i].ledMode]);
+                        if (directionalColor) {
+                            color = *directionalColor;
+                        }
+
                         break; // stop on first match
                     }
                 break;
@@ -1223,9 +1146,6 @@ void pgResetFn_specialColors(specialColorIndexes_t *instance)
 void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-    memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-
-    reevaluateLedConfig();
 }
 
 void applyDefaultColors(hsvColor_t *colors)

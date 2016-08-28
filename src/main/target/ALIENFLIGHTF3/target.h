@@ -72,6 +72,7 @@
 #define USE_UART2 // Receiver - RX (PA3)
 #define USE_UART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT       4
+#define AVOID_UART2_FOR_PWM_PPM
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
@@ -119,6 +120,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART3
+#define RX_CHANNELS_TAER
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -25,7 +25,6 @@ typedef struct master_t {
 
     uint8_t mixerMode;
     uint32_t enabledFeatures;
-    uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
@@ -58,9 +57,10 @@ typedef struct master_t {
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
     uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
+    uint8_t gyro_soft_type;                 // Gyro Filter Type
     uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
     uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
-    uint8_t gyro_soft_notch_q;              // Biquad gyro notch quality
+    uint16_t gyro_soft_notch_cutoff;        // Biquad gyro notch low cutoff
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -158,6 +158,7 @@ typedef struct master_t {
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
     uint8_t blackbox_device;
+    uint8_t blackbox_on_motor_test;
 #endif
 
     uint32_t beeper_off_flags;
@@ -173,3 +174,5 @@ typedef struct master_t {
 extern master_t masterConfig;
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
+
+void createDefaultConfig(master_t *config);

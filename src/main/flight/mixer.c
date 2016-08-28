@@ -802,11 +802,13 @@ void mixTable(void *pidProfilePtr)
         if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
-            throttlePrevious = throttle = rcCommand[THROTTLE];
+            throttlePrevious = rcCommand[THROTTLE];
+            throttle = rcCommand[THROTTLE] + flight3DConfig->deadband3d_throttle;
         } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
             throttleMax = escAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
-            throttlePrevious = throttle = rcCommand[THROTTLE];
+            throttlePrevious = rcCommand[THROTTLE];
+            throttle = rcCommand[THROTTLE] - flight3DConfig->deadband3d_throttle;
         } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
             throttle = throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = escAndServoConfig->minthrottle;
@@ -835,33 +837,10 @@ void mixTable(void *pidProfilePtr)
         throttleMax = throttleMax - (rollPitchYawMixRange / 2);
     }
 
-    // Keep track for motor update timing // Only for Betaflight pid controller to keep legacy pidc basic and free from additional float math
-    float motorDtms;
-    if (pidProfile->accelerationLimitPercent && pidProfile->pidController == PID_CONTROLLER_BETAFLIGHT) {
-        static uint32_t previousMotorTime;
-        uint32_t currentMotorTime = micros();
-        motorDtms = (float) (currentMotorTime - previousMotorTime) / 1000.0f;
-        previousMotorTime = currentMotorTime;
-    }
-
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
-
-        // Accel limit. Prevent PID controller to output huge ramps to the motors. Only limiting acceleration. Only for Betaflight pid controller to keep legacy pidc basic
-        if (pidProfile->accelerationLimitPercent && pidProfile->pidController == PID_CONTROLLER_BETAFLIGHT) {
-            static int16_t lastFilteredMotor[MAX_SUPPORTED_MOTORS];
-
-            // acceleration limit
-            float delta    = motor[i] - lastFilteredMotor[i];
-            const float maxDeltaPerMs = throttleRange * ((float)pidProfile->accelerationLimitPercent / 100.0f);
-            float maxDelta = maxDeltaPerMs * motorDtms;
-            if (delta > maxDelta) { // accelerating too hard
-                motor[i] = lastFilteredMotor[i] + maxDelta;
-            }
-            lastFilteredMotor[i] = motor[i];
-        }
 
         if (isFailsafeActive) {
             motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);

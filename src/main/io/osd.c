@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "platform.h"
 #include "version.h"
@@ -753,6 +754,28 @@ void updateOsd(void)
             sprintf(line+1, "%d.%1d", vbat / 10, vbat % 10);
             max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
         }
+
+        if (masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW] != -1) {
+            line[0] = SYM_AMP;
+            sprintf(line+1, "%d.%02d", amperage / 100, amperage % 100);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] != -1) {
+            line[0] = SYM_MAH;
+            sprintf(line+1, "%d", mAhDrawn);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME] != -1) {
+            for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
+                line[i] = toupper((unsigned char)masterConfig.name[i]);
+                if (masterConfig.name[i] == 0)
+                    break;
+            }
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]);
+        }
+
         if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
             line[0] = SYM_RSSI;
             sprintf(line+1, "%d", rssi / 10);
@@ -808,21 +831,22 @@ void osdInit(void)
     max7456_draw_screen();
 }
 
-void resetOsdConfig(void)
+void resetOsdConfig(osd_profile *osdProfile)
 {
-    featureSet(FEATURE_OSD);
-    masterConfig.osdProfile.video_system = AUTO;
-    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
-    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]         = -59;
-    masterConfig.osdProfile.item_pos[OSD_TIMER]              = -39;
-    masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]       = -9;
-    masterConfig.osdProfile.item_pos[OSD_CPU_LOAD]           = 26;
-    masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]        = 1;
-    masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]    = -80;
-    masterConfig.osdProfile.item_pos[OSD_ARMED]              = -107;
-    masterConfig.osdProfile.item_pos[OSD_DISARMED]           = -109;
-    masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] = -1;
-    masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]   = -1;
+    osdProfile->video_system = AUTO;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
+    osdProfile->item_pos[OSD_RSSI_VALUE]         = -59;
+    osdProfile->item_pos[OSD_TIMER]              = -39;
+    osdProfile->item_pos[OSD_THROTTLE_POS]       = -9;
+    osdProfile->item_pos[OSD_CPU_LOAD]           = 26;
+    osdProfile->item_pos[OSD_VTX_CHANNEL]        = 1;
+    osdProfile->item_pos[OSD_VOLTAGE_WARNING]    = -80;
+    osdProfile->item_pos[OSD_ARMED]              = -107;
+    osdProfile->item_pos[OSD_DISARMED]           = -109;
+    osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = -1;
+    osdProfile->item_pos[OSD_HORIZON_SIDEBARS]   = -1;
+    osdProfile->item_pos[OSD_CURRENT_DRAW]       = -23;
+    osdProfile->item_pos[OSD_MAH_DRAWN]          = -18;
+    osdProfile->item_pos[OSD_CRAFT_NAME]         = 1;
 }
-
 #endif

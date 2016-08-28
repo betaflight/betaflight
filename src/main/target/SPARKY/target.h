@@ -56,6 +56,7 @@
 #define USE_UART2 // Input - RX (PA3)
 #define USE_UART3 // Servo out - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT       4
+#define AVOID_UART2_FOR_PWM_PPM
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
@@ -70,6 +71,9 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
+
+#define I2C2_SCL                PA9
+#define I2C2_SDA                PA10
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2

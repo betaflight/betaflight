@@ -121,7 +121,8 @@ typedef struct rxConfig_s {
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
-    uint8_t rcSmoothInterval;
+    uint8_t rcInterpolation;
+    uint8_t rcInterpolationInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
     uint8_t max_aux_channel;
     uint16_t airModeActivateThreshold;      // Throttle setpoint where airmode gets activated
@@ -142,10 +143,11 @@ typedef struct rxRuntimeConfig_s {
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
 
-void useRxConfig(rxConfig_t *rxConfigToUse);
-
 typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
 
+struct modeActivationCondition_s;
+void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
+void useRxConfig(rxConfig_t *rxConfigToUse);
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);

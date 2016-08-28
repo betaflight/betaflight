@@ -76,9 +76,9 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(void) {
-    masterConfig.escAndServoConfig.minthrottle = 1025;
-    masterConfig.escAndServoConfig.maxthrottle = 1980;
-    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
-    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+void targetConfiguration(master_t *config) {
+    config->escAndServoConfig.minthrottle = 1025;
+    config->escAndServoConfig.maxthrottle = 1980;
+    config->batteryConfig.vbatmaxcellvoltage = 45;
+    config->batteryConfig.vbatmincellvoltage = 30;
 }

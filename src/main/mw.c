@@ -123,7 +123,8 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float angleRate[3], angleRateSmooth[3];
+float setpointRate[3];
+float rcInput[3];
 
 extern pidControllerFuncPtr pid_controller;
 
@@ -172,22 +173,44 @@ bool isCalibrating()
     return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
-float calculateRate(int axis, int16_t rc) {
-    float angleRate;
+#define RC_RATE_INCREMENTAL 14.54f
 
-    if (isSuperExpoActive()) {
-        float rcFactor = (axis == YAW) ? (ABS(rc) / (500.0f * (currentControlRateProfile->rcYawRate8 / 100.0f))) : (ABS(rc) / (500.0f * (currentControlRateProfile->rcRate8 / 100.0f)));
-        rcFactor = 1.0f / (constrainf(1.0f - (rcFactor * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+float calculateSetpointRate(int axis, int16_t rc) {
+    float angleRate, rcRate, rcSuperfactor, rcCommandf;
+    uint8_t rcExpo;
 
-        angleRate = rcFactor * ((27 * rc) / 16.0f);
+    if (axis != YAW) {
+        rcExpo = currentControlRateProfile->rcExpo8;
+        rcRate = currentControlRateProfile->rcRate8 / 100.0f;
     } else {
-        angleRate = (float)((currentControlRateProfile->rates[axis] + 27) * rc) / 16.0f;
+        rcExpo = currentControlRateProfile->rcYawExpo8;
+        rcRate = currentControlRateProfile->rcYawRate8 / 100.0f;
+    }
+
+    if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
+    rcCommandf = rc / 500.0f;
+    rcInput[axis] = ABS(rcCommandf);
+
+    if (rcExpo) {
+        float expof = rcExpo / 100.0f;
+        rcCommandf = rcCommandf * (expof * (rcInput[axis] * rcInput[axis] * rcInput[axis]) + rcInput[axis]*(1-expof));
+    }
+
+    angleRate = 200.0f * rcRate * rcCommandf;
+
+    if (currentControlRateProfile->rates[axis]) {
+        rcSuperfactor = 1.0f / (constrainf(1.0f - (rcInput[axis] * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        angleRate *= rcSuperfactor;
+    }
+
+    if (debugMode == DEBUG_ANGLERATE) {
+        debug[axis] = angleRate;
     }
 
     if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-	    return  constrainf(angleRate, -8190.0f, 8190.0f); // Rate limit protection
+	    return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
     else
-        return  constrainf(angleRate / 4.1f, -1997.0f, 1997.0f); // Rate limit protection (deg/sec)
+        return  constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -202,10 +225,10 @@ void scaleRcCommandToFpvCamAngle(void) {
         sinFactor = sin_approx(masterConfig.rxConfig.fpvCamAngleDegrees * RAD);
     }
 
-    int16_t roll = angleRate[ROLL];
-    int16_t yaw = angleRate[YAW];
-    angleRate[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
-    angleRate[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
+    int16_t roll = rcCommand[ROLL];
+    int16_t yaw = rcCommand[YAW];
+    rcCommand[ROLL] = constrain(roll * cosFactor -  yaw * sinFactor, -500, 500);
+    rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
 void processRcCommand(void)
@@ -214,44 +237,61 @@ void processRcCommand(void)
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     uint16_t rxRefreshRate;
-    int axis;
+    bool readyToCalculateRate = false;
 
-    // Set RC refresh rate for sampling and channels to filter
-    if (masterConfig.rxConfig.rcSmoothInterval) {
-        rxRefreshRate = 1000 * masterConfig.rxConfig.rcSmoothInterval;
+    if (masterConfig.rxConfig.rcInterpolation || flightModeFlags) {
+        if (isRXDataNew) {
+            // Set RC refresh rate for sampling and channels to filter
+            switch (masterConfig.rxConfig.rcInterpolation) {
+                case(RC_SMOOTHING_AUTO):
+                    rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
+                    break;
+                case(RC_SMOOTHING_MANUAL):
+                    rxRefreshRate = 1000 * masterConfig.rxConfig.rcInterpolationInterval;
+                    break;
+                case(RC_SMOOTHING_OFF):
+                case(RC_SMOOTHING_DEFAULT):
+                default:
+                    initRxRefreshRate(&rxRefreshRate);
+            }
+
+            rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
+
+            if (debugMode == DEBUG_RC_INTERPOLATION) {
+                for (int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
+                debug[3] = rxRefreshRate;
+            }
+
+            for (int channel=0; channel < 4; channel++) {
+                deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
+                lastCommand[channel] = rcCommand[channel];
+            }
+
+            factor = rcInterpolationFactor - 1;
+        } else {
+            factor--;
+        }
+
+        // Interpolate steps of rcCommand
+        if (factor > 0) {
+            for (int channel=0; channel < 4; channel++) rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+        } else {
+            factor = 0;
+        }
+
+        readyToCalculateRate = true;
     } else {
-        initRxRefreshRate(&rxRefreshRate);
+        factor = 0; // reset factor in case of level modes flip flopping
     }
 
-    rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
-
-    if (isRXDataNew) {
-        for (axis = 0; axis < 3; axis++) angleRate[axis] = calculateRate(axis, rcCommand[axis]);
-
+    if (readyToCalculateRate || isRXDataNew) {
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE)) {
+        if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
-        }
 
-        for (int channel=0; channel < 4; channel++) {
-            deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
-            lastCommand[channel] = rcCommand[channel];
-        }
+        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
-        factor = rcInterpolationFactor - 1;
-    } else {
-        factor--;
-    }
-
-    // Interpolate steps of rcCommand
-    if (factor > 0) {
-        for (int channel=0; channel < 4; channel++) {
-            rcCommandSmooth[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-        }
-        for (axis = 0; axis < 2; axis++) angleRateSmooth[axis] = calculateRate(axis, rcCommandSmooth[axis]);
-    } else {
-        factor = 0;
     }
 }
 
@@ -280,14 +320,14 @@ static void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcExpo8, currentControlRateProfile->rcRate8);
+            rcCommand[axis] = tmp;
         } else if (axis == YAW) {
             if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
                 tmp -= masterConfig.rcControlsConfig.yaw_deadband;
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = rcLookup(tmp, currentControlRateProfile->rcYawExpo8, currentControlRateProfile->rcYawRate8) * -masterConfig.yaw_control_direction;;
+            rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
         }
         if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
@@ -451,7 +491,7 @@ void handleInflightCalibrationStickPosition(void)
     }
 }
 
-void updateInflightCalibrationState(void)
+static void updateInflightCalibrationState(void)
 {
     if (AccInflightCalibrationArmed && ARMING_FLAG(ARMED) && rcData[THROTTLE] > masterConfig.rxConfig.mincheck && !IS_RC_MODE_ACTIVE(BOXARM)) {   // Copter is airborne and you are turning it off via boxarm : start measurement
         InflightcalibratingA = 50;
@@ -518,7 +558,7 @@ void processRx(void)
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
-        if (currentProfile->pidProfile.zeroThrottleStabilisation)
+        if (currentProfile->pidProfile.pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
         else
             pidStabilisationState(PID_STABILISATION_OFF);
@@ -688,8 +728,6 @@ void subTaskMainSubprocesses(void) {
 
     const uint32_t startTime = micros();
 
-    processRcCommand();
-
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.temperature) {
         gyro.temperature(&telemTemperature1);
@@ -728,13 +766,15 @@ void subTaskMainSubprocesses(void) {
                     && masterConfig.mixerMode != MIXER_FLYING_WING
     #endif
         ) {
-            rcCommand[YAW] = rcCommandSmooth[YAW] = 0;
-            angleRate[YAW] = angleRateSmooth[YAW] = 0;
+            rcCommand[YAW] = 0;
+            setpointRate[YAW] = 0;
         }
 
         if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
         }
+
+        processRcCommand();
 
     #ifdef GPS
         if (sensors(SENSOR_GPS)) {
@@ -795,43 +835,30 @@ uint8_t setPidUpdateCountDown(void) {
 // Function for loop trigger
 void taskMainPidLoopCheck(void)
 {
-    static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
+    static uint8_t pidUpdateCountdown;
 
-    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-
-    cycleTime = micros() - previousTime;
-    previousTime = micros();
+    cycleTime = getTaskDeltaTime(TASK_SELF);
 
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;
     }
 
-    const uint32_t startTime = micros();
-    while (true) {
-        if (gyroSyncCheckUpdate(&gyro) || ((currentDeltaTime + (micros() - previousTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-            static uint8_t pidUpdateCountdown;
+    if (runTaskMainSubprocesses) {
+        subTaskMainSubprocesses();
+        runTaskMainSubprocesses = false;
+    }
 
-            if (debugMode == DEBUG_PIDLOOP) {debug[0] = micros() - startTime;} // time spent busy waiting
-            if (runTaskMainSubprocesses) {
-                subTaskMainSubprocesses();
-                runTaskMainSubprocesses = false;
-            }
+    gyroUpdate();
 
-            gyroUpdate();
-
-            if (pidUpdateCountdown) {
-                pidUpdateCountdown--;
-            } else {
-                pidUpdateCountdown = setPidUpdateCountDown();
-                subTaskPidController();
-                subTaskMotorUpdate();
-                runTaskMainSubprocesses = true;
-            }
-
-            break;
-        }
+    if (pidUpdateCountdown) {
+        pidUpdateCountdown--;
+    } else {
+        pidUpdateCountdown = setPidUpdateCountDown();
+        subTaskPidController();
+        subTaskMotorUpdate();
+        runTaskMainSubprocesses = true;
     }
 }
 
@@ -856,16 +883,17 @@ void taskUpdateBeeper(void)
 
 void taskUpdateBattery(void)
 {
+#ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    static uint32_t ibatLastServiced = 0;
-
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
         }
     }
+#endif
 
+    static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER)) {
         int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 

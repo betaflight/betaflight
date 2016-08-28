@@ -28,7 +28,7 @@
 #define BEEPER_INVERTED
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC4
+#define MPU_INT_EXTI            PA3
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -123,8 +123,8 @@
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-#define I2C1_SCL_PIN            PB8
-#define I2C1_SDA_PIN            PB9
+#define I2C1_SCL                PB8
+#define I2C1_SDA                PB9
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
