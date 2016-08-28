@@ -44,7 +44,6 @@
 
 .global  g_pfnVectors
 .global  Default_Handler
-.global	 irq_stack
 
 /* start address for the initialization values of the .data section. 
 defined in linker script */
@@ -68,7 +67,7 @@ defined in linker script */
  * @retval : None
 */
 
-    .section  .text.Reset_Handler
+  .section  .text.Reset_Handler
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:  
@@ -146,22 +145,18 @@ Infinite_Loop:
   .size  Default_Handler, .-Default_Handler
 /******************************************************************************
 *
-* The minimal vector table for a Cortex M3. Note that the proper constructs
+* The minimal vector table for a Cortex M4. Note that the proper constructs
 * must be placed on this to ensure that it ends up at physical address
 * 0x0000.0000.
 * 
 *******************************************************************************/
-  .section  .irqstack,"aw",%progbits
-  irq_stack:
-  .space  1024
-
   .section  .isr_vector,"a",%progbits
   .type  g_pfnVectors, %object
   .size  g_pfnVectors, .-g_pfnVectors
     
 
 g_pfnVectors:
-  .word  irq_stack+1024
+  .word  _estack
   .word  Reset_Handler
   .word  NMI_Handler
   .word  HardFault_Handler
