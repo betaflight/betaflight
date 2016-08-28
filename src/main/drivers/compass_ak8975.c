@@ -112,12 +112,15 @@ void ak8975Init()
 
 bool ak8975Read(int16_t *magData)
 {
-    bool ack;
-    UNUSED(ack);
     uint8_t status;
     uint8_t buf[6];
 
-    ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
+    // set magData to zero for case of failed read
+    magData[X] = 0;
+    magData[Y] = 0;
+    magData[Z] = 0;
+
+    bool ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
     if (!ack || (status & BIT_STATUS1_REG_DATA_READY) == 0) {
         return false;
     }
@@ -134,15 +137,7 @@ bool ak8975Read(int16_t *magData)
 #endif
 
     ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
-    if (!ack) {
-        return false;
-    }
-
-    if (status & BIT_STATUS2_REG_DATA_ERROR) {
-        return false;
-    }
-
-    if (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW) {
+    if (!ack || (status & BIT_STATUS2_REG_DATA_ERROR) || (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW)) {
         return false;
     }
 

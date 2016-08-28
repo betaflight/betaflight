@@ -258,6 +258,11 @@ bool ak8963Read(int16_t *magData)
     bool ack = false;
     uint8_t buf[7];
 
+    // set magData to zero for case of failed read
+    magData[X] = 0;
+    magData[Y] = 0;
+    magData[Z] = 0;
+
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
 
     // we currently need a different approach for the MPU9250 connected via SPI.

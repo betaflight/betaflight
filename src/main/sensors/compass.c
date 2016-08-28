@@ -73,15 +73,21 @@ void updateCompass(flightDynamicsTrims_t *magZero)
 {
     static uint32_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];
-    uint32_t axis;
 
-    mag.read(magADCRaw);
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    if (!mag.read(magADCRaw)) {
+        magADC[X] = 0;
+        magADC[Y] = 0;
+        magADC[Z] = 0;
+        return;
+    }
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    }
 
     if (STATE(CALIBRATE_MAG)) {
         calStartedAt = currentTime;
 
-        for (axis = 0; axis < 3; axis++) {
+        for (int axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magPrev[axis] = 0;
         }
@@ -103,7 +109,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
             float diffMag = 0;
             float avgMag = 0;
 
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 diffMag += (magADC[axis] - magPrev[axis]) * (magADC[axis] - magPrev[axis]);
                 avgMag += (magADC[axis] + magPrev[axis]) * (magADC[axis] + magPrev[axis]) / 4.0f;
             }
@@ -112,7 +118,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
             if ((avgMag > 0.01f) && ((diffMag / avgMag) > (0.14f * 0.14f))) {
                 sensorCalibrationPushSampleForOffsetCalculation(&calState, magADC);
 
-                for (axis = 0; axis < 3; axis++) {
+                for (int axis = 0; axis < 3; axis++) {
                     magPrev[axis] = magADC[axis];
                 }
             }
@@ -120,7 +126,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
             float magZerof[3];
             sensorCalibrationSolveForOffset(&calState, magZerof);
 
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 magZero->raw[axis] = lrintf(magZerof[axis]);
             }
 
