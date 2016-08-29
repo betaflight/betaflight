@@ -69,21 +69,6 @@ void dmaInit(void)
     // TODO: Do we need this?
 }
 
-#ifdef STM32F4
-dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream)
-{
-    dmaHandlerIdentifier_e i;
-
-    for (i = 0; i < (sizeof(dmaDescriptors) / sizeof(dmaDescriptors[0])); i++) {
-        if (stream == dmaDescriptors[i].stream) {
-            return i;
-        }
-    }
-
-    // Shouldn't get here
-    return 0;
-}
-#else
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel)
 {
     dmaHandlerIdentifier_e i;
@@ -97,7 +82,6 @@ dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel)
     // Shouldn't get here
     return 0;
 }
-#endif
 
 void dmaEnableClock(dmaHandlerIdentifier_e identifier)
 {
