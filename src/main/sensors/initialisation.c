@@ -180,8 +180,9 @@ bool fakeBaroDetect(baro_t *baro)
 #endif
 
 #ifdef USE_FAKE_MAG
-static void fakeMagInit(void)
+static bool fakeMagInit(void)
 {
+    return true;
 }
 
 static bool fakeMagRead(int16_t *magData)
