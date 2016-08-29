@@ -82,6 +82,7 @@
 
 extern baro_t baro;
 extern mag_t mag;
+extern sensor_align_e gyroAlign;
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
@@ -702,12 +703,15 @@ static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentC
 }
 
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
-        uint8_t gyroLpf,
         uint8_t accHardwareToUse,
         uint8_t magHardwareToUse,
         uint8_t baroHardwareToUse,
-        int16_t magDeclinationFromConfig) {
-
+        int16_t magDeclinationFromConfig,
+        uint32_t looptime,
+        uint8_t gyroLpf,
+        uint8_t gyroSync,
+        uint8_t gyroSyncDenominator)
+{
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -719,11 +723,15 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     if (!detectGyro()) {
         return false;
     }
-    gyro.init(gyroLpf);
+    // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
+    gyro.targetLooptime = gyroSetSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);    // Set gyro sample rate before initialisation
+    gyro.init(gyroLpf); // driver initialisation
+    gyroInit(); // sensor initialisation
 
     if (detectAcc(accHardwareToUse)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc);
+        accInit(gyro.targetLooptime); // acc and gyro updated at same frequency in taskMainPidLoop in mw.c
     }
 
 #ifdef BARO
@@ -746,12 +754,11 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     UNUSED(magDeclinationFromConfig);
 #endif
 
-    reconfigureAlignment(sensorAlignmentConfig);
-
 #ifdef SONAR
     const rangefinderType_e rangefinderType = detectRangefinder();
     rangefinderInit(rangefinderType);
 #endif
+    reconfigureAlignment(sensorAlignmentConfig);
 
     return true;
 }

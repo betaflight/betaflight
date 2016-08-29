@@ -422,15 +422,15 @@ void init(void)
     }
 #endif
 
-    // Set gyro sampling rate divider before initialization
-    gyroSetSampleRate(masterConfig.looptime, masterConfig.gyro_lpf, masterConfig.gyroSync, masterConfig.gyroSyncDenominator);
-
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            masterConfig.gyro_lpf,
             masterConfig.acc_hardware,
             masterConfig.mag_hardware,
             masterConfig.baro_hardware,
-            currentProfile->mag_declination)) {
+            currentProfile->mag_declination,
+            masterConfig.looptime,
+            masterConfig.gyro_lpf,
+            masterConfig.gyroSync,
+            masterConfig.gyroSyncDenominator)) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -585,7 +585,7 @@ int main(void)
     /* Setup scheduler */
     schedulerInit();
 
-    rescheduleTask(TASK_GYROPID, targetLooptime);
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
     setTaskEnabled(TASK_SERIAL, true);

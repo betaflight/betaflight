@@ -37,9 +37,11 @@ extern acc_t acc;
 
 extern int32_t accADC[XYZ_AXIS_COUNT];
 
+void accInit(uint32_t accTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(void);
-void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse);
-void setAccelerationGain(flightDynamicsTrims_t * accGainToUse);
-void setAccelerationFilter(int8_t initialAccLpfCutHz);
+union flightDynamicsTrims_u;
+void setAccelerationZero(union flightDynamicsTrims_u * accZeroToUse);
+void setAccelerationGain(union flightDynamicsTrims_u * accGainToUse);
+void setAccelerationFilter(uint8_t initialAccLpfCutHz);

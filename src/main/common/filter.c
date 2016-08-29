@@ -29,22 +29,16 @@
 #define BIQUAD_Q    (1.0f / 1.41421356f)     /* quality factor - butterworth (1 / sqrt(2)) */
 #define M_PI_FLOAT  3.14159265358979323846f
 
-/* sets up a biquad Filter */
-void biquadFilterInit(biquadFilter_t *newState, uint8_t filterCutFreq, int16_t samplingRate)
+void biquadFilterInit(biquadFilter_t *filter, uint32_t filterCutFreq, uint32_t refreshRate)
 {
-    float omega, sn, cs, alpha;
+    // setup variables
+    const float sampleRate = 1.0f / ((float)refreshRate * 0.000001f);
+    const float omega = 2 * M_PIf * ((float)filterCutFreq) / sampleRate;
+    const float sn = sin_approx(omega);
+    const float cs = cos_approx(omega);
+    const float alpha = sn / (2 * BIQUAD_Q);
+
     float a0, a1, a2, b0, b1, b2;
-
-    /* If sampling rate == 0 - use main loop target rate */
-    if (!samplingRate) {
-        samplingRate = 1000000 / targetLooptime;
-    }
-
-    /* setup variables */
-    omega = 2 * M_PIf * (float)filterCutFreq / (float)samplingRate;
-    sn = sin_approx(omega);
-    cs = cos_approx(omega);
-    alpha = sn / (2 * BIQUAD_Q);
 
     b0 = (1 - cs) / 2;
     b1 = 1 - cs;
@@ -53,26 +47,23 @@ void biquadFilterInit(biquadFilter_t *newState, uint8_t filterCutFreq, int16_t s
     a1 = -2 * cs;
     a2 = 1 - alpha;
 
-    /* precompute the coefficients */
-    newState->b0 = b0 / a0;
-    newState->b1 = b1 / a0;
-    newState->b2 = b2 / a0;
-    newState->a1 = a1 / a0;
-    newState->a2 = a2 / a0;
+    // precompute the coefficients
+    filter->b0 = b0 / a0;
+    filter->b1 = b1 / a0;
+    filter->b2 = b2 / a0;
+    filter->a1 = a1 / a0;
+    filter->a2 = a2 / a0;
 
-    /* zero initial samples */
-    newState->d1 = newState->d2 = 1;
+    // zero initial samples
+    filter->d1 = filter->d2 = 1;
 }
 
 /* Computes a biquad_t filter on a sample */
-float biquadFilterApply(biquadFilter_t *state, float sample)
+float biquadFilterApply(biquadFilter_t *filter, float input)
 {
-    float result;
-
-    result = state->b0 * sample + state->d1;
-    state->d1 = state->b1 * sample - state->a1 * result + state->d2;
-    state->d2 = state->b2 * sample - state->a2 * result;
-
+    const float result = filter->b0 * input + filter->d1;
+    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
+    filter->d2 = filter->b2 * input - filter->a2 * result;
     return result;
 }
 

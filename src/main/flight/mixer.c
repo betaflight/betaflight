@@ -47,6 +47,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
+#include "sensors/gyro.h"
 
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
@@ -922,7 +923,7 @@ void filterServos(void)
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
         if (!servoFilterIsSet) {
             for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                biquadFilterInit(&servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, 0);
+                biquadFilterInit(&servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, gyro.targetLooptime);
             }
 
             servoFilterIsSet = true;

@@ -498,7 +498,7 @@ void filterRc(bool isRXDataNew)
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
-        biquadFilterInit(&filteredCycleTimeState, 1, 0);
+        biquadFilterInit(&filteredCycleTimeState, 1, gyro.targetLooptime);
         filterInitialised = true;
     }
 
@@ -641,7 +641,7 @@ void taskMainPidLoopChecker(void) {
 
     if (masterConfig.gyroSync) {
         while (1) {
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
                 break;
             }
         }

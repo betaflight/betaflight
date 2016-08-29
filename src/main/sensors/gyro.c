@@ -41,20 +41,27 @@ sensor_align_e gyroAlign = 0;
 
 int32_t gyroADC[XYZ_AXIS_COUNT];
 
-static gyroConfig_t *gyroConfig;
+static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
+static const gyroConfig_t *gyroConfig;
 
 static uint16_t calibratingG = 0;
-static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-static int32_t gyroZero[FLIGHT_DYNAMICS_INDEX_COUNT] = { 0, 0, 0 };
 
-static int8_t gyroLpfCutHz = 0;
-static biquadFilter_t gyroFilterState[XYZ_AXIS_COUNT];
-static bool gyroFilterInitialised = false;
+static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
+static uint8_t gyroSoftLpfHz = 0;
 
-void useGyroConfig(gyroConfig_t *gyroConfigToUse, int8_t initialGyroLpfCutHz)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz)
 {
     gyroConfig = gyroConfigToUse;
-    gyroLpfCutHz = initialGyroLpfCutHz;
+    gyroSoftLpfHz = gyro_soft_lpf_hz;
+}
+
+void gyroInit(void)
+{
+    if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+        for (int axis = 0; axis < 3; axis++) {
+            biquadFilterInit(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+        }
+    }
 }
 
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -125,29 +132,21 @@ static void applyGyroZero(void)
 
 void gyroUpdate(void)
 {
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+
     // range: +/- 8192; +/- 2000 deg/sec
     if (!gyro.read(gyroADCRaw)) {
         return;
     }
 
     // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) gyroADC[axis] = gyroADCRaw[axis];
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        gyroADC[axis] = gyroADCRaw[axis];
+    }
 
-    if (gyroLpfCutHz) {
-        if (!gyroFilterInitialised) {
-            if (targetLooptime) {  /* Initialisation needs to happen once sample rate is known */
-                for (int axis = 0; axis < 3; axis++) {
-                    biquadFilterInit(&gyroFilterState[axis], gyroLpfCutHz, 0);
-                }
-
-                gyroFilterInitialised = true;
-            }
-        }
-
-        if (gyroFilterInitialised) {
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterState[axis], (float) gyroADC[axis]));
-            }
+    if (gyroSoftLpfHz) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]));
         }
     }
 

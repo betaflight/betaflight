@@ -379,9 +379,6 @@ extern uint32_t currentTime;
 //From rx.c:
 extern uint16_t rssi;
 
-//From gyro.c
-extern uint32_t targetLooptime;
-
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 
 static uint32_t blackboxLastArmingBeep = 0;
@@ -1303,7 +1300,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrMid8);

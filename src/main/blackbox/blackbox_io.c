@@ -618,7 +618,7 @@ bool blackboxDeviceOpen(void)
                  *                              = floor((looptime_ns * 3) / 500.0)
                  *                              = (looptime_ns * 3) / 500
                  */
-                blackboxMaxHeaderBytesPerIteration = constrain((targetLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+                blackboxMaxHeaderBytesPerIteration = constrain((gyro.targetLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
 
                 return blackboxPort != NULL;
             }
