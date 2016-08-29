@@ -189,18 +189,13 @@
 #define ADC4_GPIO_PIN         GPIO_Pin_1
 #define ADC4_CHANNEL          ADC_Channel_2
 
-#define ADC5_GPIO             GPIOC
-#define ADC5_GPIO_PIN         GPIO_Pin_3     // connected directly to 3v3.
-#define ADC5_CHANNEL          ADC_Channel_9
-
-#define ADC_CHANNEL_COUNT 6
+#define ADC_CHANNEL_COUNT 5
 
 #define ADC_BATTERY     ADC_CHANNEL0
 #define ADC_CURRENT     ADC_CHANNEL1
 #define ADC_RSSI        ADC_CHANNEL2
 #define ADC_POWER_12V   ADC_CHANNEL3
 #define ADC_POWER_5V    ADC_CHANNEL4
-#define ADC_POWER_3V    ADC_CHANNEL5
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
