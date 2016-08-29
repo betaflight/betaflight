@@ -227,7 +227,7 @@ bool hmc5883lInit(void)
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
     validSamples = 0;
     failedSamples = 0;
-    while (validSamples < 10 && failedSamples < 5) { // Collect 10 samples
+    while (validSamples < 10 && failedSamples < INIT_MAX_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
         if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.

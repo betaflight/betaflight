@@ -80,7 +80,7 @@
 #define GYRO_MPU6500_ALIGN      CW0_DEG
 
 #define ACC
-//#define USE_ACC_ADXL345
+#define USE_ACC_ADXL345
 //#define USE_ACC_BMA280
 //#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
@@ -96,7 +96,7 @@
 #define BARO
 #define USE_BARO_MS5611 // needed for Flip32 board
 #define USE_BARO_BMP085
-//#define USE_BARO_BMP280
+#define USE_BARO_BMP280
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -104,7 +104,7 @@
 //#define USE_MAG_MAG3110
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
-//#define SONAR
+#define SONAR
 //#define USE_SONAR_SRF10
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
@@ -195,7 +195,7 @@
 // USART2, PA3
 #define BIND_PIN                        PA3
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define TARGET_MOTOR_COUNT      6
 #define DISABLE_UNCOMMON_MIXERS
@@ -203,7 +203,6 @@
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-// Disable HOTT and S.Port telemetry
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 

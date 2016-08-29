@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#ifdef USE_MAG_AK8963
+
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -345,3 +347,4 @@ restart:
     return ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE); // start reading again
 #endif
 }
+#endif
