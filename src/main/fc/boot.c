@@ -530,6 +530,23 @@ void init(void)
     adcInit(&adc_params);
 #endif
 
+    // Extra 500ms delay prior to initialising hardware if board is cold-booting, allows GPS time to power-up
+#if defined(GPS) || defined(MAG)
+    if (!isMPUSoftReset()) {
+        LED1_ON;
+        LED0_OFF;
+
+        for (int i = 0; i < 5; i++) {
+            LED1_TOGGLE;
+            LED0_TOGGLE;
+            delay(100);
+        }
+
+        LED0_OFF;
+        LED1_OFF;
+    }
+#endif
+
     initBoardAlignment();
 
 #ifdef DISPLAY

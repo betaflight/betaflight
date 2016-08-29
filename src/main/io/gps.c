@@ -108,6 +108,7 @@ uint32_t GPS_garbageByteCount = 0;
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
+#define GPS_BOOT_DELAY          (2000)
 
 static serialPort_t *gpsPort;
 
@@ -365,6 +366,12 @@ void gpsInitHardware(void)
 
 void gpsThread(void)
 {
+    // Extra delay for at least 2 seconds after booting to give GPS time to initialise
+    if (!isMPUSoftReset() && (millis() < GPS_BOOT_DELAY)) {
+        sensorsClear(SENSOR_GPS);
+        DISABLE_STATE(GPS_FIX);
+        return;
+    }
     // read out available GPS bytes
     if (gpsPort) {
         while (serialRxBytesWaiting(gpsPort))
