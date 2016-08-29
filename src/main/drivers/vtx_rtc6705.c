@@ -85,6 +85,9 @@
 #define DISABLE_RTC6705 GPIO_SetBits(RTC6705_CS_GPIO,   RTC6705_CS_PIN)
 #define ENABLE_RTC6705  GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN)
 
+#define DISABLE_RTC6705_POWER GPIO_SetBits(RTC6705_POWER_GPIO,   RTC6705_POWER_PIN)
+#define ENABLE_RTC6705_POWER  GPIO_ResetBits(RTC6705_POWER_GPIO, RTC6705_POWER_PIN)
+
 #define DP_5G_MASK          0x7000 // b111000000000000
 #define PA5G_BS_MASK        0x0E00 // b000111000000000
 #define PA5G_PW_MASK        0x0180 // b000000110000000
@@ -125,6 +128,19 @@ static uint32_t reverse32(uint32_t in)
  */
 void rtc6705Init(void)
 {
+    gpio_config_t gpio;
+
+#ifdef RTC6705_POWER_PIN
+    RCC_AHBPeriphClockCmd(RTC6705_POWER_PERIPHERAL, ENABLE);
+
+    DISABLE_RTC6705_POWER;
+
+    gpio.pin = RTC6705_POWER_PIN;
+    gpio.speed = Speed_2MHz;
+    gpio.mode = Mode_Out_PP;
+    gpioInit(RTC6705_POWER_GPIO, &gpio);
+#endif
+
     RCC_AHBPeriphClockCmd(RTC6705_CS_PERIPHERAL, ENABLE);
 
     DISABLE_RTC6705;
@@ -132,7 +148,6 @@ void rtc6705Init(void)
     // GPIO bit is enabled so here so the output is not pulled low when the GPIO is set in output mode.
     // Note: It's critical to ensure that incorrect signals are not sent to the VTX.
 
-    gpio_config_t gpio;
     gpio.pin = RTC6705_CS_PIN;
     gpio.speed = Speed_2MHz;
     gpio.mode = Mode_Out_PP;

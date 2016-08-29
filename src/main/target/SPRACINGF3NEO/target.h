@@ -158,6 +158,10 @@
 #define RTC6705_CS_PIN                  GPIO_Pin_4
 #define RTC6705_SPI_INSTANCE            SPI1
 
+#define RTC6705_POWER_PERIPHERAL        RCC_AHBPeriph_GPIOC
+#define RTC6705_POWER_GPIO              GPIOC
+#define RTC6705_POWER_PIN               GPIO_Pin_3
+
 
 #define USE_ADC
 #define DEBUG_ADC_CHANNELS

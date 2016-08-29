@@ -687,7 +687,7 @@ void vtxCycleBand(void)
     rtc6705SetChannel(vtxBand, vtxChannel);
 }
 
-void vtxTogglePower(void)
+void vtxToggleRFPower(void)
 {
     vtxPower = !vtxPower;
     rtc6705SetRFPower(vtxPower);
@@ -926,7 +926,7 @@ void taskPid(void)
     } else if (diff > 1000 && diff <= 5000) {
         vtxCycleBand();
     } else if (diff > 5000) {
-        vtxTogglePower();
+        vtxToggleRFPower();
     }
 
 #endif
