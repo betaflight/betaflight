@@ -36,7 +36,7 @@
 #define INVERTER_USART          USART2
 
 #define USE_EXTI
-#define MAG_INT_EXTI PC14
+#define MAG_INT_EXTI            PC14
 #define USE_MPU_DATA_READY_SIGNAL
 //#define USE_MAG_DATA_READY_SIGNAL
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
@@ -96,7 +96,7 @@
 #define BARO
 #define USE_BARO_MS5611 // needed for Flip32 board
 #define USE_BARO_BMP085
-#define USE_BARO_BMP280
+//#define USE_BARO_BMP280
 
 #define MAG
 #define USE_MAG_HMC5883

@@ -451,10 +451,12 @@ static void updateIMUTopic(void)
 
         posEstimator.imu.accelNEU.V.Z -= calibratedGravityCMSS;
 
+#if defined(NAV_BLACKBOX)
         /* Update blackbox values */
         navAccNEU[X] = posEstimator.imu.accelNEU.A[X];
         navAccNEU[Y] = posEstimator.imu.accelNEU.A[Y];
         navAccNEU[Z] = posEstimator.imu.accelNEU.A[Z];
+#endif
     }
 }
 
