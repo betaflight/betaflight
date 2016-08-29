@@ -20,9 +20,11 @@
 
 #include <math.h>
 
-#include "build/build_config.h"
-
 #include <platform.h>
+
+#ifdef USE_MAG_AK8975
+
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -32,8 +34,6 @@
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
-
-#include "sensors/sensors.h"
 
 #include "sensor.h"
 #include "compass.h"
@@ -79,7 +79,7 @@ bool ak8975Detect(mag_t *mag)
 #define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
 
-void ak8975Init()
+bool ak8975Init()
 {
     bool ack;
     uint8_t buffer[3];
@@ -105,6 +105,7 @@ void ak8975Init()
 
     // Trigger first measurement
     ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01);
+    return true;
 }
 
 #define BIT_STATUS1_REG_DATA_READY              (1 << 0)
@@ -118,6 +119,11 @@ bool ak8975Read(int16_t *magData)
     UNUSED(ack);
     uint8_t status;
     uint8_t buf[6];
+
+    // set magData to zero for case of failed read
+    magData[X] = 0;
+    magData[Y] = 0;
+    magData[Z] = 0;
 
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
     if (!ack || (status & BIT_STATUS1_REG_DATA_READY) == 0) {
@@ -136,15 +142,7 @@ bool ak8975Read(int16_t *magData)
 #endif
 
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
-    if (!ack) {
-        return false;
-    }
-
-    if (status & BIT_STATUS2_REG_DATA_ERROR) {
-        return false;
-    }
-
-    if (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW) {
+    if (!ack || (status & BIT_STATUS2_REG_DATA_ERROR) || (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW)) {
         return false;
     }
 
@@ -156,3 +154,4 @@ bool ak8975Read(int16_t *magData)
     ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01); // start reading again
     return true;
 }
+#endif

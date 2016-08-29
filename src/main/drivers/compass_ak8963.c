@@ -20,9 +20,11 @@
 
 #include <math.h>
 
-#include "build/build_config.h"
-
 #include "platform.h"
+
+#ifdef USE_MAG_AK8963
+
+#include "build/build_config.h"
 
 #include "build/debug.h"
 
@@ -36,9 +38,6 @@
 #include "exti.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
-
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
 
 #include "sensor.h"
 #include "compass.h"
@@ -228,7 +227,7 @@ bool ak8963Detect(mag_t *mag)
     return false;
 }
 
-void ak8963Init()
+bool ak8963Init()
 {
     bool ack;
     UNUSED(ack);
@@ -261,12 +260,18 @@ void ak8963Init()
 #else
     ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
 #endif
+    return true;
 }
 
 bool ak8963Read(int16_t *magData)
 {
     bool ack = false;
     uint8_t buf[7];
+
+    // set magData to zero for case of failed read
+    magData[X] = 0;
+    magData[Y] = 0;
+    magData[Z] = 0;
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
 
@@ -349,3 +354,4 @@ restart:
     return ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE); // start reading again
 #endif
 }
+#endif
