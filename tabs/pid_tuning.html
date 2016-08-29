@@ -45,7 +45,7 @@
                 </div>
             </div>
         </div>
-        <div class="tab_container">
+        <div class="tab_container" style="background-color: #fff;">
             <table>
                 <tr>
                     <td class="pid active">
@@ -57,11 +57,13 @@
                 </tr>
             </table>
         </div>
+        <div class="tabboarder"></div>
+        <div class="tabarea">
         <form name="pid-tuning" id="pid-tuning">
             <div class="subtab-pid">
                 <div class="clear-both"></div>
                 <div class="cf_column twothird">
-                    <div class="gui_box grey topspacer">
+                    <div class="gui_box grey topspacer" style="margin-top: 0px;">
                         <table class="pid_titlebar">
                             <tr>
                                 <th class="name" i18n="pidTuningName"></th>
@@ -206,9 +208,9 @@
                     <div id="pid_accel" class="gui_box grey topspacer pid_tuning">
                         <table class="pid_titlebar">
                             <tr>
-                                <th class="third" i18n="pidTuningName"></th>
-                                <th class="third" i18n="pidTuningStrength"></th>
-                                <th class="third" i18n="pidTuningTransition"></th>
+                                <th class="third" i18n="pidTuningName" style="width: 17%;"></th>
+                                <th class="third" i18n="pidTuningStrength" style="width: 33%;"></th>
+                                <th class="third" i18n="pidTuningTransition" style="width: 33%;"></th>
                             </tr>
                         </table>
                         <table id="pid_level" class="pid_tuning">
@@ -450,7 +452,7 @@
             </div>
             <div class="subtab-filter" style="display: none;">
                 <div class="clear-both"></div>
-                <div class="note topspacer">
+                <div class="note topspacer" style="margin-top: 0px;">
                     <div class="note_spacer">
                         <p i18n="tuningHelp"></p>
                     </div>
@@ -568,6 +570,7 @@
                 </div>
             </div>
         </form>
+        </div>
         <div class="clear-both"></div>
     </div>
     <div class="content_toolbar">

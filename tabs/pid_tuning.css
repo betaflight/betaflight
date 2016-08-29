@@ -242,11 +242,13 @@
     padding: 5px;
     text-align: left;
     border-right: 1px solid #ccc;
-    width: calc(100% - 1px);
+    width: 14%;
+
 }
 
 .tab-pid_tuning .pid_titlebar th:first-child {
     text-align: left;
+    width: 14%;
 }
 
 .tab-pid_tuning .pid_titlebar th:last-child {
@@ -273,11 +275,11 @@
 }
 
 .tab-pid_tuning .compensation td:last-child {
-    width: 40%;
+    width: 80%;
 }
 
 .tab-pid_tuning .compensation td {
-    width: 40%;
+    width: 20%;
 }
 
 .tab-pid_tuning .compensation .slider input {
@@ -306,13 +308,27 @@
 }
 
 .tab-pid_tuning .tab_container {
-    float: top;
-    width: 300px;
-    height: 20px;
+    float: left;
+    width: 396px;
+    height: 29px;
     border-right-width: 0px;
 }
 
 .tab-pid_tuning .tab_container td {
+    background-color: #2e2e2e;
+    padding-left: 8px;
+    border-right: 1px solid white;
+
+}
+
+.tab-pid_tuning .tab_container td:first-child {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.tab-pid_tuning .tab_container td:last-child {
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
     background-color: #2e2e2e;
 }
 
@@ -324,6 +340,9 @@
     background-color: #ffbb00;
     color: #000;
     transition: none;
+    height: 27px;
+    padding-left: 8px;
+
 }
 
 .tab-pid_tuning .tab_container td.active a {
@@ -667,7 +686,7 @@
 }
 
 .tab-pid_tuning .pidTuning td {
-width: 50%;
+width: 40%;
 }
 
 .tab-pid_tuning .new_rates td:first-child {
@@ -700,4 +719,43 @@ width: 50%;
 
 .tab-pid_tuning .new_rates_last-child {
     border-bottom: none;
+}
+
+.tab-pid_tuning .filter {
+    padding-left: 5px;
+}
+
+.tab-pid_tuning .tabboarder {
+    background-color: #ffbb00;
+    float: left;
+    width: 100%;
+    height: 3px;
+    margin-bottom: 10px;
+}
+
+.tab-pid_tuning #pid_level th:first-child {
+    width: 7%;
+}
+
+.tab-pid_tuning #pid_level td:first-child {
+    width: 7%;
+}
+
+.tab-pid_tuning .slider {
+    width: 40% !important;
+}
+
+.tabarea {
+    float: left;
+    width: calc(100% - 22px);
+    padding-left: 10px;
+    position: relative;
+    padding: 10px;
+    border: 1px solid silver;
+    margin-top: -10px;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-top: 0px solid silver;
+
+
 }
