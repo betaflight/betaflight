@@ -73,13 +73,21 @@ bool mag3110detect(mag_t *mag)
     return true;
 }
 
-void mag3110Init()
+bool mag3110Init()
 {
     bool ack = i2cWrite(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG1, 0x01); //  active mode 80 Hz ODR with OSR = 1
     delay(20);
+    if (!ack) {
+        return false;
+    }
 
     ack = i2cWrite(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG2, 0xA0); // AUTO_MRST_EN + RAW
     delay(10);
+    if (!ack) {
+        return false;
+    }
+
+    return true;
 }
 
 #define BIT_STATUS_REG_DATA_READY               (1 << 3)

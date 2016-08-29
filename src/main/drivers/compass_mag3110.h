@@ -18,5 +18,5 @@
 #pragma once
 
 bool mag3110detect(mag_t *mag);
-void mag3110Init(void);
+bool mag3110Init(void);
 bool mag3110Read(int16_t *magData);

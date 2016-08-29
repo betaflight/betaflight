@@ -32,7 +32,7 @@ typedef enum {
 #define MAG_MAX  MAG_FAKE
 
 #ifdef MAG
-void compassInit(void);
+bool compassInit(int16_t magDeclinationFromConfig);
 void updateCompass(flightDynamicsTrims_t *magZero);
 bool isCompassReady(void);
 #endif
@@ -40,4 +40,4 @@ bool isCompassReady(void);
 extern int32_t magADC[XYZ_AXIS_COUNT];
 
 extern sensor_align_e magAlign;
-extern mag_t mag;
+extern float magneticDeclination;

@@ -43,6 +43,7 @@
 #endif
 
 mag_t mag;                   // mag access functions
+float magneticDeclination = 0.0f;       // calculated at startup from config
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
@@ -53,13 +54,19 @@ sensor_align_e magAlign = 0;
 static uint8_t magInit = 0;
 static uint8_t magUpdatedAtLeastOnce = 0;
 
-void compassInit(void)
+bool compassInit(int16_t magDeclinationFromConfig)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    mag.init();
+    const bool ret = mag.init();
     LED1_OFF;
-    magInit = 1;
+    if (ret) {
+        const int deg = magDeclinationFromConfig / 100;
+        const int min = magDeclinationFromConfig % 100;
+        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
+        magInit = 1;
+    }
+    return ret;
 }
 
 bool isCompassReady(void)

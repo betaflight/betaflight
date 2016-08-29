@@ -218,7 +218,7 @@ bool ak8963Detect(mag_t *mag)
     return false;
 }
 
-void ak8963Init()
+bool ak8963Init()
 {
     bool ack;
     UNUSED(ack);
@@ -251,6 +251,7 @@ void ak8963Init()
 #else
     ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
 #endif
+    return true;
 }
 
 bool ak8963Read(int16_t *magData)

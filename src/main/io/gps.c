@@ -430,8 +430,9 @@ void updateGpsIndicator(uint32_t currentTime)
 }
 
 /* Support for built-in magnetometer accessible via the native GPS protocol (i.e. NAZA) */
-void gpsMagInit(void)
+bool gpsMagInit(void)
 {
+    return true;
 }
 
 bool gpsMagRead(int16_t *magData)

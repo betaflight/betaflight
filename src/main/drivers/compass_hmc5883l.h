@@ -24,5 +24,5 @@ typedef struct hmc5883Config_s {
 } hmc5883Config_t;
 
 bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse);
-void hmc5883lInit(void);
+bool hmc5883lInit(void);
 bool hmc5883lRead(int16_t *magData);

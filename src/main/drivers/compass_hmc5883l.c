@@ -183,7 +183,8 @@ bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
     return true;
 }
 
-void hmc5883lInit(void)
+#define INIT_MAX_FAILURES 5
+bool hmc5883lInit(void)
 {
     int16_t magADC[3];
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
@@ -199,7 +200,7 @@ void hmc5883lInit(void)
 
     int validSamples = 0;
     int failedSamples = 0;
-    while (validSamples < 10 && failedSamples < 5) { // Collect 10 samples
+    while (validSamples < 10 && failedSamples < INIT_MAX_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
         if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.
@@ -217,6 +218,9 @@ void hmc5883lInit(void)
             ++failedSamples;
         }
         LED1_TOGGLE;
+    }
+    if (failedSamples >= INIT_MAX_FAILURES) {
+        bret = false;
     }
 
     // Apply the negative bias. (Same gain)
@@ -242,10 +246,20 @@ void hmc5883lInit(void)
         }
         LED1_TOGGLE;
     }
+    if (failedSamples >= INIT_MAX_FAILURES) {
+        bret = false;
+    }
 
-    magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
-    magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
-    magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
+    if (bret) {
+        magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
+        magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
+        magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
+    } else {
+        // Something went wrong so get a best guess
+        magGain[X] = 1.0f;
+        magGain[Y] = 1.0f;
+        magGain[Z] = 1.0f;
+    }
 
     // leave test mode
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
@@ -253,13 +267,8 @@ void hmc5883lInit(void)
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
     delay(100);
 
-    if (!bret) {                // Something went wrong so get a best guess
-        magGain[X] = 1.0f;
-        magGain[Y] = 1.0f;
-        magGain[Z] = 1.0f;
-    }
-
     hmc5883lConfigureDataReadyInterruptHandling();
+    return bret;
 }
 
 bool hmc5883lRead(int16_t *magData)

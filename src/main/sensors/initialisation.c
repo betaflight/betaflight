@@ -66,6 +66,8 @@
 
 #include "config/config.h"
 
+#include "io/gps.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -78,15 +80,8 @@
 #include "hardware_revision.h"
 #endif
 
-#ifdef GPS
-extern bool gpsMagDetect(mag_t *mag);
-#endif
-
-extern float magneticDeclination;
-
-extern gyro_t gyro;
 extern baro_t baro;
-extern acc_t acc;
+extern mag_t mag;
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
@@ -326,7 +321,7 @@ bool detectGyro(void)
     return true;
 }
 
-static void detectAcc(accelerationSensor_e accHardwareToUse)
+static bool detectAcc(accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware;
 
@@ -456,18 +451,17 @@ retry:
 
 
     if (accHardware == ACC_NONE) {
-        return;
+        return false;
     }
 
     detectedSensors[SENSOR_INDEX_ACC] = accHardware;
     sensorsSet(SENSOR_ACC);
+    return true;
 }
 
-static void detectBaro(baroSensor_e baroHardwareToUse)
+#ifdef BARO
+static bool detectBaro(baroSensor_e baroHardwareToUse)
 {
-#ifndef BARO
-    UNUSED(baroHardwareToUse);
-#else
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
@@ -534,15 +528,17 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
     }
 
     if (baroHardware == BARO_NONE) {
-        return;
+        return false;
     }
 
     detectedSensors[SENSOR_INDEX_BARO] = baroHardware;
     sensorsSet(SENSOR_BARO);
-#endif
+    return true;
 }
+#endif // BARO
 
-static void detectMag(magSensor_e magHardwareToUse)
+#ifdef MAG
+static bool detectMag(magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware = MAG_NONE;
 
@@ -655,12 +651,14 @@ static void detectMag(magSensor_e magHardwareToUse)
 
     // If not in autodetect mode and detected the wrong chip - disregard the compass even if detected
     if ((magHardwareToUse != MAG_DEFAULT && magHardware != magHardwareToUse) || (magHardware == MAG_NONE)) {
-        return;
+        return false;
     }
 
     detectedSensors[SENSOR_INDEX_MAG] = magHardware;
     sensorsSet(SENSOR_MAG);
+    return true;
 }
+#endif // MAG
 
 #ifdef SONAR
 /*
@@ -721,30 +719,34 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     if (!detectGyro()) {
         return false;
     }
-    detectAcc(accHardwareToUse);
-    detectBaro(baroHardwareToUse);
+    gyro.init(gyroLpf);
 
-    // Now time to init things, acc first
-    if (sensors(SENSOR_ACC)) {
+    if (detectAcc(accHardwareToUse)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc);
     }
 
-    gyro.init(gyroLpf);
-
-    detectMag(magHardwareToUse);
-
-    reconfigureAlignment(sensorAlignmentConfig);
+#ifdef BARO
+    detectBaro(baroHardwareToUse);
+#else
+    UNUSED(baroHardwareToUse);
+#endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (sensors(SENSOR_MAG)) {
+    magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+#ifdef MAG
+    if (detectMag(magHardwareToUse)) {
         // calculate magnetic declination
-        const int deg = magDeclinationFromConfig / 100;
-        const int min = magDeclinationFromConfig % 100;
-        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
-    } else {
-        magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+        if (!compassInit(magDeclinationFromConfig)) {
+            sensorsClear(SENSOR_MAG);
+        }
     }
+#else
+    UNUSED(magHardwareToUse);
+    UNUSED(magDeclinationFromConfig);
+#endif
+
+    reconfigureAlignment(sensorAlignmentConfig);
 
 #ifdef SONAR
     const rangefinderType_e rangefinderType = detectRangefinder();
