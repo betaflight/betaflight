@@ -53,8 +53,11 @@
 #define USE_ACC_SPI_MPU9250
 #define ACC_MPU9250_ALIGN       CW270_DEG
 
-//#define MAG
-//#define USE_MAG_HMC5883
+#define MAG
+#define USE_MAG_AK8963
+#define USE_MAG_AK8975
+#define USE_MAG_MAG3110
+#define USE_MAG_HMC5883
 
 #define BARO
 #define USE_BARO_MS5611

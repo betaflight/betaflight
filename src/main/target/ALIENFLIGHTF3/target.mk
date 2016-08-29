@@ -1,5 +1,5 @@
 F3_TARGETS  += $(TARGET)
-FEATURES    = VCP
+FEATURES    = VCP HIGHEND
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
@@ -10,7 +10,5 @@ TARGET_SRC = \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
             drivers/compass_mag3110.c \
-            drivers/serial_usb_vcp.c \
-            drivers/sonar_hcsr04.c \
-            drivers/sonar_srf10.c
+            drivers/serial_usb_vcp.c
 

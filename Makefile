@@ -440,6 +440,8 @@ HIGHEND_SRC = \
             blackbox/blackbox_io.c \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
+            drivers/sonar_hcsr04.c \
+            drivers/sonar_srf10.c \
             flight/navigation_rewrite.c \
             flight/navigation_rewrite_multicopter.c \
             flight/navigation_rewrite_fixedwing.c \
