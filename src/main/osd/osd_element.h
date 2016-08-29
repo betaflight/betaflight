@@ -48,8 +48,8 @@ enum osdElementFlags_e {
 };
 
 typedef struct element_s {
-    uint8_t x;
-    uint8_t y;
+    int8_t x;
+    int8_t y;
     uint8_t flags;
     uint8_t id;
 } element_t;

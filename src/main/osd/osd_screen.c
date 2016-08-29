@@ -33,8 +33,8 @@
 textScreen_t osdTextScreen;
 
 typedef struct osdCursor_s {
-    uint8_t x;
-    uint8_t y;
+    osdCoordVal_t x;
+    osdCoordVal_t y;
 } osdCursor_t;
 
 static osdCursor_t cursor = {0, 0};
@@ -47,6 +47,12 @@ static uint16_t osdCalculateBufferOffset(osdCoordVal_t x, osdCoordVal_t y) {
     } else {
         // negative y = bottom aligned
         yy = osdTextScreen.height + y;
+
+        // prevent bottom aligned  PAL screen coordinate from appearing off-screen when NTSC is used
+        // e.g. when PAL rows = 16, and Y = -15 it's OK, but when NTSC with 13 rows is used a negative value is calculated for yy.
+        if (yy < 0) {
+            yy = 0;
+        }
     }
     uint16_t offset = (yy * osdTextScreen.width) + x;
     return offset;
