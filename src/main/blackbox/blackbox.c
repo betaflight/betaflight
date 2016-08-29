@@ -680,6 +680,8 @@ static void writeIntraframe(void)
     blackboxHistory[2] = blackboxHistory[0];
     //And advance the current state over to a blank space ready to be filled
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
+
+    blackboxLoggedAnyFrames = true;
 }
 
 static void blackboxWriteMainStateArrayUsingAveragePredictor(int arrOffsetInHistory, int count)
@@ -831,6 +833,8 @@ static void writeInterframe(void)
     blackboxHistory[2] = blackboxHistory[1];
     blackboxHistory[1] = blackboxHistory[0];
     blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
+
+    blackboxLoggedAnyFrames = true;
 }
 
 /* Write the contents of the global "slowHistory" to the log as an "S" frame. Because this data is logged so

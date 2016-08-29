@@ -65,6 +65,11 @@ static i2cDevice_t i2cHardwareMap[] = {
     { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK }
 };
 
+static bool deviceInitialised[] = {
+    false,
+    false
+};
+
 static bool i2cOverClock;
 
 void i2cSetOverclock(uint8_t overClock)
@@ -90,7 +95,7 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-  
+
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
@@ -116,8 +121,10 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
- 
+
     I2C_Cmd(I2Cx, ENABLE);
+
+    deviceInitialised[device] = true;
 }
 
 uint16_t i2cGetErrorCounter(void)
@@ -127,6 +134,9 @@ uint16_t i2cGetErrorCounter(void)
 
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 {
+    if (!deviceInitialised[device])
+        return false;
+
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
@@ -193,6 +203,9 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
 {
+    if (!deviceInitialised[device])
+        return false;
+
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;

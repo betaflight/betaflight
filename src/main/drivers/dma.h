@@ -108,6 +108,13 @@ typedef struct dmaChannelDescriptor_s {
 
 #endif
 
+#ifdef STM32F4
+dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream);
+#else
+dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel);
+#endif
+
 void dmaInit(void);
+void dmaEnableClock(dmaHandlerIdentifier_e identifier);
 void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 

@@ -24,12 +24,15 @@
 
 #include "nvic.h"
 #include "io.h"
+#include "dma.h"
 
 #include "bus_spi.h"
 #include "system.h"
 
 #include "sdcard.h"
 #include "sdcard_standard.h"
+
+#include "build/debug.h"
 
 #ifdef AFATFS_USE_INTROSPECTIVE_LOGGING
     #define SDCARD_PROFILING
@@ -414,9 +417,6 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
     if (useDMAForTx) {
 #ifdef SDCARD_DMA_CHANNEL_TX
         // Queue the transmission of the sector payload
-#ifdef SDCARD_DMA_CLK
-        RCC_AHB1PeriphClockCmd(SDCARD_DMA_CLK, ENABLE);
-#endif
         DMA_InitTypeDef DMA_InitStructure;
 
         DMA_StructInit(&DMA_InitStructure);
@@ -544,6 +544,8 @@ void sdcard_init(bool useDMA)
 {
 #ifdef SDCARD_DMA_CHANNEL_TX
     useDMAForTx = useDMA;
+    dmaEnableClock(dmaFindHandlerIdentifier(SDCARD_DMA_CHANNEL_TX));
+    DMA_Cmd(SDCARD_DMA_CHANNEL_TX, DISABLE);
 #else
     // DMA is not available
     (void) useDMA;
