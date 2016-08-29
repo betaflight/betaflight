@@ -38,7 +38,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -55,9 +54,9 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-#define USE_MAG_DATA_READY_SIGNAL
-#define ENSURE_MAG_DATA_READY_IS_HIGH
-#define MAG_INT_EXTI            PB7
+//#define USE_MAG_DATA_READY_SIGNAL
+//#define ENSURE_MAG_DATA_READY_IS_HIGH
+//#define MAG_INT_EXTI            PB7
 
 //#define USE_MAG_NAZA
 //#define MAG_NAZA_ALIGN          CW180_DEG_FLIP

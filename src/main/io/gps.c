@@ -59,6 +59,7 @@
 #define GPS_BAUD_CHANGE_DELAY   (200)
 #define GPS_INIT_DELAY          (500)
 #define GPS_BUS_INIT_DELAY      (500)
+#define GPS_BOOT_DELAY          (2000)
 
 typedef enum {
     GPS_TYPE_NA,        // Not available
@@ -148,9 +149,6 @@ static void gpsHandleProtocol(void)
         // Update statistics
         gpsStats.lastMessageDt = gpsState.lastMessageMs - gpsState.lastLastMessageMs;
     }
-
-    debug[0] = gpsSol.fixType;
-    debug[1] = STATE(GPS_FIX);
 }
 
 static void gpsResetSolution(void)
@@ -280,6 +278,13 @@ uint16_t gpsConstrainHDOP(uint32_t hdop)
 
 void gpsThread(void)
 {
+    /* Extra delay for at least 2 seconds after booting to give GPS time to initialise */
+    if (isMPUSoftReset() && (millis() < GPS_BOOT_DELAY)) {
+        sensorsClear(SENSOR_GPS);
+        DISABLE_STATE(GPS_FIX);
+        return;
+    }
+
 #ifdef USE_FAKE_GPS
     gpsFakeGPSUpdate();
 #else
