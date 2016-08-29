@@ -279,7 +279,7 @@ uint16_t gpsConstrainHDOP(uint32_t hdop)
 void gpsThread(void)
 {
     /* Extra delay for at least 2 seconds after booting to give GPS time to initialise */
-    if (isMPUSoftReset() && (millis() < GPS_BOOT_DELAY)) {
+    if (!isMPUSoftReset() && (millis() < GPS_BOOT_DELAY)) {
         sensorsClear(SENSOR_GPS);
         DISABLE_STATE(GPS_FIX);
         return;
