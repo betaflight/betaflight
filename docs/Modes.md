@@ -37,7 +37,7 @@ auxillary receiver channels and other events such as failsafe detection.
 
 ## Auto-leveled flight
 
-The default flight mode does not stabilize the multicopter around the roll and the pitch axis. That is, the multicopter does not level on its own if you center the pitch and roll sticks on the radio. Rather, they work just like the jaw axis: the rate of rotation of each axis is controlled directly by the related stick on the radio, and by leaving them centered the flight controller will just try to keep the multicopter in whatever orientation it's in. This default mode is called RATE mode, also sometime called "acro" (from "acrobatic") or "manual" mode, and is active whenever no auto-leveled mode is enabled.
+The default flight mode does not stabilize the multicopter around the roll and the pitch axis. That is, the multicopter does not level on its own if you center the pitch and roll sticks on the radio. Rather, they work just like the yaw axis: the rate of rotation of each axis is controlled directly by the related stick on the radio, and by leaving them centered the flight controller will just try to keep the multicopter in whatever orientation it's in. This default mode is called RATE mode, also sometime called "acro" (from "acrobatic") or "manual" mode, and is active whenever no auto-leveled mode is enabled.
 
 If your flight controller is equipped with a 3 axis accelerometer (very likely), then you can enable one of the two available auto leveled flight modes.
 
