@@ -296,7 +296,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     max7456_send(MAX7456ADD_CMM, WRITE_NVR);
 
     // wait until bit 5 in the status register returns to 0 (12ms)
-    while ((spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456ADD_STAT) & STATUS_REG_NVR_BUSY) != 0);
+    while ((max7456_send(MAX7456ADD_STAT, 0) & STATUS_REG_NVR_BUSY) != 0x00);
 
     max7456_send(VM0_REG, video_signal_type | 0x0C);
     DISABLE_MAX7456;
