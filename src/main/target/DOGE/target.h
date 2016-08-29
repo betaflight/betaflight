@@ -56,6 +56,8 @@
 // tqfp48 pin 3
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
 
 // tqfp48 pin 25
 #define BMP280_CS_PIN           SPI2_NSS_PIN
@@ -71,16 +73,19 @@
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define GYRO
-// #define USE_FAKE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG // ??
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW270_DEG
 
 #define ACC
-// #define USE_FAKE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG // ??
+#define ACC_MPU6500_ALIGN       CW270_DEG
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW270_DEG
 
 #define BARO
 #define USE_BARO_BMP280
