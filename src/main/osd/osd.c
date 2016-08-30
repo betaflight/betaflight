@@ -267,7 +267,7 @@ void osdUpdate(void)
         }
     }
 
-    TIME_SECTION_END(0);
+    //TIME_SECTION_END(0);
 
     osdHardwareUpdate();
 
