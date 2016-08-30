@@ -170,7 +170,11 @@ static void rtc6705Transfer(uint32_t command)
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 8) & 0xFF);
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 0) & 0xFF);
 
+    delayMicroseconds(2);
+
     DISABLE_RTC6705;
+
+    delayMicroseconds(2);
 }
 
 /**
@@ -207,6 +211,7 @@ void rtc6705SetFreq(uint16_t freq)
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     rtc6705Transfer(RTC6705_SET_HEAD);
+    delayMicroseconds(10);
     rtc6705Transfer(val_hex);
 }
 
