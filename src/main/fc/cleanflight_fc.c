@@ -907,21 +907,23 @@ void taskPid(void)
 
 #ifdef BUTTON_A_PIN
     bool buttonHeld;
+    bool buttonWasPressed = false;
     uint32_t start = millis();
-    do {
-        buttonHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN);
-        if (buttonHeld) {
-            LED1_ON;
-        }
-    } while(buttonHeld);
+    while ((buttonHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN))) {
+        LED1_ON;
+        buttonWasPressed = true;
+    }
 
+    if (!buttonWasPressed) {
+        return;
+    }
 
     LED1_OFF;
 
     uint32_t end = millis();
 
     int32_t diff = cmp32(end, start);
-    if (diff > 500 && diff <= 1000) {
+    if (diff > 100 && diff <= 1000) {
         vtxCycleChannel();
     } else if (diff > 1000 && diff <= 5000) {
         vtxCycleBand();
