@@ -576,9 +576,7 @@ uint8_t max7456_readStatus(void)
 void max7456_updateStatus(void)
 {
     uint8_t status = max7456_readStatus();
-    if (status & MAX7456_STAT_BIT_LOS_OF_SYNC) {
-        max7456State.los = true;
-    }
+    max7456State.los = (status & MAX7456_STAT_BIT_LOS_OF_SYNC);
 
     max7456State.detectedVideoMode = max7456_statusToVideoMode(status);
 }

@@ -1126,6 +1126,13 @@ void taskTransponder(void)
 }
 #endif
 
+void taskHardwareWatchdog(void)
+{
+#ifdef OSD
+    osdHardwareCheck();
+#endif
+}
+
 #ifdef OSD
 void osdUpdateFCState(void)
 {

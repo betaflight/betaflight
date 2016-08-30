@@ -783,6 +783,7 @@ void configureScheduler(void)
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+    setTaskEnabled(TASK_HARDWARE_WATCHDOG, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
 #endif

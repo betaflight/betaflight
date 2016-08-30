@@ -87,6 +87,13 @@ cfTask_t cfTasks[] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
+    [TASK_HARDWARE_WATCHDOG] = {
+        .taskName = "HW_WATCHDOG",
+        .taskFunc = taskHardwareWatchdog,
+        .desiredPeriod = TASK_PERIOD_HZ(1),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,

@@ -33,6 +33,7 @@
 #include "config/profile.h"
 
 #include "osd/config.h"
+#include "osd/feature.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"

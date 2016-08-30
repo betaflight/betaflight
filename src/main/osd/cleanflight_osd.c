@@ -63,6 +63,7 @@
 
 #include "osd/osd_element.h"
 #include "osd/osd.h"
+#include "osd/feature.h"
 
 #include "osd/config.h"
 
