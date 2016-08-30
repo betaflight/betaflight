@@ -1375,7 +1375,7 @@ static void cliLed(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            generateLedConfig(i, ledConfigBuffer, sizeof(ledConfigBuffer));
+            generateLedConfig(&masterConfig.ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
             cliPrintf("led %u %s\r\n", i, ledConfigBuffer);
         }
     } else {
