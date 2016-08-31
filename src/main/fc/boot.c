@@ -484,6 +484,8 @@ void init(void)
 
 #ifdef VTX
 #ifdef VTX_RTC6705
+    // TODO ensure RTC6705_BOOT_DELAY has passed if VTX is powered on by default when vtx power not controllable by software.
+    rtc6705SetRFPower(RTC6705_RF_POWER_MIN);
     rtc6705SetChannel(5, 1); // raceband channel 1
 #endif
 #endif

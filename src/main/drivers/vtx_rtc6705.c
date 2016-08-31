@@ -215,14 +215,28 @@ void rtc6705SetFreq(uint16_t freq)
     rtc6705Transfer(val_hex);
 }
 
-void rtc6705SetRFPower(uint8_t reduce_power)
+void rtc6705SetRFPower(uint8_t rf_power)
 {
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     uint32_t val_hex = 0x10; // write
     val_hex |= 7; // address
-    uint32_t data = reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
+    uint32_t data = rf_power == RTC6705_RF_POWER_MIN ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
     rtc6705Transfer(val_hex);
+}
+
+void rtc6705Disable(void)
+{
+#ifdef RTC6705_POWER_PIN
+    DISABLE_RTC6705_POWER;
+#endif
+}
+
+void rtc6705Enable(void)
+{
+#ifdef RTC6705_POWER_PIN
+    ENABLE_RTC6705_POWER;
+#endif
 }

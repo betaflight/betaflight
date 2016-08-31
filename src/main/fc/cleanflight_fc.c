@@ -663,35 +663,6 @@ void filterRc(void){
     }
 }
 
-#include "drivers/vtx_rtc6705.h"
-
-static uint8_t vtxChannel = RTC6705_CHANNEL_MIN;  // FIXME see boot.c - boot.c should use these values and they should be in eeprom.
-static uint8_t vtxBand = RTC6705_BAND_MIN;
-static uint8_t vtxPower = 0;
-
-void vtxCycleChannel(void)
-{
-    vtxChannel++;
-    if (vtxChannel > RTC6705_CHANNEL_MAX) {
-        vtxChannel = RTC6705_CHANNEL_MIN;
-    }
-    rtc6705SetChannel(vtxBand, vtxChannel);
-}
-
-void vtxCycleBand(void)
-{
-    vtxBand++;
-    if (vtxBand > RTC6705_BAND_MAX) {
-        vtxBand = RTC6705_BAND_MIN;
-    }
-    rtc6705SetChannel(vtxBand, vtxChannel);
-}
-
-void vtxToggleRFPower(void)
-{
-    vtxPower = !vtxPower;
-    rtc6705SetRFPower(vtxPower);
-}
 
 void processRcCommand(void)
 {
@@ -905,32 +876,8 @@ void taskPid(void)
         debug[3]++;
     }
 
-#ifdef BUTTON_A_PIN
-    bool buttonHeld;
-    bool buttonWasPressed = false;
-    uint32_t start = millis();
-    while ((buttonHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN))) {
-        LED1_ON;
-        buttonWasPressed = true;
-    }
-
-    if (!buttonWasPressed) {
-        return;
-    }
-
-    LED1_OFF;
-
-    uint32_t end = millis();
-
-    int32_t diff = cmp32(end, start);
-    if (diff > 100 && diff <= 1000) {
-        vtxCycleChannel();
-    } else if (diff > 1000 && diff <= 5000) {
-        vtxCycleBand();
-    } else if (diff > 5000) {
-        vtxToggleRFPower();
-    }
-
+#ifdef VTX
+    handleVTXControlButton();
 #endif
 
 }

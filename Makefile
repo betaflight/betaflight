@@ -746,6 +746,7 @@ SPRACINGF3NEO_SRC	 = \
 		   io/asyncfatfs/fat_standard.c \
 		   io/transponder_ir.c \
 		   io/flashfs.c \
+		   io/vtx_rtc6705.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
 		   $(HIGHEND_SRC) \
