@@ -108,7 +108,7 @@ uint32_t GPS_garbageByteCount = 0;
 // How many entries in gpsInitData array below
 #define GPS_INIT_ENTRIES (GPS_BAUDRATE_MAX + 1)
 #define GPS_BAUDRATE_CHANGE_DELAY (200)
-#define GPS_BOOT_DELAY          (2000)
+#define GPS_BOOT_DELAY          (2500)
 
 static serialPort_t *gpsPort;
 
