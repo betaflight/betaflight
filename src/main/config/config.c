@@ -270,6 +270,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
+    telemetryConfig->pidValuesAsTelemetry = 0;
 }
 #endif
 

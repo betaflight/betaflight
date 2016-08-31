@@ -61,6 +61,9 @@
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
+#include "config/config_profile.h"
+extern profile_t *currentProfile;
+extern controlRateConfig_t *currentControlRateProfile;
 
 enum
 {
@@ -314,7 +317,9 @@ void handleSmartPortTelemetry(void)
         smartPortIdCnt++;
 
         int32_t tmpi;
+        uint32_t tmp2;
         static uint8_t t1Cnt = 0;
+        static uint8_t t2Cnt = 0;
 
         switch(id) {
 #ifdef GPS
@@ -462,6 +467,38 @@ void handleSmartPortTelemetry(void)
                 }
                 else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
+                    smartPortHasRequest = 0;
+                }
+
+                else if (telemetryConfig->pidValuesAsTelemetry){
+                    switch (t2Cnt) {
+                        case 0:
+                            tmp2 = currentProfile->pidProfile.P8[ROLL];
+                            tmp2 += (currentProfile->pidProfile.P8[PITCH]<<8);
+                            tmp2 += (currentProfile->pidProfile.P8[YAW]<<16);
+                        break;
+                        case 1:
+                            tmp2 = currentProfile->pidProfile.I8[ROLL];
+                            tmp2 += (currentProfile->pidProfile.I8[PITCH]<<8);
+                            tmp2 += (currentProfile->pidProfile.I8[YAW]<<16);
+                        break;
+                        case 2:
+                            tmp2 = currentProfile->pidProfile.D8[ROLL];
+                            tmp2 += (currentProfile->pidProfile.D8[PITCH]<<8);
+                            tmp2 += (currentProfile->pidProfile.D8[YAW]<<16);
+                        break;
+                        case 3:
+                            tmp2 = currentControlRateProfile->rates[FD_ROLL];
+                            tmp2 += (currentControlRateProfile->rates[FD_PITCH]<<8);
+                            tmp2 += (currentControlRateProfile->rates[FD_YAW]<<16);
+                        break;
+                    }
+                    tmp2 += t2Cnt<<24;
+                    t2Cnt++;
+                    if (t2Cnt == 4) {
+                        t2Cnt = 0;
+                    }
+                    smartPortSendPackage(id, tmp2);
                     smartPortHasRequest = 0;
                 }
                 break;
