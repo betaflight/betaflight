@@ -120,11 +120,6 @@ bool ak8975Read(int16_t *magData)
     uint8_t status;
     uint8_t buf[6];
 
-    // set magData to zero for case of failed read
-    magData[X] = 0;
-    magData[Y] = 0;
-    magData[Z] = 0;
-
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
     if (!ack || (status & BIT_STATUS1_REG_DATA_READY) == 0) {
         return false;
