@@ -68,6 +68,8 @@ int32_t navLatestActualPosition[3];
 int16_t navTargetSurface;
 int16_t navActualSurface;
 uint16_t navFlags;
+uint16_t navEPH;
+uint16_t navEPV;
 int16_t navAccNEU[3];
 #endif
 int16_t navDebug[4];

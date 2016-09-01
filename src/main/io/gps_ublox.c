@@ -371,6 +371,7 @@ static bool gpsParceFrameUBLOX(void)
         gpsSol.llh.alt = _buffer.posllh.altitude_msl / 10;  //alt in cm
         gpsSol.eph = gpsConstrainEPE(_buffer.posllh.horizontal_accuracy / 10);
         gpsSol.epv = gpsConstrainEPE(_buffer.posllh.vertical_accuracy / 10);
+        gpsSol.flags.validEPE = 1;
         if (next_fix_type != GPS_NO_FIX)
             gpsSol.fixType = next_fix_type;
         _new_position = true;

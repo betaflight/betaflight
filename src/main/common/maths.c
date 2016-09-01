@@ -459,3 +459,7 @@ uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
     return crc;
 }
 
+float bellCurve(const float x, const float curveWidth)
+{
+    return powf(M_Ef, -sq(x) / (2.0f * sq(curveWidth)));
+}
