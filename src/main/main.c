@@ -31,6 +31,8 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "drivers/logging.h"
+
 #include "drivers/nvic.h"
 
 #include "drivers/sensor.h"
@@ -145,6 +147,8 @@ void flashLedsAndBeep(void)
 
 void init(void)
 {
+    initBootlog();
+
     printfSupportInit();
 
     initEEPROM();
@@ -152,6 +156,7 @@ void init(void)
     ensureEEPROMContainsValidData();
     readEEPROM();
 
+    addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
     systemInit();
@@ -177,6 +182,8 @@ void init(void)
 #ifdef USE_EXTI
     EXTIInit();
 #endif
+
+    addBootlogEvent2(BOOT_EVENT_SYSTEM_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
@@ -282,6 +289,7 @@ void init(void)
     if (!feature(FEATURE_ONESHOT125))
         motorControlEnable = true;
 
+    addBootlogEvent2(BOOT_EVENT_PWM_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -394,6 +402,8 @@ void init(void)
     /* Extra 500ms delay prior to initialising hardware if board is cold-booting */
 #if defined(GPS) || defined(MAG)
     if (!isMPUSoftReset()) {
+        addBootlogEvent2(BOOT_EVENT_EXTRA_BOOT_DELAY, BOOT_EVENT_FLAGS_NONE);
+
         LED1_ON;
         LED0_OFF;
 
@@ -436,6 +446,7 @@ void init(void)
         failureMode(FAILURE_MISSING_ACC);
     }
 
+    addBootlogEvent2(BOOT_EVENT_SENSOR_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_SENSORS_READY;
 
     flashLedsAndBeep();
@@ -458,18 +469,20 @@ void init(void)
             &masterConfig.serialConfig,
             &masterConfig.gpsConfig
         );
+
+        addBootlogEvent2(BOOT_EVENT_GPS_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif
 
 #ifdef NAV
-        navigationInit(
-            &masterConfig.navConfig,
-            &currentProfile->pidProfile,
-            &currentProfile->rcControlsConfig,
-            &masterConfig.rxConfig,
-            &masterConfig.flight3DConfig,
-            &masterConfig.escAndServoConfig
-        );
+    navigationInit(
+        &masterConfig.navConfig,
+        &currentProfile->pidProfile,
+        &currentProfile->rcControlsConfig,
+        &masterConfig.rxConfig,
+        &masterConfig.flight3DConfig,
+        &masterConfig.escAndServoConfig
+    );
 #endif
 
 #ifdef LED_STRIP
@@ -477,12 +490,14 @@ void init(void)
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
+        addBootlogEvent2(BOOT_EVENT_LEDSTRIP_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+        addBootlogEvent2(BOOT_EVENT_TELEMETRY_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif
 
@@ -561,6 +576,7 @@ void init(void)
     latchActiveFeatures();
     motorControlEnable = true;
 
+    addBootlogEvent2(BOOT_EVENT_SYSTEM_READY, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_READY;
 }
 

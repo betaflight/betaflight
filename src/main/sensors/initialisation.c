@@ -24,6 +24,8 @@
 
 #include "common/axis.h"
 
+#include "drivers/logging.h"
+
 #include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
@@ -313,6 +315,8 @@ bool detectGyro(void)
             gyroHardware = GYRO_NONE;
     }
 
+    addBootlogEvent6(BOOT_EVENT_GYRO_DETECTION, BOOT_EVENT_FLAGS_NONE, gyroHardware, 0, 0, 0);
+
     if (gyroHardware == GYRO_NONE) {
         return false;
     }
@@ -451,6 +455,7 @@ retry:
         goto retry;
     }
 
+    addBootlogEvent6(BOOT_EVENT_ACC_DETECTION, BOOT_EVENT_FLAGS_NONE, accHardware, 0, 0, 0);
 
     if (accHardware == ACC_NONE) {
         return false;
@@ -528,6 +533,8 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             baroHardware = BARO_NONE;
             break;
     }
+
+    addBootlogEvent6(BOOT_EVENT_BARO_DETECTION, BOOT_EVENT_FLAGS_NONE, baroHardware, 0, 0, 0);
 
     if (baroHardware == BARO_NONE) {
         return false;
@@ -651,6 +658,8 @@ static bool detectMag(magSensor_e magHardwareToUse)
             break;
     }
 
+    addBootlogEvent6(BOOT_EVENT_MAG_DETECTION, BOOT_EVENT_FLAGS_NONE, magHardware, 0, 0, 0);
+
     // If not in autodetect mode and detected the wrong chip - disregard the compass even if detected
     if ((magHardwareToUse != MAG_DEFAULT && magHardware != magHardwareToUse) || (magHardware == MAG_NONE)) {
         return false;
@@ -680,6 +689,9 @@ static rangefinderType_e detectRangefinder(void)
         rangefinderType = RANGEFINDER_SRF10;
     }
 #endif
+
+    addBootlogEvent6(BOOT_EVENT_RANGEFINDER_DETECTION, BOOT_EVENT_FLAGS_NONE, rangefinderType, 0, 0, 0);
+
     detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;
 
     if (rangefinderType != RANGEFINDER_NONE) {
@@ -724,6 +736,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     if (!detectGyro()) {
         return false;
     }
+
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.targetLooptime = gyroSetSampleRate(looptime, gyroLpf, gyroSync, gyroSyncDenominator);    // Set gyro sample rate before initialisation
     gyro.init(gyroLpf); // driver initialisation
@@ -747,6 +760,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     if (detectMag(magHardwareToUse)) {
         // calculate magnetic declination
         if (!compassInit(magDeclinationFromConfig)) {
+            addBootlogEvent2(BOOT_EVENT_MAG_INIT_FAILED, BOOT_EVENT_FLAGS_ERROR);
             sensorsClear(SENSOR_MAG);
         }
     }

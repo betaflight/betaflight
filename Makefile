@@ -372,6 +372,7 @@ COMMON_SRC = \
             common/streambuf.c \
             config/config.c \
             fc/runtime_config.c \
+            drivers/logging.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \

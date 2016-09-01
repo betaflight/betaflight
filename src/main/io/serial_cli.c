@@ -36,6 +36,8 @@
 #include "common/color.h"
 #include "common/typeconversion.h"
 
+#include "drivers/logging.h"
+
 #include "drivers/system.h"
 
 #include "drivers/sensor.h"
@@ -111,6 +113,10 @@ static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 16];
 
 #if defined(USE_ASSERT)
 static void cliAssert(char *cmdline);
+#endif
+
+#if defined(BOOTLOG)
+static void cliBootlog(char *cmdline);
 #endif
 
 static void cliAux(char *cmdline);
@@ -269,6 +275,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("assert", "", NULL, cliAssert),
 #endif
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
+#if defined(BOOTLOG)
+    CLI_COMMAND_DEF("bootlog", "show boot events", NULL, cliBootlog),
+#endif
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
@@ -1017,6 +1026,46 @@ static void cliAssert(char *cmdline)
     }
     else {
         cliPrintf("No assert() failed\r\n");
+    }
+}
+#endif
+
+#if defined(BOOTLOG)
+static void cliBootlog(char *cmdline)
+{
+    UNUSED(cmdline);
+
+    int bootEventCount = getBootlogEventCount();
+
+#if defined(BOOTLOG_DESCRIPTIONS)
+    cliPrintf("Time Evt            Description  Parameters\r\n");
+#else
+    cliPrintf("Time Evt Parameters\r\n");
+#endif
+
+    for (int idx = 0; idx < bootEventCount; idx++) {
+        bootLogEntry_t * event = getBootlogEvent(idx);
+
+#if defined(BOOTLOG_DESCRIPTIONS)
+        const char * eventDescription = getBootlogEventDescription(event->eventCode);
+        if (!eventDescription) {
+            eventDescription = "";
+        }
+
+        cliPrintf("%4d: %2d %22s ", event->timestamp, event->eventCode, eventDescription);
+#else
+        cliPrintf("%4d: %2d ", event->timestamp, event->eventCode);
+#endif
+
+        if (event->eventFlags & BOOT_EVENT_FLAGS_PARAM16) {
+            cliPrintf(" (%d, %d, %d, %d)\r\n", event->params.u16[0], event->params.u16[1], event->params.u16[2], event->params.u16[3]);
+        }
+        else if (event->eventFlags & BOOT_EVENT_FLAGS_PARAM32) {
+            cliPrintf(" (%d, %d)\r\n", event->params.u32[0], event->params.u32[1]);
+        }
+        else {
+            cliPrintf("\r\n");
+        }
     }
 }
 #endif

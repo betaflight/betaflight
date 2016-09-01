@@ -36,6 +36,8 @@
 #include "bus_i2c.h"
 #include "light_led.h"
 
+#include "logging.h"
+
 #include "sensor.h"
 #include "compass.h"
 
@@ -189,6 +191,8 @@ bool hmc5883lInit(void)
     int16_t magADC[3];
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
+    bool error_read = false;
+    bool error_saturation = false;
 
     delay(50);
     i2cWrite(MAG_I2C_INSTANCE, MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
@@ -211,6 +215,7 @@ bool hmc5883lInit(void)
             xyz_total[Z] += magADC[Z];
             // Detect saturation.
             if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+                error_saturation = true;
                 bret = false;
                 break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
             }
@@ -219,8 +224,13 @@ bool hmc5883lInit(void)
         }
         LED1_TOGGLE;
     }
+
     if (failedSamples >= INIT_MAX_FAILURES) {
         bret = false;
+    }
+
+    if (failedSamples > 0) {
+        error_read = true;
     }
 
     // Apply the negative bias. (Same gain)
@@ -238,6 +248,7 @@ bool hmc5883lInit(void)
             xyz_total[Z] -= magADC[Z];
             // Detect saturation.
             if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+                error_saturation = true;
                 bret = false;
                 break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
             }
@@ -246,8 +257,13 @@ bool hmc5883lInit(void)
         }
         LED1_TOGGLE;
     }
+
     if (failedSamples >= INIT_MAX_FAILURES) {
         bret = false;
+    }
+
+    if (failedSamples > 0) {
+        error_read = true;
     }
 
     if (bret) {
@@ -268,6 +284,15 @@ bool hmc5883lInit(void)
     delay(100);
 
     hmc5883lConfigureDataReadyInterruptHandling();
+
+    if (error_read) {
+        addBootlogEvent2(BOOT_EVENT_HMC5883L_READ_FAILED, BOOT_EVENT_FLAGS_WARNING);
+    }
+
+    if (error_saturation) {
+        addBootlogEvent2(BOOT_EVENT_HMC5883L_SATURATION, BOOT_EVENT_FLAGS_ERROR);
+    }
+
     return bret;
 }
 

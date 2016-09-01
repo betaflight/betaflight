@@ -28,6 +28,7 @@
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #else
+#define BOOTLOG
 #define BLACKBOX
 #define GPS
 #define GPS_PROTO_NMEA
@@ -46,6 +47,7 @@
 #define DISPLAY
 #define DISPLAY_ARMED_BITMAP
 #define TELEMETRY_MAVLINK
+#define BOOTLOG_DESCRIPTIONS
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP
