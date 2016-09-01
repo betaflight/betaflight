@@ -53,9 +53,18 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
     }
 
     function load_3d() {
-        var next_callback = esc_protocol;
+        var next_callback = load_rc_deadband;
         if (semver.gte(CONFIG.apiVersion, "1.14.0")) {
             MSP.send_message(MSPCodes.MSP_3D, false, false, next_callback);
+        } else {
+            next_callback();
+        }
+    }
+
+    function load_rc_deadband() {
+        var next_callback = esc_protocol;
+        if (semver.gte(CONFIG.apiVersion, "1.17.0")) {
+            MSP.send_message(MSPCodes.MSP_RC_DEADBAND, false, false, next_callback);
         } else {
             next_callback();
         }
@@ -189,10 +198,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         esc_protocol_e.val(PID_ADVANCED_CONFIG.fast_pwm_protocol+1);
         
         
-        $('input[name="unsyncedPWMSwitch"]').prop('checked', PID_ADVANCED_CONFIG.use_unsyncedPwm);
+        $('input[id="unsyncedPWMSwitch"]').prop('checked', PID_ADVANCED_CONFIG.use_unsyncedPwm !== 0);
         $('input[name="unsyncedpwmfreq"]').val(PID_ADVANCED_CONFIG.motor_pwm_rate);
         if (PID_ADVANCED_CONFIG.use_unsyncedPwm) {
-            
             $('div.unsyncedpwmfreq').show();
         }
         else {
@@ -257,9 +265,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
            
         });
 
-        $('input[name="accHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.acc_hardware!=1)?1:0);
-        $('input[name="baroHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.baro_hardware!=1)?1:0);
-        $('input[name="magHardwareSwitch"]').prop('checked', (SENSOR_CONFIG.mag_hardware!=1)?1:0);
+        $('input[id="accHardwareSwitch"]').prop('checked', SENSOR_CONFIG.acc_hardware !== 1);
+        $('input[id="baroHardwareSwitch"]').prop('checked', SENSOR_CONFIG.baro_hardware !== 1);
+        $('input[id="magHardwareSwitch"]').prop('checked', SENSOR_CONFIG.mag_hardware !== 1);
 
 
         // Only show these sections for supported FW
@@ -395,7 +403,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         //fill motor disarm params and FC loop time        
         if(semver.gte(CONFIG.apiVersion, "1.8.0")) {
             $('input[name="autodisarmdelay"]').val(ARMING_CONFIG.auto_disarm_delay);
-            $('input[name="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch);
+            $('input[id="disarmkillswitch"]').prop('checked', ARMING_CONFIG.disarm_kill_switch !== 0);
             $('div.disarm').show();            
             if (BF_CONFIG.features.isEnabled('MOTOR_STOP')) {
                 $('div.disarmdelay').show();
@@ -421,20 +429,16 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
         // fill current
         $('input[name="currentscale"]').val(BF_CONFIG.currentscale);
         $('input[name="currentoffset"]').val(BF_CONFIG.currentoffset);
-        $('input[name="multiwiicurrentoutput"]').prop('checked', MISC.multiwiicurrentoutput);
+        $('input[name="multiwiicurrentoutput"]').prop('checked', MISC.multiwiicurrentoutput !== 0);
 
         //fill 3D
         if (semver.lt(CONFIG.apiVersion, "1.14.0")) {
-            $('.tab-configuration .3d').hide();
+            $('.tab-configuration ._3d').hide();
         } else {
             $('input[name="3ddeadbandlow"]').val(_3D.deadband3d_low);
             $('input[name="3ddeadbandhigh"]').val(_3D.deadband3d_high);
             $('input[name="3dneutral"]').val(_3D.neutral3d);
-            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
-                $('input[name="3ddeadbandthrottle"]').val(_3D.deadband3d_throttle);
-            } else {
-                $('.3ddeadbandthrottle').hide();
-            }
+            $('input[name="3ddeadbandthrottle"]').val(_3D.deadband3d_throttle);
         }
 
         // UI hooks
@@ -453,7 +457,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             }
         });
 
-        $("input[name='unsyncedPWMSwitch']").change(function() {
+        $("input[id='unsyncedPWMSwitch']").change(function() {
             if ($(this).is(':checked')) {
                 $('div.unsyncedpwmfreq').show();
             } else {
@@ -474,7 +478,7 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             // motor disarm
             if(semver.gte(CONFIG.apiVersion, "1.8.0")) {
                 ARMING_CONFIG.auto_disarm_delay = parseInt($('input[name="autodisarmdelay"]').val());
-                ARMING_CONFIG.disarm_kill_switch = ~~$('input[name="disarmkillswitch"]').is(':checked'); // ~~ boolean to decimal conversion
+                ARMING_CONFIG.disarm_kill_switch = $('input[id="disarmkillswitch"]').is(':checked') ? 1 : 0;
             }
             
             MISC.midrc = parseInt($('input[name="midrc"]').val());
@@ -489,22 +493,21 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
 
             BF_CONFIG.currentscale = parseInt($('input[name="currentscale"]').val());
             BF_CONFIG.currentoffset = parseInt($('input[name="currentoffset"]').val());
-            MISC.multiwiicurrentoutput = ~~$('input[name="multiwiicurrentoutput"]').is(':checked'); // ~~ boolean to decimal conversion
+            MISC.multiwiicurrentoutput = $('input[name="multiwiicurrentoutput"]').is(':checked') ? 1 : 0;
 
-            _3D.deadband3d_low = parseInt($('input[name="3ddeadbandlow"]').val());
-            _3D.deadband3d_high = parseInt($('input[name="3ddeadbandhigh"]').val());
-            _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
-            if (semver.lt(CONFIG.apiVersion, "1.17.0")) {
+            if(semver.gte(CONFIG.apiVersion, "1.14.0")) {
+                _3D.deadband3d_low = parseInt($('input[name="3ddeadbandlow"]').val());
+                _3D.deadband3d_high = parseInt($('input[name="3ddeadbandhigh"]').val());
+                _3D.neutral3d = parseInt($('input[name="3dneutral"]').val());
                 _3D.deadband3d_throttle = ($('input[name="3ddeadbandthrottle"]').val());
             }
-
 
             SENSOR_ALIGNMENT.align_gyro = parseInt(orientation_gyro_e.val());
             SENSOR_ALIGNMENT.align_acc = parseInt(orientation_acc_e.val());
             SENSOR_ALIGNMENT.align_mag = parseInt(orientation_mag_e.val());
             
             PID_ADVANCED_CONFIG.fast_pwm_protocol = parseInt(esc_protocol_e.val()-1);
-            PID_ADVANCED_CONFIG.use_unsyncedPwm = ~~$('input[name="unsyncedPWMSwitch"]').is(':checked');
+            PID_ADVANCED_CONFIG.use_unsyncedPwm = $('input[id="unsyncedPWMSwitch"]').is(':checked') ? 1 : 0;
             PID_ADVANCED_CONFIG.motor_pwm_rate = parseInt($('input[name="unsyncedpwmfreq"]').val());
             PID_ADVANCED_CONFIG.gyro_sync_denom = parseInt(gyro_select_e.val());
             PID_ADVANCED_CONFIG.pid_process_denom = parseInt(pid_select_e.val());
@@ -520,16 +523,25 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
             function save_misc() {
                 MSP.send_message(MSPCodes.MSP_SET_MISC, mspHelper.crunch(MSPCodes.MSP_SET_MISC), false, save_3d);
             }
-            
+
             function save_3d() {
-                var next_callback = save_sensor_alignment;
+                var next_callback = save_rc_deadband;
                 if(semver.gte(CONFIG.apiVersion, "1.14.0")) {
-                   MSP.send_message(MSPCodes.MSP_SET_3D, mspHelper.crunch(MSPCodes.MSP_SET_3D), false, next_callback);
+                    MSP.send_message(MSPCodes.MSP_SET_3D, mspHelper.crunch(MSPCodes.MSP_SET_3D), false, next_callback);
                 } else {
-                   next_callback();
-                }     
+                    next_callback();
+                }
             }
-            
+
+            function save_rc_deadband() {
+                var next_callback = save_sensor_alignment;
+                if(semver.gte(CONFIG.apiVersion, "1.17.0")) {
+                    MSP.send_message(MSPCodes.MSP_SET_RC_DEADBAND, mspHelper.crunch(MSPCodes.MSP_SET_RC_DEADBAND), false, next_callback);
+                } else {
+                    next_callback();
+                }
+            }
+
             function save_sensor_alignment() {
                 var next_callback = save_esc_protocol;
                 if(semver.gte(CONFIG.apiVersion, "1.15.0")) {
@@ -569,9 +581,9 @@ TABS.configuration.initialize = function (callback, scrollPosition) {
                 var next_callback = save_name;
                 
                 if (CONFIG.flightControllerIdentifier == "BTFL" && semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
-                    SENSOR_CONFIG.acc_hardware = $('input[name="accHardwareSwitch"]').is(':checked')?0:1;
-                    SENSOR_CONFIG.baro_hardware = $('input[name="baroHardwareSwitch"]').is(':checked')?0:1;
-                    SENSOR_CONFIG.mag_hardware = $('input[name="magHardwareSwitch"]').is(':checked')?0:1
+                    SENSOR_CONFIG.acc_hardware = $('input[id="accHardwareSwitch"]').is(':checked') ? 0 : 1;
+                    SENSOR_CONFIG.baro_hardware = $('input[id="baroHardwareSwitch"]').is(':checked') ? 0 : 1;
+                    SENSOR_CONFIG.mag_hardware = $('input[id="magHardwareSwitch"]').is(':checked') ? 0 : 1;
                     MSP.send_message(MSPCodes.MSP_SET_SENSOR_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_SENSOR_CONFIG), false, next_callback);
                 } else {
                     next_callback();
