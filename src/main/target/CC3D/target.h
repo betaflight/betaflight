@@ -171,9 +171,10 @@
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
 
+// Disable all GPS protocols except UBLOX
 #undef GPS_PROTO_NMEA
-#undef GPS_PROTO_NAZA
 #undef GPS_PROTO_I2C_NAV
+#undef GPS_PROTO_NAZA
 
 #ifdef OPBL
 
