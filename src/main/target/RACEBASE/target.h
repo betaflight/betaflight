@@ -76,6 +76,7 @@
 
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
+#define M25P16_SPI_SHARED
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 

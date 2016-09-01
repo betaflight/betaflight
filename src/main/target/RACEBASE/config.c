@@ -79,8 +79,6 @@
 void targetConfiguration(master_t *config) {
     config->rxConfig.sbus_inversion = 0;
     config->rxConfig.rssi_scale = 19;
-    config->escAndServoConfig.minthrottle = 1060;
-    config->escAndServoConfig.maxthrottle = 1940;
     config->serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
 }
