@@ -62,6 +62,9 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
+#define SERIALRX_UART           SERIAL_PORT_USART2
+
+
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
