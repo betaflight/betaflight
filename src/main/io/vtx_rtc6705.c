@@ -82,7 +82,8 @@ void vtxTogglePower(void) {
 /**
  * Allow VTX channel/band/rf power/on-off control via a single button.
  *
- * The LED1 flashes fast and progressively slower the longer a button is held to indicate the action that will be performed.
+ * The LED1 flashes a set number of times, followed by a short pause, one per second.  The amount of flashes decreases over time while
+ * the button is held to indicate the action that will be performed upon release.
  * The actions are ordered by most-frequently used action.  i.e. you change channel more frequently than band.
  *
  * Future: It would be nice to re-use the code in statusindicator.c and blink-codes but target a different LED instead of the simple timed
@@ -96,6 +97,7 @@ void handleVTXControlButton(void)
     uint32_t start = millis();
     uint32_t ledToggleAt = start;
     bool ledEnabled = false;
+    uint8_t flashesDone = 0;
 
     uint8_t actionCounter = 0;
     while ((buttonHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN))) {
@@ -103,13 +105,13 @@ void handleVTXControlButton(void)
 
         int32_t diff = cmp32(end, start);
         if (diff > 25 && diff <= 1000) {
-            actionCounter = 1;
-        } else if (diff > 1000 && diff <= 3000) {
-            actionCounter = 2;
-        } else if (diff > 3000 && diff <= 5000) {
-            actionCounter = 3;
-        } else if (diff > 5000) {
             actionCounter = 4;
+        } else if (diff > 1000 && diff <= 3000) {
+            actionCounter = 3;
+        } else if (diff > 3000 && diff <= 5000) {
+            actionCounter = 2;
+        } else if (diff > 5000) {
+            actionCounter = 1;
         }
 
         if (actionCounter) {
@@ -119,12 +121,21 @@ void handleVTXControlButton(void)
             if (diff < 0) {
                 ledEnabled = !ledEnabled;
 
+                const uint8_t updateDuration = 75;
+
+                ledToggleAt = end + updateDuration;
+
                 if (ledEnabled) {
                     LED1_ON;
                 } else {
                     LED1_OFF;
+                    flashesDone++;
                 }
-                ledToggleAt = end + (100 * actionCounter);
+
+                if (flashesDone == actionCounter) {
+                    ledToggleAt += (1000 - ((flashesDone * updateDuration) * 2));
+                    flashesDone = 0;
+                }
             }
             buttonWasPressed = true;
         }
@@ -137,16 +148,16 @@ void handleVTXControlButton(void)
     LED1_OFF;
 
     switch(actionCounter) {
-        case 1:
+        case 4:
             vtxCycleChannel();
             break;
-        case 2:
+        case 3:
             vtxCycleBand();
             break;
-        case 3:
+        case 2:
             vtxCycleRFPower();
             break;
-        case 4:
+        case 1:
             vtxTogglePower();
             break;
     }
