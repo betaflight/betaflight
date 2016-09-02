@@ -191,6 +191,7 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
     controlRateConfig->dynThrPID = 10;
     controlRateConfig->rcYawExpo8 = 0;
     controlRateConfig->tpa_breakpoint = 1650;
+    controlRateConfig->rcExpoPwr = 3;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
         controlRateConfig->rates[axis] = 70;

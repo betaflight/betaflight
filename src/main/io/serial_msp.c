@@ -820,7 +820,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16((uint16_t)gyro.targetLooptime);
         break;
     case MSP_RC_TUNING:
-        headSerialReply(12);
+        headSerialReply(13);
         serialize8(currentControlRateProfile->rcRate8);
         serialize8(currentControlRateProfile->rcExpo8);
         for (i = 0 ; i < 3; i++) {
@@ -832,6 +832,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentControlRateProfile->tpa_breakpoint);
         serialize8(currentControlRateProfile->rcYawExpo8);
         serialize8(currentControlRateProfile->rcYawRate8);
+        serialize8(currentControlRateProfile->rcExpoPwr);
         break;
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
@@ -1423,6 +1424,9 @@ static bool processInCommand(void)
             }
             if (currentPort->dataSize >= 12) {
                 currentControlRateProfile->rcYawRate8 = read8();
+            }
+            if (currentPort->dataSize >=13) {
+                currentControlRateProfile->rcExpoPwr = read8();
             }
         } else {
             headSerialError(0);

@@ -189,12 +189,14 @@ float calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
     rcCommandf = rc / 500.0f;
-    rcInput[axis] = ABS(rcCommandf);
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * (expof * (rcInput[axis] * rcInput[axis] * rcInput[axis]) + rcInput[axis]*(1-expof));
+        float absRc = ABS(rcCommandf);
+        rcCommandf = rcCommandf * (expof * (powerf(absRc, currentControlRateProfile->rcExpoPwr)) + absRc*(1-expof));
     }
+
+    rcInput[axis] = ABS(rcCommandf);
 
     angleRate = 200.0f * rcRate * rcCommandf;
 
