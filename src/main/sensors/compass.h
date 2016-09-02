@@ -36,10 +36,9 @@ typedef struct compassConfig_s {
 PG_DECLARE_PROFILE(compassConfig_t, compassConfig);
 
 
-#ifdef MAG
-void compassInit(void);
-void updateCompass(flightDynamicsTrims_t *magZero);
-#endif
+bool compassInit(void);
+union flightDynamicsTrims_u;
+void updateCompass(union flightDynamicsTrims_u *magZero);
 
 void recalculateMagneticDeclination(void);
 

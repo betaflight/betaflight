@@ -553,11 +553,6 @@ void init(void)
     mixerInitialiseServoFiltering(targetLooptime);
 #endif
 
-#ifdef MAG
-    if (sensors(SENSOR_MAG))
-        compassInit();
-#endif
-
     imuInit();
 
     mspInit();
