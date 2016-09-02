@@ -432,10 +432,10 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, se
     maxServoIndex = servoMixers[currentMixerMode].maxServoIndex;
 
     // enable servos for mixes that require them. note, this shifts motor counts.
-    mixerUsesServos = mixers[currentMixerMode].useServo;
+    mixerUsesServos = mixers[currentMixerMode].useServo || feature(FEATURE_SERVO_TILT);
 
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    servoOutputEnabled = mixerUsesServos || feature(FEATURE_SERVO_TILT) || feature(FEATURE_CHANNEL_FORWARDING);
+    servoOutputEnabled = mixerUsesServos || feature(FEATURE_CHANNEL_FORWARDING);
 
     // give all servos a default command
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -631,7 +631,9 @@ void writeServos(void)
         zeroServoValue = true;
     }
 
-    if (mixerUsesServos) {
+    // Write mixer servo outputs
+    //      mixerUsesServos might indicate SERVO_TILT, servoRuleCount indicate if mixer alone uses servos
+    if (mixerUsesServos && servoRuleCount) {
         for (int i = minServoIndex; i <= maxServoIndex; i++) {
             if (zeroServoValue) {
                 pwmWriteServo(servoIndex++, 0);
