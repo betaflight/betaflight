@@ -448,15 +448,28 @@ static bool max7456_isResetComplete(void)
     return resetComplete;
 }
 
+#define MAX7456_RESET_TIMEOUT 1000
+
+static void max7456_waitForReset(void)
+{
+    uint32_t start = micros();
+    while (!max7456_isResetComplete()) {
+
+        delayMicroseconds(100);
+        uint32_t now = micros();
+        if (cmp32(now, start) > MAX7456_RESET_TIMEOUT) {
+            break;
+        }
+    }
+}
+
 static void max7456_softReset()
 {
     // force soft reset on Max7456
     max7456_write(MAX7456_REG_VM0, MAX7456_VM0_BIT_SOFTWARE_RESET); // without video mode
     delayMicroseconds(100);
 
-    while(!max7456_isResetComplete()) {
-        delayMicroseconds(100);
-    }
+    max7456_waitForReset();
 }
 
 void max7456_hardwareReset(void)
