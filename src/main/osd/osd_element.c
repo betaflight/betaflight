@@ -170,7 +170,7 @@ void osdSetElementFlashOnDisconnectState(bool showNow) {
 
 void osdDrawTextElement(const element_t *element)
 {
-    if (!element->flags & EF_ENABLED) {
+    if (!(element->flags & EF_ENABLED)) {
         return;
     }
     if (element->flags & EF_FLASH_ON_DISCONNECT && !osdElementState.flashWhenDisconnected) {
