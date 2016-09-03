@@ -34,7 +34,7 @@ struct dmaCallbackHandler_s {
 #define DMA1Channel5Descriptor  (&dmaChannels[4])
 #define DMA1Channel6Descriptor  (&dmaChannels[5])
 #define DMA1Channel7Descriptor  (&dmaChannels[6])
-#if defined(STM32F3) || defined(STM32F10X_CL)
+#if defined(STM32F303xC) || defined(STM32F10X_CL)
 #define DMA2Channel1Descriptor  (&dmaChannels[7])
 #define DMA2Channel2Descriptor  (&dmaChannels[8])
 #define DMA2Channel3Descriptor  (&dmaChannels[9])
