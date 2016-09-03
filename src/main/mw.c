@@ -189,19 +189,17 @@ float calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
     rcCommandf = rc / 500.0f;
+    rcInput[axis] = ABS(rcCommandf);
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        float absRc = ABS(rcCommandf);
-        rcCommandf = rcCommandf * (expof * (powerf(absRc, currentControlRateProfile->rcExpoPwr)) + absRc*(1-expof));
+        rcCommandf = rcCommandf * (expof * (powerf(rcInput[axis], currentControlRateProfile->rcExpoPwr)) + rcInput[axis]*(1-expof));
     }
-
-    rcInput[axis] = ABS(rcCommandf);
 
     angleRate = 200.0f * rcRate * rcCommandf;
 
     if (currentControlRateProfile->rates[axis]) {
-        rcSuperfactor = 1.0f / (constrainf(1.0f - (rcInput[axis] * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         angleRate *= rcSuperfactor;
     }
 
@@ -210,7 +208,7 @@ float calculateSetpointRate(int axis, int16_t rc) {
     }
 
     if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-	    return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
+        return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
     else
         return  constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
