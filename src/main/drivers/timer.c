@@ -351,13 +351,21 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  GPIOB, Pin_11, TIM_Channel_4, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource11, GPIO_AF_1},  // PWM8
 
     // IR
-    { TIM16, GPIOB, Pin_8, TIM_Channel_1, TIM1_UP_TIM16_IRQn,       1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_1},
+    { TIM16, GPIOB, Pin_8,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_1},
 
     // LED Strip
+#ifdef SPRACINGF3EVO_REV_E
+    { TIM8,  GPIOA, Pin_15, TIM_Channel_1, TIM8_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_2},
+#else
     { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_6},
+#endif
 };
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
+#ifdef SPRACINGF3EVO_REV_E
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
+#else
+#define USED_TIMERS  (TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
+#endif
 
 #define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3)
 #define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15)
