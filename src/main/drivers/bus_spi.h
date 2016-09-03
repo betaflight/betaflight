@@ -49,10 +49,6 @@
 #ifndef SPI3_GPIO
 #define SPI3_GPIO               GPIOB
 #define SPI3_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI3_NSS_GPIO           GPIOA
-#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI3_NSS_PIN            GPIO_Pin_15
-#define SPI3_NSS_PIN_SOURCE     GPIO_PinSource15
 #define SPI3_SCK_PIN            GPIO_Pin_3
 #define SPI3_SCK_PIN_SOURCE     GPIO_PinSource3
 #define SPI3_MISO_PIN           GPIO_Pin_4
@@ -60,6 +56,14 @@
 #define SPI3_MOSI_PIN           GPIO_Pin_5
 #define SPI3_MOSI_PIN_SOURCE    GPIO_PinSource5
 #endif
+
+#ifndef SPI3_NSS_GPIO
+#define SPI3_NSS_GPIO           GPIOA
+#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
+#define SPI3_NSS_PIN            GPIO_Pin_15
+#define SPI3_NSS_PIN_SOURCE     GPIO_PinSource15
+#endif
+
 
 #endif
 

@@ -280,21 +280,6 @@ void initSpi2(void)
 
 #if defined(USE_SPI_DEVICE_3) && defined(STM32F303xC)
 
-#ifndef SPI3_GPIO
-#define SPI3_GPIO               GPIOB
-#define SPI3_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
-#define SPI3_NSS_GPIO           GPIOA
-#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI3_NSS_PIN            GPIO_Pin_15
-#define SPI3_NSS_PIN_SOURCE     GPIO_PinSource15
-#define SPI3_SCK_PIN            GPIO_Pin_3
-#define SPI3_SCK_PIN_SOURCE     GPIO_PinSource3
-#define SPI3_MISO_PIN           GPIO_Pin_4
-#define SPI3_MISO_PIN_SOURCE    GPIO_PinSource4
-#define SPI3_MOSI_PIN           GPIO_Pin_5
-#define SPI3_MOSI_PIN_SOURCE    GPIO_PinSource5
-#endif
-
 void initSpi3(void)
 {
     // Specific to the STM32F303 (AF6)
@@ -309,6 +294,7 @@ void initSpi3(void)
     // Enable SPI3 clock
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
     RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI3, ENABLE);
+    RCC_AHBPeriphClockCmd(SPI3_NSS_PERIPHERAL, ENABLE);
 
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -317,9 +303,7 @@ void initSpi3(void)
     GPIO_PinAFConfig(SPI3_GPIO, SPI3_SCK_PIN_SOURCE, GPIO_AF_6);
     GPIO_PinAFConfig(SPI3_GPIO, SPI3_MISO_PIN_SOURCE, GPIO_AF_6);
     GPIO_PinAFConfig(SPI3_GPIO, SPI3_MOSI_PIN_SOURCE, GPIO_AF_6);
-
 #ifdef SPI3_NSS_PIN_SOURCE
-    RCC_AHBPeriphClockCmd(SPI3_NSS_PERIPHERAL, ENABLE);
     GPIO_PinAFConfig(SPI3_NSS_GPIO, SPI3_NSS_PIN_SOURCE, GPIO_AF_6);
 #endif
 
