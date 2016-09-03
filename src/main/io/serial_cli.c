@@ -707,7 +707,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_RX_NRF24
     { "nrf24rx_protocol",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_protocol, .config.lookup = { TABLE_NRF24_RX }, 0 },
     { "nrf24rx_id",                 VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.nrf24rx_id, .config.minmax = { 0, 0 }, 0 },
-    { "nrf24rx_channel_count",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_channel_count,  .config.minmax = { 0, 8 }, 0 },
+    { "nrf24rx_rf_channel_count",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_rf_channel_count, .config.minmax = { 0, 8 }, 0 },
 #endif
 #ifdef SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },

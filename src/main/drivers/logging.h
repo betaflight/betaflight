@@ -17,8 +17,6 @@
 
 #pragma once
 
-#ifdef BOOTLOG
-
 #include "logging_codes.h"
 
 typedef struct bootLogEntry_s {
@@ -38,5 +36,3 @@ const char * getBootlogEventDescription(bootLogEventCode_e eventCode);
 void addBootlogEvent2(bootLogEventCode_e eventCode, bootLogFlags_e eventFlags);
 void addBootlogEvent4(bootLogEventCode_e eventCode, bootLogFlags_e eventFlags, uint32_t param1, uint32_t param2);
 void addBootlogEvent6(bootLogEventCode_e eventCode, bootLogFlags_e eventFlags, uint16_t param1, uint16_t param2, uint16_t param3, uint16_t param4);
-
-#endif

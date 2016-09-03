@@ -21,9 +21,11 @@
 
 #include "platform.h"
 
+#include "build/build_config.h"
+#include "logging.h"
+
 #ifdef BOOTLOG
 
-#include "logging.h"
 #include "system.h"
 
 #define MAX_BOOTLOG_ENTRIES     64
@@ -130,4 +132,15 @@ void addBootlogEvent6(bootLogEventCode_e eventCode, uint16_t eventFlags, uint16_
     event.params.u16[3] = param4;
     addBootlogEntry(&event);
 }
+#else
+const char * getBootlogEventDescription(bootLogEventCode_e eventCode) {UNUSED(eventCode);return NULL;}
+void initBootlog(void) {}
+int getBootlogEventCount(void) {return 0;}
+bootLogEntry_t * getBootlogEvent(int index) {UNUSED(index);return NULL;}
+void addBootlogEvent2(bootLogEventCode_e eventCode, uint16_t eventFlags)
+    {UNUSED(eventCode);UNUSED(eventFlags);}
+void addBootlogEvent4(bootLogEventCode_e eventCode, uint16_t eventFlags, uint32_t param1, uint32_t param2)
+    {UNUSED(eventCode);UNUSED(eventFlags);UNUSED(param1);UNUSED(param2);}
+void addBootlogEvent6(bootLogEventCode_e eventCode, uint16_t eventFlags, uint16_t param1, uint16_t param2, uint16_t param3, uint16_t param4)
+    {UNUSED(eventCode);UNUSED(eventFlags);UNUSED(param1);UNUSED(param2);UNUSED(param3);UNUSED(param4);}
 #endif

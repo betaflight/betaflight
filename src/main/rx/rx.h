@@ -115,7 +115,7 @@ typedef struct rxConfig_s {
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
     uint8_t nrf24rx_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
     uint32_t nrf24rx_id;
-    uint8_t nrf24rx_channel_count;
+    uint8_t nrf24rx_rf_channel_count;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;
