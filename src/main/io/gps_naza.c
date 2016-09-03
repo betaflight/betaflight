@@ -221,6 +221,7 @@ static bool NAZA_parse_gps(void)
         gpsSol.magData[1] = decodeShort(_buffernaza.mag.y, mask_mag);
         gpsSol.magData[2] = (_buffernaza.mag.z ^ (mask_mag<<8));
 
+        gpsSol.flags.validMag = 1;
         break;
     case ID_VER:
         break;
