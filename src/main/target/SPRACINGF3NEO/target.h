@@ -152,6 +152,12 @@
 #define MAX7456_CS_PIN                  SPI1_NSS_PIN
 #define MAX7456_SPI_INSTANCE            SPI1
 
+#ifdef SPRACINGF3EVO_REV_E
+#define MAX7456_DMA_CHANNEL_TX          DMA1_Channel3
+#define MAX7456_DMA_CHANNEL_RX          DMA1_Channel2
+#define MAX7456_DMA_IRQ_HANDLER_ID      DMA1Channel2Descriptor
+#endif
+
 #define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MAX7456_VSYNC_GPIO              GPIOC
 #define MAX7456_VSYNC_PIN               Pin_4
