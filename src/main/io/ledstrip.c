@@ -504,7 +504,7 @@ static void applyLedFixedLayers()
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
 
         int fn = ledGetFunction(ledConfig);
-        int hOffset = HSV_HUE_MAX;
+        int hOffset = HSV_HUE_MAX + 1;
 
         switch (fn) {
             case LED_FUNCTION_COLOR:
