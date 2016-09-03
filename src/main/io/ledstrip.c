@@ -514,8 +514,11 @@ static void applyLedFixedLayers()
             case LED_FUNCTION_FLIGHT_MODE:
                 for (unsigned i = 0; i < ARRAYLEN(flightModeToLed); i++)
                     if (!flightModeToLed[i].flightMode || FLIGHT_MODE(flightModeToLed[i].flightMode)) {
-                        color = *getDirectionalModeColor(ledIndex, modeColors(flightModeToLed[i].ledMode));
-                        break; // stop on first match
+                        hsvColor_t *candidateColor = getDirectionalModeColor(ledIndex, modeColors(flightModeToLed[i].ledMode));
+                        if (candidateColor) {
+                            color = *candidateColor;
+                            break;
+                        }
                     }
                 break;
 
