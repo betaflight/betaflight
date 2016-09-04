@@ -35,12 +35,12 @@
 #include "telemetry/ltm.h"
 
 // debug build flags
+//#define DEBUG_NRF24_INAV
 //#define NO_RF_CHANNEL_HOPPING
 //#define USE_BIND_ADDRESS_FOR_DATA_STATE
 
 
-//#define USE_AUTO_ACKKNOWLEDGEMENT
-#undef TELEMETRY_NRF24_LTM
+#define USE_AUTO_ACKKNOWLEDGEMENT
 
 /*
  * iNav Protocol
@@ -256,13 +256,20 @@ static void inavSetBound(void)
     inavSetHoppingChannels();
     NRF24L01_SetChannel(inavRfChannels[0]);
 #ifdef DEBUG_NRF24_INAV
-    debug[0] = inavRfChannels[0];
+    debug[0] = inavRfChannels[inavRfChannelIndex];
 #endif
+}
+
+static void writeAckPayload(const uint8_t *data, uint8_t length)
+{
+    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT));
+    NRF24L01_FlushTx();
+    NRF24L01_WriteAckPayload(data, length, NRF24L01_PIPE0);
 }
 
 static void writeTelemetryAckPayload(void)
 {
-#if defined(TELEMETRY_NRF24_LTM)
+#ifdef TELEMETRY_NRF24_LTM
     // set up telemetry data, send back telemetry data in the ACK packet
     static uint8_t sequenceNumber = 0;
     static ltm_frame_e ltmFrameType = LTM_FRAME_START;
@@ -273,8 +280,9 @@ static void writeTelemetryAckPayload(void)
     if (ltmFrameType > LTM_FRAME_COUNT) {
         ltmFrameType = LTM_FRAME_START;
     }
-    NRF24L01_WriteAckPayload(ackPayload, ackPayloadSize, NRF24L01_PIPE0);
+    writeAckPayload(ackPayload, ackPayloadSize);
 #ifdef DEBUG_NRF24_INAV
+    debug[1] = ackPayload[0]; // sequenceNumber
     debug[2] = ackPayload[1]; // frame type, 'A', 'S' etc
     debug[3] = ackPayload[2]; // pitch for AFrame
 #endif
@@ -300,7 +308,7 @@ static void writeBindAckPayload(uint8_t *payload)
         payload[8] = INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT;
         break;
     }
-    NRF24L01_WriteAckPayload(payload, payloadSize, NRF24L01_PIPE0);
+    writeAckPayload(payload, payloadSize);
 #else
     UNUSED(payload);
 #endif
@@ -312,10 +320,6 @@ static void writeBindAckPayload(uint8_t *payload)
  */
 nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
 {
-#ifdef DEBUG_NRF24_INAV
-    debug[1] = protocolState;
-#endif
-
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
     uint32_t timeNowUs;
     switch (protocolState) {
@@ -359,15 +363,15 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
     UNUSED(protocol);
     UNUSED(rfChannelHoppingCount);
 
-    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
+    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
 
 #ifdef USE_AUTO_ACKKNOWLEDGEMENT
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, BV(NRF24L01_01_EN_AA_ENAA_P0)); // auto acknowledgment on P0
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
-    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES);   // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, NRF24L01_04_SETUP_RETR_ARD_2500us | NRF24L01_04_SETUP_RETR_ARC_1); // one retry after 2500us
-    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, BV(NRF24L01_1C_DYNPD_DPL_P0)); // enaable dynamic payload length on P0
-    NRF24L01_WriteReg(NRF24L01_1D_FEATURE, BV(NRF24L01_1D_FEATURE_EN_DPL) | BV(NRF24L01_1D_FEATURE_EN_ACK_PAY));
+    NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES); // 5-byte RX/TX address
+    NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0);
+    NRF24L01_WriteReg(NRF24L01_1D_FEATURE, BV(NRF24L01_1D_FEATURE_EN_ACK_PAY) | BV(NRF24L01_1D_FEATURE_EN_DPL));
+    NRF24L01_WriteReg(NRF24L01_1C_DYNPD, BV(NRF24L01_1C_DYNPD_DPL_P0)); // enable dynamic payload length on P0
 
     NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rxTxAddr, RX_TX_ADDR_LEN);
 #else
@@ -401,7 +405,7 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
 
     NRF24L01_SetRxMode(); // enter receive mode to start listening for packets
     // put a null packet in the transmit buffer to be sent as ACK on first receive
-    NRF24L01_WriteAckPayload(ackPayload, payloadSize, NRF24L01_PIPE0);
+    writeAckPayload(ackPayload, payloadSize);
 }
 
 void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
