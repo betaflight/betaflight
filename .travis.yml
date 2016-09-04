@@ -71,7 +71,7 @@ compiler: clang
 install:
   - make arm_sdk_install
 
-before_script: tools/gcc-arm-none-*/bin/arm-none-eabi-gcc --version
+before_script: tools/gcc-arm-none-eabi-5_4-2016q2/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
 cache: apt
