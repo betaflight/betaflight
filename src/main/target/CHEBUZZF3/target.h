@@ -120,6 +120,7 @@
 
 #define SERIAL_PORT_COUNT 6
 
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
 #define UART1_RX_PIN        GPIO_Pin_10 // PA10
 #define UART1_GPIO          GPIOA

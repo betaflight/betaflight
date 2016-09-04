@@ -72,6 +72,7 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
 #define UART1_GPIO          GPIOB

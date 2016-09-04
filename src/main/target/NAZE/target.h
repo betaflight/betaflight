@@ -151,6 +151,8 @@
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
+#define USE_UART1_TX_DMA
+
 // UART3 only on NAZE32_SP - Flex Port
 #define UART3_RX_PIN Pin_11
 #define UART3_TX_PIN Pin_10

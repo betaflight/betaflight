@@ -69,14 +69,13 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT 5
 
-#ifndef UART1_GPIO
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
 #define UART1_RX_PIN        GPIO_Pin_10 // PA10
 #define UART1_GPIO          GPIOA
 #define UART1_GPIO_AF       GPIO_AF_7
 #define UART1_TX_PINSOURCE  GPIO_PinSource9
 #define UART1_RX_PINSOURCE  GPIO_PinSource10
-#endif
 
 #define UART2_TX_PIN        GPIO_Pin_14 // PA14 / SWCLK
 #define UART2_RX_PIN        GPIO_Pin_15 // PA15
@@ -85,14 +84,12 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource14
 #define UART2_RX_PINSOURCE  GPIO_PinSource15
 
-#ifndef UART3_GPIO
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
 #define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
 #define UART3_GPIO_AF       GPIO_AF_7
 #define UART3_GPIO          GPIOB
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
-#endif
 
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5

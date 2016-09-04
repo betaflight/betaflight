@@ -50,6 +50,8 @@
 
 #define SERIAL_PORT_COUNT 2
 
+#define USE_UART1_TX_DMA
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 

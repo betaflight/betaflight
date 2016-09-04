@@ -82,14 +82,13 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-#ifndef UART1_GPIO
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
 #define UART1_GPIO          GPIOB
 #define UART1_GPIO_AF       GPIO_AF_7
 #define UART1_TX_PINSOURCE  GPIO_PinSource6
 #define UART1_RX_PINSOURCE  GPIO_PinSource7
-#endif
 
 #define UART2_TX_PIN        GPIO_Pin_2 // PA2
 #define UART2_RX_PIN        GPIO_Pin_3 // PA3
@@ -98,14 +97,12 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource2
 #define UART2_RX_PINSOURCE  GPIO_PinSource3
 
-#ifndef UART3_GPIO
 #define UART3_TX_PIN        GPIO_Pin_10 // PB10 (AF7)
 #define UART3_RX_PIN        GPIO_Pin_11 // PB11 (AF7)
 #define UART3_GPIO_AF       GPIO_AF_7
 #define UART3_GPIO          GPIOB
 #define UART3_TX_PINSOURCE  GPIO_PinSource10
 #define UART3_RX_PINSOURCE  GPIO_PinSource11
-#endif
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA10/AF4), SCL (PA9/AF4)
