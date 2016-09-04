@@ -169,7 +169,7 @@ cfTask_t cfTasks[] = {
     [TASK_DRAW_SCREEN] = {
         .taskName = "DRAW_SCREEN",
         .taskFunc = taskDrawScreen,
-        .desiredPeriod = 1000000 / 5,           // 5 Hz - FIXME improve OSD performance to obtain 30 FPS
+        .desiredPeriod = 1000000 / 30,           // 30 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
