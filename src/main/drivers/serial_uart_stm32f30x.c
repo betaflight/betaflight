@@ -44,6 +44,7 @@
 
 
 // Using RX DMA disables the use of receive callbacks
+//#define USE_UART1_TX_DMA
 //#define USE_UART1_RX_DMA
 //#define USE_UART2_RX_DMA
 //#define USE_UART2_TX_DMA
@@ -66,6 +67,7 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
+#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA)
 static void handleUsartTxDma(dmaChannel_t* descriptor, dmaCallbackHandler_t* handler)
 {
     uartPort_t *s = container_of(handler, uartPort_t, dmaTxHandler);
@@ -77,6 +79,7 @@ static void handleUsartTxDma(dmaChannel_t* descriptor, dmaCallbackHandler_t* han
     else
         s->txDMAEmpty = true;
 }
+#endif
 
 #ifdef USE_UART1
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
@@ -100,7 +103,9 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 #ifdef USE_UART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
 #endif
+#ifdef USE_UART1_TX_DMA
     s->txDMAChannel = DMA1_Channel4;
+#endif
 
     s->USARTx = USART1;
 
@@ -135,9 +140,11 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
         }
     }
 
+#ifdef USE_UART1_TX_DMA
     // DMA TX Interrupt
     dmaHandlerInit(&uartPort1.dmaTxHandler, handleUsartTxDma);
     dmaSetHandler(DMA1Channel4Descriptor, &uartPort1.dmaTxHandler, NVIC_PRIO_SERIALUART1_TXDMA);
+#endif
 
 #ifndef USE_UART1_RX_DMA
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
