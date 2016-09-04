@@ -25,6 +25,8 @@
 #define SERIAL_RX
 #define USE_CLI
 
+#define ASYNC_GYRO_PROCESSING
+
 #if (FLASH_SIZE <= 64)
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP

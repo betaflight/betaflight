@@ -381,6 +381,32 @@ static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 }
 #endif
 
+#ifdef ASYNC_GYRO_PROCESSING
+uint32_t getLooptime(void) {
+    return masterConfig.looptime;
+}
+
+uint16_t getAccUpdateFrequency(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return masterConfig.accTaskFrequency;
+    } else {
+        return 1000000 / getLooptime();
+    }
+}
+
+uint16_t getAttiUpdateFrequency(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return masterConfig.attiTaskFrequency;
+    } else {
+        return 1000000 / getLooptime();
+    }
+}
+
+uint8_t getAsyncMode(void) {
+    return masterConfig.asyncMode;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -521,6 +547,12 @@ static void resetConf(void)
     masterConfig.i2c_overclock = 0;
     masterConfig.gyroSync = 0;
     masterConfig.gyroSyncDenominator = 2;
+
+#ifdef ASYNC_GYRO_PROCESSING
+    masterConfig.accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
+    masterConfig.attiTaskFrequency = ATTI_TASK_FREQUENCY_DEFAULT;
+    masterConfig.asyncMode = ASYNC_MODE_NONE;
+#endif
 
     resetPidProfile(&currentProfile->pidProfile);
 

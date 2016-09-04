@@ -28,6 +28,20 @@
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 
+#define ACC_TASK_FREQUENCY_DEFAULT 500
+#define ACC_TASK_FREQUENCY_MIN 15
+#define ACC_TASK_FREQUENCY_MAX 1000
+#define ATTI_TASK_FREQUENCY_DEFAULT 1000
+#define ATTI_TASK_FREQUENCY_MIN 15
+#define ATTI_TASK_FREQUENCY_MAX 1000
+
+#ifdef ASYNC_GYRO_PROCESSING
+typedef enum {
+    ASYNC_MODE_NONE,
+    ASYNC_MODE_GYRO,
+    ASYNC_MODE_ALL
+} asyncMode_e;
+#endif
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -105,3 +119,9 @@ uint16_t getCurrentMinthrottle(void);
 struct master_s;
 void targetConfiguration(struct master_s *config);
 
+#ifdef ASYNC_GYRO_PROCESSING
+uint32_t getLooptime(void);
+uint16_t getAccUpdateFrequency(void);
+uint16_t getAttiUpdateFrequency(void);
+uint8_t getAsyncMode(void);
+#endif
