@@ -42,13 +42,13 @@
                     </div>
                     <div class="checkboxPwm" style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">
                         <div style="float: left; height: 20px; margin-right: 5px; margin-left: 3px;">
-                            <input type="checkbox" name="unsyncedPWMSwitch" class="toggle" />
+                            <input type="checkbox" id="unsyncedPWMSwitch" class="toggle" />
                         </div>
-                        <label for="unsyncedpwmswitch"> <span class="freelabel"
+                        <label for="unsyncedPWMSwitch"> <span class="freelabel"
                             i18n="configurationunsyndePwm"></span>
                         </label>
                     </div>
-                    <div class="number unsyncedpwmfreq" style="display: show; margin-top: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                    <div class="number unsyncedpwmfreq" style="margin-top: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
                         <label>
                             <div class="numberspacer">
                                 <input type="number" name="unsyncedpwmfreq" min="200" max="32000" step="100" />
@@ -65,7 +65,7 @@
                     <div class="disarm">
                         <div class="checkbox">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                <input type="checkbox" name="disarmkillswitch" class="toggle" />
+                                <input type="checkbox" id="disarmkillswitch" class="toggle" />
                             </div>
                             <label for="disarmkillswitch"> <span class="freelabel"
                                 i18n="configurationDisarmKillSwitch"></span>
@@ -331,6 +331,7 @@
                         <label>
                             <input type="text" name="batterycurrent" readonly class="disabled" /> <span
                                 i18n="configurationBatteryCurrent"></span>
+                        </label>
                     </div>
                     <div class="checkbox">
                     <div class="numberspacer">
@@ -422,7 +423,7 @@
                     <div class="hardwareSelection">
                         <div class="select">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                <input type="checkbox" name="accHardwareSwitch" class="toggle" />
+                                <input type="checkbox" id="accHardwareSwitch" class="toggle" />
                             </div>
                             <label for="accHardwareSwitch"> <span class="freelabel"
                                 i18n="configurationAccHardware"></span>
@@ -430,7 +431,7 @@
                         </div>
                         <div class="select">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                <input type="checkbox" name="baroHardwareSwitch" class="toggle" />
+                                <input type="checkbox" id="baroHardwareSwitch" class="toggle" />
                             </div>
                             <label for="baroHardwareSwitch"> <span class="freelabel"
                                 i18n="configurationBaroHardware"></span>
@@ -438,7 +439,7 @@
                         </div>
                         <div class="select">
                             <div style="float: left; height: 20px; margin-right: 15px; margin-left: 3px;">
-                                <input type="checkbox" name="magHardwareSwitch" class="toggle" />
+                                <input type="checkbox" id="magHardwareSwitch" class="toggle" />
                             </div>
                             <label for="magHardwareSwitch"> <span class="freelabel"
                                 i18n="configurationMagHardware"></span>
@@ -449,7 +450,7 @@
             </div>
         </div>
         <div class="clear-both"></div>
-        <div class="leftWrapper 3d">
+        <div class="leftWrapper _3d">
             <div class="gui_box grey">
                 <div class="gui_box_titlebar">
                     <div class="spacer_box_title" i18n="configuration3d"></div>
@@ -470,7 +471,7 @@
                             i18n="configuration3dNeutral"></span>
                         </label>
                     </div>
-                    <div class="number 3ddeadbandthrottle" >
+                    <div class="number" >
                         <label> <input type="number" name="3ddeadbandthrottle" step="1" min="0" max="1000" /> <span
                             i18n="configuration3dDeadbandThrottle"></span>
                         </label>
