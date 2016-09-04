@@ -382,23 +382,31 @@ static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 #endif
 
 #ifdef ASYNC_GYRO_PROCESSING
-uint32_t getLooptime(void) {
-    return masterConfig.looptime;
-}
-
-uint16_t getAccUpdateFrequency(void) {
-    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
-        return masterConfig.accTaskFrequency;
+uint32_t getPidUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
+        return getGyroUpdateRate();
     } else {
-        return 1000000 / getLooptime();
+        return masterConfig.looptime;
     }
 }
 
-uint16_t getAttiUpdateFrequency(void) {
+uint16_t getGyroUpdateRate(void) {
+    return gyro.targetLooptime;
+}
+
+uint16_t getAccUpdateRate(void) {
     if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
-        return masterConfig.attiTaskFrequency;
+        return 1000000 / masterConfig.accTaskFrequency;
     } else {
-        return 1000000 / getLooptime();
+        return getPidUpdateRate();
+    }
+}
+
+uint16_t getAttiUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / masterConfig.attiTaskFrequency;
+    } else {
+        return getPidUpdateRate();
     }
 }
 

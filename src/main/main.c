@@ -57,6 +57,7 @@ int main(void)
 {
     init();
     loopbackInit();
+
     while (true) {
         scheduler();
         processLoopback();

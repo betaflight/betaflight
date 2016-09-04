@@ -214,6 +214,16 @@ void taskSyncPwmDriver(void) {
 }
 #endif
 
+#ifdef ASYNC_GYRO_PROCESSING
+void taskAttitude(void) {
+    imuUpdateAttitude();
+}
+
+void taskAcc(void) {
+    imuUpdateAccelerometer();
+}
+#endif
+
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
@@ -222,12 +232,49 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
-    [TASK_GYROPID] = {
-        .taskName = "GYRO/PID",
-        .taskFunc = taskMainPidLoopChecker,
-        .desiredPeriod = 1000,
-        .staticPriority = TASK_PRIORITY_REALTIME,
-    },
+    #ifdef ASYNC_GYRO_PROCESSING
+        [TASK_PID] = {
+            .taskName = "PID",
+            .taskFunc = taskMainPidLoop,
+            .desiredPeriod = 1000000 / 500, // Run at 500Hz
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+        [TASK_GYRO] = {
+            .taskName = "GYRO",
+            .taskFunc = taskGyro,
+            .desiredPeriod = 1000000 / 1000, //Run at 1000Hz
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+
+        [TASK_ACC] = {
+            .taskName = "ACC",
+            .taskFunc = taskAcc,
+            .desiredPeriod = 1000000 / 520, //520Hz is ACC bandwidth (260Hz) * 2
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+        [TASK_ATTI] = {
+            .taskName = "ATTITUDE",
+            .taskFunc = taskAttitude,
+            .desiredPeriod = 1000000 / 60, //With acc LPF at 15Hz 60Hz attitude refresh should be enough
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+    #else
+
+        /*
+         * Legacy synchronous PID/gyro/acc/atti mode
+         * for 64kB targets and other smaller targets
+         */
+
+        [TASK_GYROPID] = {
+            .taskName = "GYRO/PID",
+            .taskFunc = taskMainPidLoop,
+            .desiredPeriod = 1000,
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+    #endif
 
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
@@ -342,10 +389,30 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
 void fcTasksInit(void)
 {
+    /* Setup scheduler */
     schedulerInit();
 
+#ifdef ASYNC_GYRO_PROCESSING
+    rescheduleTask(TASK_PID, getPidUpdateRate());
+    setTaskEnabled(TASK_PID, true);
+
+    if (getAsyncMode() != ASYNC_MODE_NONE) {
+        rescheduleTask(TASK_GYRO, getGyroUpdateRate());
+        setTaskEnabled(TASK_GYRO, true);
+    }
+
+    if (getAsyncMode() == ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
+        rescheduleTask(TASK_ACC, getAccUpdateRate());
+        setTaskEnabled(TASK_ACC, true);
+
+        rescheduleTask(TASK_ATTI, getAttiUpdateRate());
+        setTaskEnabled(TASK_ATTI, true);
+    }
+
+#else
     rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
+#endif
 
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
