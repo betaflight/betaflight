@@ -19,6 +19,11 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPNE"
 
+
+#ifndef SPRACINGF3NEO_REV
+#define SPRACINGF3NEO_REV 5
+#endif
+
 // For Rev E SPI1 RX/TX DMA was needed so LED STRIP on PA8/PA15 were swapped.
 // This frees moved LED strip from DMA1 to DMA2 and frees up the channels on DMA1 to be used for SPI1
 // This also means PWM5/6 are now mutually exclusive with the LED strip feature since LED and PWM5/6 use TIM8
@@ -105,7 +110,7 @@
 // Using SPI2 default IO pins PB12/PA13/PA14/PA15
 // Using SPI3 default IO pins PA15/PB3/PB4/PB5
 
-#ifdef SPRACINGF3EVO_REV_E
+#if (SPRACINGF3NEO_REV >= 5)
 #define SPI3_NSS_GPIO           GPIOA
 #define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
 #define SPI3_NSS_PIN            GPIO_Pin_8
@@ -148,11 +153,9 @@
 #define MAX7456_CS_PIN                  SPI1_NSS_PIN
 #define MAX7456_SPI_INSTANCE            SPI1
 
-#ifdef SPRACINGF3EVO_REV_E
 #define MAX7456_DMA_CHANNEL_TX          DMA1_Channel3
 #define MAX7456_DMA_CHANNEL_RX          DMA1_Channel2
 #define MAX7456_DMA_IRQ_HANDLER_ID      DMA1Channel2Descriptor
-#endif
 
 #define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MAX7456_VSYNC_GPIO              GPIOC
@@ -216,7 +219,7 @@
 
 #define LED_STRIP
 
-#ifdef SPRACINGF3EVO_REV_E
+#ifdef SPRACINGF3NEO_REV_E
 #define LED_STRIP_TIMER TIM8
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA

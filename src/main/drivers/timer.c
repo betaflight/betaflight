@@ -354,10 +354,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM16, GPIOB, Pin_8,  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_1},
 
     // LED Strip
-#ifdef SPRACINGF3EVO_REV_E
-    { TIM8,  GPIOA, Pin_15, TIM_Channel_1, TIM8_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_2},
-#else
+#if (SPRACINGF3NEO_REV < 5)
     { TIM1,  GPIOA, Pin_8,  TIM_Channel_1, TIM1_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_6},
+#else
+    { TIM8,  GPIOA, Pin_15, TIM_Channel_1, TIM8_CC_IRQn,            1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_2},
 #endif
 };
 

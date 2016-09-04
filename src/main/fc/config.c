@@ -279,6 +279,16 @@ static void validateAndFixConfig(void)
     }
 #endif
 
+#if (SPRACINGF3NEO_REV < 5)
+    if (featureConfigured(FEATURE_OSD) && featureConfigured(FEATURE_TRANSPONDER)) {
+        featureClear(FEATURE_TRANSPONDER);
+    }
+
+    if (featureConfigured(FEATURE_OSD) && featureConfigured(FEATURE_LED_STRIP)) {
+        featureClear(FEATURE_LED_STRIP);
+    }
+#endif
+
     if (!isSerialConfigValid(serialConfig())) {
         PG_RESET_CURRENT(serialConfig);
     }
