@@ -23,6 +23,7 @@
 
 #include "build/debug.h"
 
+#include "drivers/dma.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/nvic.h"
@@ -33,7 +34,6 @@
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
-
 #include "common/utils.h"
 
 #include "osd/fonts/font_max7456_12x18.h"
@@ -123,6 +123,11 @@
 #endif
 
 #define BWBRIGHTNESS(black, white) ((black << 2) | white)
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+dmaCallbackHandler_t dmaTxHandler;
+volatile uint8_t dma_transaction_in_progress = 0;
+#endif
 
 uint8_t max7456_videoModeMask;
 
@@ -229,8 +234,119 @@ textScreen_t *max7456_getTextScreen(void)
     return &max7456Screen;
 }
 
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+static void max7456_writeDMA(void* tx_buffer, void* rx_buffer, uint16_t buffer_size)
+{
+    DMA_InitTypeDef DMA_InitStructure;
+#ifdef MAX7456_DMA_CHANNEL_RX
+    static uint16_t dummy[] = {0xffff};
+#else
+    UNUSED(rx_buffer);
+#endif
+    while (dma_transaction_in_progress); // Wait for prev DMA transaction
+
+    // Enable SPI TX/RX request
+    ENABLE_MAX7456;
+
+    DMA_DeInit(MAX7456_DMA_CHANNEL_TX);
+#ifdef MAX7456_DMA_CHANNEL_RX
+    DMA_DeInit(MAX7456_DMA_CHANNEL_RX);
+#endif
+
+    // Common to both channels
+    DMA_StructInit(&DMA_InitStructure);
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(MAX7456_SPI_INSTANCE->DR));
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_BufferSize = buffer_size;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
+
+#ifdef MAX7456_DMA_CHANNEL_RX
+    // Rx Channel
+    DMA_InitStructure.DMA_MemoryBaseAddr = rx_buffer ? (uint32_t)rx_buffer : (uint32_t)(dummy);
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+    DMA_InitStructure.DMA_MemoryInc = rx_buffer ? DMA_MemoryInc_Enable : DMA_MemoryInc_Disable;
+
+    DMA_Init(MAX7456_DMA_CHANNEL_RX, &DMA_InitStructure);
+    DMA_Cmd(MAX7456_DMA_CHANNEL_RX, ENABLE);
+#endif
+    // Tx channel
+
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)tx_buffer; //max7456_screen;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+
+    DMA_Init(MAX7456_DMA_CHANNEL_TX, &DMA_InitStructure);
+    DMA_Cmd(MAX7456_DMA_CHANNEL_TX, ENABLE);
+
+#ifdef MAX7456_DMA_CHANNEL_RX
+    DMA_ITConfig(MAX7456_DMA_CHANNEL_RX, DMA_IT_TC, ENABLE);
+#else
+    DMA_ITConfig(MAX7456_DMA_CHANNEL_TX, DMA_IT_TC, ENABLE);
+#endif
+
+    dma_transaction_in_progress = 1;
+
+    SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
+#ifdef MAX7456_DMA_CHANNEL_RX
+            SPI_I2S_DMAReq_Rx |
+#endif
+            SPI_I2S_DMAReq_Tx, ENABLE);
+}
+
+void max7456_dma_irq_handler(dmaChannel_t* descriptor, dmaCallbackHandler_t* callbackHandler)
+{
+    UNUSED(callbackHandler);
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+#ifdef MAX7456_DMA_CHANNEL_RX
+        DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
+#else
+        //Empty RX buffer. RX DMA takes care of it if enabled
+        while (SPI_I2S_GetFlagStatus(MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_RXNE) == SET) {
+            MAX7456_SPI_INSTANCE->DR;
+        }
+#endif
+        DMA_Cmd(MAX7456_DMA_CHANNEL_TX, DISABLE);
+
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+
+        SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
+#ifdef MAX7456_DMA_CHANNEL_RX
+                SPI_I2S_DMAReq_Rx |
+#endif
+                SPI_I2S_DMAReq_Tx, DISABLE);
+
+        DISABLE_MAX7456;
+        dma_transaction_in_progress = 0;
+    }
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_HTIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
+}
+#endif
+
+static void max7456_waitForDMAToComplete(void)
+{
+#ifdef MAX7456_DMA_CHANNEL_TX
+    static uint32_t waiting = 0;
+    while (dma_transaction_in_progress) {
+        waiting++;
+    };
+#endif
+}
+
 static void max7456_write(uint8_t address, uint8_t data)
 {
+    max7456_waitForDMAToComplete();
+
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, address);
@@ -242,6 +358,8 @@ static void max7456_write(uint8_t address, uint8_t data)
 static uint8_t max7456_read(uint8_t address)
 {
     uint8_t result;
+
+    max7456_waitForDMAToComplete();
 
     ENABLE_MAX7456;
 
@@ -376,6 +494,16 @@ void max7456_init(videoMode_e desiredVideoMode)
     uint8_t blackLevelValue = blackLevelResult &= ~(1<<4);
 
     max7456_write(MAX7456_REG_OSDBL, blackLevelValue);
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+    static bool dmaInitDone = false;
+    if (!dmaInitDone) {
+        dmaHandlerInit(&dmaTxHandler, max7456_dma_irq_handler);
+        dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, &dmaTxHandler, NVIC_PRIO_MAX7456_DMA);
+        dmaInitDone = true;
+    }
+#endif
+
 }
 
 void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
@@ -464,18 +592,50 @@ void max7456_waitForVSync(void)
     }
 }
 
+#ifdef MAX7456_DMA_CHANNEL_TX
+
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
+{
+    MAX7456_TIME_SECTION_BEGIN(1);
+
+    uint32_t totalScreenCharacters = textScreen->height * textScreen->width;
+
+    static uint16_t max7456_screen[MAX7456_PAL_CHARACTER_COUNT + 3 + 2];
+
+    uint32_t offset = 0;
+
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMAH) | (0 << 8);
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMAL) | (0 << 8);
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMM) | ((MAX7456_DMM_BIT_AUTO_INCREMENT) << 8);
+
+    for(uint32_t characterOffset = 0; characterOffset < totalScreenCharacters; characterOffset++) {
+        max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMDI | (screenBuffer[characterOffset] << 8));
+    }
+
+    // terminate auto-increment
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMDI) | (0xFF << 8);
+
+    // disable auto increment, enabled above.
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMM) | (0x00 << 8);
+
+    max7456_writeDMA(&max7456_screen, NULL, offset * 2);
+
+    MAX7456_TIME_SECTION_END(1);
+}
+
+#else
 void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
 {
     ENABLE_MAX7456;
-
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_DMM_BIT_8BIT_ENABLE | MAX7456_DMM_BIT_AUTO_INCREMENT);
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
     spiTransferByte(MAX7456_SPI_INSTANCE, 0);
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
     spiTransferByte(MAX7456_SPI_INSTANCE, 0);
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_DMM_BIT_8BIT_ENABLE | MAX7456_DMM_BIT_AUTO_INCREMENT);
 
     //
     // It takes about 4600us to transfer the contents of the screen buffer via SPI to the MAX7456
@@ -517,12 +677,8 @@ void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffe
     MAX7456_TIME_SECTION_END(2);
 
     DISABLE_MAX7456;
-
-
 }
-
-// show the entire font in the middle of the screen.
-
+#endif
 
 void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
 {
@@ -550,6 +706,9 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
     DISABLE_MAX7456;
 }
 
+/**
+ * show the entire font in the middle of the screen.
+ */
 void max7456_showFont(void)
 {
     int c = 0, y = 2;

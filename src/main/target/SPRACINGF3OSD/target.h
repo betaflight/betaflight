@@ -46,6 +46,10 @@
 #define MAX7456_CS_PIN         SPI2_CS_PIN
 #define MAX7456_SPI_INSTANCE   SPI2
 
+#define MAX7456_DMA_CHANNEL_TX              DMA1_Channel5
+#define MAX7456_DMA_CHANNEL_RX              DMA1_Channel4
+#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1Channel4Descriptor
+
 #define MAX7456_NRST_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define MAX7456_NRST_GPIO               GPIOB
 #define MAX7456_NRST_PIN                Pin_2
@@ -81,14 +85,12 @@
 #define USE_UART2
 #define SERIAL_PORT_COUNT 3
 
-#ifndef UART1_GPIO
 #define UART1_TX_PIN        GPIO_Pin_9  // PA9
 #define UART1_RX_PIN        GPIO_Pin_10 // PA10
 #define UART1_GPIO          GPIOA
 #define UART1_GPIO_AF       GPIO_AF_7
 #define UART1_TX_PINSOURCE  GPIO_PinSource9
 #define UART1_RX_PINSOURCE  GPIO_PinSource10
-#endif
 
 #define USE_MSP_CLIENT
 
@@ -96,11 +98,9 @@
 
 #define USE_ADC
 
-#ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
-#endif
 
 // 12v
 #define ADC0_GPIO               GPIOA
