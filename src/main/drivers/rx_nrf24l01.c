@@ -261,7 +261,6 @@ void NRF24L01_SetupBasic(void)
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, 0x00); // No auto acknowledgment
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
     NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES); // 5-byte RX/TX address
-    NRF24L01_WriteReg(NRF24L01_08_OBSERVE_TX, 0x00); // Don't count lost or retransmitted packets
     NRF24L01_WriteReg(NRF24L01_1C_DYNPD, 0x00); // Disable dynamic payload length on all pipes
 }
 
@@ -326,6 +325,9 @@ bool NRF24L01_ReadPayloadIfAvailable(uint8_t *data, uint8_t length)
 }
 
 #ifndef UNIT_TEST
+/*
+ * Fast read of payload, for use in interrupt service routine
+ */
 bool NRF24L01_ReadPayloadIfAvailableFast(uint8_t *data, uint8_t length)
 {
     // number of bits transferred = 8 * (3 + length)
@@ -333,10 +335,13 @@ bool NRF24L01_ReadPayloadIfAvailableFast(uint8_t *data, uint8_t length)
     // at 50MHz clock rate that is approximately 3 microseconds
     bool ret = false;
     ENABLE_NRF24();
-    nrf24TransferByte(R_REGISTER | (REGISTER_MASK & NRF24L01_17_FIFO_STATUS));
-    const uint8_t fifoStatus = nrf24TransferByte(NOP);
-    if ((fifoStatus & BV(NRF24L01_17_FIFO_STATUS_RX_EMPTY)) == 0) {
+    nrf24TransferByte(R_REGISTER | (REGISTER_MASK & NRF24L01_07_STATUS));
+    const uint8_t status = nrf24TransferByte(NOP);
+    if ((status & BV(NRF24L01_07_STATUS_RX_DR)) == 0) {
         ret = true;
+        // clear RX_DR flag
+        nrf24TransferByte(W_REGISTER | (REGISTER_MASK & NRF24L01_07_STATUS));
+        nrf24TransferByte(BV(NRF24L01_07_STATUS_RX_DR));
         nrf24TransferByte(R_RX_PAYLOAD);
         for (uint8_t i = 0; i < length; i++) {
             data[i] = nrf24TransferByte(NOP);

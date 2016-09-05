@@ -23,10 +23,10 @@
 #include <string.h>
 
 #include <platform.h>
-#include "build/build_config.h"
-
 
 #ifdef USE_RX_SYMA
+
+#include "build/build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
@@ -54,7 +54,7 @@
  * uses address received in bind packets
  * hops between 4 channels generated from address received in bind packets
  *
- * SymaX5 Protocol
+ * SymaX5C Protocol
  * No auto acknowledgment
  * Payload size is 16, static
  * Data rate is 1Mbps
@@ -222,20 +222,6 @@ static void setSymaXHoppingChannels(uint32_t addr)
     }
 }
 
-static void symaSetBound(const uint8_t* rxTxAddr)
-{
-    protocolState = STATE_DATA;
-    // using protocol NRF24L01_SYMA_X, since NRF24L01_SYMA_X5C went straight into data mode
-    // set the hopping channels as determined by the rxTxAddr received in the bind packet
-    setSymaXHoppingChannels(rxTxAddr[0]);
-    timeOfLastHop = micros();
-    packetCount = 0;
-    // set the NRF24 to use the rxTxAddr received in the bind packet
-    NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
-    symaRfChannelIndex = 0;
-    NRF24L01_SetChannel(symaRfChannels[0]);
-}
-
 /*
  * This is called periodically by the scheduler.
  * Returns NRF24_RECEIVED_DATA if a data packet was received.
@@ -243,26 +229,35 @@ static void symaSetBound(const uint8_t* rxTxAddr)
 nrf24_received_t symaNrf24DataReceived(uint8_t *payload)
 {
     nrf24_received_t ret = NRF24_RECEIVED_NONE;
-    uint32_t timeNowUs;
+
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const bool bindPacket = symaCheckBindPacket(payload);
             if (bindPacket) {
                 ret = NRF24_RECEIVED_BIND;
-                symaSetBound(rxTxAddr);
+                protocolState = STATE_DATA;
+                // using protocol NRF24L01_SYMA_X, since NRF24L01_SYMA_X5C went straight into data mode
+                // set the hopping channels as determined by the rxTxAddr received in the bind packet
+                setSymaXHoppingChannels(rxTxAddr[0]);
+                // set the NRF24 to use the rxTxAddr received in the bind packet
+                NRF24L01_WriteRegisterMulti(NRF24L01_0A_RX_ADDR_P0, rxTxAddr, RX_TX_ADDR_LEN);
+                packetCount = 0;
+                symaRfChannelIndex = 0;
+                NRF24L01_SetChannel(symaRfChannels[0]);
             }
         }
         break;
     case STATE_DATA:
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
+            symaHopToNextChannel();
+            timeOfLastHop = micros();
             ret = NRF24_RECEIVED_DATA;
         }
-        timeNowUs = micros();
-        if ((ret == NRF24_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
+        if (micros() > timeOfLastHop + hopTimeout) {
             symaHopToNextChannel();
-            timeOfLastHop = timeNowUs;
+            timeOfLastHop = micros();
         }
         break;
     }
