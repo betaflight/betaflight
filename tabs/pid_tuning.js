@@ -253,12 +253,8 @@ TABS.pid_tuning.initialize = function (callback) {
             $('input[name="dtermSetpoint-range"]').val(ADVANCED_TUNING.dtermSetpointWeight / 100);
 
             self.updateRcInterpolationParameters();
-
-            $('.pid_tuning input[name="rcExpoPower"]').val(RC_tuning.rcExpoPower.toFixed(0)).prop("readonly", false);
         } else {
             $('.pid_filter .newFilter').hide();
-
-            $('.pid_tuning input[name="rcExpoPower"]').val(3).prop("readonly", true);
         }
     }
 
@@ -363,8 +359,6 @@ TABS.pid_tuning.initialize = function (callback) {
             FILTER_CONFIG.gyro_soft_notch_cutoff = parseInt($('.pid_filter input[name="gyroNotchCutoff"]').val());
             FILTER_CONFIG.dterm_notch_hz = parseInt($('.pid_filter input[name="dTermNotchFrequency"]').val());
             FILTER_CONFIG.dterm_notch_cutoff = parseInt($('.pid_filter input[name="dTermNotchCutoff"]').val());
-
-            RC_tuning.rcExpoPower = parseInt($('.pid_tuning input[name="rcExpoPower"]').val());
         }
 
     }
