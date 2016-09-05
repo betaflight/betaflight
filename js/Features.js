@@ -46,17 +46,26 @@ var Features = function (config) {
         );
     }
 
-    if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "3.0.0")) {
-        features.push(
-            {bit: 18, group: 'other', name: 'OSD', haveTip: true}
-        );
-    }
+    if (config.flightControllerVersion !== '') {
+        if (semver.gte(config.flightControllerVersion, "2.8.0")) {
+            features.push(
+                {bit: 22, group: 'other', name: 'AIRMODE'}
+            );
+        }
 
-    if (config.flightControllerVersion !== '' && semver.gte(config.flightControllerVersion, "2.8.0")) {
-         features.push(
-            {bit: 22, group: 'other', name: 'AIRMODE'},
-            {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'}
-        );
+        if (semver.gte(config.flightControllerVersion, "2.8.0") && !semver.gte(config.flightControllerVersion, "3.0.0")) {
+            features.push(
+                {bit: 23, group: 'pidTuning', name: 'SUPEREXPO_RATES'}
+            );
+        }
+
+        if (semver.gte(config.flightControllerVersion, "3.0.0")) {
+            features.push(
+                {bit: 18, group: 'other', name: 'OSD', haveTip: true}
+            );
+        }
+
+
     }
 
     self._features = features;

@@ -9,18 +9,24 @@ var RateCurve = function (useLegacyCurve) {
 
     this.constrain = function (value, min, max) {
         return Math.max(min, Math.min(value, max));
-    }
+    };
 
-    this.rcCommand = function (rcData, rcRate, rcExpo) {
-        var tmp = Math.min(Math.abs(rcData - midRc), 500) / 100;
+    this.rcCommand = function (rcData, rcRate) {
+        var tmp = Math.min(Math.abs(rcData - midRc), 500);
+        rcRate = rcRate;
 
-	var result = ((2500 + rcExpo * (tmp * tmp - 25)) * tmp * rcRate / 2500).toFixed(0);
-	if (rcData < midRc) {
+        if (rcRate > 2) {
+            rcRate = rcRate + (rcRate - 2) * 14.54;
+        }
+
+        var result = tmp * rcRate;
+
+        if (rcData < midRc) {
             result = -result;
         }
 
         return result;
-    }
+    };
 
     this.drawRateCurve = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height) {
         var canvasHeightScale = height / (2 * maxAngularVel);
@@ -42,7 +48,7 @@ var RateCurve = function (useLegacyCurve) {
         context.stroke();
 
         context.restore();
-    }
+    };
 
     this.drawLegacyRateCurve = function (rate, rcRate, rcExpo, context, width, height) {
         // math magic by englishman
@@ -55,28 +61,41 @@ var RateCurve = function (useLegacyCurve) {
         context.quadraticCurveTo(width * 11 / 20, height - ((rateY / 2) * (1 - rcExpo)), width, height - rateY);
         context.stroke();
     }
-}
+};
 
 RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive) {
     var angleRate;
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
-        rate = rate * 100;
-        rcRate = rcRate * 100;
-        rcExpo = rcExpo * 100;
 
-        var inputValue = this.rcCommand(rcData, rcRate, rcExpo);
-
-        if (superExpoActive) {
-            var rcFactor = Math.abs(inputValue) / (500 * rcRate / 100);
-            rcFactor = 1 / this.constrain(1 - rcFactor * rate / 100, 0.01, 1);
-
-            angleRate = rcFactor * 27 * inputValue / 16;
+        var inputValue = this.rcCommand(rcData, rcRate);
+        var maxRc = 500 * rcRate;
+        
+        var expoPower;
+        var rcRateConstant;
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            expoPower = 3;
+            rcRateConstant = 200;
         } else {
-            angleRate = (rate + 27) * inputValue / 16;
+            expoPower = 2;
+            rcRateConstant = 205.85;
         }
 
-        angleRate = this.constrain(angleRate, -8190, 8190); // Rate limit protection
-        angleRate = angleRate >> 2; // the shift by 2 is to counterbalance the divide by 4 that occurs on the gyro to calculate the error
+        if (rcExpo > 0) {
+            var absRc = Math.abs(inputValue) / maxRc;
+            inputValue =  inputValue * Math.pow(absRc, expoPower) * rcExpo + inputValue * (1-rcExpo);
+        }
+
+        var rcInput = inputValue / maxRc;
+
+        if (superExpoActive) {
+            var rcFactor = 1 / this.constrain(1 - Math.abs(rcInput) * rate, 0.01, 1);
+            angleRate = rcRateConstant * rcRate * rcInput; // 200 should be variable checked on version (older versions it's 205,9)
+            angleRate = angleRate * rcFactor;
+        } else {
+            angleRate = (((rate * 100) + 27) * inputValue / 16) / 4.1; // Only applies to old versions ?
+        }
+
+        angleRate = this.constrain(angleRate, -1998, 1998); // Rate limit protection
     }
 
     return angleRate;
@@ -89,7 +108,7 @@ RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpo
     }
 
     return maxAngularVel;
-}
+};
 
 RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context) {
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
@@ -102,4 +121,4 @@ RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, maxA
             this.drawRateCurve(rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height);
         }
     }
-}
+};

@@ -72,6 +72,7 @@
                                 <th class="derivative" i18n="pidTuningDerivative"></th>
                                 <th class="rc_rate" i18n="pidTuningRcRate"></th>
                                 <th class="rate" i18n="pidTuningRate"></th>
+                                <th class="maxVel" i18n="pidTuningMaxVel"></th>
                                 <th class="rc_expo" i18n="pidTuningRcExpo"></th>
                             </tr>
                         </table>
@@ -91,11 +92,12 @@
                                 <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
                                 <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
                                 <td rowspan="2" style="background-color:white;">
-                                    <input type="number" name="rc_rate" step="0.01" min="0" max="2.5" />
+                                    <input type="number" name="rc_rate" step="0.01" min="0" max="2.55" />
                                     <div class="bracket"></div>
                                 </td>
                                 <td class="roll_rate"><input type="number" name="roll_rate" step="0.01" min="0" max="1.00" /></td>
                                 <td class="roll_pitch_rate" rowspan="2"><input type="number" name="roll_pitch_rate" step="0.01" min="0" max="1.00" /></td>
+                                <td class="new_rates maxAngularVelRoll"></td>
                                 <td rowspan="2" style="background-color:white;">
                                     <input type="number" name="rc_expo" step="0.01" min="0" max="1" />
                                     <div class="bracket"></div>
@@ -108,6 +110,7 @@
                                 <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
                                 <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
                                 <td class="pitch_rate"><input type="number" name="pitch_rate" step="0.01" min="0" max="1.00" /></td>
+                                <td class="new_rates maxAngularVelPitch"></td>
                             </tr>
                             <tr class="YAW">
                                 <!-- 2 -->
@@ -115,8 +118,9 @@
                                 <td class="pid_data"><input type="number" name="p" step="1" min="0" max="255" /></td>
                                 <td class="pid_data"><input type="number" name="i" step="1" min="0" max="255" /></td>
                                 <td></td>
-                                <td rowspan="1"><input type="number" name="rc_rate_yaw" step="0.01" min="0" max="2.5" /></td>
+                                <td rowspan="1"><input type="number" name="rc_rate_yaw" step="0.01" min="0" max="2.55" /></td>
                                 <td><input type="number" name="yaw_rate" step="0.01" min="0" max="2.55" /></td>
+                                <td class="new_rates maxAngularVelYaw"></td>
                                 <td><input type="number" name="rc_yaw_expo" step="0.01" min="0" max="1" /></td>
                             </tr>
                             <tr class="YAW_JUMP_PREVENTION">
@@ -127,7 +131,7 @@
                                     </div>
                                 </td>
                                 <td class="pid_data"><input type="number" name="d" step="1" min="0" max="255" /></td>
-                                <td colspan=3></td>
+                                <td colspan=4></td>
                             </tr>
                         </table>
                     </div>
@@ -208,7 +212,7 @@
                     <div id="pid_accel" class="gui_box grey topspacer pid_tuning">
                         <table class="pid_titlebar">
                             <tr>
-                                <th class="third" i18n="pidTuningName" style="width: 17%;"></th>
+                                <th class="third" i18n="pidTuningName" style="width: 24%;"></th>
                                 <th class="third" i18n="pidTuningStrength" style="width: 33%;"></th>
                                 <th class="third" i18n="pidTuningTransition" style="width: 33%;"></th>
                             </tr>
@@ -371,25 +375,13 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan=2>
-                                            <div class="spacer" style="margin-top: 10px; margin-bottom: 10px;">
+                                        <td>
+                                            <div class="spacer" style="margin-top: 10px;">
                                                 <div class="rate_curve">
                                                     <canvas height="120px" style="width: 100%; height: 100%"></canvas>
                                                 </div>
                                             </div>
                                         </td>
-                                    </tr>
-                                    <tr class="new_rates">
-                                        <td i18n="pidTuningMaxAngularVelRoll" style="width: 70%"></td>
-                                        <td class="maxAngularVelRoll"></td>
-                                    </tr>
-                                    <tr class="new_rates">
-                                        <td i18n="pidTuningMaxAngularVelPitch"></td>
-                                        <td class="maxAngularVelPitch"></td>
-                                    </tr>
-                                    <tr class="new_rates">
-                                        <td i18n="pidTuningMaxAngularVelYaw"></td>
-                                        <td class="maxAngularVelYaw"></td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -850,6 +850,9 @@
     "pidTuningRcRate": {
         "message": "RC Rate"
     },
+    "pidTuningMaxVel": {
+        "message": "Max Vel (deg/s)"
+    },
     "pidTuningRate": {
         "message": "Rate"
     },
@@ -872,19 +875,10 @@
         "message": "Frequency"
     },
     "pidTuningRatesCurve": {
-	"message": "Rates"
-    },
-    "pidTuningMaxAngularVelRoll": {
-	"message": "Max roll speed (deg/s):"
-    },
-    "pidTuningMaxAngularVelPitch": {
-	"message": "Max pitch speed (deg/s):"
-    },
-    "pidTuningMaxAngularVelYaw": {
-	"message": "Max yaw speed (deg/s):"
+	    "message": "Rates"
     },
     "throttle": {
-	"message": "Throttle"
+	    "message": "Throttle"
     },
     "pidTuningButtonSave": {
         "message": "Save"
@@ -1606,6 +1600,12 @@
     },
     "pidTuningYawJumpPreventionHelp": {
         "message": "Keeps the craft from jumping up at the end of yaws. Higher number gives more damping at the end of yaw moves (works like old yaw D, which was not a real D like on other axis)"
+    },
+    "pidTuningRcExpoPower": {
+        "message": "RC Expo Power"
+    },
+    "pidTuningRcExpoPowerHelp": {
+        "message": "The exponent that is used when calculating RC Expo. In Betaflight versions prior to 3.0, value is fixed at 3."
     },
     "pidTuningLevel": {
         "message": "Angle/Horizon"

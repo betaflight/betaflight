@@ -242,13 +242,13 @@
     padding: 5px;
     text-align: left;
     border-right: 1px solid #ccc;
-    width: 14%;
+    width: 12.5%;
 
 }
 
 .tab-pid_tuning .pid_titlebar th:first-child {
     text-align: left;
-    width: 14%;
+    width: 12.5%;
 }
 
 .tab-pid_tuning .pid_titlebar th:last-child {
@@ -288,7 +288,7 @@
 
 .tab-pid_tuning table td {
     padding: 1px;
-    width: 14%;
+    width: 12.5%;
     border-right: 1px solid #ccc;
 }
 
@@ -370,32 +370,8 @@
     border-top-right-radius: 3px;
 }
 
-.tab-pid_tuning .name {
-    width: 14%;
-}
-
-.tab-pid_tuning .proportional {
-    width: 14%;
-}
-
-.tab-pid_tuning .integral {
-    width: 14%;
-}
-
-.tab-pid_tuning .derivative {
-    width: 14%;
-}
-
-.tab-pid_tuning .rc_rate {
-    width: 14%;
-}
-
-.tab-pid_tuning .rate {
-    width: 14%;
-}
-
-.tab-pid_tuning .rc_expo {
-    width: 14%;
+.tab-pid_tuning .new_rates {
+    text-align: left;
 }
 
 .tab-pid_tuning .tpa {
@@ -711,7 +687,6 @@ width: 40%;
 
 .tab-pid_tuning .rc_curve_bg {
     float: left;
-    padding-bottom: 20px;
     background: #ddd;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
