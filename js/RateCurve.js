@@ -71,8 +71,14 @@ RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcR
         var maxRc = 500 * rcRate;
 
         if (rcExpo > 0) {
+            var expoPower;
             var absRc = Math.abs(inputValue) / maxRc;
-            inputValue = inputValue * ((rcExpo * absRc * absRc * absRc) + absRc * (1-rcExpo)); // absRc should be wrapped in function using expo power
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) { // Configurable in the future
+                expoPower = 3;
+            } else {
+                expoPower = 2;
+            }
+            inputValue =  inputValue * Math.pow(absRc, expoPower) * rcExpo + inputValue * (1-rcExpo);
         }
 
         var rcInput = inputValue / maxRc;
