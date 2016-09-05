@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 145;
+static const uint8_t EEPROM_CONF_VERSION = 144;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -191,7 +191,6 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
     controlRateConfig->dynThrPID = 10;
     controlRateConfig->rcYawExpo8 = 0;
     controlRateConfig->tpa_breakpoint = 1650;
-    controlRateConfig->rcExpoPwr = 3;
 
     for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
         controlRateConfig->rates[axis] = 70;
