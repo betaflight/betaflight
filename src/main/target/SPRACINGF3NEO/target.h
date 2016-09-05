@@ -110,12 +110,6 @@
 // Using SPI2 default IO pins PB12/PA13/PA14/PA15
 // Using SPI3 default IO pins PA15/PB3/PB4/PB5
 
-#if (SPRACINGF3NEO_REV >= 5)
-#define SPI3_NSS_GPIO           GPIOA
-#define SPI3_NSS_PERIPHERAL     RCC_AHBPeriph_GPIOA
-#define SPI3_NSS_PIN            GPIO_Pin_8
-#endif
-
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
@@ -142,13 +136,28 @@
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
 
+#if (SPRACINGF3NEO_REV >= 5)
+#define MPU6500_CS_GPIO_CLK_PERIPHERAL  SPI1_GPIO_PERIPHERAL
+#define MPU6500_CS_GPIO                 SPI1_NSS_GPIO
+#define MPU6500_CS_PIN                  SPI1_NSS_PIN
+#define MPU6500_SPI_INSTANCE            SPI1
+#else
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL  SPI3_GPIO_PERIPHERAL
 #define MPU6500_CS_GPIO                 SPI3_NSS_GPIO
 #define MPU6500_CS_PIN                  SPI3_NSS_PIN
 #define MPU6500_SPI_INSTANCE            SPI3
-
+#endif
 
 // Bus Switched Device, Device A.
+#if (SPRACINGF3NEO_REV >= 5)
+#define MAX7456_CS_GPIO                 SPI3_NSS_GPIO
+#define MAX7456_CS_PIN                  SPI3_NSS_PIN
+#define MAX7456_SPI_INSTANCE            SPI3
+
+#define MAX7456_DMA_CHANNEL_TX          DMA2_Channel2
+#define MAX7456_DMA_CHANNEL_RX          DMA2_Channel1
+#define MAX7456_DMA_IRQ_HANDLER_ID      DMA2Channel1Descriptor
+#else
 #define MAX7456_CS_GPIO                 SPI1_NSS_GPIO
 #define MAX7456_CS_PIN                  SPI1_NSS_PIN
 #define MAX7456_SPI_INSTANCE            SPI1
@@ -156,6 +165,7 @@
 #define MAX7456_DMA_CHANNEL_TX          DMA1_Channel3
 #define MAX7456_DMA_CHANNEL_RX          DMA1_Channel2
 #define MAX7456_DMA_IRQ_HANDLER_ID      DMA1Channel2Descriptor
+#endif
 
 #define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MAX7456_VSYNC_GPIO              GPIOC
@@ -172,7 +182,12 @@
 #define RTC6705_CS_PERIPHERAL           RCC_AHBPeriph_GPIOF
 #define RTC6705_CS_GPIO                 GPIOF
 #define RTC6705_CS_PIN                  GPIO_Pin_4
+
+#if (SPRACINGF3NEO_REV >= 5)
+#define RTC6705_SPI_INSTANCE            SPI3
+#else
 #define RTC6705_SPI_INSTANCE            SPI1
+#endif
 
 #define RTC6705_POWER_PERIPHERAL        RCC_AHBPeriph_GPIOC
 #define RTC6705_POWER_GPIO              GPIOC
