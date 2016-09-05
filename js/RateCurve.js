@@ -69,15 +69,19 @@ RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcR
 
         var inputValue = this.rcCommand(rcData, rcRate);
         var maxRc = 500 * rcRate;
+        
+        var expoPower;
+        var rcRateConstant;
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            expoPower = 3;
+            rcRateConstant = 200;
+        } else {
+            expoPower = 2;
+            rcRateConstant = 205.85;
+        }
 
         if (rcExpo > 0) {
-            var expoPower;
             var absRc = Math.abs(inputValue) / maxRc;
-            if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) { // Configurable in the future
-                expoPower = 3;
-            } else {
-                expoPower = 2;
-            }
             inputValue =  inputValue * Math.pow(absRc, expoPower) * rcExpo + inputValue * (1-rcExpo);
         }
 
@@ -85,7 +89,7 @@ RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcR
 
         if (superExpoActive) {
             var rcFactor = 1 / this.constrain(1 - Math.abs(rcInput) * rate, 0.01, 1);
-            angleRate = 200 * rcRate * rcInput; // 200 should be variable checked on version (older versions it's 205,9)
+            angleRate = rcRateConstant * rcRate * rcInput; // 200 should be variable checked on version (older versions it's 205,9)
             angleRate = angleRate * rcFactor;
         } else {
             angleRate = (((rate * 100) + 27) * inputValue / 16) / 4.1; // Only applies to old versions ?
