@@ -110,7 +110,7 @@ void updateBattery(void)
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     }
     /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= batteryConfig->batterynotpresentlevel)
+    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= batteryConfig->batterynotpresentlevel && !ARMING_FLAG(ARMED))
     {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
