@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 144;
+static const uint8_t EEPROM_CONF_VERSION = 145;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -247,7 +247,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 80;
+    pidProfile->ptermSetpointWeight = 85;
     pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
@@ -320,6 +320,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->maxthrottle = 2000;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
+    escAndServoConfig->maxEscThrottleJumpMs = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)

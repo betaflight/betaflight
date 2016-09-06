@@ -670,6 +670,7 @@ const clivalue_t valueTable[] = {
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,
@@ -853,7 +854,7 @@ const clivalue_t valueTable[] = {
     { "tolerance_band_reduction",   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBandReduction, .config.minmax = {0, 100 } },
     { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
     { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
-    { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {40, 255 } },
+    { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {40, 100 } },
     { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 255 } },
     { "yaw_rate_accel_limit",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0, 1000 } },
     { "rate_accel_limit",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0, 1000 } },
