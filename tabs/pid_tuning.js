@@ -236,6 +236,13 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_tuning input[name="rc_rate_yaw"]').hide();
         }
 
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")
+            || semver.gte(CONFIG.flightControllerVersion, "2.8.0") && BF_CONFIG.features.isEnabled('SUPEREXPO_RATES')) {
+            $('#pid-tuning .rate').text(chrome.i18n.getMessage("pidTuningSuperRate"));
+        } else {
+            $('#pid-tuning .rate').text(chrome.i18n.getMessage("pidTuningRate"));
+        }
+
         if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
             $('.pid_filter input[name="gyroNotchFrequency"]').val(FILTER_CONFIG.gyro_soft_notch_hz);
             $('.pid_filter input[name="gyroNotchCutoff"]').val(FILTER_CONFIG.gyro_soft_notch_cutoff);

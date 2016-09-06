@@ -856,6 +856,9 @@
     "pidTuningRate": {
         "message": "Rate"
     },
+    "pidTuningSuperRate": {
+        "message": "Super Rate"
+    },
     "pidTuningRatesPreview": {
         "message": "Rates Preview"
     },
