@@ -13,11 +13,6 @@ var RateCurve = function (useLegacyCurve) {
 
     this.rcCommand = function (rcData, rcRate) {
         var tmp = Math.min(Math.abs(rcData - midRc), 500);
-        rcRate = rcRate;
-
-        if (rcRate > 2) {
-            rcRate = rcRate + (rcRate - 2) * 14.54;
-        }
 
         var result = tmp * rcRate;
 
@@ -66,7 +61,9 @@ var RateCurve = function (useLegacyCurve) {
 RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive) {
     var angleRate;
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
-
+        if (rcRate > 2) {
+            rcRate = rcRate + (rcRate - 2) * 14.54;
+        }
         var inputValue = this.rcCommand(rcData, rcRate);
         var maxRc = 500 * rcRate;
         
