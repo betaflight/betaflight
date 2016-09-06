@@ -833,7 +833,7 @@
         "message": "D Setpoint Weight"
     },
     "pidTuningPtermSetpointHelp": {
-        "message": "This parameter determines the transient behaviour of P on abrupt stick moves. Lower value gives less overshoot and smoother behaviour, but too low values can slow down the response. Value of 1 equals to legacy pid controller. Values higher than 1.0 can open a possibility to run lower pids without losing the stick feel."
+        "message": "This parameter determines the transient behaviour of P on abrupt stick moves. Lower value gives less overshoot and smoother behaviour, but too low values can slow down the response of P. Value of 1 equals to legacy pid controller. Values higher than 1.0 can open a possibility to run lower pids without losing the stick feel."
     },
     "pidTuningDtermSetpointHelp": {
         "message": "This parameter determines the transient behaviour of D on stick inputs.<br> Value of 0 equals to old Measuemenent method where D only tracks gyro, while value of 1 equals to old Error method with equal gyro and stick tracking ratio.<br> Lower value equals to slower/smoother stick response, while higher value provides more stick acceleration response.<br> Note that RC interpolation is recommended to be enabled with higher values to prevent control kicks making noise"
