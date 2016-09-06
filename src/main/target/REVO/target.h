@@ -51,8 +51,11 @@
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
 #define MAG
+#define USE_MAG_AK8963
+#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
+#define USE_MAG_MAG3110
 
 //#define USE_MAG_DATA_READY_SIGNAL
 //#define ENSURE_MAG_DATA_READY_IS_HIGH
@@ -62,6 +65,8 @@
 //#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
 
 #define BARO
+#define USE_BARO_BMP085
+#define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
 //#define PITOT
@@ -75,7 +80,7 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PC5
+#define VBUS_SENSING_PIN        PC5
 #define VBUS_SENSING_ENABLED
 
 #define USE_UART1
@@ -104,8 +109,8 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
-#define I2C_DEVICE_EXT (I2CDEV_2)
+#define I2C_DEVICE              (I2CDEV_1)
+#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1

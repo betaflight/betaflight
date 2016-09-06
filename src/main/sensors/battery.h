@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
+#ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
+#endif
 #define VBAT_RESDIVVAL_DEFAULT 10
 #define VBAT_RESDIVMULTIPLIER_DEFAULT 1
 #define VBAT_SCALE_MIN 0
@@ -71,7 +71,8 @@ const  char * getBatteryStateString(void);
 void updateBattery(uint32_t vbatTimeDelta);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 
-void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+struct rxConfig_s;
+void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

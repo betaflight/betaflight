@@ -40,27 +40,34 @@
 // Using MPU6050 for the moment.
 #define GYRO
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
+#define GYRO_MPU6050_ALIGN      CW270_DEG
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+#define MPU6500_CS_PIN          PA15
+#define MPU6500_SPI_INSTANCE    SPI3
 
 #define ACC
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW270_DEG
+#define ACC_MPU6050_ALIGN       CW270_DEG
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 // No baro support.
 //#define BARO
 //#define USE_BARO_MS5611
 
-// No mag support for now (option to use MPU9150 in the future).
-//#define MAG
-//#define USE_MAG_AK8975
-//#define MAG_AK8975_ALIGN CW0_DEG_FLIP
+// option to use MPU9150 or MPU9250 integrated AK89xx Mag
+#define MAG
+#define USE_MAG_AK8963
+#define MAG_AK8963_ALIGN        CW0_DEG_FLIP
+#define USE_MAG_HMC5883
 
 #define USE_VCP
 #define USE_UART1 // Not connected - TX (PB6) RX PB7 (AF7)
 #define USE_UART2 // Receiver - RX (PA3)
 #define USE_UART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT       4
-#define AVOID_UART3_FOR_PWM_PPM
+#define AVOID_UART2_FOR_PWM_PPM
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
@@ -86,18 +93,10 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_3
 
-#define M25P16_CS_PIN           PA15
-#define M25P16_SPI_INSTANCE     SPI3
-
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
-#define MPU6500_CS_PIN                   PA15
-#define MPU6500_SPI_INSTANCE             SPI3
-
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
-#define ADC_DMA_CHANNEL         DMA2_Channel1
-#define ADC_AHB_PERIPHERAL      RCC_AHBPeriph_DMA2
 #define VBAT_ADC_PIN            PA4
+#define VBAT_SCALE_DEFAULT      20
 
 #define SPEKTRUM_BIND
 // USART2, PA3
@@ -107,25 +106,13 @@
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
-#undef BLACKBOX
-
-#undef GPS
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_UBLOX
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
-
-#undef TELEMETRY
-#undef TELEMETRY_FRSKY
-#undef TELEMETRY_HOTT
-#undef TELEMETRY_SMARTPORT
-#undef TELEMETRY_LTM
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART3
+#define RX_CHANNELS_TAER
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    10

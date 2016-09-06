@@ -3,6 +3,8 @@ FEATURES       += VCP ONBOARDFLASH
 
 TARGET_SRC = \
             drivers/accgyro_spi_mpu6000.c \
+            drivers/barometer_bmp085.c \
+            drivers/barometer_bmp280.c \
             drivers/barometer_ms5611.c \
             drivers/compass_ak8963.c \
             drivers/compass_ak8975.c \
