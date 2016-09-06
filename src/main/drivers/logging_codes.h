@@ -42,10 +42,11 @@ typedef enum {
     BOOT_EVENT_MAG_DETECTION            = 12,
     BOOT_EVENT_RANGEFINDER_DETECTION    = 13,
     BOOT_EVENT_MAG_INIT_FAILED          = 14,
-    BOOT_EVENT_HMC5883L_READ_FAILED     = 15,
-    BOOT_EVENT_HMC5883L_SATURATION      = 16,
-    BOOT_EVENT_TIMER_CH_SKIPPED         = 17,   // 1 - MAX_MOTORS exceeded, 2 - MAX_SERVOS exceeded, 3 - feature clash
-    BOOT_EVENT_TIMER_CH_MAPPED          = 18,   // 0 - PPM, 1 - PWM, 2 - MOTOR, 3 - SERVO
+    BOOT_EVENT_HMC5883L_READ_OK_COUNT   = 15,
+    BOOT_EVENT_HMC5883L_READ_FAILED     = 16,
+    BOOT_EVENT_HMC5883L_SATURATION      = 17,
+    BOOT_EVENT_TIMER_CH_SKIPPED         = 18,   // 1 - MAX_MOTORS exceeded, 2 - MAX_SERVOS exceeded, 3 - feature clash
+    BOOT_EVENT_TIMER_CH_MAPPED          = 19,   // 0 - PPM, 1 - PWM, 2 - MOTOR, 3 - SERVO
 
     BOOT_EVENT_CODE_COUNT
 } bootLogEventCode_e;
