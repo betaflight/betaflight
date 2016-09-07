@@ -240,8 +240,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
-    pidProfile->dterm_notch_hz = 260;
-    pidProfile->dterm_notch_cutoff = 160;
+    pidProfile->dterm_notch_hz = 250;
+    pidProfile->dterm_notch_cutoff = 150;
     pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
