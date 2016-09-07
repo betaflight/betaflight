@@ -17,11 +17,10 @@
 
 #pragma once
 
-extern int16_t telemTemperature1;
+void initIbusTelemetry(telemetryConfig_t *);
 
-void handleInflightCalibrationStickPosition();
+void handleIbusTelemetry(void);
+void checkIbusTelemetryState(void);
 
-void mwDisarm(void);
-void mwArm(void);
-
-bool isCalibrating(void);
+void configureIbusTelemetryPort(void);
+void freeIbusTelemetryPort(void);

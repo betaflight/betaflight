@@ -205,6 +205,7 @@
 #undef SPEKTRUM_BIND
 #undef TELEMETRY
 #undef TELEMETRY_LTM
+#undef TELEMETRY_IBUS
 #endif
 
 // Number of available PWM outputs
