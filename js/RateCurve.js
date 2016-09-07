@@ -61,14 +61,11 @@ var RateCurve = function (useLegacyCurve) {
 RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive, deadband) {
     var angleRate;
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
-<<<<<<< f9ea2c8ee4e9635ef6191b0d8b160dbb44128d82
         if (rcRate > 2) {
             rcRate = rcRate + (rcRate - 2) * 14.54;
         }
-        var inputValue = this.rcCommand(rcData, rcRate);
-=======
+
         var inputValue = this.rcCommand(rcData, rcRate, deadband);
->>>>>>> Added deadband to curves and model calculations. Also fixed rates curve bug in pre 2.8.
         var maxRc = 500 * rcRate;
         
         var expoPower;
