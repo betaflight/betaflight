@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
+#define TARGET_CONFIG
 
 #define LED0                    PB3
 #define LED1                    PB4
@@ -25,7 +26,6 @@
 #define BEEPER                  PA12
 
 #define USE_EXTI
-#define MAG_INT_EXTI PC14
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
@@ -70,8 +70,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-// alternative defaults for AlienFlight F1 target
-#define TARGET_CONFIG
+#define HARDWARE_BIND_PLUG
+// Hardware bind plug at PB5 (Pin 41)
+#define BINDPLUG_PIN            PB5
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
@@ -80,10 +81,7 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
-#define BINDPLUG_PIN            PB5
-
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
