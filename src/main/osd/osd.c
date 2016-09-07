@@ -80,6 +80,7 @@ const uint16_t osdSupportedElementIds[] = {
     OSD_ELEMENT_INDICATOR_MAG,
     OSD_ELEMENT_INDICATOR_BARO,
     OSD_ELEMENT_RSSI_FC,
+    OSD_ELEMENT_CALLSIGN,
 };
 
 const uint8_t osdSupportedElementIdsCount = ARRAYLEN(osdSupportedElementIds);
@@ -97,6 +98,7 @@ static const element_t osdDefaultElements[] = {
     { 19, -2, EF_ENABLED | EF_FLASH_ON_DISCONNECT, OSD_ELEMENT_VOLTAGE_BATTERY_FC },
     {  2, -1, EF_ENABLED, OSD_ELEMENT_AMPERAGE },
     { 18, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
+    {  8, -5, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
 };
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {

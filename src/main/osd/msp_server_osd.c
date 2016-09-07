@@ -33,6 +33,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/pilot.h"
 
 #include "drivers/adc.h"
 #include "drivers/system.h"
@@ -228,6 +229,28 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                 }
             }
             break;
+
+        case MSP_PILOT: {
+            uint8_t *callsign = pilotConfig()->callsign;
+            sbufWriteU8(dst, strlen((char *)callsign));
+            sbufWriteString(dst, (char *)pilotConfig()->callsign);
+            break;
+        }
+        case MSP_SET_PILOT: {
+            uint8_t callsignMessageBytesRemaining = sbufReadU8(src);
+            uint8_t *callsign = pilotConfig()->callsign;
+            uint8_t callsignBytesToRemaining = MIN(callsignMessageBytesRemaining, CALLSIGN_LENGTH);
+
+            while(sbufBytesRemaining(src) && callsignMessageBytesRemaining--) {
+                uint8_t c = sbufReadU8(src);
+                if (callsignBytesToRemaining > 0) {
+                    callsignBytesToRemaining--;
+                    *callsign++ = c;
+                }
+            };
+            *callsign = 0;
+            break;
+        }
         case MSP_OSD_VIDEO_CONFIG:
             sbufWriteU8(dst, osdVideoConfig()->videoMode); // 0 = NTSC, 1 = PAL
             break;

@@ -111,3 +111,10 @@ void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataF
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
 
+void osdElementRender_callsign(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint8_t *callsign = (uint8_t *) dataFn();
+
+    osdPrintAt(element->x, element->y, (char *)callsign);
+}
+

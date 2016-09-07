@@ -62,6 +62,7 @@
 #define PG_CHANNEL_RANGE_CONFIG 44
 #define PG_MODE_COLOR_CONFIG 45
 #define PG_SPECIAL_COLOR_CONFIG 46
+#define PG_PILOT_CONFIG 47
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100

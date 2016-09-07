@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   21 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   22 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -261,6 +261,7 @@
 #define MSP_VOLTAGE_METERS       128    //out message         Voltage (per meter)
 #define MSP_CURRENT_METERS       129    //out message         Amperage (per meter)
 #define MSP_BATTERY_STATES       130    //out message         Connected/Disconnected, Voltage, Current Used (per battery)
+#define MSP_PILOT                131    //out message         callsign, etc
 
 #define MSP_SET_RAW_RC           200    //in message          8 rc chan
 #define MSP_SET_RAW_GPS          201    //in message          fix, numsat, lat, lon, alt, speed
@@ -282,6 +283,7 @@
 #define MSP_SET_RESET_CURR_PID   219    //in message          resetting the current pid profile to defaults
 #define MSP_SET_SENSOR_ALIGNMENT 220    //in message          set the orientation of the acc,gyro,mag
 #define MSP_SET_LED_STRIP_MODECOLOR 221 //in  message         Set LED strip mode_color settings
+#define MSP_SET_PILOT            222    //in message          callsign, etc
 
 // #define MSP_BIND                 240    //in message          no param
 // #define MSP_ALARMS               242

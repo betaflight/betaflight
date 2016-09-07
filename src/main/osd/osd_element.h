@@ -17,7 +17,7 @@
 
 // 0 - 65535 / 16 bits.
 enum osdElementIds_e {
-    // durations
+    // durations/timers
     OSD_ELEMENT_ON_DURATION = 1,
     OSD_ELEMENT_ARMED_DURATION = 2,
 
@@ -38,6 +38,9 @@ enum osdElementIds_e {
 
     // rx
     OSD_ELEMENT_RSSI_FC = 13,
+
+    // pilot
+    OSD_ELEMENT_CALLSIGN = 14,
 };
 
 // 16 bits.

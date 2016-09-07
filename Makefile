@@ -246,7 +246,8 @@ SYSTEM_SRC = \
 		   common/printf.c \
 		   common/streambuf.c \
 		   common/typeconversion.c \
-			 common/crc.c \
+		   common/crc.c \
+		   common/pilot.c \
 		   drivers/buf_writer.c \
 		   drivers/dma.c \
 		   drivers/serial.c \
@@ -306,7 +307,7 @@ FC_COMMON_SRC = \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
-			 rx/srxl.c \
+		   rx/srxl.c \
 		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \

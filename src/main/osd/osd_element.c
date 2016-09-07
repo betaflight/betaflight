@@ -34,6 +34,7 @@
 #include "osd/fc_state.h" // only required for data providers
 #include "sensors/battery.h" // only required for data providers
 #include "common/utils.h"
+#include "common/pilot.h"
 
 
 #include "osd/osd_element.h"
@@ -131,6 +132,11 @@ intptr_t osdElementData_rssiFC(void)
     return (intptr_t) fcStatus.rssi;
 }
 
+intptr_t osdElementData_callsign(void)
+{
+    return (intptr_t) pilotConfig()->callsign;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_DURATION, osdElementRender_duration, osdElementData_onDuration},
     {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
@@ -144,6 +150,7 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_INDICATOR_MAG, osdElementRender_indicatorMag, osdElementData_indicatorMagFC},
     {OSD_ELEMENT_INDICATOR_BARO, osdElementRender_indicatorBaro, osdElementData_indicatorBaroFC},
     {OSD_ELEMENT_RSSI_FC, osdElementRender_rssi, osdElementData_rssiFC},
+    {OSD_ELEMENT_CALLSIGN, osdElementRender_callsign, osdElementData_callsign},
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)
