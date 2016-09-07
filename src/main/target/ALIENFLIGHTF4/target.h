@@ -27,6 +27,7 @@
 #define LED1                    PD2
 
 #define BEEPER                  PC13
+#define BEEPER_INVERTED
 
 #define INVERTER                PC15
 #define INVERTER_USART          USART2
