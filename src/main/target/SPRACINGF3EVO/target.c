@@ -32,8 +32,8 @@ const uint16_t multiPPM[] = {
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
     PWM9  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 
@@ -46,8 +46,8 @@ const uint16_t multiPWM[] = {
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_SERVO_OUTPUT << 8),
     PWM9  | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),
-    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 

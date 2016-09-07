@@ -174,6 +174,7 @@ bool isCalibrating()
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
+#define RC_EXPO_POWER 3
 
 float calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
@@ -193,13 +194,13 @@ float calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * (expof * (rcInput[axis] * rcInput[axis] * rcInput[axis]) + rcInput[axis]*(1-expof));
+        rcCommandf = rcCommandf * powerf(rcInput[axis], RC_EXPO_POWER) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
 
     if (currentControlRateProfile->rates[axis]) {
-        rcSuperfactor = 1.0f / (constrainf(1.0f - (rcInput[axis] * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         angleRate *= rcSuperfactor;
     }
 
@@ -208,7 +209,7 @@ float calculateSetpointRate(int axis, int16_t rc) {
     }
 
     if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-	    return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
+        return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
     else
         return  constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
@@ -572,6 +573,8 @@ void processRx(void)
     if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP)
         && !STATE(FIXED_WING)
+		&& !feature(FEATURE_3D)
+		&& !isAirmodeActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {

@@ -99,6 +99,13 @@ float acos_approx(float x)
 }
 #endif
 
+float powerf(float base, int exp) {
+    float result = base;
+    for (int count = 1; count < exp; count++) result *= base;
+
+    return result;
+}
+
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (ABS(value) < deadband) {
