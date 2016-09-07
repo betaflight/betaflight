@@ -11,8 +11,8 @@ var RateCurve = function (useLegacyCurve) {
         return Math.max(min, Math.min(value, max));
     };
 
-    this.rcCommand = function (rcData, rcRate) {
-        var tmp = Math.min(Math.abs(rcData - midRc), 500);
+    this.rcCommand = function (rcData, rcRate, deadband) {
+        var tmp = Math.min(Math.max(Math.abs(rcData - midRc) - deadband, 0), 500);
 
         var result = tmp * rcRate;
 
@@ -23,7 +23,7 @@ var RateCurve = function (useLegacyCurve) {
         return result;
     };
 
-    this.drawRateCurve = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height) {
+    this.drawRateCurve = function (rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, context, width, height) {
         var canvasHeightScale = height / (2 * maxAngularVel);
 
         var stepWidth = context.lineWidth;
@@ -33,10 +33,10 @@ var RateCurve = function (useLegacyCurve) {
 
         context.beginPath();
         var rcData = minRc;
-        context.moveTo(-500, -canvasHeightScale * this.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive));
+        context.moveTo(-500, -canvasHeightScale * this.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive, deadband));
         rcData = rcData + stepWidth;
         while (rcData <= maxRc) {
-            context.lineTo(rcData - midRc, -canvasHeightScale * this.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive));
+            context.lineTo(rcData - midRc, -canvasHeightScale * this.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive, deadband));
 
             rcData = rcData + stepWidth;
         }
@@ -48,7 +48,7 @@ var RateCurve = function (useLegacyCurve) {
     this.drawLegacyRateCurve = function (rate, rcRate, rcExpo, context, width, height) {
         // math magic by englishman
         var rateY = height * rcRate;
-        rateY = rateY + (1 / (1 - ((rateY / height) * rate)))
+        rateY = rateY + (1 / (1 - ((rateY / height) * rate)));
 
         // draw
         context.beginPath();
@@ -58,13 +58,14 @@ var RateCurve = function (useLegacyCurve) {
     }
 };
 
-RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive) {
+RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive, deadband) {
     var angleRate;
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
         if (rcRate > 2) {
             rcRate = rcRate + (rcRate - 2) * 14.54;
         }
-        var inputValue = this.rcCommand(rcData, rcRate);
+
+        var inputValue = this.rcCommand(rcData, rcRate, deadband);
         var maxRc = 500 * rcRate;
         
         var expoPower;
@@ -98,16 +99,16 @@ RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcR
     return angleRate;
 };
 
-RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpoActive) {
+RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpoActive, deadband) {
     var maxAngularVel;
     if (!this.useLegacyCurve) {
-        maxAngularVel = this.rcCommandRawToDegreesPerSecond(maxRc, rate, rcRate, rcExpo, superExpoActive);
+        maxAngularVel = this.rcCommandRawToDegreesPerSecond(maxRc, rate, rcRate, rcExpo, superExpoActive, deadband);
     }
 
     return maxAngularVel;
 };
 
-RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context) {
+RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, context) {
     if (rate !== undefined && rcRate !== undefined && rcExpo !== undefined) {
         var height = context.canvas.height;
         var width = context.canvas.width;
@@ -115,7 +116,7 @@ RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, maxA
         if (this.useLegacyCurve) {
             this.drawLegacyRateCurve(rate, rcRate, rcExpo, context, width, height);
         } else {
-            this.drawRateCurve(rate, rcRate, rcExpo, superExpoActive, maxAngularVel, context, width, height);
+            this.drawRateCurve(rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, context, width, height);
         }
     }
 };

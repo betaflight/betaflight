@@ -49,6 +49,13 @@ TABS.pid_tuning.initialize = function (callback) {
 
         return promise;
     }).then(function() {
+        var promise = true;
+        if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
+            promise = MSP.promise(MSPCodes.MSP_RC_DEADBAND);
+        }
+
+        return promise;
+    }).then(function() {
         $('#content').load("./tabs/pid_tuning.html", process_html);
     });
 
@@ -453,18 +460,18 @@ TABS.pid_tuning.initialize = function (callback) {
 
     self.rateCurve = new RateCurve(useLegacyCurve);
 
-    function printMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo, maxAngularVelElement) {
-        var maxAngularVel = self.rateCurve.getMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo).toFixed(0);
+    function printMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo, deadband, maxAngularVelElement) {
+        var maxAngularVel = self.rateCurve.getMaxAngularVel(rate, rcRate, rcExpo, useSuperExpo, deadband).toFixed(0);
         maxAngularVelElement.text(maxAngularVel);
 
         return maxAngularVel;
     }
 
-    function drawCurve(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, colour, yOffset, context) {
+    function drawCurve(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, deadband, colour, yOffset, context) {
         context.save();
         context.strokeStyle = colour;
         context.translate(0, yOffset);
-        self.rateCurve.draw(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, context);
+        self.rateCurve.draw(rate, rcRate, rcExpo, useSuperExpo, maxAngularVel, deadband, context);
         context.restore();
     }
 
@@ -485,7 +492,9 @@ TABS.pid_tuning.initialize = function (callback) {
             rc_rate_yaw: RC_tuning.rcYawRate,
             rc_expo:     RC_tuning.RC_EXPO,
             rc_yaw_expo: RC_tuning.RC_YAW_EXPO,
-            superexpo:   BF_CONFIG.features.isEnabled('SUPEREXPO_RATES')
+            superexpo:   BF_CONFIG.features.isEnabled('SUPEREXPO_RATES'),
+            deadband: RC_deadband.deadband,
+            yawDeadband: RC_deadband.yaw_deadband
         };
 
         if (semver.lt(CONFIG.apiVersion, "1.7.0")) {
@@ -717,22 +726,25 @@ TABS.pid_tuning.initialize = function (callback) {
                     var curveHeight = rcCurveElement.height;
                     var curveWidth = rcCurveElement.width;
 
-                    var maxAngularVel = Math.max(
-                        printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelRollElement),
-                        printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVelPitchElement),
-                        printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVelYawElement));
-
                     curveContext.clearRect(0, 0, curveWidth, curveHeight);
 
+                    var maxAngularVel;
                     if (!useLegacyCurve) {
+                        maxAngularVel = Math.max(
+                            printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelRollElement),
+                            printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelPitchElement),
+                            printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVelYawElement));
+
                         drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
+                    } else {
+                        maxAngularVel = 0;
                     }
 
                     curveContext.lineWidth = 4;
 
-                    drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#ff0000', 0, curveContext);
-                    drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, maxAngularVel, '#00ff00', -4, curveContext);
-                    drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, maxAngularVel, '#0000ff', 4, curveContext);
+                    drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#ff0000', 0, curveContext);
+                    drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#00ff00', -4, curveContext);
+                    drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, '#0000ff', 4, curveContext);
 
                     updateNeeded = false;
                 }
@@ -904,9 +916,9 @@ TABS.pid_tuning.renderModel = function () {
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta();
 
-        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], this.currentRates.roll_rate,  this.currentRates.rc_rate,     this.currentRates.rc_expo,     this.currentRates.superexpo),
-            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], this.currentRates.pitch_rate, this.currentRates.rc_rate,     this.currentRates.rc_expo,     this.currentRates.superexpo),
-            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], this.currentRates.yaw_rate,   this.currentRates.rc_rate_yaw, this.currentRates.rc_yaw_expo, this.currentRates.superexpo);
+        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], this.currentRates.roll_rate,  this.currentRates.rc_rate,     this.currentRates.rc_expo,     this.currentRates.superexpo, this.currentRates.deadband),
+            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], this.currentRates.pitch_rate, this.currentRates.rc_rate,     this.currentRates.rc_expo,     this.currentRates.superexpo, this.currentRates.deadband),
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], this.currentRates.yaw_rate,   this.currentRates.rc_rate_yaw, this.currentRates.rc_yaw_expo, this.currentRates.superexpo, this.currentRates.yawDeadband);
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
     }

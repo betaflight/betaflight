@@ -1,7 +1,10 @@
 'use strict';
 
 TABS.receiver = {
-  rateChartHeight: 117
+    rateChartHeight: 117,
+    useSuperExpo: false,
+    deadband: 0,
+    yawDeadband: 0
 };
 
 TABS.receiver.initialize = function (callback) {
@@ -64,6 +67,14 @@ TABS.receiver.initialize = function (callback) {
         } else {
             $('.deadband input[name="yaw_deadband"]').val(RC_deadband.yaw_deadband);
             $('.deadband input[name="deadband"]').val(RC_deadband.deadband);
+
+            $('.deadband input[name="deadband"]').change(function () {
+                this.deadband = parseInt($(this).val());
+            }).change();
+            $('.deadband input[name="yaw_deadband"]').change(function () {
+                this.yawDeadband = parseInt($(this).val());
+            }).change();
+
         }
 
         // generate bars
@@ -400,7 +411,7 @@ TABS.receiver.initModelPreview = function () {
     this.model = new Model($('.model_preview'), $('.model_preview canvas'));
 
     this.useSuperExpo = false;
-    if (CONFIG.flightControllerIdentifier === 'BTFL' && semver.gte(CONFIG.flightControllerVersion, '2.8.0')) {
+    if (semver.gte(CONFIG.flightControllerVersion, '2.8.0')) {
         this.useSuperExpo = BF_CONFIG.features.isEnabled('SUPEREXPO_RATES');
     }
 
@@ -417,9 +428,9 @@ TABS.receiver.renderModel = function () {
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta();
 
-        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
-            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo),
-            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate, RC_tuning.rcYawRate, RC_tuning.RC_YAW_EXPO, this.useSuperExpo);
+        var roll  = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[0], RC_tuning.roll_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo, this.deadband),
+            pitch = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[1], RC_tuning.pitch_rate, RC_tuning.RC_RATE, RC_tuning.RC_EXPO, this.useSuperExpo, this.deadband),
+            yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], RC_tuning.yaw_rate, RC_tuning.rcYawRate, RC_tuning.RC_YAW_EXPO, this.useSuperExpo, this.yawDeadband);
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
     }
