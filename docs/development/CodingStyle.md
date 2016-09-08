@@ -14,15 +14,17 @@ Any of these tools can get you pretty close:
 
 Eclipse built in "K&R" style, after changing the indent to 4 spaces.
 ```
-indent -kr -nut
+astyle --style=kr --indent=spaces=4 --min-conditional-indent=0 --max-instatement-indent=80 --pad-header --pad-oper --align-pointer=name --align-reference=name --max-code-length=120 --convert-tabs --preserve-date --suffix=none --mode=c
 ```
 ```
-astyle --style=kr --indent=spaces=4 --pad-header --pad-oper --align-pointer=name --align-reference=name --convert-tabs --preserve-date --suffix=none --mode=c src/*.*
-```
-```
-clang ?
+indent -kr -i4 -nut
 ```
 (the options for these commands can be tuned more to comply even better)
+
+Note: These tools are not authorative.
+Sometimes, for example, you may want other columns and line breaks so it looks like a matrix.
+
+Note2: The Astyle settings have been tested and will produce a nice result. Many files will be changed, mostly to the better but maybe not always, so use with care. 
 
 ##Curly Braces
 Functions shall have the opening brace at the beginning of the next line.
@@ -31,12 +33,12 @@ All non-function statement blocks (if, switch, for) shall have the opening brace
 
 Closing braces shall be but on the line after the last statement in the block.
 
-If it is followed by an "else" or "else if" that shall be on the same line, again with the opening brace on the same line.
+If it is followed by an `else` or `else if` that shall be on the same line, again with the opening brace on the same line.
 
-A single statement after an "if" or an "else" may omit the "unnecessary" braces only when ALL conditional branches have single statements AND you have strong reason to know it will always be that way.
+A single statement after an `if` or an `else` may omit the "unnecessary" braces only when ALL conditional branches have single statements AND you have strong reason to know it will always be that way.
 
 If in doubt, do not omit such "unnecessary" braces.
-(Adding a statement to a branch will brake the logic if the braces are forgotten and otherwise make the PR longer).
+(Adding a statement to a branch will break the logic if the braces are forgotten and otherwise make the PR longer).
 
 ##Spaces
 Use a space after (most) keywords.  The notable exceptions are sizeof, typeof, alignof, and __attribute__, which look somewhat like functions (and are usually used with parentheses).
@@ -106,14 +108,18 @@ For configuration variables that are user accessible via CLI or similar, all_low
 Variable names should be nouns.
 
 Simple temporary variables with a very small scope may be short where it aligns with common practice.
-Such as "i" as a temporary counter in a "for" loop, like "for (uint_8 i = 0; i < 4; i++)".
+Such as "i" as a temporary counter in a `for` loop, like `for (uint_8 i = 0; i < 4; i++)`.
 Using "temporaryCounter" in that case would not improve readability.
 
 ##Declarations
 Avoid global variables.
 
 Variables should be declared at the top of the smallest scope where the variable is used.
+Variable re-use should be avoided - use distinct variabes when their use is unrelated.
 One blank line should follow the declaration(s).
+
+Hint: Sometimes you can create a block, i.e. add curly braces, to reduce the scope further.
+For example to avoid name clash between different `case` branches.
 
 Variables with limited use may be declared at the point of first use. It makes PR-review easier (but that point is lost if the variable is used everywhere anyway).
 
@@ -189,7 +195,9 @@ In the .h file:
 … declarations …
 #endif
 ```
-In the module .c file, and in the test file but nowhere else, put "#define MODULENAME_INTERNALS_" just before including the .h file.
+In the module .c file, and in the test file but nowhere else, put `#define MODULENAME_INTERNALS_` just before including the .h file.
+
+Note: You can get the same effect by putting the internals in a separate .h file.
 
 ##Implementation
 Keep functions short and distinctive.
@@ -203,16 +211,13 @@ Defining constants using pre-processor macros is not preferred.
 Const-correctness should be enforced.
 This allows some errors to be picked up at compile time (for example getting the order of the parameters wrong in a call to memcpy).
 
-The pre-increment is preferred over the post-increment operator, i.e.  ++i rather than i++.
-(The pre-increment form can be more efficient and it also reads better; ++i can be read as "increment i" or "inc i" whereas  i++  is read as "i plus plus").
-
 A function should only read data from the HW once in each call, and preferably all at one place.
 For example, if gyro angle or time is needed multiple times, read once and store in a local variable.
 
-Use "for" loops (rather than "do" or "while" loops) for iteration.
+Use `for` loops (rather than `do` or `while` loops) for iteration.
 
-The use of "continue" or "goto" should be avoided.
-Same for multiple "return" from a function and multiple "break" inside a "case".
+The use of `continue` or `goto` should be avoided.
+Same for multiple `return` from a function and multiple `break` inside a `case`.
 In general, they reduce readability and maintainability.
 In rare cases such constructs can be justified but only when you have considered and understood the alternatives and still have a strong reason.
 
@@ -231,15 +236,16 @@ Do not include things you are not using.
 #Other details
 No trailing whitespace at the end of lines or at blank lines.
 
-Stay within 80 columns, unless exceeding 80 columns significantly increases readability and does not hide information.
+Stay within 120 columns, unless exceeding 120 columns significantly increases readability and does not hide information.
+(Less is acceptable. More than 140 makes it difficult to read on Github so that should be a hard limit.)
 
 Take maximum possible advantage of compile time checking, so generally warnings should be as strict as possible.
 
 Don't call or reference "upwards". That is don't call or use anything in a software layer that is above the current layer. The software layers are not that obvious in Cleanflight, but we can certainly say that device drivers are the bottom layer and so should not call or use anything outside the device drivers.
 
-Target specific code (e.g.  #ifdef CC3D ) should be absolutely minimised.
+Target specific code (e.g. #ifdef CC3D) should be absolutely minimised.
 
-"typedef void handlerFunc(void);" is easier to read than "typedef void (*handlerFuncPtr)(void);".
+typedef void handlerFunc(void); is easier to read than typedef void (*handlerFuncPtr)(void);.
 
 Code should be spherical.
 That is its surface area (public interfaces) relative to its functionality should be minimised.
@@ -248,6 +254,6 @@ do something essential and all implementation should be hidden and unimportant t
 
 Code should work in theory as well as in practice.
 It should be based on sound mathematical, physical or computer science principles rather than just heuristics.
-This is important for test code too. Tests shall be based on such principles and real-world properties so they don't just test the current imlementation as it happens to be.
+This is important for test code too. Tests shall be based on such principles and real-world properties so they don't just test the current implementation as it happens to be.
 
 Guidelines not tramlines: guidelines are not totally rigid - they can be broken when there is good reason.
