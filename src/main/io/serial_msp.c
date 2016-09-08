@@ -1270,8 +1270,8 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(currentProfile->pidProfile.vbatPidCompensation);
         serialize8(currentProfile->pidProfile.ptermSRateWeight);
         serialize8(currentProfile->pidProfile.dtermSetpointWeight);
-        serialize8(currentProfile->pidProfile.toleranceBand);
-        serialize8(currentProfile->pidProfile.toleranceBandReduction);
+        serialize8(0); // reserved
+        serialize8(0); // reserved
         serialize8(currentProfile->pidProfile.itermThrottleGain);
         serialize16(currentProfile->pidProfile.rateAccelLimit);
         serialize16(currentProfile->pidProfile.yawRateAccelLimit);
@@ -1868,8 +1868,8 @@ static bool processInCommand(void)
         currentProfile->pidProfile.vbatPidCompensation = read8();
         currentProfile->pidProfile.ptermSRateWeight = read8();
         currentProfile->pidProfile.dtermSetpointWeight = read8();
-        currentProfile->pidProfile.toleranceBand = read8();
-        currentProfile->pidProfile.toleranceBandReduction = read8();
+        read8(); // reserved
+        read8(); // reserved
         currentProfile->pidProfile.itermThrottleGain = read8();
         currentProfile->pidProfile.rateAccelLimit = read16();
         currentProfile->pidProfile.yawRateAccelLimit = read16();

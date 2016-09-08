@@ -64,11 +64,6 @@ typedef enum {
 } pidSuperExpoYaw_e;
 
 typedef enum {
-    NEGATIVE_ERROR = 0,
-    POSITIVE_ERROR
-} pidErrorPolarity_e;
-
-typedef enum {
     PID_STABILISATION_OFF = 0,
     PID_STABILISATION_ON
 } pidStabilisationState_e;
@@ -94,9 +89,6 @@ typedef struct pidProfile_s {
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
 
     // Betaflight PID controller parameters
-    uint8_t toleranceBand;                  // Error tolerance area where toleranceBandReduction is applied under certain circumstances
-    uint8_t toleranceBandReduction;         // Lowest possible P and D reduction in percentage
-    uint8_t zeroCrossAllowanceCount;        // Amount of bouncebacks within tolerance band allowed before reduction kicks in
     uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
     uint8_t ptermSRateWeight;               // Setpoint super expo ratio for Pterm (lower means that pretty much only P has super expo rates)
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)

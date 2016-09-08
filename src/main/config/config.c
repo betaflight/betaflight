@@ -247,13 +247,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSRateWeight = 50;
+    pidProfile->ptermSRateWeight = 100;
     pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->toleranceBand = 0;
-    pidProfile->toleranceBandReduction = 40;
-    pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
@@ -491,7 +488,7 @@ void createDefaultConfig(master_t *config)
 #endif
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz = 210;
+    config->gyro_soft_notch_hz = 220;
     config->gyro_soft_notch_cutoff = 110;
 
     config->debug_mode = DEBUG_NONE;

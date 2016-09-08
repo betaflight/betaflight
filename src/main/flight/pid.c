@@ -235,36 +235,8 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         errorRate = setpointRate[axis] - PVRate;       // r - y
         rP = ptermSetpointRate[axis] - PVRate;         // br - y
 
-        // Reduce Hunting effect and jittering near setpoint. Limit multiple zero crossing within deadband and lower PID affect during low error amount
-        float dynReduction = tpaFactor;
-        if (pidProfile->toleranceBand) {
-            const float minReduction = (float)pidProfile->toleranceBandReduction / 100.0f;
-            static uint8_t zeroCrossCount[3];
-            static uint8_t currentErrorPolarity[3];
-            if (ABS(errorRate) < pidProfile->toleranceBand) {
-                if (zeroCrossCount[axis]) {
-                    if (currentErrorPolarity[axis] == POSITIVE_ERROR) {
-                        if (errorRate < 0 ) {
-                            zeroCrossCount[axis]--;
-                            currentErrorPolarity[axis] = NEGATIVE_ERROR;
-                        }
-                    } else {
-                        if (errorRate > 0 ) {
-                            zeroCrossCount[axis]--;
-                            currentErrorPolarity[axis] = POSITIVE_ERROR;
-                        }
-                    }
-                } else {
-                    dynReduction *= constrainf(ABS(errorRate) / pidProfile->toleranceBand, minReduction, 1.0f);
-                }
-            } else {
-                zeroCrossCount[axis] =  pidProfile->zeroCrossAllowanceCount;
-                currentErrorPolarity[axis] = (errorRate > 0) ? POSITIVE_ERROR : NEGATIVE_ERROR;
-            }
-        }
-
         // -----calculate P component
-        PTerm = Kp[axis] * rP * dynReduction;
+        PTerm = Kp[axis] * rP * tpaFactor;
 
         // -----calculate I component.
         // Reduce strong Iterm accumulation during higher stick inputs
@@ -289,7 +261,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
 
-            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd[axis] * delta * dynReduction;
+            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd[axis] * delta * tpaFactor;
 
             // Filter delta
             if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
@@ -302,7 +274,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
                 }
             }
 
-            DTerm = Kd[axis] * delta * dynReduction;
+            DTerm = Kd[axis] * delta * tpaFactor;
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);
