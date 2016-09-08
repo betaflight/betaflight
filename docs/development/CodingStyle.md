@@ -12,7 +12,7 @@ K&R indent style with 4 space indent, NO hard tabs (all tabs replaced by spaces)
 ##Tool support
 Any of these tools can get you pretty close:
 
-Eclipse built in "K&R" style, after changing the indent to 4 spaces.
+Eclipse built in "K&R" style, after changing the indent to 4 spaces and change Braces after function declarations to Next line.
 ```
 astyle --style=kr --indent=spaces=4 --min-conditional-indent=0 --max-instatement-indent=80 --pad-header --pad-oper --align-pointer=name --align-reference=name --max-code-length=120 --convert-tabs --preserve-date --suffix=none --mode=c
 ```
