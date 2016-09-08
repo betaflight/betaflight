@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 145;
+static const uint8_t EEPROM_CONF_VERSION = 146;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -235,7 +235,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 75;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_lpf_hz = 80;
+    pidProfile->yaw_lpf_hz = 0;
     pidProfile->rollPitchItermIgnoreRate = 130;
     pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
@@ -247,7 +247,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 85;
+    pidProfile->ptermSRateWeight = 50;
     pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
@@ -491,8 +491,8 @@ void createDefaultConfig(master_t *config)
 #endif
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz = 0;
-    config->gyro_soft_notch_cutoff = 150;
+    config->gyro_soft_notch_hz = 210;
+    config->gyro_soft_notch_cutoff = 110;
 
     config->debug_mode = DEBUG_NONE;
 

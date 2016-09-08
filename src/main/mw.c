@@ -123,7 +123,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float setpointRate[3];
+float setpointRate[3], ptermSetpointRate[3];
 float rcInput[3];
 
 extern pidControllerFuncPtr pid_controller;
@@ -176,7 +176,7 @@ bool isCalibrating()
 #define RC_RATE_INCREMENTAL 14.54f
 #define RC_EXPO_POWER 3
 
-float calculateSetpointRate(int axis, int16_t rc) {
+void calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
     uint8_t rcExpo;
 
@@ -201,7 +201,19 @@ float calculateSetpointRate(int axis, int16_t rc) {
 
     if (currentControlRateProfile->rates[axis]) {
         rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
-        angleRate *= rcSuperfactor;
+        if (currentProfile->pidProfile.pidController == PID_CONTROLLER_BETAFLIGHT) {
+            ptermSetpointRate[axis] = angleRate * rcSuperfactor;
+            if (currentProfile->pidProfile.ptermSRateWeight < 100) {
+                const float pWeight = currentProfile->pidProfile.ptermSRateWeight / 100.0f;
+                angleRate = angleRate + (pWeight * ptermSetpointRate[axis] - angleRate);
+            } else {
+                angleRate = ptermSetpointRate[axis];
+            }
+        } else {
+            angleRate *= rcSuperfactor;
+        }
+    } else {
+        if (currentProfile->pidProfile.pidController == PID_CONTROLLER_BETAFLIGHT) ptermSetpointRate[axis] = angleRate;
     }
 
     if (debugMode == DEBUG_ANGLERATE) {
@@ -209,9 +221,9 @@ float calculateSetpointRate(int axis, int16_t rc) {
     }
 
     if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-        return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
+        setpointRate[axis] = constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
     else
-        return  constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
+        setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -290,7 +302,7 @@ void processRcCommand(void)
         if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
 
-        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+        for (int axis = 0; axis < 3; axis++) calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
     }

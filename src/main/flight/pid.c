@@ -49,7 +49,7 @@
 
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
-extern float setpointRate[3];
+extern float setpointRate[3], ptermSetpointRate[3];
 extern float rcInput[3];
 
 static bool pidStabilisationEnabled;
@@ -135,7 +135,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], b[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
+    static float Kp[3], Ki[3], Kd[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -187,7 +187,6 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
             Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
             Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
-            b[axis] = pidProfile->ptermSetpointWeight / 100.0f;
             c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
             yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
             rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
@@ -234,11 +233,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // ----- calculate error / angle rates  ----------
         errorRate = setpointRate[axis] - PVRate;       // r - y
-        rP = b[axis] * setpointRate[axis] - PVRate;    // br - y
-
-        // Slowly restore original setpoint with more stick input
-        float diffRate = errorRate - rP;
-        rP += diffRate * rcInput[axis];
+        rP = ptermSetpointRate[axis] - PVRate;         // br - y
 
         // Reduce Hunting effect and jittering near setpoint. Limit multiple zero crossing within deadband and lower PID affect during low error amount
         float dynReduction = tpaFactor;
