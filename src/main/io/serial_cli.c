@@ -405,10 +405,6 @@ static const char * const lookupTableBlackboxDevice[] = {
 };
 #endif
 
-static const char * const lookupTablePidController[] = {
-    "UNUSED", "MWREWRITE", "LUX"
-};
-
 #ifdef SERIAL_RX
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
@@ -484,7 +480,6 @@ typedef enum {
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
-    TABLE_PID_CONTROLLER,
 #ifdef SERIAL_RX
     TABLE_SERIAL_RX,
 #endif
@@ -516,7 +511,6 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
 #endif
-    { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
 #ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
 #endif
@@ -599,9 +593,6 @@ const clivalue_t valueTable[] = {
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-#ifdef USE_SERVOS
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-#endif
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME lower limit should match code in the mixer, 1500 currently,
@@ -609,9 +600,6 @@ const clivalue_t valueTable[] = {
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 50,  32000 }, 0 },
-#ifdef USE_SERVOS
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 }, 0 },
-#endif
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
@@ -765,6 +753,9 @@ const clivalue_t valueTable[] = {
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "servo_lowpass_freq",         VAR_INT16  | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400}, 0 },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE }, 0 },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 }, 0 },
 #endif
 
     { "mode_range_logic_operator",  VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP,  &masterConfig.profile[0].modeActivationOperator, .config.lookup = { TABLE_AUX_OPERATOR }, 0 },
@@ -794,10 +785,6 @@ const clivalue_t valueTable[] = {
 
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
-
-#ifdef USE_SERVOS
-    { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE }, 0 },
-#endif
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
