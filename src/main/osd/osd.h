@@ -62,7 +62,8 @@ void osdHardwareApplyConfiguration(videoMode_e videoMode);
 void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);
-bool osdIsCameraConnected(void);
 void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent);
+
+bool osdIsCameraConnected(void);
 
 void osdSetFontCharacter(uint8_t address, sbuf_t *src);

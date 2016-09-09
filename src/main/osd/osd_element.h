@@ -41,6 +41,10 @@ enum osdElementIds_e {
 
     // pilot
     OSD_ELEMENT_CALLSIGN = 14,
+
+    // motors
+    OSD_ELEMENT_MOTORS = 15,
+
 };
 
 // 16 bits.

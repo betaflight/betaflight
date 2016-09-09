@@ -24,12 +24,18 @@
 #include "build/debug.h"
 
 #include "common/printf.h"
+#include "common/maths.h"
+
 #include "drivers/system.h"
 #include "drivers/video_textscreen.h"
+#include "drivers/video.h"
 
 #include "osd/osd_element.h"
 #include "osd/osd_element_render.h"
 #include "osd/osd_screen.h"
+
+// from osd hardware implementation
+void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent);
 
 static char elementAsciiBuffer[31];
 
@@ -118,3 +124,30 @@ void osdElementRender_callsign(const element_t *element, elementDataProviderFn d
     osdPrintAt(element->x, element->y, (char *)callsign);
 }
 
+
+// 4x4 grid
+struct quadMotorCoordinateOffset_s {
+    uint8_t x;
+    uint8_t y;
+} quadMotorCoordinateOffsets[4] = {
+    // FIXME assumes standard motor order
+    {3, 3},
+    {3, 1},
+    {0, 3},
+    {0, 1}
+};
+
+void osdElementRender_motors(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint16_t *motors = (uint16_t *) dataFn();
+
+    const int maxMotors = 4; // just quad for now
+    for (int i = 0; i < maxMotors; i++) {
+        if (!motors[i]) {
+            continue; // skip unused/uninitialsed motors.
+        }
+        int percent = scaleRange(motors[i], 1000, 2000, 0, 100); // FIXME should use min/max command as used by the FC.
+
+        osdHardwareDisplayMotor(quadMotorCoordinateOffsets[i].x + element->x, quadMotorCoordinateOffsets[i].y + element->y, percent);
+    }
+}

@@ -137,6 +137,12 @@ intptr_t osdElementData_callsign(void)
     return (intptr_t) pilotConfig()->callsign;
 }
 
+
+intptr_t osdElementData_motors(void)
+{
+    return (intptr_t) fcMotors;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_DURATION, osdElementRender_duration, osdElementData_onDuration},
     {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
@@ -151,6 +157,7 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_INDICATOR_BARO, osdElementRender_indicatorBaro, osdElementData_indicatorBaroFC},
     {OSD_ELEMENT_RSSI_FC, osdElementRender_rssi, osdElementData_rssiFC},
     {OSD_ELEMENT_CALLSIGN, osdElementRender_callsign, osdElementData_callsign},
+    {OSD_ELEMENT_MOTORS, osdElementRender_motors, osdElementData_motors},
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)

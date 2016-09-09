@@ -81,6 +81,7 @@ const uint16_t osdSupportedElementIds[] = {
     OSD_ELEMENT_INDICATOR_BARO,
     OSD_ELEMENT_RSSI_FC,
     OSD_ELEMENT_CALLSIGN,
+    OSD_ELEMENT_MOTORS,
 };
 
 const uint8_t osdSupportedElementIdsCount = ARRAYLEN(osdSupportedElementIds);
@@ -99,6 +100,7 @@ static const element_t osdDefaultElements[] = {
     {  2, -1, EF_ENABLED, OSD_ELEMENT_AMPERAGE },
     { 18, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
     {  8, -5, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
+    { 13, -4, EF_ENABLED, OSD_ELEMENT_MOTORS },
 };
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {
@@ -163,33 +165,9 @@ static const struct {
 };
 
 
-// 4x4 grid
-struct quadMotorCoordinateOffset_s {
-    uint8_t x;
-    uint8_t y;
-} quadMotorCoordinateOffsets[4] = {
-    {3, 3},
-    {3, 1},
-    {0, 3},
-    {0, 1}
-};
-
 bool osdIsCameraConnected(void)
 {
     return osdState.cameraConnected;
-}
-
-void osdDisplayMotors(void)
-{
-    const int maxMotors = 4; // just quad for now
-    for (int i = 0; i < maxMotors; i++) {
-        if (!fcMotors[i]) {
-            continue; // skip unused/uninitialsed motors.
-        }
-        int percent = scaleRange(fcMotors[i], 1000, 2000, 0, 100); // FIXME should use min/max command as used by the FC.
-
-        osdHardwareDisplayMotor(quadMotorCoordinateOffsets[i].x, quadMotorCoordinateOffsets[i].y, percent);
-    }
 }
 
 void osdUpdate(void)
@@ -280,8 +258,6 @@ void osdUpdate(void)
             osdPrintAt(11, 4, "NO CAMERA");
         }
     }
-
-    osdDisplayMotors();
 
     TIME_SECTION_END(0);
 

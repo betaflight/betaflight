@@ -221,7 +221,7 @@ void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
 {
     uint8_t c = FONT_CHARACTER_MOTOR_OFF - (MIN(percent, 99) / 10);
 
-    osdSetRawCharacterAtPosition(13 + x, osdTextScreen.height - 4 + y, c);
+    osdSetRawCharacterAtPosition(x, y, c);
 }
 
 void osdSetFontCharacter(uint8_t address, sbuf_t *src)
