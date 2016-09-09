@@ -202,7 +202,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
     if (currentControlRateProfile->rates[axis]) {
         rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
         if (currentProfile->pidProfile.pidController == PID_CONTROLLER_BETAFLIGHT) {
-            ptermSetpointRate[axis] = angleRate * rcSuperfactor;
+            ptermSetpointRate[axis] = constrainf(angleRate * rcSuperfactor, -1998.0f, 1998.0f);
             if (currentProfile->pidProfile.ptermSRateWeight < 100 && axis != YAW) {
                 const float pWeight = currentProfile->pidProfile.ptermSRateWeight / 100.0f;
                 angleRate = angleRate + (pWeight * ptermSetpointRate[axis] - angleRate);
