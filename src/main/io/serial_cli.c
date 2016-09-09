@@ -1302,7 +1302,7 @@ static void cliSerial(char *cmdline)
                 portConfig.telemetry_baudrateIndex = baudRateIndex;
                 break;
             case 3:
-                if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_250000) {
+                if (baudRateIndex < BAUD_19200 || baudRateIndex > BAUD_2470000) {
                     continue;
                 }
                 portConfig.blackbox_baudrateIndex = baudRateIndex;
