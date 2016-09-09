@@ -146,7 +146,7 @@
     float: right;
     position: relative;
     margin: 0px 0px 20px 0;
-    width: 100%
+    width: 100%;
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
     background-color: #DEDEDE;
@@ -302,6 +302,28 @@
     border: 1px solid silver;
     margin: 4px;
     width: calc(100% - 10px);
+}
+
+.tab-receiver .rcInterpolation td {
+    padding: 5px;
+}
+
+.tab-receiver .rcInterpolation td:first-child {
+    width: 20%;
+    padding-bottom: 6px;
+    padding-top: 5px;
+}
+
+.tab-receiver .rcInterpolation td:last-child {
+    width: 80%;
+}
+
+.tab-receiver .rcInterpolation td {
+    width: 20%;
+}
+
+.tab-receiver .rcInterpolation .slider input {
+    -webkit-appearance: slider-horizontal
 }
 
 .tab-receiver .curves {

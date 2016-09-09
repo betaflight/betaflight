@@ -52,7 +52,43 @@
                     </tr>
                 </table>
             </div>
-            <div class="gui_box grey topspacer">
+            <div class="gui_box grey tunings topspacer rcInterpolation">
+                <table class="rcInterpolation" width="100%">
+                    <tr>
+                        <th colspan=2 i18n="receiverRcInterpolation"></th>
+                    </tr>
+                     <tr class="rcInterpolation">
+                        <td>
+                            <select name="rcInterpolation-select">
+                                <option value="0" i18n="receiverRcInterpolationOff"/>
+                                <option value="1" i18n="receiverRcInterpolationDefault"/>
+                                <option value="2" i18n="receiverRcInterpolationAuto"/>
+                                <option value="3" i18n="receiverRcInterpolationManual"/>
+                            </select>
+                        </td>
+                        <td>
+                            <div>
+                                <label>
+                                    <span i18n="receiverRcInterpolation"></span>
+                                </label>
+                                <div class="helpicon cf_tip" i18n_title="receiverRcInterpolationHelp"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rcInterpolationInterval">
+                        <td><input type="number" class="nonProfile" name="rcInterpolationInterval-number" step="1" min="1" max="50"/></td>
+                        <td>
+                            <div>
+                                <label>
+                                    <span i18n="receiverRcInterpolationInterval"></span>
+                                </label>
+                                <div class="helpicon cf_tip" i18n_title="receiverRcInterpolationIntervalHelp"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="gui_box grey tunings topspacer">
                 <table class="pid_titlebar" style="width: 100%;">
                     <thead>
                         <tr>
