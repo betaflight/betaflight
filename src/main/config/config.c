@@ -331,7 +331,11 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
+#ifdef STM32F303xC
+    telemetryConfig->telemetry_inversion = 1;
+#else
     telemetryConfig->telemetry_inversion = 0;
+#endif
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -488,7 +492,7 @@ void createDefaultConfig(master_t *config)
 #endif
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz = 0;
+    config->gyro_soft_notch_hz = 230;
     config->gyro_soft_notch_cutoff = 130;
 
     config->debug_mode = DEBUG_NONE;
