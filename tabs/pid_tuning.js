@@ -34,10 +34,6 @@ TABS.pid_tuning.initialize = function (callback) {
           return MSP.promise(MSPCodes.MSP_PID_ADVANCED);
         }
     }).then(function() {
-        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-          return MSP.promise(MSPCodes.MSP_RX_CONFIG);
-        }
-    }).then(function() {
         return MSP.promise(MSPCodes.MSP_RC_TUNING);
     }).then(function() {
         return MSP.promise(MSPCodes.MSP_FILTER_CONFIG);
@@ -256,17 +252,11 @@ TABS.pid_tuning.initialize = function (callback) {
             $('.pid_filter input[name="dTermNotchFrequency"]').val(FILTER_CONFIG.dterm_notch_hz);
             $('.pid_filter input[name="dTermNotchCutoff"]').val(FILTER_CONFIG.dterm_notch_cutoff);
 
-            $('select[name="rcInterpolation-select"]').val(RX_CONFIG.rcInterpolation);
-
-            $('input[name="rcInterpolationInterval-number"]').val(RX_CONFIG.rcInterpolationInterval);
-
             $('input[name="ptermSetpoint-number"]').val(ADVANCED_TUNING.ptermSetpointWeight / 100);
             $('input[name="ptermSetpoint-range"]').val(ADVANCED_TUNING.ptermSetpointWeight / 100);
 
             $('input[name="dtermSetpoint-number"]').val(ADVANCED_TUNING.dtermSetpointWeight / 100);
             $('input[name="dtermSetpoint-range"]').val(ADVANCED_TUNING.dtermSetpointWeight / 100);
-
-            self.updateRcInterpolationParameters();
         } else {
             $('.pid_filter .newFilter').hide();
         }
@@ -363,9 +353,6 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         if (semver.gte(CONFIG.flightControllerVersion, '3.0.0')) {
-            RX_CONFIG.rcInterpolation = parseInt($('select[name="rcInterpolation-select"]').val());
-            RX_CONFIG.rcInterpolationInterval = parseInt($('input[name="rcInterpolationInterval-number"]').val());
-
             ADVANCED_TUNING.ptermSetpointWeight = parseInt($('input[name="ptermSetpoint-number"]').val() * 100);
             ADVANCED_TUNING.dtermSetpointWeight = parseInt($('input[name="dtermSetpoint-number"]').val() * 100);
 
@@ -454,7 +441,7 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     var useLegacyCurve = false;
-    if (CONFIG.flightControllerIdentifier !== "BTFL" || semver.lt(CONFIG.flightControllerVersion, "2.8.0")) {
+    if (!semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
         useLegacyCurve = true;
     }
 
@@ -476,8 +463,10 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
     function process_html() {
-        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0")) {
+        if (semver.gte(CONFIG.flightControllerVersion, "2.8.0") && !semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
             BF_CONFIG.features.generateElements($('.tab-pid_tuning .features'));
+        } else {
+            $('.tab-pid_tuning .pidTuningFeatures').hide();
         }
 
         // translate to user-selected language
@@ -603,9 +592,6 @@ TABS.pid_tuning.initialize = function (callback) {
             });
         } else {
             $('.tab-pid_tuning .rate_profile').hide();
-
-            $('#pid-tuning .rcInterpolation').hide();
-            $('#pid-tuning .rcInterpolationInterval').hide();
 
             $('#pid-tuning .ptermSetpoint').hide();
             $('#pid-tuning .dtermSetpoint').hide();
@@ -826,12 +812,6 @@ TABS.pid_tuning.initialize = function (callback) {
 			self.updatePidControllerParameters();
         });
 
-        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-            $('select[name="rcInterpolation-select"]').change(function () {
-                self.updateRcInterpolationParameters();
-            });
-        }
-
         // update == save.
         $('a.update').click(function () {
             form_to_pid_and_rc();
@@ -854,10 +834,6 @@ TABS.pid_tuning.initialize = function (callback) {
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.2")) {
                   return MSP.promise(MSPCodes.MSP_SET_PID_ADVANCED, mspHelper.crunch(MSPCodes.MSP_SET_PID_ADVANCED));
-                }
-            }).then(function () {
-                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-                  return MSP.promise(MSPCodes.MSP_SET_RX_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_RX_CONFIG));
                 }
             }).then(function () {
                 if (semver.gte(CONFIG.flightControllerVersion, "2.8.1")) {
@@ -1031,16 +1007,6 @@ TABS.pid_tuning.updatePidControllerParameters = function () {
             $('#pid-tuning .dtermSetpoint').show();
 
             $('#pid-tuning .delta').hide();
-        }
-    }
-}
-
-TABS.pid_tuning.updateRcInterpolationParameters = function () {
-    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
-        if ($('select[name="rcInterpolation-select"]').val() === '3') {
-            $('#pid-tuning .rcInterpolationInterval').show();
-        } else {
-            $('#pid-tuning .rcInterpolationInterval').hide();
         }
     }
 }

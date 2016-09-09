@@ -36,9 +36,18 @@ TABS.receiver.initialize = function (callback) {
     }
 
     function load_rc_configs() {
-        var next_callback = load_html;
+        var next_callback = load_rx_config;
         if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
             MSP.send_message(MSPCodes.MSP_RC_DEADBAND, false, false, next_callback);
+        } else {
+            next_callback();
+        }
+    }
+
+    function load_rx_config() {
+        var next_callback = load_html;
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            MSP.send_message(MSPCodes.MSP_RX_CONFIG, false, false, next_callback);
         } else {
             next_callback();
         }
@@ -75,6 +84,17 @@ TABS.receiver.initialize = function (callback) {
                 this.yawDeadband = parseInt($(this).val());
             }).change();
 
+        }
+
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+            $('select[name="rcInterpolation-select"]').val(RX_CONFIG.rcInterpolation);
+            $('input[name="rcInterpolationInterval-number"]').val(RX_CONFIG.rcInterpolationInterval);
+
+            $('select[name="rcInterpolation-select"]').change(function () {
+                self.updateRcInterpolationParameters();
+            }).change();
+        } else {
+            $('.tab-receiver div.rcInterpolation').hide();
         }
 
         // generate bars
@@ -231,16 +251,30 @@ TABS.receiver.initialize = function (callback) {
             // catch rssi aux
             MISC.rssi_channel = parseInt($('select[name="rssi_channel"]').val());
 
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+                RX_CONFIG.rcInterpolation = parseInt($('select[name="rcInterpolation-select"]').val());
+                RX_CONFIG.rcInterpolationInterval = parseInt($('input[name="rcInterpolationInterval-number"]').val());
+            }
+
             function save_misc() {
                 MSP.send_message(MSPCodes.MSP_SET_MISC, mspHelper.crunch(MSPCodes.MSP_SET_MISC), false, save_rc_configs);
             }
 
             function save_rc_configs() {
-                var next_callback = save_to_eeprom;
+                var next_callback = save_rx_config;
                 if (semver.gte(CONFIG.apiVersion, "1.15.0")) {
-                   MSP.send_message(MSPCodes.MSP_SET_RC_DEADBAND, mspHelper.crunch(MSPCodes.MSP_SET_RC_DEADBAND), false, next_callback);
+                    MSP.send_message(MSPCodes.MSP_SET_RC_DEADBAND, mspHelper.crunch(MSPCodes.MSP_SET_RC_DEADBAND), false, next_callback);
                 } else {
-                   next_callback();
+                    next_callback();
+                }
+            }
+
+            function save_rx_config() {
+                var next_callback = save_to_eeprom;
+                if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+                    MSP.send_message(MSPCodes.MSP_SET_RX_CONFIG, mspHelper.crunch(MSPCodes.MSP_SET_RX_CONFIG), false, next_callback);
+                } else {
+                    next_callback();
                 }
             }
 
@@ -446,4 +480,14 @@ TABS.receiver.cleanup = function (callback) {
     this.keepRendering = false;
 
     if (callback) callback();
+};
+
+TABS.receiver.updateRcInterpolationParameters = function () {
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
+        if ($('select[name="rcInterpolation-select"]').val() === '3') {
+            $('.tab-receiver .rcInterpolationInterval').show();
+        } else {
+            $('.tab-receiver .rcInterpolationInterval').hide();
+        }
+    }
 };

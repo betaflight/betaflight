@@ -264,25 +264,25 @@
     border-right: 0px solid #ccc;
 }
 
-.tab-pid_tuning .compensation td {
+.tab-pid_tuning .pidTuningFeatures td {
    padding: 5px;
 }
 
-.tab-pid_tuning .compensation td:first-child {
+.tab-pid_tuning .pidTuningFeatures td:first-child {
     width: 20%;
     padding-bottom: 6px;
     padding-top: 5px;
 }
 
-.tab-pid_tuning .compensation td:last-child {
+.tab-pid_tuning .pidTuningFeatures td:last-child {
     width: 80%;
 }
 
-.tab-pid_tuning .compensation td {
+.tab-pid_tuning .pidTuningFeatures td {
     width: 20%;
 }
 
-.tab-pid_tuning .compensation .slider input {
+.tab-pid_tuning .pidTuningFeatures .slider input {
     -webkit-appearance: slider-horizontal
 }
 

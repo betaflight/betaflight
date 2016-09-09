@@ -802,28 +802,31 @@
     "pidTuningPidSettings": {
         "message": "PID Controller Settings"
     },
-    "pidTuningRcInterpolationHelp": {
-        "message": "RC TX/RX systems are not as fast as PID loops. That means that PID loop has gaps in the information stream from RC systems. This option enables interpolation of the RC input during the times when no RC frames are received. The option also offers cleaner P and D behaviour as there are no ramps in control input."
-    },
-    "pidTuningRcInterpolationIntervalHelp": {
-        "message": "Interpolation interval for manual RC interpolation mode in milliseconds"
-    },
-    "pidTuningRcInterpolation": {
+    "receiverRcInterpolation": {
         "message": "RC Interpolation"
     },
-    "pidTuningRcInterpolationOff": {
+    "receiverRcInterpolationHelp": {
+        "message": "RC TX/RX systems are not as fast as PID loops. That means that PID loop has gaps in the information stream from RC systems. This option enables interpolation of the RC input during the times when no RC frames are received. The option also offers cleaner P and D behaviour as there are no ramps in control input."
+    },
+    "receiverRcInterpolationIntervalHelp": {
+        "message": "Interpolation interval for manual RC interpolation mode in milliseconds"
+    },
+    "receiverRcInterpolation": {
+        "message": "RC Interpolation"
+    },
+    "receiverRcInterpolationOff": {
         "message": "Off"
     },
-    "pidTuningRcInterpolationDefault": {
+    "receiverRcInterpolationDefault": {
         "message": "Preset"
     },
-    "pidTuningRcInterpolationAuto": {
+    "receiverRcInterpolationAuto": {
         "message": "Auto"
     },
-    "pidTuningRcInterpolationManual": {
+    "receiverRcInterpolationManual": {
         "message": "Manual"
     },
-    "pidTuningRcInterpolationInterval": {
+    "receiverRcInterpolationInterval": {
         "message": "RC Interpolating Interval (ms)"
     },
     "pidTuningPtermSetpoint": {
