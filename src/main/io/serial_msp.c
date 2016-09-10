@@ -58,7 +58,7 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
     mspPortToReset->port = serialPort;
 }
 
-void mspAllocateSerialPorts(void)
+void mspSerialAllocatePorts(void)
 {
     serialPort_t *serialPort;
 
@@ -83,7 +83,7 @@ void mspAllocateSerialPorts(void)
     }
 }
 
-void mspReleasePortIfAllocated(serialPort_t *serialPort)
+void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
     uint8_t portIndex;
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
@@ -142,7 +142,7 @@ static void setCurrentPort(mspPort_t *port)
     mspSerialPort = currentPort->port;
 }
 
-void mspProcess(void)
+void mspSerialProcess(void)
 {
     uint8_t portIndex;
     mspPort_t *candidatePort;

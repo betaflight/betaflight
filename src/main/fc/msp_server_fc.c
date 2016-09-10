@@ -1750,11 +1750,11 @@ void mspProcessReceivedCommand(void)
     currentPort->c_state = IDLE;
 }
 
-void mspInit(void)
+void mspSerialInit(void)
 {
     initActiveBoxIds();
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspAllocateSerialPorts();
+    mspSerialAllocatePorts();
 }
 

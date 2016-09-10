@@ -430,7 +430,7 @@ void handleSerial(void)
     }
 #endif
 
-    mspProcess();
+    mspSerialProcess();
 }
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
