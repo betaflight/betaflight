@@ -504,7 +504,7 @@ void init(void)
 
     imuInit();
 
-    mspInit(&masterConfig.serialConfig);
+    mspSerialInit(&masterConfig.serialConfig);
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
