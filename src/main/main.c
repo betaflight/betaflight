@@ -127,6 +127,7 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
+static void CPU_CACHE_Enable(void);
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -141,6 +142,10 @@ static uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
 {
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
     printfSupportInit();
 
     initEEPROM();
@@ -230,7 +235,9 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+#if !defined(USE_HAL_DRIVER)
     dmaInit();
+#endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
@@ -283,13 +290,13 @@ void init(void)
 #endif
 
     mixerConfigureOutput();
-    
+    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
     beeperInit(&masterConfig.beeperConfig);
 #endif
-
+/* temp until PGs are implemented. */
 #ifdef INVERTER
     initInverter();
 #endif
@@ -313,6 +320,9 @@ void init(void)
 #else
     spiInit(SPIDEV_3);
 #endif
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
 #endif
 #endif
 
@@ -625,6 +635,22 @@ int main(void)
     while (true) {
         main_step();
     }
+}
+#endif
+
+#ifdef USE_HAL_DRIVER
+/**
+  * @brief  CPU L1-Cache enable.
+  * @param  None
+  * @retval None
+  */
+static void CPU_CACHE_Enable(void)
+{
+  /* Enable I-Cache */
+  SCB_EnableICache();
+
+  /* Enable D-Cache */
+  SCB_EnableDCache();
 }
 #endif
 

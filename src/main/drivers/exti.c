@@ -22,7 +22,7 @@ extiChannelRec_t extiChannelRecs[16];
 static const uint8_t extiGroups[16] = { 0, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6 };
 static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
 
-#if defined(STM32F1) || defined(STM32F4)
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
     EXTI0_IRQn,
     EXTI1_IRQn,
@@ -66,6 +66,37 @@ void EXTIHandlerInit(extiCallbackRec_t *self, extiHandlerCallback *fn)
     self->fn = fn;
 }
 
+#if defined(STM32F7)
+void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config)
+{
+    int chIdx;
+    chIdx = IO_GPIOPinIdx(io);
+    if(chIdx < 0)
+        return;
+    extiChannelRec_t *rec = &extiChannelRecs[chIdx];
+    int group = extiGroups[chIdx];
+
+    GPIO_InitTypeDef init = {
+        .Pin = IO_Pin(io),
+        .Mode = GPIO_MODE_IT_RISING,
+        .Speed = GPIO_SPEED_FREQ_LOW,
+        .Pull = GPIO_NOPULL,
+    };
+    HAL_GPIO_Init(IO_GPIO(io), &init);
+
+    rec->handler = cb;
+    uint32_t extiLine = IO_EXTI_Line(io);
+
+    //EXTI_ClearITPendingBit(extiLine);
+
+    if(extiGroupPriority[group] > irqPriority) {
+        extiGroupPriority[group] = irqPriority;
+        HAL_NVIC_SetPriority(extiGroupIRQn[group], NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
+        HAL_NVIC_EnableIRQ(extiGroupIRQn[group]);
+    }
+}
+#else
+
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, EXTITrigger_TypeDef trigger)
 {
     int chIdx;
@@ -107,6 +138,7 @@ void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, EXTITrigger_Typ
         NVIC_Init(&NVIC_InitStructure);
     }
 }
+#endif
 
 void EXTIRelease(IO_t io)
 {
@@ -131,6 +163,7 @@ void EXTIEnable(IO_t io, bool enable)
         EXTI->IMR |= extiLine;
     else
         EXTI->IMR &= ~extiLine;
+#elif defined(STM32F7)
 #elif defined(STM32F303xC)
     int extiLine = IO_EXTI_Line(io);
     if(extiLine < 0)
@@ -147,6 +180,8 @@ void EXTIEnable(IO_t io, bool enable)
 
 void EXTI_IRQHandler(void)
 {
+    //HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+
     uint32_t exti_active = EXTI->IMR & EXTI->PR;
 
     while(exti_active) {

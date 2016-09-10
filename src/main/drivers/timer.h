@@ -30,6 +30,11 @@ typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
+#elif defined(STM32F7)
+typedef uint32_t timCCR_t;
+typedef uint32_t timCCER_t;
+typedef uint32_t timSR_t;
+typedef uint32_t timCNT_t;
 #elif defined(STM32F3)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
@@ -77,11 +82,11 @@ typedef struct timerHardware_s {
     uint8_t irq;
     uint8_t output;
     ioConfig_t ioMode;
-#if defined(STM32F3) || defined(STM32F4)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
 #if defined(USE_DSHOT) 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *dmaStream; 
     uint32_t dmaChannel;
 #elif defined(STM32F3)

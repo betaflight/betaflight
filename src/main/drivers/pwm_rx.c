@@ -320,7 +320,11 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     if (pwmInputPort->state == 0) {
         pwmInputPort->rise = capture;
         pwmInputPort->state = 1;
+#if defined(USE_HAL_DRIVER)
+        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_FALLING);
+#else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
+#endif
     } else {
         pwmInputPort->fall = capture;
 
@@ -330,11 +334,37 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
 
         // switch state
         pwmInputPort->state = 0;
+#if defined(USE_HAL_DRIVER)
+        pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_RISING);
+#else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
+#endif
         pwmInputPort->missedEvents = 0;
     }
 }
 
+#ifdef USE_HAL_DRIVER
+
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
+{
+    TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
+    if(Handle == NULL) return;
+    
+    TIM_IC_InitTypeDef TIM_ICInitStructure;
+
+    TIM_ICInitStructure.ICPolarity = polarity;
+    TIM_ICInitStructure.ICSelection = TIM_ICSELECTION_DIRECTTI;
+    TIM_ICInitStructure.ICPrescaler = TIM_ICPSC_DIV1;
+
+    if (inputFilteringMode == INPUT_FILTERING_ENABLED) {
+        TIM_ICInitStructure.ICFilter = INPUT_FILTER_TO_HELP_WITH_NOISE_FROM_OPENLRS_TELEMETRY_RX;
+    } else {
+        TIM_ICInitStructure.ICFilter = 0x00;
+    }
+
+    HAL_TIM_IC_ConfigChannel(Handle, &TIM_ICInitStructure, channel);
+}
+#else
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -353,6 +383,9 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
+
+#endif
+
 
 void pwmRxInit(const pwmConfig_t *pwmConfig)
 {
@@ -377,8 +410,11 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
         IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
         IOConfigGPIO(io, timer->ioMode);
 
-        pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
-
+#if defined(USE_HAL_DRIVER)
+    pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
+#else
+    pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
+#endif
         timerConfigure(timer, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
 
         timerChCCHandlerInit(&port->edgeCb, pwmEdgeCallback);
@@ -438,7 +474,11 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
     IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
     IOConfigGPIO(io, timer->ioMode);
 
+#if defined(USE_HAL_DRIVER)
+    pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
+#else
     pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
+#endif
 
     timerConfigure(timer, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
 
