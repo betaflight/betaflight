@@ -108,7 +108,7 @@ For configuration variables that are user accessible via CLI or similar, all_low
 Variable names should be nouns.
 
 Simple temporary variables with a very small scope may be short where it aligns with common practice.
-Such as "i" as a temporary counter in a `for` loop, like `for (uint_8 i = 0; i < 4; i++)`.
+Such as "i" as a temporary counter in a `for` loop, like `for (int i = 0; i < 4; i++)`.
 Using "temporaryCounter" in that case would not improve readability.
 
 ##Declarations
@@ -119,7 +119,7 @@ Variable re-use should be avoided - use distinct variabes when their use is unre
 One blank line should follow the declaration(s).
 
 Hint: Sometimes you can create a block, i.e. add curly braces, to reduce the scope further.
-For example to avoid name clash between different `case` branches.
+For example to limit variable scope to a single `case` branch.
 
 Variables with limited use may be declared at the point of first use. It makes PR-review easier (but that point is lost if the variable is used everywhere anyway).
 
@@ -237,7 +237,7 @@ Do not include things you are not using.
 No trailing whitespace at the end of lines or at blank lines.
 
 Stay within 120 columns, unless exceeding 120 columns significantly increases readability and does not hide information.
-(Less is acceptable. More than 140 makes it difficult to read on Github so that should be a hard limit.)
+(Less is acceptable. More than 140 makes it difficult to read on Github so that shall never be exceeded.)
 
 Take maximum possible advantage of compile time checking, so generally warnings should be as strict as possible.
 
@@ -245,7 +245,7 @@ Don't call or reference "upwards". That is don't call or use anything in a softw
 
 Target specific code (e.g. #ifdef CC3D) should be absolutely minimised.
 
-typedef void handlerFunc(void); is easier to read than typedef void (*handlerFuncPtr)(void);.
+`typedef void handlerFunc(void);` is easier to read than `typedef void (*handlerFuncPtr)(void);`.
 
 Code should be spherical.
 That is its surface area (public interfaces) relative to its functionality should be minimised.
