@@ -105,6 +105,10 @@ typedef enum {
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
 STATIC_UNIT_TESTED uint8_t ackPayload[NRF24L01_MAX_PAYLOAD_SIZE];
+#define BIND_PAYLOAD0 0xae // 10101110
+#define BIND_PAYLOAD1 0xc9 // 11001001
+#define BIND_ACK_PAYLOAD0 0x83 // 10000111
+#define BIND_ACK_PAYLOAD1 0xa5 // 10100101
 
 #define INAV_PROTOCOL_PAYLOAD_SIZE_MIN 8
 #define INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT 16
@@ -133,7 +137,7 @@ static const uint32_t hopTimeout = 5000; // 5ms
 STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
 {
     bool bindPacket = false;
-    if (payload[0] == 0xae  && payload[1] == 0xc9) {
+    if (payload[0] == BIND_PAYLOAD0  && payload[1] == BIND_PAYLOAD1) {
         bindPacket = true;
         if (protocolState ==STATE_BIND) {
             rxTxAddr[0] = payload[2];
@@ -262,8 +266,7 @@ static void inavSetBound(void)
 
 static void writeAckPayload(const uint8_t *data, uint8_t length)
 {
-    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_TX_DS) | BV(NRF24L01_07_STATUS_MAX_RT));
-    NRF24L01_FlushTx();
+    NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_MAX_RT));
     NRF24L01_WriteAckPayload(data, length, NRF24L01_PIPE0);
 }
 
@@ -276,6 +279,7 @@ static void writeTelemetryAckPayload(void)
 
     ackPayload[0] = sequenceNumber++;
     const int ackPayloadSize = getLtmFrame(&ackPayload[1], ltmFrameType) + 1;
+
     ++ltmFrameType;
     if (ltmFrameType > LTM_FRAME_COUNT) {
         ltmFrameType = LTM_FRAME_START;
@@ -293,8 +297,8 @@ static void writeBindAckPayload(uint8_t *payload)
 {
 #ifdef USE_AUTO_ACKKNOWLEDGEMENT
     // send back the payload with the first two bytes set to zero as the ack
-    payload[0] = 0;
-    payload[1] = 0;
+    payload[0] = BIND_ACK_PAYLOAD0;
+    payload[1] = BIND_ACK_PAYLOAD1;
     // respond to request for rfChannelCount;
     payload[7] = inavRfChannelHoppingCount;
     // respond to request for payloadSize
@@ -363,15 +367,18 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
     UNUSED(protocol);
     UNUSED(rfChannelHoppingCount);
 
-    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
+    // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC, only get IRQ pin interrupt on RX_DR
+    NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO) | BV(NRF24L01_00_CONFIG_MASK_MAX_RT) | BV(NRF24L01_00_CONFIG_MASK_TX_DS));
 
 #ifdef USE_AUTO_ACKKNOWLEDGEMENT
     NRF24L01_WriteReg(NRF24L01_01_EN_AA, BV(NRF24L01_01_EN_AA_ENAA_P0)); // auto acknowledgment on P0
     NRF24L01_WriteReg(NRF24L01_02_EN_RXADDR, BV(NRF24L01_02_EN_RXADDR_ERX_P0));
     NRF24L01_WriteReg(NRF24L01_03_SETUP_AW, NRF24L01_03_SETUP_AW_5BYTES); // 5-byte RX/TX address
     NRF24L01_WriteReg(NRF24L01_04_SETUP_RETR, 0);
+    NRF24L01_Activate(0x73); // activate R_RX_PL_WID, W_ACK_PAYLOAD, and W_TX_PAYLOAD_NOACK registers
     NRF24L01_WriteReg(NRF24L01_1D_FEATURE, BV(NRF24L01_1D_FEATURE_EN_ACK_PAY) | BV(NRF24L01_1D_FEATURE_EN_DPL));
     NRF24L01_WriteReg(NRF24L01_1C_DYNPD, BV(NRF24L01_1C_DYNPD_DPL_P0)); // enable dynamic payload length on P0
+    //NRF24L01_Activate(0x73); // deactivate R_RX_PL_WID, W_ACK_PAYLOAD, and W_TX_PAYLOAD_NOACK registers
 
     NRF24L01_WriteRegisterMulti(NRF24L01_10_TX_ADDR, rxTxAddr, RX_TX_ADDR_LEN);
 #else

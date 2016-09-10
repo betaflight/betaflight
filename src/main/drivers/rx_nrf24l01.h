@@ -190,6 +190,7 @@ uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length);
 
 void NRF24L01_FlushTx(void);
 void NRF24L01_FlushRx(void);
+uint8_t NRF24L01_Activate(uint8_t code);
 
 
 // Utility functions

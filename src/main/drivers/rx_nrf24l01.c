@@ -231,6 +231,15 @@ void NRF24L01_FlushRx()
     DISABLE_NRF24();
 }
 
+uint8_t NRF24L01_Activate(uint8_t code)
+{
+    ENABLE_NRF24();
+    const uint8_t ret = nrf24TransferByte(ACTIVATE);
+    nrf24TransferByte(code);
+    DISABLE_NRF24();
+    return ret;
+}
+
 #endif // UNIT_TEST
 
 // standby configuration, used to simplify switching between RX, TX, and Standby modes
