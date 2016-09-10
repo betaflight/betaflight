@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -27,6 +26,7 @@
 #include "nvic.h"
 
 #include "gpio.h"
+#include "rcc.h"
 #include "system.h"
 
 #include "timer.h"
@@ -203,6 +203,29 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
     return channel >> 2;
 }
+
+rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].rcc;
+        }
+    }
+    return 0;
+}
+
+#if defined(STM32F7)
+uint8_t timerGPIOAF(TIM_TypeDef *tim)
+{
+    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].alternateFunction;
+        }
+    }
+    return 0;
+}
+#endif
+
 
 void timerNVICConfigure(uint8_t irq)
 {

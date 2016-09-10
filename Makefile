@@ -641,6 +641,7 @@ STM32F7xx_COMMON_SRC = \
             drivers/inverter.c \
             drivers/bus_spi_hal.c \
             drivers/timer_hal.c \
+            drivers/timer_stm32f7xx.c \
             drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
@@ -653,7 +654,6 @@ F7EXCLUDES = drivers/bus_spi.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/ledstrip.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied

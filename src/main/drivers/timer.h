@@ -115,6 +115,8 @@ typedef enum {
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
+#elif defined(STM32F7)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
 
 extern const timerHardware_t timerHardware[];
