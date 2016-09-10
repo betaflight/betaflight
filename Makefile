@@ -410,6 +410,7 @@ COMMON_SRC = \
             io/serial_cli.c \
             io/serial_msp.c \
             io/statusindicator.c \
+            fc/msp_server_fc.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \

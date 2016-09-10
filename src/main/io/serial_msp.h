@@ -17,9 +17,6 @@
 
 #pragma once
 
-#include "io/serial.h"
-#include "drivers/serial.h"
-
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
 #define MAX_MSP_PORT_COUNT 2
 
@@ -35,8 +32,9 @@ typedef enum {
 
 #define MSP_PORT_INBUF_SIZE 64
 
+struct serial_port_s;
 typedef struct mspPort_s {
-    serialPort_t *port; // null when port unused.
+    struct serialPort_s *port; // null when port unused.
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
@@ -46,7 +44,13 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
+extern mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+extern mspPort_t *currentPort;
+struct bufWriter_s;
+extern struct bufWriter_s *writer;
+extern bool isRebootScheduled;
+
 void mspInit(void);
 void mspProcess(void);
 void mspAllocateSerialPorts(void);
-void mspReleasePortIfAllocated(serialPort_t *serialPort);
+void mspReleasePortIfAllocated(struct serialPort_s *serialPort);
