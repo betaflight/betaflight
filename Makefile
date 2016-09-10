@@ -382,6 +382,7 @@ COMMON_SRC = \
             common/filter.c \
             common/maths.c \
             common/printf.c \
+            common/streambuf.c \
             common/typeconversion.c \
             config/config.c \
             config/config_eeprom.c \
