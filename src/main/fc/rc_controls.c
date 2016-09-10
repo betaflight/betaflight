@@ -55,6 +55,7 @@
 #include "flight/failsafe.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "blackbox/blackbox.h"
 

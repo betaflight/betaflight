@@ -371,6 +371,7 @@ COMMON_SRC = \
             common/typeconversion.c \
             common/streambuf.c \
             config/config.c \
+            config/feature.c \
             fc/runtime_config.c \
             drivers/logging.c \
             drivers/adc.c \

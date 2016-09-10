@@ -31,6 +31,7 @@
 #include "common/maths.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"

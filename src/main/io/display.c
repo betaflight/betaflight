@@ -64,6 +64,7 @@
 
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "display.h"
 

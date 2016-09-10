@@ -67,6 +67,7 @@
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "io/gps.h"
 
