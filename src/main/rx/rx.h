@@ -115,6 +115,7 @@ typedef struct rxConfig_s {
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
+    uint8_t spektrum_rssi_enabled;          // enable forwarding of Spektrum fade count as an RSSI figure on one of the RX channels.
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_ppm_invert;
