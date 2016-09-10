@@ -44,5 +44,6 @@ typedef struct profile_s {
 
     uint16_t flaperon_throw_offset;
     uint8_t flaperon_throw_inverted;
+
 #endif
 } profile_t;

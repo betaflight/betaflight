@@ -27,6 +27,10 @@
 #define MAG_HOLD_RATE_LIMIT_MAX 250
 #define MAG_HOLD_RATE_LIMIT_DEFAULT 90
 
+#define FW_ITERM_THROW_LIMIT_DEFAULT 165
+#define FW_ITERM_THROW_LIMIT_MIN 25
+#define FW_ITERM_THROW_LIMIT_MAX 500
+
 #define AXIS_ACCEL_MIN_LIMIT    50
 
 typedef enum {
@@ -65,6 +69,10 @@ typedef struct pidProfile_s {
     int16_t max_angle_inclination[ANGLE_INDEX_COUNT];       // Max possible inclination (roll and pitch axis separately
 
     uint8_t mag_hold_rate_limit;            //Maximum rotation rate MAG_HOLD mode can feed to yaw rate PID controller
+
+#ifdef USE_SERVOS
+    uint16_t fixedWingItermThrowLimit;
+#endif
 } pidProfile_t;
 
 extern int16_t axisPID[];

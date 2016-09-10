@@ -344,6 +344,12 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
     }
 
+#ifdef USE_SERVOS
+    if (STATE(FIXED_WING)) {
+        pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidProfile->fixedWingItermThrowLimit, pidProfile->fixedWingItermThrowLimit);
+    }
+#endif
+
     axisPID[axis] = newOutputLimited;
 
 #ifdef BLACKBOX

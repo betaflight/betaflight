@@ -160,7 +160,7 @@ size_t custom_flash_memory_address = 0;
 #define CONFIG_START_FLASH_ADDRESS (custom_flash_memory_address)
 #else
 // use the last flash pages for storage
-#ifndef CONFIG_START_FLASH_ADDRESS 
+#ifndef CONFIG_START_FLASH_ADDRESS
 #define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
 #endif
 #endif
@@ -231,6 +231,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
     pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
+
+    pidProfile->fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT;
+
 }
 
 #ifdef NAV
