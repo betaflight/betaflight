@@ -524,6 +524,7 @@ void createDefaultConfig(master_t *config)
     config->rxConfig.sbus_inversion = 1;
     config->rxConfig.spektrum_sat_bind = 0;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
+    config->rxConfig.spektrum_rssi_enabled = 0;
     config->rxConfig.midrc = 1500;
     config->rxConfig.mincheck = 1100;
     config->rxConfig.maxcheck = 1900;

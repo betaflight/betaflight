@@ -23,4 +23,5 @@
 uint8_t spektrumFrameStatus(void);
 struct rxConfig_s;
 void spektrumBind(struct rxConfig_s *rxConfig);
+extern uint8_t spekRssiEnabled;
 
