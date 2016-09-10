@@ -218,11 +218,11 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
-                setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
+                ptermSetpointRate[axis] = setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
             } else {
                 // HORIZON mode - direct sticks control is applied to rate PID
                 // mix up angle error to desired AngleRate to add a little auto-level feel
-                setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
+                ptermSetpointRate[axis] = setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
             }
         }
 
