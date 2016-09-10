@@ -813,16 +813,10 @@ void activateConfig(void)
     setAccelerationGain(&masterConfig.accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
-    mixerUseConfigs(
+    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.escAndServoConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
-        currentProfile->servoConf,
-        &currentProfile->gimbalConfig,
+    servosUseConfigs(currentProfile->servoConf, &currentProfile->gimbalConfig);
 #endif
-        &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig,
-        &masterConfig.mixerConfig,
-        &masterConfig.rxConfig
-    );
 
     imuRuntimeConfig.dcm_kp_acc = masterConfig.dcm_kp_acc / 10000.0f;
     imuRuntimeConfig.dcm_ki_acc = masterConfig.dcm_ki_acc / 10000.0f;

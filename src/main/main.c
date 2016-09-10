@@ -215,10 +215,9 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-#ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
-#else
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+#ifdef USE_SERVOS
+    servosInit(masterConfig.customServoMixer);
 #endif
 
     drv_pwm_config_t pwm_params;

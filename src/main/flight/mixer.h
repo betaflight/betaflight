@@ -220,10 +220,6 @@ struct escAndServoConfig_s;
 struct rxConfig_s;
 
 void mixerUseConfigs(
-#ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
-        struct gimbalConfig_s *gimbalConfigToUse,
-#endif
         flight3DConfig_t *flight3DConfigToUse,
         struct escAndServoConfig_s *escAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
@@ -235,10 +231,10 @@ void mixerLoadMix(int index, motorMixer_t *customMixers);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMotorMixers, servoMixer_t *initialCustomServoMixers);
-#else
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers);
+void servosUseConfigs(servoParam_t *servoConfToUse, struct gimbalConfig_s *gimbalConfigToUse);
+void servosInit(servoMixer_t *customServoMixers);
 #endif
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 void mixerUsePWMIOConfiguration(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);
