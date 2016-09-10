@@ -189,9 +189,9 @@ STATIC_UNIT_TESTED void determineLedStripDimensions(void)
 
 STATIC_UNIT_TESTED void determineOrientationLimits(void)
 {
-    highestYValueForNorth = MIN((ledGridHeight / 2) - 1, 0);
+    highestYValueForNorth = MAX((ledGridHeight / 2) - 1, 0);
     lowestYValueForSouth = (ledGridHeight + 1) / 2;
-    highestXValueForWest = MIN((ledGridWidth / 2) - 1, 0);
+    highestXValueForWest = MAX((ledGridWidth / 2) - 1, 0);
     lowestXValueForEast = (ledGridWidth + 1) / 2;
 }
 

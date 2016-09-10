@@ -444,7 +444,14 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
     switch (baroHardware) {
         case BARO_DEFAULT:
             ; // fallthough
-
+        case BARO_BMP085:
+#ifdef USE_BARO_BMP085
+            if (bmp085Detect(bmp085Config, &baro)) {
+                baroHardware = BARO_BMP085;
+                break;
+            }
+#endif
+            ; // fallthough
         case BARO_MS5611:
 #ifdef USE_BARO_MS5611
             if (ms5611Detect(&baro)) {
@@ -453,14 +460,6 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             }
 #endif
             ; // fallthough
-        case BARO_BMP085:
-#ifdef USE_BARO_BMP085
-            if (bmp085Detect(bmp085Config, &baro)) {
-                baroHardware = BARO_BMP085;
-                break;
-            }
-#endif
-        ; // fallthough
         case BARO_BMP280:
 #ifdef USE_BARO_BMP280
             if (bmp280Detect(&baro)) {
@@ -468,6 +467,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
+            ; // fallthough
         case BARO_NONE:
             baroHardware = BARO_NONE;
             break;

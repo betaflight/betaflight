@@ -222,7 +222,7 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
-    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", "SUPEREXPO_RATES", NULL
+    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -672,6 +672,7 @@ const clivalue_t valueTable[] = {
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,
@@ -852,11 +853,8 @@ const clivalue_t valueTable[] = {
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_cutoff, .config.minmax = { 1,  500 } },
     { "vbat_pid_compensation",      VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
     { "pid_at_min_throttle",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidAtMinThrottle, .config.lookup = { TABLE_OFF_ON } },
-    { "pid_tolerance_band",         VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBand, .config.minmax = {0, 200 } },
-    { "tolerance_band_reduction",   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.toleranceBandReduction, .config.minmax = {0, 100 } },
-    { "zero_cross_allowance",       VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.zeroCrossAllowanceCount, .config.minmax = {0, 50 } },
     { "iterm_throttle_gain",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.itermThrottleGain, .config.minmax = {0, 200 } },
-    { "pterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSetpointWeight, .config.minmax = {30, 100 } },
+    { "pterm_srate_ratio",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.ptermSRateWeight, .config.minmax = {0, 100 } },
     { "dterm_setpoint_weight",      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dtermSetpointWeight, .config.minmax = {0, 255 } },
     { "yaw_rate_accel_limit",       VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawRateAccelLimit, .config.minmax = {0, 1000 } },
     { "rate_accel_limit",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rateAccelLimit, .config.minmax = {0, 1000 } },
@@ -971,14 +969,24 @@ static void cliShowArgumentRangeError(char *name, int min, int max)
     cliPrintf("%s must be between %d and %d\r\n", name, min, max);
 }
 
+static char *nextArg(char *currentArg)
+{
+    char *ptr = strchr(currentArg, ' ');
+    while (ptr && *ptr == ' ') {
+        ptr++;
+    }
+
+    return ptr;
+}
+
 static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
 {
     int val;
 
     for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
-        ptr = strchr(ptr, ' ');
+        ptr = nextArg(ptr);
         if (ptr) {
-            val = atoi(++ptr);
+            val = atoi(ptr);
             val = CHANNEL_VALUE_TO_STEP(val);
             if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
                 if (argIndex == 0) {
@@ -1061,9 +1069,9 @@ static void cliRxFail(char *cmdline)
             rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
             bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
 
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                char *p = strchr(rxFailsafeModeCharacters, *(++ptr));
+                char *p = strchr(rxFailsafeModeCharacters, *(ptr));
                 if (p) {
                     uint8_t requestedMode = p - rxFailsafeModeCharacters;
                     mode = rxFailsafeModesTable[type][requestedMode];
@@ -1077,13 +1085,13 @@ static void cliRxFail(char *cmdline)
 
                 requireValue = mode == RX_FAILSAFE_MODE_SET;
 
-                ptr = strchr(ptr, ' ');
+                ptr = nextArg(ptr);
                 if (ptr) {
                     if (!requireValue) {
                         cliShowParseError();
                         return;
                     }
-                    value = atoi(++ptr);
+                    value = atoi(ptr);
                     value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
                     if (value > MAX_RXFAIL_RANGE_STEP) {
                         cliPrint("Value out of range\r\n");
@@ -1167,17 +1175,17 @@ static void cliAux(char *cmdline)
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
             modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             uint8_t validArgumentCount = 0;
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < CHECKBOX_ITEM_COUNT) {
                     mac->modeId = val;
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     mac->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1257,20 +1265,20 @@ static void cliSerial(char *cmdline)
         validArgumentCount++;
     }
 
-    ptr = strchr(ptr, ' ');
+    ptr = nextArg(ptr);
     if (ptr) {
-        val = atoi(++ptr);
+        val = atoi(ptr);
         portConfig.functionMask = val & 0xFFFF;
         validArgumentCount++;
     }
 
     for (i = 0; i < 4; i ++) {
-        ptr = strchr(ptr, ' ');
+        ptr = nextArg(ptr);
         if (!ptr) {
             break;
         }
 
-        val = atoi(++ptr);
+        val = atoi(ptr);
 
         uint8_t baudRateIndex = lookupBaudRateIndex(val);
         if (baudRates[baudRateIndex] != (uint32_t) val) {
@@ -1437,17 +1445,17 @@ static void cliAdjustmentRange(char *cmdline)
             adjustmentRange_t *ar = &masterConfig.adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
 
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     ar->adjustmentIndex = val;
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxChannelIndex = val;
                     validArgumentCount++;
@@ -1456,17 +1464,17 @@ static void cliAdjustmentRange(char *cmdline)
 
             ptr = processChannelRangeArgs(ptr, &ar->range, &validArgumentCount);
 
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < ADJUSTMENT_FUNCTION_COUNT) {
                     ar->adjustmentFunction = val;
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     ar->auxSwitchChannelIndex = val;
                     validArgumentCount++;
@@ -1534,9 +1542,9 @@ static void cliMotorMix(char *cmdline)
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
             masterConfig.customMotorMixer[i].throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
-        ptr = strchr(cmdline, ' ');
+        ptr = nextArg(cmdline);
         if (ptr) {
-            len = strlen(++ptr);
+            len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
                     cliPrint("Invalid name\r\n");
@@ -1554,30 +1562,30 @@ static void cliMotorMix(char *cmdline)
         ptr = cmdline;
         uint32_t i = atoi(ptr); // get motor number
         if (i < MAX_SUPPORTED_MOTORS) {
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].throttle = fastA2F(++ptr);
+                masterConfig.customMotorMixer[i].throttle = fastA2F(ptr);
                 check++;
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].roll = fastA2F(++ptr);
+                masterConfig.customMotorMixer[i].roll = fastA2F(ptr);
                 check++;
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].pitch = fastA2F(++ptr);
+                masterConfig.customMotorMixer[i].pitch = fastA2F(ptr);
                 check++;
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].yaw = fastA2F(++ptr);
+                masterConfig.customMotorMixer[i].yaw = fastA2F(ptr);
                 check++;
             }
             if (check != 4) {
                 cliShowParseError();
             } else {
-                cliMotorMix("");
+		        printMotorMix(DUMP_MASTER, NULL);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -1625,15 +1633,15 @@ static void cliRxRange(char *cmdline)
         if (i >= 0 && i < NON_AUX_CHANNEL_COUNT) {
             int rangeMin, rangeMax;
 
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                rangeMin = atoi(++ptr);
+                rangeMin = atoi(ptr);
                 validArgumentCount++;
             }
 
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                rangeMax = atoi(++ptr);
+                rangeMax = atoi(ptr);
                 validArgumentCount++;
             }
 
@@ -1683,8 +1691,8 @@ static void cliLed(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr);
         if (i < LED_MAX_STRIP_LENGTH) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseLedStripConfig(i, ++ptr)) {
+            ptr = nextArg(cmdline);
+            if (!parseLedStripConfig(i, ptr)) {
                 cliShowParseError();
             }
         } else {
@@ -1731,8 +1739,8 @@ static void cliColor(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
-            ptr = strchr(cmdline, ' ');
-            if (!parseColor(i, ++ptr)) {
+            ptr = nextArg(cmdline);
+            if (!parseColor(i, ptr)) {
                 cliShowParseError();
             }
         } else {
@@ -1985,9 +1993,9 @@ static void cliServoMix(char *cmdline)
             masterConfig.servoConf[i].reversedSources = 0;
         }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
-        ptr = strchr(cmdline, ' ');
+        ptr = nextArg(cmdline);
         if (ptr) {
-            len = strlen(++ptr);
+            len = strlen(ptr);
             for (uint32_t i = 0; ; i++) {
                 if (mixerNames[i] == NULL) {
                     cliPrintf("Invalid name\r\n");
@@ -2283,25 +2291,25 @@ static void cliVtx(char *cmdline)
         if (i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT) {
             vtxChannelActivationCondition_t *cac = &masterConfig.vtxChannelActivationConditions[i];
             uint8_t validArgumentCount = 0;
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= 0 && val < MAX_AUX_CHANNEL_COUNT) {
                     cac->auxChannelIndex = val;
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= VTX_BAND_MIN && val <= VTX_BAND_MAX) {
                     cac->band = val;
                     validArgumentCount++;
                 }
             }
-            ptr = strchr(ptr, ' ');
+            ptr = nextArg(ptr);
             if (ptr) {
-                val = atoi(++ptr);
+                val = atoi(ptr);
                 if (val >= VTX_CHANNEL_MIN && val <= VTX_CHANNEL_MAX) {
                     cac->channel = val;
                     validArgumentCount++;

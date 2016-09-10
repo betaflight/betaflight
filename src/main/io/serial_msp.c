@@ -603,7 +603,8 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
         IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE;
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
 
     for (i = 0; i < activeBoxIdCount; i++) {
         int flag = (tmp & (1 << activeBoxIds[i]));
@@ -1274,10 +1275,10 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentProfile->pidProfile.yaw_p_limit);
         serialize8(currentProfile->pidProfile.deltaMethod);
         serialize8(currentProfile->pidProfile.vbatPidCompensation);
-        serialize8(currentProfile->pidProfile.ptermSetpointWeight);
+        serialize8(currentProfile->pidProfile.ptermSRateWeight);
         serialize8(currentProfile->pidProfile.dtermSetpointWeight);
-        serialize8(currentProfile->pidProfile.toleranceBand);
-        serialize8(currentProfile->pidProfile.toleranceBandReduction);
+        serialize8(0); // reserved
+        serialize8(0); // reserved
         serialize8(currentProfile->pidProfile.itermThrottleGain);
         serialize16(currentProfile->pidProfile.rateAccelLimit);
         serialize16(currentProfile->pidProfile.yawRateAccelLimit);
@@ -1876,10 +1877,10 @@ static bool processInCommand(void)
         currentProfile->pidProfile.yaw_p_limit = read16();
         currentProfile->pidProfile.deltaMethod = read8();
         currentProfile->pidProfile.vbatPidCompensation = read8();
-        currentProfile->pidProfile.ptermSetpointWeight = read8();
+        currentProfile->pidProfile.ptermSRateWeight = read8();
         currentProfile->pidProfile.dtermSetpointWeight = read8();
-        currentProfile->pidProfile.toleranceBand = read8();
-        currentProfile->pidProfile.toleranceBandReduction = read8();
+        read8(); // reserved
+        read8(); // reserved
         currentProfile->pidProfile.itermThrottleGain = read8();
         currentProfile->pidProfile.rateAccelLimit = read16();
         currentProfile->pidProfile.yawRateAccelLimit = read16();
