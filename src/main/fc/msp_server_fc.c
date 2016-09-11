@@ -922,9 +922,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(0); // for compatibility with betaflight
         serialize8(0); // for compatibility with betaflight
         serialize16(0); // for compatibility with betaflight
-        serialize8(masterConfig.rxConfig.nrf24rx_protocol);
-        serialize32(masterConfig.rxConfig.nrf24rx_id);
-        serialize8(masterConfig.rxConfig.nrf24rx_rf_channel_count);
+        serialize8(masterConfig.rxConfig.rx_spi_protocol);
+        serialize32(masterConfig.rxConfig.rx_spi_id);
+        serialize8(masterConfig.rxConfig.rx_spi_rf_channel_count);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -1460,13 +1460,13 @@ static bool processInCommand(void)
             read16();
         }
         if (currentPort->dataSize > 16) {
-            masterConfig.rxConfig.nrf24rx_protocol = read8();
+            masterConfig.rxConfig.rx_spi_protocol = read8();
         }
         if (currentPort->dataSize > 17) {
-            masterConfig.rxConfig.nrf24rx_id = read32();
+            masterConfig.rxConfig.rx_spi_id = read32();
         }
         if (currentPort->dataSize > 21) {
-            masterConfig.rxConfig.nrf24rx_rf_channel_count = read8();
+            masterConfig.rxConfig.rx_spi_rf_channel_count = read8();
         }
         break;
 

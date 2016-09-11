@@ -45,7 +45,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
 #include "rx/pwm.h"
@@ -57,7 +57,7 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 
 #include "rx/rx.h"
 
@@ -193,13 +193,13 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
     }
 #endif
 
-#ifdef USE_RX_NRF24
-    if (feature(FEATURE_RX_NRF24)) {
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
         rxRefreshRate = 10000;
-        const nfr24l01_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? NFR24L01_SOFTSPI : NFR24L01_SPI;
-        const bool enabled = rxNrf24Init(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
+        const bool enabled = rxSpiInit(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
         if (!enabled) {
-            featureClear(FEATURE_RX_NRF24);
+            featureClear(FEATURE_RX_SPI);
             rcReadRawFunc = nullReadRawRC;
         }
     }
@@ -363,9 +363,9 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
-#ifdef USE_RX_NRF24
-    if (feature(FEATURE_RX_NRF24)) {
-        rxDataReceived = rxNrf24DataReceived();
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
+        rxDataReceived = rxSpiDataReceived();
         if (rxDataReceived) {
             rxSignalReceived = true;
             rxIsInFailsafeMode = false;

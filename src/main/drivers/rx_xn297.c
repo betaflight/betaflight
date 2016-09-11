@@ -21,7 +21,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "drivers/rx_nrf24l01.h"
+#include "rx_spi.h"
+#include "rx_nrf24l01.h"
 #include "common/maths.h"
 
 

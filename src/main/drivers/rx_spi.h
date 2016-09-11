@@ -14,14 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
 
-struct rxConfig_s;
-struct rxRuntimeConfig_s;
-void h8_3dNrf24Init(const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
-void h8_3dNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload);
-rx_spi_received_e h8_3dNrf24DataReceived(uint8_t *payload);
+typedef enum {
+    RX_SPI_SOFTSPI,
+    RX_SPI_HARDSPI,
+} rx_spi_type_e;
+
+#define RX_SPI_MAX_PAYLOAD_SIZE 32
+
+void rxSpiDeviceInit(rx_spi_type_e spiType);
+uint8_t rxSpiTransferByte(uint8_t data);
+uint8_t rxSpiWriteByte(uint8_t data);
+uint8_t rxSpiWriteCommand(uint8_t command, uint8_t data);
+uint8_t rxSpiWriteCommandMulti(uint8_t command, const uint8_t *data, uint8_t length);
+uint8_t rxSpiReadCommand(uint8_t command, uint8_t commandData);
+uint8_t rxSpiReadCommandMulti(uint8_t command, uint8_t commandData, uint8_t *retData, uint8_t length);
+

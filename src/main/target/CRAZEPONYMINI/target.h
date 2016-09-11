@@ -46,7 +46,11 @@
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+
+#define USE_RX_SPI
+#define RX_SPI_INSTANCE         SPI1
 #define USE_RX_NRF24
 //#define USE_RX_CX10
 //#define USE_RX_H8_3D
@@ -54,25 +58,22 @@
 #define USE_RX_V202
 #define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
 
-#define USE_SPI
-#define USE_SPI_DEVICE_1
-
-#define NRF24_SPI_INSTANCE       SPI1
-#define USE_NRF24_SPI1
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CE_PIN                    PA12
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CSN_PIN                   PA4
-#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_IRQ_PIN                   PA15
-#define NRF24_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_CE_PIN                   PA12
+#define RX_CE_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_NSS_PIN                  PA4
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOA
+#define RX_IRQ_PIN                  PA15
+#define RX_IRQ_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOA
 
 #define SKIP_RX_MSP
 #define SKIP_INFLIGHT_ADJUSTMENTS
 #define SKIP_RX_PWM_PPM
 #undef SERIAL_RX
 #undef BLACKBOX
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 
 // Since the CrazePony MINI PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #undef USE_SERVOS

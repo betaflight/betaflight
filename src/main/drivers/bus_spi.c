@@ -108,8 +108,8 @@ void spiInitDevice(SPIDevice device)
         spi->sdcard = true;
     }
 #endif
-#ifdef NRF24_SPI_INSTANCE
-    if (spi->dev == NRF24_SPI_INSTANCE) {
+#ifdef RX_SPI_INSTANCE
+    if (spi->dev == RX_SPI_INSTANCE) {
         spi->nrf24l01 = true;
     }
 #endif
