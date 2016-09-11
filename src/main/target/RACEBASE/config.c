@@ -19,7 +19,7 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -39,6 +39,10 @@
 #include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
 
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
+
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
@@ -51,8 +55,6 @@
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -69,7 +71,6 @@
 #include "flight/altitudehold.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 
 #include "config/config_profile.h"
