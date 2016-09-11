@@ -22,6 +22,19 @@ sudo add-apt-repository ppa:terry.guo/gcc-arm-embedded
 sudo apt-get update
 ```
 
+For Linux Mint 18 (Ubuntu 16, 2016-09-11)
+```
+sudo apt install git
+sudo apt install gcc
+sudo apt install gcc-arm-none-eabi
+sudo apt-get install libnewlib-arm-none-eabi
+
+cd src
+git clone https://github.com/iNavFlight/inav.git
+cd inav
+make TARGET=NAZE
+```
+
 For Ubuntu 14.10 (current release, called Utopic Unicorn), you should pin:
 ```
 sudo apt-get install gcc-arm-none-eabi=4.9.3.2014q4-0utopic12
