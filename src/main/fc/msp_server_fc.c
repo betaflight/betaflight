@@ -165,7 +165,6 @@ static uint8_t activeBoxIdCount = 0;
 // from mixer.c
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
-
 static const char pidnames[] =
     "ROLL;"
     "PITCH;"
@@ -334,6 +333,143 @@ reset:
     }
 }
 
+static void initActiveBoxIds(void)
+{
+    // calculate used boxes based on features and fill availableBoxes[] array
+    memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
+
+    activeBoxIdCount = 0;
+    activeBoxIds[activeBoxIdCount++] = BOXARM;
+
+    if (sensors(SENSOR_ACC)) {
+        activeBoxIds[activeBoxIdCount++] = BOXANGLE;
+        activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
+        activeBoxIds[activeBoxIdCount++] = BOXTURNASSIST;
+    }
+
+    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+    activeBoxIds[activeBoxIdCount++] = BOXHEADINGLOCK;
+
+    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+        activeBoxIds[activeBoxIdCount++] = BOXMAG;
+        activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
+        activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
+    }
+
+    if (feature(FEATURE_SERVO_TILT))
+        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
+
+    bool isFixedWing = masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE;
+
+#ifdef GPS
+    if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
+        activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
+        activeBoxIds[activeBoxIdCount++] = BOXSURFACE;
+    }
+    if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
+        activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
+        activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
+        activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
+        activeBoxIds[activeBoxIdCount++] = BOXHOMERESET;
+        activeBoxIds[activeBoxIdCount++] = BOXGCSNAV;
+    }
+#endif
+
+    if (isFixedWing) {
+        activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
+    }
+
+    /*
+     * FLAPERON mode active only in case of airplane and custom airplane. Activating on
+     * flying wing can cause bad thing
+     */
+    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+        activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
+    }
+
+    activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
+
+#ifdef LED_STRIP
+    if (feature(FEATURE_LED_STRIP)) {
+        activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
+    }
+#endif
+
+    activeBoxIds[activeBoxIdCount++] = BOXOSD;
+
+#ifdef TELEMETRY
+    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
+        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
+#endif
+
+#ifdef USE_SERVOS
+    if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
+        activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
+    }
+#endif
+
+#ifdef BLACKBOX
+    if (feature(FEATURE_BLACKBOX)){
+        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
+    }
+#endif
+
+    if (feature(FEATURE_FAILSAFE)){
+        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
+    }
+}
+
+#define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
+
+static uint32_t packFlightModeFlags(void)
+{
+    uint32_t i, junk, tmp;
+
+    // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
+    // Requires new Multiwii protocol version to fix
+    // It would be preferable to setting the enabled bits based on BOXINDEX.
+    junk = 0;
+    tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
+        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
+        IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
+        IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
+        IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
+        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
+        IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
+        IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
+        IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
+        IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
+        IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
+        IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
+        IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
+        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
+
+    for (i = 0; i < activeBoxIdCount; i++) {
+        int flag = (tmp & (1 << activeBoxIds[i]));
+        if (flag)
+            junk |= 1 << i;
+    }
+
+    return junk;
+}
+
 static void serializeSDCardSummaryReply(void)
 {
     headSerialReply(3 + 2 * 4);
@@ -422,55 +558,6 @@ static void serializeDataflashReadReply(uint32_t address, uint8_t size)
     }
 }
 #endif
-
-#define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
-
-static uint32_t packFlightModeFlags(void)
-{
-    uint32_t i, junk, tmp;
-
-    // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
-    // Requires new Multiwii protocol version to fix
-    // It would be preferable to setting the enabled bits based on BOXINDEX.
-    junk = 0;
-    tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
-        IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
-        IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
-        IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
-        IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
-        IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBLACKBOX)) << BOXBLACKBOX |
-        IS_ENABLED(FLIGHT_MODE(FAILSAFE_MODE)) << BOXFAILSAFE |
-        IS_ENABLED(FLIGHT_MODE(NAV_ALTHOLD_MODE)) << BOXNAVALTHOLD |
-        IS_ENABLED(FLIGHT_MODE(NAV_POSHOLD_MODE)) << BOXNAVPOSHOLD |
-        IS_ENABLED(FLIGHT_MODE(NAV_RTH_MODE)) << BOXNAVRTH |
-        IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
-        IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
-        IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
-        IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
-
-    for (i = 0; i < activeBoxIdCount; i++) {
-        int flag = (tmp & (1 << activeBoxIds[i]));
-        if (flag)
-            junk |= 1 << i;
-    }
-
-    return junk;
-}
 
 static bool processOutCommand(uint8_t cmdMSP)
 {
@@ -588,6 +675,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(packFlightModeFlags());
         serialize8(masterConfig.current_profile_index);
         break;
+
     case MSP_RAW_IMU:
         headSerialReply(18);
 
@@ -601,6 +689,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < 3; i++)
             serialize16(magADC[i]);
         break;
+
 #ifdef USE_SERVOS
     case MSP_SERVO:
         s_struct((uint8_t *)&servo, MAX_SUPPORTED_SERVOS * 2);
@@ -631,23 +720,27 @@ static bool processOutCommand(uint8_t cmdMSP)
         }
         break;
 #endif
+
     case MSP_MOTOR:
         headSerialReply(16);
         for (unsigned i = 0; i < 8; i++) {
             serialize16(i < MAX_SUPPORTED_MOTORS ? motor[i] : 0);
         }
         break;
+
     case MSP_RC:
         headSerialReply(2 * rxRuntimeConfig.channelCount);
         for (i = 0; i < rxRuntimeConfig.channelCount; i++)
             serialize16(rcData[i]);
         break;
+
     case MSP_ATTITUDE:
         headSerialReply(6);
         serialize16(attitude.values.roll);
         serialize16(attitude.values.pitch);
         serialize16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         break;
+
     case MSP_ALTITUDE:
         headSerialReply(6);
 #if defined(NAV)
@@ -658,6 +751,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(0);
 #endif
         break;
+
     case MSP_SONAR_ALTITUDE:
         headSerialReply(4);
 #if defined(SONAR)
@@ -666,6 +760,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize32(0);
 #endif
         break;
+
     case MSP_ANALOG:
         headSerialReply(7);
         serialize8((uint8_t)constrain(vbat, 0, 255));
@@ -676,15 +771,18 @@ static bool processOutCommand(uint8_t cmdMSP)
         } else
             serialize16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
         break;
+
     case MSP_ARMING_CONFIG:
         headSerialReply(2);
         serialize8(masterConfig.auto_disarm_delay);
         serialize8(masterConfig.disarm_kill_switch);
         break;
+
     case MSP_LOOP_TIME:
         headSerialReply(2);
         serialize16(masterConfig.looptime);
         break;
+
     case MSP_RC_TUNING:
         headSerialReply(11);
         serialize8(100); //rcRate8 kept for compatibity reasons, this setting is no longer used
@@ -698,6 +796,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(currentControlRateProfile->tpa_breakpoint);
         serialize8(currentControlRateProfile->rcYawExpo8);
         break;
+
     case MSP_PID:
         headSerialReply(3 * PID_ITEM_COUNT);
         for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -706,14 +805,17 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(currentProfile->pidProfile.D8[i]);
         }
         break;
+
     case MSP_PIDNAMES:
         headSerialReply(sizeof(pidnames) - 1);
         serializeNames(pidnames);
         break;
+
     case MSP_PID_CONTROLLER:
         headSerialReply(1);
         serialize8(2);      // FIXME: Report as LuxFloat
         break;
+
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
         for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -725,6 +827,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(mac->range.endStep);
         }
         break;
+
     case MSP_ADJUSTMENT_RANGES:
         headSerialReply(MAX_ADJUSTMENT_RANGE_COUNT * (
                 1 + // adjustment index/slot
@@ -744,9 +847,11 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(adjRange->auxSwitchChannelIndex);
         }
         break;
+
     case MSP_BOXNAMES:
         serializeBoxNamesReply();
         break;
+
     case MSP_BOXIDS:
         headSerialReply(activeBoxIdCount);
         for (i = 0; i < activeBoxIdCount; i++) {
@@ -757,6 +862,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(box->permanentId);
         }
         break;
+
     case MSP_MISC:
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
         serialize16(masterConfig.rxConfig.midrc);
@@ -794,6 +900,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         for (i = 0; i < 8; i++)
             serialize8(i + 1);
         break;
+
 #ifdef GPS
     case MSP_RAW_GPS:
         headSerialReply(18);
@@ -806,6 +913,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(gpsSol.groundCourse);
         serialize16(gpsSol.hdop);
         break;
+
     case MSP_COMP_GPS:
         headSerialReply(5);
         serialize16(GPS_distanceToHome);
@@ -838,6 +946,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(msp_wp.flag);    // flags
         break;
 #endif
+
     case MSP_GPSSVINFO:
         /* Compatibility stub - return zero SVs */
         headSerialReply(1 + (1 * 4));
@@ -849,6 +958,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(gpsSol.hdop / 100);
         serialize8(gpsSol.hdop / 100);
         break;
+
     case MSP_GPSSTATISTICS:
         headSerialReply(20);
         serialize16(gpsStats.lastMessageDt);
@@ -1128,9 +1238,11 @@ static bool processInCommand(void)
             readEEPROM();
         }
         break;
+
     case MSP_SET_HEAD:
         updateMagHoldHeading(read16());
         break;
+
     case MSP_SET_RAW_RC:
 #ifndef SKIP_RX_MSP
         {
@@ -1149,16 +1261,20 @@ static bool processInCommand(void)
         }
 #endif
         break;
+
     case MSP_SET_ARMING_CONFIG:
         masterConfig.auto_disarm_delay = read8();
         masterConfig.disarm_kill_switch = read8();
         break;
+
     case MSP_SET_LOOP_TIME:
         masterConfig.looptime = read16();
         break;
+
     case MSP_SET_PID_CONTROLLER:
         // FIXME: Do nothing
         break;
+
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
             currentProfile->pidProfile.P8[i] = read8();
@@ -1166,6 +1282,7 @@ static bool processInCommand(void)
             currentProfile->pidProfile.D8[i] = read8();
         }
         break;
+
     case MSP_SET_MODE_RANGE:
         i = read8();
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
@@ -1186,6 +1303,7 @@ static bool processInCommand(void)
             headSerialError(0);
         }
         break;
+
     case MSP_SET_ADJUSTMENT_RANGE:
         i = read8();
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
@@ -1231,6 +1349,7 @@ static bool processInCommand(void)
             headSerialError(0);
         }
         break;
+
     case MSP_SET_MISC:
         tmp = read16();
         if (tmp < 1600 && tmp > 1400)
@@ -1262,6 +1381,7 @@ static bool processInCommand(void)
         masterConfig.batteryConfig.vbatmaxcellvoltage = read8();  // vbatlevel_warn2 in MWC2.3 GUI
         masterConfig.batteryConfig.vbatwarningcellvoltage = read8();  // vbatlevel when buzzer starts to alert
         break;
+
     case MSP_SET_MOTOR:
         for (i = 0; i < 8; i++) {
             const int16_t disarmed = read16();
@@ -1270,6 +1390,7 @@ static bool processInCommand(void)
             }
         }
         break;
+
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
         if (currentPort->dataSize != 1 + sizeof(servoParam_t)) {
@@ -1339,14 +1460,17 @@ static bool processInCommand(void)
             readEEPROM();
         }
         break;
+
     case MSP_ACC_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
             accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
         break;
+
     case MSP_MAG_CALIBRATION:
         if (!ARMING_FLAG(ARMED))
             ENABLE_STATE(CALIBRATE_MAG);
         break;
+
     case MSP_EEPROM_WRITE:
         if (ARMING_FLAG(ARMED)) {
             headSerialError(0);
@@ -1500,7 +1624,6 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_BF_CONFIG:
-
 #ifdef USE_QUAD_MIXER_ONLY
         read8(); // mixerMode ignored
 #else
@@ -1627,94 +1750,11 @@ void mspProcessReceivedCommand(void)
     currentPort->c_state = IDLE;
 }
 
-void mspInit(void)
+void mspSerialInit(void)
 {
-    // calculate used boxes based on features and fill availableBoxes[] array
-    memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
-
-    activeBoxIdCount = 0;
-    activeBoxIds[activeBoxIdCount++] = BOXARM;
-
-    if (sensors(SENSOR_ACC)) {
-        activeBoxIds[activeBoxIdCount++] = BOXANGLE;
-        activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
-        activeBoxIds[activeBoxIdCount++] = BOXTURNASSIST;
-    }
-
-    activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
-    activeBoxIds[activeBoxIdCount++] = BOXHEADINGLOCK;
-
-    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
-        activeBoxIds[activeBoxIdCount++] = BOXMAG;
-        activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
-        activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
-    }
-
-    if (feature(FEATURE_SERVO_TILT))
-        activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
-
-    bool isFixedWing = masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE;
-
-#ifdef GPS
-    if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
-        activeBoxIds[activeBoxIdCount++] = BOXNAVALTHOLD;
-        activeBoxIds[activeBoxIdCount++] = BOXSURFACE;
-    }
-    if ((feature(FEATURE_GPS) && sensors(SENSOR_MAG) && sensors(SENSOR_ACC)) || (isFixedWing && sensors(SENSOR_ACC) && feature(FEATURE_GPS))) {
-        activeBoxIds[activeBoxIdCount++] = BOXNAVPOSHOLD;
-        activeBoxIds[activeBoxIdCount++] = BOXNAVRTH;
-        activeBoxIds[activeBoxIdCount++] = BOXNAVWP;
-        activeBoxIds[activeBoxIdCount++] = BOXHOMERESET;
-        activeBoxIds[activeBoxIdCount++] = BOXGCSNAV;
-    }
-#endif
-
-    if (isFixedWing) {
-        activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
-    }
-
-    /*
-     * FLAPERON mode active only in case of airplane and custom airplane. Activating on
-     * flying wing can cause bad thing
-     */
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
-        activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
-    }
-
-    activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
-
-#ifdef LED_STRIP
-    if (feature(FEATURE_LED_STRIP)) {
-        activeBoxIds[activeBoxIdCount++] = BOXLEDLOW;
-    }
-#endif
-
-    activeBoxIds[activeBoxIdCount++] = BOXOSD;
-
-#ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch)
-        activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
-#endif
-
-#ifdef USE_SERVOS
-    if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
-    }
-#endif
-
-#ifdef BLACKBOX
-    if (feature(FEATURE_BLACKBOX)){
-        activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
-    }
-#endif
-
-    if (feature(FEATURE_FAILSAFE)){
-        activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
-    }
+    initActiveBoxIds();
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspAllocateSerialPorts();
+    mspSerialAllocatePorts();
 }
 
