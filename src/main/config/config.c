@@ -231,8 +231,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
     pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
-
+#ifdef SERVOS
     pidProfile->fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT;
+#endif
 
 }
 
