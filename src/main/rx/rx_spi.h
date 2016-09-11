@@ -32,45 +32,45 @@ typedef enum {
     NRF24RX_H8_3D,
     NRF24RX_INAV,
     NRF24RX_PROTOCOL_COUNT
-} nrf24_protocol_t;
+} rx_spi_protocol_e;
 
 typedef enum {
-    NRF24_RECEIVED_NONE = 0,
-    NRF24_RECEIVED_BIND,
-    NRF24_RECEIVED_DATA
-} nrf24_received_t;
+    RX_SPI_RECEIVED_NONE = 0,
+    RX_SPI_RECEIVED_BIND,
+    RX_SPI_RECEIVED_DATA
+} rx_spi_received_e;
 
 // RC channels in AETR order
 typedef enum {
-    NRF24_ROLL = 0,
-    NRF24_PITCH,
-    NRF24_THROTTLE,
-    NRF24_YAW,
-    NRF24_AUX1,
-    NRF24_AUX2,
-    NRF24_AUX3,
-    NRF24_AUX4,
-    NRF24_AUX5,
-    NRF24_AUX6,
-    NRF24_AUX7,
-    NRF24_AUX8,
-    NRF24_AUX9,
-    NRF24_AUX10,
-    NRF24_AUX11,
-    NRF24_AUX12,
-    NRF24_AUX13,
-    NRF24_AUX14
-} nrf24_AETR_t;
+    RC_SPI_ROLL = 0,
+    RC_SPI_PITCH,
+    RC_SPI_THROTTLE,
+    RC_SPI_YAW,
+    RC_SPI_AUX1,
+    RC_SPI_AUX2,
+    RC_SPI_AUX3,
+    RC_SPI_AUX4,
+    RC_SPI_AUX5,
+    RC_SPI_AUX6,
+    RC_SPI_AUX7,
+    RC_SPI_AUX8,
+    RC_SPI_AUX9,
+    RC_SPI_AUX10,
+    RC_SPI_AUX11,
+    RC_SPI_AUX12,
+    RC_SPI_AUX13,
+    RC_SPI_AUX14
+} rc_spi_aetr_e;
 
 // RC channels as used by deviation
-#define RC_CHANNEL_RATE        NRF24_AUX1
-#define RC_CHANNEL_FLIP        NRF24_AUX2
-#define RC_CHANNEL_PICTURE     NRF24_AUX3
-#define RC_CHANNEL_VIDEO       NRF24_AUX4
-#define RC_CHANNEL_HEADLESS    NRF24_AUX5
-#define RC_CHANNEL_RTH         NRF24_AUX6 // return to home
+#define RC_CHANNEL_RATE        RC_SPI_AUX1
+#define RC_CHANNEL_FLIP        RC_SPI_AUX2
+#define RC_CHANNEL_PICTURE     RC_SPI_AUX3
+#define RC_CHANNEL_VIDEO       RC_SPI_AUX4
+#define RC_CHANNEL_HEADLESS    RC_SPI_AUX5
+#define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
 
-bool rxNrf24DataReceived(void);
+bool rxSpiDataReceived(void);
 struct rxConfig_s;
 struct rxRuntimeConfig_s;
-bool rxNrf24Init(nfr24l01_spi_type_e spiType, const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool rxSpiInit(rx_spi_type_e spiType, const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig, rcReadRawDataPtr *callback);

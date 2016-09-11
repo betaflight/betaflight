@@ -36,7 +36,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 
 #include "sensors/sensors.h"
@@ -57,7 +57,7 @@
 #include "io/gps.h"
 
 #include "rx/rx.h"
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -88,8 +88,8 @@ void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, es
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
-#ifndef NRF24_DEFAULT_PROTOCOL
-#define NRF24_DEFAULT_PROTOCOL 0
+#ifndef RX_SPI_DEFAULT_PROTOCOL
+#define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
 #if !defined(FLASH_SIZE)
@@ -516,7 +516,7 @@ static void resetConf(void)
 #endif
 
     masterConfig.rxConfig.serialrx_provider = 0;
-    masterConfig.rxConfig.nrf24rx_protocol = NRF24_DEFAULT_PROTOCOL;
+    masterConfig.rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.midrc = 1500;
     masterConfig.rxConfig.mincheck = 1100;
@@ -847,23 +847,23 @@ void activateConfig(void)
 
 static void validateAndFixConfig(void)
 {
-    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_NRF24))) {
+    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
          featureSet(DEFAULT_RX_FEATURE);
      }
 
      if (featureConfigured(FEATURE_RX_PPM)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_NRF24);
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
      }
 
      if (featureConfigured(FEATURE_RX_MSP)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_NRF24);
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
      }
 
      if (featureConfigured(FEATURE_RX_SERIAL)) {
-         featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_NRF24);
+         featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
      }
 
-     if (featureConfigured(FEATURE_RX_NRF24)) {
+     if (featureConfigured(FEATURE_RX_SPI)) {
          featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
      }
 
@@ -886,7 +886,7 @@ static void validateAndFixConfig(void)
     }
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_NRF24);
+         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);

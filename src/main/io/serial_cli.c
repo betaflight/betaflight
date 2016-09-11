@@ -211,7 +211,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "SUPEREXPO", "VTX", "RX_NRF24", "SOFTSPI", NULL
+    "SUPEREXPO", "VTX", "RX_SPI", "SOFTSPI", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -419,9 +419,9 @@ static const char * const lookupTableSerialRX[] = {
 };
 #endif
 
-#ifdef USE_RX_NRF24
-// sync with nrf24_protocol_t
-static const char * const lookupTableNRF24RX[] = {
+#ifdef USE_RX_SPI
+// sync with rx_spi_protocol_e
+static const char * const lookupTableRxSpi[] = {
     "V202_250K",
     "V202_1M",
     "SYMA_X",
@@ -484,8 +484,8 @@ typedef enum {
 #ifdef SERIAL_RX
     TABLE_SERIAL_RX,
 #endif
-#ifdef USE_RX_NRF24
-    TABLE_NRF24_RX,
+#ifdef USE_RX_SPI
+    TABLE_RX_SPI,
 #endif
     TABLE_GYRO_LPF,
     TABLE_FAILSAFE_PROCEDURE,
@@ -515,8 +515,8 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
 #endif
-#ifdef USE_RX_NRF24
-    { lookupTableNRF24RX, sizeof(lookupTableNRF24RX) / sizeof(char *) },
+#ifdef USE_RX_SPI
+    { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
 #endif
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableFailsafeProcedure, sizeof(lookupTableFailsafeProcedure) / sizeof(char *) },
@@ -693,10 +693,10 @@ const clivalue_t valueTable[] = {
 #ifdef SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.serialrx_provider, .config.lookup = { TABLE_SERIAL_RX }, 0 },
 #endif
-#ifdef USE_RX_NRF24
-    { "nrf24rx_protocol",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.nrf24rx_protocol, .config.lookup = { TABLE_NRF24_RX }, 0 },
-    { "nrf24rx_id",                 VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.nrf24rx_id, .config.minmax = { 0, 0 }, 0 },
-    { "nrf24rx_rf_channel_count",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.nrf24rx_rf_channel_count, .config.minmax = { 0, 8 }, 0 },
+#ifdef USE_RX_SPI
+    { "rx_spi_protocol",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rx_spi_protocol, .config.lookup = { TABLE_RX_SPI }, 0 },
+    { "rx_spi_id",                  VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.rx_spi_id, .config.minmax = { 0, 0 }, 0 },
+    { "rx_spi_rf_channel_count",    VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rx_spi_rf_channel_count, .config.minmax = { 0, 8 }, 0 },
 #endif
 #ifdef SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },

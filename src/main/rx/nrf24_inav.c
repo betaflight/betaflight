@@ -29,7 +29,7 @@
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
 
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 #include "rx/nrf24_inav.h"
 
 #include "telemetry/ltm.h"
@@ -119,7 +119,7 @@ uint8_t receivedPowerSnapshot;
 #define RX_TX_ADDR_LEN 5
 // set rxTxAddr to the bind address
 STATIC_UNIT_TESTED uint8_t rxTxAddr[RX_TX_ADDR_LEN] = {0x4b,0x5c,0x6d,0x7e,0x8f};
-uint32_t *nrf24rxIdPtr;
+uint32_t *rxSpiIdPtr;
 #define RX_TX_ADDR_4 0xD2 // rxTxAddr[4] always set to this value
 
 // radio channels for frequency hopping
@@ -149,9 +149,9 @@ STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
             if (inavRfChannelHoppingCount > INAV_RF_CHANNEL_COUNT_MAX) {
                 inavRfChannelHoppingCount = INAV_RF_CHANNEL_COUNT_MAX;
             }*/
-            if (nrf24rxIdPtr != NULL && *nrf24rxIdPtr == 0) {
+            if (rxSpiIdPtr != NULL && *rxSpiIdPtr == 0) {
                 // copy the rxTxAddr so it can be saved
-                memcpy(nrf24rxIdPtr, rxTxAddr, sizeof(uint32_t));
+                memcpy(rxSpiIdPtr, rxTxAddr, sizeof(uint32_t));
             }
         }
     }
@@ -164,18 +164,18 @@ void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
     // payload[0] and payload[1] are zero in DATA state
     // the AETR channels have 10 bit resolution
     uint8_t lowBits = payload[6]; // least significant bits for AETR
-    rcData[NRF24_ROLL]     = PWM_RANGE_MIN + ((payload[2] << 2) | (lowBits & 0x03)); // Aileron
+    rcData[RC_SPI_ROLL]     = PWM_RANGE_MIN + ((payload[2] << 2) | (lowBits & 0x03)); // Aileron
     lowBits >>= 2;
-    rcData[NRF24_PITCH]    = PWM_RANGE_MIN + ((payload[3] << 2) | (lowBits & 0x03)); // Elevator
+    rcData[RC_SPI_PITCH]    = PWM_RANGE_MIN + ((payload[3] << 2) | (lowBits & 0x03)); // Elevator
     lowBits >>= 2;
-    rcData[NRF24_THROTTLE] = PWM_RANGE_MIN + ((payload[4] << 2) | (lowBits & 0x03)); // Throttle
+    rcData[RC_SPI_THROTTLE] = PWM_RANGE_MIN + ((payload[4] << 2) | (lowBits & 0x03)); // Throttle
     lowBits >>= 2;
-    rcData[NRF24_YAW]      = PWM_RANGE_MIN + ((payload[5] << 2) | (lowBits & 0x03)); // Rudder
+    rcData[RC_SPI_YAW]      = PWM_RANGE_MIN + ((payload[5] << 2) | (lowBits & 0x03)); // Rudder
 
     if (payloadSize == INAV_PROTOCOL_PAYLOAD_SIZE_MIN) {
         // small payload variant of protocol, supports 6 channels
-        rcData[NRF24_AUX1] = PWM_RANGE_MIN + (payload[7] << 2);
-        rcData[NRF24_AUX2] = PWM_RANGE_MIN + (payload[1] << 2);
+        rcData[RC_SPI_AUX1] = PWM_RANGE_MIN + (payload[7] << 2);
+        rcData[RC_SPI_AUX2] = PWM_RANGE_MIN + (payload[1] << 2);
     } else {
         // channel AUX1 is used for rate, as per the deviation convention
         const uint8_t rate = payload[7];
@@ -198,24 +198,24 @@ void inavNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
         // channels AUX7 to AUX10 have 10 bit resolution
         lowBits = payload[13]; // least significant bits for AUX7 to AUX10
-        rcData[NRF24_AUX7] = PWM_RANGE_MIN + ((payload[9] << 2) | (lowBits & 0x03));
+        rcData[RC_SPI_AUX7] = PWM_RANGE_MIN + ((payload[9] << 2) | (lowBits & 0x03));
         lowBits >>= 2;
-        rcData[NRF24_AUX8] = PWM_RANGE_MIN + ((payload[10] << 2) | (lowBits & 0x03));
+        rcData[RC_SPI_AUX8] = PWM_RANGE_MIN + ((payload[10] << 2) | (lowBits & 0x03));
         lowBits >>= 2;
-        rcData[NRF24_AUX9] = PWM_RANGE_MIN + ((payload[11] << 2) | (lowBits & 0x03));
+        rcData[RC_SPI_AUX9] = PWM_RANGE_MIN + ((payload[11] << 2) | (lowBits & 0x03));
         lowBits >>= 2;
-        rcData[NRF24_AUX10] = PWM_RANGE_MIN + ((payload[12] << 2) | (lowBits & 0x03));
+        rcData[RC_SPI_AUX10] = PWM_RANGE_MIN + ((payload[12] << 2) | (lowBits & 0x03));
         lowBits >>= 2;
 
         // channels AUX11 and AUX12 have 8 bit resolution
-        rcData[NRF24_AUX11] = PWM_RANGE_MIN + (payload[14] << 2);
-        rcData[NRF24_AUX12] = PWM_RANGE_MIN + (payload[15] << 2);
+        rcData[RC_SPI_AUX11] = PWM_RANGE_MIN + (payload[14] << 2);
+        rcData[RC_SPI_AUX12] = PWM_RANGE_MIN + (payload[15] << 2);
     }
     if (payloadSize == INAV_PROTOCOL_PAYLOAD_SIZE_MAX) {
         // large payload variant of protocol
         // channels AUX13 to AUX16 have 8 bit resolution
-        rcData[NRF24_AUX13] = PWM_RANGE_MIN + (payload[16] << 2);
-        rcData[NRF24_AUX14] = PWM_RANGE_MIN + (payload[17] << 2);
+        rcData[RC_SPI_AUX13] = PWM_RANGE_MIN + (payload[16] << 2);
+        rcData[RC_SPI_AUX14] = PWM_RANGE_MIN + (payload[17] << 2);
     }
 }
 
@@ -320,18 +320,18 @@ static void writeBindAckPayload(uint8_t *payload)
 
 /*
  * This is called periodically by the scheduler.
- * Returns NRF24L01_RECEIVED_DATA if a data packet was received.
+ * Returns RX_SPI_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
+rx_spi_received_e inavNrf24DataReceived(uint8_t *payload)
 {
-    nrf24_received_t ret = NRF24_RECEIVED_NONE;
+    rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
     uint32_t timeNowUs;
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
-                ret = NRF24_RECEIVED_BIND;
+                ret = RX_SPI_RECEIVED_BIND;
                 writeBindAckPayload(payload);
                 // got a bind packet, so set the hopping channels and the rxTxAddr and start listening for data
                 inavSetBound();
@@ -346,14 +346,14 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
                 // transmitter may still continue to transmit bind packets after we have switched to data mode
-                ret = NRF24_RECEIVED_BIND;
+                ret = RX_SPI_RECEIVED_BIND;
                 writeBindAckPayload(payload);
             } else {
-                ret = NRF24_RECEIVED_DATA;
+                ret = RX_SPI_RECEIVED_DATA;
                 writeTelemetryAckPayload();
             }
         }
-        if ((ret == NRF24_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
+        if ((ret == RX_SPI_RECEIVED_DATA) || (timeNowUs > timeOfLastHop + hopTimeout)) {
             inavHopToNextChannel();
             timeOfLastHop = timeNowUs;
         }
@@ -362,7 +362,7 @@ nrf24_received_t inavNrf24DataReceived(uint8_t *payload)
     return ret;
 }
 
-static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id, int rfChannelHoppingCount)
+static void inavNrf24Setup(rx_spi_protocol_e protocol, const uint32_t *rxSpiId, int rfChannelHoppingCount)
 {
     UNUSED(protocol);
     UNUSED(rfChannelHoppingCount);
@@ -392,19 +392,19 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
 
 #ifdef USE_BIND_ADDRESS_FOR_DATA_STATE
     inavSetBound();
-    UNUSED(nrf24rx_id);
+    UNUSED(rxSpiId);
 #else
-    nrf24rx_id = NULL; // !!TODO remove this once  configurator supports setting rx_id
-    if (nrf24rx_id == NULL || *nrf24rx_id == 0) {
-        nrf24rxIdPtr = NULL;
+    rxSpiId = NULL; // !!TODO remove this once  configurator supports setting rx_id
+    if (rxSpiId == NULL || *rxSpiId == 0) {
+        rxSpiIdPtr = NULL;
         protocolState = STATE_BIND;
         inavRfChannelCount = 1;
         inavRfChannelIndex = 0;
         NRF24L01_SetChannel(INAV_RF_BIND_CHANNEL);
     } else {
-        nrf24rxIdPtr = (uint32_t*)nrf24rx_id;
+        rxSpiIdPtr = (uint32_t*)rxSpiId;
         // use the rxTxAddr provided and go straight into DATA_STATE
-        memcpy(rxTxAddr, nrf24rx_id, sizeof(uint32_t));
+        memcpy(rxTxAddr, rxSpiId, sizeof(uint32_t));
         rxTxAddr[4] = RX_TX_ADDR_4;
         inavSetBound();
     }
@@ -418,7 +418,7 @@ static void inavNrf24Setup(nrf24_protocol_t protocol, const uint32_t *nrf24rx_id
 void inavNrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT_MAX;
-    inavNrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol, &rxConfig->nrf24rx_id, rxConfig->nrf24rx_rf_channel_count);
+    inavNrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol, &rxConfig->rx_spi_id, rxConfig->rx_spi_rf_channel_count);
 }
 #endif
 
