@@ -61,11 +61,9 @@ var Features = function (config) {
 
         if (semver.gte(config.flightControllerVersion, "3.0.0")) {
             features.push(
-                {bit: 18, group: 'other', name: 'OSD', haveTip: true}
+                {bit: 18, group: 'other', name: 'OSD'}
             );
         }
-
-
     }
 
     self._features = features;
