@@ -52,6 +52,7 @@
 #include "io/gps.h"
 #include "rx/rx.h"
 
+#include "sensors/current.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
@@ -528,7 +529,7 @@ static void applyLedFixedLayers()
 
             case LED_FUNCTION_BATTERY:
                 color = HSV(RED);
-                hOffset += scaleRange(calculateBatteryCapacityRemainingPercentage(), 0, 100, -30, 120);
+                hOffset += scaleRange(batteryCapacityRemainingPercentage(), 0, 100, -30, 120);
                 break;
 
             case LED_FUNCTION_RSSI:

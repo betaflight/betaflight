@@ -23,18 +23,22 @@
 #include <platform.h>
 #include "build/debug.h"
 
+#include "common/utils.h"
+#include "common/filter.h" // only required for data providers
+
 // only required for data providers
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "common/pilot.h" // only required for data providers
+
 #include "drivers/video_textscreen.h"
 #include "drivers/system.h"  // only required for data providers
 #include "drivers/adc.h"  // only required for data providers
-#include "fc/rc_controls.h" // only required for data providers // FIXME dependency on FC code for throttle status
 #include "osd/fc_state.h" // only required for data providers
+#include "sensors/voltage.h" // only required for data providers
+#include "sensors/current.h" // only required for data providers
 #include "sensors/battery.h" // only required for data providers
-#include "common/utils.h"
-#include "common/pilot.h"
 
 
 #include "osd/osd_element.h"
@@ -52,21 +56,22 @@ intptr_t osdElementData_armedDuration(void)
 
 intptr_t osdElementData_mAhDrawn(void)
 {
-    return (intptr_t)mAhDrawn;
+    return (intptr_t)getCurrentMeter(batteryConfig()->currentMeterSource)->mAhDrawn;
 }
 
 intptr_t osdElementData_amperage(void)
 {
-    return (intptr_t)amperage;
+    return (intptr_t)getCurrentMeter(batteryConfig()->currentMeterSource)->amperage;
 }
 
 static voltageAndName_t voltageAndName;
 
 intptr_t osdElementData_voltage5V(void)
 {
+
     voltageAndName = (voltageAndName_t){
         .name = "5V",
-        .voltage = batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V))
+        .voltage = getVoltage(ADC_POWER_5V)
     };
     return (intptr_t) &voltageAndName;
 }
@@ -75,7 +80,7 @@ intptr_t osdElementData_voltage12V(void)
 {
     voltageAndName = (voltageAndName_t){
         .name = "12V",
-        .voltage = batteryAdcToVoltage(adcGetChannel(ADC_POWER_12V))
+        .voltage = getVoltage(ADC_POWER_12V)
     };
     return (intptr_t) &voltageAndName;
 }

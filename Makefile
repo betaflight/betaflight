@@ -257,6 +257,7 @@ SYSTEM_SRC = \
 		   io/statusindicator.c \
 		   msp/msp.c \
 		   msp/msp_serial.c \
+		   msp/msp_server.c \
 		   $(TARGET_SRC) \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
@@ -311,6 +312,8 @@ FC_COMMON_SRC = \
 		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
+		   sensors/voltage.c \
+		   sensors/current.c \
 		   sensors/boardalignment.c \
 		   sensors/compass.c \
 		   sensors/gyro.c \
@@ -330,6 +333,8 @@ OSD_COMMON_SRC = \
 		   osd/msp_client_osd.c \
 		   osd/osd_tasks.c \
 		   sensors/battery.c \
+		   sensors/voltage.c \
+		   sensors/current.c \
 		   io/beeper.c
 
 HIGHEND_SRC = \

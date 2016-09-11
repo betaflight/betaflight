@@ -105,6 +105,9 @@
 //
 // MSP commands for Cleanflight original features
 //
+#define MSP_BATTERY_CONFIG              32
+#define MSP_SET_BATTERY_CONFIG          33
+
 #define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
 

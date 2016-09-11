@@ -120,6 +120,8 @@
 #define ADC_BATTERY ADC_CHANNEL2
 #define ADC_CURRENT ADC_CHANNEL3
 
+#define MAX_VOLTAGE_METERS 3
+
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

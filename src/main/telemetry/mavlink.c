@@ -60,6 +60,7 @@
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
+#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "rx/rx.h"
@@ -205,6 +206,8 @@ void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
     if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
+
+    currentMeter_t *currentMeter = getCurrentMeter(batteryConfig()->currentMeterSource);
     
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present. 
@@ -222,9 +225,9 @@ void mavlinkSendSystemStatus(void)
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
         feature(FEATURE_VBAT) ? vbat * 100 : 0,
         // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        feature(FEATURE_VBAT) ? amperage : -1,
+        feature(FEATURE_CURRENT_METER) ? currentMeter->amperage : -1,
         // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
-        feature(FEATURE_VBAT) ? calculateBatteryPercentage() : 100,
+        feature(FEATURE_VBAT) ? batteryVoltagePercentage() : 100,
         // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
         0,
         // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)

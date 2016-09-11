@@ -33,6 +33,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
 #include "common/pilot.h"
 
 #include "drivers/adc.h"
@@ -42,6 +43,8 @@
 #include "drivers/video.h"
 
 #include "fc/rc_controls.h" // FIXME virtual current sensor needs it
+#include "sensors/voltage.h"
+#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "io/serial.h"
@@ -60,8 +63,6 @@
 #include "osd/osd_serial.h"
 #include "osd/osd_screen.h"
 #include "osd/msp_server_osd.h"
-
-#define MAX_VOLTAGE_METERS 4 // FIXME move this
 
 extern uint16_t cycleTime;
 
@@ -157,19 +158,17 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_VOLTAGE_METER_CONFIG:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                // FIXME update for multiple voltage sources  i.e.  use `i` and support at least OSD VBAT, OSD 12V, OSD 5V
-                sbufWriteU8(dst, batteryConfig()->vbatscale);
-                sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
-                sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
-                sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatscale);
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatresdivval);
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatresdivmultiplier);
             }
             break;
 
         case MSP_CURRENT_METER_CONFIG:
-            sbufWriteU16(dst, batteryConfig()->currentMeterScale);
-            sbufWriteU16(dst, batteryConfig()->currentMeterOffset);
-            sbufWriteU8(dst, batteryConfig()->currentMeterType);
-            sbufWriteU16(dst, batteryConfig()->batteryCapacity);
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterScale);
+                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterOffset);
+            }
             break;
 
         case MSP_CF_SERIAL_CONFIG:
@@ -200,33 +199,24 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_BATTERY_STATES:
-            // write out battery states, once for each battery
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(getCurrentMeter(batteryConfig()->currentMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             break;
 
         case MSP_CURRENT_METERS:
-            // write out amperage, once for each current meter.
-            sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                currentMeter_t *meter = getCurrentMeter(i);
+                // write out amperage, once for each current meter.
+                sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+                // TODO add mahDrawn
+            }
             break;
-
         case MSP_VOLTAGE_METERS:
             // write out voltage, once for each meter.
-            for (int i = 0; i < 3; i++) {
-                // FIXME hack that needs cleanup, see issue #2221
-                // This works for now, but the vbat scale also changes the 12V and 5V readings.
-                switch(i) {
-                    case 0:
-                        sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-                        break;
-                    case 1:
-                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_POWER_12V)), 0, 255));
-                        break;
-                    case 2:
-                        sbufWriteU8(dst, (uint8_t)constrain(batteryAdcToVoltage(adcGetChannel(ADC_POWER_5V)), 0, 255));
-                        break;
-                }
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                uint16_t voltage = getVoltage(i);
+                sbufWriteU8(dst, (uint8_t)constrain(voltage, 0, 255));
             }
             break;
 
@@ -323,23 +313,36 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_SET_VOLTAGE_METER_CONFIG: {
-            uint8_t i = sbufReadU8(src);
-            if (i >= MAX_VOLTAGE_METERS) {
+            int index = sbufReadU8(src);
+
+            if (index >= MAX_VOLTAGE_METERS) {
                 return -1;
             }
-            // FIXME use `i`, see MSP_VOLTAGE_METER_CONFIG
-            batteryConfig()->vbatscale = sbufReadU8(src);               // actual vbatscale as intended
-            batteryConfig()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
-            batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
-            batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+
+            voltageMeterConfig(index)->vbatscale = sbufReadU8(src);
+            voltageMeterConfig(index)->vbatresdivval = sbufReadU8(src);
+            voltageMeterConfig(index)->vbatresdivmultiplier = sbufReadU8(src);
             break;
         }
 
-        case MSP_SET_CURRENT_METER_CONFIG:
-            batteryConfig()->currentMeterScale = sbufReadU16(src);
-            batteryConfig()->currentMeterOffset = sbufReadU16(src);
-            batteryConfig()->currentMeterType = sbufReadU8(src);
+        case MSP_SET_CURRENT_METER_CONFIG: {
+            int index = sbufReadU8(src);
+
+            if (index >= MAX_CURRENT_METERS) {
+                return -1;
+            }
+
+            currentMeterConfig(index)->currentMeterScale = sbufReadU16(src);
+            currentMeterConfig(index)->currentMeterOffset = sbufReadU16(src);
+            break;
+        }
+
+        case MSP_SET_BATTERY_CONFIG:
+            batteryConfig()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
             batteryConfig()->batteryCapacity = sbufReadU16(src);
+            batteryConfig()->currentMeterSource = sbufReadU8(src);
             break;
 
         case MSP_SET_CF_SERIAL_CONFIG: {

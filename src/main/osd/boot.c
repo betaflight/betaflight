@@ -31,6 +31,7 @@
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -67,6 +68,8 @@
 #include "msp/msp_serial.h"
 #include "io/serial_cli.h"
 
+#include "sensors/voltage.h"
+#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "osd/config.h"
@@ -194,7 +197,10 @@ void init(void)
 
     // Now that everything has powered up the voltage and cell count be determined.
 
+    voltageMeterInit();
     batteryInit();
+
+    currentMeterInit();
 
     LED1_ON;  // FIXME This is a hack to enable the bus switch.
 

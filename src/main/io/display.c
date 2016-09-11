@@ -50,6 +50,7 @@
 #include "io/display.h"
 #include "io/gps.h"
 
+#include "sensors/current.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -479,18 +480,20 @@ static void showBatteryPage(void)
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
 
-        uint8_t batteryPercentage = calculateBatteryPercentage();
+        uint8_t voltagePercentage = batteryVoltagePercentage();
         i2c_OLED_set_line(rowIndex++);
-        drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, batteryPercentage);
+        drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, voltagePercentage);
     }
 
     if (feature(FEATURE_CURRENT_METER)) {
-        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", amperage / 100, amperage % 100, mAhDrawn);
+        currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+
+        tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", state->amperage / 100, state->amperage % 100, state->mAhDrawn);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
 
-        uint8_t capacityPercentage = calculateBatteryCapacityRemainingPercentage();
+        uint8_t capacityPercentage = batteryCapacityRemainingPercentage();
         i2c_OLED_set_line(rowIndex++);
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, capacityPercentage);
     }

@@ -24,13 +24,14 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+#include "build/atomic.h"
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "build/atomic.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -90,6 +91,8 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/voltage.h"
+#include "sensors/current.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/initialisation.h"
@@ -126,7 +129,7 @@ void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
 void navigationInit(pidProfile_t *pidProfile);
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType);
+const sonarHardware_t *sonarGetHardwareConfiguration(currentMeterIndex_e currentMeter);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
@@ -391,7 +394,7 @@ void init(void)
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.useCurrentMeterADC = (
         feature(FEATURE_CURRENT_METER)
-        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC
+        && batteryConfig()->currentMeterSource == CURRENT_METER_ADC
     );
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
@@ -667,10 +670,17 @@ void init(void)
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
-    // Now that everything has powered up the voltage and cell count be determined.
 
-    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
+    if (feature(FEATURE_VBAT)) {
+        // Now that everything has powered up the voltage and cell count be determined.
+
+        voltageMeterInit();
         batteryInit();
+    }
+
+    if (feature(FEATURE_CURRENT_METER)) {
+        currentMeterInit();
+    }
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {

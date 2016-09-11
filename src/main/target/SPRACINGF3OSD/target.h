@@ -129,6 +129,8 @@
 #define ADC_BATTERY ADC_CHANNEL2
 #define ADC_CURRENT ADC_CHANNEL3
 
+#define MAX_VOLTAGE_METERS 3
+
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

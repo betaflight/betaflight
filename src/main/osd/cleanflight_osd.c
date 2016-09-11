@@ -46,6 +46,8 @@
 
 #include "fc/rc_controls.h" // FIXME required due to virtual current meter.
 
+#include "sensors/voltage.h"
+#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "io/statusindicator.h"
@@ -119,7 +121,8 @@ void taskUpdateBattery(void)
 
     if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
         vbatLastServiced = currentTime;
-        updateBattery();
+        voltageMeterUpdate();
+        batteryUpdate();
     }
 
     int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
@@ -127,6 +130,6 @@ void taskUpdateBattery(void)
     if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
         ibatLastServiced = currentTime;
 
-        updateCurrentMeter(ibatTimeSinceLastServiced);
+        currentUpdateMeter(ibatTimeSinceLastServiced);
     }
 }
