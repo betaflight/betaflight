@@ -27,6 +27,12 @@ extern "C" {
     #include "build/build_config.h"
 
     #include <platform.h>
+
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
+    #include "common/pilot.h"
+
     #include "drivers/adc.h"
     #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
@@ -34,6 +40,8 @@ extern "C" {
     #include "osd/osd_element.h"
     #include "osd/osd_element_render.h"
     #include "osd/osd_screen.h"
+
+    PG_REGISTER(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
     TEXT_SCREEN_CHAR textScreenBuffer[TEST_SCREEN_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 
@@ -466,6 +474,8 @@ TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
 
 // STUBS
 extern "C" {
+    uint16_t fcMotors[OSD_MAX_MOTORS];
+
     uint16_t adcGetChannel(uint8_t channel) {
         return testAdcChannels[channel];
     }
@@ -478,5 +488,6 @@ extern "C" {
     bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
     void serialWrite(serialPort_t *, uint8_t ) {};
 
+    void osdHardwareDisplayMotor(uint8_t, uint8_t, uint8_t) {}
 
 }

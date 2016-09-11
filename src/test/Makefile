@@ -999,6 +999,7 @@ $(OBJECT_DIR)/osd_screen_unittest.o : \
 
 $(OBJECT_DIR)/osd_screen_unittest : \
 	$(OBJECT_DIR)/common/printf.o \
+	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/common/typeconversion.o \
 	$(OBJECT_DIR)/osd/osd_screen.o \
 	$(OBJECT_DIR)/osd/osd_element.o \
