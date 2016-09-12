@@ -31,7 +31,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "fc/rc_controls.h"
 #include "fc/config.h"
 
 #include "io/beeper.h"

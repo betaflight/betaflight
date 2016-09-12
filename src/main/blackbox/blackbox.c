@@ -44,7 +44,6 @@
 #include "drivers/accgyro.h"
 
 #include "fc/rate_profile.h"
-#include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"

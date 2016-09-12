@@ -44,8 +44,6 @@
 #include "drivers/video_textscreen.h"
 #include "drivers/video.h"
 
-#include "fc/rc_controls.h" // FIXME required due to virtual current meter.
-
 #include "sensors/voltage.h"
 #include "sensors/current.h"
 #include "sensors/battery.h"

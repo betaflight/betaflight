@@ -47,7 +47,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "sensors/sensors.h"

@@ -24,7 +24,6 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "io/motor_and_servo.h"

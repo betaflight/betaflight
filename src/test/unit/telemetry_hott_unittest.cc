@@ -35,7 +35,6 @@ extern "C" {
     #include "drivers/serial.h"
 
     #include "fc/runtime_config.h"
-    #include "fc/rc_controls.h"
     #include "io/serial.h"
     #include "io/gps.h"
 

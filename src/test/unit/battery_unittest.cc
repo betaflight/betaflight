@@ -24,8 +24,10 @@ extern "C" {
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
-    #include "fc/rc_controls.h"
+    #include "common/filter.h"
 
+    #include "sensors/voltage.h"
+    #include "sensors/current.h"
     #include "sensors/battery.h"
     #include "io/beeper.h"
 }
