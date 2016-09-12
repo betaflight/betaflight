@@ -114,6 +114,11 @@ TABS.firmware_flasher.initialize = function (callback) {
                     });
                 });
             TABS.firmware_flasher.releases = releases;
+            chrome.storage.local.get('selected_board', function (result) {
+                if (result.selected_board) {
+                    $('select[name="board"]').val(result.selected_board);
+                }
+            });
         };
 
         function loadReleaseData() {
@@ -194,6 +199,7 @@ TABS.firmware_flasher.initialize = function (callback) {
                     versions_e.append(select_e);
                 });
             }
+            chrome.storage.local.set({'selected_board': target});
         });
 
         // UI Hooks
