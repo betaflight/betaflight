@@ -334,7 +334,7 @@ OSD_COMMON_SRC = \
 		   osd/osd_tasks.c \
 		   sensors/battery.c \
 		   sensors/voltage.c \
-		   sensors/current.c \
+		   sensors/amperage.c \
 		   io/beeper.c
 
 HIGHEND_SRC = \

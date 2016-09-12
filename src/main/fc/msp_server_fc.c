@@ -828,8 +828,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             }
             break;
 
-        case MSP_CURRENT_METER_CONFIG:
-            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+        case MSP_AMPERAGE_METER_CONFIG:
+            for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
                 sbufWriteU16(dst, amperageMeterConfig(i)->scale);
                 sbufWriteU16(dst, amperageMeterConfig(i)->offset);
             }
@@ -1356,7 +1356,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
 
-        case MSP_SET_CURRENT_METER_CONFIG: {
+        case MSP_SET_AMPERAGE_METER_CONFIG: {
             int index = sbufReadU8(src);
 
             if (index >= MAX_AMPERAGE_METERS) {

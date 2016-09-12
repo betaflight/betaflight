@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <platform.h>
-#include "../sensors/amperage.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -67,6 +66,7 @@
 #include "msp/msp_serial.h"
 #include "io/serial_cli.h"
 
+#include "sensors/amperage.h"
 #include "sensors/voltage.h"
 #include "sensors/battery.h"
 

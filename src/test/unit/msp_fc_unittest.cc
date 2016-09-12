@@ -404,7 +404,7 @@ TEST_F(MspTest, TestMspCommands)
         MSP_MODE_RANGES,                // 34    //out message         Returns all mode ranges
         MSP_FEATURE,                    // 36
         MSP_BOARD_ALIGNMENT,            // 38
-        MSP_CURRENT_METER_CONFIG,       // 40
+        MSP_AMPERAGE_METER_CONFIG,       // 40
         MSP_MIXER,                      // 42
         MSP_RX_CONFIG,                  // 44
         MSP_LED_COLORS,                 // 46

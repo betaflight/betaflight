@@ -117,8 +117,8 @@
 #define MSP_BOARD_ALIGNMENT             38
 #define MSP_SET_BOARD_ALIGNMENT         39
 
-#define MSP_CURRENT_METER_CONFIG        40
-#define MSP_SET_CURRENT_METER_CONFIG    41
+#define MSP_AMPERAGE_METER_CONFIG       40
+#define MSP_SET_AMPERAGE_METER_CONFIG   41
 
 #define MSP_MIXER                       42
 #define MSP_SET_MIXER                   43

@@ -21,8 +21,7 @@
 #include <math.h>
 
 #include <platform.h>
-#include "../sensors/amperage.h"
-#include "scheduler/scheduler.h"
+
 #include "build/debug.h"
 
 #include "config/parameter_group.h"
@@ -36,6 +35,8 @@
 #include "common/printf.h"
 #include "common/streambuf.h"
 
+#include "scheduler/scheduler.h"
+
 #include "drivers/light_led.h"
 
 #include "drivers/buf_writer.h"
@@ -46,6 +47,7 @@
 #include "drivers/video.h"
 
 #include "sensors/voltage.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "io/statusindicator.h"
