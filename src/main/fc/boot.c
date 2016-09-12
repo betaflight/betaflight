@@ -362,7 +362,7 @@ void init(void)
     const sonarHardware_t *sonarHardware = NULL;
     sonarGPIOConfig_t sonarGPIOConfig;
     if (feature(FEATURE_SONAR)) {
-        bool usingCurrentMeterIOPins = feature(FEATURE_AMPERAGE_METER) && batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC;
+        bool usingCurrentMeterIOPins = (feature(FEATURE_AMPERAGE_METER) && batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC);
         sonarHardware = sonarGetHardwareConfiguration(usingCurrentMeterIOPins);
         sonarGPIOConfig.triggerGPIO = sonarHardware->trigger_gpio;
         sonarGPIOConfig.triggerPin = sonarHardware->trigger_pin;
