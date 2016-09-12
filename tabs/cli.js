@@ -3,7 +3,9 @@
 TABS.cli = {
     'validateText': "",
     'currentLine': "",
-    'sequenceElements': 0
+    'sequenceElements': 0,
+    lineDelayMs: 15,
+    profileSwitchDelayMs: 100
 };
 
 TABS.cli.initialize = function (callback) {
@@ -26,13 +28,23 @@ TABS.cli.initialize = function (callback) {
                 event.preventDefault(); // prevent the adding of new line
 
                 var out_string = textarea.val();
-                var out_arr = out_string.split("\n");
                 self.history.add(out_string.trim());
 
-                var timeout_needle = 0;
-                for (var i = 0; i < out_arr.length; i++) {
-                    self.sendSlowly(out_arr, i, timeout_needle++);
-                }
+                var outputArray = out_string.split("\n");
+                Promise.reduce(outputArray, function(delay, line) {
+                    return new Promise(function (resolve) {
+                        GUI.timeout_add('CLI_send_slowly', function () {
+                            var processingDelay = self.lineDelayMs;
+                            if (line.toLowerCase().startsWith('profile')) {
+                                processingDelay = self.profileSwitchDelayMs;
+                            }
+
+                            self.sendLine(line, function () {
+                                resolve(processingDelay);
+                            });
+                        }, delay)
+                    })
+                }, 0);
 
                 textarea.val('');
             }
@@ -84,24 +96,6 @@ TABS.cli.history.prev = function () {
 TABS.cli.history.next = function () {
     if (this.index < this.history.length) this.index += 1;
     return this.history[this.index - 1];
-};
-
-TABS.cli.sendSlowly = function (out_arr, i, timeout_needle) {
-    GUI.timeout_add('CLI_send_slowly', function () {
-        var bufferOut = new ArrayBuffer(out_arr[i].length + 1);
-        var bufView = new Uint8Array(bufferOut);
-
-        for (var c_key = 0; c_key < out_arr[i].length; c_key++) {
-            bufView[c_key] = out_arr[i].charCodeAt(c_key);
-        }
-
-        bufView[out_arr[i].length] = 0x0D; // enter (\n)
-
-        serial.send(bufferOut);
-        if (out_arr[i].substring(1, 7) == 'profile') {
-            timeout_needle *= 2; // switching profiles needs additional time
-        }
-    }, timeout_needle * 15);
 };
 
 TABS.cli.read = function (readInfo) {
@@ -199,6 +193,19 @@ TABS.cli.read = function (readInfo) {
     $('.tab-cli .window .wrapper').append(text);
     $('.tab-cli .window').scrollTop($('.tab-cli .window .wrapper').height());
 };
+
+TABS.cli.sendLine = function (line, callback) {
+    var bufferOut = new ArrayBuffer(line.length + 1);
+    var bufView = new Uint8Array(bufferOut);
+
+    for (var c_key = 0; c_key < line.length; c_key++) {
+        bufView[c_key] = line.charCodeAt(c_key);
+    }
+
+    bufView[line.length] = 0x0D; // enter (\n)
+
+    serial.send(bufferOut, callback);
+}
 
 TABS.cli.cleanup = function (callback) {
     if (!CONFIGURATOR.connectionValid || !CONFIGURATOR.cliValid) {
