@@ -20,6 +20,7 @@
 #include "string.h"
 
 #include <platform.h>
+
 #include "build/build_config.h"
 
 #include "common/maths.h"
@@ -94,7 +95,7 @@ uint16_t getVoltage(uint8_t channel)
 
     failureMode(FAILURE_DEVELOPER);
 
-    return NULL;
+    return 0;
 }
 
 // unfiltered - always recalcualates voltage based on last adc sensor reading
@@ -111,7 +112,7 @@ uint16_t getLatestVoltage(uint8_t channel)
 
     failureMode(FAILURE_DEVELOPER);
 
-    return NULL;
+    return 0;
 }
 
 void voltageMeterUpdate(void)

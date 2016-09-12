@@ -602,6 +602,27 @@ $(OBJECT_DIR)/battery_unittest : \
 	$(CXX) $(CXX_FLAGS) $^ -o $@
 
 
+$(OBJECT_DIR)/sensors/voltage.o : $(USER_DIR)/sensors/voltage.c $(USER_DIR)/sensors/voltage.h $(GTEST_HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/voltage.c -o $@
+
+$(OBJECT_DIR)/voltage_unittest.o : \
+	$(TEST_DIR)/voltage_unittest.cc \
+	$(USER_DIR)/sensors/voltage.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $< -o $@
+
+$(OBJECT_DIR)/voltage_unittest : \
+	$(OBJECT_DIR)/sensors/voltage.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/voltage_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $@
+
+
 $(OBJECT_DIR)/drivers/barometer_ms5611.o : \
     $(USER_DIR)/drivers/barometer_ms5611.c \
     $(USER_DIR)/drivers/barometer_ms5611.h \

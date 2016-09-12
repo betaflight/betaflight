@@ -101,7 +101,7 @@ void currentUpdateVirtualMeter(int32_t lastUpdateAt, bool armed, bool throttleLo
 }
 
 
-currentMeter_t *getCurrentMeter(uint8_t index)
+currentMeter_t *getCurrentMeter(currentMeterIndex_e  index)
 {
     return &currentMeters[index];
 }
