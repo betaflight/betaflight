@@ -25,6 +25,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -39,6 +40,7 @@
 #include "drivers/compass.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/adc.h"
 
 #include "fc/rate_profile.h"
 #include "fc/rc_controls.h"
@@ -48,6 +50,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 
+#include "sensors/voltage.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
@@ -106,7 +109,7 @@ STATIC_UNIT_TESTED void resetConf(void)
 #ifdef ALIENFLIGHT
 #ifdef ALIENFLIGHTF3
     serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    batteryConfig()->vbatscale = 20;
+    getVoltageMeterConfig(ADC_BATTERY)->vbatscale = 20;
     sensorSelectionConfig()->mag_hardware = MAG_NONE;            // disabled by default
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
