@@ -26,6 +26,7 @@ extern "C" {
     #include "common/maths.h"
     #include "common/color.h"
     #include "common/utils.h"
+    #include "common/filter.h"
 
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
@@ -54,6 +55,8 @@ extern "C" {
     #include "sensors/barometer.h"
     #include "sensors/compass.h"
     #include "sensors/gyro.h"
+    #include "sensors/current.h"
+    #include "sensors/voltage.h"
     #include "sensors/battery.h"
     #include "sensors/boardalignment.h"
 
@@ -63,6 +66,8 @@ extern "C" {
     #include "flight/navigation.h"
     #include "flight/failsafe.h"
     #include "flight/altitudehold.h"
+
+    #include "msp/msp_server.h"
 
     #include "telemetry/telemetry.h"
     #include "telemetry/frsky.h"
@@ -93,7 +98,10 @@ extern "C" {
     PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);
+    PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARR(currentMeterConfig_t, MAX_CURRENT_METERS, currentMeterConfig, PG_CURRENT_METER_CONFIG, 0);
+    PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
     PG_REGISTER_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
     PG_REGISTER(pwmRxConfig_t, pwmRxConfig, PG_DRIVER_PWM_RX_CONFIG, 0);
@@ -354,7 +362,9 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig()->mag_hardware);   // default/autodetect
     EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig()->baro_hardware); // default/autodetect
 
-    EXPECT_EQ(0, batteryConfig()->currentMeterOffset);
+    for (int i = 0; i < MAX_CURRENT_METERS; i++) {
+        EXPECT_EQ(0, currentMeterConfig(i)->currentMeterOffset);
+    }
     EXPECT_EQ(0, batteryConfig()->batteryCapacity);
 
     EXPECT_EQ(0, telemetryConfig()->telemetry_inversion);

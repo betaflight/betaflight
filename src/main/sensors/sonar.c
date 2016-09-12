@@ -88,7 +88,7 @@ const sonarHardware_t *sonarGetHardwareConfiguration(bool usingCurrentMeterIOPin
     UNUSED(usingCurrentMeterIOPins);
     return &sonarRC;
 #elif defined(UNIT_TEST)
-    UNUSED(currentMeterType);
+    UNUSED(usingCurrentMeterIOPins);
     return 0;
 #else
 #error Sonar not defined for target

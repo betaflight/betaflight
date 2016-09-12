@@ -31,11 +31,15 @@ extern "C" {
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
+    #include "common/filter.h"
     #include "common/pilot.h"
 
     #include "drivers/adc.h"
     #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
+    #include "sensors/current.h"
+    #include "sensors/voltage.h"
+    #include "sensors/battery.h"
     #include "osd/fc_state.h"
     #include "osd/osd_element.h"
     #include "osd/osd_element_render.h"
@@ -58,16 +62,15 @@ extern "C" {
 
     const uint8_t *asciiToFontMapping = &font_test_asciiToFontMapping[0];
 
-    int32_t mAhDrawn;
-    int32_t amperage;
     uint16_t vbat;
 
-    uint16_t testAdcChannels[ADC_CHANNEL_COUNT];
-
-    #define TEST_VOLTAGE_0  0
-    uint16_t testVoltages[1];
+    uint16_t testVoltages[MAX_VOLTAGE_METERS];
 
     fcStatus_t fcStatus;
+
+    currentMeter_t currentMeter;
+
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -81,7 +84,6 @@ protected:
     virtual void SetUp() {
         memset(textScreenBuffer, TEST_INITIAL_CHARACTER, sizeof(textScreenBuffer));
         memset(testVoltages, 0, sizeof(testVoltages));
-        memset(testAdcChannels, 0, sizeof(testAdcChannels));
 
         osdTextScreen.height = TEST_ROW_COUNT;
         osdTextScreen.width = TEST_COLUMN_COUNT;
@@ -209,7 +211,7 @@ TEST_F(OsdScreenTest, TestOsdElement_ArmedDuration)
 TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
 {
     // given
-    mAhDrawn = 99999;
+    currentMeter.mAhDrawn = 99999;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_MAH_DRAWN
@@ -229,7 +231,7 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
 TEST_F(OsdScreenTest, TestOsdElement_Amperage)
 {
     // given
-    amperage = 9876;
+    currentMeter.amperage = 9876;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_AMPERAGE
@@ -249,8 +251,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Amperage)
 TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
 {
     // given
-    testAdcChannels[ADC_POWER_5V] = TEST_VOLTAGE_0;
-    testVoltages[TEST_VOLTAGE_0] = 51;
+    testVoltages[ADC_POWER_5V] = 51;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_VOLTAGE_5V
@@ -269,8 +270,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
 TEST_F(OsdScreenTest, TestOsdElement_Voltage12V)
 {
     // given
-    testAdcChannels[ADC_POWER_12V] = TEST_VOLTAGE_0;
-    testVoltages[TEST_VOLTAGE_0] = 126;
+    testVoltages[ADC_POWER_12V] = 126;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_VOLTAGE_12V
@@ -476,12 +476,17 @@ TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
 extern "C" {
     uint16_t fcMotors[OSD_MAX_MOTORS];
 
-    uint16_t adcGetChannel(uint8_t channel) {
-        return testAdcChannels[channel];
+    uint16_t getVoltage(uint8_t channel) {
+        return testVoltages[channel];
     }
-
+    /*
     uint16_t batteryAdcToVoltage(uint16_t src) {
         return testVoltages[src];
+    }*/
+
+    currentMeter_t *getCurrentMeter(currentMeterIndex_e index) {
+        UNUSED(index);
+        return &currentMeter;
     }
 
     uint32_t millis(void) { return testMillis; }

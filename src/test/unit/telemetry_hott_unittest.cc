@@ -27,8 +27,10 @@ extern "C" {
     #include <platform.h>
 
     #include "common/axis.h"
+    #include "common/filter.h"
 
     #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
     #include "config/profile.h"
 
     #include "drivers/system.h"
@@ -39,6 +41,8 @@ extern "C" {
     #include "io/gps.h"
 
     #include "sensors/sensors.h"
+    #include "sensors/voltage.h"
+    #include "sensors/current.h"
     #include "sensors/battery.h"
 
     #include "telemetry/telemetry.h"
@@ -46,6 +50,10 @@ extern "C" {
 
     #include "flight/pid.h"
     #include "flight/gps_conversion.h"
+
+    PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+
+    currentMeter_t currentMeter;
 }
 
 #include "unittest_macros.h"
@@ -243,5 +251,9 @@ batteryState_e getBatteryState(void) {
 	return BATTERY_OK;
 }
 
+currentMeter_t *getCurrentMeter(currentMeterIndex_e index) {
+    UNUSED(index);
+    return &currentMeter;
+}
 }
 
