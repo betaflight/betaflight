@@ -972,11 +972,14 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             serializeSDCardSummaryReply(reply);
             break;
 
-        case MSP_BATTERY_STATES:
+        case MSP_BATTERY_STATES: {
+            amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
+
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(getAmperageMeter(batteryConfig()->amperageMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             break;
+        }
 
         case MSP_CURRENT_METERS:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
