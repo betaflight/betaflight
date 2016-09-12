@@ -38,7 +38,7 @@
 
 voltageMeterState_t voltageMeterStates[MAX_VOLTAGE_METERS];
 
-static const uint8_t voltageMeterAdcChannels[] = {
+static const uint8_t voltageMeterAdcChannelMap[] = {
 #ifdef ADC_BATTERY
     ADC_BATTERY,
 #endif
@@ -72,8 +72,8 @@ STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, voltageMeter
 
 voltageMeterConfig_t *getVoltageMeterConfig(const uint8_t channel)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannels); i++) {
-        if (voltageMeterAdcChannels[i] == channel) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+        if (voltageMeterAdcChannelMap[i] == channel) {
             return voltageMeterConfig(i);
         }
     }
@@ -86,8 +86,8 @@ voltageMeterConfig_t *getVoltageMeterConfig(const uint8_t channel)
 // filtered - uses pre-calculated value
 uint16_t getVoltage(uint8_t channel)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannels); i++) {
-        if (voltageMeterAdcChannels[i] == channel) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+        if (voltageMeterAdcChannelMap[i] == channel) {
             voltageMeterState_t *state = &voltageMeterStates[i];
             return state->vbat;
         }
@@ -101,8 +101,8 @@ uint16_t getVoltage(uint8_t channel)
 // unfiltered - always recalcualates voltage based on last adc sensor reading
 uint16_t getLatestVoltage(uint8_t channel)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannels); i++) {
-        if (voltageMeterAdcChannels[i] == channel) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
+        if (voltageMeterAdcChannelMap[i] == channel) {
             voltageMeterState_t *state = &voltageMeterStates[i];
             voltageMeterConfig_t *config = voltageMeterConfig(i);
 
@@ -119,13 +119,13 @@ void voltageMeterUpdate(void)
 {
     uint16_t vbatSample;
 
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannels); i++) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         // store the battery voltage with some other recent battery voltage readings
 
         voltageMeterState_t *state = &voltageMeterStates[i];
         voltageMeterConfig_t *config = voltageMeterConfig(i);
 
-        uint8_t channel = voltageMeterAdcChannels[i];
+        uint8_t channel = voltageMeterAdcChannelMap[i];
         vbatSample = state->vbatLatestADC = adcGetChannel(channel);
 
         vbatSample = applyBiQuadFilter(vbatSample, &state->vbatFilterState);
@@ -137,7 +137,7 @@ void voltageMeterUpdate(void)
 
 void voltageMeterInit(void)
 {
-    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannels); i++) {
+    for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         // store the battery voltage with some other recent battery voltage readings
 
         voltageMeterState_t *state = &voltageMeterStates[i];

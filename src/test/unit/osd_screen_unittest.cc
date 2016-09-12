@@ -64,7 +64,7 @@ extern "C" {
 
     uint16_t vbat;
 
-    uint16_t testVoltages[MAX_VOLTAGE_METERS];
+    uint16_t testVoltages[ADC_CHANNEL_COUNT];
 
     fcStatus_t fcStatus;
 
