@@ -364,7 +364,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 #endif
 
 static const char * const lookupTableAmperageMeter[] = {
-    "ADC", "VIRTUAL"
+    "VIRTUAL", "ADC"
 };
 
 static const char * const lookupTableGimbalMode[] = {

@@ -34,8 +34,8 @@ typedef struct amperageMeter_s {
 } amperageMeter_t;
 
 typedef enum {
-    AMPERAGE_METER_ADC = 0,
-    AMPERAGE_METER_VIRTUAL
+    AMPERAGE_METER_VIRTUAL = 0,
+    AMPERAGE_METER_ADC,
 } amperageMeter_e;
 
 extern amperageMeter_t amperageMeters[MAX_AMPERAGE_METERS];
