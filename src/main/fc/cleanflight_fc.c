@@ -824,13 +824,15 @@ void taskUpdateBattery(void)
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
 
-            amperageUpdateMeter(ibatTimeSinceLastServiced);
+            if (batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC) {
+                amperageUpdateMeter(ibatTimeSinceLastServiced);
+            } else {
+                throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
+                bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
+                int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-            throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
-            bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
-            int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
-
-            amperageUpdateVirtualMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
+                amperageUpdateVirtualMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
+            }
         }
     }
 }
