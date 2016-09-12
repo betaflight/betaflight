@@ -18,126 +18,64 @@
 
 #include <limits.h>
 
-//#define DEBUG_BATTERY
-
 extern "C" {
     #include "config/parameter_group.h"
     #include "config/parameter_group_ids.h"
 
-    #include "fc/rc_controls.h"
+    #include "common/filter.h"
 
+    #include "sensors/voltage.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/battery.h"
+
     #include "io/beeper.h"
 }
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-typedef struct batteryAdcToVoltageExpectation_s {
-    uint16_t adcReading;
-    uint16_t expectedVoltageInDeciVoltSteps;
-    uint8_t scale;
-} batteryAdcToVoltageExpectation_t;
-
-#define ELEVEN_TO_ONE_VOLTAGE_DIVIDER 110 // (10k:1k) * 10 for 0.1V
-
-TEST(BatteryTest, BatteryADCToVoltage)
-{
-    // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
-    batteryConfig_t testBatteryConfig = {
-        .vbatscale = VBAT_SCALE_DEFAULT,
-        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
-        .vbatmaxcellvoltage = 43,
-        .vbatmincellvoltage = 33,
-        .vbatwarningcellvoltage = 35,
-        .currentMeterScale = 400,
-        .currentMeterOffset = 0,
-        .currentMeterType = CURRENT_SENSOR_NONE,
-        .multiwiiCurrentMeterOutput = 0,
-        .batteryCapacity = 2200,
-    };
-    memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
-
-    batteryInit();
-
-    batteryAdcToVoltageExpectation_t batteryAdcToVoltageExpectations[] = {
-            {1420, 126 /*125.88*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1430, 127 /*126.76*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1440, 128 /*127.65*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1890, 168 /*167.54*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1900, 168 /*168.42*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1910, 169 /*169.31*/, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {   0,   0 /*  0.00*/, VBAT_SCALE_MAX},
-            {4096, 842 /*841.71*/, VBAT_SCALE_MAX}
-    };
-    uint8_t testIterationCount = sizeof(batteryAdcToVoltageExpectations) / sizeof(batteryAdcToVoltageExpectation_t);
-
-    // expect
-
-    for (uint8_t index = 0; index < testIterationCount; index ++) {
-        batteryAdcToVoltageExpectation_t *batteryAdcToVoltageExpectation = &batteryAdcToVoltageExpectations[index];
-        batteryConfig()->vbatscale = batteryAdcToVoltageExpectation->scale;
-#ifdef DEBUG_BATTERY
-        printf("adcReading: %d, vbatscale: %d\n",
-                batteryAdcToVoltageExpectation->adcReading,
-                batteryAdcToVoltageExpectation->scale
-        );
-#endif
-        uint16_t pointOneVoltSteps = batteryAdcToVoltage(batteryAdcToVoltageExpectation->adcReading);
-
-        EXPECT_EQ(batteryAdcToVoltageExpectation->expectedVoltageInDeciVoltSteps, pointOneVoltSteps);
-    }
-}
-
-uint16_t currentADCReading;
-
+uint16_t currentVoltage;
+amperageMeter_t *amperageMeter;
 
 typedef struct batteryAdcToBatteryStateExpectation_s
 {
-    uint16_t adcReading;
-    uint16_t expectedVoltageInDeciVoltSteps;
+    uint16_t voltage;
     batteryState_e expectedBatteryState;
-    uint8_t scale;
 } batteryAdcToBatteryStateExpectation_t;
 
-/* Test the battery state and hysteresis code */
-TEST(BatteryTest, BatteryState)
+TEST(BatteryTest, BatteryStateAndHysteresis)
 {
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t testBatteryConfig = {
-        .vbatscale = VBAT_SCALE_DEFAULT,
-        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
-        .currentMeterScale = 400,
-        .currentMeterOffset = 0,
-        .currentMeterType = CURRENT_SENSOR_NONE,
-        .multiwiiCurrentMeterOutput = 0,
-        .batteryCapacity = 2200,
+        .batteryCapacity = 0,    // UNUSED
+        .amperageMeterSource = 0  // UNUSED
     };
+
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
     batteryInit();
 
+
     batteryAdcToBatteryStateExpectation_t batteryAdcToBatteryStateExpectations[] = {
-            {1420, 126, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* fall down to battery warning level */
-            {1185, 105, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* creep back up to battery ok */
-            {1185, 105, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1195, 106, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1207, 107, BATTERY_OK, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* fall down to battery critical level */
-            {1175, 104, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1108, 98, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            /* creep back up to battery warning */
-            {1115, 99, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1130, 100, BATTERY_CRITICAL, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
-            {1145, 101, BATTERY_WARNING, ELEVEN_TO_ONE_VOLTAGE_DIVIDER},
+            // using 3-Cell voltages.
+            {126, BATTERY_OK},
+            // fall down to battery warning level
+            {105, BATTERY_OK},
+            {104, BATTERY_WARNING},
+            // creep back up to battery ok
+            {105, BATTERY_WARNING},
+            {106, BATTERY_WARNING},
+            {107, BATTERY_OK},
+            // fall down to battery critical level
+            {104, BATTERY_WARNING},
+            {98, BATTERY_CRITICAL},
+            // creep back up to battery warning
+            {99, BATTERY_CRITICAL},
+            {100, BATTERY_CRITICAL},
+            {101, BATTERY_WARNING},
 
     };
     uint8_t testIterationCount = sizeof(batteryAdcToBatteryStateExpectations) / sizeof(batteryAdcToBatteryStateExpectation_t);
@@ -145,59 +83,63 @@ TEST(BatteryTest, BatteryState)
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
         batteryAdcToBatteryStateExpectation_t *batteryAdcToBatteryStateExpectation = &batteryAdcToBatteryStateExpectations[index];
-        batteryConfig()->vbatscale = batteryAdcToBatteryStateExpectation->scale;
-        currentADCReading = batteryAdcToBatteryStateExpectation->adcReading;
-        updateBattery( );
+
+        currentVoltage = batteryAdcToBatteryStateExpectation->voltage;
+
+        batteryUpdate();
+
         batteryState_e batteryState = getBatteryState();
         EXPECT_EQ(batteryAdcToBatteryStateExpectation->expectedBatteryState, batteryState);
     }
 }
 
-typedef struct batteryAdcToCellCountExpectation_s
+typedef struct cellCountExpectation_s
 {
-    uint16_t adcReading;
-    uint16_t expectedVoltageInDeciVoltSteps;
-    uint8_t scale;
+    uint16_t voltage;
     uint8_t cellCount;
-} batteryAdcToCellCountExpectation_t;
+} cellCountExpectation_t;
 
-/* Test the cell count is correctly detected if we start at 0V */
-TEST(BatteryTest, CellCount)
+// FIXME as-is this test barely scratches the surface of using the min/max cell voltages, expand to cover 1-8 cell detection.
+// it does not cover, for example, the voltages used by different battery technologies which use different min/max cell voltages
+TEST(BatteryTest, LipoCellCount)
 {
     // batteryInit() reads a bunch of fields including vbatscale, so set up the config with useful initial values:
     batteryConfig_t testBatteryConfig = {
-        .vbatscale = VBAT_SCALE_DEFAULT,
-        .vbatresdivval = VBAT_RESDIVVAL_DEFAULT,
-        .vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT,
+        // Standard LIPO voltages
         .vbatmaxcellvoltage = 43,
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
-        .currentMeterScale = 400,
-        .currentMeterOffset = 0,
-        .currentMeterType = CURRENT_SENSOR_NONE,
-        .multiwiiCurrentMeterOutput = 0,
-        .batteryCapacity = 2200,
+        .batteryCapacity = 0,    // UNUSED
+        .amperageMeterSource = 0  // UNUSED
     };
 
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
 
-    batteryInit();
-
-    batteryAdcToCellCountExpectation_t batteryAdcToCellCountExpectations[] = {
-            {0, 0, ELEVEN_TO_ONE_VOLTAGE_DIVIDER, 1},
-            {1420, 126, ELEVEN_TO_ONE_VOLTAGE_DIVIDER, 3},
+    cellCountExpectation_t cellCountExpectations[] = {
+            {42,    1},
+            {84,    2},
+            {126,   3},
+            {168,   4},
+            {210,   5},
+            {252,   6},
+            {294,   7},
+            {336,   8},
     };
-    uint8_t testIterationCount = sizeof(batteryAdcToCellCountExpectations) / sizeof(batteryAdcToCellCountExpectation_t);
+    uint8_t testIterationCount = sizeof(cellCountExpectations) / sizeof(cellCountExpectation_t);
 
     // expect
     for (uint8_t index = 0; index < testIterationCount; index ++) {
-        batteryAdcToCellCountExpectation_t *batteryAdcToCellCountExpectation = &batteryAdcToCellCountExpectations[index];
-        batteryConfig()->vbatscale = batteryAdcToCellCountExpectation->scale;
-        currentADCReading = batteryAdcToCellCountExpectation->adcReading;
-        updateBattery( );
-        EXPECT_EQ(batteryAdcToCellCountExpectation->cellCount, batteryCellCount);
+        cellCountExpectation_t *cellCountExpectation = &cellCountExpectations[index];
+
+        currentVoltage = cellCountExpectation->voltage;
+
+        batteryInit();
+        batteryUpdate();
+
+        EXPECT_EQ(cellCountExpectation->cellCount, batteryCellCount);
     }
 }
+
 
 //#define DEBUG_ROLLOVER_PATTERNS
 /**
@@ -277,29 +219,17 @@ TEST(BatteryTest, RollOverPattern2)
 
 extern "C" {
 #include "common/filter.h"
-uint8_t armingFlags = 0;
-int16_t rcCommand[4] = {0,0,0,0};
 
-float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
-
-bool feature(uint32_t mask)
-{
-    UNUSED(mask);
-    return false;
-}
-
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
-{
-    UNUSED(*rxConfig);
-    UNUSED(deadband3d_throttle);
-    return THROTTLE_HIGH;
-}
-
-uint16_t adcGetChannel(uint8_t channel)
+uint16_t getVoltage(uint8_t channel)
 {
     UNUSED(channel);
-    return currentADCReading;
+    return currentVoltage;
+}
+
+uint16_t getLatestVoltage(uint8_t channel)
+{
+    UNUSED(channel);
+    return currentVoltage;
 }
 
 void delay(uint32_t ms)
@@ -312,5 +242,15 @@ void beeper(beeperMode_e mode)
 {
     UNUSED(mode);
 }
+
+void voltageMeterUpdate(void) {}
+
+amperageMeter_t *getAmperageMeter(amperageMeter_e  index)
+{
+    UNUSED(index);
+    return amperageMeter;
+}
+
+
 
 }

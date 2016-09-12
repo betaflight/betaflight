@@ -31,6 +31,7 @@
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -53,8 +54,6 @@
 #include "drivers/exti.h"
 #include "drivers/io.h"
 
-#include "fc/rc_controls.h" // FIXME for throttle status, not needed by OSD.
-
 #include "osd/osd_element.h"
 #include "osd/osd.h"
 #include "osd/osd_serial.h"
@@ -67,6 +66,8 @@
 #include "msp/msp_serial.h"
 #include "io/serial_cli.h"
 
+#include "sensors/amperage.h"
+#include "sensors/voltage.h"
 #include "sensors/battery.h"
 
 #include "osd/config.h"
@@ -171,7 +172,7 @@ void init(void)
 #endif
 
     drv_adc_config_t adc_params = {
-        .channelMask = ADC_CHANNEL_MASK(ADC_BATTERY) | ADC_CHANNEL_MASK(ADC_CURRENT) | ADC_CHANNEL_MASK(ADC_POWER_12V) | ADC_CHANNEL_MASK(ADC_POWER_5V)
+        .channelMask = ADC_CHANNEL_MASK(ADC_BATTERY) | ADC_CHANNEL_MASK(ADC_AMPERAGE) | ADC_CHANNEL_MASK(ADC_POWER_12V) | ADC_CHANNEL_MASK(ADC_POWER_5V)
     };
 
     adcInit(&adc_params);
@@ -194,7 +195,10 @@ void init(void)
 
     // Now that everything has powered up the voltage and cell count be determined.
 
+    voltageMeterInit();
     batteryInit();
+
+    amperageMeterInit();
 
     LED1_ON;  // FIXME This is a hack to enable the bus switch.
 

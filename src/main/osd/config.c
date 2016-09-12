@@ -40,11 +40,6 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include "fc/rate_profile.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_adjustments.h"
-#include "fc/config.h"
-
 #include "io/beeper.h"
 #include "io/serial.h"
 
@@ -109,18 +104,18 @@ void writeEEPROM(void)
     writeConfigToEEPROM();
 }
 
+void resetEEPROM(void)
+{
+    resetConf();
+    writeEEPROM();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
     resetEEPROM();
-}
-
-void resetEEPROM(void)
-{
-    resetConf();
-    writeEEPROM();
 }
 
 // FIXME stub out the profile code, unused in the OSD but the msp.c parameter group code still references getCurrentProfile

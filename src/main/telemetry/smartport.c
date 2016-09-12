@@ -24,7 +24,6 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "io/motor_and_servo.h"
@@ -33,6 +32,7 @@
 #include "io/serial.h"
 
 #include "sensors/sensors.h"
+#include "../sensors/amperage.h"
 #include "sensors/battery.h"
 #include "sensors/acceleration.h"
 
@@ -316,8 +316,10 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (feature(FEATURE_CURRENT_METER)) {
-                    smartPortSendPackage(id, amperage / 10); // given in 10mA steps, unknown requested unit
+                if (feature(FEATURE_AMPERAGE_METER)) {
+                    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
+
+                    smartPortSendPackage(id, state->amperage / 10); // given in 10mA steps, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -329,8 +331,9 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (feature(FEATURE_CURRENT_METER)) {
-                    smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
+                if (feature(FEATURE_AMPERAGE_METER)) {
+                    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
+                    smartPortSendPackage(id, state->mAhDrawn); // given in mAh, unknown requested unit
                     smartPortHasRequest = 0;
                 }
                 break;

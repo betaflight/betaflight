@@ -167,7 +167,7 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 #if 0
-// ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it.
+// ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it - See pgResetInstance
 #define PG_REGISTER_ARR_WITH_RESET_TEMPLATE(_type, _size, _name, _pgn, _version) \
     extern const _type pgResetTemplate_ ## _name;                       \
     PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \

@@ -31,13 +31,11 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gpio.h"
 
-#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/config.h"
 
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
 #include "sensors/sonar.h"
+#include "sensors/sensors.h"
 
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
 // Inclination is adjusted by imu
@@ -53,7 +51,7 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType)
+const sonarHardware_t *sonarGetHardwareConfiguration(bool usingCurrentMeterIOPins)
 {
 #if defined(SONAR_PWM_TRIGGER_PIN)
     static const sonarHardware_t const sonarPWM = {
@@ -75,20 +73,22 @@ const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMet
         .echoIO = IO_TAG(SONAR_ECHO_IO),
     };
 #endif
+
+// FIXME compare the actual IO pins rather than assuming the features clash.
 #if defined(SONAR_PWM_TRIGGER_PIN)
     // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins 5 and 6 for sonar, otherwise use RC pins 7 and 8
     if (feature(FEATURE_SOFTSERIAL)
             || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && currentMeterType == CURRENT_SENSOR_ADC)) {
+            || usingCurrentMeterIOPins) {
         return &sonarPWM;
     } else {
         return &sonarRC;
     }
 #elif defined(SONAR_TRIGGER_PIN)
-    UNUSED(currentMeterType);
+    UNUSED(usingCurrentMeterIOPins);
     return &sonarRC;
 #elif defined(UNIT_TEST)
-    UNUSED(currentMeterType);
+    UNUSED(usingCurrentMeterIOPins);
     return 0;
 #else
 #error Sonar not defined for target

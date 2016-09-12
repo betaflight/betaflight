@@ -32,6 +32,7 @@ extern "C" {
     #include "common/maths.h"
     #include "common/streambuf.h"
     #include "common/utils.h"
+    #include "common/filter.h"
 
     #include "config/parameter_group.h"
     #include "config/config_eeprom.h"
@@ -59,6 +60,7 @@ extern "C" {
 
     #include "msp/msp_protocol.h"
     #include "msp/msp.h"
+    #include "msp/msp_server.h"
     #include "msp/msp_serial.h"
 
     #include "telemetry/telemetry.h"
@@ -66,6 +68,8 @@ extern "C" {
 
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
+    #include "sensors/voltage.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/battery.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -81,7 +85,6 @@ extern "C" {
     #include "config/parameter_group_ids.h"
     #include "fc/runtime_config.h"
     #include "config/profile.h"
-
 }
 
 #include "unittest_macros.h"
@@ -89,9 +92,13 @@ extern "C" {
 
 
 extern "C" {
+    PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);
     PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
+    PG_REGISTER_ARR(amperageMeterConfig_t, MAX_AMPERAGE_METERS, amperageMeterConfig, PG_AMPERAGE_METER_CONFIG, 0);
+
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
@@ -397,7 +404,7 @@ TEST_F(MspTest, TestMspCommands)
         MSP_MODE_RANGES,                // 34    //out message         Returns all mode ranges
         MSP_FEATURE,                    // 36
         MSP_BOARD_ALIGNMENT,            // 38
-        MSP_CURRENT_METER_CONFIG,       // 40
+        MSP_AMPERAGE_METER_CONFIG,       // 40
         MSP_MIXER,                      // 42
         MSP_RX_CONFIG,                  // 44
         MSP_LED_COLORS,                 // 46
@@ -476,6 +483,7 @@ TEST_F(MspTest, TestMspCommands)
 
 // STUBS
 extern "C" {
+amperageMeter_t amperageMeter;
 //
 mspPostProcessFuncPtr mspPostProcessFn = NULL;
 // from acceleration.c
@@ -581,5 +589,9 @@ void serialSetMode(serialPort_t *, portMode_t) {}
 void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }
 bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
+
+amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
+batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
+uint16_t getVoltage(uint8_t ) { return 0; }
 }
 

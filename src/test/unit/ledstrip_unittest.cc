@@ -435,8 +435,7 @@ bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId
 bool failsafeIsActive() { return false; }
 bool rxIsReceivingSignal() { return true; }
 bool sensors(uint32_t mask) { UNUSED(mask); return true; }
-uint8_t calculateBatteryCapacityRemainingPercentage(void) { return 40; }
-
+uint8_t batteryCapacityRemainingPercentage(void) { return 40; }
 uint8_t GPS_numSat;
 uint8_t stateFlags;
 uint16_t rssi;

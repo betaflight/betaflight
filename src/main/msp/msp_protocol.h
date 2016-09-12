@@ -105,6 +105,9 @@
 //
 // MSP commands for Cleanflight original features
 //
+#define MSP_BATTERY_CONFIG              32
+#define MSP_SET_BATTERY_CONFIG          33
+
 #define MSP_MODE_RANGES                 34    //out message         Returns all mode ranges
 #define MSP_SET_MODE_RANGE              35    //in message          Sets a single mode range
 
@@ -114,8 +117,8 @@
 #define MSP_BOARD_ALIGNMENT             38
 #define MSP_SET_BOARD_ALIGNMENT         39
 
-#define MSP_CURRENT_METER_CONFIG        40
-#define MSP_SET_CURRENT_METER_CONFIG    41
+#define MSP_AMPERAGE_METER_CONFIG       40
+#define MSP_SET_AMPERAGE_METER_CONFIG   41
 
 #define MSP_MIXER                       42
 #define MSP_SET_MIXER                   43

@@ -56,6 +56,8 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/voltage.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
@@ -810,27 +812,26 @@ void taskUpdateBattery(void)
     if (feature(FEATURE_VBAT)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
-            updateBattery();
+
+            voltageMeterUpdate();
+            batteryUpdate();
         }
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_AMPERAGE_METER)) {
         int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
 
-            throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
+            if (batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC) {
+                amperageUpdateMeter(ibatTimeSinceLastServiced);
+            } else {
+                throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
+                bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
+                int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-            switch(batteryConfig()->currentMeterType) {
-                case CURRENT_SENSOR_ADC:
-                    updateCurrentMeter(ibatTimeSinceLastServiced);
-                    break;
-                case CURRENT_SENSOR_VIRTUAL:
-                    updateVirtualCurrentMeter(ibatTimeSinceLastServiced, throttleStatus);
-                    break;
-                default:
-                    break;
+                amperageUpdateVirtualMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
             }
         }
     }
