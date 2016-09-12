@@ -207,11 +207,11 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         }
 
         case MSP_CURRENT_METERS:
-            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+            for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
                 amperageMeter_t *meter = getAmperageMeter(i);
                 // write out amperage, once for each current meter.
                 sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-                // TODO add mahDrawn
+                sbufWriteU32(dst, meter->mAhDrawn);
             }
             break;
         case MSP_VOLTAGE_METERS:
