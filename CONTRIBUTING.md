@@ -11,7 +11,7 @@ Please search for existing issues *before* creating new ones.
 When submitting an issue the general rule is to include:
 
 1. What is your setup and a detailed explanation of the issue,  also include last working version of iNav. 
-1. status sump from cli. 
+1. status dump from cli. 
 1. bootlog dump from cli. 
 1. dump dump from cli. 
 1. BLACKBOX log of the issue. 
