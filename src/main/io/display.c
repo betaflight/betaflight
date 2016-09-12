@@ -50,7 +50,7 @@
 #include "io/display.h"
 #include "io/gps.h"
 
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -485,8 +485,8 @@ static void showBatteryPage(void)
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, voltagePercentage);
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
-        currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    if (feature(FEATURE_AMPERAGE_METER)) {
+        amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
         tfp_sprintf(lineBuffer, "Amps: %d.%2d mAh: %d", state->amperage / 100, state->amperage % 100, state->mAhDrawn);
         padLineBuffer();
@@ -621,7 +621,7 @@ void updateDisplay(void)
                 (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
-            if (cyclePageIds[pageState.cycleIndex] == PAGE_BATTERY && !(feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER))) {
+            if (cyclePageIds[pageState.cycleIndex] == PAGE_BATTERY && !(feature(FEATURE_VBAT) || feature(FEATURE_AMPERAGE_METER))) {
                 pageState.cycleIndex++;
             }
 #ifdef GPS

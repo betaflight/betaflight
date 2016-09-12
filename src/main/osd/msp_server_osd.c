@@ -43,7 +43,6 @@
 #include "drivers/video.h"
 
 #include "sensors/voltage.h"
-#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "io/serial.h"
@@ -62,6 +61,7 @@
 #include "osd/osd_serial.h"
 #include "osd/osd_screen.h"
 #include "osd/msp_server_osd.h"
+#include "../sensors/amperage.h"
 
 extern uint16_t cycleTime;
 
@@ -165,8 +165,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_CURRENT_METER_CONFIG:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterScale);
-                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterOffset);
+                sbufWriteU16(dst, amperageMeterConfig(i)->scale);
+                sbufWriteU16(dst, amperageMeterConfig(i)->offset);
             }
             break;
 
@@ -200,12 +200,12 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_BATTERY_STATES:
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(getCurrentMeter(batteryConfig()->currentMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(getAmperageMeter(batteryConfig()->amperageMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             break;
 
         case MSP_CURRENT_METERS:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                currentMeter_t *meter = getCurrentMeter(i);
+                amperageMeter_t *meter = getAmperageMeter(i);
                 // write out amperage, once for each current meter.
                 sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
                 // TODO add mahDrawn
@@ -327,12 +327,12 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_SET_CURRENT_METER_CONFIG: {
             int index = sbufReadU8(src);
 
-            if (index >= MAX_CURRENT_METERS) {
+            if (index >= MAX_AMPERAGE_METERS) {
                 return -1;
             }
 
-            currentMeterConfig(index)->currentMeterScale = sbufReadU16(src);
-            currentMeterConfig(index)->currentMeterOffset = sbufReadU16(src);
+            amperageMeterConfig(index)->scale = sbufReadU16(src);
+            amperageMeterConfig(index)->offset = sbufReadU16(src);
             break;
         }
 
@@ -341,7 +341,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
             batteryConfig()->batteryCapacity = sbufReadU16(src);
-            batteryConfig()->currentMeterSource = sbufReadU8(src);
+            batteryConfig()->amperageMeterSource = sbufReadU8(src);
             break;
 
         case MSP_SET_CF_SERIAL_CONFIG: {

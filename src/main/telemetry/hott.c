@@ -77,7 +77,7 @@
 
 
 #include "sensors/sensors.h"
-#include "sensors/current.h"
+#include "../sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "flight/pid.h"
@@ -256,7 +256,7 @@ static inline void hottEAMUpdateBattery(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
     int32_t amp = state->amperage / 10;
     hottEAMMessage->current_L = amp & 0xFF;
@@ -265,7 +265,7 @@ static inline void hottEAMUpdateCurrentMeter(HOTT_EAM_MSG_t *hottEAMMessage)
 
 static inline void hottEAMUpdateBatteryDrawnCapacity(HOTT_EAM_MSG_t *hottEAMMessage)
 {
-    currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
     int32_t mAh = state->mAhDrawn / 10;
     hottEAMMessage->batt_cap_L = mAh & 0xFF;

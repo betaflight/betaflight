@@ -102,12 +102,12 @@
 #define ADC1_GPIO_PIN           GPIO_Pin_1
 #define ADC1_CHANNEL            ADC_Channel_1
 
-//vbat
+// vbat
 #define ADC2_GPIO               GPIOA
 #define ADC2_GPIO_PIN           GPIO_Pin_2
 #define ADC2_CHANNEL            ADC_Channel_2
 
-// current
+// amperage
 #define ADC3_GPIO               GPIOA
 #define ADC3_GPIO_PIN           GPIO_Pin_3
 #define ADC3_CHANNEL            ADC_Channel_3
@@ -118,7 +118,7 @@
 #define ADC_POWER_12V ADC_CHANNEL0
 #define ADC_POWER_5V ADC_CHANNEL1
 #define ADC_BATTERY ADC_CHANNEL2
-#define ADC_CURRENT ADC_CHANNEL3
+#define ADC_AMPERAGE ADC_CHANNEL3
 
 #define MAX_VOLTAGE_METERS 3
 

@@ -37,11 +37,12 @@
 #include "drivers/adc.h"  // only required for data providers
 #include "osd/fc_state.h" // only required for data providers
 #include "sensors/voltage.h" // only required for data providers
-#include "sensors/current.h" // only required for data providers
 #include "sensors/battery.h" // only required for data providers
 
 
 #include "osd/osd_element.h"
+
+#include "../sensors/amperage.h" // only required for data providers
 #include "osd/osd_element_render.h"
 
 intptr_t osdElementData_onDuration(void)
@@ -56,12 +57,12 @@ intptr_t osdElementData_armedDuration(void)
 
 intptr_t osdElementData_mAhDrawn(void)
 {
-    return (intptr_t)getCurrentMeter(batteryConfig()->currentMeterSource)->mAhDrawn;
+    return (intptr_t)getAmperageMeter(batteryConfig()->amperageMeterSource)->mAhDrawn;
 }
 
 intptr_t osdElementData_amperage(void)
 {
-    return (intptr_t)getCurrentMeter(batteryConfig()->currentMeterSource)->amperage;
+    return (intptr_t)getAmperageMeter(batteryConfig()->amperageMeterSource)->amperage;
 }
 
 static voltageAndName_t voltageAndName;

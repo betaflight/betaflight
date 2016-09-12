@@ -159,7 +159,7 @@
 #define ADC3_GPIO_PIN               GPIO_Pin_3
 #define ADC3_CHANNEL                ADC_Channel_9
 
-#define ADC_CURRENT     ADC_CHANNEL0
+#define ADC_AMPERAGE     ADC_CHANNEL0
 #define ADC_BATTERY     ADC_CHANNEL1
 #define ADC_RSSI        ADC_CHANNEL2
 #define ADC_EXTERNAL    ADC_CHANNEL3

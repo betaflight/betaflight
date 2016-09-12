@@ -52,7 +52,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 #include "sensors/voltage.h"
 #include "sensors/battery.h"
 
@@ -427,7 +427,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return feature(FEATURE_VBAT);
 
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE:
-            return feature(FEATURE_CURRENT_METER);
+            return feature(FEATURE_AMPERAGE_METER);
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -967,7 +967,7 @@ static void loadMainState(void)
 
     blackboxCurrent->vbatLatest = getLatestVoltage(ADC_BATTERY);
 
-    currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
     blackboxCurrent->amperageLatest = state->amperage;
 
 #ifdef MAG
@@ -1171,13 +1171,13 @@ static bool blackboxWriteSysinfo()
         break;
         case 13:
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
-            if (feature(FEATURE_CURRENT_METER)) {
-                uint8_t currentMeterSource = batteryConfig()->currentMeterSource;
-                currentMeterConfig_t *config = currentMeterConfig(currentMeterSource);
+            if (feature(FEATURE_AMPERAGE_METER)) {
+                uint8_t amperageMeterSource = batteryConfig()->amperageMeterSource;
+                amperageMeterConfig_t *config = amperageMeterConfig(amperageMeterSource);
 
-                blackboxPrintfHeaderLine("currentMeter:%d,%d",
-                    config->currentMeterOffset,
-                    config->currentMeterScale
+                blackboxPrintfHeaderLine("amperageMeter:%d,%d",
+                    config->offset,
+                    config->scale
                 );
             }
         break;

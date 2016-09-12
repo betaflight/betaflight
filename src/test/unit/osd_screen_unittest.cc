@@ -37,7 +37,7 @@ extern "C" {
     #include "drivers/adc.h"
     #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
-    #include "sensors/current.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/voltage.h"
     #include "sensors/battery.h"
     #include "osd/fc_state.h"
@@ -68,7 +68,7 @@ extern "C" {
 
     fcStatus_t fcStatus;
 
-    currentMeter_t currentMeter;
+    amperageMeter_t amperageMeter;
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 }
@@ -211,7 +211,7 @@ TEST_F(OsdScreenTest, TestOsdElement_ArmedDuration)
 TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
 {
     // given
-    currentMeter.mAhDrawn = 99999;
+    amperageMeter.mAhDrawn = 99999;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_MAH_DRAWN
@@ -231,7 +231,7 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
 TEST_F(OsdScreenTest, TestOsdElement_Amperage)
 {
     // given
-    currentMeter.amperage = 9876;
+    amperageMeter.amperage = 9876;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_AMPERAGE
@@ -484,9 +484,9 @@ extern "C" {
         return testVoltages[src];
     }*/
 
-    currentMeter_t *getCurrentMeter(currentMeterIndex_e index) {
+    amperageMeter_t *getAmperageMeter(amperageMeter_e index) {
         UNUSED(index);
-        return &currentMeter;
+        return &amperageMeter;
     }
 
     uint32_t millis(void) { return testMillis; }

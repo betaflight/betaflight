@@ -779,8 +779,8 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
-        if (init->useCurrentMeterADC && timerHardwarePtr->gpio == CURRENT_METER_ADC_GPIO && timerHardwarePtr->pin == CURRENT_METER_ADC_GPIO_PIN) {
+#ifdef AMPERAGE_METER_ADC_GPIO
+        if (init->useCurrentMeterADC && timerHardwarePtr->gpio == AMPERAGE_METER_ADC_GPIO && timerHardwarePtr->pin == AMPERAGE_METER_ADC_GPIO_PIN) {
             continue;
         }
 #endif

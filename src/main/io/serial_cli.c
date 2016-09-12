@@ -73,7 +73,6 @@
 #include "rx/spektrum.h"
 
 #include "sensors/voltage.h"
-#include "sensors/current.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -109,6 +108,7 @@
 #include "common/printf.h"
 
 #include "serial_cli.h"
+#include "../sensors/amperage.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
@@ -204,7 +204,7 @@ static const char * const mixerNames[] = {
 static const char * const featureNames[] = {
     "RX_PPM", "VBAT", "INFLIGHT_ACC_CAL", "RX_SERIAL", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
-    "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
+    "SONAR", "TELEMETRY", "AMPERAGE_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "ONESHOT125",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", NULL
 };
@@ -363,7 +363,7 @@ static const char * const lookupTableGPSSBASMode[] = {
 };
 #endif
 
-static const char * const lookupTableCurrentMeter[] = {
+static const char * const lookupTableAmperageMeter[] = {
     "ADC", "VIRTUAL"
 };
 
@@ -423,7 +423,7 @@ typedef enum {
 #ifdef BLACKBOX
     TABLE_BLACKBOX_DEVICE,
 #endif
-    TABLE_CURRENT_METER,
+    TABLE_AMPERAGE_METER,
     TABLE_GIMBAL_MODE,
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
@@ -443,7 +443,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef BLACKBOX
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
 #endif
-    { lookupTableCurrentMeter, sizeof(lookupTableCurrentMeter) / sizeof(char *) },
+    { lookupTableAmperageMeter, sizeof(lookupTableAmperageMeter) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
@@ -598,10 +598,10 @@ const clivalue_t valueTable[] = {
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmaxcellvoltage)},
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatmincellvoltage)},
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  50 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatwarningcellvoltage)},
-    { "current_meter_scale",        VAR_INT16  | MASTER_VALUE, .config.minmax = { -10000,  10000 } , PG_CURRENT_METER_CONFIG, offsetof(currentMeterConfig_t, currentMeterScale)},
-    { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  3300 } , PG_CURRENT_METER_CONFIG, offsetof(currentMeterConfig_t, currentMeterOffset)},
-    { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MSP_SERVER_CONFIG, offsetof(mspServerConfig_t, multiwiiCurrentMeterOutput)},
-    { "current_meter_source",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_CURRENT_METER } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, currentMeterSource)},
+    { "amperage_meter_scale",       VAR_INT16  | MASTER_VALUE, .config.minmax = { -10000,  10000 } , PG_AMPERAGE_METER_CONFIG, offsetof(amperageMeterConfig_t, scale)},
+    { "amperage_meter_offset",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  3300 } , PG_AMPERAGE_METER_CONFIG, offsetof(amperageMeterConfig_t, offset)},
+    { "multiwii_amperage_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MSP_SERVER_CONFIG, offsetof(mspServerConfig_t, multiwiiCurrentMeterOutput)},
+    { "amperage_meter_source",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AMPERAGE_METER } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, amperageMeterSource)},
 
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, gyro_align)},
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, acc_align)},

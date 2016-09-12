@@ -69,7 +69,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
     #include "sensors/voltage.h"
-    #include "sensors/current.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/battery.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -97,7 +97,7 @@ extern "C" {
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
-    PG_REGISTER_ARR(currentMeterConfig_t, MAX_CURRENT_METERS, currentMeterConfig, PG_CURRENT_METER_CONFIG, 0);
+    PG_REGISTER_ARR(amperageMeterConfig_t, MAX_AMPERAGE_METERS, amperageMeterConfig, PG_AMPERAGE_METER_CONFIG, 0);
 
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
@@ -483,7 +483,7 @@ TEST_F(MspTest, TestMspCommands)
 
 // STUBS
 extern "C" {
-currentMeter_t currentMeter;
+amperageMeter_t amperageMeter;
 //
 mspPostProcessFuncPtr mspPostProcessFn = NULL;
 // from acceleration.c
@@ -590,7 +590,7 @@ void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }
 bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
 
-currentMeter_t *getCurrentMeter(currentMeterIndex_e index) { UNUSED(index); return &currentMeter; }
+amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
 batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
 uint16_t getVoltage(uint8_t ) { return 0; }
 }

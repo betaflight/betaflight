@@ -31,48 +31,48 @@
 #include "config/parameter_group_ids.h"
 #include "config/config_reset.h"
 
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 
-currentMeter_t currentMeters[MAX_CURRENT_METERS];
+amperageMeter_t amperageMeters[MAX_AMPERAGE_METERS];
 
-PG_REGISTER_ARR_WITH_RESET_FN(currentMeterConfig_t, MAX_CURRENT_METERS, currentMeterConfig, PG_CURRENT_METER_CONFIG, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(amperageMeterConfig_t, MAX_AMPERAGE_METERS, amperageMeterConfig, PG_AMPERAGE_METER_CONFIG, 0);
 
-void pgResetFn_currentMeterConfig(currentMeterConfig_t *instance)
+void pgResetFn_amperageMeterConfig(amperageMeterConfig_t *instance)
 {
-    for (int i = 0; i < MAX_CURRENT_METERS; i++) {
-        if (i == CURRENT_METER_ADC) {
-            RESET_CONFIG(currentMeterConfig_t, &instance[i],
-                .currentMeterScale = 400, // for Allegro ACS758LCB-100U (40mV/A)
+    for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
+        if (i == AMPERAGE_METER_ADC) {
+            RESET_CONFIG(amperageMeterConfig_t, &instance[i],
+                .scale = 400, // for Allegro ACS758LCB-100U (40mV/A)
             );
         }
     }
 }
 
 #define ADCVREF 3300   // in mV
-int32_t currentSensorToCentiamps(const uint16_t src, currentMeterConfig_t *config)
+int32_t amperageSensorToCentiamps(const uint16_t src, amperageMeterConfig_t *config)
 {
     int32_t millivolts;
 
     millivolts = ((uint32_t)src * ADCVREF) / 4096;
-    millivolts -= config->currentMeterOffset;
+    millivolts -= config->offset;
 
-    return (millivolts * 1000) / (int32_t)config->currentMeterScale; // current in 0.01A steps
+    return (millivolts * 1000) / (int32_t)config->scale; // amperage in 0.01A steps
 }
 
-void currentUpdateMeter(int32_t lastUpdateAt)
+void amperageUpdateMeter(int32_t lastUpdateAt)
 {
-#ifndef ADC_CURRENT
+#ifndef ADC_AMPERAGE
     UNUSED(lastUpdateAt);
 #else
     static int32_t amperageRaw = 0;
     static int64_t mAhdrawnRaw = 0;
     static uint16_t amperageLatestADC;     // most recent raw reading from current ADC
 
-    currentMeter_t *state = &currentMeters[CURRENT_METER_ADC];
+    amperageMeter_t *state = &amperageMeters[AMPERAGE_METER_ADC];
 
     amperageRaw -= amperageRaw / 8;
-    amperageRaw += amperageLatestADC = adcGetChannel(ADC_CURRENT);
-    state->amperage = currentSensorToCentiamps(amperageRaw / 8, currentMeterConfig(CURRENT_METER_ADC));
+    amperageRaw += amperageLatestADC = adcGetChannel(ADC_AMPERAGE);
+    state->amperage = amperageSensorToCentiamps(amperageRaw / 8, amperageMeterConfig(AMPERAGE_METER_ADC));
 
     mAhdrawnRaw += (MAX(0, state->amperage) * lastUpdateAt) / 1000;
     state->mAhDrawn = mAhdrawnRaw / (3600 * 100);
@@ -80,20 +80,20 @@ void currentUpdateMeter(int32_t lastUpdateAt)
 }
 
 
-void currentUpdateVirtualMeter(int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
+void amperageUpdateVirtualMeter(int32_t lastUpdateAt, bool armed, bool throttleLowAndMotorStop, int32_t throttleOffset)
 {
     static int64_t mAhdrawnRaw = 0;
     int32_t throttleFactor = 0;
 
-    currentMeter_t *state = &currentMeters[CURRENT_METER_VIRTUAL];
+    amperageMeter_t *state = &amperageMeters[AMPERAGE_METER_VIRTUAL];
 
-    state->amperage = (int32_t)currentMeterConfig(CURRENT_METER_VIRTUAL)->currentMeterOffset;
+    state->amperage = (int32_t)amperageMeterConfig(AMPERAGE_METER_VIRTUAL)->offset;
     if (armed) {
         if (throttleLowAndMotorStop) {
             throttleOffset = 0;
         }
         throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-        state->amperage += throttleFactor * (int32_t)currentMeterConfig(CURRENT_METER_VIRTUAL)->currentMeterScale  / 1000;
+        state->amperage += throttleFactor * (int32_t)amperageMeterConfig(AMPERAGE_METER_VIRTUAL)->scale  / 1000;
     }
 
     mAhdrawnRaw += (MAX(0, state->amperage) * lastUpdateAt) / 1000;
@@ -101,11 +101,11 @@ void currentUpdateVirtualMeter(int32_t lastUpdateAt, bool armed, bool throttleLo
 }
 
 
-currentMeter_t *getCurrentMeter(currentMeterIndex_e  index)
+amperageMeter_t *getAmperageMeter(amperageMeter_e  index)
 {
-    return &currentMeters[index];
+    return &amperageMeters[index];
 }
 
-void currentMeterInit(void)
+void amperageMeterInit(void)
 {
 }

@@ -39,8 +39,8 @@
 #include "io/beeper.h"
 
 #include "sensors/voltage.h"
-#include "sensors/current.h"
 #include "sensors/battery.h"
+#include "amperage.h"
 
 #define VBATT_PRESENT_THRESHOLD_MV    10
 
@@ -154,7 +154,7 @@ uint8_t batteryCapacityRemainingPercentage(void)
 {
     uint16_t batteryCapacity = batteryConfig()->batteryCapacity;
 
-    currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
     return constrain((batteryCapacity - constrain(state->mAhDrawn, 0, 0xFFFF)) * 100.0f / batteryCapacity , 0, 100);
 }

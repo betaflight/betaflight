@@ -313,7 +313,7 @@ FC_COMMON_SRC = \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/voltage.c \
-		   sensors/current.c \
+		   sensors/amperage.c \
 		   sensors/boardalignment.c \
 		   sensors/compass.c \
 		   sensors/gyro.c \

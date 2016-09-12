@@ -25,7 +25,7 @@ extern "C" {
     #include "common/filter.h"
 
     #include "sensors/voltage.h"
-    #include "sensors/current.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/battery.h"
 
     #include "io/beeper.h"
@@ -35,7 +35,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 uint16_t currentVoltage;
-currentMeter_t *currentMeter;
+amperageMeter_t *amperageMeter;
 
 typedef struct batteryAdcToBatteryStateExpectation_s
 {
@@ -51,7 +51,7 @@ TEST(BatteryTest, BatteryStateAndHysteresis)
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
         .batteryCapacity = 0,    // UNUSED
-        .currentMeterSource = 0  // UNUSED
+        .amperageMeterSource = 0  // UNUSED
     };
 
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
@@ -110,7 +110,7 @@ TEST(BatteryTest, LipoCellCount)
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
         .batteryCapacity = 0,    // UNUSED
-        .currentMeterSource = 0  // UNUSED
+        .amperageMeterSource = 0  // UNUSED
     };
 
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
@@ -245,10 +245,10 @@ void beeper(beeperMode_e mode)
 
 void voltageMeterUpdate(void) {}
 
-currentMeter_t *getCurrentMeter(currentMeterIndex_e  index)
+amperageMeter_t *getAmperageMeter(amperageMeter_e  index)
 {
     UNUSED(index);
-    return currentMeter;
+    return amperageMeter;
 }
 
 

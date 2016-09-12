@@ -52,7 +52,7 @@
 #include "io/gps.h"
 #include "rx/rx.h"
 
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 

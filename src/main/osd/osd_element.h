@@ -21,7 +21,7 @@ enum osdElementIds_e {
     OSD_ELEMENT_ON_DURATION = 1,
     OSD_ELEMENT_ARMED_DURATION = 2,
 
-    // current
+    // amperage
     OSD_ELEMENT_MAH_DRAWN = 3,
     OSD_ELEMENT_AMPERAGE = 4,
 

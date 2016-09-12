@@ -55,7 +55,7 @@ extern "C" {
     #include "sensors/barometer.h"
     #include "sensors/compass.h"
     #include "sensors/gyro.h"
-    #include "sensors/current.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/voltage.h"
     #include "sensors/battery.h"
     #include "sensors/boardalignment.h"
@@ -100,7 +100,7 @@ extern "C" {
     PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);
     PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
-    PG_REGISTER_ARR(currentMeterConfig_t, MAX_CURRENT_METERS, currentMeterConfig, PG_CURRENT_METER_CONFIG, 0);
+    PG_REGISTER_ARR(amperageMeterConfig_t, MAX_AMPERAGE_METERS, amperageMeterConfig, PG_AMPERAGE_METER_CONFIG, 0);
     PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
     PG_REGISTER_ARR(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
@@ -362,8 +362,8 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
     EXPECT_EQ(MAG_DEFAULT, sensorSelectionConfig()->mag_hardware);   // default/autodetect
     EXPECT_EQ(BARO_DEFAULT, sensorSelectionConfig()->baro_hardware); // default/autodetect
 
-    for (int i = 0; i < MAX_CURRENT_METERS; i++) {
-        EXPECT_EQ(0, currentMeterConfig(i)->currentMeterOffset);
+    for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
+        EXPECT_EQ(0, amperageMeterConfig(i)->offset);
     }
     EXPECT_EQ(0, batteryConfig()->batteryCapacity);
 

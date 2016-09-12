@@ -42,7 +42,7 @@ extern "C" {
 
     #include "sensors/sensors.h"
     #include "sensors/voltage.h"
-    #include "sensors/current.h"
+    #include "../../main/sensors/amperage.h"
     #include "sensors/battery.h"
 
     #include "telemetry/telemetry.h"
@@ -53,7 +53,7 @@ extern "C" {
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
 
-    currentMeter_t currentMeter;
+    amperageMeter_t amperageMeter;
 }
 
 #include "unittest_macros.h"
@@ -251,9 +251,9 @@ batteryState_e getBatteryState(void) {
 	return BATTERY_OK;
 }
 
-currentMeter_t *getCurrentMeter(currentMeterIndex_e index) {
+amperageMeter_t *getAmperageMeter(amperageMeter_e index) {
     UNUSED(index);
-    return &currentMeter;
+    return &amperageMeter;
 }
 }
 

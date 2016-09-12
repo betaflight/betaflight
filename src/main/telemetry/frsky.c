@@ -49,7 +49,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
-#include "sensors/current.h"
+#include "../sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "io/serial.h"
@@ -413,7 +413,7 @@ static void sendVoltageAmp(void)
 
 static void sendAmperage(void)
 {
-    currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
     sendDataHead(ID_CURRENT);
     serialize16((uint16_t)(state->amperage / 10));
@@ -427,7 +427,7 @@ static void sendFuelLevel(void)
     if (batteryConfig()->batteryCapacity > 0) {
         serialize16((uint16_t)batteryCapacityRemainingPercentage());
     } else {
-        currentMeter_t *state = getCurrentMeter(batteryConfig()->currentMeterSource);
+        amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
         serialize16((uint16_t)constrain(state->mAhDrawn, 0, 0xFFFF));
     }
 }

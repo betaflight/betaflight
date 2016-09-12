@@ -78,7 +78,7 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 #include "sensors/voltage.h"
 #include "sensors/battery.h"
 #include "sensors/sonar.h"
@@ -628,16 +628,16 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_ANALOG: {
-            currentMeter_t *currentMeter = getCurrentMeter(batteryConfig()->currentMeterSource);
+            amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(currentMeter->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             sbufWriteU16(dst, rssi);
 
             if (mspServerConfig()->multiwiiCurrentMeterOutput) {
-                sbufWriteU16(dst, (uint16_t)constrain(currentMeter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+                sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
             } else {
-                sbufWriteU16(dst, (int16_t)constrain(currentMeter->amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+                sbufWriteU16(dst, (int16_t)constrain(amperageMeter->amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             }
             break;
         }
@@ -830,8 +830,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_CURRENT_METER_CONFIG:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterScale);
-                sbufWriteU16(dst, currentMeterConfig(i)->currentMeterOffset);
+                sbufWriteU16(dst, amperageMeterConfig(i)->scale);
+                sbufWriteU16(dst, amperageMeterConfig(i)->offset);
             }
             break;
 
@@ -840,7 +840,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
             sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
             sbufWriteU16(dst, batteryConfig()->batteryCapacity);
-            sbufWriteU8(dst, batteryConfig()->currentMeterSource);
+            sbufWriteU8(dst, batteryConfig()->amperageMeterSource);
             break;
 
         case MSP_MIXER:
@@ -975,12 +975,12 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_BATTERY_STATES:
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(getCurrentMeter(batteryConfig()->currentMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(getAmperageMeter(batteryConfig()->amperageMeterSource)->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             break;
 
         case MSP_CURRENT_METERS:
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                currentMeter_t *meter = getCurrentMeter(i);
+                amperageMeter_t *meter = getAmperageMeter(i);
                 // write out amperage, once for each current meter.
                 sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
                 // TODO add mahDrawn
@@ -1359,12 +1359,12 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_SET_CURRENT_METER_CONFIG: {
             int index = sbufReadU8(src);
 
-            if (index >= MAX_CURRENT_METERS) {
+            if (index >= MAX_AMPERAGE_METERS) {
                 return -1;
             }
 
-            currentMeterConfig(index)->currentMeterScale = sbufReadU16(src);
-            currentMeterConfig(index)->currentMeterOffset = sbufReadU16(src);
+            amperageMeterConfig(index)->scale = sbufReadU16(src);
+            amperageMeterConfig(index)->offset = sbufReadU16(src);
             break;
         }
 
@@ -1373,7 +1373,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
             batteryConfig()->batteryCapacity = sbufReadU16(src);
-            batteryConfig()->currentMeterSource = sbufReadU8(src);
+            batteryConfig()->amperageMeterSource = sbufReadU8(src);
             break;
 
 

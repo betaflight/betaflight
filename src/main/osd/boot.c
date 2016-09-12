@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <platform.h>
+#include "../sensors/amperage.h"
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -67,7 +68,6 @@
 #include "io/serial_cli.h"
 
 #include "sensors/voltage.h"
-#include "sensors/current.h"
 #include "sensors/battery.h"
 
 #include "osd/config.h"
@@ -172,7 +172,7 @@ void init(void)
 #endif
 
     drv_adc_config_t adc_params = {
-        .channelMask = ADC_CHANNEL_MASK(ADC_BATTERY) | ADC_CHANNEL_MASK(ADC_CURRENT) | ADC_CHANNEL_MASK(ADC_POWER_12V) | ADC_CHANNEL_MASK(ADC_POWER_5V)
+        .channelMask = ADC_CHANNEL_MASK(ADC_BATTERY) | ADC_CHANNEL_MASK(ADC_AMPERAGE) | ADC_CHANNEL_MASK(ADC_POWER_12V) | ADC_CHANNEL_MASK(ADC_POWER_5V)
     };
 
     adcInit(&adc_params);
@@ -198,7 +198,7 @@ void init(void)
     voltageMeterInit();
     batteryInit();
 
-    currentMeterInit();
+    amperageMeterInit();
 
     LED1_ON;  // FIXME This is a hack to enable the bus switch.
 

@@ -57,7 +57,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 #include "sensors/voltage.h"
-#include "sensors/current.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
@@ -818,19 +818,19 @@ void taskUpdateBattery(void)
         }
     }
 
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_AMPERAGE_METER)) {
         int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
 
-            currentUpdateMeter(ibatTimeSinceLastServiced);
+            amperageUpdateMeter(ibatTimeSinceLastServiced);
 
             throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig(), rcControlsConfig()->deadband3d_throttle);
             bool throttleLowAndMotorStop = (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP));
             int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
 
-            currentUpdateVirtualMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
+            amperageUpdateVirtualMeter(ibatTimeSinceLastServiced, ARMING_FLAG(ARMED), throttleLowAndMotorStop, throttleOffset);
         }
     }
 }
