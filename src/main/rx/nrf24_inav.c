@@ -41,6 +41,7 @@
 
 
 #define USE_AUTO_ACKKNOWLEDGEMENT
+#define USE_WHITENING
 
 /*
  * iNav Protocol
@@ -78,6 +79,12 @@
  *    Channels AUX11 and AUX12 are analog channels, values 1000 to 2000 with resolution of 4 (8-bit channels)
  * c) For 18 byte payload there are 18 channels, the first 16 channelsar are as for 16 byte payload, and then there are two
  *    additional channels: AUX13 and AUX14 both with resolution of 4 (8-bit channels)
+ *
+ * Intercepting packets
+ *
+ * Packets are designed to be intercepted by a second receiver. So a second receiver could, for example intercept the
+ * ACK packets and use the GPS telemetry to display the position of the aircraft on a map, or to control a camera gimbal
+ * to point at the aircraft.
  */
 
 #define RC_CHANNEL_COUNT 16 // standard variant of the protocol has 16 RC channels
@@ -105,10 +112,15 @@ typedef enum {
 STATIC_UNIT_TESTED protocol_state_t protocolState;
 
 STATIC_UNIT_TESTED uint8_t ackPayload[NRF24L01_MAX_PAYLOAD_SIZE];
-#define BIND_PAYLOAD0 0xae // 10101110
-#define BIND_PAYLOAD1 0xc9 // 11001001
-#define BIND_ACK_PAYLOAD0 0x83 // 10000111
-#define BIND_ACK_PAYLOAD1 0xa5 // 10100101
+#define BIND_PAYLOAD_SIZE       16
+#define BIND_PAYLOAD0           0xad // 10101101
+#define BIND_PAYLOAD1           0xc9 // 11001001
+#define BIND_ACK_PAYLOAD0       0x95 // 10010101
+#define BIND_ACK_PAYLOAD1       0xa9 // 10101001
+#define TELEMETRY_ACK_PAYLOAD0  0x5a // 01011010
+// TELEMETRY_ACK_PAYLOAD1 is sequence count
+#define DATA_PAYLOAD0           0x00
+#define DATA_PAYLOAD1           0x00
 
 #define INAV_PROTOCOL_PAYLOAD_SIZE_MIN 8
 #define INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT 16
@@ -133,6 +145,26 @@ STATIC_UNIT_TESTED uint8_t inavRfChannels[INAV_RF_CHANNEL_COUNT_MAX];
 
 static uint32_t timeOfLastHop;
 static const uint32_t hopTimeout = 5000; // 5ms
+
+static void whitenPayload(uint8_t *payload, uint8_t len)
+{
+#ifdef USE_WHITENING
+    uint8_t whitenCoeff = 0x6b; // 01101011
+    while (len--) {
+        for (uint8_t m = 1; m; m <<= 1) {
+            if (whitenCoeff & 0x80) {
+                whitenCoeff ^= 0x11;
+                (*payload) ^= m;
+            }
+            whitenCoeff <<= 1;
+        }
+        payload++;
+    }
+#else
+    UNUSED(payload);
+    UNUSED(len);
+#endif
+}
 
 STATIC_UNIT_TESTED bool inavCheckBindPacket(const uint8_t *payload)
 {
@@ -264,8 +296,9 @@ static void inavSetBound(void)
 #endif
 }
 
-static void writeAckPayload(const uint8_t *data, uint8_t length)
+static void writeAckPayload(uint8_t *data, uint8_t length)
 {
+    whitenPayload(data, length);
     NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_MAX_RT));
     NRF24L01_WriteAckPayload(data, length, NRF24L01_PIPE0);
 }
@@ -277,8 +310,9 @@ static void writeTelemetryAckPayload(void)
     static uint8_t sequenceNumber = 0;
     static ltm_frame_e ltmFrameType = LTM_FRAME_START;
 
-    ackPayload[0] = sequenceNumber++;
-    const int ackPayloadSize = getLtmFrame(&ackPayload[1], ltmFrameType) + 1;
+    ackPayload[0] = TELEMETRY_ACK_PAYLOAD0;
+    ackPayload[1] = sequenceNumber++;
+    const int ackPayloadSize = getLtmFrame(&ackPayload[2], ltmFrameType) + 2;
 
     ++ltmFrameType;
     if (ltmFrameType > LTM_FRAME_COUNT) {
@@ -286,9 +320,9 @@ static void writeTelemetryAckPayload(void)
     }
     writeAckPayload(ackPayload, ackPayloadSize);
 #ifdef DEBUG_NRF24_INAV
-    debug[1] = ackPayload[0]; // sequenceNumber
-    debug[2] = ackPayload[1]; // frame type, 'A', 'S' etc
-    debug[3] = ackPayload[2]; // pitch for AFrame
+    debug[1] = ackPayload[1]; // sequenceNumber
+    debug[2] = ackPayload[2]; // frame type, 'A', 'S' etc
+    debug[3] = ackPayload[3]; // pitch for AFrame
 #endif
 #endif
 }
@@ -296,23 +330,24 @@ static void writeTelemetryAckPayload(void)
 static void writeBindAckPayload(uint8_t *payload)
 {
 #ifdef USE_AUTO_ACKKNOWLEDGEMENT
+    memcpy(ackPayload, payload, BIND_PAYLOAD_SIZE);
     // send back the payload with the first two bytes set to zero as the ack
-    payload[0] = BIND_ACK_PAYLOAD0;
-    payload[1] = BIND_ACK_PAYLOAD1;
+    ackPayload[0] = BIND_ACK_PAYLOAD0;
+    ackPayload[1] = BIND_ACK_PAYLOAD1;
     // respond to request for rfChannelCount;
-    payload[7] = inavRfChannelHoppingCount;
+    ackPayload[7] = inavRfChannelHoppingCount;
     // respond to request for payloadSize
     switch (payloadSize) {
     case INAV_PROTOCOL_PAYLOAD_SIZE_MIN:
     case INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT:
     case INAV_PROTOCOL_PAYLOAD_SIZE_MAX:
-        payload[8] = payloadSize;
+        ackPayload[8] = payloadSize;
         break;
     default:
-        payload[8] = INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT;
+        ackPayload[8] = INAV_PROTOCOL_PAYLOAD_SIZE_DEFAULT;
         break;
     }
-    writeAckPayload(payload, payloadSize);
+    writeAckPayload(ackPayload, BIND_PAYLOAD_SIZE);
 #else
     UNUSED(payload);
 #endif
@@ -329,6 +364,7 @@ rx_spi_received_e inavNrf24DataReceived(uint8_t *payload)
     switch (protocolState) {
     case STATE_BIND:
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
+            whitenPayload(payload, payloadSize);
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
                 ret = RX_SPI_RECEIVED_BIND;
@@ -342,6 +378,7 @@ rx_spi_received_e inavNrf24DataReceived(uint8_t *payload)
         timeNowUs = micros();
         // read the payload, processing of payload is deferred
         if (NRF24L01_ReadPayloadIfAvailable(payload, payloadSize)) {
+            whitenPayload(payload, payloadSize);
             receivedPowerSnapshot = NRF24L01_ReadReg(NRF24L01_09_RPD); // set to 1 if received power > -64dBm
             const bool bindPacket = inavCheckBindPacket(payload);
             if (bindPacket) {
