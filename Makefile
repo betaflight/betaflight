@@ -67,6 +67,23 @@ INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target
 
+## Build tools, so we all share the same versions
+# import macros common to all supported build systems
+include $(ROOT)/make/system-id.mk
+
+# configure some directories that are relative to wherever ROOT_DIR is located
+TOOLS_DIR := $(ROOT)/tools
+BUILD_DIR := $(ROOT)/build
+DL_DIR := $(ROOT)/downloads
+
+export RM := rm
+
+# import macros that are OS specific
+include $(ROOT)/make/$(OSFAMILY).mk
+
+# include the tools makefile
+include $(ROOT)/make/tools.mk
+
 # default xtal value for F4 targets
 HSE_VALUE       = 8000000
 
@@ -572,9 +589,10 @@ CCACHE :=
 endif
 
 # Tool names
-CC          := $(CCACHE) arm-none-eabi-gcc
-OBJCOPY     := arm-none-eabi-objcopy
-SIZE        := arm-none-eabi-size
+CC          := $(CCACHE) $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc
+CPP         := $(CCACHE) $(ARM_SDK_DIR)/bin/arm-none-eabi-g++
+OBJCOPY     := $(ARM_SDK_DIR)/bin/arm-none-eabi-objcopy
+SIZE        := $(ARM_SDK_DIR)/bin/arm-none-eabi-size
 
 #
 # Tool options.
@@ -759,6 +777,16 @@ cppcheck: $(CSOURCES)
 
 cppcheck-result.xml: $(CSOURCES)
 	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+
+## mkdirs
+$(DL_DIR):
+	mkdir -p $@
+
+$(TOOLS_DIR):
+	mkdir -p $@
+
+$(BUILD_DIR):
+	mkdir -p $@
 
 ## help              : print this help message and exit
 help: Makefile
