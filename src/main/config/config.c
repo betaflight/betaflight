@@ -308,7 +308,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_500000;
         serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
         serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
         serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
