@@ -446,6 +446,8 @@ MspHelper.prototype.process_data = function(dataHandler) {
                                        '115200',
                                        '230400',
                                        '250000',
+                                       '500000',
+                                       '1000000'
                                    ];
             if (semver.lt(CONFIG.apiVersion, "1.6.0")) {
                 SERIAL_CONFIG.ports = [];
@@ -1046,6 +1048,8 @@ MspHelper.prototype.crunch = function(code) {
                                        '115200',
                                        '230400',
                                        '250000',
+                                       '500000',
+                                       '1000000'
                                    ]; //TODO, instead of lookuptable, this should be sent as uint32
             var serialPortFunctions = {
                 'MSP': 0,
@@ -1205,17 +1209,29 @@ MspHelper.prototype.setRawRx = function(channels) {
  * Send a request to read a block of data from the dataflash at the given address and pass that address and a dataview
  * of the returned data to the given callback (or null for the data if an error occured).
  */
-MspHelper.prototype.dataflashRead = function(address, onDataCallback) {
-    MSP.send_message(MSPCodes.MSP_DATAFLASH_READ, [address & 0xFF, (address >> 8) & 0xFF, (address >> 16) & 0xFF, (address >> 24) & 0xFF], 
-            false, function(response) {
+MspHelper.prototype.dataflashRead = function(address, blockSize, onDataCallback) {
+    var outData = [address & 0xFF, (address >> 8) & 0xFF, (address >> 16) & 0xFF, (address >> 24) & 0xFF];
+
+    if (semver.gte(CONFIG.flightControllerVersion, "3.1.0")) {
+        outData = outData.concat([blockSize & 0xFF, (blockSize >> 8) & 0xFF]);
+    }
+
+    MSP.send_message(MSPCodes.MSP_DATAFLASH_READ, outData, false, function(response) {
         var chunkAddress = response.data.readU32();
-        
+
+        var headerSize = 4;
+        var dataSize = response.data.buffer.byteLength - headerSize;
+        if (semver.gte(CONFIG.flightControllerVersion, "3.1.0")) {
+            headerSize = headerSize + 2;
+            dataSize = response.data.readU16();
+        }
+
         // Verify that the address of the memory returned matches what the caller asked for
         if (chunkAddress == address) {
             /* Strip that address off the front of the reply and deliver it separately so the caller doesn't have to
              * figure out the reply format:
              */
-            onDataCallback(address, new DataView(response.data.buffer, response.data.byteOffset + 4, response.data.buffer.byteLength - 4));
+            onDataCallback(address, new DataView(response.data.buffer, response.data.byteOffset + headerSize, dataSize));
         } else {
             // Report error
             onDataCallback(address, null);
