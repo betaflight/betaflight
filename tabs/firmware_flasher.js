@@ -117,6 +117,7 @@ TABS.firmware_flasher.initialize = function (callback) {
             chrome.storage.local.get('selected_board', function (result) {
                 if (result.selected_board) {
                     $('select[name="board"]').val(result.selected_board);
+                    $('select[name="board"]').trigger("change");
                 }
             });
         };
