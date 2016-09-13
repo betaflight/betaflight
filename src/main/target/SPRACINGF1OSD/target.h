@@ -122,6 +122,8 @@
 
 #define MAX_VOLTAGE_METERS 3
 
+#define BOARD_HAS_AMPERAGE_METER
+
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

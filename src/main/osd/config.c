@@ -45,6 +45,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/amperage.h"
 #include "sensors/acceleration.h"
 
 #include "telemetry/telemetry.h"
@@ -71,6 +72,10 @@
 STATIC_UNIT_TESTED void resetConf(void)
 {
     pgResetAll(MAX_PROFILE_COUNT);
+
+#ifdef BOARD_HAS_AMPERAGE_METER
+    batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
+#endif
 }
 
 static void activateConfig(void)

@@ -95,9 +95,14 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
-    // only enable the VBAT feature by default if the board has a voltage divider otherwise
-    // the user may see incorrect readings and unexpected issues with pin mappings may occur.
+    // only enable the feature by default if the board has supporting hardware
     featureSet(FEATURE_VBAT);
+#endif
+
+#ifdef BOARD_HAS_AMPERAGE_METER
+    // only enable the feature by default if the board has supporting hardware
+    featureSet(FEATURE_AMPERAGE_METER);
+    batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
 #endif
 
 #if defined(COLIBRI_RACE)
