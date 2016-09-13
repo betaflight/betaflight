@@ -53,6 +53,7 @@
 #include "rx/rx.h"
 
 #include "sensors/voltage.h"
+#include "sensors/amperage.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
