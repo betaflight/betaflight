@@ -50,7 +50,7 @@ When SOFTSERIAL is enabled, LED_STRIP and CURRENT_METER are unavailable, but two
 + Remove the short on the board
 
 ### Cleanflight configurator
-+ Select the correct hardware and the desired release of the Clearflight firmware
++ Select the correct hardware and the desired release of the Cleanflight firmware
 + Put a check in the "No reboot sequence" 
 + Flash firmware
 
