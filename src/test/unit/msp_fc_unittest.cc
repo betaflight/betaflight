@@ -595,6 +595,8 @@ void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }
 bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
+void osdApplyConfiguration(void) {}
+
 amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
 batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
 voltageMeterState_t *getVoltageMeter(uint8_t ) { return &voltageMeter; }
