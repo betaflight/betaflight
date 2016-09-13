@@ -59,16 +59,16 @@ Open the Cygwin-Terminal, navigate to your development folder and use the git co
 
 ```bash
 cd /cygdrive/c/dev
-git clone https://github.com/cleanflight/cleanflight.git
+git clone https://github.com/iNavFlight/inav
 ```
 ![GIT Checkout](assets/011.git_checkout.png)
 
 ![GIT Checkout](assets/012.git_checkout.png)
 
-To compile your INAV binaries, enter the cleanflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
+To compile your INAV binaries, enter the inav directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
 
 ```bash
-cd cleanflight
+cd inav
 make TARGET=NAZE
 ```
 
@@ -84,14 +84,14 @@ arm-none-eabi-size ./obj/main/cleanflight_NAZE.elf
 arm-none-eabi-objcopy -O ihex --set-start 0x8000000 obj/main/cleanflight_NAZE.elf obj/cleanflight_NAZE.hex
 ```
 
-You can use the INAV-Configurator to flash the ```obj/cleanflight_NAZE.hex``` file.
+You can use the INAV-Configurator to flash the ```obj/inav_NAZE.hex``` file.
 
 ## Updating and rebuilding
 
 Navigate to the local cleanflight repository and use the following steps to pull the latest changes and rebuild your version of cleanflight:
 
 ```bash
-cd /cygdrive/c/dev/cleanflight
+cd /cygdrive/c/dev/inav
 git reset --hard
 git pull
 make clean TARGET=NAZE
