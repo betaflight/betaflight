@@ -68,7 +68,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
 
 void batteryUpdate(void)
 {
-    vbat = getVoltage(ADC_BATTERY);
+    vbat = getVoltageForADCChannel(ADC_BATTERY);
 
     /* battery has just been connected*/
     if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
@@ -82,7 +82,7 @@ void batteryUpdate(void)
         delay(VBATTERY_STABLE_DELAY);
         voltageMeterUpdate();
 
-        uint16_t vbatLatestVoltage = getLatestVoltage(ADC_BATTERY);
+        uint16_t vbatLatestVoltage = getLatestVoltageForADCChannel(ADC_BATTERY);
 
         unsigned cells = (vbatLatestVoltage / batteryConfig()->vbatmaxcellvoltage) + 1;
         if (cells > 8) {

@@ -37,6 +37,8 @@
 #include "config/feature.h"
 #include "config/profile.h"
 
+#include "common/pilot.h"
+
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -992,7 +994,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_VOLTAGE_METERS:
             // write out voltage, once for each meter.
             for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
-                uint16_t voltage = getVoltage(i);
+                uint16_t voltage = getVoltageMeter(i)->vbat;
                 sbufWriteU8(dst, (uint8_t)constrain(voltage, 0, 255));
             }
             break;

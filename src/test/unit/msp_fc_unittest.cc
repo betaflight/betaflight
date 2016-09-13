@@ -69,7 +69,7 @@ extern "C" {
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
     #include "sensors/voltage.h"
-    #include "../../main/sensors/amperage.h"
+    #include "sensors/amperage.h"
     #include "sensors/battery.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -484,6 +484,7 @@ TEST_F(MspTest, TestMspCommands)
 // STUBS
 extern "C" {
 amperageMeter_t amperageMeter;
+voltageMeterState_t voltageMeter;
 //
 mspPostProcessFuncPtr mspPostProcessFn = NULL;
 // from acceleration.c
@@ -592,6 +593,6 @@ bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
 
 amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
 batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
-uint16_t getVoltage(uint8_t ) { return 0; }
+voltageMeterState_t *getVoltageMeter(uint8_t ) { return &voltageMeter; }
 }
 

@@ -50,7 +50,8 @@ extern voltageMeterState_t voltageMeterStates[MAX_VOLTAGE_METERS];
 void voltageMeterInit(void);
 void voltageMeterUpdate(void);
 
-uint16_t getVoltage(uint8_t channel);
-uint16_t getLatestVoltage(uint8_t channel);
+voltageMeterState_t *getVoltageMeter(uint8_t index);
+uint16_t getVoltageForADCChannel(uint8_t channel);
+uint16_t getLatestVoltageForADCChannel(uint8_t channel);
 
 voltageMeterConfig_t *getVoltageMeterConfig(const uint8_t channel);

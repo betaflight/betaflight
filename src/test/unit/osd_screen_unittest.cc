@@ -476,7 +476,7 @@ TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
 extern "C" {
     uint16_t fcMotors[OSD_MAX_MOTORS];
 
-    uint16_t getVoltage(uint8_t channel) {
+    uint16_t getVoltageForADCChannel(uint8_t channel) {
         return testVoltages[channel];
     }
     /*

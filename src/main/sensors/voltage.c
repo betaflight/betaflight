@@ -84,7 +84,7 @@ voltageMeterConfig_t *getVoltageMeterConfig(const uint8_t channel)
 }
 
 // filtered - uses pre-calculated value
-uint16_t getVoltage(uint8_t channel)
+uint16_t getVoltageForADCChannel(uint8_t channel)
 {
     for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         if (voltageMeterAdcChannelMap[i] == channel) {
@@ -98,8 +98,13 @@ uint16_t getVoltage(uint8_t channel)
     return 0;
 }
 
+voltageMeterState_t *getVoltageMeter(uint8_t index)
+{
+    return &voltageMeterStates[index];
+}
+
 // unfiltered - always recalcualates voltage based on last adc sensor reading
-uint16_t getLatestVoltage(uint8_t channel)
+uint16_t getLatestVoltageForADCChannel(uint8_t channel)
 {
     for (uint8_t i = 0; i < MAX_VOLTAGE_METERS && i < ARRAYLEN(voltageMeterAdcChannelMap); i++) {
         if (voltageMeterAdcChannelMap[i] == channel) {

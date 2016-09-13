@@ -72,7 +72,7 @@ intptr_t osdElementData_voltage5V(void)
 
     voltageAndName = (voltageAndName_t){
         .name = "5V",
-        .voltage = getVoltage(ADC_POWER_5V)
+        .voltage = getVoltageForADCChannel(ADC_POWER_5V)
     };
     return (intptr_t) &voltageAndName;
 }
@@ -81,7 +81,7 @@ intptr_t osdElementData_voltage12V(void)
 {
     voltageAndName = (voltageAndName_t){
         .name = "12V",
-        .voltage = getVoltage(ADC_POWER_12V)
+        .voltage = getVoltageForADCChannel(ADC_POWER_12V)
     };
     return (intptr_t) &voltageAndName;
 }

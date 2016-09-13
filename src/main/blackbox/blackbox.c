@@ -839,7 +839,7 @@ void startBlackbox(void)
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
 
-        vbatReference = getLatestVoltage(ADC_BATTERY);
+        vbatReference = getLatestVoltageForADCChannel(ADC_BATTERY);
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -965,7 +965,7 @@ static void loadMainState(void)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = getLatestVoltage(ADC_BATTERY);
+    blackboxCurrent->vbatLatest = getLatestVoltageForADCChannel(ADC_BATTERY);
 
     amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
     blackboxCurrent->amperageLatest = state->amperage;
