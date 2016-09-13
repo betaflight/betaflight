@@ -403,6 +403,7 @@ COMMON_SRC = \
             common/typeconversion.c \
             config/config.c \
             config/config_eeprom.c \
+            config/feature.c \
             fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \

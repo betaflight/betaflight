@@ -81,6 +81,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"

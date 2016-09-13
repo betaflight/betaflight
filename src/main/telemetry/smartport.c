@@ -62,6 +62,8 @@
 
 #include "config/config.h"
 #include "config/config_profile.h"
+#include "config/feature.h"
+
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
 

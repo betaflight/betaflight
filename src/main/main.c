@@ -108,6 +108,7 @@
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
