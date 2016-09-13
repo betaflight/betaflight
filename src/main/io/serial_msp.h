@@ -44,8 +44,8 @@ typedef struct mspPort_s {
 } mspPort_t;
 
 struct serialConfig_s;
-void mspInit(struct serialConfig_s *serialConfig);
-void mspProcess(void);
-void mspAllocateSerialPorts(struct serialConfig_s *serialConfig);
+void mspSerialInit(struct serialConfig_s *serialConfig);
+void mspSerialProcess(void);
+void mspSerialAllocatePorts(struct serialConfig_s *serialConfig);
 struct serialPort_s;
-void mspReleasePortIfAllocated(struct serialPort_s *serialPort);
+void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

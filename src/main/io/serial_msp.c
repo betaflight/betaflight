@@ -429,7 +429,7 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
     mspPortToReset->port = serialPort;
 }
 
-void mspAllocateSerialPorts(serialConfig_t *serialConfig)
+void mspSerialAllocatePorts(serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
 
@@ -456,7 +456,7 @@ void mspAllocateSerialPorts(serialConfig_t *serialConfig)
     }
 }
 
-void mspReleasePortIfAllocated(serialPort_t *serialPort)
+void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
     uint8_t portIndex;
     for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
@@ -468,7 +468,7 @@ void mspReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-void mspInit(serialConfig_t *serialConfig)
+void mspSerialInit(serialConfig_t *serialConfig)
 {
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
@@ -567,7 +567,7 @@ void mspInit(serialConfig_t *serialConfig)
 #endif
 
     memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspAllocateSerialPorts(serialConfig);
+    mspSerialAllocatePorts(serialConfig);
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
@@ -1961,7 +1961,7 @@ STATIC_UNIT_TESTED void setCurrentPort(mspPort_t *port)
     mspSerialPort = currentPort->port;
 }
 
-void mspProcess(void)
+void mspSerialProcess(void)
 {
     uint8_t portIndex;
     mspPort_t *candidatePort;
