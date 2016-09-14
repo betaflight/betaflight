@@ -37,6 +37,7 @@
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
@@ -62,6 +63,7 @@
 #include "io/vtx.h"
 
 #include "rx/rx.h"
+#include "rx/rx_spi.h"
 
 #include "telemetry/telemetry.h"
 
@@ -82,6 +84,9 @@
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
+#endif
+#ifndef RX_SPI_DEFAULT_PROTOCOL
+#define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
@@ -454,6 +459,7 @@ void createDefaultConfig(master_t *config)
 #else
     config->rxConfig.serialrx_provider = 0;
 #endif
+    config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
     config->rxConfig.sbus_inversion = 1;
     config->rxConfig.spektrum_sat_bind = 0;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
@@ -720,26 +726,28 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP))) {
+    if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
         featureSet(DEFAULT_RX_FEATURE);
     }
 
     if (featureConfigured(FEATURE_RX_PPM)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
     }
 
     if (featureConfigured(FEATURE_RX_MSP)) {
-        featureClear(FEATURE_RX_SERIAL);
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
     }
 
     if (featureConfigured(FEATURE_RX_SERIAL)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_PPM);
+        featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+    }
+
+    if (featureConfigured(FEATURE_RX_SPI)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
@@ -758,6 +766,20 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_SOFTSERIAL);
     }
 
+#ifdef USE_SOFTSPI
+    if (featureConfigured(FEATURE_SOFTSPI)) {
+        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
+#if defined(STM32F10X)
+        featureClear(FEATURE_LED_STRIP);
+        // rssi adc needs the same ports
+        featureClear(FEATURE_RSSI_ADC);
+        // current meter needs the same ports
+        if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+            featureClear(FEATURE_CURRENT_METER);
+        }
+#endif
+    }
+#endif
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
     if (featureConfigured(FEATURE_SOFTSERIAL) && (

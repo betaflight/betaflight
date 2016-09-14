@@ -67,7 +67,7 @@ typedef struct SPIDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     volatile uint16_t errorCount;
-    bool sdcard;
+    bool leadingEdge;
 } spiDevice_t;
 
 bool spiInit(SPIDevice device);
