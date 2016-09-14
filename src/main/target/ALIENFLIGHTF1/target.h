@@ -26,9 +26,9 @@
 #define BEEPER                  PA12
 
 #define USE_EXTI
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define MAG_INT_EXTI            PC14
 #define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define GYRO
 #define USE_GYRO_MPU6050

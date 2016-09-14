@@ -42,10 +42,9 @@
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
 // MPU6000 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI                PC13
 #define USE_EXTI
+#define MPU_INT_EXTI            PC13
+#define USE_MPU_DATA_READY_SIGNAL
 
 
 #define USE_FLASHFS

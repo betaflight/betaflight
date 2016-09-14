@@ -29,7 +29,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PA3
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 

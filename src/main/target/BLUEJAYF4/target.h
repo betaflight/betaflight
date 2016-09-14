@@ -27,7 +27,6 @@
 #define HW_PIN                  PB2
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define USE_EXTI
 
 #define LED0                    PB6
 #define LED1                    PB5
@@ -41,10 +40,11 @@
 #define INVERTER_USART          USART6
 
 // MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_EXTI
+#define MPU_INT_EXTI            PC5
 #define USE_MPU_DATA_READY_SIGNAL
-//#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-#define MPU_INT_EXTI PC5
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_INSTANCE    SPI1
 

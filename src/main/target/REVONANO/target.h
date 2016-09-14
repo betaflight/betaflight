@@ -57,7 +57,6 @@
 #define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9

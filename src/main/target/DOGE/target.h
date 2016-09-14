@@ -115,12 +115,10 @@
 
 // mpu_int definition in sensors/initialisation.c
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define MPU_INT_EXTI            PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define LED_STRIP
 
