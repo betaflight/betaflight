@@ -110,7 +110,7 @@ $(document).ready(function () {
             $('input.auto_connect').prop('checked', true);
             $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
 
-            $('select#baud').val(500000).prop('disabled', true);
+            $('select#baud').val(115200).prop('disabled', true);
         } else {
             // disabled by user
             GUI.auto_connect = false;
@@ -127,7 +127,7 @@ $(document).ready(function () {
             if (GUI.auto_connect) {
                 $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectEnabled'));
 
-                $('select#baud').val(500000).prop('disabled', true);
+                $('select#baud').val(115200).prop('disabled', true);
             } else {
                 $('input.auto_connect, span.auto_connect').prop('title', chrome.i18n.getMessage('autoConnectDisabled'));
 
