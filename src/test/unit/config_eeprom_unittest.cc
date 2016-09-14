@@ -369,6 +369,7 @@ TEST(ConfigUnittest, TestResetConfigZeroValues)
 
     EXPECT_EQ(0, telemetryConfig()->telemetry_inversion);
     EXPECT_EQ(0, telemetryConfig()->telemetry_switch);
+    EXPECT_EQ(0, telemetryConfig()->telemetry_flvss_cells);
 
     EXPECT_EQ(0, frskyTelemetryConfig()->gpsNoFixLatitude);
     EXPECT_EQ(0, frskyTelemetryConfig()->gpsNoFixLongitude);

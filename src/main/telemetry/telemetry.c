@@ -59,6 +59,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_inversion = DEFAULT_TELEMETRY_INVERSION,
+    .telemetry_flvss_cells = 1,
 );
 
 void telemetryInit(void)
