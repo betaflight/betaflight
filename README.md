@@ -76,7 +76,7 @@ Please subscribe and '+1' the videos if you find them useful.
 ## Configuration Tool
 
 To configure Cleanflight you should use the [Cleanflight-configurator GUI tool](https://chrome.google.com/webstore/detail/cleanflight-configurator/enacoimjcgeinfnnnpajinjgmkahmfgb
-) (Windows/OSX/Linux) that can be found here:
+) (Windows/OSX/Linux).
 
 The source for it is here:
 
@@ -92,9 +92,11 @@ Contributions are welcome and encouraged.  You can contribute in many ways:
 * New features.
 * Telling us your ideas and suggestions.
 
-The best place to start is the IRC channel on freenode (see above), drop in, say hi. Next place is the github issue tracker:
+The best place to start is the IRC channel on freenode (see above), drop in, say hi.
+Next place is the github issue tracker:
 
 https://github.com/cleanflight/cleanflight/issues
+
 https://github.com/cleanflight/cleanflight-configurator/issues
 
 Before creating new issues please check to see if there is an existing one, search first otherwise you waste peoples time when they could be coding instead!
