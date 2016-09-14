@@ -148,18 +148,9 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 {
     float horizonLevelStrength = 0.0f;
     if (FLIGHT_MODE(HORIZON_MODE)) {
-        // Figure out the most deflected stick position
-        const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
-        const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
-        const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
-
-        // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
-        if(pidProfile->D8[PIDLEVEL] == 0){
-            horizonLevelStrength = 0;
-        } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
-        }
+        // (convert 0-100 range to 0.0-1.0 range)
+        horizonLevelStrength = (float)calcHorizonLevelStrength(rxConfig->midrc, pidProfile->horizon_tilt_effect,
+                pidProfile->horizon_tilt_mode, pidProfile->D8[PIDLEVEL]) / 100.0f;
     }
 
     // ----------PID controller----------

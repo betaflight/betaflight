@@ -145,20 +145,12 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    int8_t horizonLevelStrength = 0;
+    int horizonLevelStrength = 0;
     if (FLIGHT_MODE(HORIZON_MODE)) {
-        // Figure out the most deflected stick position
-        const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
-        const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
-        const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
-
-        // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = (500 - mostDeflectedPos) / 5;  // 100 at centre stick, 0 = max stick deflection
-
-        // Using D8[PIDLEVEL] as a Sensitivity for Horizon.
-        // 0 more level to 255 more rate. Default value of 100 seems to work fine.
-        // For more rate mode increase D and slower flips and rolls will be possible
-        horizonLevelStrength = constrain((10 * (horizonLevelStrength - 100) * (10 * pidProfile->D8[PIDLEVEL] / 80) / 100) + 100, 0, 100);
+        // Using Level D as a Sensitivity for Horizon. 0 more rate to 255 more level.
+        // For more rate mode decrease D and slower flips and rolls will be possible
+        horizonLevelStrength = calcHorizonLevelStrength(rxConfig->midrc, pidProfile->horizon_tilt_effect,
+                pidProfile->horizon_tilt_mode, pidProfile->D8[PIDLEVEL]);
     }
 
     // ----------PID controller----------
