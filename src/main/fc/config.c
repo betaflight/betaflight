@@ -298,7 +298,7 @@ void readEEPROM(void)
     suspendRxSignal();
 
     // Sanity check, read flash
-    if (!scanEEPROM(true)) {
+    if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
