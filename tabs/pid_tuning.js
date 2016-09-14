@@ -430,6 +430,78 @@ TABS.pid_tuning.initialize = function (callback) {
         }
     }
 
+    function drawAxisLabel(curveContext, axisLabel, x, y, align, color) {
+
+        curveContext.fillStyle = color || '#000000' ;
+        curveContext.textAlign = align || 'center';
+        curveContext.fillText(axisLabel, x, y);
+    }
+
+    function drawBalloonLabel(curveContext, axisLabel, x, y, align, color, borderColor, textColor) {
+
+        /**
+         * curveContext is the canvas to draw on
+         * axisLabel is the string to display in the center of the balloon
+         * x, y are the coordinates of the point of the balloon
+         * align is whether the balloon appears to the left (align 'right') or right (align left) of the x,y coordinates
+         * color, borderColor and textColor are the fill color, border color and text color of the balloon
+         */
+
+        const DEFAULT_OFFSET        = 50; // in canvas scale; this is the horizontal length of the pointer
+        const DEFAULT_RADIUS        = 10; // in canvas scale, this is the radius around the balloon
+
+        const fontSize = parseInt(curveContext.font);
+
+        // calculate the width and height required for the balloon
+        const width = (curveContext.measureText(axisLabel).width * 1.2);
+        const height = fontSize * 1.5; // the balloon is bigger than the text height
+        const pointerY = y; // always point to the required Y coordinate, even if we move the balloon itself to keep it on the canvas
+
+        // setup balloon background
+        curveContext.fillStyle   = color        || '#ffffff' ;
+        curveContext.strokeStyle = borderColor  || '#000000' ;
+
+        // adjust the coordinates for determine where the balloon background should be drawn
+        x += ((align=='right')?-(width + DEFAULT_OFFSET):0) + ((align=='left')?DEFAULT_OFFSET:0);
+        y -= (height/2); if(y<0) y=0; else if(y>curveContext.height) y=curveContext.height; // prevent balloon from going out of canvas
+
+        var pointerLength =  (height - 2 * DEFAULT_RADIUS ) / 6;
+
+        curveContext.beginPath();
+        curveContext.moveTo(x + DEFAULT_RADIUS, y);
+        curveContext.lineTo(x + width - DEFAULT_RADIUS, y);
+        curveContext.quadraticCurveTo(x + width, y, x + width, y + DEFAULT_RADIUS);
+
+        if(align=='right') { // point is to the right
+            curveContext.lineTo(x + width, y + DEFAULT_RADIUS + pointerLength);
+            curveContext.lineTo(x + width + DEFAULT_OFFSET, pointerY);  // point
+            curveContext.lineTo(x + width, y + height - DEFAULT_RADIUS - pointerLength);
+        }
+        curveContext.lineTo(x + width, y + height - DEFAULT_RADIUS);
+
+        curveContext.quadraticCurveTo(x + width, y + height, x + width - DEFAULT_RADIUS, y + height);
+        curveContext.lineTo(x + DEFAULT_RADIUS, y + height);
+        curveContext.quadraticCurveTo(x, y + height, x, y + height - DEFAULT_RADIUS);
+
+        if(align=='left') { // point is to the left
+            curveContext.lineTo(x, y + height - DEFAULT_RADIUS - pointerLength);
+            curveContext.lineTo(x - DEFAULT_OFFSET, pointerY); // point
+            curveContext.lineTo(x, y + DEFAULT_RADIUS - pointerLength);
+        }
+        curveContext.lineTo(x, y + DEFAULT_RADIUS);
+
+        curveContext.quadraticCurveTo(x, y, x + DEFAULT_RADIUS, y);
+        curveContext.closePath();
+
+        // fill in the balloon background
+        curveContext.fill();
+        curveContext.stroke();
+
+        // and add the label
+        drawAxisLabel(curveContext, axisLabel, x + (width/2), y + (height + fontSize)/2 - 4, 'center', textColor);
+
+    }
+
     function checkInput(element) {
         var value = parseFloat(element.val());
         if (value < parseFloat(element.prop('min'))
@@ -713,6 +785,7 @@ TABS.pid_tuning.initialize = function (callback) {
                     var curveWidth = rcCurveElement.width;
 
                     curveContext.clearRect(0, 0, curveWidth, curveHeight);
+                    curveContext.font = "24pt Verdana, Arial, sans-serif";
 
                     var maxAngularVel;
                     if (!useLegacyCurve) {
@@ -721,7 +794,11 @@ TABS.pid_tuning.initialize = function (callback) {
                             printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelPitchElement),
                             printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVelYawElement));
 
+                        // make maxAngularVel multiple of 200deg/s so that the auto-scale doesn't keep changing for small changes of the maximum curve
+                        maxAngularVel = Math.ceil(maxAngularVel/200) * 200;
+
                         drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
+                        drawAxisLabel(curveContext, maxAngularVel.toFixed(0) + ' deg/s', (curveWidth / 2) - 10, parseInt(curveContext.font)*1.2, 'right');
                     } else {
                         maxAngularVel = 0;
                     }
@@ -731,6 +808,17 @@ TABS.pid_tuning.initialize = function (callback) {
                     drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#ff0000', 0, curveContext);
                     drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#00ff00', -4, curveContext);
                     drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, '#0000ff', 4, curveContext);
+
+                    if (!useLegacyCurve && maxAngularVel) {
+                        var maxAngularVelRoll   = maxAngularVelRollElement.text()  + ' deg/s',
+                            maxAngularVelPitch  = maxAngularVelPitchElement.text() + ' deg/s',
+                            maxAngularVelYaw    = maxAngularVelYawElement.text()   + ' deg/s',
+                            rateScaling         = (curveHeight / 2) / maxAngularVel;
+
+                        drawBalloonLabel(curveContext, maxAngularVelRoll,  curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelRoll)),  'right', '#FF8080', '#FF8080', '#000000');
+                        drawBalloonLabel(curveContext, maxAngularVelPitch, curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelPitch)), 'right', '#80FF80', '#80FF80', '#000000');
+                        drawBalloonLabel(curveContext, maxAngularVelYaw,   curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelYaw)),   'right', '#8080FF', '#8080FF', '#000000');
+                    }
 
                     updateNeeded = false;
                 }
