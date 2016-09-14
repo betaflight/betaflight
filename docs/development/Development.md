@@ -6,19 +6,17 @@ This document is primarily for developers only.
 
 1. Name everything well.
 2. Strike a balance between simplicity and not-repeating code.
-3. Methods that return a boolean should be named as a question, and should not change state.  e.g. 'isOkToArm()'
-4. Methods that start with the word 'find' can return a null, methods that start with 'get' should not.
-5. Methods should have verb or verb-phrase names, like `deletePage` or `save`.  Variables should not, they generally should be nouns.  Tell the system to 'do' something 'with' something.  e.g. deleteAllPages(pageList).
-6. Keep methods short - it makes it easier to test.
-7. Don't be afraid of moving code to a new file - it helps to reduce test dependencies.
-8. Avoid noise-words in variable names, like 'data' or 'info'.  Think about what you're naming and name it well.  Don't be afraid to rename anything.
-9. Avoid comments that describe what the code is doing, the code should describe itself.  Comments are useful however for big-picture purposes and to document content of variables.
-10. If you need to document a variable do it at the declaration, don't copy the comment to the `extern` usage since it will lead to comment rot.
-11. Seek advice from other developers - know you can always learn more.
-12. Be professional - attempts at humor or slating existing code in the codebase itself is not helpful when you have to change/fix it.
-13. Know that there's always more than one way to do something and that code is never final - but it does have to work.
+3. Methods that start with the word 'find' can return a null, methods that start with 'get' should not.
+4. Keep methods short - it makes it easier to test.
+5. Don't be afraid of moving code to a new file - it helps to reduce test dependencies.
+6. Avoid noise-words in variable names, like 'data' or 'info'.  Think about what you're naming and name it well.  Don't be afraid to rename anything.
+7. Avoid comments that describe what the code is doing, the code should describe itself.  Comments are useful however for big-picture purposes and to document content of variables.
+8. If you need to document a variable do it at the declaration, don't copy the comment to the `extern` usage since it will lead to comment rot.
+9. Seek advice from other developers - know you can always learn more.
+10. Be professional - attempts at humor or slating existing code in the codebase itself is not helpful when you have to change/fix it.
+11. Know that there's always more than one way to do something and that code is never final - but it does have to work.
 
-Before making any code contributions, take a note of the https://github.com/multiwii/baseflight/wiki/CodingStyle
+Before making any code contributions, try to comply with the [coding style](CodingStyle.md). It has a lot of sound advice.
 
 It is also advised to read about clean code, here are some useful links:
 
@@ -59,6 +57,7 @@ make junittest
 ```
 
 This will build a set of executable files in the `obj/test` folder, one for each `*_unittest.cc` file.
+It will stop after first compile/build error. If you want it to continue with the next test module you can use `make -k test`.
 
 After they have been executed by the make invocation, you can still run them on the command line to execute the tests and to see the test report. Test reports will also be produced in form of junit XML files, if tests are built and run with the "junittest" goal. Junit report files are saved in obj/test directory and has the following  naming pattern test_name_results.xml, for example: obj/test/battery_unittest_results.xml 
 
@@ -66,7 +65,7 @@ You can also step-debug the tests in eclipse and you can use the GoogleTest test
 
 The tests are currently always compiled with debugging information enabled, there may be additional warnings, if you see any warnings please attempt to fix them and submit pull requests with the fixes.
 
-Tests are verified and working with GCC 4.9.2.
+Tests are verified and working with GCC 4.9.3
 
 ## Test coverage analysis
 
@@ -117,6 +116,12 @@ The main flow for a contributing is as follows:
 11. Repeat from step 4 for new other changes.
 
 The primary thing to remember is that separate pull requests should be created for separate branches.  Never create a pull request from your `master` branch.
+
+Once you have created the PR,
+every new commit/push in your branch will propagate from your fork into the PR in the main github/cleanflight repo.
+Checkout another branch first if you want something else.
+
+Push will often fail if you edit or squash commits in a branch already pushed. Never do such things after creating the PR.
 
 Later, you can get the changes from the cleanflight repo into your `master` branch by adding cleanflight as a git remote and merging from it as follows:
 
