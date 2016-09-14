@@ -1,6 +1,16 @@
 # Building in windows
 
 
+## Bash On Windows 10
+
+A new feature in Windows 10 allows any developer to quickly and easily run an entire linux subsystem in windows and access it via a bash terminal. This gives developers full use of the entire linux OS and all of the great existing linux tools and programs. When Bash for Windows is up and running it feels like you sshed into a full linux box, except the linux distro is actually running alongside windows locally.
+
+If you use Bash on Windows you can easily build cleanflight exactly as you would for Ubuntu. (the linux distro running on Windows is Ubuntu Trusty)
+
+Setup for Bash on Windows is very easy and takes less than 5 minutes. [For instructions follow the official guide here.](https://msdn.microsoft.com/commandline/wsl/install_guide)
+
+Once you have Bash On Windows running you can follow the "Building in Ubuntu" instructions for building cleanfight.
+
 ##Setup Cygwin
 
 download the Setup*.exe from https://www.cygwin.com/
