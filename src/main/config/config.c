@@ -678,16 +678,16 @@ void activateConfig(void)
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
-#ifdef USE_SERVOS
-        masterConfig.servoConf,
-        &masterConfig.gimbalConfig,
-#endif
         &masterConfig.flight3DConfig,
         &masterConfig.escAndServoConfig,
         &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
     );
+
+#ifdef USE_SERVOS
+    servoUseConfigs(masterConfig.servoConf, &masterConfig.gimbalConfig);
+#endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
