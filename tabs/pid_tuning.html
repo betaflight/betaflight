@@ -212,7 +212,7 @@
                     <div id="pid_accel" class="gui_box grey topspacer pid_tuning">
                         <table class="pid_titlebar">
                             <tr>
-                                <th class="third" i18n="pidTuningName" style="width: 19%;"></th>
+                                <th class="third" i18n="pidTuningName"></th>
                                 <th class="third" i18n="pidTuningStrength" style="width: 33%;"></th>
                                 <th class="third" i18n="pidTuningTransition" style="width: 33%;"></th>
                             </tr>
@@ -266,7 +266,7 @@
                                         <option value="1" i18n="pidTuningDeltaMeasurement"/>
                                     </select>
                                 </td>
-                                <td colspan=2>
+                                <td>
                                     <div>
                                         <label for="delta-select">
                                         <span i18n="pidTuningDelta"></span>
@@ -278,19 +278,19 @@
                             <tr class="ptermSetpoint">
                                 <td><input type="number" name="ptermSetpoint-number" step="0.01" min="0.00" max="1.00"/></td>
                                 <td class="slider"><input type="range" name="ptermSetpoint-range" step="0.01" min="0.00" max="1.00"/></td>
-                                 <td colspan=2>
+                                <td>
                                     <div>
                                         <label>
                                         <span i18n="pidTuningPtermSetpoint"></span>
                                         </label>
                                         <div class="helpicon cf_tip" i18n_title="pidTuningPtermSetpointHelp"></div>
-                                </div>
-                            </td>
+                                    </div>
+                                </td>
                             </tr>
                             <tr class="dtermSetpoint">
                                 <td><input type="number" name="dtermSetpoint-number" step="0.01" min="0.00" max="2.55"/></td>
                                 <td class="slider"><input type="range" name="dtermSetpoint-range" step="0.01" min="0.00" max="2.55"/></td>
-                                 <td colspan=2>
+                                <td>
                                     <div>
                                         <label>
                                         <span i18n="pidTuningDtermSetpoint"></span>
@@ -299,8 +299,9 @@
                                     </div>
                                 </td>
                             </tr>
-                            <td><input type="checkbox" id="vbatpidcompensation" class="toggle" /></td>
-                                <td colspan=2>
+                            <tr>
+                                <td><input type="checkbox" id="vbatpidcompensation" class="toggle" /></td>
+                                <td>
                                     <div>
                                         <label for="vbatpidcompensation">
                                         <span i18n="pidTuningVbatPidCompensation"></span>

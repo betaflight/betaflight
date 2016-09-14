@@ -243,7 +243,6 @@
     text-align: left;
     border-right: 1px solid #ccc;
     width: 12.5%;
-
 }
 
 .tab-pid_tuning .pid_titlebar th:first-child {
@@ -262,6 +261,36 @@
 
 .tab-pid_tuning table tr td:last-child {
     border-right: 0px solid #ccc;
+}
+
+.tab-pid_tuning #pid_optional table th {
+    width: 25%;
+}
+
+.tab-pid_tuning #pid_optional table td {
+    width: 25%;
+}
+
+.tab-pid_tuning #pid_accel table th {
+    width: 33%;
+}
+
+.tab-pid_tuning #pid_accel table td {
+    width: 33%;
+}
+
+.tab-pid_tuning table.compensation td {
+    width: 60%;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.tab-pid_tuning table.compensation td:first-child {
+    width: 10%;
+}
+
+.tab-pid_tuning table.compensation td:last-child {
+    width: 30%;
 }
 
 .tab-pid_tuning .pidTuningFeatures td {
@@ -288,6 +317,7 @@
 
 .tab-pid_tuning table td {
     padding: 1px;
+    padding-left: 5px;
     width: 12.5%;
     border-right: 1px solid #ccc;
 }
@@ -706,18 +736,6 @@ width: 40%;
     width: 100%;
     height: 3px;
     margin-bottom: 10px;
-}
-
-.tab-pid_tuning #pid_level th:first-child {
-    width: 7%;
-}
-
-.tab-pid_tuning #pid_level td:first-child {
-    width: 7%;
-}
-
-.tab-pid_tuning .slider {
-    width: 40% !important;
 }
 
 .tabarea {
