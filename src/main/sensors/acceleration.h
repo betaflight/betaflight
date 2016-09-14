@@ -28,7 +28,8 @@ typedef enum {
     ACC_LSM303DLHC = 6,
     ACC_MPU6000 = 7,
     ACC_MPU6500 = 8,
-    ACC_FAKE = 9,
+	ACC_ICM20689 = 9,
+    ACC_FAKE = 10,
     ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
 
