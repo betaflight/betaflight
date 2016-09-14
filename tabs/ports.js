@@ -39,8 +39,14 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         '19200',
         '38400',
         '57600',
-        '115200'
+        '115200',
+        '230400',
+        '250000'
     ];
+
+    if (semver.gte(CONFIG.flightControllerVersion, "3.1.0")) {
+        mspBaudRates = mspBaudRates.concat(['500000', '1000000']);
+    }
 
     var gpsBaudRates = [
         '9600',
