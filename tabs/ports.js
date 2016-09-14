@@ -39,7 +39,12 @@ TABS.ports.initialize = function (callback, scrollPosition) {
         '19200',
         '38400',
         '57600',
-        '115200'
+        '115200',
+        '230400',
+        '250000',
+        '500000',
+        '1000000'
+
     ];
 
     var gpsBaudRates = [
