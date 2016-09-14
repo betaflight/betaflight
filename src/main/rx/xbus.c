@@ -86,7 +86,7 @@ static volatile uint8_t xBusFrame[XBUS_RJ01_FRAME_SIZE];
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 
 static void xBusDataReceive(uint16_t c);
-static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
@@ -319,7 +319,7 @@ uint8_t xBusFrameStatus(void)
     return SERIAL_RX_FRAME_COMPLETE;
 }
 
-static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
 

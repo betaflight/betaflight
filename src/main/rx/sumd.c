@@ -51,7 +51,7 @@ static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
 static uint16_t crc;
 
 static void sumdDataReceive(uint16_t c);
-static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
@@ -186,7 +186,7 @@ uint8_t sumdFrameStatus(void)
     return frameStatus;
 }
 
-static uint16_t sumdReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     return sumdChannels[chan] / 8;

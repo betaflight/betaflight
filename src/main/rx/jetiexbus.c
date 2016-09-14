@@ -208,7 +208,7 @@ static uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
 static void jetiExBusDataReceive(uint16_t c);
-static uint16_t jetiExBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static void jetiExBusFrameReset();
 
@@ -416,7 +416,7 @@ uint8_t jetiExBusFrameStatus()
 }
 
 
-static uint16_t jetiExBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     if (chan >= rxRuntimeConfig->channelCount)
         return 0;

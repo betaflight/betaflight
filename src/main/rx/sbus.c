@@ -80,7 +80,7 @@ static uint16_t sbusStateFlags = 0;
 
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
-static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
@@ -254,7 +254,7 @@ uint8_t sbusFrameStatus(void)
     return SERIAL_RX_FRAME_COMPLETE;
 }
 
-static uint16_t sbusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     // Linear fitting values read from OpenTX-ppmus and comparing with values received by X4R

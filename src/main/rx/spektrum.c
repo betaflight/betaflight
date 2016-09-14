@@ -60,7 +60,7 @@ static bool spekHiRes = false;
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 
@@ -163,7 +163,7 @@ uint8_t spektrumFrameStatus(void)
     return SERIAL_RX_FRAME_COMPLETE;
 }
 
-static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
 

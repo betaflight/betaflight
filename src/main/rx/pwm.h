@@ -16,3 +16,4 @@
  */
 
 #pragma once
+void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);

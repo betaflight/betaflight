@@ -54,15 +54,11 @@ static bool sumhFrameDone = false;
 static uint8_t sumhFrame[SUMH_FRAME_SIZE];
 static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 
-static void sumhDataReceive(uint16_t c);
-static uint16_t sumhReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
 static serialPort_t *sumhPort;
 
 
 static void sumhDataReceive(uint16_t c);
-static uint16_t sumhReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
+static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 
 bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
@@ -140,7 +136,7 @@ uint8_t sumhFrameStatus(void)
     return SERIAL_RX_FRAME_COMPLETE;
 }
 
-static uint16_t sumhReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
 
