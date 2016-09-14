@@ -108,7 +108,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_BOARD_INFO:
             sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
             sbufWriteU16(dst, 0);  // hardware revision
-            sbufWriteU8(dst, 1);  // 0 == FC, 1 == OSD
+            sbufWriteU8(dst, 1);  // 0 == FC, 1 == OSD, 2 == FC with OSD
             break;
 
         case MSP_BUILD_INFO:

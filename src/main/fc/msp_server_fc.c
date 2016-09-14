@@ -518,6 +518,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 #else
             sbufWriteU16(dst, 0); // No hardware revision available.
 #endif
+            sbufWriteU8(dst, 0);  // 0 == FC, 1 == OSD, 2 == FC with OSD
             break;
 
         case MSP_BUILD_INFO:
