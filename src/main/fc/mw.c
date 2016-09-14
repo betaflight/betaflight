@@ -499,7 +499,7 @@ void filterRc(bool isRXDataNew)
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
-        biquadFilterInit(&filteredCycleTimeState, 1, gyro.targetLooptime);
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
         filterInitialised = true;
     }
 

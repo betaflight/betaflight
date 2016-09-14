@@ -59,7 +59,7 @@ void gyroInit(void)
 {
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
         }
     }
 }

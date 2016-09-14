@@ -921,7 +921,7 @@ void filterServos(void)
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
         if (!servoFilterIsSet) {
             for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                biquadFilterInit(&servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, gyro.targetLooptime);
+                biquadFilterInitLPF(&servoFitlerState[servoIdx], mixerConfig->servo_lowpass_freq, gyro.targetLooptime);
             }
 
             servoFilterIsSet = true;
