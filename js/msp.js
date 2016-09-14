@@ -10,7 +10,6 @@ var MSP = {
     message_buffer:             null,
     message_buffer_uint8_view:  null,
     message_checksum:           0,
-    messageIsJumboFrame:        false,
 
     callbacks:                  [],
     packet_error:               0,
@@ -18,8 +17,6 @@ var MSP = {
 
     last_received_timestamp:   null,
     listeners:                  [],
-
-    JUMBO_FRAME_SIZE_LIMIT:     255,
     
     read: function (readInfo) {
         var data = new Uint8Array(readInfo.data);
@@ -53,11 +50,12 @@ var MSP = {
                     break;
                 case 3:
                     this.message_length_expected = data[i];
-                    if (this.message_length_expected === this.JUMBO_FRAME_SIZE_LIMIT) {
-                        this.messageIsJumboFrame = true;
-                    }
 
                     this.message_checksum = data[i];
+
+                    // setup arraybuffer
+                    this.message_buffer = new ArrayBuffer(this.message_length_expected);
+                    this.message_buffer_uint8_view = new Uint8Array(this.message_buffer);
 
                     this.state++;
                     break;
@@ -67,39 +65,13 @@ var MSP = {
 
                     if (this.message_length_expected > 0) {
                         // process payload
-                        if (this.messageIsJumboFrame) {
-                            this.state++;
-                        } else {
-                            this.state = this.state + 3;
-                        }
+                        this.state++;
                     } else {
                         // no payload
-                        this.state += 5;
+                        this.state += 2;
                     }
                     break;
-                case 5:
-                    this.message_length_expected = data[i];
-
-                    this.message_checksum ^= data[i];
-
-                    this.state++;
-
-                    break;
-                case 6:
-                    this.message_length_expected = this.message_length_expected  + 256 * data[i];
-
-                    this.message_checksum ^= data[i];
-
-                    this.state++;
-
-                    break;
-                case 7:
-                    // setup arraybuffer
-                    this.message_buffer = new ArrayBuffer(this.message_length_expected);
-                    this.message_buffer_uint8_view = new Uint8Array(this.message_buffer);
-
-                    this.state++;
-                case 8: // payload
+                case 5: // payload
                     this.message_buffer_uint8_view[this.message_length_received] = data[i];
                     this.message_checksum ^= data[i];
                     this.message_length_received++;
@@ -108,7 +80,7 @@ var MSP = {
                         this.state++;
                     }
                     break;
-                case 9:
+                case 6:
                     if (this.message_checksum == data[i]) {
                         // message received, store dataview
                         this.dataView = new DataView(this.message_buffer, 0, this.message_length_expected);
@@ -120,7 +92,6 @@ var MSP = {
                     // Reset variables
                     this.message_length_received = 0;
                     this.state = 0;
-                    this.messageIsJumboFrame = false;
                     this.notify();
                     break;
 

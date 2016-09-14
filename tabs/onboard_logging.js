@@ -4,8 +4,7 @@ var
     sdcardTimer;
 
 TABS.onboard_logging = {
-    available: false,
-    BLOCK_SIZE: 4096
+    available: false
 };
 TABS.onboard_logging.initialize = function (callback) {
     var 
@@ -314,12 +313,7 @@ TABS.onboard_logging.initialize = function (callback) {
         $(".dataflash-saving")[0].close();
     }
     
-    function mark_saving_dialog_done(startTime, totalBytes) {
-        var totalTime = (new Date().getTime() - startTime) / 1000;
-        console.log('Received ' + totalBytes + ' bytes in ' + totalTime.toFixed(2) + 's ('
-            + (totalBytes / totalTime / 1024).toFixed(2) + 'kB / s) with block size ' + self.BLOCK_SIZE + '.');
-
-
+    function mark_saving_dialog_done() {
         $(".dataflash-saving").addClass("done");
     }
     
@@ -362,27 +356,26 @@ TABS.onboard_logging.initialize = function (callback) {
                                         if (saveCancelled) {
                                             dismiss_saving_dialog();
                                         } else {
-                                            mark_saving_dialog_done(startTime, nextAddress);
+                                            mark_saving_dialog_done();
                                         }
                                     } else {
-                                        mspHelper.dataflashRead(nextAddress, self.BLOCK_SIZE, onChunkRead);
+                                        mspHelper.dataflashRead(nextAddress, onChunkRead);
                                     }
                                 };
                                 
                                 fileWriter.write(blob);
                             } else {
                                 // A zero-byte block indicates end-of-file, so we're done
-                                mark_saving_dialog_done(startTime, nextAddress);
+                                mark_saving_dialog_done();
                             }
                         } else {
                             // There was an error with the received block (address didn't match the one we asked for), retry
-                            mspHelper.dataflashRead(nextAddress, self.BLOCK_SIZE, onChunkRead);
+                            mspHelper.dataflashRead(nextAddress, onChunkRead);
                         }
                     }
 
-                    var startTime = new Date().getTime();
                     // Fetch the initial block
-                    mspHelper.dataflashRead(nextAddress, self.BLOCK_SIZE, onChunkRead);
+                    mspHelper.dataflashRead(nextAddress, onChunkRead);
                 });
             });
         }
