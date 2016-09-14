@@ -36,6 +36,7 @@
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
 #include "fc/rc_controls.h"
@@ -54,6 +55,7 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
+#include "rx/rx_spi.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS
@@ -192,6 +194,18 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
     if (feature(FEATURE_RX_MSP)) {
         rxMspInit(rxConfig, &rxRuntimeConfig);
         needRxSignalMaxDelayUs = DELAY_5_HZ;
+    }
+#endif
+
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
+        rxRefreshRate = 10000;
+        const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
+        const bool enabled = rxSpiInit(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        if (!enabled) {
+            featureClear(FEATURE_RX_SPI);
+            rcReadRawFunc = nullReadRawRC;
+        }
     }
 #endif
 
@@ -334,6 +348,17 @@ bool rxUpdate(uint32_t currentTime)
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTime + needRxSignalMaxDelayUs;
+        }
+    }
+#endif
+
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
+        rxDataReceived = rxSpiDataReceived();
+        if (rxDataReceived) {
+            rxSignalReceived = true;
+            rxIsInFailsafeMode = false;
+            needRxSignalBefore = currentTime + DELAY_10_HZ;
         }
     }
 #endif
