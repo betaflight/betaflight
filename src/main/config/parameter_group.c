@@ -59,12 +59,7 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
 
 void pgReset(const pgRegistry_t* reg, int profileIndex)
 {
-    if (pgIsSystem(reg)) {
-        pgResetInstance(reg, reg->address);
-    } else {
-        // reset one instance for each profile
-        pgResetInstance(reg, pgOffset(reg, profileIndex));
-    }
+    pgResetInstance(reg, pgOffset(reg, profileIndex));
 }
 
 void pgResetCurrent(const pgRegistry_t *reg)
