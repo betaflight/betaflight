@@ -395,34 +395,32 @@ void handleSmartPortTelemetry(void)
                 // the Taranis seems to consider this number a signed 16 bit integer
 
                 if (ARMING_FLAG(OK_TO_ARM))
-                    tmpi |= 1;
+                    tmpi += 1;
                 if (ARMING_FLAG(PREVENT_ARMING))
-                    tmpi |= 2;
+                    tmpi += 2;
                 if (ARMING_FLAG(ARMED))
-                    tmpi |= 4;
+                    tmpi += 4;
 
                 if (FLIGHT_MODE(ANGLE_MODE))
-                    tmpi |= 10;
+                    tmpi += 10;
                 if (FLIGHT_MODE(HORIZON_MODE))
-                    tmpi |= 20;
-                if (FLIGHT_MODE(GTUNE_MODE))
-                    tmpi |= 40;
-                if (FLIGHT_MODE(PASSTHRU_MODE))
-                    tmpi |= 40;
+                    tmpi += 20;
+                if (FLIGHT_MODE(GTUNE_MODE) || FLIGHT_MODE(PASSTHRU_MODE))
+                    tmpi += 40;
 
                 if (FLIGHT_MODE(MAG_MODE))
-                    tmpi |= 100;
+                    tmpi += 100;
                 if (FLIGHT_MODE(BARO_MODE))
-                    tmpi |= 200;
+                    tmpi += 200;
                 if (FLIGHT_MODE(SONAR_MODE))
-                    tmpi |= 400;
+                    tmpi += 400;
 
                 if (FLIGHT_MODE(GPS_HOLD_MODE))
-                    tmpi |= 1000;
+                    tmpi += 1000;
                 if (FLIGHT_MODE(GPS_HOME_MODE))
-                    tmpi |= 2000;
+                    tmpi += 2000;
                 if (FLIGHT_MODE(HEADFREE_MODE))
-                    tmpi |= 4000;
+                    tmpi += 4000;
 
                 smartPortSendPackage(id, (uint32_t)tmpi);
                 smartPortHasRequest = 0;
