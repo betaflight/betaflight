@@ -122,7 +122,7 @@
 #define INVERTER
 //#define DISPLAY
 
-#define SONAR
+//#define SONAR
 #define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
 #define SONAR_PWM_TRIGGER_GPIO      GPIOB
 #define SONAR_PWM_ECHO_PIN          Pin_9   // PWM6 (PB9) - 5v tolerant
