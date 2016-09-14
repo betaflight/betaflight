@@ -81,6 +81,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #include "blackbox.h"
 #include "blackbox_io.h"
@@ -1282,11 +1283,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle:%d",                 masterConfig.profile[masterConfig.current_profile_index].pidProfile.pidAtMinThrottle);
 
         // Betaflight PID controller parameters
-        BLACKBOX_PRINT_HEADER_LINE("toleranceBand:%d",                    masterConfig.profile[masterConfig.current_profile_index].pidProfile.toleranceBand);
-        BLACKBOX_PRINT_HEADER_LINE("toleranceBandReduction:%d",           masterConfig.profile[masterConfig.current_profile_index].pidProfile.toleranceBandReduction);
-        BLACKBOX_PRINT_HEADER_LINE("zeroCrossAllowanceCount:%d",          masterConfig.profile[masterConfig.current_profile_index].pidProfile.zeroCrossAllowanceCount);
         BLACKBOX_PRINT_HEADER_LINE("itermThrottleGain:%d",                masterConfig.profile[masterConfig.current_profile_index].pidProfile.itermThrottleGain);
-        BLACKBOX_PRINT_HEADER_LINE("ptermSetpointWeight:%d",              masterConfig.profile[masterConfig.current_profile_index].pidProfile.ptermSetpointWeight);
+        BLACKBOX_PRINT_HEADER_LINE("ptermSRateWeight:%d",                 masterConfig.profile[masterConfig.current_profile_index].pidProfile.ptermSRateWeight);
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              masterConfig.profile[masterConfig.current_profile_index].pidProfile.dtermSetpointWeight);
         BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   masterConfig.profile[masterConfig.current_profile_index].pidProfile.rateAccelLimit);

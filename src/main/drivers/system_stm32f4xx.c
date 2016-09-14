@@ -196,9 +196,9 @@ void checkForBootLoaderRequest(void)
         *((uint32_t *)0x2001FFFC) = 0x0;
 
         __enable_irq();
-        __set_MSP(0x20001000);
+        __set_MSP(*((uint32_t *)0x1FFF0000));
 
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004));
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFF0004));
         bootJump();
         while (1);
     }

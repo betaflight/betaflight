@@ -85,7 +85,7 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 
 static uint8_t serialPortCount;
 
-const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000}; // see baudRate_e
+const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 500000, 1000000}; // see baudRate_e
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
 
@@ -433,7 +433,7 @@ void handleSerial(void)
     }
 #endif
 
-    mspProcess();
+    mspSerialProcess();
 }
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)

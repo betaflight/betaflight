@@ -50,6 +50,7 @@ typedef struct batteryConfig_s {
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
     uint16_t batteryCapacity;               // mAh
+    uint8_t batterynotpresentlevel;         // Below this level battery is considered as not present
 } batteryConfig_t;
 
 typedef enum {

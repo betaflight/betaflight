@@ -87,6 +87,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #include "scheduler/scheduler.h"
 #include "scheduler/scheduler_tasks.h"
@@ -124,7 +125,7 @@ extern uint8_t PIDweight[3];
 uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float setpointRate[3];
+float setpointRate[3], ptermSetpointRate[3];
 float rcInput[3];
 
 extern pidControllerFuncPtr pid_controller;
@@ -175,8 +176,9 @@ bool isCalibrating()
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
+#define RC_EXPO_POWER 3
 
-float calculateSetpointRate(int axis, int16_t rc) {
+void calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
     uint8_t rcExpo;
 
@@ -194,14 +196,26 @@ float calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * (expof * (rcInput[axis] * rcInput[axis] * rcInput[axis]) + rcInput[axis]*(1-expof));
+        rcCommandf = rcCommandf * powerf(rcInput[axis], RC_EXPO_POWER) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
 
     if (currentControlRateProfile->rates[axis]) {
-        rcSuperfactor = 1.0f / (constrainf(1.0f - (rcInput[axis] * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
-        angleRate *= rcSuperfactor;
+        rcSuperfactor = 1.0f / (constrainf(1.0f - (ABS(rcCommandf) * (currentControlRateProfile->rates[axis] / 100.0f)), 0.01f, 1.00f));
+        if (currentProfile->pidProfile.pidController == PID_CONTROLLER_BETAFLIGHT) {
+            ptermSetpointRate[axis] = constrainf(angleRate * rcSuperfactor, -1998.0f, 1998.0f);
+            if (currentProfile->pidProfile.ptermSRateWeight < 100 && axis != YAW && !flightModeFlags) {
+                const float pWeight = currentProfile->pidProfile.ptermSRateWeight / 100.0f;
+                angleRate = angleRate + (pWeight * ptermSetpointRate[axis] - angleRate);
+            } else {
+                angleRate = ptermSetpointRate[axis];
+            }
+        } else {
+            angleRate *= rcSuperfactor;
+        }
+    } else {
+        if (currentProfile->pidProfile.pidController == PID_CONTROLLER_BETAFLIGHT) ptermSetpointRate[axis] = angleRate;
     }
 
     if (debugMode == DEBUG_ANGLERATE) {
@@ -209,9 +223,9 @@ float calculateSetpointRate(int axis, int16_t rc) {
     }
 
     if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-	    return  constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
+        setpointRate[axis] = constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
     else
-        return  constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
+        setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -290,7 +304,7 @@ void processRcCommand(void)
         if (masterConfig.rxConfig.fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
 
-        for (int axis = 0; axis < 3; axis++) setpointRate[axis] = calculateSetpointRate(axis, rcCommand[axis]);
+        for (int axis = 0; axis < 3; axis++) calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
     }
@@ -410,7 +424,7 @@ void mwDisarm(void)
 void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
-        mspReleasePortIfAllocated(sharedPort);
+        mspSerialReleasePortIfAllocated(sharedPort);
         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     }
 }
@@ -443,7 +457,7 @@ void mwArm(void)
             if (feature(FEATURE_BLACKBOX)) {
                 serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
                 if (sharedBlackboxAndMspPort) {
-                    mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
+                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
                 startBlackbox();
             }
@@ -573,6 +587,8 @@ void processRx(void)
     if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP)
         && !STATE(FIXED_WING)
+		&& !feature(FEATURE_3D)
+		&& !isAirmodeActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
@@ -702,7 +718,7 @@ void processRx(void)
         } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
-            mspAllocateSerialPorts(&masterConfig.serialConfig);
+            mspSerialAllocatePorts(&masterConfig.serialConfig);
         }
     }
 #endif

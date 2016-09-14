@@ -80,6 +80,7 @@
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -97,10 +98,14 @@ void targetConfiguration(master_t *config);
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
-static uint32_t activeFeaturesLatch = 0;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
+
+
+void intFeatureClearAll(master_t *config);
+void intFeatureSet(uint32_t mask, master_t *config);
+void intFeatureClear(uint32_t mask, master_t *config);
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -139,7 +144,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 65;
     pidProfile->D8[PITCH] = 22;
-    pidProfile->P8[YAW] = 80;
+    pidProfile->P8[YAW] = 70;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
     pidProfile->P8[PIDALT] = 50;
@@ -163,7 +168,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 75;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_lpf_hz = 80;
+    pidProfile->yaw_lpf_hz = 0;
     pidProfile->rollPitchItermIgnoreRate = 130;
     pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
@@ -175,13 +180,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 80;
+    pidProfile->ptermSRateWeight = 85;
     pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->toleranceBand = 0;
-    pidProfile->toleranceBandReduction = 40;
-    pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
@@ -248,6 +250,7 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     escAndServoConfig->maxthrottle = 2000;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
+    escAndServoConfig->maxEscThrottleJumpMs = 0;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -261,7 +264,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
-    telemetryConfig->telemetry_inversion = 0;
+    telemetryConfig->telemetry_inversion = 1;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -270,6 +273,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
+    telemetryConfig->pidValuesAsTelemetry = 0;
 }
 #endif
 
@@ -286,6 +290,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
+    batteryConfig->batterynotpresentlevel = 55; // VBAT below 5.5 V will be igonored
 }
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
@@ -303,7 +308,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_500000;
         serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
         serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
         serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
@@ -371,10 +376,6 @@ uint16_t getCurrentMinthrottle(void)
     return masterConfig.escAndServoConfig.minthrottle;
 }
 
-static void intFeatureClearAll(master_t *config);
-static void intFeatureSet(uint32_t mask, master_t *config);
-static void intFeatureClear(uint32_t mask, master_t *config);
-
 // Default settings
 void createDefaultConfig(master_t *config)
 {
@@ -419,7 +420,7 @@ void createDefaultConfig(master_t *config)
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
     config->gyro_soft_notch_hz = 0;
-    config->gyro_soft_notch_cutoff = 150;
+    config->gyro_soft_notch_cutoff = 130;
 
     config->debug_mode = DEBUG_NONE;
 
@@ -786,12 +787,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
-
-
 /*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
     if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
         featureClear(FEATURE_LED_STRIP);
@@ -869,56 +864,6 @@ void changeControlRateProfile(uint8_t profileIndex)
     }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();
-}
-
-void latchActiveFeatures()
-{
-    activeFeaturesLatch = masterConfig.enabledFeatures;
-}
-
-bool featureConfigured(uint32_t mask)
-{
-    return masterConfig.enabledFeatures & mask;
-}
-
-bool feature(uint32_t mask)
-{
-    return activeFeaturesLatch & mask;
-}
-
-void featureSet(uint32_t mask)
-{
-    intFeatureSet(mask, &masterConfig);
-}
-
-static void intFeatureSet(uint32_t mask, master_t *config)
-{
-    config->enabledFeatures |= mask;
-}
-
-void featureClear(uint32_t mask)
-{
-    intFeatureClear(mask, &masterConfig);
-}
-
-static void intFeatureClear(uint32_t mask, master_t *config)
-{
-    config->enabledFeatures &= ~(mask);
-}
-
-void featureClearAll()
-{
-    intFeatureClearAll(&masterConfig);
-}
-
-static void intFeatureClearAll(master_t *config)
-{
-    config->enabledFeatures = 0;
-}
-
-uint32_t featureMask(void)
-{
-    return masterConfig.enabledFeatures;
 }
 
 void beeperOffSet(uint32_t mask)

@@ -650,7 +650,7 @@ void blackboxDeviceClose(void)
              * of time to shut down asynchronously, we're the only ones that know when to call it.
              */
             if (blackboxPortSharing == PORTSHARING_SHARED) {
-                mspAllocateSerialPorts(&masterConfig.serialConfig);
+                mspSerialAllocatePorts(&masterConfig.serialConfig);
             }
         break;
         default:
