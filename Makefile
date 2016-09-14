@@ -70,6 +70,8 @@ LINKER_DIR      = $(ROOT)/src/main/target
 ## Build tools, so we all share the same versions
 # import macros common to all supported build systems
 include $(ROOT)/make/system-id.mk
+# developer preferences, edit these at will, they'll be gitignored
+include $(ROOT)/make/local.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT)/tools
@@ -591,10 +593,10 @@ CCACHE :=
 endif
 
 # Tool names
-CC          := $(CCACHE) $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc
-CPP         := $(CCACHE) $(ARM_SDK_DIR)/bin/arm-none-eabi-g++
-OBJCOPY     := $(ARM_SDK_DIR)/bin/arm-none-eabi-objcopy
-SIZE        := $(ARM_SDK_DIR)/bin/arm-none-eabi-size
+CC          := $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CPP         := $(CCACHE) $(ARM_SDK_PREFIX)g++
+OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+SIZE        := $(ARM_SDK_PREFIX)size
 
 #
 # Tool options.

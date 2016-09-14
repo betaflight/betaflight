@@ -15,6 +15,8 @@
 
 # Set up ARM (STM32) SDK
 ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_4-2016q2
+# Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
+GCC_REQUIRED_VERSION := 5.4.1
 
 .PHONY: arm_sdk_install
 
@@ -37,7 +39,7 @@ arm_sdk_install: | $(DL_DIR) $(TOOLS_DIR)
 arm_sdk_install: arm_sdk_clean
 ifneq ($(OSFAMILY), windows)
         # download the source only if it's newer than what we already have
-	$(V1) wget --no-check-certificate -N -P "$(DL_DIR)" "$(ARM_SDK_URL)"
+	$(V1) curl -L -k -o "$(DL_DIR)/$(ARM_SDK_FILE)" "$(ARM_SDK_URL)"
 
         # binary only release so just extract it
 	$(V1) tar -C $(TOOLS_DIR) -xjf "$(DL_DIR)/$(ARM_SDK_FILE)"
@@ -183,7 +185,7 @@ dfuutil_install: | $(DL_DIR) $(TOOLS_DIR)
 dfuutil_install: dfuutil_clean
         # download the source
 	$(V0) @echo " DOWNLOAD     $(DFUUTIL_URL)"
-	$(V1) wget -N -P "$(DL_DIR)" "$(DFUUTIL_URL)"
+	$(V1) curl -L -k -o "$(DL_DIR)/$(DFUUTIL_FILE)" "$(DFUUTIL_URL)"
 
         # extract the source
 	$(V0) @echo " EXTRACT      $(DFUUTIL_FILE)"
@@ -218,8 +220,6 @@ uncrustify_install: UNCRUSTIFY_OPTIONS := prefix=$(UNCRUSTIFY_DIR)
 uncrustify_install: uncrustify_clean
 ifneq ($(OSFAMILY), windows)
 	$(V0) @echo " DOWNLOAD     $(UNCRUSTIFY_URL)"
-	$(V1) wget --no-check-certificate -N -P "$(DL_DIR)" "$(UNCRUSTIFY_URL)"
-else
 	$(V1) curl -L -k -o "$(DL_DIR)/$(UNCRUSTIFY_FILE)" "$(UNCRUSTIFY_URL)"
 endif
         # extract the src
@@ -271,13 +271,14 @@ zip_clean:
 #
 ##############################
 
+GCC_VERSION=$(shell arm-none-eabi-gcc -dumpversion)
 ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
   ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
-else
-  ifndef IGNORE_MISSING_TOOLCHAIN
-    ifeq (,$(findstring _install,$(MAKECMDGOALS)))
-      $(error **WARNING** ARM-SDK not in $(ARM_SDK_DIR)  Please run 'make arm_sdk_install')
-    endif
+else ifeq (,$(findstring _install,$(MAKECMDGOALS)))
+  ifeq ($(GCC_VERSION),)
+    $(error **ERROR** arm-none-eabi-gcc not in the PATH. Run 'make arm_sdk_install' to install automatically in the tools folder of this repo)
+  else ifneq ($(GCC_VERSION), $(GCC_REQUIRED_VERSION))
+    $(error **ERROR** your arm-none-eabi-gcc is '$(GCC_VERSION)', but '$(GCC_REQUIRED_VERSION)' is expected. Override with 'GCC_REQUIRED_VERSION' in make/local.mk or run 'make arm_sdk_install' to install the right version automatically in the tools folder of this repo)
   endif
   # not installed, hope it's in the path...
   ARM_SDK_PREFIX ?= arm-none-eabi-
