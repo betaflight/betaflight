@@ -71,7 +71,7 @@ enum
     // remaining 3 bits are crc (according to comments in openTx code)
 };
 
-// these data identifiers are obtained from http://diydrones.com/forum/topics/amp-to-frsky-x8r-sport-converter
+// these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky.h
 enum
 {
     FSSP_DATAID_SPEED      = 0x0830 ,
@@ -94,6 +94,8 @@ enum
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
+    FSSP_DATAID_A3	   = 0x0900 ,
+    FSSP_DATAID_A4	   = 0x0910 ,
 };
 
 const uint16_t frSkyDataIdTable[] = {
@@ -118,6 +120,8 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_T1        ,
     FSSP_DATAID_T2        ,
     FSSP_DATAID_GPS_ALT   ,
+    //FSSP_DATAID_A3	  ,
+    FSSP_DATAID_A4	  ,
     0
 };
 
@@ -475,6 +479,13 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
 #endif
+	    case FSSP_DATAID_A4    :
+                if (feature(FEATURE_VBAT)) {
+                    smartPortSendPackage(id, vbat * 10 / batteryCellCount ); //sending calculated average cell value with 0.01 precision
+                    smartPortHasRequest = 0;
+                }
+                break;
+
             default:
                 break;
                 // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start

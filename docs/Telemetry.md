@@ -163,6 +163,8 @@ More information about the implementation can be found here: https://github.com/
 
 The following sensors are transmitted :
 
+A4 : average cell value. Warning : unlike FLVSS sensors, you do not get actual lowest value of a cell, but an average : (total lipo voltage) / (number of cells)
+
 Alt : barometer based altitude, init level is zero.
 
 Vspd : vertical speed, unit is cm/s.
