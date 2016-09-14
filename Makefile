@@ -373,6 +373,7 @@ COMMON_SRC = \
             config/config.c \
             config/feature.c \
             config/config_eeprom.c \
+            config/parameter_group.c \
             fc/runtime_config.c \
             drivers/logging.c \
             drivers/adc.c \
