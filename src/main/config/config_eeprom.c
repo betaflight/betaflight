@@ -148,12 +148,13 @@ const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFlags_e cl
     while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
         if (record->size == 0
-           || p + record->size >= &__config_end
-           || record->size < sizeof(*record))
+            || p + record->size >= &__config_end
+            || record->size < sizeof(*record))
             break;
         if (pgN(reg) == record->pgn
-           && (record->flags & CR_CLASSIFICATION_MASK) == classification)
+            && (record->flags & CR_CLASSIFICATION_MASK) == classification)
             return record;
+        p += record->size;
     }
     // record not found
     return NULL;
