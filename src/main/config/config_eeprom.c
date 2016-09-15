@@ -145,13 +145,13 @@ const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFlags_e cl
 {
     const uint8_t *p = &__config_start;
     p += sizeof(configHeader_t);             // skip header
-    while(true) {
+    while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
-        if(record->size == 0
+        if (record->size == 0
            || p + record->size >= &__config_end
            || record->size < sizeof(*record))
             break;
-        if(pgN(reg) == record->pgn
+        if (pgN(reg) == record->pgn
            && (record->flags & CR_CLASSIFICATION_MASK) == classification)
             return record;
     }
@@ -166,7 +166,7 @@ bool loadEEPROM(void)
 {
     PG_FOREACH(reg) {
         configRecordFlags_e cls_start, cls_end;
-        if(pgIsSystem(reg)) {
+        if (pgIsSystem(reg)) {
             cls_start = CR_CLASSICATION_SYSTEM;
             cls_end = CR_CLASSICATION_SYSTEM;
         } else {
@@ -176,7 +176,7 @@ bool loadEEPROM(void)
         for (configRecordFlags_e cls = cls_start; cls <= cls_end; cls++) {
             int profileIndex = cls - cls_start;
             const configRecord_t *rec = findEEPROM(reg, cls);
-            if(rec) {
+            if (rec) {
                 // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
                 pgLoad(reg, profileIndex, rec->pg, rec->size, rec->version);
             } else {

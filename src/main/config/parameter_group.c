@@ -48,7 +48,7 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     const uint16_t regSize = pgSize(reg);
 
     memset(base, 0, regSize);
-    if(reg->reset.ptr >= (void*)__pg_resetdata_start && reg->reset.ptr < (void*)__pg_resetdata_end) {
+    if (reg->reset.ptr >= (void*)__pg_resetdata_start && reg->reset.ptr < (void*)__pg_resetdata_end) {
         // pointer points to resetdata section, to it is data template
         memcpy(base, reg->reset.ptr, regSize);
     } else if (reg->reset.fn) {
@@ -64,7 +64,7 @@ void pgReset(const pgRegistry_t* reg, int profileIndex)
 
 void pgResetCurrent(const pgRegistry_t *reg)
 {
-    if(pgIsSystem(reg)) {
+    if (pgIsSystem(reg)) {
         pgResetInstance(reg, reg->address);
     } else {
         pgResetInstance(reg, *reg->ptr);
@@ -75,7 +75,7 @@ void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int siz
 {
     pgResetInstance(reg, pgOffset(reg, profileIndex));
     // restore only matching version, keep defaults otherwise
-    if(version == pgVersion(reg)) {
+    if (version == pgVersion(reg)) {
         const int take = MIN(size, pgSize(reg));
         memcpy(pgOffset(reg, profileIndex), from, take);
     }
