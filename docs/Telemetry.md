@@ -70,7 +70,7 @@ Cels : average cell value, vbat divided by cell number.
 
 > Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
 > ```
-> set telemetry_flvss_cells = OFF
+> set telemetry_send_cells = OFF
 > ```
 > 
 > Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ.
@@ -199,7 +199,7 @@ Cels : average cell value, vbat divided by cell number.
 
 > Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
 > ```
-> set telemetry_flvss_cells = OFF
+> set telemetry_send_cells = OFF
 > ```
 > 
 > Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ. It is recommeded that you chain the flight controllers telemetry with a real Frsky FLVSS s.port sensor.

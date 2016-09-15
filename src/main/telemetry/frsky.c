@@ -357,7 +357,7 @@ static void sendVario(void)
  */
 static void sendVoltage(void)
 {
-    if (!telemetryConfig()->telemetry_flvss_cells) {
+    if (!telemetryConfig()->telemetry_send_cells) {
         return;
     }
     static uint16_t currentCell = 0;

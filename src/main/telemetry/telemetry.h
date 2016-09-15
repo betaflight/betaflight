@@ -30,7 +30,7 @@ typedef enum {
 typedef struct telemetryConfig_s {
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inversion;            // also shared with smartport inversion
-    uint8_t telemetry_flvss_cells;          // Enable/Disable FrSky FLVSS Individual Cell Voltages Telemetry "Cels"
+    uint8_t telemetry_send_cells;          // Enable/Disable Battery Cell responses.
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);

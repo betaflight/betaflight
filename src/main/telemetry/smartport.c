@@ -320,7 +320,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_CELLS       :
-                if (feature(FEATURE_VBAT) && telemetryConfig()->telemetry_flvss_cells) {
+                if (feature(FEATURE_VBAT) && telemetryConfig()->telemetry_send_cells) {
                     /*
                      * A cell packet is formated this way: https://github.com/jcheger/frsky-arduino/blob/master/FrskySP/FrskySP.cpp
                      * content    | length
