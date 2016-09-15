@@ -49,7 +49,7 @@
 
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
-extern float setpointRate[3];
+extern float setpointRate[3], ptermSetpointRate[3];
 extern float rcInput[3];
 
 static bool pidStabilisationEnabled;
@@ -135,7 +135,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
     float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], b[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
+    static float Kp[3], Ki[3], Kd[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -187,7 +187,6 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
             Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
             Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
-            b[axis] = pidProfile->ptermSetpointWeight / 100.0f;
             c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
             yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
             rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
@@ -219,11 +218,11 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
-                setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
+                ptermSetpointRate[axis] = setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
             } else {
                 // HORIZON mode - direct sticks control is applied to rate PID
                 // mix up angle error to desired AngleRate to add a little auto-level feel
-                setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
+                ptermSetpointRate[axis] = setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
             }
         }
 
@@ -234,42 +233,10 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // ----- calculate error / angle rates  ----------
         errorRate = setpointRate[axis] - PVRate;       // r - y
-        rP = b[axis] * setpointRate[axis] - PVRate;    // br - y
-
-        // Slowly restore original setpoint with more stick input
-        float diffRate = errorRate - rP;
-        rP += diffRate * rcInput[axis];
-
-        // Reduce Hunting effect and jittering near setpoint. Limit multiple zero crossing within deadband and lower PID affect during low error amount
-        float dynReduction = tpaFactor;
-        if (pidProfile->toleranceBand) {
-            const float minReduction = (float)pidProfile->toleranceBandReduction / 100.0f;
-            static uint8_t zeroCrossCount[3];
-            static uint8_t currentErrorPolarity[3];
-            if (ABS(errorRate) < pidProfile->toleranceBand) {
-                if (zeroCrossCount[axis]) {
-                    if (currentErrorPolarity[axis] == POSITIVE_ERROR) {
-                        if (errorRate < 0 ) {
-                            zeroCrossCount[axis]--;
-                            currentErrorPolarity[axis] = NEGATIVE_ERROR;
-                        }
-                    } else {
-                        if (errorRate > 0 ) {
-                            zeroCrossCount[axis]--;
-                            currentErrorPolarity[axis] = POSITIVE_ERROR;
-                        }
-                    }
-                } else {
-                    dynReduction *= constrainf(ABS(errorRate) / pidProfile->toleranceBand, minReduction, 1.0f);
-                }
-            } else {
-                zeroCrossCount[axis] =  pidProfile->zeroCrossAllowanceCount;
-                currentErrorPolarity[axis] = (errorRate > 0) ? POSITIVE_ERROR : NEGATIVE_ERROR;
-            }
-        }
+        rP = ptermSetpointRate[axis] - PVRate;         // br - y
 
         // -----calculate P component
-        PTerm = Kp[axis] * rP * dynReduction;
+        PTerm = Kp[axis] * rP * tpaFactor;
 
         // -----calculate I component.
         // Reduce strong Iterm accumulation during higher stick inputs
@@ -294,7 +261,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             // Divide delta by targetLooptime to get differential (ie dr/dt)
             delta *= (1.0f / getdT());
 
-            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd[axis] * delta * dynReduction;
+            if (debugMode == DEBUG_DTERM_FILTER) debug[axis] = Kd[axis] * delta * tpaFactor;
 
             // Filter delta
             if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
@@ -307,7 +274,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
                 }
             }
 
-            DTerm = Kd[axis] * delta * dynReduction;
+            DTerm = Kd[axis] * delta * tpaFactor;
 
             // -----calculate total PID output
             axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);

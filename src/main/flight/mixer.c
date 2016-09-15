@@ -864,13 +864,13 @@ void mixTable(void *pidProfilePtr)
 
     // Anti Desync feature for ESC's. Limit rapid throttle changes
     if (escAndServoConfig->maxEscThrottleJumpMs) {
-        const int16_t maxThrottleStep = constrain(escAndServoConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 5, 10000);
+        const int16_t maxThrottleStep = constrain(escAndServoConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
 
         // Only makes sense when it's within the range
         if (maxThrottleStep < throttleRange) {
             static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
 
-            motor[i] = constrain(motor[i], motorPrevious[i] - maxThrottleStep, motorPrevious[i] + maxThrottleStep);
+            motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
             motorPrevious[i] = motor[i];
         }
     }

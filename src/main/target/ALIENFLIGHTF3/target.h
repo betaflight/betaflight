@@ -124,11 +124,10 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-// IO - assuming 303 in 64pin package, TODO
+// IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )

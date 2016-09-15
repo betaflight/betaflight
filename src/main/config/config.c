@@ -172,7 +172,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 145;
+static const uint8_t EEPROM_CONF_VERSION = 146;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -235,7 +235,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 75;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->yaw_lpf_hz = 80;
+    pidProfile->yaw_lpf_hz = 0;
     pidProfile->rollPitchItermIgnoreRate = 130;
     pidProfile->yawItermIgnoreRate = 32;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
@@ -247,13 +247,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSetpointWeight = 85;
+    pidProfile->ptermSRateWeight = 85;
     pidProfile->dtermSetpointWeight = 150;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
-    pidProfile->toleranceBand = 0;
-    pidProfile->toleranceBandReduction = 40;
-    pidProfile->zeroCrossAllowanceCount = 2;
     pidProfile->itermThrottleGain = 0;
 
 #ifdef GTUNE
@@ -334,7 +331,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
-    telemetryConfig->telemetry_inversion = 0;
+    telemetryConfig->telemetry_inversion = 1;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -492,7 +489,7 @@ void createDefaultConfig(master_t *config)
     config->gyro_soft_type = FILTER_PT1;
     config->gyro_soft_lpf_hz = 90;
     config->gyro_soft_notch_hz = 0;
-    config->gyro_soft_notch_cutoff = 150;
+    config->gyro_soft_notch_cutoff = 130;
 
     config->debug_mode = DEBUG_NONE;
 
@@ -890,12 +887,6 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_DISPLAY);
     }
 #endif
-
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
-
 
 /*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
     if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
