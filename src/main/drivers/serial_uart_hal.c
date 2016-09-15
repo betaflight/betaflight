@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 #include "io.h"
@@ -283,7 +283,7 @@ uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
     }
 }
 
-uint8_t uartTotalTxBytesFree(serialPort_t *instance)
+uint32_t uartTotalTxBytesFree(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
 

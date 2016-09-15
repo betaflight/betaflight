@@ -16,19 +16,18 @@
  */
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
+
 #include "common/utils.h"
-#include "drivers/io.h"
+#include "io.h"
 
 #include "vcp_hal/usbd_cdc_interface.h"
 
-#include "drivers/system.h"
+#include "system.h"
 
 #include "serial.h"
 #include "serial_usb_vcp.h"
@@ -39,8 +38,7 @@
 static vcpPort_t vcpPort;
 USBD_HandleTypeDef USBD_Device;
 
-
-void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
+static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     UNUSED(instance);
     UNUSED(baudRate);
@@ -48,7 +46,7 @@ void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     // TODO implement
 }
 
-void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
+static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
 {
     UNUSED(instance);
     UNUSED(mode);
@@ -56,20 +54,20 @@ void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-uint32_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
     uint32_t receiveLength = vcpAvailable();
     return receiveLength;
 }
 
-uint8_t usbVcpRead(serialPort_t *instance)
+static uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
     return vcpRead();
@@ -134,7 +132,7 @@ static void usbVcpBeginWrite(serialPort_t *instance)
     port->buffering = true;
 }
 
-uint8_t usbTxBytesFree()
+uint32_t usbTxBytesFree()
 {
     // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
     return 255;
@@ -156,9 +154,9 @@ static const struct serialPortVTable usbVTable[] = {
         .serialSetBaudRate = usbVcpSetBaudRate,
         .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
         .setMode = usbVcpSetMode,
+        .writeBuf = usbVcpWriteBuf,
         .beginWrite = usbVcpBeginWrite,
-        .endWrite = usbVcpEndWrite,
-        .writeBuf = usbVcpWriteBuf
+        .endWrite = usbVcpEndWrite
     }
 };
 

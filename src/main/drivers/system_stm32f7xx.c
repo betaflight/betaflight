@@ -22,20 +22,12 @@
 
 #include "platform.h"
 
-#include "gpio.h"
+#include "accgyro_mpu.h"
+#include "exti.h"
 #include "nvic.h"
 #include "system.h"
 
-
 #include "exti.h"
-#include "debug.h"
-#include "sensor.h"
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_mpu6000.h"
-#include "accgyro_mpu6500.h"
-#include "accgyro_spi_mpu9250.h"
-
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 void SystemClock_Config(void);
@@ -181,7 +173,6 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
     //SysTick_Config(SystemCoreClock / 1000);
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);

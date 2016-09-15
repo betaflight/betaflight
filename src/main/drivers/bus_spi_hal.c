@@ -20,8 +20,6 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
 #include "bus_spi.h"
 #include "dma.h"
 #include "io.h"

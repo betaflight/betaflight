@@ -20,8 +20,6 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #include "gpio.h"
 
 #define MODE_OFFSET 0
