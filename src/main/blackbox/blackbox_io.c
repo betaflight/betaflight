@@ -50,6 +50,7 @@
 #include "common/printf.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"

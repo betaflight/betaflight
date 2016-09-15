@@ -428,6 +428,7 @@ COMMON_SRC = \
             flight/failsafe.c \
             flight/imu.c \
             flight/mixer.c \
+            flight/servos.c \
             flight/pid.c \
             flight/pid_legacy.c \
             flight/pid_betaflight.c \

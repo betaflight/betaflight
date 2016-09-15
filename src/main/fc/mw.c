@@ -76,6 +76,7 @@
 #include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
