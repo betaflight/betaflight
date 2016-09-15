@@ -121,10 +121,10 @@ typedef struct rxConfig_s {
     uint8_t rssi_channel;
     uint8_t rssi_scale;
     uint8_t rssi_ppm_invert;
-    uint8_t rcSmoothing;                    // Enable/Disable RC filtering
     uint16_t midrc;                         // Some radios have not a neutral point centered on 1500. can be changed here
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
+    uint8_t rcSmoothing;                    // Enable/Disable RC filtering
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
@@ -142,12 +142,11 @@ typedef struct rxRuntimeConfig_s {
 
 extern rxRuntimeConfig_t rxRuntimeConfig;
 
+typedef uint16_t (*rcReadRawDataPtr)(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
+
 struct modeActivationCondition_s;
 void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(rxConfig_t *rxConfigToUse);
-
-typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
-
 void updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);

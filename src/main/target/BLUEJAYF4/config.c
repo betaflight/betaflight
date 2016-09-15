@@ -73,10 +73,10 @@
 #include "hardware_revision.h"
 
 // alternative defaults settings for BlueJayF4 targets
-void targetConfiguration(void) 
+void targetConfiguration(master_t *config)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
-        masterConfig.sensorAlignmentConfig.gyro_align = CW180_DEG;
-        masterConfig.sensorAlignmentConfig.acc_align  = CW180_DEG;
+        config->sensorAlignmentConfig.gyro_align = CW180_DEG;
+        config->sensorAlignmentConfig.acc_align  = CW180_DEG;
     }
 }

@@ -23,6 +23,7 @@
 
 #include "build/build_config.h"
 
+#include "blackbox/blackbox_io.h"
 
 #include "common/color.h"
 #include "common/axis.h"
@@ -33,7 +34,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
@@ -44,8 +44,8 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/boardalignment.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -58,8 +58,6 @@
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
-
-#include "blackbox/blackbox_io.h"
 
 #include "telemetry/telemetry.h"
 
@@ -80,24 +78,20 @@
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
+#ifndef RX_SPI_DEFAULT_PROTOCOL
+#define RX_SPI_DEFAULT_PROTOCOL 0
+#endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
-
-#ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
-#endif
-#ifndef RX_SPI_DEFAULT_PROTOCOL
-#define RX_SPI_DEFAULT_PROTOCOL 0
-#endif
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
+
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
 {
@@ -251,7 +245,11 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 
 void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
+#ifdef BRUSHED_MOTORS
+    escAndServoConfig->minthrottle = 1000;
+#else
     escAndServoConfig->minthrottle = 1150;
+#endif
     escAndServoConfig->maxthrottle = 1850;
     escAndServoConfig->mincommand = 1000;
     escAndServoConfig->servoCenterPulse = 1500;
@@ -392,8 +390,6 @@ uint16_t getCurrentMinthrottle(void)
 // Default settings
 static void resetConf(void)
 {
-    int i;
-
     // Clear all configuration
     memset(&masterConfig, 0, sizeof(master_t));
     setProfile(0);
@@ -441,7 +437,11 @@ static void resetConf(void)
     resetTelemetryConfig(&masterConfig.telemetryConfig);
 #endif
 
+#ifdef SERIALRX_PROVIDER
+    masterConfig.rxConfig.serialrx_provider = SERIALRX_PROVIDER;
+#else
     masterConfig.rxConfig.serialrx_provider = 0;
+#endif
     masterConfig.rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
     masterConfig.rxConfig.spektrum_sat_bind = 0;
     masterConfig.rxConfig.midrc = 1500;
@@ -450,7 +450,7 @@ static void resetConf(void)
     masterConfig.rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
     masterConfig.rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
 
-    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
         channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
         channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
@@ -506,7 +506,7 @@ static void resetConf(void)
 
     resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
 
-    // for (i = 0; i < CHECKBOXITEMS; i++)
+    // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
 
     currentProfile->mag_declination = 0;
@@ -516,7 +516,11 @@ static void resetConf(void)
     resetBarometerConfig(&masterConfig.barometerConfig);
 
     // Radio
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234", &masterConfig.rxConfig);
+#else
     parseRcChannels("AETR1234", &masterConfig.rxConfig);
+#endif
 
     resetRcControlsConfig(&currentProfile->rcControlsConfig);
 
@@ -532,7 +536,7 @@ static void resetConf(void)
 
 #ifdef USE_SERVOS
     // servos
-    for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         currentProfile->servoConf[i].min = DEFAULT_SERVO_MIN;
         currentProfile->servoConf[i].max = DEFAULT_SERVO_MAX;
         currentProfile->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
@@ -551,8 +555,9 @@ static void resetConf(void)
 #endif
 
     // custom mixer. clear by defaults.
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         masterConfig.customMotorMixer[i].throttle = 0.0f;
+    }
 
 #ifdef LED_STRIP
     applyDefaultColors(masterConfig.colors);
@@ -600,7 +605,6 @@ static void resetConf(void)
 #else
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
-    masterConfig.rxConfig.serialrx_provider = 1;
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
@@ -665,16 +669,16 @@ static void resetConf(void)
 #endif
 
     // copy first profile into remaining profile
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
     }
 
     // copy first control rate config into remaining profile
-    for (i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.controlRateProfiles[i], currentControlRateProfile, sizeof(controlRateConfig_t));
     }
 
-    for (i = 1; i < MAX_PROFILE_COUNT; i++) {
+    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         masterConfig.profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
     }
 }
@@ -742,45 +746,27 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
-         featureSet(DEFAULT_RX_FEATURE);
-     }
+        featureSet(DEFAULT_RX_FEATURE);
+    }
 
-     if (featureConfigured(FEATURE_RX_PPM)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
-     }
+    if (featureConfigured(FEATURE_RX_PPM)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_SPI);
+    }
 
-     if (featureConfigured(FEATURE_RX_MSP)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
-     }
+    if (featureConfigured(FEATURE_RX_MSP)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_SPI);
+    }
 
-     if (featureConfigured(FEATURE_RX_SERIAL)) {
-         featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
-     }
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
+        featureClear(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+    }
 
-     if (featureConfigured(FEATURE_RX_SPI)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
-     }
-
-#if defined(NAV)
-    // Ensure sane values of navConfig settings
-    validateNavConfig(&masterConfig.navConfig);
-#endif
-
-    if (featureConfigured(FEATURE_SOFTSPI)) {
-        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
-#if defined(STM32F10X)
-        featureClear(FEATURE_LED_STRIP);
-        // rssi adc needs the same ports
-        featureClear(FEATURE_RSSI_ADC);
-        // current meter needs the same ports
-        if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
-            featureClear(FEATURE_CURRENT_METER);
-        }
-#endif
+    if (featureConfigured(FEATURE_RX_SPI)) {
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM | FEATURE_RX_MSP);
     }
 
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
-         featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
+        featureClear(FEATURE_RX_SERIAL | FEATURE_RX_MSP | FEATURE_RX_PPM | FEATURE_RX_SPI);
 #if defined(STM32F10X)
         // rssi adc needs the same ports
         featureClear(FEATURE_RSSI_ADC);
@@ -788,7 +774,6 @@ void validateAndFixConfig(void)
         if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
             featureClear(FEATURE_CURRENT_METER);
         }
-
 #if defined(CC3D)
         // There is a timer clash between PWM RX pins and motor output pins - this forces us to have same timer tick rate for these timers
         // which is only possible when using brushless motors w/o oneshot (timer tick rate is PWM_TIMER_MHZ)
@@ -811,6 +796,21 @@ void validateAndFixConfig(void)
         // software serial needs free PWM ports
         featureClear(FEATURE_SOFTSERIAL);
     }
+
+#ifdef USE_SOFTSPI
+    if (featureConfigured(FEATURE_SOFTSPI)) {
+        featureClear(FEATURE_RX_PPM | FEATURE_RX_PARALLEL_PWM | FEATURE_SOFTSERIAL | FEATURE_VBAT);
+#if defined(STM32F10X)
+        featureClear(FEATURE_LED_STRIP);
+        // rssi adc needs the same ports
+        featureClear(FEATURE_RSSI_ADC);
+        // current meter needs the same ports
+        if (masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
+            featureClear(FEATURE_CURRENT_METER);
+        }
+#endif
+    }
+#endif
 
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
@@ -851,7 +851,7 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_USART3)
+#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
         featureClear(FEATURE_DISPLAY);
     }
@@ -904,6 +904,10 @@ void validateAndFixConfig(void)
      if (!isMixerEnabled(masterConfig.mixerMode)) {
          masterConfig.mixerMode = DEFAULT_MIXER;
      }
+#if defined(NAV)
+    // Ensure sane values of navConfig settings
+    validateNavConfig(&masterConfig.navConfig);
+#endif
 }
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)

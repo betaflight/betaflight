@@ -17,7 +17,11 @@
 
 #pragma once
 
+#if FLASH_SIZE <= 128
+#define MAX_PROFILE_COUNT 2
+#else
 #define MAX_PROFILE_COUNT 3
+#endif
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 
@@ -93,3 +97,6 @@ bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 
 uint16_t getCurrentMinthrottle(void);
+struct master_s;
+void targetConfiguration(struct master_s *config);
+

@@ -22,11 +22,9 @@
 #include <string.h>
 
 #include "platform.h"
+
 #include "build/build_config.h"
-
 #include "build/debug.h"
-
-
 
 #include "common/maths.h"
 
@@ -35,19 +33,19 @@
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
-
-#include "io/serial.h"
-#include "fc/rc_controls.h"
-
-
-#include "flight/failsafe.h"
-
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+
+#include "io/serial.h"
+
+#include "rx/rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -58,8 +56,6 @@
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
 #include "rx/rx_spi.h"
-
-#include "rx/rx.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS
@@ -97,7 +93,7 @@ rxRuntimeConfig_t rxRuntimeConfig;
 static rxConfig_t *rxConfig;
 static uint8_t rcSampleIndex = 0;
 
-static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
+static uint16_t nullReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
     UNUSED(rxRuntimeConfig);
     UNUSED(channel);
 
@@ -668,4 +664,3 @@ void updateRSSI(uint32_t currentTime)
 void initRxRefreshRate(uint16_t *rxRefreshRatePtr) {
     *rxRefreshRatePtr = rxRefreshRate;
 }
-
