@@ -357,39 +357,40 @@ static void sendVario(void)
  */
 static void sendVoltage(void)
 {
-    if (telemetryConfig()->telemetry_flvss_cells) {
-        static uint16_t currentCell = 0;
-        uint32_t cellVoltage;
-        uint16_t payload;
-
-        /*
-         * Format for Voltage Data for single cells is like this:
-         *
-         *  llll llll cccc hhhh
-         *  l: Low voltage bits
-         *  h: High voltage bits
-         *  c: Cell number (starting at 0)
-         *
-         * The actual value sent for cell voltage has resolution of 0.002 volts
-         * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
-         */
-        cellVoltage = ((uint32_t)vbat * 100 + batteryCellCount) / (batteryCellCount * 2);
-
-        // Cell number is at bit 9-12
-        payload = (currentCell << 4);
-
-        // Lower voltage bits are at bit 0-8
-        payload |= ((cellVoltage & 0x0ff) << 8);
-
-        // Higher voltage bits are at bits 13-15
-        payload |= ((cellVoltage & 0xf00) >> 8);
-
-        sendDataHead(ID_VOLT);
-        serialize16(payload);
-
-        currentCell++;
-        currentCell %= batteryCellCount;
+    if (!telemetryConfig()->telemetry_flvss_cells) {
+        return;
     }
+    static uint16_t currentCell = 0;
+    uint32_t cellVoltage;
+    uint16_t payload;
+
+    /*
+     * Format for Voltage Data for single cells is like this:
+     *
+     *  llll llll cccc hhhh
+     *  l: Low voltage bits
+     *  h: High voltage bits
+     *  c: Cell number (starting at 0)
+     *
+     * The actual value sent for cell voltage has resolution of 0.002 volts
+     * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
+     */
+    cellVoltage = ((uint32_t)vbat * 100 + batteryCellCount) / (batteryCellCount * 2);
+
+    // Cell number is at bit 9-12
+    payload = (currentCell << 4);
+
+    // Lower voltage bits are at bit 0-8
+    payload |= ((cellVoltage & 0x0ff) << 8);
+
+    // Higher voltage bits are at bits 13-15
+    payload |= ((cellVoltage & 0xf00) >> 8);
+
+    sendDataHead(ID_VOLT);
+    serialize16(payload);
+
+    currentCell++;
+    currentCell %= batteryCellCount;
 }
 
 /*
