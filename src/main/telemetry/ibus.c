@@ -59,8 +59,8 @@
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
  * both TX and RX. It runs at a fixed baud rate of 115200. Queries are sent
  * every 7ms by the iBus receiver. Multiple sensors can be daisy chained with
- * ibus but not with this implementation, only because i don't have one of the
- * sensors to test with!
+ * ibus but this is implemented but not tested because i don't have one of the
+ * sensors to test with
  *
  *     _______
  *    /       \                                             /---------\

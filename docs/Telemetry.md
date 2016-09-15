@@ -11,7 +11,7 @@ feature TELEMETRY
 ```
 
 Multiple telemetry providers are currently supported, FrSky, Graupner
-HoTT V4, SmartPort (S.Port) and LightTelemetry (LTM)
+HoTT V4, SmartPort (S.Port), LightTelemetry (LTM) and Ibus
 
 All telemetry systems use serial ports, configure serial ports to use the telemetry system required.
 
@@ -250,3 +250,43 @@ Notes:
 
 * This has been tested with Flip32 and SPracingF3 boards and FrSky X8R and X4R receivers
 * To discover all sensors board has to be armed, and when GPS is connected, it needs to have a proper 3D fix. When not armed, values like ***Vfas*** or GPS coordinates may not sent.
+
+
+## Ibus telemetry
+
+Ibus telemetry requires a single connection from the TX pin of a bidirectional serial port to the Ibus sens pin on an FlySky telemetry receiver. (tested with fs-iA6B receiver, iA10 should work)
+
+It shares 1 line for both TX and RX, the rx pin cannot be used for other serial port stuff.
+It runs at a fixed baud rate of 115200.
+
+```
+     _______
+    /       \                                             /---------\
+    | STM32 |--UART TX-->[Bi-directional @ 115200 baud]<--| IBUS RX |
+    |  uC   |--UART RX--x[not connected]                  \---------/
+    \_______/
+```
+
+It should be possible to daisy chain multiple sensors with ibus. This is implemented but not tested because i don't have one of the sensors to test with.
+
+### Configuration
+
+CLI command to enable:
+```
+serial 1 1024 115200 57600 115200 115200
+```
+
+CLI setting to determine if the voltage reported is Vbatt or calculated average cell voltage
+```
+set ibus_report_cell_voltage=[ON/OFF]
+```
+
+### Available sensors
+
+The following sensors are transmitted :
+
+Tmp1 : baro temp if available, gyro otherwise.
+
+RPM : throttle value
+
+Vbatt : configurable battery voltage or the average cell value, vbat divided by number of cells.
