@@ -31,42 +31,17 @@
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 #include "config/profile.h"
-#include "config/config_reset.h"
-#include "config/config_system.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "osd/config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include "io/beeper.h"
 #include "io/serial.h"
 
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
 #include "sensors/amperage.h"
-#include "sensors/acceleration.h"
 
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
-#include "flight/navigation.h"
-
-
-// FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
-#include "io/motor_and_servo.h"
-
-
-#ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
-#endif
-
 
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
@@ -75,6 +50,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 
 #ifdef BOARD_HAS_AMPERAGE_METER
     batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
+#endif
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
 #endif
 }
 

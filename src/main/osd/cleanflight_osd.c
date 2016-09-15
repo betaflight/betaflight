@@ -26,6 +26,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/feature.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -52,6 +53,7 @@
 
 #include "io/statusindicator.h"
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
@@ -133,3 +135,12 @@ void taskUpdateBattery(void)
         amperageUpdateMeter(ibatTimeSinceLastServiced);
     }
 }
+
+#ifdef TRANSPONDER
+void taskTransponder(void)
+{
+    if (feature(FEATURE_TRANSPONDER)) {
+        updateTransponder();
+    }
+}
+#endif

@@ -90,6 +90,15 @@ cfTask_t cfTasks[] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
+#ifdef TRANSPONDER
+    [TASK_TRANSPONDER] = {
+        .taskName = "TRANSPONDER",
+        .taskFunc = taskTransponder,
+        .desiredPeriod = 1000000 / 250,         // 250 Hz, every 4 ms
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
     [TASK_TEST] = {
         .taskName = "TEST",
         .taskFunc = taskTest,

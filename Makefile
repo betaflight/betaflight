@@ -320,6 +320,7 @@ FC_COMMON_SRC = \
 		   sensors/initialisation.c
 
 OSD_COMMON_SRC = \
+		   config/feature.c \
 		   osd/boot.c \
 		   osd/cleanflight_osd.c \
 		   osd/fc_state.c \
@@ -808,7 +809,10 @@ SPRACINGF3OSD_SRC = \
 		   drivers/io.c \
 		   drivers/exti.c \
 		   drivers/rcc.c \
+		   drivers/transponder_ir.c \
+		   drivers/transponder_ir_stm32f30x.c \
 		   io/flashfs.c \
+		   io/transponder_ir.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
 		   $(OSD_COMMON_SRC) \

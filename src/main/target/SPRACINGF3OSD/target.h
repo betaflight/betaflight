@@ -133,6 +133,21 @@
 
 #define BOARD_HAS_AMPERAGE_METER
 
+#define TRANSPONDER
+#define TRANSPONDER_GPIO                     GPIOA
+#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
+#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
+#define TRANSPONDER_PIN                      GPIO_Pin_8
+#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
+#define TRANSPONDER_TIMER                    TIM1
+#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
+#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
+#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
+#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
+#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
+
+#define DEFAULT_FEATURES FEATURE_TRANSPONDER
+
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff

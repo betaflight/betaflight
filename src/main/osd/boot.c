@@ -35,6 +35,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/feature.h"
 
 #include "drivers/nvic.h"
 
@@ -48,6 +49,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_spi.h"
 #include "drivers/flash_m25p16.h"
+#include "drivers/transponder_ir.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video.h"
 #include "drivers/usb_io.h"
@@ -60,6 +62,7 @@
 
 #include "io/serial.h"
 #include "io/flashfs.h"
+#include "io/transponder_ir.h"
 
 #include "osd/msp_server_osd.h"
 #include "msp/msp.h"
@@ -103,6 +106,7 @@ PG_RESET_TEMPLATE(flashchipConfig_t, flashchipConfig,
 typedef enum {
     SYSTEM_STATE_INITIALISING        = 0,
     SYSTEM_STATE_CONFIG_LOADED       = (1 << 0),
+    SYSTEM_STATE_TRANSPONDER_ENABLED = (1 << 1),
 
     SYSTEM_STATE_READY               = (1 << 7)
 } systemState_e;
@@ -148,6 +152,9 @@ void init(void)
 
     systemInit();
 
+    // Latch active features to be used for feature() in the remainder of init().
+    latchActiveFeatures();
+
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
 
@@ -184,6 +191,14 @@ void init(void)
     mspInit();
     mspSerialInit();
 
+#ifdef TRANSPONDER
+    if (feature(FEATURE_TRANSPONDER)) {
+        transponderInit(transponderConfig()->data);
+        transponderEnable();
+        transponderStartRepeating();
+        systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
+    }
+#endif
 
 #ifdef USE_FLASHFS
 #if defined(USE_FLASH_M25P16)
@@ -217,6 +232,10 @@ void configureScheduler(void)
     setTaskEnabled(TASK_DRAW_SCREEN, true);
     setTaskEnabled(TASK_UPDATE_FC_STATE, true);
 
+#ifdef TRANSPONDER
+    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+
     setTaskEnabled(TASK_TEST, true);
 }
 
@@ -232,5 +251,13 @@ int main(void) {
 
 void HardFault_Handler(void)
 {
+#ifdef TRANSPONDER
+    // prevent IR LEDs from burning out.
+    uint8_t requiredStateForTransponder = SYSTEM_STATE_CONFIG_LOADED | SYSTEM_STATE_TRANSPONDER_ENABLED;
+    if ((systemState & requiredStateForTransponder) == requiredStateForTransponder) {
+        transponderIrDisable();
+    }
+#endif
+
     while (1);
 }

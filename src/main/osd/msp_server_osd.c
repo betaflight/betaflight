@@ -27,6 +27,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/feature.h"
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -46,6 +47,7 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
+#include "io/transponder_ir.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -369,6 +371,33 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             }
             break;
         }
+
+        case MSP_FEATURE:
+            sbufWriteU32(dst, featureMask());
+            break;
+
+        case MSP_SET_FEATURE:
+            featureClearAll();
+            featureSet(sbufReadU32(src)); // features bitmap
+            break;
+
+        case MSP_TRANSPONDER_CONFIG:
+#ifdef TRANSPONDER
+            sbufWriteU8(dst, 1); //Transponder supported
+            sbufWriteData(dst, transponderConfig()->data, sizeof(transponderConfig()->data));
+#else
+            sbufWriteU8(dst, 0); // Transponder not supported
+#endif
+            break;
+
+#ifdef TRANSPONDER
+        case MSP_SET_TRANSPONDER_CONFIG:
+            if (len != sizeof(transponderConfig()->data))
+                return -1;
+            sbufReadData(src, transponderConfig()->data, sizeof(transponderConfig()->data));
+            transponderUpdateData(transponderConfig()->data);
+            break;
+#endif
 
         case MSP_REBOOT:
             mspPostProcessFn = mspRebootFn;

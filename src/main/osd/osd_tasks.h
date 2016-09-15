@@ -27,6 +27,7 @@ typedef enum {
     TASK_MSP_SERVER,
     TASK_DRAW_SCREEN,
     TASK_UPDATE_FC_STATE,
+    TASK_TRANSPONDER,
     TASK_TEST,
 
     /* Count of real tasks */
@@ -41,4 +42,5 @@ void taskHardwareWatchdog(void);
 void taskSystem(void);
 void taskDrawScreen(void);
 void taskUpdateFCState(void);
+void taskTransponder(void);
 void taskTest(void);
