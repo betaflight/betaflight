@@ -18,6 +18,6 @@
 #pragma once
 
 bool isEEPROMContentValid(void);
-bool scanEEPROM(bool andLoad);
+bool loadEEPROM(void);
 void writeConfigToEEPROM(void);
 void activateProfile(uint8_t profileIndexToActivate);

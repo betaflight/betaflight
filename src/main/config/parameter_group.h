@@ -219,12 +219,11 @@ extern const uint8_t __pg_resetdata_end[];
     }                                                                   \
     /**/
 
-typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
-
 const pgRegistry_t* pgFind(pgn_t pgn);
-const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex);
+
+void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int size, int version);
 int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex);
-void pgResetAll(uint8_t profileCount);
-void pgActivateProfile(uint8_t profileIndexToActivate);
+void pgResetAll(int profileCount);
 void pgResetCurrent(const pgRegistry_t *reg);
+void pgReset(const pgRegistry_t* reg, int profileIndex);
+void pgActivateProfile(int profileIndex);
