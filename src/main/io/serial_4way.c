@@ -44,6 +44,10 @@
 #include "io/serial_4way_stk500v2.h"
 #endif
 
+#if defined(USE_HAL_DRIVER)
+#define Bit_RESET GPIO_PIN_RESET
+#endif
+
 #define USE_TXRX_LED
 
 #ifdef  USE_TXRX_LED

@@ -336,18 +336,36 @@ uint8_t vcpAvailable()
     return rxAvailable;
 }
 
-uint32_t vcpWrite(uint8_t ch)
+/**
+ * @brief  vcpWrite
+ *         CDC received data to be send over USB IN endpoint are managed in
+ *         this function.
+ * @param  Buf: Buffer of data to be sent
+ * @param  Len: Number of data to be sent (in bytes)
+ * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
+ */
+uint32_t vcpWrite(uint8_t* Buf, uint32_t Len)
 {
-    UserTxBuffer[UserTxBufPtrIn] = ch;
-    UserTxBufPtrIn++;
-      
-    /* To avoid buffer overflow */
-    if(UserTxBufPtrIn == APP_RX_DATA_SIZE)
+    uint32_t ptr_head = UserTxBufPtrIn;
+    uint32_t ptr_tail = UserTxBufPtrOut;
+    uint32_t i = 0;
+
+    for (i = 0; i < Len; i++)
     {
-        UserTxBufPtrIn = 0;
+        // head reached tail
+        if(ptr_head == (ptr_tail-1))
+        {
+            break;
+        }
+
+        UserTxBuffer[ptr_head++] = Buf[i];
+        if(ptr_head == (APP_RX_DATA_SIZE))
+        {
+            ptr_head = 0;
+        }
     }
-    
-    return 1;
+    UserTxBufPtrIn = ptr_head;
+    return i;
 }
 
 uint32_t vcpBaudrate()

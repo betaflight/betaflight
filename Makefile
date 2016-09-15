@@ -651,9 +651,6 @@ F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/pwm_output.c \
-            io/serial_4way.c \
-            io/serial_4way_avrootloader.c \
-            io/serial_4way_stk500v2.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied

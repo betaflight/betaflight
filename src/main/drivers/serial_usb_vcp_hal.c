@@ -83,8 +83,10 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
     }
 
     uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = vcpWrite(*p);
+    uint8_t *p = data;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = vcpWrite(p, count);
         count -= txed;
         p += txed;
 
@@ -105,15 +107,20 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (!vcpIsConnected()) {
         return false;
     }
-    
-    uint32_t txed;
+
     uint32_t start = millis();
+    uint8_t *p = port->txBuf;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = vcpWrite(p, count);
+        count -= txed;
+        p += txed;
 
-    do {
-        txed += vcpWrite(port->txBuf[txed]);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
-
-    return txed == count;
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+    return count == 0;
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)
