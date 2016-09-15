@@ -120,7 +120,7 @@
 #define LED0
 #define LED1
 #define INVERTER
-#define DISPLAY
+//#define DISPLAY
 
 #define SONAR
 #define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
