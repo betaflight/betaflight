@@ -129,4 +129,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+    [TASK_PWMDRIVER] = {
+        .taskName = "PWMDRIVER",
+        .taskFunc = taskSyncPwmDriver,
+        .desiredPeriod = 1000000 / 200,         // 200 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+#endif
+
 };

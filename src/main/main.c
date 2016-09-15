@@ -62,6 +62,8 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+#include "io/pwmdriver_i2c.h"
+#include "drivers/io_pca9685.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -280,6 +282,16 @@ void init(void)
 
 #ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+    /*
+    If external PWM driver is enabled, for example PCA9685, disable internal
+    servo handling mechanism, since external device will do that
+    */
+    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+        pwm_params.useServos = false;
+    }
 #endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
@@ -573,6 +585,10 @@ void init(void)
     LED2_ON;
 #endif
 
+#ifdef USE_PMW_SERVO_DRIVER
+    pwmDriverInitialize();
+#endif
+
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
     motorControlEnable = true;
@@ -635,6 +651,10 @@ int main(void)
 #endif
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+#endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+    setTaskEnabled(TASK_PWMDRIVER, feature(FEATURE_PWM_SERVO_DRIVER));
 #endif
 
     while (true) {

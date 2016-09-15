@@ -88,6 +88,9 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
+#include "io/pwmdriver_i2c.h"
+#include "drivers/io_pca9685.h"
+
 // June 2013     V2.2-dev
 
 enum {
@@ -632,6 +635,7 @@ void taskMainPidLoop(void)
         handleBlackbox();
     }
 #endif
+
 }
 
 // Function for loop trigger
@@ -771,6 +775,15 @@ void taskLedStrip(void)
 {
     if (feature(FEATURE_LED_STRIP)) {
         updateLedStrip();
+    }
+}
+#endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+void taskSyncPwmDriver(void) {
+
+    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+        pwmDriverSync();
     }
 }
 #endif

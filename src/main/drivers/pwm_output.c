@@ -28,6 +28,10 @@
 #include "timer.h"
 #include "pwm_mapping.h"
 #include "pwm_output.h"
+#include "drivers/io_pca9685.h"
+#include "io/pwmdriver_i2c.h"
+#include "config/config.h"
+#include "fc/runtime_config.h"
 
 typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
@@ -129,7 +133,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     p->tim = timerHardware->tim;
 
     *p->ccr = 0;
-   
+
     return p;
 }
 
@@ -219,8 +223,18 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
 
 void pwmWriteServo(uint8_t index, uint16_t value)
 {
+#ifdef USE_PMW_SERVO_DRIVER
+
+    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+        pwmDriverSetPulse(index, value);
+    } else if (servos[index] && index < MAX_SERVOS) {
+        *servos[index]->ccr = value;
+    }
+
+#else
     if (servos[index] && index < MAX_SERVOS) {
         *servos[index]->ccr = value;
     }
+#endif
 }
 #endif

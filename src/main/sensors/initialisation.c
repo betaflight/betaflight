@@ -787,4 +787,3 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
     return true;
 }
-

@@ -33,4 +33,6 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
-
+#ifdef USE_PMW_SERVO_DRIVER
+void taskSyncPwmDriver(void);
+#endif
