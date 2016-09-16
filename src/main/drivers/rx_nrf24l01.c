@@ -29,13 +29,9 @@
 #include "build/build_config.h"
 
 #include "system.h"
-#include "gpio.h"
 #include "io.h"
-#include "io_impl.h"
-#include "rcc.h"
 #include "rx_spi.h"
 #include "rx_nrf24l01.h"
-#include "bus_spi.h"
 
 #define NRF24_CE_HI()       {IOHi(IOGetByTag(IO_TAG(RX_CE_PIN)));}
 #define NRF24_CE_LO()       {IOLo(IOGetByTag(IO_TAG(RX_CE_PIN)));}
