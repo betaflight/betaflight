@@ -37,7 +37,6 @@
 #include "rx/rx.h"
 #include "rx/sumh.h"
 
-#ifdef USE_SERIALRX_SUMH
 // driver for SUMH receiver using UART2
 
 #define SUMH_BAUDRATE 115200
@@ -52,21 +51,21 @@ static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 
 static serialPort_t *sumhPort;
 
-
 static void sumhDataReceive(uint16_t c);
 static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 
-bool sumhInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
 
-    if (callback)
-        *callback = sumhReadRawRC;
-
     rxRuntimeConfig->channelCount = SUMH_MAX_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 11000;
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    rxRuntimeConfig->rcReadRawFn = sumhReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sumhFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
@@ -104,20 +103,20 @@ uint8_t sumhFrameStatus(void)
     uint8_t channelIndex;
 
     if (!sumhFrameDone) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     sumhFrameDone = false;
 
     if (!((sumhFrame[0] == 0xA8) && (sumhFrame[SUMH_FRAME_SIZE - 2] == 0))) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     for (channelIndex = 0; channelIndex < SUMH_MAX_CHANNEL_COUNT; channelIndex++) {
         sumhChannels[channelIndex] = (((uint32_t)(sumhFrame[(channelIndex << 1) + 3]) << 8)
                 + sumhFrame[(channelIndex << 1) + 4]) / 6.4f - 375;
     }
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
@@ -130,5 +129,4 @@ static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 
     return sumhChannels[chan];
 }
-
-#endif
+#endif // USE_SERIALRX_SUMH

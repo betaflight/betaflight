@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SERIALRX_SBUS
+
 #include "build/build_config.h"
 
 #include "drivers/serial.h"
@@ -30,8 +32,6 @@
 
 #include "rx/rx.h"
 #include "rx/sbus.h"
-
-#ifdef USE_SERIALRX_SBUS
 
 /*
  * Observations
@@ -76,16 +76,19 @@ static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    int b;
-    for (b = 0; b < SBUS_MAX_CHANNEL; b++)
+    for (int b = 0; b < SBUS_MAX_CHANNEL; b++) {
         sbusChannelData[b] = (16 * rxConfig->midrc) / 10 - 1408;
-    if (callback)
-        *callback = sbusReadRawRC;
-    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+    }
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFn = sbusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
@@ -174,7 +177,7 @@ static void sbusDataReceive(uint16_t c)
 uint8_t sbusFrameStatus(void)
 {
     if (!sbusFrameDone) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
     sbusFrameDone = false;
 
@@ -225,13 +228,13 @@ uint8_t sbusFrameStatus(void)
         debug[0] = sbusStateFlags;
 #endif
         // RX *should* still be sending valid channel data, so use it.
-        return SERIAL_RX_FRAME_COMPLETE | SERIAL_RX_FRAME_FAILSAFE;
+        return RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
     }
 
 #ifdef DEBUG_SBUS_PACKETS
     debug[0] = sbusStateFlags;
 #endif
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
@@ -241,5 +244,4 @@ static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     // http://www.wolframalpha.com/input/?i=linear+fit+%7B173%2C+988%7D%2C+%7B1812%2C+2012%7D%2C+%7B993%2C+1500%7D
     return (0.625f * sbusChannelData[chan]) + 880;
 }
-
-#endif
+#endif // USE_SERIALRX_SBUS
