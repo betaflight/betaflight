@@ -50,6 +50,7 @@ typedef enum {
     BOXFAILSAFE,
     BOXAIRMODE,
     BOX3DDISABLESWITCH,
+    BOXFPVANGLEMIX,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -84,6 +85,13 @@ typedef enum {
     NOT_CENTERED = 0,
     CENTERED
 } rollPitchStatus_e;
+
+typedef enum {
+    RC_SMOOTHING_OFF = 0,
+    RC_SMOOTHING_DEFAULT,
+    RC_SMOOTHING_AUTO,
+    RC_SMOOTHING_MANUAL
+} rcSmoothing_t;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -246,9 +254,7 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 bool isAirmodeActive(void);
-bool isSuperExpoActive(void);
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
 void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
 

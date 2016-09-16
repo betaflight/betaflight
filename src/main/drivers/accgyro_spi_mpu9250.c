@@ -25,7 +25,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 #include "light_led.h"
@@ -55,7 +54,7 @@ static IO_t mpuSpi9250CsPin = IO_NONE;
 #define DISABLE_MPU9250       IOHi(mpuSpi9250CsPin)
 #define ENABLE_MPU9250        IOLo(mpuSpi9250CsPin)
 
-void mpu9250ResetGyro(void) 
+void mpu9250ResetGyro(void)
 {
     // Device Reset
     mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
@@ -124,7 +123,7 @@ void mpu9250SpiAccInit(acc_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-bool verifympu9250WriteRegister(uint8_t reg, uint8_t data) 
+bool verifympu9250WriteRegister(uint8_t reg, uint8_t data)
 {
     uint8_t in;
     uint8_t attemptsRemaining = 20;
@@ -177,7 +176,7 @@ static void mpu9250AccAndGyroInit(uint8_t lpf) {
     verifympu9250WriteRegister(MPU_RA_INT_ENABLE, 0x01); //this resets register MPU_RA_PWR_MGMT_1 and won't read back correctly.
 #endif
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST); 
+    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST);
 
     mpuSpi9250InitDone = true; //init done
 }
@@ -191,9 +190,9 @@ bool mpu9250SpiDetect(void)
 #ifdef MPU9250_CS_PIN
     mpuSpi9250CsPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN));
 #endif
-    IOInit(mpuSpi9250CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(mpuSpi9250CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
-        
+
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
     mpu9250WriteRegister(MPU_RA_PWR_MGMT_1, MPU9250_BIT_RESET);
 
@@ -209,7 +208,7 @@ bool mpu9250SpiDetect(void)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST); 
+    spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_FAST);
 
     return true;
 }

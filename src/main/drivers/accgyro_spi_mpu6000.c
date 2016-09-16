@@ -24,7 +24,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -41,6 +40,9 @@
 #include "sensor.h"
 #include "accgyro.h"
 #include "accgyro_mpu.h"
+
+#if defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_SPI_MPU6000)
+
 #include "accgyro_spi_mpu6000.h"
 
 static void mpu6000AccAndGyroInit(void);
@@ -156,12 +158,12 @@ bool mpu6000SpiDetect(void)
     uint8_t in;
     uint8_t attemptsRemaining = 5;
 
-#ifdef MPU6000_CS_PIN     
+#ifdef MPU6000_CS_PIN
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
 #endif
-    IOInit(mpuSpi6000CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(mpuSpi6000CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
-    
+
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     mpu6000WriteRegister(MPU_RA_PWR_MGMT_1, BIT_H_RESET);
@@ -251,7 +253,7 @@ static void mpu6000AccAndGyroInit(void) {
     delayMicroseconds(15);
 #endif
 
-    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST); 
+    spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 
     mpuSpi6000InitDone = true;
@@ -283,3 +285,5 @@ bool mpu6000SpiGyroDetect(gyro_t *gyro)
 
     return true;
 }
+
+#endif

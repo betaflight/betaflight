@@ -24,20 +24,20 @@
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(STM32F3)
 #define ADC_TAG_MAP_COUNT 39
-#else 
+#else
 #define ADC_TAG_MAP_COUNT 10
-#endif 
+#endif
 
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
-#if defined(STM32F3) 
+#if defined(STM32F3)
     ADCDEV_2,
     ADCDEV_MAX = ADCDEV_2,
 #elif defined(STM32F4)
     ADCDEV_2,
     ADCDEV_3,
-    ADCDEV_MAX = ADCDEV_3,    
+    ADCDEV_MAX = ADCDEV_3,
 #else
     ADCDEV_MAX = ADCDEV_1,
 #endif
@@ -47,7 +47,7 @@ typedef struct adcTagMap_s {
     ioTag_t tag;
     uint8_t channel;
 } adcTagMap_t;
-    
+
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;

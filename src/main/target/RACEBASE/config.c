@@ -75,25 +75,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-// alternative defaults settings for AlienFlight targets
-void targetConfiguration(void) {
-    featureClear(FEATURE_ONESHOT125);
-    masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
-    masterConfig.motor_pwm_rate = 32000;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rates[FD_PITCH] = 40;
-    currentControlRateProfile->rates[FD_ROLL] = 40;
-    currentControlRateProfile->rates[FD_YAW] = 40;
-    parseRcChannels("TAER1234", &masterConfig.rxConfig);
-
-    masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    masterConfig.customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    masterConfig.customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    masterConfig.customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
+// alternative defaults settings for COLIBRI RACE targets
+void targetConfiguration(master_t *config) {
+    config->rxConfig.sbus_inversion = 0;
+    config->rxConfig.rssi_scale = 19;
+    config->rxConfig.serialrx_provider = SERIALRX_SBUS;
 }

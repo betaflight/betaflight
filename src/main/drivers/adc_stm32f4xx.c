@@ -26,8 +26,6 @@
 #include "io_impl.h"
 #include "rcc.h"
 
-#include "sensors/sensors.h" // FIXME dependency into the main code
-
 #include "sensor.h"
 #include "accgyro.h"
 
@@ -38,13 +36,13 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 },  
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 }, 
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 } 
 };
 
 /* note these could be packed up for saving space */
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
 /*
     { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
     { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
@@ -70,12 +68,12 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA4, ADC_Channel_4  },
     { DEFIO_TAG_E__PA5, ADC_Channel_5  },
     { DEFIO_TAG_E__PA6, ADC_Channel_6  },
-    { DEFIO_TAG_E__PA7, ADC_Channel_7  },    
+    { DEFIO_TAG_E__PA7, ADC_Channel_7  },
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 /*
     if (instance == ADC2) // TODO add ADC2 and 3
@@ -109,7 +107,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
     }
 #endif
-    
+
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
         adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
@@ -123,25 +121,25 @@ void adcInit(drv_adc_config_t *init)
 #endif
 
     //RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
-    
+
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
-    
-    adcDevice_t adc = adcHardware[device];   
-    
+
+    adcDevice_t adc = adcHardware[device];  
+
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_SYSTEM, RESOURCE_ADC);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
         adcConfig[i].sampleTime = ADC_SampleTime_480Cycles;
         adcConfig[i].enabled = true;
     }
-    
+
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
 

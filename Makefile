@@ -180,7 +180,6 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
-TARGET_FLAGS    = -D$(TARGET)
 # End F3 targets
 #
 # Start F4 targets
@@ -274,7 +273,6 @@ $(error Unknown MCU for F4 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
-TARGET_FLAGS = -D$(TARGET)
 # End F4 targets
 #
 # Start F1 targets
@@ -314,7 +312,6 @@ endif
 
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
-TARGET_FLAGS   := -D$(TARGET) -pedantic $(TARGET_FLAGS)
 
 ifeq ($(DEVICE_FLAGS),)
 DEVICE_FLAGS    = -DSTM32F10X_MD
@@ -331,6 +328,10 @@ endif
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
+endif
+
+ifneq ($(HSE_VALUE),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
@@ -547,10 +548,17 @@ VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 # Things that might need changing to use different tools
 #
 
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
 # Tool names
-CC          = arm-none-eabi-gcc
-OBJCOPY     = arm-none-eabi-objcopy
-SIZE        = arm-none-eabi-size
+CC          := $(CCACHE) arm-none-eabi-gcc
+OBJCOPY     := arm-none-eabi-objcopy
+SIZE        := arm-none-eabi-size
 
 #
 # Tool options.
@@ -575,8 +583,10 @@ CFLAGS      += $(ARCH_FLAGS) \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
+              -pedantic \
               $(DEVICE_FLAGS) \
               -DUSE_STDPERIPH_DRIVER \
+              -D$(TARGET) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \

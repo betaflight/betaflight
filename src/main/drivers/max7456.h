@@ -143,12 +143,18 @@
 enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
 
 extern uint16_t max_screen_size;
-extern char max7456_screen[VIDEO_BUFFER_CHARS_PAL];
 
+#ifdef MAX7456_DMA_CHANNEL_TX
+    #define MAX7456_CHAR_TYPE           uint16_t
+    #define MAX7456_CHAR(X)             (MAX7456ADD_DMDI | ((X) << 8))
+#else
+    #define MAX7456_CHAR_TYPE           char
+    #define MAX7456_CHAR(X)             (X)
+#endif
 
 void max7456_init(uint8_t system);
 void max7456_draw_screen(void);
-void max7456_draw_screen_fast(void);
-void max7456_artificial_horizon(int rollAngle, int pitchAngle, uint8_t show_sidebars);
 void max7456_write_string(const char *string, int16_t address);
 void max7456_write_nvm(uint8_t char_address, uint8_t *font_data);
+MAX7456_CHAR_TYPE* max7456_get_screen_buffer(void);
+

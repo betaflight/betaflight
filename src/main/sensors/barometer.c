@@ -28,7 +28,6 @@ int32_t BaroAlt = 0;
 
 #include "drivers/barometer.h"
 #include "drivers/system.h"
-#include "config/config.h"
 
 #include "sensors/barometer.h"
 
@@ -68,7 +67,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
     static int currentFilterSampleIndex = 0;
     static bool medianFilterReady = false;
     int nextSampleIndex;
-    
+
     nextSampleIndex = (currentFilterSampleIndex + 1);
     if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
         nextSampleIndex = 0;
@@ -77,7 +76,7 @@ static int32_t applyBarometerMedianFilter(int32_t newPressureReading)
 
     barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
     currentFilterSampleIndex = nextSampleIndex;
-    
+
     if (medianFilterReady)
         return quickMedianFilter3(barometerFilterSamples);
     else
@@ -117,7 +116,7 @@ typedef enum {
 
 
 bool isBaroReady(void) {
-	return baroReady;
+    return baroReady;
 }
 
 uint32_t baroUpdate(void)

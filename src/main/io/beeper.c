@@ -172,7 +172,7 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,      		   "ALL") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,                 "ALL") },
     { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERRED") },
 };
 
@@ -308,7 +308,7 @@ void beeperUpdate(void)
     if (!beeperIsOn) {
         beeperIsOn = 1;
         if (currentBeeperEntry->sequence[beeperPos] != 0) {
-        	if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
+            if (!(getBeeperOffMask() & (1 << (currentBeeperEntry->mode - 1))))
                 BEEP_ON;
             warningLedEnable();
             warningLedRefresh();

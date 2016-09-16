@@ -88,8 +88,35 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim)
 #if USED_TIMERS & TIM_N(4)
         _CASE(4);
 #endif
+#if USED_TIMERS & TIM_N(5)
+        _CASE(5);
+#endif
+#if USED_TIMERS & TIM_N(6)
+        _CASE(6);
+#endif
+#if USED_TIMERS & TIM_N(7)
+        _CASE(7);
+#endif
 #if USED_TIMERS & TIM_N(8)
         _CASE(8);
+#endif
+#if USED_TIMERS & TIM_N(9)
+        _CASE(9);
+#endif
+#if USED_TIMERS & TIM_N(10)
+        _CASE(10);
+#endif
+#if USED_TIMERS & TIM_N(11)
+        _CASE(11);
+#endif
+#if USED_TIMERS & TIM_N(12)
+        _CASE(12);
+#endif
+#if USED_TIMERS & TIM_N(13)
+        _CASE(13);
+#endif
+#if USED_TIMERS & TIM_N(14)
+        _CASE(14);
 #endif
 #if USED_TIMERS & TIM_N(15)
         _CASE(15);
@@ -121,8 +148,35 @@ TIM_TypeDef * const usedTimers[USED_TIMER_COUNT] = {
 #if USED_TIMERS & TIM_N(4)
     _DEF(4),
 #endif
+#if USED_TIMERS & TIM_N(5)
+    _DEF(5),
+#endif
+#if USED_TIMERS & TIM_N(6)
+    _DEF(6),
+#endif
+#if USED_TIMERS & TIM_N(7)
+    _DEF(7),
+#endif
 #if USED_TIMERS & TIM_N(8)
     _DEF(8),
+#endif
+#if USED_TIMERS & TIM_N(9)
+    _DEF(9),
+#endif
+#if USED_TIMERS & TIM_N(10)
+    _DEF(10),
+#endif
+#if USED_TIMERS & TIM_N(11)
+    _DEF(11),
+#endif
+#if USED_TIMERS & TIM_N(12)
+    _DEF(12),
+#endif
+#if USED_TIMERS & TIM_N(13)
+    _DEF(13),
+#endif
+#if USED_TIMERS & TIM_N(14)
+    _DEF(14),
 #endif
 #if USED_TIMERS & TIM_N(15)
     _DEF(15),
@@ -199,7 +253,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     }
 #else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-#endif 
+#endif
 
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -374,7 +428,7 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 

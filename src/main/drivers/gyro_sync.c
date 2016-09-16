@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build_config.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"

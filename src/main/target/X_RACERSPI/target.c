@@ -84,8 +84,8 @@ const uint16_t airPWM[] = {
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH1 - PA0  - *TIM2_CH1
     { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH2 - PA1  - *TIM2_CH2, TIM15_CH1N
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)
-    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH4 - PB10 - *TIM2_CH3, USART3_TX (AF7)
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH3 - PB11 - *TIM2_CH4, UART3_RX (AF7)
+    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH4 - PB10 - *TIM2_CH3, UART3_TX (AF7)
     { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // RC_CH5 - PB4  - *TIM3_CH1
     { TIM3,  IO_TAG(PB5),  TIM_Channel_2, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // RC_CH6 - PB5  - *TIM3_CH2
     { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // RC_CH7 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N

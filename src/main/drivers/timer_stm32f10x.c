@@ -23,10 +23,10 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
     { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
     { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) }, 
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
     { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
     { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) }, 
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 #endif
 };
 

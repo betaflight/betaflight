@@ -15,10 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -35,7 +34,7 @@ void systemReset(void)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
-void systemResetToBootloader(void) 
+void systemResetToBootloader(void)
 {
     // 1FFFF000 -> 20000200 -> SP
     // 1FFFF004 -> 1FFFF021 -> PC
@@ -83,7 +82,7 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
     // Enable FPU
     SCB->CPACR = (0x3 << (10 * 2)) | (0x3 << (11 * 2));
@@ -108,4 +107,17 @@ void systemInit(void)
 
 void checkForBootLoaderRequest(void)
 {
+    void(*bootJump)(void);
+
+    if (*((uint32_t *)0x20009FFC) == 0xDEADBEEF) {
+
+        *((uint32_t *)0x20009FFC) = 0x0;
+
+        __enable_irq();
+        __set_MSP(*((uint32_t *)0x1FFFD800));
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFD804));
+        bootJump();
+        while (1);
+    }
 }

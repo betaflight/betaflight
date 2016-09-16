@@ -46,6 +46,8 @@ extern int16_t GPS_directionToHome;        // direction to home or hol point in 
 
 extern navigationMode_e nav_mode;          // Navigation mode
 
+struct pidProfile_s;
+void navigationInit(gpsProfile_t *initialGpsProfile, struct pidProfile_s *pidProfile);
 void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);

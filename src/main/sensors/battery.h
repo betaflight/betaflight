@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
 #include "common/maths.h"
 
 #ifndef VBAT_SCALE_DEFAULT
@@ -43,7 +42,6 @@ typedef struct batteryConfig_s {
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
-    uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
 
     int16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
     uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
@@ -70,14 +68,14 @@ extern uint16_t amperageLatestADC;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 
-uint16_t batteryAdcToVoltage(uint16_t src);
 batteryState_e getBatteryState(void);
 const  char * getBatteryStateString(void);
 void updateBattery(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 batteryConfig_t *batteryConfig;
 
-void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
+struct rxConfig_s;
+void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 fix12_t calculateVbatPidCompensation(void);

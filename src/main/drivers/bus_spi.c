@@ -20,8 +20,6 @@
 
 #include <platform.h>
 
-#include "build_config.h"
-
 #include "bus_spi.h"
 #include "io.h"
 #include "io_impl.h"
@@ -38,7 +36,7 @@
 #ifndef GPIO_AF_SPI3
 #define GPIO_AF_SPI3    GPIO_AF_6
 #endif
-#endif 
+#endif
 
 #ifndef SPI1_SCK_PIN
 #define SPI1_NSS_PIN    PA4
@@ -86,7 +84,7 @@ static spiDevice_t spiHardwareMap[] = {
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
-    if (instance == SPI1) 
+    if (instance == SPI1)
         return SPIDEV_1;
 
     if (instance == SPI2)
@@ -113,19 +111,13 @@ void spiInitDevice(SPIDevice device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
-    IOInit(IOGetByTag(spi->sck), OWNER_SYSTEM, RESOURCE_SPI);
-    IOInit(IOGetByTag(spi->miso), OWNER_SYSTEM, RESOURCE_SPI);
-    IOInit(IOGetByTag(spi->mosi), OWNER_SYSTEM, RESOURCE_SPI);
-    
-#if defined(STM32F303xC) || defined(STM32F4)
-    if (spi->sdcard) {
-        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG, spi->af);
-        IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG, spi->af);
-    }
-    else {
-        IOConfigGPIOAF(IOGetByTag(spi->sck), SPI_IO_AF_CFG, spi->af);
-        IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
-    }
+    IOInit(IOGetByTag(spi->sck),  OWNER_SPI, RESOURCE_SPI_SCK,  device + 1);
+    IOInit(IOGetByTag(spi->miso), OWNER_SPI, RESOURCE_SPI_MISO, device + 1);
+    IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
+
+#if defined(STM32F3) || defined(STM32F4)
+    IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
+    IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
     if (spi->nss)
@@ -135,11 +127,11 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
     IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
     IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
-    
+
     if (spi->nss)
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
 #endif
-    
+
             // Init SPI hardware
     SPI_I2S_DeInit(spi->dev);
 

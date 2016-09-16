@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -69,7 +68,7 @@ static void mpu6500SpiInit(void)
     }
 
     mpuSpi6500CsPin = IOGetByTag(IO_TAG(MPU6500_CS_PIN));
-    IOInit(mpuSpi6500CsPin, OWNER_SYSTEM, RESOURCE_SPI);
+    IOInit(mpuSpi6500CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(mpuSpi6500CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);

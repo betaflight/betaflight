@@ -54,7 +54,7 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
   */
 #define CCMR_OFFSET        ((uint16_t)0x0018)
 #define CCMR_OC13M_MASK    ((uint32_t)0xFFFEFF8F)
-#define CCMR_OC24M_MASK    ((uint32_t)0xFEFF8FFF) 
+#define CCMR_OC24M_MASK    ((uint32_t)0xFEFF8FFF)
 
 void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint32_t TIM_OCMode)
 {

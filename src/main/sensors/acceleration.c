@@ -29,11 +29,9 @@
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
 
-#include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "io/beeper.h"
 #include "sensors/boardalignment.h"
-#include "config/runtime_config.h"
 #include "config/config.h"
 
 #include "sensors/acceleration.h"
@@ -67,12 +65,12 @@ bool isAccelerationCalibrationComplete(void)
     return calibratingA == 0;
 }
 
-bool isOnFinalAccelerationCalibrationCycle(void)
+static bool isOnFinalAccelerationCalibrationCycle(void)
 {
     return calibratingA == 1;
 }
 
-bool isOnFirstAccelerationCalibrationCycle(void)
+static bool isOnFirstAccelerationCalibrationCycle(void)
 {
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
@@ -83,7 +81,7 @@ void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
     rollAndPitchTrims->values.pitch = 0;
 }
 
-void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     static int32_t a[3];
 
@@ -115,7 +113,7 @@ void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
     calibratingA--;
 }
 
-void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     uint8_t axis;
     static int32_t b[3];
@@ -168,7 +166,7 @@ void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTri
     }
 }
 
-void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
+static void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 {
     accSmooth[X] -= accelerationTrims->raw[X];
     accSmooth[Y] -= accelerationTrims->raw[Y];
@@ -192,7 +190,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
         if (!accFilterInitialised) {
             if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInit(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+                    biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
                 }
                 accFilterInitialised = true;
             }

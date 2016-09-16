@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "platform.h"
 #include "version.h"
@@ -121,6 +122,11 @@
 #define STICKMIN 10
 #define STICKMAX 90
 
+/** Artificial Horizon limits **/
+#define AHIPITCHMAX 200             // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
+#define AHIROLLMAX  400             // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AHISIDEBARWIDTHPOSITION 7
+#define AHISIDEBARHEIGHTPOSITION 3
 
 static uint32_t next_osd_update_at = 0;
 static uint32_t armed_seconds      = 0;
@@ -193,6 +199,23 @@ void print_vtx_freq(uint16_t pos, uint8_t col) {
     sprintf(string_buffer,  "%d M", vtx_freq[current_vtx_channel]);
     max7456_write_string(string_buffer, pos);
 }
+
+void update_vtx_power(int value_change_direction, uint8_t col) {
+    UNUSED(col);
+    if (value_change_direction) {
+        masterConfig.vtx_power = 0;
+    } else {
+        masterConfig.vtx_power = 1;
+    }
+    rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
+}
+
+void print_vtx_power(uint16_t pos, uint8_t col) {
+    UNUSED(col);
+    sprintf(string_buffer, "%s", masterConfig.vtx_power ? "25MW" : "200MW");
+    max7456_write_string(string_buffer, pos);
+}
+
 #endif
 
 void print_pid(uint16_t pos, uint8_t col, int pid_term) {
@@ -399,7 +422,7 @@ osd_page_t menu_pages[] = {
     {
         .title       = "VTX SETTINGS",
         .cols_number = 1,
-        .rows_number = 3,
+        .rows_number = 4,
         .cols = {
             {
                 .title = NULL,
@@ -421,6 +444,11 @@ osd_page_t menu_pages[] = {
                 .title  = "FREQUENCY",
                 .update = NULL,
                 .print  = print_vtx_freq
+            },
+            {
+                .title  = "POWER",
+                .update = update_vtx_power,
+                .print  = print_vtx_power
             }
         }
     },
@@ -627,10 +655,52 @@ void show_menu(void) {
     max7456_write_string(">", cursor_x + cursor_y * OSD_LINE_LENGTH);
 }
 
+// Write the artifical horizon to the screen buffer
+void osdDrawArtificialHorizon(int rollAngle, int pitchAngle, uint8_t show_sidebars) {
+    uint16_t position = 194;
+    MAX7456_CHAR_TYPE *screenBuffer = max7456_get_screen_buffer();
+
+    if (pitchAngle > AHIPITCHMAX)
+        pitchAngle = AHIPITCHMAX;
+    if (pitchAngle < -AHIPITCHMAX)
+        pitchAngle = -AHIPITCHMAX;
+    if (rollAngle > AHIROLLMAX)
+        rollAngle = AHIROLLMAX;
+    if (rollAngle < -AHIROLLMAX)
+        rollAngle = -AHIROLLMAX;
+
+    for (uint8_t X = 0; X <= 8; X++) {
+        if (X == 4)
+            X = 5;
+        int Y = (rollAngle * (4 - X)) / 64;
+        Y -= pitchAngle / 8;
+        Y += 41;
+        if (Y >= 0 && Y <= 81) {
+            uint16_t pos = position - 7 + LINE * (Y / 9) + 3 - 4 * LINE + X;
+            screenBuffer[pos] = MAX7456_CHAR(SYM_AH_BAR9_0 + (Y % 9));
+        }
+    }
+    screenBuffer[position - 1] = MAX7456_CHAR(SYM_AH_CENTER_LINE);
+    screenBuffer[position + 1] = MAX7456_CHAR(SYM_AH_CENTER_LINE_RIGHT);
+    screenBuffer[position]     = MAX7456_CHAR(SYM_AH_CENTER);
+
+    if (show_sidebars) {
+        // Draw AH sides
+        int8_t hudwidth  = AHISIDEBARWIDTHPOSITION;
+        int8_t hudheight = AHISIDEBARHEIGHTPOSITION;
+        for (int8_t X = -hudheight; X <= hudheight; X++) {
+            screenBuffer[position - hudwidth + (X * LINE)] = MAX7456_CHAR(SYM_AH_DECORATION);
+            screenBuffer[position + hudwidth + (X * LINE)] = MAX7456_CHAR(SYM_AH_DECORATION);
+        }
+        // AH level indicators
+        screenBuffer[position-hudwidth+1] =  MAX7456_CHAR(SYM_AH_LEFT);
+        screenBuffer[position+hudwidth-1] =  MAX7456_CHAR(SYM_AH_RIGHT);
+    }
+}
+
 void updateOsd(void)
 {
-    static uint8_t skip = 0;
-    static bool blink = false;
+    static uint8_t blink = 0;
     static uint8_t arming = 0;
     uint32_t seconds;
     char line[30];
@@ -641,89 +711,108 @@ void updateOsd(void)
         return;
     }
     next_osd_update_at = now + OSD_UPDATE_FREQUENCY;
-    if ( !(skip % 2))
-        blink = !blink;
+    blink++;
 
-    if (skip++ & 1) {
-        if (ARMING_FLAG(ARMED)) {
-            if (!armed) {
-                armed = true;
-                armed_at = now;
-                in_menu = false;
-                arming = 5;
-            }
-        } else {
-            if (armed) {
-                armed = false;
-                armed_seconds += ((now - armed_at) / 1000000);
-            }
-            for (uint8_t channelIndex = 0; channelIndex < 4; channelIndex++) {
-                sticks[channelIndex] = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
-            }
-            if (!in_menu && sticks[YAW] > STICKMAX && sticks[THROTTLE] > STICKMIN && sticks[THROTTLE] < STICKMAX && sticks[ROLL] > STICKMIN && sticks[ROLL] < STICKMAX && sticks[PITCH] > STICKMAX) {
-                in_menu = true;
-                cursor_row = 255;
-                cursor_col = 2;
-                activating_menu = true;
-            }
-        }
-        if (in_menu) {
-            show_menu();
-        } else {
-            if (batteryWarningVoltage > vbat && blink && masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING] != -1) {
-                max7456_write_string("LOW VOLTAGE", masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]);
-            }
-            if (arming && blink && masterConfig.osdProfile.item_pos[OSD_ARMED] != -1) {
-                max7456_write_string("ARMED", masterConfig.osdProfile.item_pos[OSD_ARMED]);
-                arming--;
-            }
-            if (!armed && masterConfig.osdProfile.item_pos[OSD_DISARMED] != -1) {
-                max7456_write_string("DISARMED", masterConfig.osdProfile.item_pos[OSD_DISARMED]);
-            }
-
-            if (masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] != -1) {
-                line[0] = SYM_VOLT;
-                sprintf(line+1, "%d.%1d", vbat / 10, vbat % 10);
-                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
-            }
-            if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
-                line[0] = SYM_RSSI;
-                sprintf(line+1, "%d", rssi / 10);
-                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]);
-            }
-            if (masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS] != -1) {
-                line[0] = SYM_THR;
-                line[1] = SYM_THR1;
-                sprintf(line+2, "%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
-            }
-            if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
-                if (armed) {
-                    seconds = armed_seconds + ((now-armed_at) / 1000000);
-                    line[0] = SYM_FLY_M;
-                    sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
-                } else {
-                    line[0] = SYM_ON_M;
-                    seconds = now  / 1000000;
-                    sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
-                }
-                max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);
-            }
-            if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {
-                print_average_system_load(masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], 0);
-            }
-            if (masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] != -1) {
-                max7456_artificial_horizon(attitude.values.roll, attitude.values.pitch, masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS] != -1);
-            }
+    if (ARMING_FLAG(ARMED)) {
+        if (!armed) {
+            armed = true;
+            armed_at = now;
+            in_menu = false;
+            arming = 5;
         }
     } else {
-        max7456_draw_screen_fast();
+        if (armed) {
+            armed = false;
+            armed_seconds += ((now - armed_at) / 1000000);
+        }
+        for (uint8_t channelIndex = 0; channelIndex < 4; channelIndex++) {
+            sticks[channelIndex] = (constrain(rcData[channelIndex], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN);
+        }
+        if (!in_menu && sticks[YAW] > STICKMAX && sticks[THROTTLE] > STICKMIN && sticks[THROTTLE] < STICKMAX && sticks[ROLL] > STICKMIN && sticks[ROLL] < STICKMAX && sticks[PITCH] > STICKMAX) {
+            in_menu = true;
+            cursor_row = 255;
+            cursor_col = 2;
+            activating_menu = true;
+        }
     }
+    if (in_menu) {
+        show_menu();
+    } else {
+        if (batteryWarningVoltage > vbat && (blink & 1) && masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING] != -1) {
+            max7456_write_string("LOW VOLTAGE", masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]);
+        }
+        if (arming && (blink & 1) && masterConfig.osdProfile.item_pos[OSD_ARMED] != -1) {
+            max7456_write_string("ARMED", masterConfig.osdProfile.item_pos[OSD_ARMED]);
+            arming--;
+        }
+        if (!armed && masterConfig.osdProfile.item_pos[OSD_DISARMED] != -1) {
+            max7456_write_string("DISARMED", masterConfig.osdProfile.item_pos[OSD_DISARMED]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] != -1) {
+            line[0] = SYM_VOLT;
+            sprintf(line+1, "%d.%1d", vbat / 10, vbat % 10);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW] != -1) {
+            line[0] = SYM_AMP;
+            sprintf(line+1, "%d.%02d", amperage / 100, amperage % 100);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] != -1) {
+            line[0] = SYM_MAH;
+            sprintf(line+1, "%d", mAhDrawn);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME] != -1) {
+            for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
+                line[i] = toupper((unsigned char)masterConfig.name[i]);
+                if (masterConfig.name[i] == 0)
+                    break;
+            }
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]);
+        }
+
+        if (masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] != -1) {
+            line[0] = SYM_RSSI;
+            sprintf(line+1, "%d", rssi / 10);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]);
+        }
+        if (masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS] != -1) {
+            line[0] = SYM_THR;
+            line[1] = SYM_THR1;
+            sprintf(line+2, "%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
+        }
+        if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
+            if (armed) {
+                seconds = armed_seconds + ((now-armed_at) / 1000000);
+                line[0] = SYM_FLY_M;
+                sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
+            } else {
+                line[0] = SYM_ON_M;
+                seconds = now  / 1000000;
+                sprintf(line+1, " %02d:%02d", seconds / 60, seconds % 60);
+            }
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_TIMER]);
+        }
+        if (masterConfig.osdProfile.item_pos[OSD_CPU_LOAD] != -1) {
+            print_average_system_load(masterConfig.osdProfile.item_pos[OSD_CPU_LOAD], 0);
+        }
+        if (masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] != -1) {
+            osdDrawArtificialHorizon(attitude.values.roll, attitude.values.pitch, masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS] != -1);
+        }
+    }
+    max7456_draw_screen();
 }
 
 void osdInit(void)
 {
     uint16_t x;
+    MAX7456_CHAR_TYPE* screen_buffer = max7456_get_screen_buffer();
 
     max7456_init(masterConfig.osdProfile.video_system);
 
@@ -731,7 +820,8 @@ void osdInit(void)
     x =  160;
     for (int i = 1; i < 5; i++) {
         for (int j = 3; j < 27; j++)
-            max7456_screen[i * LINE + j] = (char)x++;
+            if (x != 255)
+                screen_buffer[(i * LINE + j)] = MAX7456_CHAR(x++);
     }
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456_write_string(string_buffer, LINE06 + 5);
@@ -741,21 +831,22 @@ void osdInit(void)
     max7456_draw_screen();
 }
 
-void resetOsdConfig(void)
+void resetOsdConfig(osd_profile *osdProfile)
 {
-    featureSet(FEATURE_OSD);
-    masterConfig.osdProfile.video_system = AUTO;
-    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
-    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]         = -59;
-    masterConfig.osdProfile.item_pos[OSD_TIMER]              = -39;
-    masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]       = -9;
-    masterConfig.osdProfile.item_pos[OSD_CPU_LOAD]           = 26;
-    masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]        = 1;
-    masterConfig.osdProfile.item_pos[OSD_VOLTAGE_WARNING]    = -80;
-    masterConfig.osdProfile.item_pos[OSD_ARMED]              = -107;
-    masterConfig.osdProfile.item_pos[OSD_DISARMED]           = -109;
-    masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON] = -1;
-    masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]   = -1;
+    osdProfile->video_system = AUTO;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
+    osdProfile->item_pos[OSD_RSSI_VALUE]         = -59;
+    osdProfile->item_pos[OSD_TIMER]              = -39;
+    osdProfile->item_pos[OSD_THROTTLE_POS]       = -9;
+    osdProfile->item_pos[OSD_CPU_LOAD]           = 26;
+    osdProfile->item_pos[OSD_VTX_CHANNEL]        = 1;
+    osdProfile->item_pos[OSD_VOLTAGE_WARNING]    = -80;
+    osdProfile->item_pos[OSD_ARMED]              = -107;
+    osdProfile->item_pos[OSD_DISARMED]           = -109;
+    osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = -1;
+    osdProfile->item_pos[OSD_HORIZON_SIDEBARS]   = -1;
+    osdProfile->item_pos[OSD_CURRENT_DRAW]       = -23;
+    osdProfile->item_pos[OSD_MAH_DRAWN]          = -18;
+    osdProfile->item_pos[OSD_CRAFT_NAME]         = 1;
 }
-
 #endif

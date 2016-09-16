@@ -89,11 +89,11 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #if defined(MPU_INT_EXTI)
     static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
-#elif defined(USE_HARDWARE_REVISION_DETECTION) 
+#elif defined(USE_HARDWARE_REVISION_DETECTION)
     return selectMPUIntExtiConfigByHardwareRevision();
 #else
     return NULL;
-#endif    
+#endif
 }
 
 #ifdef USE_FAKE_GYRO
@@ -118,9 +118,15 @@ static bool fakeGyroReadTemp(int16_t *tempData)
     return true;
 }
 
+
+static bool fakeGyroInitStatus(void) {
+    return true;
+}
+
 bool fakeGyroDetect(gyro_t *gyro)
 {
     gyro->init = fakeGyroInit;
+    gyro->intStatus = fakeGyroInitStatus;
     gyro->read = fakeGyroRead;
     gyro->temperature = fakeGyroReadTemp;
     gyro->scale = 1.0f / 16.4f;
@@ -143,6 +149,7 @@ bool fakeAccDetect(acc_t *acc)
 {
     acc->init = fakeAccInit;
     acc->read = fakeAccRead;
+    acc->acc_1G = 512*8;
     acc->revisionCode = 0;
     return true;
 }
@@ -233,7 +240,7 @@ bool detectGyro(void)
             }
 #endif
             ; // fallthrough
-        
+
     case GYRO_MPU9250:
 #ifdef USE_GYRO_SPI_MPU9250
 
@@ -377,6 +384,20 @@ retry:
             }
 #endif
             ; // fallthrough
+	case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+
+        if (mpu9250SpiAccDetect(&acc))
+        {
+            accHardware = ACC_MPU9250;
+#ifdef ACC_MPU9250_ALIGN
+            accAlign = ACC_MPU9250_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
         case ACC_FAKE:
 #ifdef USE_FAKE_ACC
             if (fakeAccDetect(&acc)) {
@@ -418,35 +439,26 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
 
 #ifdef USE_BARO_BMP085
 
-	const bmp085Config_t *bmp085Config = NULL;
+    const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
-	static const bmp085Config_t defaultBMP085Config = {
-		.xclrIO = IO_TAG(BARO_XCLR_PIN),
-		.eocIO = IO_TAG(BARO_EOC_PIN),
-	};
-	bmp085Config = &defaultBMP085Config;
+    static const bmp085Config_t defaultBMP085Config = {
+        .xclrIO = IO_TAG(BARO_XCLR_PIN),
+        .eocIO = IO_TAG(BARO_EOC_PIN),
+    };
+    bmp085Config = &defaultBMP085Config;
 #endif
 
 #ifdef NAZE
-	if (hardwareRevision == NAZE32) {
-		bmp085Disable(bmp085Config);
-	}
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
 #endif
 
 #endif
 
     switch (baroHardware) {
         case BARO_DEFAULT:
-            ; // fallthough
-
-        case BARO_MS5611:
-#ifdef USE_BARO_MS5611
-            if (ms5611Detect(&baro)) {
-                baroHardware = BARO_MS5611;
-                break;
-            }
-#endif
             ; // fallthough
         case BARO_BMP085:
 #ifdef USE_BARO_BMP085
@@ -455,7 +467,15 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
-	    ; // fallthough
+            ; // fallthough
+        case BARO_MS5611:
+#ifdef USE_BARO_MS5611
+            if (ms5611Detect(&baro)) {
+                baroHardware = BARO_MS5611;
+                break;
+            }
+#endif
+            ; // fallthough
         case BARO_BMP280:
 #ifdef USE_BARO_BMP280
             if (bmp280Detect(&baro)) {
@@ -463,6 +483,7 @@ static void detectBaro(baroSensor_e baroHardwareToUse)
                 break;
             }
 #endif
+            ; // fallthough
         case BARO_NONE:
             baroHardware = BARO_NONE;
             break;
@@ -503,7 +524,7 @@ static void detectMag(magSensor_e magHardwareToUse)
         .intTag = IO_TAG(MAG_INT_EXTI)
     };
 
-	hmc5883Config = &extiHmc5883Config;
+    hmc5883Config = &extiHmc5883Config;
 #endif
 
 #endif
@@ -530,7 +551,7 @@ retry:
 
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-            if (ak8975detect(&mag)) {
+            if (ak8975Detect(&mag)) {
 #ifdef MAG_AK8975_ALIGN
                 magAlign = MAG_AK8975_ALIGN;
 #endif
@@ -584,10 +605,14 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator)
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
+        uint8_t accHardwareToUse,
+        uint8_t magHardwareToUse,
+        uint8_t baroHardwareToUse,
+        int16_t magDeclinationFromConfig,
+        uint8_t gyroLpf,
+        uint8_t gyroSyncDenominator)
 {
-    int16_t deg, min;
-
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
 
@@ -604,7 +629,6 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     }
     detectAcc(accHardwareToUse);
     detectBaro(baroHardwareToUse);
-
 
     // Now time to init things, acc first
     if (sensors(SENSOR_ACC)) {
@@ -623,9 +647,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t a
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (sensors(SENSOR_MAG)) {
         // calculate magnetic declination
-        deg = magDeclinationFromConfig / 100;
-        min = magDeclinationFromConfig % 100;
-
+        const int16_t deg = magDeclinationFromConfig / 100;
+        const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     } else {
         magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.

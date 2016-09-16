@@ -184,7 +184,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
 #ifdef HARDWARE_BIND_PLUG
     BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(BindPlug, OWNER_SYSTEM, RESOURCE_INPUT);
+    IOInit(BindPlug, OWNER_RX, RESOURCE_INPUT, 0);
     IOConfigGPIO(BindPlug, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
@@ -216,7 +216,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     LED1_ON;
 
     BindPin = IOGetByTag(IO_TAG(BIND_PIN));
-    IOInit(BindPin, OWNER_SYSTEM, RESOURCE_OUTPUT);
+    IOInit(BindPin, OWNER_RX, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
     // RX line, set high
@@ -245,7 +245,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 #ifndef HARDWARE_BIND_PLUG
     // If we came here as a result of hard  reset (power up, with spektrum_sat_bind set), then reset it back to zero and write config
     // Don't reset if hardware bind plug is present
-	// Reset only when autoreset is enabled
+    // Reset only when autoreset is enabled
     if (rxConfig->spektrum_sat_bind_autoreset == 1 && !isMPUSoftReset()) {
         rxConfig->spektrum_sat_bind = 0;
         saveConfigAndNotify();

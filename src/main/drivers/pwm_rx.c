@@ -18,9 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <stdlib.h>
-
 #include <platform.h>
+
+#ifndef SKIP_RX_PWM_PPM
+
 #include "build_config.h"
 #include "debug.h"
 
@@ -32,6 +33,7 @@
 #include "gpio.h"
 #include "timer.h"
 
+#include "pwm_output.h"
 #include "pwm_mapping.h"
 
 #include "pwm_rx.h"
@@ -84,7 +86,7 @@ static uint16_t captures[PWM_PORTS_OR_PPM_CAPTURE_COUNT];
 
 static uint8_t ppmFrameCount = 0;
 static uint8_t lastPPMFrameCount = 0;
-static uint8_t ppmCountShift = 0;
+static uint8_t ppmCountDivisor = 1;
 
 typedef struct ppmDevice_s {
     uint8_t  pulseIndex;
@@ -178,7 +180,6 @@ static void ppmOverflowCallback(timerOvrHandlerRec_t* cbRec, captureCompare_t ca
     if (capture == PPM_TIMER_PERIOD - 1) {
         ppmDev.overflowed = true;
     }
-
 }
 
 static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture)
@@ -203,14 +204,14 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
         }
     }
 
-    // Divide by 8 if Oneshot125 is active and this is a CC3D board
-    currentTime = currentTime >> ppmCountShift;
+    // Divide value if Oneshot, Multishot or brushed motors are active and the timer is shared
+    currentTime = currentTime / ppmCountDivisor;
 
     /* Capture computation */
     if (currentTime > previousTime) {
-        ppmDev.deltaTime    = currentTime - (previousTime + (ppmDev.overflowed ? (PPM_TIMER_PERIOD >> ppmCountShift) : 0));
+        ppmDev.deltaTime    = currentTime - (previousTime + (ppmDev.overflowed ? (PPM_TIMER_PERIOD / ppmCountDivisor) : 0));
     } else {
-        ppmDev.deltaTime    = (PPM_TIMER_PERIOD >> ppmCountShift) + currentTime - previousTime;
+        ppmDev.deltaTime    = (PPM_TIMER_PERIOD / ppmCountDivisor) + currentTime - previousTime;
     }
 
     ppmDev.overflowed = false;
@@ -337,12 +338,6 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     }
 }
 
-static void pwmGPIOConfig(ioTag_t pin, ioConfig_t mode)
-{
-    IOInit(IOGetByTag(pin), OWNER_PWMINPUT, RESOURCE_INPUT);
-    IOConfigGPIO(IOGetByTag(pin), mode);
-}
-
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_ICInitTypeDef TIM_ICInitStructure;
@@ -372,7 +367,10 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
     self->mode = INPUT_MODE_PWM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->tag, timerHardwarePtr->ioMode);
+    IO_t io = IOGetByTag(timerHardwarePtr->tag);
+    IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
+    IOConfigGPIO(io, timerHardwarePtr->ioMode);
+
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PWM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -385,11 +383,25 @@ void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel)
 #define UNUSED_PPM_TIMER_REFERENCE 0
 #define FIRST_PWM_PORT 0
 
-void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer)
+void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer, uint8_t pwmProtocol)
 {
-    if (timerHardwarePtr->tim == sharedPwmTimer) {
-        ppmCountShift = 3;  // Divide by 8 if the timer is running at 8 MHz
-    }
+	if (timerHardwarePtr->tim == sharedPwmTimer) {
+        switch (pwmProtocol)
+        {
+        case PWM_TYPE_ONESHOT125:
+            ppmCountDivisor = ONESHOT125_TIMER_MHZ;
+            break;
+        case PWM_TYPE_ONESHOT42:
+            ppmCountDivisor = ONESHOT42_TIMER_MHZ;
+            break;
+        case PWM_TYPE_MULTISHOT:
+            ppmCountDivisor = MULTISHOT_TIMER_MHZ;
+            break;
+        case PWM_TYPE_BRUSHED:
+            ppmCountDivisor = PWM_BRUSHED_TIMER_MHZ;
+            break;
+        }
+	}
 }
 
 void ppmInConfig(const timerHardware_t *timerHardwarePtr)
@@ -401,7 +413,10 @@ void ppmInConfig(const timerHardware_t *timerHardwarePtr)
     self->mode = INPUT_MODE_PPM;
     self->timerHardware = timerHardwarePtr;
 
-    pwmGPIOConfig(timerHardwarePtr->tag, timerHardwarePtr->ioMode);
+    IO_t io = IOGetByTag(timerHardwarePtr->tag);
+    IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
+    IOConfigGPIO(io, timerHardwarePtr->ioMode);
+
     pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 
     timerConfigure(timerHardwarePtr, (uint16_t)PPM_TIMER_PERIOD, PWM_TIMER_MHZ);
@@ -420,3 +435,4 @@ uint16_t pwmRead(uint8_t channel)
 {
     return captures[channel];
 }
+#endif

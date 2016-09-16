@@ -17,11 +17,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <math.h>
 
 #include "platform.h"
+
+#ifdef USE_MAG_HMC5883
+
 #include "debug.h"
 
 #include "common/axis.h"
@@ -272,3 +274,4 @@ bool hmc5883lRead(int16_t *magData)
 
     return true;
 }
+#endif

@@ -102,8 +102,8 @@ typedef struct
 
 #ifndef UNIT_TEST
 #ifdef STM32F4
-static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRRL = i; }        
-static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BSRRH = i; }        
+static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRRL = i; }
+static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BSRRH = i; }
 #else
 static inline void digitalHi(GPIO_TypeDef *p, uint16_t i) { p->BSRR = i; }
 static inline void digitalLo(GPIO_TypeDef *p, uint16_t i) { p->BRR = i; }

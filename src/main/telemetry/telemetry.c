@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -40,7 +39,7 @@
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
-#include "rx/jetiexbus.h"
+#include "telemetry/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -56,7 +55,7 @@ void telemetryInit(void)
     initSmartPortTelemetry(telemetryConfig);
     initLtmTelemetry(telemetryConfig);
     initJetiExBusTelemetry(telemetryConfig);
-    
+
     telemetryCheckState();
 }
 

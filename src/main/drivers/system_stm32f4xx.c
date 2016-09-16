@@ -15,26 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
+#include "accgyro_mpu.h"
 #include "gpio.h"
 #include "nvic.h"
 #include "system.h"
 
-
 #include "exti.h"
-#include "debug.h"
-#include "sensor.h"
-#include "accgyro.h"
-#include "accgyro_mpu.h"
-#include "accgyro_spi_mpu6000.h"
-#include "accgyro_mpu6500.h"
-#include "accgyro_spi_mpu9250.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
@@ -49,7 +41,7 @@ void systemReset(void)
     NVIC_SystemReset();
 }
 
-void systemResetToBootloader(void) 
+void systemResetToBootloader(void)
 {
     if (mpuConfiguration.reset)
         mpuConfiguration.reset();
@@ -169,7 +161,7 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
     SetSysClock();
 
@@ -183,7 +175,7 @@ void systemInit(void)
     extern void *isr_vector_table_base;
     NVIC_SetVectorTable((uint32_t)&isr_vector_table_base, 0x0);
     RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_OTG_FS, DISABLE);
-    
+
     RCC_ClearFlag();
 
     enableGPIOPowerUsageAndNoiseReductions();
@@ -199,15 +191,15 @@ void systemInit(void)
 void(*bootJump)(void);
 void checkForBootLoaderRequest(void)
 {
-	if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
+    if (*((uint32_t *)0x2001FFFC) == 0xDEADBEEF) {
 
-		*((uint32_t *)0x2001FFFC) = 0x0; 
+        *((uint32_t *)0x2001FFFC) = 0x0;
 
-		__enable_irq();
-		__set_MSP(0x20001000);
-		                                               
-		bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004)); 
-		bootJump();
-		while (1);
-	}
+        __enable_irq();
+        __set_MSP(*((uint32_t *)0x1FFF0000));
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFF0004));
+        bootJump();
+        while (1);
+    }
 }

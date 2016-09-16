@@ -52,12 +52,12 @@ extern uint8_t motorCount;
  ****************************************************************************
  ***                    G_Tune                                            ***
  ****************************************************************************
-	G_Tune Mode
-	This is the multiwii implementation of ZERO-PID Algorithm
-	http://technicaladventure.blogspot.com/2014/06/zero-pids-tuner-for-multirotors.html
-	The algorithm has been originally developed by Mohammad Hefny (mohammad.hefny@gmail.com)
+    G_Tune Mode
+    This is the multiwii implementation of ZERO-PID Algorithm
+    http://technicaladventure.blogspot.com/2014/06/zero-pids-tuner-for-multirotors.html
+    The algorithm has been originally developed by Mohammad Hefny (mohammad.hefny@gmail.com)
 
-	You may use/modify this algorithm on your own risk, kindly refer to above link in any future distribution.
+    You may use/modify this algorithm on your own risk, kindly refer to above link in any future distribution.
  */
 
 /*
@@ -107,13 +107,13 @@ void init_Gtune(pidProfile_t *pidProfileToTune)
     uint8_t i;
 
     pidProfile = pidProfileToTune;
-	if (pidProfile->pidController == 2) {
-	    floatPID = true;                                                        // LuxFloat is using float values for PID settings
-	} else {
-	    floatPID = false;
-	}
-	updateDelayCycles();
-	for (i = 0; i < 3; i++) {
+    if (pidProfile->pidController == 2) {
+        floatPID = true;                                                        // LuxFloat is using float values for PID settings
+    } else {
+        floatPID = false;
+    }
+    updateDelayCycles();
+    for (i = 0; i < 3; i++) {
         if ((pidProfile->gtune_hilimP[i] && pidProfile->gtune_lolimP[i] > pidProfile->gtune_hilimP[i]) || (motorCount < 4 && i == FD_YAW)) { // User config error disable axisis for tuning
             pidProfile->gtune_hilimP[i] = 0;                                    // Disable YAW tuning for everything below a quadcopter
         }

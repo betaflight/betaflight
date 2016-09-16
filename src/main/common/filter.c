@@ -55,25 +55,45 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
-/* sets up a biquad Filter */
-void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate)
-{
-    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
+float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
+    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
+    return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+}
 
+/* sets up a biquad Filter */
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+{
+    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
+}
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+{
     // setup variables
-    const float omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
+    const float omega = 2 * M_PI_FLOAT * filterFreq / sampleRate;
     const float sn = sinf(omega);
     const float cs = cosf(omega);
-    //this is wrong, should be hyperbolic sine
-    //alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
-    const float alpha = sn / (2 * BIQUAD_Q);
+    const float alpha = sn / (2 * Q);
 
-    const float b0 = (1 - cs) / 2;
-    const float b1 = 1 - cs;
-    const float b2 = (1 - cs) / 2;
-    const float a0 = 1 + alpha;
-    const float a1 = -2 * cs;
-    const float a2 = 1 - alpha;
+    float b0, b1, b2, a0, a1, a2;
+
+    switch (filterType) {
+        case FILTER_LPF:
+            b0 = (1 - cs) / 2;
+            b1 = 1 - cs;
+            b2 = (1 - cs) / 2;
+            a0 = 1 + alpha;
+            a1 = -2 * cs;
+            a2 = 1 - alpha;
+            break;
+        case FILTER_NOTCH:
+            b0 =  1;
+            b1 = -2 * cs;
+            b2 =  1;
+            a0 =  1 + alpha;
+            a1 = -2 * cs;
+            a2 =  1 - alpha;
+            break;
+    }
 
     // precompute the coefficients
     filter->b0 = b0 / a0;

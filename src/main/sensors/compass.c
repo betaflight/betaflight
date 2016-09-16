@@ -25,7 +25,6 @@
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/compass_hmc5883l.h"
-#include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
 #include "sensors/boardalignment.h"

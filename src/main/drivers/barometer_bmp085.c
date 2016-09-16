@@ -35,7 +35,7 @@
 
 #ifdef BARO
 
-#if defined(BARO_EOC_GPIO) 
+#if defined(BARO_EOC_GPIO)
 
 static IO_t eocIO;
 
@@ -49,7 +49,7 @@ void bmp085_extiHandler(extiCallbackRec_t* cb)
     isConversionComplete = true;
 }
 
-bool bmp085TestEOCConnected(const bmp085Config_t *config); 
+bool bmp085TestEOCConnected(const bmp085Config_t *config);
 # endif
 
 typedef struct {
@@ -139,11 +139,11 @@ static IO_t xclrIO;
 #endif
 
 
-void bmp085InitXclrIO(const bmp085Config_t *config) 
+void bmp085InitXclrIO(const bmp085Config_t *config)
 {
     if (!xclrIO && config && config->xclrIO) {
         xclrIO = IOGetByTag(config->xclrIO);
-        IOInit(xclrIO, OWNER_SYSTEM, RESOURCE_OUTPUT);
+        IOInit(xclrIO, OWNER_BARO, RESOURCE_OUTPUT, 0);
         IOConfigGPIO(xclrIO, IOCFG_OUT_PP);
     }
 }
@@ -184,7 +184,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */ 
+    ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     if (ack) {
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
         bmp085.oversampling_setting = 3;
@@ -367,7 +367,7 @@ static void bmp085_get_cal_param(void)
 bool bmp085TestEOCConnected(const bmp085Config_t *config)
 {
     UNUSED(config);
-    
+
     if (!bmp085InitDone && eocIO) {
         bmp085_start_ut();
         delayMicroseconds(UT_DELAY * 2); // wait twice as long as normal, just to be sure

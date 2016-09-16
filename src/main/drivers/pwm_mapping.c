@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -30,11 +29,6 @@
 #include "pwm_output.h"
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
-
-void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
-void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmFastPwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint8_t fastPwmProtocolType, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 /*
     Configuration maps
@@ -93,26 +87,18 @@ pwmOutputConfiguration_t *pwmGetOutputConfiguration(void)
     return &pwmOutputConfiguration;
 }
 
-bool CheckGPIOPin(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
-{
-    return IO_GPIOBYTAG(tag) == gpio && IO_PINBYTAG(tag) == pin;
-}
-
-bool CheckGPIOPinSource(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
-{
-    return IO_GPIOBYTAG(tag) == gpio && IO_GPIO_PinSource(IOGetByTag(tag)) == pin;
-}
-
 pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-    int i = 0;
     const uint16_t *setup;
 
+#ifndef SKIP_RX_PWM_PPM
     int channelIndex = 0;
+#endif
 
     memset(&pwmOutputConfiguration, 0, sizeof(pwmOutputConfiguration));
-       
+  
     // this is pretty hacky shit, but it will do for now. array of 4 config maps, [ multiPWM multiPPM airPWM airPPM ]
+    int i = 0;
     if (init->airplane)
         i = 2; // switch to air hardware config
     if (init->usePPM || init->useSerialRx)
@@ -123,7 +109,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #else
     setup = hardwareMaps[i];
 #endif
-
+	TIM_TypeDef* ppmTimer = NULL;
     for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT && setup[i] != 0xFFFF; i++) {
         uint8_t timerIndex = setup[i] & 0x00FF;
         uint8_t type = (setup[i] & 0xFF00) >> 8;
@@ -142,9 +128,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#if defined(STM32F303xC) && defined(USE_USART3)
+#if defined(STM32F303xC) && defined(USE_UART3)
         // skip UART3 ports (PB10/PB11)
-        if (init->useUART3 && (CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_TX_PIN) || CheckGPIOPin(timerHardwarePtr->tag, UART3_GPIO, UART3_RX_PIN)))
+        if (init->useUART3 && (timerHardwarePtr->tag == IO_TAG(UART3_TX_PIN) || timerHardwarePtr->tag == IO_TAG(UART3_RX_PIN)))
             continue;
 #endif
 
@@ -176,13 +162,13 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef RSSI_ADC_GPIO
+#ifdef RSSI_ADC_PIN
         if (init->useRSSIADC && timerHardwarePtr->tag == IO_TAG(RSSI_ADC_PIN)) {
             continue;
         }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
+#ifdef CURRENT_METER_ADC_PIN
         if (init->useCurrentMeterADC && timerHardwarePtr->tag == IO_TAG(CURRENT_METER_ADC_PIN)) {
             continue;
         }
@@ -191,8 +177,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #ifdef SONAR
         if (init->useSonar &&
             (
-                timerHardwarePtr->tag == init->sonarConfig.triggerTag ||
-                timerHardwarePtr->tag == init->sonarConfig.echoTag
+                timerHardwarePtr->tag == init->sonarIOConfig.triggerTag ||
+                timerHardwarePtr->tag == init->sonarIOConfig.echoTag
             )) {
             continue;
         }
@@ -249,6 +235,19 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(RCEXPLORERF3)
+            if (timerIndex == PWM2)
+            {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
+
+#if defined(SPRACINGF3EVO)
+            // remap PWM6+7 as servos
+            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
 #if (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
             // remap PWM 5+6 or 9+10 as servos - softserial pin pairs require timer ports that use the same timer
             if (init->useSoftSerial) {
@@ -276,7 +275,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (init->useChannelForwarding && !init->airplane) {
 #if defined(NAZE) && defined(WS2811_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
-            if (init->useLEDStrip) { 
+            if (init->useLEDStrip) {
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }
@@ -305,33 +304,39 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
-#if defined(SPARKY) || defined(ALIENFLIGHTF3)
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
-                ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
-            }
-#endif
+#ifndef SKIP_RX_PWM_PPM
+            ppmTimer = timerHardwarePtr->tim;
             ppmInConfig(timerHardwarePtr);
+#endif
         } else if (type == MAP_TO_PWM_INPUT) {
+#ifndef SKIP_RX_PWM_PPM
             pwmInConfig(timerHardwarePtr, channelIndex);
             channelIndex++;
+#endif
         } else if (type == MAP_TO_MOTOR_OUTPUT) {
 
 #ifdef CC3D
-            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
+            if (!(init->pwmProtocolType == PWM_TYPE_CONVENTIONAL)) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
                 if (timerHardwarePtr->tim == TIM2)
                     continue;
             }
 #endif
+            if (init->usePPM) {
+                if (init->pwmProtocolType != PWM_TYPE_CONVENTIONAL && timerHardwarePtr->tim == ppmTimer) {
+                    ppmAvoidPWMTimerClash(timerHardwarePtr, ppmTimer, init->pwmProtocolType);
+                }
+            }
+
             if (init->useFastPwm) {
-                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->pwmProtocolType, init->motorPwmRate, init->idlePulse);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM ;
+                pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->pwmProtocolType);
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_OUTPUT_PROTOCOL_ONESHOT;
             } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 pwmBrushedMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_MOTOR_MODE_BRUSHED;
             } else {
                 pwmBrushlessMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
-                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM ;
+                pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM;
             }
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].index = pwmOutputConfiguration.motorCount;
             pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].timerHardware = timerHardwarePtr;

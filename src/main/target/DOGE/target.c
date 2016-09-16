@@ -43,7 +43,7 @@ const uint16_t multiPWM[] = {
     PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8), 
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 
@@ -78,7 +78,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_2 }, // PWM2 - PB8
     { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_2 }, // PWM3 - PB9
-    
+
     { TIM2,  IO_TAG(PA10), TIM_Channel_4, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_10 }, // PMW4 - PA10
     { TIM2,  IO_TAG(PA9),  TIM_Channel_3, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_10 }, // PWM5 - PA9
     { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,    1, IOCFG_AF_PP,      GPIO_AF_1 },  // PWM6 - PA0
