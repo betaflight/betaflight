@@ -200,8 +200,7 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
         rxRefreshRate = 10000;
-        const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
-        const bool enabled = rxSpiInit(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        const bool enabled = rxSpiInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
         if (!enabled) {
             featureClear(FEATURE_RX_SPI);
             rcReadRawFunc = nullReadRawRC;
@@ -354,11 +353,12 @@ bool rxUpdate(uint32_t currentTime)
 
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
-        rxDataReceived = rxSpiDataReceived();
-        if (rxDataReceived) {
-            rxSignalReceived = true;
+        const uint8_t frameStatus = rxSpiFrameStatus();
+        if (frameStatus & RX_FRAME_COMPLETE) {
+            rxDataReceived = true;
             rxIsInFailsafeMode = false;
-            needRxSignalBefore = currentTime + DELAY_10_HZ;
+            rxSignalReceived = true;
+            needRxSignalBefore = currentTime + DELAY_5_HZ;
         }
     }
 #endif

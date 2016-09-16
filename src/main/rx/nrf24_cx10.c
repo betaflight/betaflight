@@ -32,6 +32,7 @@
 #include "drivers/rx_xn297.h"
 #include "drivers/system.h"
 
+#include "rx/rx.h"
 #include "rx/rx_spi.h"
 #include "rx/nrf24_cx10.h"
 
