@@ -100,7 +100,6 @@
 
 #include "blackbox/blackbox.h"
 
-#include "osd/config.h"
 #include "osd/osd_element.h"
 #include "osd/osd.h"
 #include "osd/osd_serial.h"
