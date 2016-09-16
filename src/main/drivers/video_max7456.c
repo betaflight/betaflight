@@ -304,12 +304,20 @@ void max7456_dma_irq_handler(dmaChannel_t* descriptor, dmaCallbackHandler_t* cal
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 #ifdef MAX7456_DMA_CHANNEL_RX
         DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
-#else
-        //Empty RX buffer. RX DMA takes care of it if enabled
+#endif
+        uint32_t counter1 = 0;
+        uint32_t counter2 = 0;
+
+        // Make sure spi transfer is complete (empty transmit buffer and not busy)
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_TXE) == RESET) {counter1++;};
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_BSY) == SET) {counter2++;};
+
+        // Empty the RX buffer. RX DMA takes care of it if enabled.
+        // Note: This can only be be done after transmission is complete.
         while (SPI_I2S_GetFlagStatus(MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_RXNE) == SET) {
             MAX7456_SPI_INSTANCE->DR;
         }
-#endif
+
         DMA_Cmd(MAX7456_DMA_CHANNEL_TX, DISABLE);
 
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
