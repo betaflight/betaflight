@@ -98,7 +98,7 @@
 #define PA_CONTROL_DEFAULT  0x4FBD
 
 // Define variables
-static const uint32_t channelArray[RTC6705_BAND_MAX][RTC6705_CHANNEL_MAX] = {
+static const uint32_t channelArray[RTC6705_BAND_COUNT][RTC6705_CHANNEL_COUNT] = {
     { RTC6705_SET_A1, RTC6705_SET_A2, RTC6705_SET_A3, RTC6705_SET_A4, RTC6705_SET_A5, RTC6705_SET_A6, RTC6705_SET_A7, RTC6705_SET_A8 },
     { RTC6705_SET_B1, RTC6705_SET_B2, RTC6705_SET_B3, RTC6705_SET_B4, RTC6705_SET_B5, RTC6705_SET_B6, RTC6705_SET_B7, RTC6705_SET_B8 },
     { RTC6705_SET_E1, RTC6705_SET_E2, RTC6705_SET_E3, RTC6705_SET_E4, RTC6705_SET_E5, RTC6705_SET_E6, RTC6705_SET_E7, RTC6705_SET_E8 },
@@ -126,7 +126,7 @@ static uint32_t reverse32(uint32_t in)
 /**
  * Start chip if available
  */
-void rtc6705Init(void)
+void rtc6705IOInit(void)
 {
     gpio_config_t gpio;
 
@@ -182,13 +182,13 @@ static void rtc6705Transfer(uint32_t command)
  */
 void rtc6705SetChannel(uint8_t band, uint8_t channel)
 {
-    band = constrain(band, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
-    channel = constrain(channel, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
+    band = constrain(band, 0, RTC6705_BAND_COUNT - 1);
+    channel = constrain(channel, 0, RTC6705_CHANNEL_COUNT - 1);
 
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
     rtc6705Transfer(RTC6705_SET_HEAD);
-    rtc6705Transfer(channelArray[band-1][channel-1]);
+    rtc6705Transfer(channelArray[band][channel]);
 }
 
  /**
@@ -221,7 +221,7 @@ void rtc6705SetRFPower(uint8_t rf_power)
 
     uint32_t val_hex = 0x10; // write
     val_hex |= 7; // address
-    uint32_t data = rf_power == RTC6705_RF_POWER_MIN ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
+    uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
     rtc6705Transfer(val_hex);

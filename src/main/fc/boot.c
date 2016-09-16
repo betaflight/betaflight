@@ -67,7 +67,6 @@
 #include "drivers/io.h"
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
-#include "drivers/vtx_rtc6705.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -86,6 +85,8 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
+
 #include "fc/msp_server_fc.h"
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
@@ -362,9 +363,9 @@ void init(void)
 #endif
 
 #ifdef VTX
-#ifdef VTX_RTC6705
-    rtc6705Init();
-#endif
+    // This must be done early to ensure that the VTX does not power up.  We do not fully initialise the VTX at this stage
+    // because it takes some time - we don't want to delay other time critical initialisation.
+    vtxIOInit();
 #endif
 
     delay(100);
@@ -483,11 +484,7 @@ void init(void)
 #endif
 
 #ifdef VTX
-#ifdef VTX_RTC6705
-    // TODO ensure RTC6705_BOOT_DELAY has passed if VTX is powered on by default when vtx power not controllable by software.
-    rtc6705SetRFPower(RTC6705_RF_POWER_MIN);
-    rtc6705SetChannel(5, 1); // raceband channel 1
-#endif
+    vtxInit();
 #endif
 
 #if defined(NAZE)
