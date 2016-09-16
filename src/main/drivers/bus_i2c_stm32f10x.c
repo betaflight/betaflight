@@ -99,11 +99,11 @@ static i2cState_t i2cState[] = {
     { false, false, false, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-static bool i2cOverClock;
-
 void i2cSetOverclock(uint8_t overClock)
 {
-    i2cOverClock = overClock ? true : false;
+    for (unsigned int i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
+        i2cHardwareMap[i].overClock = overClock;
+    }
 }
 
 void I2C1_ER_IRQHandler(void) {
