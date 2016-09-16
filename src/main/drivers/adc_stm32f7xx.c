@@ -26,8 +26,6 @@
 #include "io_impl.h"
 #include "rcc.h"
 
-#include "sensors/sensors.h" // FIXME dependency into the main code
-
 #include "sensor.h"
 #include "accgyro.h"
 
@@ -75,7 +73,7 @@ const adcTagMap_t adcTagMap[] = {
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 /*
     if (instance == ADC2) // TODO add ADC2 and 3
@@ -109,7 +107,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
     }
 #endif
-    
+
 #ifdef EXTERNAL1_ADC_PIN
     if (init->enableExternal1) {
         adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
@@ -122,14 +120,12 @@ void adcInit(drv_adc_config_t *init)
     }
 #endif
 
-    //RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
-    
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
-    
-    adcDevice_t adc = adcHardware[device];   
-    
+
+    adcDevice_t adc = adcHardware[device];
+
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
@@ -141,7 +137,7 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
         adcConfig[i].enabled = true;
     }
-    
+
     RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
@@ -185,7 +181,7 @@ void adcInit(drv_adc_config_t *init)
         /* Initialization Error */
     }
 
-    //__HAL_LINKDMA(&AdcHandle_1, DMA_Handle, hdma_adc_1);
+    __HAL_LINKDMA(&ADCHandle, DMA_Handle, DmaHandle);
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
