@@ -25,7 +25,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
+
+#ifdef SERIAL_RX
 
 #include "build/build_config.h"
 
@@ -54,16 +56,17 @@ static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 static void ibusDataReceive(uint16_t c);
 static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
 
-    if (callback)
-        *callback = ibusReadRawRC;
-
     rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    rxRuntimeConfig->rcReadRawFunc = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = ibusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
@@ -116,7 +119,7 @@ static void ibusDataReceive(uint16_t c)
 uint8_t ibusFrameStatus(void)
 {
     uint8_t i, offset;
-    uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
+    uint8_t frameStatus = RX_FRAME_PENDING;
     uint16_t chksum, rxsum;
 
     if (!ibusFrameDone) {
@@ -128,14 +131,14 @@ uint8_t ibusFrameStatus(void)
     chksum = 0xFFFF;
     for (i = 0; i < 30; i++)
         chksum -= ibus[i];
-        
+
     rxsum = ibus[30] + (ibus[31] << 8);
 
     if (chksum == rxsum) {
         for (i = 0, offset = 2; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
             ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
         }
-        frameStatus = SERIAL_RX_FRAME_COMPLETE;
+        frameStatus = RX_FRAME_COMPLETE;
     }
 
     return frameStatus;
@@ -146,3 +149,4 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
 }
+#endif

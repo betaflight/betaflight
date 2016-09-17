@@ -266,7 +266,7 @@ void processRcCommand(void)
                 case(RC_SMOOTHING_OFF):
                 case(RC_SMOOTHING_DEFAULT):
                 default:
-                    initRxRefreshRate(&rxRefreshRate);
+                    rxRefreshRate = rxGetRefreshRate();
             }
 
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;

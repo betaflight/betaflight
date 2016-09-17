@@ -22,4 +22,4 @@
 
 uint8_t spektrumFrameStatus(void);
 void spektrumBind(rxConfig_t *rxConfig);
-bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);

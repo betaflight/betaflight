@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#ifdef SERIAL_RX
+
 #include "build/debug.h"
 
 #include "drivers/io.h"
@@ -49,6 +51,7 @@
 #define SPEKTRUM_1024_CHANNEL_COUNT 7
 
 #define SPEK_FRAME_SIZE 16
+#define SPEKTRUM_NEEDED_FRAME_INTERVAL 5000
 
 #define SPEKTRUM_BAUDRATE 115200
 
@@ -71,31 +74,33 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
-bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
     switch (rxConfig->serialrx_provider) {
-        case SERIALRX_SPEKTRUM2048:
-            // 11 bit frames
-            spek_chan_shift = 3;
-            spek_chan_mask = 0x07;
-            spekHiRes = true;
-            rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
-            break;
-        case SERIALRX_SPEKTRUM1024:
-            // 10 bit frames
-            spek_chan_shift = 2;
-            spek_chan_mask = 0x03;
-            spekHiRes = false;
-            rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
-            break;
+    case SERIALRX_SPEKTRUM2048:
+        // 11 bit frames
+        spek_chan_shift = 3;
+        spek_chan_mask = 0x07;
+        spekHiRes = true;
+        rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 11000;
+        break;
+    case SERIALRX_SPEKTRUM1024:
+        // 10 bit frames
+        spek_chan_shift = 2;
+        spek_chan_mask = 0x03;
+        spekHiRes = false;
+        rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 22000;
+        break;
     }
 
-    if (callback)
-        *callback = spektrumReadRawRC;
+    rxRuntimeConfig->rcReadRawFunc = spektrumReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = spektrumFrameStatus;
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
@@ -120,14 +125,15 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
-    uint32_t spekTime;
-    static uint32_t spekTimeLast, spekTimeInterval;
-    static uint8_t spekFramePosition;
+    uint32_t spekTime, spekTimeInterval;
+    static uint32_t spekTimeLast = 0;
+    static uint8_t spekFramePosition = 0;
 
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-    if (spekTimeInterval > 5000) {
+
+    if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {
         spekFramePosition = 0;
     }
 
@@ -148,7 +154,7 @@ uint8_t spektrumFrameStatus(void)
     uint8_t b;
 
     if (!rcFrameComplete) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     rcFrameComplete = false;
@@ -160,7 +166,7 @@ uint8_t spektrumFrameStatus(void)
         }
     }
 
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
@@ -254,4 +260,6 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
-#endif
+#endif // SPEKTRUM_BIND
+#endif // SERIAL_RX
+
