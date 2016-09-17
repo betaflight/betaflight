@@ -544,6 +544,11 @@ void taskGyro(void) {
     }
 
     gyroUpdate();
+
+#ifdef ASYNC_GYRO_PROCESSING
+    /* Update IMU for better accuracy */
+    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTime));
+#endif
 }
 
 void taskMainPidLoop(void)

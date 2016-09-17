@@ -92,6 +92,28 @@ static float gyroScale;
 
 static bool gpsHeadingInitialized = false;
 
+#ifdef ASYNC_GYRO_PROCESSING
+/* Asynchronous update accumulators */
+static float imuAccumulatedRate[XYZ_AXIS_COUNT];
+static float imuAccumulatedRateTime;
+static float imuAccumulatedAcc[XYZ_AXIS_COUNT];
+static int   imuAccumulatedAccCount;
+#endif
+
+#ifdef ASYNC_GYRO_PROCESSING
+void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
+{
+    const float gyroUpdateDelta = gyroUpdateDeltaUs * 1e-6f;
+
+    for (int axis = 0; axis < 3; axis++) {
+        imuAccumulatedRate[axis] += gyroADC[axis] * gyroScale * gyroUpdateDelta;
+    }
+
+    imuAccumulatedRateTime += gyroUpdateDelta;
+}
+#endif
+
+
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     float q1q1 = q1 * q1;
@@ -444,9 +466,18 @@ static void imuUpdateMeasuredRotationRate(void)
 {
     int axis;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    for (axis = 0; axis < 3; axis++) {
+        imuMeasuredRotationBF.A[axis] = imuAccumulatedRate[axis] / imuAccumulatedRateTime;
+        imuAccumulatedRate[axis] = 0.0f;
+    }
+
+    imuAccumulatedRateTime = 0.0f;
+#else
     for (axis = 0; axis < 3; axis++) {
         imuMeasuredRotationBF.A[axis] = gyroADC[axis] * gyroScale;
     }
+#endif
 }
 
 /* Calculate measured acceleration in body frame cm/s/s */
@@ -454,11 +485,19 @@ static void imuUpdateMeasuredAcceleration(void)
 {
     int axis;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccelInBodyFrame.A[axis] = imuAccumulatedAcc[axis] / imuAccumulatedAccCount;
+        imuAccumulatedAcc[axis] = 0;
+    }
+    imuAccumulatedAccCount = 0;;
+#else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
+#endif
 
 #ifdef GPS
     /** Centrifugal force compensation on a fixed-wing aircraft
@@ -503,6 +542,13 @@ void imuUpdateAccelerometer(void)
         updateAccelerationReadings();
         isAccelUpdatedAtLeastOnce = true;
     }
+#endif
+
+#ifdef ASYNC_GYRO_PROCESSING
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccumulatedAcc[axis] += accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
+    }
+    imuAccumulatedAccCount++;
 #endif
 }
 

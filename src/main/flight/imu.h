@@ -51,6 +51,7 @@ void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, struct pidProfile
 
 void imuUpdateAttitude(void);
 void imuUpdateAccelerometer(void);
+void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);
 float calculateCosTiltAngle(void);
 bool isImuReady(void);
