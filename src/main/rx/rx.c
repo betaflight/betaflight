@@ -231,7 +231,6 @@ void serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
         break;
     }
-
     if (!enabled) {
         featureClear(FEATURE_RX_SERIAL);
         rxRuntimeConfig->rcReadRawFunc = nullReadRawRC;
