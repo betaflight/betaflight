@@ -855,7 +855,6 @@ void taskMainPidLoopCheck(uint32_t currentTime)
 {
     UNUSED(currentTime);
 
-    static uint32_t previousTime;
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
@@ -904,9 +903,7 @@ void taskHandleSerial(uint32_t currentTime)
 
 void taskUpdateBeeper(uint32_t currentTime)
 {
-    UNUSED(currentTime);
-
-    beeperUpdate();          //call periodic beeper handler
+    beeperUpdate(currentTime);          //call periodic beeper handler
 }
 
 void taskUpdateBattery(uint32_t currentTime)
@@ -934,10 +931,8 @@ void taskUpdateBattery(uint32_t currentTime)
 
 bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
 {
-	UNUSED(currentDeltaTime);
-
-	updateRx(currentTime);
-    return shouldProcessRx(currentTime);
+    UNUSED(currentDeltaTime);
+    return rxUpdate(currentTime);
 }
 
 void taskUpdateRxMain(uint32_t currentTime)
@@ -967,8 +962,6 @@ void taskUpdateRxMain(uint32_t currentTime)
 #ifdef GPS
 void taskProcessGPS(uint32_t currentTime)
 {
-    UNUSED(currentTime);
-
     // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
     // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
     // change this based on available hardware
@@ -997,7 +990,7 @@ void taskUpdateBaro(uint32_t currentTime)
     UNUSED(currentTime);
 
     if (sensors(SENSOR_BARO)) {
-        uint32_t newDeadline = baroUpdate();
+        const uint32_t newDeadline = baroUpdate();
         rescheduleTask(TASK_SELF, newDeadline);
     }
 }
@@ -1041,12 +1034,10 @@ void taskUpdateDisplay(uint32_t currentTime)
 #ifdef TELEMETRY
 void taskTelemetry(uint32_t currentTime)
 {
-    UNUSED(currentTime);
-
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
     }
 }
 #endif
