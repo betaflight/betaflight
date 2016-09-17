@@ -398,7 +398,7 @@ TABS.pid_tuning.initialize = function (callback) {
         }
     }
 
-    function drawAxes(curveContext, width, height, scaleHeight) {
+    function drawAxes(curveContext, width, height) {
         curveContext.strokeStyle = '#000000';
         curveContext.lineWidth = 4;
 
@@ -414,20 +414,27 @@ TABS.pid_tuning.initialize = function (callback) {
         curveContext.lineTo(width / 2, height);
         curveContext.stroke();
 
-        if (scaleHeight <= height / 2) {
-            curveContext.strokeStyle = '#c0c0c0';
-            curveContext.lineWidth = 4;
+    }
 
-            curveContext.beginPath();
-            curveContext.moveTo(0, height / 2 + scaleHeight);
-            curveContext.lineTo(width, height / 2 + scaleHeight);
-            curveContext.stroke();
 
+    function plotStickPosition(curveContext, rcData, rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, stickColor) {
+
+        const DEFAULT_SIZE = 60; // canvas units, relative size of the stick indicator (larger value is smaller indicator)
+        const rateScaling  = (curveContext.canvas.height / 2) / maxAngularVel;
+
+        var currentValue = self.rateCurve.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive, deadband);
+
+        if(rcData!=undefined) {
+            curveContext.save();
+            curveContext.fillStyle = stickColor || '#000000';
+
+            curveContext.translate(curveContext.canvas.width/2, curveContext.canvas.height/2);
             curveContext.beginPath();
-            curveContext.moveTo(0, height / 2 - scaleHeight);
-            curveContext.lineTo(width, height / 2 - scaleHeight);
-            curveContext.stroke();
+            curveContext.arc(rcData-1500, -rateScaling * currentValue, curveContext.canvas.height / DEFAULT_SIZE, 0, 2 * Math.PI);
+            curveContext.fill();
+            curveContext.restore();
         }
+        return currentValue.toFixed(0); // The calculated value in deg/s is returned from the function call for further processing.
     }
 
     function drawAxisLabel(curveContext, axisLabel, x, y, align, color) {
@@ -437,18 +444,19 @@ TABS.pid_tuning.initialize = function (callback) {
         curveContext.fillText(axisLabel, x, y);
     }
 
-    function drawBalloonLabel(curveContext, axisLabel, x, y, align, color, borderColor, textColor) {
+    function drawBalloonLabel(curveContext, axisLabel, x, y, align, colors, dirty) {
 
         /**
          * curveContext is the canvas to draw on
          * axisLabel is the string to display in the center of the balloon
          * x, y are the coordinates of the point of the balloon
          * align is whether the balloon appears to the left (align 'right') or right (align left) of the x,y coordinates
-         * color, borderColor and textColor are the fill color, border color and text color of the balloon
+         * colors is an object defining color, border and text are the fill color, border color and text color of the balloon
          */
 
-        const DEFAULT_OFFSET        = 50; // in canvas scale; this is the horizontal length of the pointer
+        const DEFAULT_OFFSET        = 125; // in canvas scale; this is the horizontal length of the pointer
         const DEFAULT_RADIUS        = 10; // in canvas scale, this is the radius around the balloon
+        const DEFAULT_MARGIN        = 5;  // in canvas scale, this is the margin around the balloon when it overlaps
 
         const fontSize = parseInt(curveContext.font);
 
@@ -458,12 +466,33 @@ TABS.pid_tuning.initialize = function (callback) {
         const pointerY = y; // always point to the required Y coordinate, even if we move the balloon itself to keep it on the canvas
 
         // setup balloon background
-        curveContext.fillStyle   = color        || '#ffffff' ;
-        curveContext.strokeStyle = borderColor  || '#000000' ;
+        curveContext.fillStyle   = colors.color   || '#ffffff' ;
+        curveContext.strokeStyle = colors.border  || '#000000' ;
+
+        // correct x position to account for window scaling
+        x *= curveContext.canvas.clientWidth/curveContext.canvas.clientHeight;
 
         // adjust the coordinates for determine where the balloon background should be drawn
         x += ((align=='right')?-(width + DEFAULT_OFFSET):0) + ((align=='left')?DEFAULT_OFFSET:0);
         y -= (height/2); if(y<0) y=0; else if(y>curveContext.height) y=curveContext.height; // prevent balloon from going out of canvas
+
+        // check that the balloon does not already overlap
+        for(var i=0; i<dirty.length; i++) {
+            if((x>=dirty[i].left && x<=dirty[i].right) || (x+width>=dirty[i].left && x+width<=dirty[i].right)) { // does it overlap horizontally
+                if((y>=dirty[i].top && y<=dirty[i].bottom) || (y+height>=dirty[i].top && y+height<=dirty[i].bottom )) { // this overlaps another balloon
+                    // snap above or snap below
+                    if(y<=(dirty[i].bottom - dirty[i].top) / 2 && (dirty[i].top - height) > 0) {
+                        y = dirty[i].top - height;
+                    } else { // snap down
+                        y = dirty[i].bottom;
+                    }
+                }
+            }
+        }
+
+        // Add the draw area to the dirty array
+        dirty.push({left:x, right:x+width, top:y-DEFAULT_MARGIN, bottom:y+height+DEFAULT_MARGIN});
+
 
         var pointerLength =  (height - 2 * DEFAULT_RADIUS ) / 6;
 
@@ -498,7 +527,7 @@ TABS.pid_tuning.initialize = function (callback) {
         curveContext.stroke();
 
         // and add the label
-        drawAxisLabel(curveContext, axisLabel, x + (width/2), y + (height + fontSize)/2 - 4, 'center', textColor);
+        drawAxisLabel(curveContext, axisLabel, x + (width/2), y + (height + fontSize)/2 - 4, 'center', colors.text);
 
     }
 
@@ -741,53 +770,126 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         // Getting the DOM elements for curve display
-        var rcCurveElement = $('.rate_curve canvas').get(0);
-        var curveContext = rcCurveElement.getContext("2d");
+        var rcCurveElement              = $('.rate_curve canvas').get(0),
+            rcStickElement              = $('.rate_curve canvas').get(1),
+            curveContext                = rcCurveElement.getContext("2d"),
+            stickContext                = rcStickElement.getContext("2d"),
+            maxAngularVelRollElement    = $('.pid_tuning .maxAngularVelRoll'),
+            maxAngularVelPitchElement   = $('.pid_tuning .maxAngularVelPitch'),
+            maxAngularVelYawElement     = $('.pid_tuning .maxAngularVelYaw'),
+            updateNeeded                = true,
+            maxAngularVel;
+
         rcCurveElement.width = 1000;
         rcCurveElement.height = 1000;
+        rcStickElement.width = 1000;
+        rcStickElement.height = 1000;
 
-        var maxAngularVelRollElement = $('.pid_tuning .maxAngularVelRoll');
-        var maxAngularVelPitchElement = $('.pid_tuning .maxAngularVelPitch');
-        var maxAngularVelYawElement = $('.pid_tuning .maxAngularVelYaw');
+        self.updateRatesLabels = function() {
+            if (!useLegacyCurve && maxAngularVel) {
+                stickContext.save();
 
-        var updateNeeded = true;
+                const BALLOON_COLORS = {
+                    roll    : {color: 'rgba(255,128,128,0.4)', border: 'rgba(255,128,128,0.6)', text: '#000000'},
+                    pitch   : {color: 'rgba(128,255,128,0.4)', border: 'rgba(128,255,128,0.6)', text: '#000000'},
+                    yaw     : {color: 'rgba(128,128,255,0.4)', border: 'rgba(128,128,255,0.6)', text: '#000000'}
+                };
 
-        function updateRates(event) {
+                var maxAngularVelRoll   = maxAngularVelRollElement.text()  + ' deg/s',
+                    maxAngularVelPitch  = maxAngularVelPitchElement.text() + ' deg/s',
+                    maxAngularVelYaw    = maxAngularVelYawElement.text()   + ' deg/s',
+                    currentValues       = [],
+                    balloonsDirty       = [],
+                    curveHeight         = rcStickElement.height,
+                    curveWidth          = rcStickElement.width,
+                    windowScale         = (400 / stickContext.canvas.clientHeight),
+                    rateScale           = (curveHeight / 2) / maxAngularVel,
+                    lineScale           = stickContext.canvas.width / stickContext.canvas.clientWidth;
+
+
+                stickContext.clearRect(0, 0, curveWidth, curveHeight);
+
+                // calculate the fontSize based upon window scaling
+                if(windowScale <= 1) {
+                    stickContext.font = "24pt Verdana, Arial, sans-serif";
+                } else {
+                    stickContext.font = (24 * windowScale) + "pt Verdana, Arial, sans-serif";
+                }
+
+                currentValues.push(plotStickPosition(stickContext, RC.channels[0], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#FF8080') + ' deg/s');
+                currentValues.push(plotStickPosition(stickContext, RC.channels[1], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#80FF80') + ' deg/s');
+                currentValues.push(plotStickPosition(stickContext, RC.channels[2], self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, '#8080FF') + ' deg/s');
+
+                stickContext.lineWidth = 1 * lineScale;
+
+                // use a custom scale so that the text does not appear stretched
+                stickContext.scale(stickContext.canvas.clientHeight/stickContext.canvas.clientWidth,1);
+
+                // add the maximum range label
+                drawAxisLabel(stickContext, maxAngularVel.toFixed(0) + ' deg/s', curveContext.canvas.clientWidth/curveContext.canvas.clientHeight * ((curveWidth / 2) - 10), parseInt(stickContext.font)*1.2, 'right');
+
+                // and then the balloon labels.
+                balloonsDirty = []; // reset the dirty balloon draw area (for overlap detection)
+                // create an array of balloons to draw
+                var balloons = [
+                    {value: parseInt(maxAngularVelRoll), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelRoll,  curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelRoll)),  'right', BALLOON_COLORS.roll, balloonsDirty);}},
+                    {value: parseInt(maxAngularVelPitch), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelPitch, curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelPitch)), 'right', BALLOON_COLORS.pitch, balloonsDirty);}},
+                    {value: parseInt(maxAngularVelYaw), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelYaw,   curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelYaw)),   'right', BALLOON_COLORS.yaw, balloonsDirty);}}
+                ];
+                // and sort them in descending order so the largest value is at the top always
+                balloons.sort(function(a,b) {return (b.value - a.value)});
+
+                // add the current rc values
+                balloons.push(
+                    {value: parseInt(currentValues[0]), balloon: function() {drawBalloonLabel(stickContext, currentValues[0], 10, 150, 'none', BALLOON_COLORS.roll, balloonsDirty);}},
+                    {value: parseInt(currentValues[1]), balloon: function() {drawBalloonLabel(stickContext, currentValues[1], 10, 250, 'none', BALLOON_COLORS.pitch, balloonsDirty);}},
+                    {value: parseInt(currentValues[2]), balloon: function() {drawBalloonLabel(stickContext, currentValues[2], 10, 350,  'none', BALLOON_COLORS.yaw, balloonsDirty);}}
+                );
+                // then display them on the chart
+                for(var i=0; i<balloons.length; i++) balloons[i].balloon();
+
+                stickContext.restore();
+
+           }
+        };
+        function updateRates (event) {
             setTimeout(function () { // let global validation trigger and adjust the values first
-                var targetElement = $(event.target),
-                    targetValue = checkInput(targetElement);
+                if(event) { // if an event is passed, then use it
+                    var targetElement = $(event.target),
+                        targetValue = checkInput(targetElement);
 
-                if (self.currentRates.hasOwnProperty(targetElement.attr('name')) && targetValue !== undefined) {
-                    self.currentRates[targetElement.attr('name')] = targetValue;
+                    if (self.currentRates.hasOwnProperty(targetElement.attr('name')) && targetValue !== undefined) {
+                        self.currentRates[targetElement.attr('name')] = targetValue;
 
+                        updateNeeded = true;
+                    }
+
+                    if (targetElement.attr('name') === 'rc_rate' && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
+                        self.currentRates.rc_rate_yaw = targetValue;
+                    }
+
+                    if (targetElement.attr('name') === 'roll_pitch_rate' && semver.lt(CONFIG.apiVersion, "1.7.0")) {
+                        self.currentRates.roll_rate = targetValue;
+                        self.currentRates.pitch_rate = targetValue;
+
+                        updateNeeded = true;
+                    }
+
+                    if (targetElement.attr('name') === 'SUPEREXPO_RATES') {
+                        self.currentRates.superexpo = targetElement.is(':checked');
+
+                        updateNeeded = true;
+                    }
+                } else { // no event was passed, just force a graph update
                     updateNeeded = true;
                 }
-
-                if (targetElement.attr('name') === 'rc_rate' && semver.lt(CONFIG.flightControllerVersion, "2.8.1")) {
-                    self.currentRates.rc_rate_yaw = targetValue;
-                }
-
-                if (targetElement.attr('name') === 'roll_pitch_rate' && semver.lt(CONFIG.apiVersion, "1.7.0")) {
-                    self.currentRates.roll_rate = targetValue;
-                    self.currentRates.pitch_rate = targetValue;
-
-                    updateNeeded = true;
-                }
-
-                if (targetElement.attr('name') === 'SUPEREXPO_RATES') {
-                    self.currentRates.superexpo = targetElement.is(':checked');
-
-                    updateNeeded = true;
-                }
-
                 if (updateNeeded) {
                     var curveHeight = rcCurveElement.height;
                     var curveWidth = rcCurveElement.width;
+                    var lineScale = stickContext.canvas.width / stickContext.canvas.clientWidth;
 
                     curveContext.clearRect(0, 0, curveWidth, curveHeight);
-                    curveContext.font = "24pt Verdana, Arial, sans-serif";
 
-                    var maxAngularVel;
                     if (!useLegacyCurve) {
                         maxAngularVel = Math.max(
                             printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelRollElement),
@@ -797,28 +899,18 @@ TABS.pid_tuning.initialize = function (callback) {
                         // make maxAngularVel multiple of 200deg/s so that the auto-scale doesn't keep changing for small changes of the maximum curve
                         maxAngularVel = Math.ceil(maxAngularVel/200) * 200;
 
-                        drawAxes(curveContext, curveWidth, curveHeight, (curveHeight / 2) / maxAngularVel * 360);
-                        drawAxisLabel(curveContext, maxAngularVel.toFixed(0) + ' deg/s', (curveWidth / 2) - 10, parseInt(curveContext.font)*1.2, 'right');
+                        drawAxes(curveContext, curveWidth, curveHeight);
+
                     } else {
                         maxAngularVel = 0;
                     }
 
-                    curveContext.lineWidth = 4;
-
+                    curveContext.lineWidth = 2 * lineScale;
                     drawCurve(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#ff0000', 0, curveContext);
                     drawCurve(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#00ff00', -4, curveContext);
                     drawCurve(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, '#0000ff', 4, curveContext);
 
-                    if (!useLegacyCurve && maxAngularVel) {
-                        var maxAngularVelRoll   = maxAngularVelRollElement.text()  + ' deg/s',
-                            maxAngularVelPitch  = maxAngularVelPitchElement.text() + ' deg/s',
-                            maxAngularVelYaw    = maxAngularVelYawElement.text()   + ' deg/s',
-                            rateScaling         = (curveHeight / 2) / maxAngularVel;
-
-                        drawBalloonLabel(curveContext, maxAngularVelRoll,  curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelRoll)),  'right', '#FF8080', '#FF8080', '#000000');
-                        drawBalloonLabel(curveContext, maxAngularVelPitch, curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelPitch)), 'right', '#80FF80', '#80FF80', '#000000');
-                        drawBalloonLabel(curveContext, maxAngularVelYaw,   curveWidth, rateScaling * (maxAngularVel - parseInt(maxAngularVelYaw)),   'right', '#8080FF', '#8080FF', '#000000');
-                    }
+                    self.updateRatesLabels();
 
                     updateNeeded = false;
                 }
@@ -970,12 +1062,16 @@ TABS.pid_tuning.initRatesPreview = function () {
     this.model = new Model($('.rates_preview'), $('.rates_preview canvas'));
 
     $(window).on('resize', $.proxy(this.model.resize, this.model));
+    $(window).on('resize', $.proxy(this.updateRatesLabels, this));
 };
 
 TABS.pid_tuning.renderModel = function () {
     if (this.keepRendering) { requestAnimationFrame(this.renderModel.bind(this)); }
 
     if (!this.clock) { this.clock = new THREE.Clock(); }
+
+    if (!this.oldRC) {this.oldRC = [RC.channels[0], RC.channels[1], RC.channels[2]];}
+    if (this.updateRequired==null) this.updateRequired = new Object(false);
 
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta();
@@ -985,6 +1081,18 @@ TABS.pid_tuning.renderModel = function () {
             yaw   = delta * this.rateCurve.rcCommandRawToDegreesPerSecond(RC.channels[2], this.currentRates.yaw_rate,   this.currentRates.rc_rate_yaw, this.currentRates.rc_yaw_expo, this.currentRates.superexpo, this.currentRates.yawDeadband);
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
+
+        this.updateRequired = false;
+        for(var i=0; i<this.oldRC.length; i++) {
+            if(this.oldRC[i] != RC.channels[i]) {
+                this.oldRC[i] = RC.channels[i];
+                this.updateRequired = true;
+            }
+        }
+        if(this.updateRequired) { //TODO : find a way to trigger on screen resize and change update rate
+            this.updateRequired = false;
+            this.updateRatesLabels();
+        } // trigger a rate graph update if the RC value has changed
     }
 };
 
@@ -994,6 +1102,9 @@ TABS.pid_tuning.cleanup = function (callback) {
     if (self.model) {
         $(window).off('resize', $.proxy(self.model.resize, self.model));
     }
+
+    $(window).off('resize', $.proxy(this.updateRatesLabels, this));
+
 
     self.keepRendering = false;
 
