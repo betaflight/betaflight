@@ -107,7 +107,7 @@ static uint8_t nullFrameStatus(void)
     return RX_FRAME_PENDING;
 }
 
-void serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 
 void useRxConfig(const rxConfig_t *rxConfigToUse)
 {
@@ -153,16 +153,13 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChann
 
 void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeActivationConditions)
 {
-    uint8_t i;
-    uint16_t value;
-
     useRxConfig(rxConfig);
     rxRuntimeConfig.rcReadRawFunc = nullReadRawRC;
     rxRuntimeConfig.rcFrameStatusFunc = nullFrameStatus;
     rcSampleIndex = 0;
     needRxSignalMaxDelayUs = DELAY_10_HZ;
 
-    for (i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rcData[i] = rxConfig->midrc;
         rcInvalidPulsPeriod[i] = millis() + MAX_INVALID_PULS_TIME;
     }
@@ -170,10 +167,11 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
     rcData[THROTTLE] = (feature(FEATURE_3D)) ? rxConfig->midrc : rxConfig->rx_min_usec;
 
     // Initialize ARM switch to OFF position when arming via switch is defined
-    for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+    for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[i];
         if (modeActivationCondition->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationCondition->range)) {
             // ARM switch is defined, determine an OFF value
+            uint16_t value;
             if (modeActivationCondition->range.startStep > 0) {
                 value = MODE_STEP_TO_CHANNEL_VALUE((modeActivationCondition->range.startStep - 1));
             } else {
@@ -186,7 +184,11 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
 
 #ifdef SERIAL_RX
     if (feature(FEATURE_RX_SERIAL)) {
-        serialRxInit(rxConfig, &rxRuntimeConfig);
+        const bool enabled = serialRxInit(rxConfig, &rxRuntimeConfig);
+        if (!enabled) {
+            featureClear(FEATURE_RX_SERIAL);
+            rxRuntimeConfig.rcReadRawFunc = nullReadRawRC;
+        }
     }
 #endif
 
@@ -199,11 +201,10 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
 
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
-        rxRefreshRate = 10000;
-        const bool enabled = rxSpiInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        const bool enabled = rxSpiInit(rxConfig, &rxRuntimeConfig);
         if (!enabled) {
             featureClear(FEATURE_RX_SPI);
-            rcReadRawFunc = nullReadRawRC;
+            rxRuntimeConfig.rcReadRawFunc = nullReadRawRC;
         }
     }
 #endif
@@ -216,7 +217,7 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
 }
 
 #ifdef SERIAL_RX
-void serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
@@ -244,10 +245,7 @@ void serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
         break;
     }
-    if (!enabled) {
-        featureClear(FEATURE_RX_SERIAL);
-        rxRuntimeConfig->rcReadRawFunc = nullReadRawRC;
-    }
+    return enabled;
 }
 
 static uint8_t serialRxFrameStatus(const rxConfig_t *rxConfig)
@@ -353,12 +351,12 @@ bool rxUpdate(uint32_t currentTime)
 
 #ifdef USE_RX_SPI
     if (feature(FEATURE_RX_SPI)) {
-        const uint8_t frameStatus = rxSpiFrameStatus();
+        const uint8_t frameStatus = rxRuntimeConfig.rcFrameStatusFunc();
         if (frameStatus & RX_FRAME_COMPLETE) {
             rxDataReceived = true;
             rxIsInFailsafeMode = false;
             rxSignalReceived = true;
-            needRxSignalBefore = currentTime + DELAY_5_HZ;
+            needRxSignalBefore = currentTime + needRxSignalMaxDelayUs;
         }
     }
 #endif
@@ -598,7 +596,7 @@ void parseRcChannels(const char *input, rxConfig_t *rxConfig)
     }
 }
 
-void updateRSSIPWM(void)
+static void updateRSSIPWM(void)
 {
     int16_t pwmRssi = 0;
     // Read value of AUX channel as rssi
@@ -616,7 +614,7 @@ void updateRSSIPWM(void)
 #define RSSI_ADC_SAMPLE_COUNT 16
 //#define RSSI_SCALE (0xFFF / 100.0f)
 
-void updateRSSIADC(uint32_t currentTime)
+static void updateRSSIADC(uint32_t currentTime)
 {
 #ifndef USE_ADC
     UNUSED(currentTime);

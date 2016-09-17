@@ -114,7 +114,7 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-uint8_t rxSpiFrameStatus(void)
+static uint8_t rxSpiFrameStatus(void)
 {
     if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
@@ -126,7 +126,7 @@ uint8_t rxSpiFrameStatus(void)
 /*
  * Set and initialize the RX protocol
  */
-bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool ret = false;
 
@@ -137,9 +137,11 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, r
         ret = true;
     }
     rxSpiNewPacketAvailable = false;
-    if (callback) {
-        *callback = rxSpiReadRawRC;
-    }
+    rxRuntimeConfig->rxRefreshRate = 20000;
+
+    rxRuntimeConfig->rcReadRawFunc = rxSpiReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = rxSpiFrameStatus;
+
     return ret;
 }
 #endif
