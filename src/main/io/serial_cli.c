@@ -1206,12 +1206,12 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
     serialConfig_t *serialConfigDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
-	serialConfig = &masterConfig.serialConfig;
+    serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-	serialConfigDefault = &defaultConfig->serialConfig;
-	equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+    serialConfigDefault = &defaultConfig->serialConfig;
+    equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
             && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
             && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
             && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
@@ -1491,10 +1491,10 @@ static void cliAdjustmentRange(char *cmdline)
 
 static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
 {
-	char buf0[8];
-	char buf1[8];
-	char buf2[8];
-	char buf3[8];
+    char buf0[8];
+    char buf1[8];
+    char buf2[8];
+    char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (masterConfig.customMotorMixer[i].throttle == 0.0f)
             break;
@@ -1534,7 +1534,7 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-		printMotorMix(DUMP_MASTER, NULL);
+        printMotorMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
@@ -1583,7 +1583,7 @@ static void cliMotorMix(char *cmdline)
             if (check != 4) {
                 cliShowParseError();
             } else {
-		        printMotorMix(DUMP_MASTER, NULL);
+                printMotorMix(DUMP_MASTER, NULL);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -1918,11 +1918,11 @@ static void cliServo(char *cmdline)
 static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
-		servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
-		servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+        servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
+        servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
         if (customServoMixer.rate == 0) {
             break;
-		}
+        }
 
         bool equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
             && customServoMixer.inputSource == customServoMixerDefault.inputSource
@@ -1932,7 +1932,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
             && customServoMixer.max == customServoMixerDefault.max
             && customServoMixer.box == customServoMixerDefault.box;
 
-		const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
+        const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
             customServoMixerDefault.targetChannel,
@@ -1955,7 +1955,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-	cliPrint("\r\n");
+    cliPrint("\r\n");
 
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -1983,7 +1983,7 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-		printServoMix(DUMP_MASTER, NULL);
+        printServoMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
@@ -2328,7 +2328,7 @@ static void cliVtx(char *cmdline)
 static void printName(uint8_t dumpMask)
 {
     bool equalsDefault = strlen(masterConfig.name) == 0;
-	cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
 }
 
 static void cliName(char *cmdline)
@@ -2556,7 +2556,7 @@ static void cliMap(char *cmdline)
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Map: ");
-	uint32_t i;
+    uint32_t i;
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
@@ -2706,7 +2706,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mixer\r\n");
 #endif
-		bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
+        bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
@@ -2719,33 +2719,33 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo\r\n");
 #endif
-		printServo(dumpMask, &defaultConfig);
+        printServo(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo mix\r\n");
 #endif
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-		printServoMix(dumpMask, &defaultConfig);
+        printServoMix(dumpMask, &defaultConfig);
 #endif
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# feature\r\n");
 #endif
-		printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &defaultConfig);
 
 #ifdef BEEPER
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# beeper\r\n");
 #endif
-		printBeeper(dumpMask, &defaultConfig);
+        printBeeper(dumpMask, &defaultConfig);
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
 #endif
-		printMap(dumpMask, &defaultConfig);
+        printMap(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");
@@ -3663,20 +3663,34 @@ static void cliResource(char *cmdline)
                 cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
             }
         }
-        cliPrintf("\r\nUse: resource list to see how to change resources.\r\n");
+        cliPrintf("\r\nUse: 'resource list' to see how to change resources.\r\n");
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         for (uint8_t i = 0; i < ARRAYLEN(resourceTable); i++) {
             const char* owner;
             owner = ownerNames[resourceTable[i].owner];
 
-            cliPrintf("resource %s ", owner);
             if (resourceTable[i].maxIndex > 0) {
-                cliPrintf("[1..%d] ", resourceTable[i].maxIndex);
-            } 
-            cliPrintf("[pin]\r\n");
+                for (int index = 0; index < resourceTable[i].maxIndex; index++) {
+                    
+                    if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr + index))) {
+                        continue;
+                    }
+                    
+                    IO_t io = IOGetByTag(*(resourceTable[i].ptr + index));
+                    if (!io) {
+                        continue;
+                    }
+                    cliPrintf("resource %s %d %c%02d\r\n", owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                }
+            } else {
+                if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr))) {
+                    continue;
+                }
+                IO_t io = IOGetByTag(*resourceTable[i].ptr);
+                cliPrintf("resource %s %c%02d\r\n", owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+            }
         }
-        cliPrintf("\r\n[Pin] should be in the format port and number, e.g. A1\r\n");
         return;
     }
 
@@ -3722,11 +3736,11 @@ static void cliResource(char *cmdline)
                 pin = atoi(pch);
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin))); 
-                    if (rec && rec->owner == OWNER_FREE) {
+                    if (rec) {
                         *tag = DEFIO_TAG_MAKE(port, pin);
                         cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
                     } else {
-                        cliPrintf("Resource is %s!", rec ? "in use" : "invalid");
+                        cliPrintf("Resource is invalid!");
                         return;
                     }
                 }
