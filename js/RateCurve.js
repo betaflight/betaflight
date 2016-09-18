@@ -6,6 +6,7 @@ var maxRc = 2000;
 
 var RateCurve = function (useLegacyCurve) {
     this.useLegacyCurve = useLegacyCurve;
+    this.maxAngularVel = null;
 
     this.constrain = function (value, min, max) {
         return Math.max(min, Math.min(value, max));
@@ -56,6 +57,27 @@ var RateCurve = function (useLegacyCurve) {
         context.quadraticCurveTo(width * 11 / 20, height - ((rateY / 2) * (1 - rcExpo)), width, height - rateY);
         context.stroke();
     }
+
+    this.drawStickPosition = function (rcData, rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, context, stickColor) {
+
+        const DEFAULT_SIZE = 60; // canvas units, relative size of the stick indicator (larger value is smaller indicator)
+        const rateScaling  = (context.canvas.height / 2) / maxAngularVel;
+
+        var currentValue = this.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive, deadband);
+
+        if(rcData!=undefined) {
+            context.save();
+            context.fillStyle = stickColor || '#000000';
+
+            context.translate(context.canvas.width/2, context.canvas.height/2);
+            context.beginPath();
+            context.arc(rcData-1500, -rateScaling * currentValue, context.canvas.height / DEFAULT_SIZE, 0, 2 * Math.PI);
+            context.fill();
+            context.restore();
+        }
+        return (Math.abs(currentValue)<0.5)?0:currentValue.toFixed(0); // The calculated value in deg/s is returned from the function call for further processing.
+    }
+
 };
 
 RateCurve.prototype.rcCommandRawToDegreesPerSecond = function (rcData, rate, rcRate, rcExpo, superExpoActive, deadband) {
@@ -106,6 +128,12 @@ RateCurve.prototype.getMaxAngularVel = function (rate, rcRate, rcExpo, superExpo
     }
 
     return maxAngularVel;
+};
+
+RateCurve.prototype.setMaxAngularVel = function (value) {
+    this.maxAngularVel = Math.ceil(value/200) * 200;
+    return this.maxAngularVel;
+
 };
 
 RateCurve.prototype.draw = function (rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, context) {

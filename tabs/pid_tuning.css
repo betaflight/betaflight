@@ -204,6 +204,8 @@
 .tab-pid_tuning .rate_curve {
     margin: 0 4px 0px 0;
     height: 100%;
+    min-height: 250px;
+    min-width: 250px;
     border: 1px solid silver;
     border-radius: 3px;
     background-image: url(../images/paper.jpg);
