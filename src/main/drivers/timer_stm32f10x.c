@@ -5,6 +5,13 @@
   http://www.st.com/software_license_agreement_liberty_v2
 */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/utils.h"
+
 #include "stm32f10x.h"
 #include "rcc.h"
 #include "timer.h"
@@ -23,10 +30,10 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
     { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
     { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) }, 
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
     { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
     { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) }, 
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 #endif
 };
 

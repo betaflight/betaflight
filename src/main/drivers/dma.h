@@ -22,13 +22,15 @@ typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channel
 #ifdef STM32F4
 
 typedef enum {
-    DMA1_ST1_HANDLER = 0,
+    DMA1_ST0_HANDLER = 0,
+    DMA1_ST1_HANDLER,
     DMA1_ST2_HANDLER,
     DMA1_ST3_HANDLER,
     DMA1_ST4_HANDLER,
     DMA1_ST5_HANDLER,
     DMA1_ST6_HANDLER,
     DMA1_ST7_HANDLER,
+    DMA2_ST0_HANDLER,
     DMA2_ST1_HANDLER,
     DMA2_ST2_HANDLER,
     DMA2_ST3_HANDLER,
@@ -63,7 +65,7 @@ typedef struct dmaChannelDescriptor_s {
 #define DMA_IT_TEIF                         ((uint32_t)0x00000008)
 #define DMA_IT_DMEIF                        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF                         ((uint32_t)0x00000001)
-
+   
 #else
 
 typedef enum {

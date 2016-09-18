@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -50,6 +48,7 @@ typedef enum {
     BOXFAILSAFE,
     BOXAIRMODE,
     BOX3DDISABLESWITCH,
+    BOXFPVANGLEMIX,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -84,6 +83,13 @@ typedef enum {
     NOT_CENTERED = 0,
     CENTERED
 } rollPitchStatus_e;
+
+typedef enum {
+    RC_SMOOTHING_OFF = 0,
+    RC_SMOOTHING_DEFAULT,
+    RC_SMOOTHING_AUTO,
+    RC_SMOOTHING_MANUAL
+} rcSmoothing_t;
 
 #define ROL_LO (1 << (2 * ROLL))
 #define ROL_CE (3 << (2 * ROLL))
@@ -159,8 +165,9 @@ typedef struct rcControlsConfig_s {
 bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
+struct rxConfig_s;
+throttleStatus_e calculateThrottleStatus(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void processRcStickPositions(struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
 
 bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range);
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions);
@@ -188,6 +195,7 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+    ADJUSTMENT_RC_RATE_YAW,
     ADJUSTMENT_FUNCTION_COUNT,
 
 } adjustmentFunction_e;
@@ -246,11 +254,9 @@ typedef struct adjustmentState_s {
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 bool isAirmodeActive(void);
-bool isSuperExpoActive(void);
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, struct rxConfig_s *rxConfig);
 
 bool isUsingSticksForArming(void);
 

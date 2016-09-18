@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 #include "gpio.h"
@@ -298,7 +298,7 @@ uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
     if (s->rxDMAStream) {
         uint32_t rxDMAHead = s->rxDMAStream->NDTR;
 #else
-   if (s->rxDMAChannel) {
+    if (s->rxDMAChannel) {
         uint32_t rxDMAHead = s->rxDMAChannel->CNDTR;
 #endif
         if (rxDMAHead >= s->rxDMAPos) {
@@ -315,7 +315,7 @@ uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
     }
 }
 
-uint8_t uartTotalTxBytesFree(serialPort_t *instance)
+uint32_t uartTotalTxBytesFree(serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
 
@@ -421,13 +421,13 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 
 const struct serialPortVTable uartVTable[] = {
     {
-        uartWrite,
-        uartTotalRxBytesWaiting,
-        uartTotalTxBytesFree,
-        uartRead,
-        uartSetBaudRate,
-        isUartTransmitBufferEmpty,
-        uartSetMode,
+        .serialWrite = uartWrite,
+        .serialTotalRxWaiting = uartTotalRxBytesWaiting,
+        .serialTotalTxFree = uartTotalTxBytesFree,
+        .serialRead = uartRead,
+        .serialSetBaudRate = uartSetBaudRate,
+        .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
+        .setMode = uartSetMode,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,

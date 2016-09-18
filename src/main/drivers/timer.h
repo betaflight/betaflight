@@ -17,12 +17,11 @@
 
 #pragma once
 
-#include "io.h"
-#include "rcc.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-#if !defined(USABLE_TIMER_CHANNEL_COUNT)
-#define USABLE_TIMER_CHANNEL_COUNT 14
-#endif
+#include "io_types.h"
+#include "rcc_types.h"
 
 typedef uint16_t captureCompare_t;        // 16 bit on both 103 and 303, just register access must be 32bit sometimes (use timCCR_t)
 
@@ -87,8 +86,9 @@ typedef struct timerHardware_s {
 } timerHardware_t;
 
 enum {
-    TIMER_OUTPUT_ENABLED = 0x01, 
-    TIMER_OUTPUT_INVERTED = 0x02
+    TIMER_OUTPUT_ENABLED = 0x01,
+    TIMER_OUTPUT_INVERTED = 0x02,
+    TIMER_OUTPUT_N_CHANNEL= 0x04
 };
 
 #ifdef STM32F1

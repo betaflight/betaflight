@@ -44,8 +44,10 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_precision;
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
+    uint8_t pidValuesAsTelemetry;
 } telemetryConfig_t;
 
+void telemetryInit(void);
 bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig);
 extern serialPort_t *telemetrySharedPort;
 

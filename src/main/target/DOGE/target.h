@@ -20,17 +20,15 @@
 #define TARGET_BOARD_IDENTIFIER "DOGE"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
- 
+
 // tqfp48 pin 34
-#define LED0    PA13
-
+#define LED0                    PA13
 // tqfp48 pin 37
-#define LED1    PA14
-
+#define LED1                    PA14
 // tqfp48 pin 38
-#define LED2    PA15
+#define LED2                    PA15
 
-#define BEEPER      PB2
+#define BEEPER                  PB2
 #define BEEPER_INVERTED
 
 #define USE_SPI
@@ -58,6 +56,8 @@
 // tqfp48 pin 3
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
+#define MPU6000_CS_PIN          SPI1_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI1
 
 // tqfp48 pin 25
 #define BMP280_CS_PIN           SPI2_NSS_PIN
@@ -69,25 +69,23 @@
 #define M25P16_CS_PIN           PC15
 #define M25P16_SPI_INSTANCE     SPI2
 
-// timer definitions in drivers/timer.c
-// channel mapping in drivers/pwm_mapping.c
-// only 6 outputs available on hardware
-#define USABLE_TIMER_CHANNEL_COUNT 9
-
 #define USE_ESCSERIAL
 #define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define GYRO
-// #define USE_FAKE_GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG // ??
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW270_DEG
 
 #define ACC
-// #define USE_FAKE_ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG // ??
+#define ACC_MPU6500_ALIGN       CW270_DEG
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW270_DEG
 
 #define BARO
 #define USE_BARO_BMP280
@@ -100,29 +98,27 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
-#define UART1_TX_PIN        PB6
-#define UART1_RX_PIN        PB7
+#define UART1_TX_PIN            PB6
+#define UART1_RX_PIN            PB7
 
-#define UART2_TX_PIN        PA2
-#define UART2_RX_PIN        PA3
+#define UART2_TX_PIN            PA2
+#define UART2_RX_PIN            PA3
 
-#define UART3_TX_PIN        PB10
-#define UART3_RX_PIN        PB11
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
-#define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA4
-#define CURRENT_METER_ADC_PIN       PA5
+#define USE_ADC
+#define ADC_INSTANCE            ADC2
+#define VBAT_ADC_PIN            PA4
+#define CURRENT_METER_ADC_PIN   PA5
 
 // mpu_int definition in sensors/initialisation.c
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define MPU_INT_EXTI            PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define LED_STRIP
 
@@ -135,19 +131,23 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // Use UART3 for speksat
-#define BIND_PIN   PB11
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // !!TODO - check the TARGET_IO_PORTs are correct
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(3)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
+// timer definitions in drivers/timer.c
+// channel mapping in drivers/pwm_mapping.c
+// only 6 outputs available on hardware
+#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
 

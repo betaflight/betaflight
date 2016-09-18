@@ -20,6 +20,7 @@
 #include <platform.h>
 #include "drivers/io.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/timer.h"
 
 const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
@@ -43,7 +44,7 @@ const uint16_t multiPWM[] = {
     PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
     PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8), 
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
     0xFFFF
 };
 

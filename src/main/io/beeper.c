@@ -20,15 +20,16 @@
 #include "stdlib.h"
 
 #include <platform.h>
-#include "build_config.h"
 
-#include "io/rc_controls.h"
+#include "build/build_config.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+
+#include "fc/rc_controls.h"
 
 #include "io/statusindicator.h"
 #include "io/vtx.h"
@@ -37,8 +38,10 @@
 #include "io/gps.h"
 #endif
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "io/beeper.h"
 

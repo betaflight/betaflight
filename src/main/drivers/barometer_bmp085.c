@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "barometer.h"
 
@@ -35,7 +35,7 @@
 
 #ifdef BARO
 
-#if defined(BARO_EOC_GPIO) 
+#if defined(BARO_EOC_GPIO)
 
 static IO_t eocIO;
 
@@ -49,7 +49,7 @@ void bmp085_extiHandler(extiCallbackRec_t* cb)
     isConversionComplete = true;
 }
 
-bool bmp085TestEOCConnected(const bmp085Config_t *config); 
+bool bmp085TestEOCConnected(const bmp085Config_t *config);
 # endif
 
 typedef struct {
@@ -139,7 +139,7 @@ static IO_t xclrIO;
 #endif
 
 
-void bmp085InitXclrIO(const bmp085Config_t *config) 
+void bmp085InitXclrIO(const bmp085Config_t *config)
 {
     if (!xclrIO && config && config->xclrIO) {
         xclrIO = IOGetByTag(config->xclrIO);
@@ -184,7 +184,7 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */ 
+    ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
     if (ack) {
         bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
         bmp085.oversampling_setting = 3;

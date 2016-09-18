@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#ifdef LED_STRIP
+
 #include "common/color.h"
 #include "light_ws2811strip.h"
 #include "nvic.h"
@@ -29,10 +31,8 @@
 #include "rcc.h"
 #include "timer.h"
 
-#ifdef LED_STRIP
-
-#if !defined(WS2811_PIN) 
-#define WS2811_PIN                      PA0 
+#if !defined(WS2811_PIN)
+#define WS2811_PIN                      PA0
 #define WS2811_TIMER                    TIM5
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
@@ -50,7 +50,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
         DMA_Cmd(descriptor->stream, DISABLE);
-        TIM_DMACmd(TIM5, TIM_DMA_CC1, DISABLE);
+        TIM_DMACmd(WS2811_TIMER, timDMASource, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -154,6 +154,7 @@ void ws2811LedStripHardwareInit(void)
 
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
+    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();

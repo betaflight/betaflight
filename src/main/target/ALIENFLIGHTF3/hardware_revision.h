@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
- 
+
 #include "drivers/exti.h"
 
 typedef enum awf3HardwareRevision_t {

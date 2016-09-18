@@ -20,17 +20,20 @@
 #include <math.h>
 
 #include "platform.h"
-#include "build_config.h"
 
 #ifdef SONAR
+
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/io.h"
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"

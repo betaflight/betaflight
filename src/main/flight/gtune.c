@@ -41,9 +41,10 @@
 #include "config/config.h"
 #include "blackbox/blackbox.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 extern uint16_t cycleTime;
 extern uint8_t motorCount;

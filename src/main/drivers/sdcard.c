@@ -25,8 +25,8 @@
 #include "nvic.h"
 #include "io.h"
 
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "bus_spi.h"
+#include "system.h"
 
 #include "sdcard.h"
 #include "sdcard_standard.h"
@@ -126,7 +126,7 @@ void sdcardInsertionDetectDeinit(void)
 #ifdef SDCARD_DETECT_PIN
     sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
     IOInit(sdCardDetectPin, OWNER_FREE, RESOURCE_NONE, 0);
-    IOConfigGPIO(sdCardDetectPin, IOCFG_IN_FLOATING); 
+    IOConfigGPIO(sdCardDetectPin, IOCFG_IN_FLOATING);
 #endif
 }
 
@@ -135,7 +135,7 @@ void sdcardInsertionDetectInit(void)
 #ifdef SDCARD_DETECT_PIN
     sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
     IOInit(sdCardDetectPin, OWNER_SDCARD, RESOURCE_INPUT, 0);
-    IOConfigGPIO(sdCardDetectPin, IOCFG_IPU); 
+    IOConfigGPIO(sdCardDetectPin, IOCFG_IPU);
 #endif
 }
 
@@ -192,6 +192,11 @@ static void sdcard_deselect(void)
  */
 static void sdcard_reset(void)
 {
+    if (!sdcard_isInserted()) {
+        sdcard.state = SDCARD_STATE_NOT_PRESENT;
+        return;
+    }
+
     if (sdcard.state >= SDCARD_STATE_READY) {
         spiSetDivisor(SDCARD_SPI_INSTANCE, SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER);
     }

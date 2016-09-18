@@ -34,19 +34,18 @@
 #include "usbd_usr.h"
 #include "usbd_desc.h"
 
-#define USB_RX_BUFSIZE      2048
-
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
 uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength);  // HJI
+uint32_t CDC_Send_FreeBytes(void);
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len);       // HJI
+uint32_t CDC_Receive_BytesAvailable(void);
+
 uint8_t usbIsConfigured(void);  // HJI
 uint8_t usbIsConnected(void);   // HJI
 uint32_t CDC_BaudRate(void);
 
 /* External variables --------------------------------------------------------*/
-
-extern __IO uint32_t receiveLength;  // HJI
 extern __IO uint32_t bDeviceState; /* USB device status */
 
 typedef enum _DEVICE_STATE {
@@ -59,7 +58,7 @@ typedef enum _DEVICE_STATE {
 } DEVICE_STATE;
 
 /* Exported typef ------------------------------------------------------------*/
-/* The following structures groups all needed parameters to be configured for the 
+/* The following structures groups all needed parameters to be configured for the
    ComPort. These parameters can modified on the fly by the host through CDC class
    command class requests. */
 typedef struct
@@ -69,12 +68,6 @@ typedef struct
   uint8_t  paritytype;
   uint8_t  datatype;
 } LINE_CODING;
-
-typedef struct {
-    uint8_t buffer[USB_RX_BUFSIZE];
-    uint16_t bufferInPosition;
-    uint16_t bufferOutPosition;
-} usbStruct_t;
 
 
 #endif /* __USBD_CDC_VCP_H */

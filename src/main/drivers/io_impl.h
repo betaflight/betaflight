@@ -12,7 +12,7 @@ typedef struct ioRec_s {
     GPIO_TypeDef *gpio;
     uint16_t pin;
     resourceOwner_t owner;
-    resourceType_t resource; 
+    resourceType_t resource;
     uint8_t index;
 } ioRec_t;
 
@@ -26,7 +26,7 @@ int IO_GPIO_PortSource(IO_t io);
 
 #if defined(STM32F3) || defined(STM32F4)
 int IO_EXTI_PortSourceGPIO(IO_t io);
-int IO_EXTI_PinSource(IO_t io); 
+int IO_EXTI_PinSource(IO_t io);
 #endif
 
 GPIO_TypeDef* IO_GPIO(IO_t io);

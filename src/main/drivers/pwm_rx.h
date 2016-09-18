@@ -26,7 +26,7 @@ typedef enum {
 
 
 void ppmInConfig(const timerHardware_t *timerHardwarePtr);
-void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer);
+void ppmAvoidPWMTimerClash(const timerHardware_t *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer, uint8_t pwmProtocol);
 
 void pwmInConfig(const timerHardware_t *timerHardwarePtr, uint8_t channel);
 uint16_t pwmRead(uint8_t channel);

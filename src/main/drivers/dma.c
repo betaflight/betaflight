@@ -21,8 +21,8 @@
 
 #include <platform.h>
 
-#include "drivers/nvic.h"
-#include "drivers/dma.h"
+#include "nvic.h"
+#include "dma.h"
 
 /*
  * DMA descriptors.

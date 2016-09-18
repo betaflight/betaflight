@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include "io_types.h"
 #include "exti.h"
- 
+
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
 #define MPU_RA_WHO_AM_I_LEGACY  0x00
@@ -119,7 +120,7 @@
 
 typedef bool (*mpuReadRegisterFunc)(uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
-typedef void(*mpuResetFuncPtr)(void);   
+typedef void(*mpuResetFuncPtr)(void);  
 
 typedef struct mpuConfiguration_s {
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each

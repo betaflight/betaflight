@@ -99,6 +99,13 @@ float acos_approx(float x)
 }
 #endif
 
+float powerf(float base, int exp) {
+    float result = base;
+    for (int count = 1; count < exp; count++) result *= base;
+
+    return result;
+}
+
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (ABS(value) < deadband) {
@@ -231,7 +238,7 @@ int32_t quickMedianFilter5(int32_t * v)
 
     QMF_SORT(p[0], p[1]); QMF_SORT(p[3], p[4]); QMF_SORT(p[0], p[3]);
     QMF_SORT(p[1], p[4]); QMF_SORT(p[1], p[2]); QMF_SORT(p[2], p[3]);
-    QMF_SORT(p[1], p[2]); 
+    QMF_SORT(p[1], p[2]);
     return p[2];
 }
 
@@ -279,7 +286,7 @@ float quickMedianFilter5f(float * v)
 
     QMF_SORTF(p[0], p[1]); QMF_SORTF(p[3], p[4]); QMF_SORTF(p[0], p[3]);
     QMF_SORTF(p[1], p[4]); QMF_SORTF(p[1], p[2]); QMF_SORTF(p[2], p[3]);
-    QMF_SORTF(p[1], p[2]); 
+    QMF_SORTF(p[1], p[2]);
     return p[2];
 }
 

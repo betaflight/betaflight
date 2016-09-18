@@ -19,7 +19,8 @@
 #include "stdint.h"
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/filter.h"
@@ -27,15 +28,18 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "sensors/battery.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/beeper.h"
 
-#define VBATT_PRESENT_THRESHOLD_MV    10
+#include "rx/rx.h"
+
 #define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
@@ -52,7 +56,7 @@ int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery 
 
 static batteryState_e batteryState;
 
-uint16_t batteryAdcToVoltage(uint16_t src)
+static uint16_t batteryAdcToVoltage(uint16_t src)
 {
     // calculate battery voltage based on ADC reading
     // result is Vbatt in 0.1V steps. 3.3V = ADC Vref, 0xFFF = 12bit adc, 110 = 11:1 voltage divider (10k:1k) * 10 for 0.1V
@@ -70,7 +74,7 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
     if (!vbatFilterIsInitialised) {
-        biquadFilterInit(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
     vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
@@ -86,12 +90,12 @@ void updateBattery(void)
     updateBatteryVoltage();
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
+    if (batteryState == BATTERY_NOT_PRESENT && vbat > batteryConfig->batterynotpresentlevel )
     {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
         /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up) 
+        (using the filtered value takes a long time to ramp up)
         We only do this on the ground so don't care if we do block, not
         worse than original code anyway*/
         delay(VBATTERY_STABLE_DELAY);
@@ -106,8 +110,8 @@ void updateBattery(void)
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD_MV */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= VBATT_PRESENT_THRESHOLD_MV)
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD */
+    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= batteryConfig->batterynotpresentlevel && !ARMING_FLAG(ARMED))
     {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
@@ -127,14 +131,14 @@ void updateBattery(void)
             if (vbat <= (batteryCriticalVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_CRITICAL;
                 beeper(BEEPER_BAT_CRIT_LOW);
-            } else if (vbat > (batteryWarningVoltage + batteryConfig->vbathysteresis)){
+            } else if (vbat > batteryWarningVoltage) {
                 batteryState = BATTERY_OK;
             } else {
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if (vbat > (batteryCriticalVoltage + batteryConfig->vbathysteresis)){
+            if (vbat > batteryCriticalVoltage) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             } else {
@@ -212,7 +216,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
 fix12_t calculateVbatPidCompensation(void) {
     fix12_t batteryScaler;
-    if (batteryConfig->vbatPidCompensation && feature(FEATURE_VBAT) && batteryCellCount > 1) {
+    if (feature(FEATURE_VBAT) && batteryCellCount > 1) {
         uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
         batteryScaler = qConstruct(maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage));
     } else {
@@ -224,7 +228,7 @@ fix12_t calculateVbatPidCompensation(void) {
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return (((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount);
+    return constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
 }
 
 uint8_t calculateBatteryCapacityRemainingPercentage(void)

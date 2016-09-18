@@ -23,10 +23,10 @@
 
 #ifdef DISPLAY
 
-#include "version.h"
-#include "debug.h"
+#include "build/version.h"
+#include "build/debug.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
@@ -46,7 +46,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -58,10 +58,14 @@
 #endif
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "config/feature.h"
+#include "fc/runtime_config.h"
+
 #include "config/config_profile.h"
 
 #include "io/display.h"
+
+#include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 

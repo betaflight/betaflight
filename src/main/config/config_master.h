@@ -25,7 +25,6 @@ typedef struct master_t {
 
     uint8_t mixerMode;
     uint32_t enabledFeatures;
-    uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
@@ -56,9 +55,12 @@ typedef struct master_t {
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
-    uint16_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_sync_denom;                // Gyro sample divider
-    uint8_t gyro_soft_lpf_hz;               // Biqyad gyro lpf hz
+    uint8_t gyro_soft_type;                 // Gyro Filter Type
+    uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
+    uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_cutoff;        // Biquad gyro notch low cutoff
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -75,7 +77,7 @@ typedef struct master_t {
 
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
-    float acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    uint16_t acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
@@ -117,8 +119,10 @@ typedef struct master_t {
     telemetryConfig_t telemetryConfig;
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
-    hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 
@@ -137,7 +141,7 @@ typedef struct master_t {
 
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
- 
+
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
@@ -154,6 +158,7 @@ typedef struct master_t {
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
     uint8_t blackbox_device;
+    uint8_t blackbox_on_motor_test;
 #endif
 
     uint32_t beeper_off_flags;
@@ -161,8 +166,13 @@ typedef struct master_t {
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
+   
+    char name[MAX_NAME_LENGTH+1];
+   
 } master_t;
 
 extern master_t masterConfig;
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
+
+void createDefaultConfig(master_t *config);

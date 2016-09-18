@@ -20,7 +20,9 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#ifndef SKIP_RX_MSP
+
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 
@@ -71,3 +73,4 @@ void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadR
     if (callback)
         *callback = rxMspReadRawRC;
 }
+#endif

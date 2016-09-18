@@ -20,9 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
 
-#define LED0 PC14 // PC14 (LED)
-#define LED1 PC13 // PC13 (LED)
-#define LED2 PC15 // PC15 (LED)
+#define LED0                    PC14
+#define LED1                    PC13
+#define LED2                    PC15
 
 #define ACC
 #define USE_ACC_MPU6050
@@ -38,7 +38,7 @@
 #define USE_UART1
 #define USE_UART2
 
-#define SERIAL_PORT_COUNT 2
+#define SERIAL_PORT_COUNT       2
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
@@ -47,25 +47,29 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN   PA3
-
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
 #define USE_SERVOS
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PIN                PA3
 #else
-// Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #undef USE_CLI
-#define USE_QUAD_MIXER_ONLY
+#undef SERIAL_RX
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
+#define SKIP_PID_FLOAT
 #endif
 
-// IO - assuming all IOs on 48pin package TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+// Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
+#define USE_QUAD_MIXER_ONLY
+#define SKIP_SERIAL_PASSTHROUGH
 
-#define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+
+#define USABLE_TIMER_CHANNEL_COUNT 14
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))

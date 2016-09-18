@@ -14,11 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig);
+typedef enum bjf4HardwareRevision_t {
+    UNKNOWN = 0,
+    BJF4_REV1,  // Flash
+    BJF4_REV2,  // SDCard
+    BJF4_REV3,  // SDCard + Flash
+    BJF4_REV3A, // Flash (20x20 mini format)
+} bjf4HardwareRevision_e;
 
-int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate);
-int16_t rcLookupThrottle(int32_t tmp);
+extern uint8_t hardwareRevision;
 
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);

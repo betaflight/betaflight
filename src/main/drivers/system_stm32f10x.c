@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
@@ -36,7 +35,7 @@ void systemReset(void)
     SCB->AIRCR = AIRCR_VECTKEY_MASK | (uint32_t)0x04;
 }
 
-void systemResetToBootloader(void) 
+void systemResetToBootloader(void)
 {
     // 1FFFF000 -> 20000200 -> SP
     // 1FFFF004 -> 1FFFF021 -> PC
@@ -107,11 +106,23 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }
 
 void checkForBootLoaderRequest(void)
 {
+    void(*bootJump)(void);
+
+    if (*((uint32_t *)0x20004FF0) == 0xDEADBEEF) {
+
+        *((uint32_t *)0x20004FF0) = 0x0;
+
+        __enable_irq();
+        __set_MSP(*((uint32_t *)0x1FFFF000));
+
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFFF004));
+        bootJump();
+        while (1);
+    }
 }

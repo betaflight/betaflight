@@ -18,12 +18,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "io/rc_controls.h"
-#include "io/escservo.h"
-
-#include "io/rc_curves.h"
+#include "platform.h"
 
 #include "config/config.h"
+#include "config/feature.h"
+
+#include "io/escservo.h"
+
+#include "fc/rc_curves.h"
+#include "fc/rc_controls.h"
+
+#include "rx/rx.h"
+
 
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
@@ -43,12 +49,6 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
         lookupThrottleRC[i] = 10 * controlRateConfig->thrMid8 + tmp * (100 - controlRateConfig->thrExpo8 + (int32_t) controlRateConfig->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
         lookupThrottleRC[i] = minThrottle + (int32_t) (escAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
-}
-
-int16_t rcLookup(int32_t tmp, uint8_t expo, uint8_t rate)
-{
-    float tmpf = tmp / 100.0f;
-    return (int16_t)((2500.0f + (float)expo * (tmpf * tmpf - 25.0f)) * tmpf * (float)(rate) / 2500.0f );
 }
 
 int16_t rcLookupThrottle(int32_t tmp)

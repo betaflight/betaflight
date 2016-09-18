@@ -36,12 +36,11 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "build_config.h"
 #include "printf.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
@@ -56,7 +55,7 @@ typedef void (*putcf) (void *, char);
 static putcf stdout_putf;
 static void *stdout_putp;
 
-// print bf, padded from left to at least n characters. 
+// print bf, padded from left to at least n characters.
 // padding is zero ('0') if z!=0, space (' ') otherwise
 static int putchw(void *putp, putcf putf, int n, char z, char *bf)
 {

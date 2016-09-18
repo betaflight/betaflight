@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "common/filter.h"
@@ -55,25 +56,45 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
-/* sets up a biquad Filter */
-void biquadFilterInit(biquadFilter_t *filter, float filterCutFreq, uint32_t refreshRate)
-{
-    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
+float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff) {
+    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
+    return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+}
 
+/* sets up a biquad Filter */
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+{
+    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
+}
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+{
     // setup variables
-    const float omega = 2 * M_PI_FLOAT * filterCutFreq / sampleRate;
+    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
+    const float omega = 2 * M_PI_FLOAT * filterFreq / sampleRate;
     const float sn = sinf(omega);
     const float cs = cosf(omega);
-    //this is wrong, should be hyperbolic sine
-    //alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
-    const float alpha = sn / (2 * BIQUAD_Q);
+    const float alpha = sn / (2 * Q);
 
-    const float b0 = (1 - cs) / 2;
-    const float b1 = 1 - cs;
-    const float b2 = (1 - cs) / 2;
-    const float a0 = 1 + alpha;
-    const float a1 = -2 * cs;
-    const float a2 = 1 - alpha;
+    float b0, b1, b2, a0, a1, a2;
+
+    switch (filterType) {
+        case FILTER_LPF:
+            b0 = (1 - cs) / 2;
+            b1 = 1 - cs;
+            b2 = (1 - cs) / 2;
+            a0 = 1 + alpha;
+            a1 = -2 * cs;
+            a2 = 1 - alpha;
+            break;
+        case FILTER_NOTCH:
+            b0 =  1;
+            b1 = -2 * cs;
+            b2 =  1;
+            a0 =  1 + alpha;
+            a1 = -2 * cs;
+            a2 =  1 - alpha;
+            break;
+    }
 
     // precompute the coefficients
     filter->b0 = b0 / a0;
@@ -95,25 +116,124 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    int32_t averageSum = 0;
-
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
-
-    return averageSum / averageCount;
+/*
+ * FIR filter
+ */
+void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+{
+    filter->buf = buf;
+    filter->bufLength = bufLength;
+    filter->coeffs = coeffs;
+    filter->coeffsLength = coeffsLength;
+    memset(filter->buf, 0, sizeof(float) * filter->bufLength);
 }
 
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    float averageSum = 0.0f;
+/*
+ * FIR filter initialisation
+ * If FIR filter is just used for averaging, coeffs can be set to NULL
+ */
+void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
+{
+    firFilterInit2(filter, buf, bufLength, coeffs, bufLength);
+}
 
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
+void firFilterUpdate(firFilter_t *filter, float input)
+{
+    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(input));
+    filter->buf[0] = input;
+}
 
-    return averageSum / averageCount;
+float firFilterApply(const firFilter_t *filter)
+{
+    float ret = 0.0f;
+    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
+        ret += filter->coeffs[ii] * filter->buf[ii];
+    }
+    return ret;
+}
+
+float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
+{
+    float ret = 0.0f;
+    for (int ii = 0; ii < count; ++ii) {
+        ret += filter->buf[ii];
+    }
+    return ret / count;
+}
+
+float firFilterCalcAverage(const firFilter_t *filter)
+{
+    return firFilterCalcPartialAverage(filter, filter->coeffsLength);
+}
+
+float firFilterLastInput(const firFilter_t *filter)
+{
+    return filter->buf[0];
+}
+
+float firFilterGet(const firFilter_t *filter, int index)
+{
+    return filter->buf[index];
+}
+
+/*
+ *  int16_t based FIR filter
+ *  Can be directly updated from devices that produce 16-bit data, eg gyros and accelerometers
+ */
+void firFilterInt16Init2(firFilterInt16_t *filter, int16_t *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+{
+    filter->buf = buf;
+    filter->bufLength = bufLength;
+    filter->coeffs = coeffs;
+    filter->coeffsLength = coeffsLength;
+    memset(filter->buf, 0, sizeof(int16_t) * filter->bufLength);
+}
+
+/*
+ * FIR filter initialisation
+ * If FIR filter is just used for averaging, coeffs can be set to NULL
+ */
+void firFilterInt16Init(firFilterInt16_t *filter, int16_t *buf, uint8_t bufLength, const float *coeffs)
+{
+    firFilterInt16Init2(filter, buf, bufLength, coeffs, bufLength);
+}
+
+void firFilterInt16Update(firFilterInt16_t *filter, int16_t input)
+{
+    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(input));
+    filter->buf[0] = input;
+}
+
+float firFilterInt16Apply(const firFilterInt16_t *filter)
+{
+    float ret = 0.0f;
+    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
+        ret += filter->coeffs[ii] * filter->buf[ii];
+    }
+    return ret;
+}
+
+float firFilterInt16CalcPartialAverage(const firFilterInt16_t *filter, uint8_t count)
+{
+    float ret = 0;
+    for (int ii = 0; ii < count; ++ii) {
+        ret += filter->buf[ii];
+    }
+    return ret / count;
+}
+
+float firFilterInt16CalcAverage(const firFilterInt16_t *filter)
+{
+    return firFilterInt16CalcPartialAverage(filter, filter->coeffsLength);
+}
+
+int16_t firFilterInt16LastInput(const firFilterInt16_t *filter)
+{
+    return filter->buf[0];
+}
+
+int16_t firFilterInt16Get(const firFilter_t *filter, int index)
+{
+    return filter->buf[index];
 }
 

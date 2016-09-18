@@ -25,24 +25,26 @@
 #define USBD_SERIALNUMBER_STRING "0x8010000"
 #endif
 
-#define LED0 PC14
-#define LED1 PC13
-#define BEEPER PC13
-#define INVERTER PC15
-#define INVERTER_USART USART2 //Sbus on USART 2 of nano.
+#define LED0                    PC14
+#define LED1                    PC13
 
-#define MPU9250_CS_PIN        PB12
-#define MPU9250_SPI_INSTANCE  SPI2
+#define BEEPER                  PC13
+
+#define INVERTER                PC15
+#define INVERTER_USART          USART2 //Sbus on USART 2 of nano.
+
+#define MPU9250_CS_PIN          PB12
+#define MPU9250_SPI_INSTANCE    SPI2
 
 #define ACC
 #define USE_ACC_MPU9250
 #define USE_ACC_SPI_MPU9250
-#define ACC_MPU9250_ALIGN CW270_DEG
+#define ACC_MPU9250_ALIGN       CW270_DEG
 
 #define GYRO
 #define USE_GYRO_MPU9250
 #define USE_GYRO_SPI_MPU9250
-#define GYRO_MPU9250_ALIGN CW270_DEG
+#define GYRO_MPU9250_ALIGN      CW270_DEG
 
 //#define MAG
 //#define USE_MAG_HMC5883
@@ -51,26 +53,23 @@
 #define USE_BARO_MS5611
 
 // MPU9250 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI    PA15
-#define USE_EXTI
-
-#define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PA9
+#define VBUS_SENSING_PIN        PA9
 
 #define USE_UART1
-#define UART1_RX_PIN PB7
-#define UART1_TX_PIN PB6
+#define UART1_RX_PIN            PB7
+#define UART1_TX_PIN            PB6
 
 #define USE_UART2
-#define UART2_RX_PIN PA3
-#define UART2_TX_PIN PA2
+#define UART2_RX_PIN            PA3
+#define UART2_TX_PIN            PA2
 
-#define SERIAL_PORT_COUNT 3 //VCP, USART1, USART2
+#define SERIAL_PORT_COUNT       3 //VCP, USART1, USART2
 
 #define USE_SPI
 //#define USE_SPI_DEVICE_1
@@ -81,9 +80,9 @@
 #define I2C_DEVICE (I2CDEV_3)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN       PA7
-#define VBAT_ADC_PIN                PA6
-#define RSSI_ADC_PIN                PA5
+#define CURRENT_METER_ADC_PIN   PA7
+#define VBAT_ADC_PIN            PA6
+#define RSSI_ADC_PIN            PA5
 
 #define GPS
 #define BLACKBOX
@@ -92,10 +91,14 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PIN                PA3
 
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
 
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) )
+#define USABLE_TIMER_CHANNEL_COUNT 12
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) )
 

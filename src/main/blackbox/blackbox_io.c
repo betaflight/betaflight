@@ -4,8 +4,8 @@
 
 #include "blackbox_io.h"
 
-#include "version.h"
-#include "build_config.h"
+#include "build/version.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -34,7 +34,7 @@
 #include "io/display.h"
 #include "io/escservo.h"
 #include "rx/rx.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 
@@ -53,9 +53,11 @@
 #include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
+#include "flight/pid.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -507,7 +509,7 @@ void blackboxWriteFloat(float value)
 
 /**
  * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
- * 
+ *
  * Intended to be called regularly for the blackbox device to perform housekeeping.
  */
 void blackboxDeviceFlush(void)
@@ -648,7 +650,7 @@ void blackboxDeviceClose(void)
              * of time to shut down asynchronously, we're the only ones that know when to call it.
              */
             if (blackboxPortSharing == PORTSHARING_SHARED) {
-                mspAllocateSerialPorts(&masterConfig.serialConfig);
+                mspSerialAllocatePorts(&masterConfig.serialConfig);
             }
         break;
         default:

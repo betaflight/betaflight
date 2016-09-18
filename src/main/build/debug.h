@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define DEBUG16_VALUE_COUNT 4
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
@@ -50,5 +52,10 @@ typedef enum {
     DEBUG_MIXER,
     DEBUG_AIRMODE,
     DEBUG_PIDLOOP,
+    DEBUG_NOTCH,
+    DEBUG_RC_INTERPOLATION,
+    DEBUG_VELOCITY,
+    DEBUG_DTERM_FILTER,
+    DEBUG_ANGLERATE,
     DEBUG_COUNT
 } debugType_e;

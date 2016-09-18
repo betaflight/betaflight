@@ -30,8 +30,8 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-#define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE UART1_TX_BUFFER_SIZE
+#define UART_RX_BUFFER_SIZE 512
+#define UART_TX_BUFFER_SIZE 512
 
 typedef enum UARTDevice {
     UARTDEV_1 = 0,
@@ -64,17 +64,17 @@ typedef struct uartDevice_s {
 
 //static uartPort_t uartPort[MAX_UARTS];
 #ifdef USE_UART1
-static uartDevice_t uart1 = 
-{ 
+static uartDevice_t uart1 =
+{
     .DMAChannel = DMA_Channel_4,
     .txDMAStream = DMA2_Stream7,
 #ifdef USE_UART1_RX_DMA
     .rxDMAStream = DMA2_Stream5,
 #endif
-    .dev = USART1, 
-    .rx = IO_TAG(UART1_RX_PIN), 
-    .tx = IO_TAG(UART1_TX_PIN), 
-    .af = GPIO_AF_USART1, 
+    .dev = USART1,
+    .rx = IO_TAG(UART1_RX_PIN),
+    .tx = IO_TAG(UART1_TX_PIN),
+    .af = GPIO_AF_USART1,
 #ifdef UART1_AHB1_PERIPHERALS
     .rcc_ahb1 = UART1_AHB1_PERIPHERALS,
 #endif
@@ -87,17 +87,17 @@ static uartDevice_t uart1 =
 #endif
 
 #ifdef USE_UART2
-static uartDevice_t uart2 = 
-{ 
+static uartDevice_t uart2 =
+{
     .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART2_RX_DMA
     .rxDMAStream = DMA1_Stream5,
 #endif
     .txDMAStream = DMA1_Stream6,
-    .dev = USART2, 
-    .rx = IO_TAG(UART2_RX_PIN), 
-    .tx = IO_TAG(UART2_TX_PIN), 
-    .af = GPIO_AF_USART2, 
+    .dev = USART2,
+    .rx = IO_TAG(UART2_RX_PIN),
+    .tx = IO_TAG(UART2_TX_PIN),
+    .af = GPIO_AF_USART2,
 #ifdef UART2_AHB1_PERIPHERALS
     .rcc_ahb1 = UART2_AHB1_PERIPHERALS,
 #endif
@@ -110,17 +110,17 @@ static uartDevice_t uart2 =
 #endif
 
 #ifdef USE_UART3
-static uartDevice_t uart3 = 
-{ 
+static uartDevice_t uart3 =
+{
     .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART3_RX_DMA
     .rxDMAStream = DMA1_Stream1,
 #endif
     .txDMAStream = DMA1_Stream3,
-    .dev = USART3, 
-    .rx = IO_TAG(UART3_RX_PIN), 
-    .tx = IO_TAG(UART3_TX_PIN), 
-    .af = GPIO_AF_USART3, 
+    .dev = USART3,
+    .rx = IO_TAG(UART3_RX_PIN),
+    .tx = IO_TAG(UART3_TX_PIN),
+    .af = GPIO_AF_USART3,
 #ifdef UART3_AHB1_PERIPHERALS
     .rcc_ahb1 = UART3_AHB1_PERIPHERALS,
 #endif
@@ -133,17 +133,17 @@ static uartDevice_t uart3 =
 #endif
 
 #ifdef USE_UART4
-static uartDevice_t uart4 = 
-{ 
+static uartDevice_t uart4 =
+{
     .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART1_RX_DMA
     .rxDMAStream = DMA1_Stream2,
 #endif
     .txDMAStream = DMA1_Stream4,
-    .dev = UART4, 
-    .rx = IO_TAG(UART4_RX_PIN), 
-    .tx = IO_TAG(UART4_TX_PIN), 
-    .af = GPIO_AF_UART4, 
+    .dev = UART4,
+    .rx = IO_TAG(UART4_RX_PIN),
+    .tx = IO_TAG(UART4_TX_PIN),
+    .af = GPIO_AF_UART4,
 #ifdef UART4_AHB1_PERIPHERALS
     .rcc_ahb1 = UART4_AHB1_PERIPHERALS,
 #endif
@@ -156,17 +156,17 @@ static uartDevice_t uart4 =
 #endif
 
 #ifdef USE_UART5
-static uartDevice_t uart5 = 
-{ 
+static uartDevice_t uart5 =
+{
     .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART1_RX_DMA
     .rxDMAStream = DMA1_Stream0,
 #endif
     .txDMAStream = DMA2_Stream7,
-    .dev = UART5, 
-    .rx = IO_TAG(UART5_RX_PIN), 
-    .tx = IO_TAG(UART5_TX_PIN), 
-    .af = GPIO_AF_UART5, 
+    .dev = UART5,
+    .rx = IO_TAG(UART5_RX_PIN),
+    .tx = IO_TAG(UART5_TX_PIN),
+    .af = GPIO_AF_UART5,
 #ifdef UART5_AHB1_PERIPHERALS
     .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
 #endif
@@ -179,17 +179,17 @@ static uartDevice_t uart5 =
 #endif
 
 #ifdef USE_UART6
-static uartDevice_t uart6 = 
-{ 
+static uartDevice_t uart6 =
+{
     .DMAChannel = DMA_Channel_5,
 #ifdef USE_UART6_RX_DMA
     .rxDMAStream = DMA2_Stream1,
 #endif
     .txDMAStream = DMA2_Stream6,
-    .dev = USART6, 
-    .rx = IO_TAG(UART6_RX_PIN), 
-    .tx = IO_TAG(UART6_TX_PIN), 
-    .af = GPIO_AF_USART6, 
+    .dev = USART6,
+    .rx = IO_TAG(UART6_RX_PIN),
+    .tx = IO_TAG(UART6_TX_PIN),
+    .af = GPIO_AF_USART6,
 #ifdef UART6_AHB1_PERIPHERALS
     .rcc_ahb1 = UART6_AHB1_PERIPHERALS,
 #endif
@@ -344,7 +344,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
             IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
         }
 
-        if (mode & MODE_RX) { 
+        if (mode & MODE_RX) {
             IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(rx, IOCFG_AF_PP, uart->af);
         }
@@ -376,6 +376,7 @@ void USART1_IRQHandler(void)
     uartPort_t *s = &(uartHardwareMap[UARTDEV_1]->port);
     uartIrqHandler(s);
 }
+
 #endif
 
 #ifdef USE_UART2

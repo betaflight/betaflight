@@ -54,17 +54,16 @@ const struct ioPortDef_s ioPortDefs[] = {
 # endif
 
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
-	"FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
-	"SONAR", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-	"BARO", "MPU", "INVERTER", "LED STRIP", "LED", "RECEIVER", "TRANSMITTER"
+    "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
+    "SONAR", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
+    "BARO", "MPU", "INVERTER", "LED STRIP", "LED", "RECEIVER", "TRANSMITTER"
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
-	"", // NONE
-	"IN", "OUT", "IN / OUT", "TIMER","UART TX","UART RX","UART TX/RX","EXTI","SCL",
+    "", // NONE
+    "IN", "OUT", "IN / OUT", "TIMER","UART TX","UART RX","UART TX/RX","EXTI","SCL",
     "SDA", "SCK","MOSI","MISO","CS","BATTERY","RSSI","EXT","CURRENT"
 };
-
 
 ioRec_t* IO_Rec(IO_t io)
 {
@@ -207,8 +206,8 @@ void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t ind
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
-	ioRec->resource = resource;
-	ioRec->index = index;
+    ioRec->resource = resource;
+    ioRec->index = index;
 }
 
 void IORelease(IO_t io)

@@ -29,7 +29,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
 uint32_t softSerialRxBytesWaiting(serialPort_t *instance);
-uint8_t softSerialTxBytesFree(serialPort_t *instance);
+uint32_t softSerialTxBytesFree(serialPort_t *instance);
 uint8_t softSerialReadByte(serialPort_t *instance);
 void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
 bool isSoftSerialTransmitBufferEmpty(serialPort_t *s);

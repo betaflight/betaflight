@@ -21,15 +21,16 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
 #include "nvic.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "exti.h"
 #include "bus_i2c.h"
 
@@ -252,7 +253,7 @@ void mpuIntExtiInit(void)
     EXTIEnable(mpuIntIO, true);
 #endif
 
-    mpuExtiInitDone = true; 
+    mpuExtiInitDone = true;
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)

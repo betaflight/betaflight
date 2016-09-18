@@ -37,6 +37,20 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+## Set verbosity level based on the V= parameter
+## V=0 Low
+## v=1 High
+export AT := @
+
+ifndef V
+export V0    :=
+export V1    := $(AT)
+else ifeq ($(V), 0)
+export V0    := $(AT)
+export V1    := $(AT)
+else ifeq ($(V), 1)
+endif
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -52,6 +66,25 @@ CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target
+
+## Build tools, so we all share the same versions
+# import macros common to all supported build systems
+include $(ROOT)/make/system-id.mk
+# developer preferences, edit these at will, they'll be gitignored
+include $(ROOT)/make/local.mk
+
+# configure some directories that are relative to wherever ROOT_DIR is located
+TOOLS_DIR := $(ROOT)/tools
+BUILD_DIR := $(ROOT)/build
+DL_DIR := $(ROOT)/downloads
+
+export RM := rm
+
+# import macros that are OS specific
+include $(ROOT)/make/$(OSFAMILY).mk
+
+# include the tools makefile
+include $(ROOT)/make/tools.mk
 
 # default xtal value for F4 targets
 HSE_VALUE       = 8000000
@@ -122,9 +155,9 @@ endif
 
 REVISION = $(shell git log -1 --format="%h")
 
-FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/version.h | awk '{print $$3}' )
-FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/version.h | awk '{print $$3}' )
-FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/version.h | awk '{print $$3}' )
+FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
+FC_VER_PATCH := $(shell grep " FC_VERSION_PATCH" src/main/build/version.h | awk '{print $$3}' )
 
 FC_VER := $(FC_VER_MAJOR).$(FC_VER_MINOR).$(FC_VER_PATCH)
 
@@ -179,7 +212,6 @@ LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 DEVICE_FLAGS    = -DSTM32F303xC -DSTM32F303
-TARGET_FLAGS    = -D$(TARGET)
 # End F3 targets
 #
 # Start F4 targets
@@ -273,7 +305,6 @@ $(error Unknown MCU for F4 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
-TARGET_FLAGS = -D$(TARGET)
 # End F4 targets
 #
 # Start F1 targets
@@ -313,7 +344,6 @@ endif
 
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m3
-TARGET_FLAGS   := -D$(TARGET) -pedantic $(TARGET_FLAGS)
 
 ifeq ($(DEVICE_FLAGS),)
 DEVICE_FLAGS    = -DSTM32F10X_MD
@@ -330,6 +360,10 @@ endif
 
 ifneq ($(FLASH_SIZE),)
 DEVICE_FLAGS  := $(DEVICE_FLAGS) -DFLASH_SIZE=$(FLASH_SIZE)
+endif
+
+ifneq ($(HSE_VALUE),)
+DEVICE_FLAGS  := $(DEVICE_FLAGS) -DHSE_VALUE=$(HSE_VALUE)
 endif
 
 TARGET_DIR     = $(ROOT)/src/main/target/$(BASE_TARGET)
@@ -357,19 +391,22 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(TARGET_DIR)
 
 COMMON_SRC = \
-            build_config.c \
-            debug.c \
-            version.c \
+            build/build_config.c \
+            build/debug.c \
+            build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            mw.c \
+            fc/mw.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/printf.c \
+            common/streambuf.c \
             common/typeconversion.c \
             config/config.c \
-            config/runtime_config.c \
+            config/config_eeprom.c \
+            config/feature.c \
+            fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -392,9 +429,11 @@ COMMON_SRC = \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
+            flight/pid_legacy.c \
+            flight/pid_betaflight.c \
             io/beeper.c \
-            io/rc_controls.c \
-            io/rc_curves.c \
+            fc/rc_controls.c \
+            fc/rc_curves.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -546,10 +585,18 @@ VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 # Things that might need changing to use different tools
 #
 
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
 # Tool names
-CC          = arm-none-eabi-gcc
-OBJCOPY     = arm-none-eabi-objcopy
-SIZE        = arm-none-eabi-size
+CC          := $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CPP         := $(CCACHE) $(ARM_SDK_PREFIX)g++
+OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
+SIZE        := $(ARM_SDK_PREFIX)size
 
 #
 # Tool options.
@@ -574,8 +621,10 @@ CFLAGS      += $(ARCH_FLAGS) \
               -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion \
               -ffunction-sections \
               -fdata-sections \
+              -pedantic \
               $(DEVICE_FLAGS) \
               -DUSE_STDPERIPH_DRIVER \
+              -D$(TARGET) \
               $(TARGET_FLAGS) \
               -D'__FORKNAME__="$(FORKNAME)"' \
               -D'__TARGET__="$(TARGET)"' \
@@ -631,39 +680,39 @@ CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
 $(TARGET_BIN): $(TARGET_ELF)
-	$(OBJCOPY) -O binary $< $@
+	$(V0) $(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
-	@echo LD $(notdir $@)
-	@$(CC) -o $@ $^ $(LDFLAGS)
-	$(SIZE) $(TARGET_ELF)
+	$(V1) echo LD $(notdir $@)
+	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(CFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<)
+	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<)
+	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<)
+	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
 
 $(VALID_TARGETS):
-		echo "" && \
+		$(V0) echo "" && \
 		echo "Building $@" && \
 		$(MAKE) binary hex TARGET=$@ && \
 		echo "Building $@ succeeded."
@@ -675,22 +724,22 @@ TARGETS_CLEAN = $(addsuffix _clean,$(VALID_TARGETS) )
 
 ## clean             : clean up temporary / machine-generated files
 clean:
-	echo "Cleaning $(TARGET)"
-	rm -f $(CLEAN_ARTIFACTS)
-	rm -rf $(OBJECT_DIR)/$(TARGET)
-	echo "Cleaning $(TARGET) succeeded."
+	$(V0) echo "Cleaning $(TARGET)"
+	$(V0) rm -f $(CLEAN_ARTIFACTS)
+	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
+	$(V0) echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up temporary / machine-generated files (tests)
 clean_test:
-	cd src/test && $(MAKE) clean || true
+	$(V0) cd src/test && $(MAKE) clean || true
 
 ## clean_<TARGET>    : clean up one specific target
 $(CLEAN_TARGETS) :
-	$(MAKE) -j TARGET=$(subst clean_,,$@) clean
+	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
 
 ## <TARGET>_clean    : clean up one specific target (alias for above)
 $(TARGETS_CLEAN) :
-	$(MAKE) -j TARGET=$(subst _clean,,$@) clean
+	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
 
 ## clean_all         : clean all valid targets
 clean_all:$(CLEAN_TARGETS)
@@ -700,62 +749,72 @@ all_clean:$(TARGETS_CLEAN)
 
 
 flash_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	echo -n 'R' >$(SERIAL_DEVICE)
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	$(V0) echo -n 'R' >$(SERIAL_DEVICE)
+	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## flash             : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
-	st-flash --reset write $< 0x08000000
+	$(V0) st-flash --reset write $< 0x08000000
 
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
 
 binary:
-	$(MAKE) -j $(TARGET_BIN)
+	$(V0) $(MAKE) -j $(TARGET_BIN)
 
 hex:
-	$(MAKE) -j $(TARGET_HEX)
+	$(V0) $(MAKE) -j $(TARGET_HEX)
 
 unbrick_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## unbrick           : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck          : run static analysis on C source code
 cppcheck: $(CSOURCES)
-	$(CPPCHECK)
+	$(V0) $(CPPCHECK)
 
 cppcheck-result.xml: $(CSOURCES)
-	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+
+## mkdirs
+$(DL_DIR):
+	mkdir -p $@
+
+$(TOOLS_DIR):
+	mkdir -p $@
+
+$(BUILD_DIR):
+	mkdir -p $@
 
 ## help              : print this help message and exit
 help: Makefile
-	@echo ""
-	@echo "Makefile for the $(FORKNAME) firmware"
-	@echo ""
-	@echo "Usage:"
-	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
-	@echo "Or:"
-	@echo "        make <target> [OPTIONS=\"<options>\"]"
-	@echo ""
-	@echo "Valid TARGET values are: $(VALID_TARGETS)"
-	@echo ""
-	@sed -n 's/^## //p' $<
+	$(V0) @echo ""
+	$(V0) @echo "Makefile for the $(FORKNAME) firmware"
+	$(V0) @echo ""
+	$(V0) @echo "Usage:"
+	$(V0) @echo "        make [V=<verbosity>] [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	$(V0) @echo "Or:"
+	$(V0) @echo "        make <target> [V=<verbosity>] [OPTIONS=\"<options>\"]"
+	$(V0) @echo ""
+	$(V0) @echo "Valid TARGET values are: $(VALID_TARGETS)"
+	$(V0) @echo ""
+	$(V0) @sed -n 's/^## //p' $<
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	@echo "Valid targets: $(VALID_TARGETS)"
-	@echo "Target:        $(TARGET)"
-	@echo "Base target:   $(BASE_TARGET)"
+	$(V0) @echo "Valid targets: $(VALID_TARGETS)"
+	$(V0) @echo "Target:        $(TARGET)"
+	$(V0) @echo "Base target:   $(BASE_TARGET)"
 
 ## test              : run the cleanflight test suite
 test:
-	cd src/test && $(MAKE) test || true
+	$(V0) cd src/test && $(MAKE) test || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

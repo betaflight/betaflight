@@ -20,11 +20,10 @@
 
 #include <math.h>
 
-#include "build_config.h"
-
 #include "platform.h"
 
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -32,9 +31,6 @@
 #include "system.h"
 #include "bus_i2c.h"
 #include "bus_spi.h"
-
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
 
 #include "sensor.h"
 #include "compass.h"

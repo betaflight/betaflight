@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define RESOURCE_INDEX(x) x + 1
+#define RESOURCE_INDEX(x) (x + 1)
 
 typedef enum {
     OWNER_FREE = 0,

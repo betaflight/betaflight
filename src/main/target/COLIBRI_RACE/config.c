@@ -19,7 +19,7 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -51,8 +51,8 @@
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -69,16 +69,17 @@
 #include "flight/altitudehold.h"
 #include "flight/navigation.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 #include "config/config.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(void) {
-    masterConfig.escAndServoConfig.minthrottle = 1025;
-    masterConfig.escAndServoConfig.maxthrottle = 1980;
-    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
-    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+void targetConfiguration(master_t *config) {
+    config->escAndServoConfig.minthrottle = 1025;
+    config->escAndServoConfig.maxthrottle = 1980;
+    config->batteryConfig.vbatmaxcellvoltage = 45;
+    config->batteryConfig.vbatmincellvoltage = 30;
 }

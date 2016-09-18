@@ -178,7 +178,7 @@
 // Voltage and amperage
 #define SYM_VOLT 0x06
 #define SYM_AMP 0x9A
-#define SYM_MAH 0xA4
+#define SYM_MAH 0x07
 #define SYM_WATT 0x57
 
 // Flying Mode

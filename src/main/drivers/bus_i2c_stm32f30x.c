@@ -20,18 +20,19 @@
 
 #include <platform.h>
 
-#include "gpio.h"
 #include "system.h"
-#include "drivers/io_impl.h"
+#include "io.h"
+#include "io_impl.h"
+#include "rcc.h"
 
 #include "bus_i2c.h"
 
 #ifndef SOFT_I2C
 
 #if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
 #else
-#define IOCFG_I2C IOCFG_AF_OD
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 #endif
 
 #define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.
@@ -39,18 +40,18 @@
 
 #define I2C_SHORT_TIMEOUT   ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT    ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
-#define I2C_GPIO_AF         GPIO_AF_4 
+#define I2C_GPIO_AF         GPIO_AF_4
 
-#ifndef I2C1_SCL 
-#define I2C1_SCL PB6 
+#ifndef I2C1_SCL
+#define I2C1_SCL PB6
 #endif
-#ifndef I2C1_SDA 
-#define I2C1_SDA PB7 
+#ifndef I2C1_SDA
+#define I2C1_SDA PB7
 #endif
-#ifndef I2C2_SCL 
-#define I2C2_SCL PF4 
+#ifndef I2C2_SCL
+#define I2C2_SCL PF4
 #endif
-#ifndef I2C2_SDA 
+#ifndef I2C2_SDA
 #define I2C2_SDA PA10
 #endif
 
@@ -82,7 +83,7 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-   
+  
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
@@ -108,7 +109,7 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
-  
+ 
     I2C_Cmd(I2Cx, ENABLE);
 }
 
@@ -122,7 +123,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
+    I2Cx = i2cHardwareMap[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -132,10 +133,10 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
         }
     }
 
-        /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
 
-        /* Wait until TXIS flag is set */
+    /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -143,10 +144,10 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
         }
     }
 
-        /* Send Register address */
+    /* Send Register address */
     I2C_SendData(I2Cx, (uint8_t) reg);
 
-        /* Wait until TCR flag is set */
+    /* Wait until TCR flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) == RESET)
     {
@@ -155,10 +156,10 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
         }
     }
 
-        /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_AutoEnd_Mode, I2C_No_StartStop);
 
-        /* Wait until TXIS flag is set */
+    /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -166,10 +167,10 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
         }
     }
 
-        /* Write data to TXDR */
+    /* Write data to TXDR */
     I2C_SendData(I2Cx, data);
 
-        /* Wait until STOPF flag is set */
+    /* Wait until STOPF flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_STOPF) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -177,7 +178,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
         }
     }
 
-        /* Clear STOPF flag */
+    /* Clear STOPF flag */
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
 
     return true;
@@ -188,7 +189,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
+    I2Cx = i2cHardwareMap[device].dev;
 
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -198,10 +199,10 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
     I2C_TransferHandling(I2Cx, addr_, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
-        /* Wait until TXIS flag is set */
+    /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -209,10 +210,10 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Send Register address */
+    /* Send Register address */
     I2C_SendData(I2Cx, (uint8_t) reg);
 
-        /* Wait until TC flag is set */
+    /* Wait until TC flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TC) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -220,10 +221,10 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+    /* Configure slave address, nbytes, reload, end mode and start or stop generation */
     I2C_TransferHandling(I2Cx, addr_, len, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
 
-        /* Wait until all data are received */
+    /* Wait until all data are received */
     while (len) {
         /* Wait until RXNE flag is set */
         i2cTimeout = I2C_LONG_TIMEOUT;
@@ -233,16 +234,16 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
             }
         }
 
-                /* Read data from RXDR */
+        /* Read data from RXDR */
         *buf = I2C_ReceiveData(I2Cx);
         /* Point to the next location where the byte read will be saved */
         buf++;
 
-                /* Decrement the read bytes counter */
+        /* Decrement the read bytes counter */
         len--;
     }
 
-        /* Wait until STOPF flag is set */
+    /* Wait until STOPF flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_STOPF) == RESET) {
         if ((i2cTimeout--) == 0) {
@@ -250,10 +251,10 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Clear STOPF flag */
+    /* Clear STOPF flag */
     I2C_ClearFlag(I2Cx, I2C_ICR_STOPCF);
 
-        /* If all operations OK */
+    /* If all operations OK */
     return true;
 }
 

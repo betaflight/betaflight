@@ -24,34 +24,29 @@
 // early prototype had slightly different pin mappings.
 //#define SPRACINGF3MINI_MKII_REVA
 
-#define LED0            PB3
+#define LED0                    PB3
 
-#define BEEPER          PC15
+#define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
-
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
-
 #define USE_EXTI
-#define MPU_INT_EXTI PC13
+#define MPU_INT_EXTI            PC13
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-
 #define GYRO
 //#define USE_FAKE_GYRO
 #define USE_GYRO_MPU6500
+#define GYRO_MPU6500_ALIGN      CW180_DEG
 
 #define ACC
 //#define USE_FAKE_ACC
 #define USE_ACC_MPU6500
-
-#define ACC_MPU6500_ALIGN  CW180_DEG
-#define GYRO_MPU6500_ALIGN CW180_DEG
+#define ACC_MPU6500_ALIGN       CW180_DEG
 
 #define BARO
 #define USE_BARO_BMP280
@@ -60,40 +55,39 @@
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8975
 #define USE_MAG_HMC5883 // External
-
-#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
 
 #define SONAR
-#define SONAR_ECHO_PIN      PB1
-#define SONAR_TRIGGER_PIN   PB0
+#define SONAR_ECHO_PIN          PB1
+#define SONAR_TRIGGER_PIN       PB0
 
 #define USB_IO
 #define USB_CABLE_DETECTION
 
-#define USB_DETECT_PIN      PB5
+#define USB_DETECT_PIN          PB5
 
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 5
+#define SERIAL_PORT_COUNT       5
 
-#define UART1_TX_PIN        PA9  // PA9
-#define UART1_RX_PIN        PA10 // PA10
+#define UART1_TX_PIN            PA9
+#define UART1_RX_PIN            PA10
 
-#define UART2_TX_PIN        PA14 // PA14 / SWCLK
-#define UART2_RX_PIN        PA15 // PA15
+#define UART2_TX_PIN            PA14 // PA14 / SWCLK
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN        PB10 // PB10 (AF7)
-#define UART3_RX_PIN        PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10 // PB10 (AF7)
+#define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define SOFTSERIAL_1_TIMER TIM2
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 9 // PA0 / PAD3
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 10 // PA1 / PAD4
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -124,10 +118,8 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
-#define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-
-
+#define USE_ADC
 #define ADC_INSTANCE                ADC2
 #define VBAT_ADC_PIN                PA4
 #define CURRENT_METER_ADC_PIN       PA5
@@ -140,7 +132,6 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -158,27 +149,30 @@
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
-#define DEFAULT_FEATURES FEATURE_BLACKBOX
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define BUTTONS
-#define BUTTON_A_PORT  GPIOB
-#define BUTTON_A_PIN   Pin_1
-#define BUTTON_B_PORT  GPIOB
-#define BUTTON_B_PIN   Pin_0
+#define BUTTON_A_PORT           GPIOB
+#define BUTTON_A_PIN            Pin_1
+#define BUTTON_B_PORT           GPIOB
+#define BUTTON_B_PIN            Pin_0
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PIN   PB11
+#define BIND_PIN                PB11
 
 #define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN   PB0
+#define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
+

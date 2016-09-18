@@ -18,20 +18,26 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "CLBR"
-#define BST_DEVICE_NAME "COLIBRI RACE"
-#define BST_DEVICE_NAME_LENGTH 12
+#define BST_DEVICE_NAME         "COLIBRI RACE"
+#define BST_DEVICE_NAME_LENGTH  12
 #define TARGET_CONFIG
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
- 
-#define LED0    PC15
-#define LED1    PC14
-#define LED2    PC13
 
-#define BEEPER      PB13
+#define LED0                    PC15
+#define LED1                    PC14
+#define LED2                    PC13
+
+#define BEEPER                  PB13
 #define BEEPER_INVERTED
 
+// MPU6500 interrupt
 #define USE_EXTI
+#define MPU_INT_EXTI            PA5
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -47,23 +53,19 @@
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW270_DEG
+#define GYRO_MPU6000_ALIGN      CW270_DEG
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW270_DEG
+#define ACC_MPU6000_ALIGN       CW270_DEG
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
@@ -80,37 +82,36 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT       4
 
-#define UART1_TX_PIN        PC4
-#define UART1_RX_PIN        PC5
+#define UART1_TX_PIN            PC4
+#define UART1_RX_PIN            PC5
 
-#define UART2_TX_PIN        PA14
-#define UART2_RX_PIN        PA15
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN        PB10
-#define UART3_RX_PIN        PB11
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
-#define I2C2_SCL_PIN         PA9
-#define I2C2_SDA_PIN         PA10
+#define I2C2_SCL_PIN            PA9
+#define I2C2_SDA_PIN            PA10
 
 #define USE_BST
 #define BST_DEVICE (BSTDEV_1)
 /* Configure the CRC peripheral to use the polynomial x8 + x7 + x6 + x4 + x2 + 1 */
-#define BST_CRC_POLYNOM                         0xD5
+#define BST_CRC_POLYNOM         0xD5
 
 #define USE_ADC
-#define ADC_INSTANCE                ADC1
-#define VBAT_ADC_PIN                PC0
-#define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_PIN                PC2
-#define EXTERNAL1_ADC_PIN           PC3
+#define ADC_INSTANCE            ADC1
+#define VBAT_ADC_PIN            PC0
+#define CURRENT_METER_ADC_PIN   PC1
+#define RSSI_ADC_PIN            PC2
+#define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
-#define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
 #define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
@@ -118,14 +119,6 @@
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-
-
-// MPU6500 interrupt
-#define USE_EXTI
-#define MPU_INT_EXTI PA5
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -135,11 +128,12 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

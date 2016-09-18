@@ -30,16 +30,20 @@
 
 #include <platform.h>
 
-#include "build_config.h"
+#ifdef LED_STRIP
+
+#include "build/build_config.h"
 
 #include "common/color.h"
 #include "common/colorconversion.h"
-#include "drivers/dma.h"
-#include "drivers/light_ws2811strip.h"
+#include "dma.h"
+#include "light_ws2811strip.h"
 
-#ifdef LED_STRIP
-
+#if defined(STM32F4)
+uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#else
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#endif
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
 static hsvColor_t ledColorBuffer[WS2811_LED_STRIP_LENGTH];

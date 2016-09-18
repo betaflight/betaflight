@@ -18,7 +18,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "config/runtime_config.h"
+#include "platform.h"
+
+#include "fc/runtime_config.h"
 #include "io/beeper.h"
 
 uint8_t armingFlags = 0;

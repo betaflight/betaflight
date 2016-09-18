@@ -6,8 +6,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "platform.h"
 
@@ -31,7 +32,7 @@
 #include "rx/msp.h"
 
 #include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -57,14 +58,13 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
-#include "mw.h"
+#include "fc/mw.h"
+#include "fc/runtime_config.h"
 
-#include "config/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "version.h"
 #ifdef NAZE
 #include "hardware_revision.h"
 #endif
@@ -933,7 +933,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
 #ifdef LED_STRIP
         case BST_LED_COLORS:
-            for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
                 hsvColor_t *color = &masterConfig.colors[i];
                 bstWrite16(color->h);
                 bstWrite8(color->s);
@@ -942,13 +942,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_LED_STRIP_CONFIG:
-            for (i = 0; i < MAX_LED_STRIP_LENGTH; i++) {
+            for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
                 ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-                bstWrite16((ledConfig->flags & LED_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-                bstWrite16((ledConfig->flags & LED_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-                bstWrite8(GET_LED_X(ledConfig));
-                bstWrite8(GET_LED_Y(ledConfig));
-                bstWrite8(ledConfig->color);
+                bstWrite32(*ledConfig);
             }
             break;
 #endif
@@ -1381,28 +1377,12 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_LED_STRIP_CONFIG:
            {
                i = bstRead8();
-               if (i >= MAX_LED_STRIP_LENGTH || bstReadDataSize() != (1 + 7)) {
+               if (i >= LED_MAX_STRIP_LENGTH || bstReadDataSize() != (1 + 4)) {
                    ret = BST_FAILED;
                    break;
                }
                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
-               uint16_t mask;
-               // currently we're storing directions and functions in a uint16 (flags)
-               // the msp uses 2 x uint16_t to cater for future expansion
-               mask = bstRead16();
-               ledConfig->flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_DIRECTION_MASK;
-
-               mask = bstRead16();
-               ledConfig->flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FUNCTION_MASK;
-
-               mask = bstRead8();
-               ledConfig->xy = CALCULATE_LED_X(mask);
-
-               mask = bstRead8();
-               ledConfig->xy |= CALCULATE_LED_Y(mask);
-
-               ledConfig->color = bstRead8();
-
+               *ledConfig = bstRead32();
                reevaluateLedConfig();
            }
            break;

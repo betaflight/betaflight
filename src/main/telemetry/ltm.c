@@ -33,9 +33,9 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #ifdef TELEMETRY
+
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -57,7 +57,7 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -78,9 +78,8 @@
 #include "telemetry/ltm.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "fc/runtime_config.h"
+
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100

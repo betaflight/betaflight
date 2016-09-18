@@ -20,12 +20,14 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build/atomic.h"
+
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 
-#include "gpio.h"
+#include "io.h"
 #include "rcc.h"
 #include "system.h"
 
@@ -253,7 +255,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
     }
 #else
     TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-#endif 
+#endif
 
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;

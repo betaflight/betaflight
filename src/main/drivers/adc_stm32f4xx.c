@@ -26,8 +26,6 @@
 #include "io_impl.h"
 #include "rcc.h"
 
-#include "sensors/sensors.h" // FIXME dependency into the main code
-
 #include "sensor.h"
 #include "accgyro.h"
 
@@ -38,13 +36,13 @@
 #define ADC_INSTANCE                ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 },  
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 }, 
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 } 
 };
 
 /* note these could be packed up for saving space */
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
 /*
     { DEFIO_TAG_E__PF3,  ADC_Channel_9  },
     { DEFIO_TAG_E__PF4,  ADC_Channel_14 },
@@ -75,7 +73,7 @@ const adcTagMap_t adcTagMap[] = {
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 /*
     if (instance == ADC2) // TODO add ADC2 and 3
@@ -128,7 +126,7 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
-    adcDevice_t adc = adcHardware[device];   
+    adcDevice_t adc = adcHardware[device];  
 
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)

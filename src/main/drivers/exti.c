@@ -24,22 +24,22 @@ static uint8_t extiGroupPriority[EXTI_IRQ_GROUPS];
 
 #if defined(STM32F1) || defined(STM32F4)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
-    EXTI0_IRQn, 
-    EXTI1_IRQn, 
-    EXTI2_IRQn, 
-    EXTI3_IRQn, 
+    EXTI0_IRQn,
+    EXTI1_IRQn,
+    EXTI2_IRQn,
+    EXTI3_IRQn,
     EXTI4_IRQn,
-    EXTI9_5_IRQn, 
+    EXTI9_5_IRQn,
     EXTI15_10_IRQn
 };
 #elif defined(STM32F3)
 static const uint8_t extiGroupIRQn[EXTI_IRQ_GROUPS] = {
-    EXTI0_IRQn, 
-    EXTI1_IRQn, 
-    EXTI2_TS_IRQn, 
-    EXTI3_IRQn, 
+    EXTI0_IRQn,
+    EXTI1_IRQn,
+    EXTI2_TS_IRQn,
+    EXTI3_IRQn,
     EXTI4_IRQn,
-    EXTI9_5_IRQn, 
+    EXTI9_5_IRQn,
     EXTI15_10_IRQn
 };
 #else

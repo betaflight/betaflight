@@ -19,16 +19,17 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "version.h"
 
 #ifdef USE_MAX7456
 
 #include "common/printf.h"
-#include "drivers/bus_spi.h"
-#include "drivers/light_led.h"
-#include "drivers/system.h"
-#include "drivers/nvic.h"
-#include "drivers/dma.h"
+
+#include "bus_spi.h"
+#include "light_led.h"
+#include "io.h"
+#include "system.h"
+#include "nvic.h"
+#include "dma.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"
@@ -75,6 +76,7 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
 #endif
 
     // Common to both channels
+    DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(MAX7456_SPI_INSTANCE->DR));
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
@@ -82,22 +84,31 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
     DMA_InitStructure.DMA_BufferSize = buffer_size;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
 #ifdef MAX7456_DMA_CHANNEL_RX
     // Rx Channel
+#ifdef STM32F4
+    DMA_InitStructure.DMA_Memory0BaseAddr = rx_buffer ? (uint32_t)rx_buffer : (uint32_t)(dummy);
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
+#else
     DMA_InitStructure.DMA_MemoryBaseAddr = rx_buffer ? (uint32_t)rx_buffer : (uint32_t)(dummy);
-    DMA_InitStructure.DMA_MemoryInc = rx_buffer ? DMA_MemoryInc_Enable : DMA_MemoryInc_Disable;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+#endif
+    DMA_InitStructure.DMA_MemoryInc = rx_buffer ? DMA_MemoryInc_Enable : DMA_MemoryInc_Disable;
 
     DMA_Init(MAX7456_DMA_CHANNEL_RX, &DMA_InitStructure);
     DMA_Cmd(MAX7456_DMA_CHANNEL_RX, ENABLE);
 #endif
     // Tx channel
 
+#ifdef STM32F4
+    DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)tx_buffer; //max7456_screen;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
+#else
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)tx_buffer; //max7456_screen;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+#endif
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
 
     DMA_Init(MAX7456_DMA_CHANNEL_TX, &DMA_InitStructure);
     DMA_Cmd(MAX7456_DMA_CHANNEL_TX, ENABLE);
@@ -147,7 +158,7 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
 }
 #endif
 
-void max7456_init(uint8_t video_system) 
+void max7456_init(uint8_t video_system)
 {
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
@@ -247,7 +258,7 @@ void max7456_draw_screen(void) {
         max7456_send(MAX7456ADD_DMM, 1);
         for (xx = 0; xx < max_screen_size; ++xx) {
             max7456_send(MAX7456ADD_DMDI, SCREEN_BUFFER[xx]);
-            SCREEN_BUFFER[xx] = MAX7456_CHAR(0);
+            SCREEN_BUFFER[xx] = MAX7456_CHAR(' ');
         }
         max7456_send(MAX7456ADD_DMDI, 0xFF);
         max7456_send(MAX7456ADD_DMM, 0);
@@ -286,7 +297,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     max7456_send(MAX7456ADD_CMM, WRITE_NVR);
 
     // wait until bit 5 in the status register returns to 0 (12ms)
-    while ((spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456ADD_STAT) & STATUS_REG_NVR_BUSY) != 0);
+    while ((max7456_send(MAX7456ADD_STAT, 0) & STATUS_REG_NVR_BUSY) != 0x00);
 
     max7456_send(VM0_REG, video_signal_type | 0x0C);
     DISABLE_MAX7456;

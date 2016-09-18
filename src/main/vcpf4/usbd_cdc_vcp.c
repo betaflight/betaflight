@@ -19,8 +19,8 @@
  ******************************************************************************
  */
 
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED 
-#pragma     data_alignment = 4 
+#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
+#pragma     data_alignment = 4
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
 /* Includes ------------------------------------------------------------------*/
@@ -34,18 +34,24 @@ LINE_CODING g_lc;
 extern __IO uint8_t USB_Tx_State;
 __IO uint32_t bDeviceState = UNCONNECTED; /* USB device status */
 
-/* These are external variables imported from CDC core to be used for IN 
- transfer management. */
-extern uint8_t APP_Rx_Buffer[]; /* Write CDC received data in this buffer.
- These data will be sent over USB IN endpoint
- in the CDC core functions. */
+/* These are external variables imported from CDC core to be used for IN transfer management. */
+
+/* This is the buffer for data received from the MCU to APP (i.e. MCU TX, APP RX) */
+extern uint8_t APP_Rx_Buffer[]; 
 extern uint32_t APP_Rx_ptr_out;
-extern uint32_t APP_Rx_ptr_in; /* Increment this pointer or roll it back to
+/* Increment this buffer position or roll it back to
  start address when writing received data
  in the buffer APP_Rx_Buffer. */
-__IO uint32_t receiveLength=0;
+extern uint32_t APP_Rx_ptr_in; 
 
-usbStruct_t usbData;
+/*
+    APP TX is the circular buffer for data that is transmitted from the APP (host)
+    to the USB device (flight controller).
+*/
+#define APP_TX_DATA_SIZE      1024
+static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE]; 
+static uint32_t APP_Tx_ptr_out = 0;
+static uint32_t APP_Tx_ptr_in = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 static uint16_t VCP_Init(void);
@@ -105,7 +111,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
     assert_param(Len>=sizeof(LINE_CODING));
 
     switch (Cmd) {
-       /* Not  needed for this driver, AT modem commands */   
+       /* Not  needed for this driver, AT modem commands */  
       case SEND_ENCAPSULATED_COMMAND:
       case GET_ENCAPSULATED_RESPONSE:
          break;
@@ -116,18 +122,18 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       case CLEAR_COMM_FEATURE:
          break;
 
- 
+
       //Note - hw flow control on UART 1-3 and 6 only
-      case SET_LINE_CODING: 
+      case SET_LINE_CODING:
          ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          break;
- 
- 
+
+
       case GET_LINE_CODING:
          ust_cpy(plc, &g_lc);
          break;
 
- 
+
       case SET_CONTROL_LINE_STATE:
          /* Not  needed for this driver */
          //RSW - This tells how to set RTS and DTR
@@ -147,39 +153,52 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
 /*******************************************************************************
  * Function Name  : Send DATA .
  * Description    : send the data received from the STM32 to the PC through USB
- * Input          : None.
+ * Input          : buffer to send, and the length of the buffer.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
 uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
 {
-    if (USB_Tx_State) 
-        return 0;
-
     VCP_DataTx(ptrBuffer, sendLength);
     return sendLength;
 }
 
+uint32_t CDC_Send_FreeBytes(void)
+{
+    /* 
+        return the bytes free in the circular buffer 
+        
+        functionally equivalent to:
+        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
+        but without the impact of the condition check.
+    */
+    return ((APP_Rx_ptr_out - APP_Rx_ptr_in) + (-((int)(APP_Rx_ptr_out <= APP_Rx_ptr_in)) & APP_RX_DATA_SIZE)) - 1;
+}
+
 /**
  * @brief  VCP_DataTx
- *         CDC received data to be send over USB IN endpoint are managed in
- *         this function.
+ *         CDC data to be sent to the Host (app) over USB 
  * @param  Buf: Buffer of data to be sent
  * @param  Len: Number of data to be sent (in bytes)
- * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
+ * @retval Result of the operation: USBD_OK if all operations are OK else VCP_FAIL
  */
 static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
 {
+    /* 
+        make sure that any paragraph end frame is not in play
+        could just check for: USB_CDC_ZLP, but better to be safe
+        and wait for any existing transmission to complete.
+    */
+    while (USB_Tx_State != 0);
+    
     for (uint32_t i = 0; i < Len; i++) {
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
+        
+        while (CDC_Send_FreeBytes() <= 0);
     }
-    return USBD_OK;
-}
 
-uint8_t usbAvailable(void) 
-{
-    return (usbData.bufferInPosition != usbData.bufferOutPosition);
+    return USBD_OK;
 }
 
 /*******************************************************************************
@@ -191,17 +210,21 @@ uint8_t usbAvailable(void)
  *******************************************************************************/
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
-    uint32_t ch = 0;
+    uint32_t count = 0;
 
-    while (usbAvailable() && ch < len) {
-        recvBuf[ch] = usbData.buffer[usbData.bufferOutPosition];
-        usbData.bufferOutPosition = (usbData.bufferOutPosition + 1) % USB_RX_BUFSIZE;
-        ch++;
-        receiveLength--;
+    while (APP_Tx_ptr_out != APP_Tx_ptr_in && count < len) {
+        recvBuf[count] = APP_Tx_Buffer[APP_Tx_ptr_out];
+        APP_Tx_ptr_out = (APP_Tx_ptr_out + 1) % APP_TX_DATA_SIZE;
+        count++;
     }
-    return ch;
+    return count;
 }
 
+uint32_t CDC_Receive_BytesAvailable(void)
+{
+    /* return the bytes available in the receive circular buffer */
+    return APP_Tx_ptr_out > APP_Tx_ptr_in ? APP_TX_DATA_SIZE - APP_Tx_ptr_out + APP_Tx_ptr_in : APP_Tx_ptr_in - APP_Tx_ptr_out;
+}
 
 /**
  * @brief  VCP_DataRx
@@ -218,22 +241,20 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
  * @param  Len: Number of data received (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
-static uint32_t rxTotalBytes = 0;
-static uint32_t rxPackets = 0;
-
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
 {
-    rxPackets++;
-
-    for (uint32_t i = 0; i < Len; i++) {
-        usbData.buffer[usbData.bufferInPosition] = Buf[i];
-        usbData.bufferInPosition = (usbData.bufferInPosition + 1) % USB_RX_BUFSIZE;
-        receiveLength++;
-        rxTotalBytes++;
+    if (CDC_Receive_BytesAvailable() + Len > APP_TX_DATA_SIZE) {
+        return USBD_FAIL;
     }
 
-    if(receiveLength > (USB_RX_BUFSIZE-1))
-        return USBD_FAIL;
+    __disable_irq();
+
+    for (uint32_t i = 0; i < Len; i++) {
+        APP_Tx_Buffer[APP_Tx_ptr_in] = Buf[i];
+        APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % APP_TX_DATA_SIZE;
+    }
+
+    __enable_irq();
 
     return USBD_OK;
 }

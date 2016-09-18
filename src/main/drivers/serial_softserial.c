@@ -22,10 +22,10 @@
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 
-#include "build_config.h"
+#include "build/build_config.h"
+#include "build/atomic.h"
 
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 #include "system.h"
@@ -412,7 +412,7 @@ uint32_t softSerialRxBytesWaiting(serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
-uint8_t softSerialTxBytesFree(serialPort_t *instance)
+uint32_t softSerialTxBytesFree(serialPort_t *instance)
 {
     if ((instance->mode & MODE_TX) == 0) {
         return 0;
@@ -470,14 +470,16 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 
 const struct serialPortVTable softSerialVTable[] = {
     {
-        softSerialWriteByte,
-        softSerialRxBytesWaiting,
-        softSerialTxBytesFree,
-        softSerialReadByte,
-        softSerialSetBaudRate,
-        isSoftSerialTransmitBufferEmpty,
-        softSerialSetMode,
+        .serialWrite = softSerialWriteByte,
+        .serialTotalRxWaiting = softSerialRxBytesWaiting,
+        .serialTotalTxFree = softSerialTxBytesFree,
+        .serialRead = softSerialReadByte,
+        .serialSetBaudRate = softSerialSetBaudRate,
+        .isSerialTransmitBufferEmpty = isSoftSerialTransmitBufferEmpty,
+        .setMode = softSerialSetMode,
         .writeBuf = NULL,
+        .beginWrite = NULL,
+        .endWrite = NULL
     }
 };
 

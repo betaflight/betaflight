@@ -21,12 +21,11 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#ifdef USE_ADC
+
+#include "build/build_config.h"
 
 #include "system.h"
-
-#include "sensors/sensors.h" // FIXME dependency into the main code
-
 #include "sensor.h"
 #include "accgyro.h"
 #include "adc.h"
@@ -38,13 +37,13 @@
 #define ADC_INSTANCE   ADC1
 #endif
 
-const adcDevice_t adcHardware[] = { 
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 }  
+const adcDevice_t adcHardware[] = {
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 } 
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
-    if (instance == ADC1) 
+    if (instance == ADC1)
         return ADCDEV_1;
 
 /* TODO -- ADC2 available on large 10x devices.
@@ -54,7 +53,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-const adcTagMap_t adcTagMap[] = { 
+const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA0, ADC_Channel_0 }, // ADC12
     { DEFIO_TAG_E__PA1, ADC_Channel_1 }, // ADC12
     { DEFIO_TAG_E__PA2, ADC_Channel_2 }, // ADC12
@@ -64,7 +63,7 @@ const adcTagMap_t adcTagMap[] = {
     { DEFIO_TAG_E__PA6, ADC_Channel_6 }, // ADC12
     { DEFIO_TAG_E__PA7, ADC_Channel_7 }, // ADC12
     { DEFIO_TAG_E__PB0, ADC_Channel_8 }, // ADC12
-    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12   
+    { DEFIO_TAG_E__PB1, ADC_Channel_9 }, // ADC12  
 };
 
 // Driver for STM32F103CB onboard ADC
@@ -84,7 +83,6 @@ void adcInit(drv_adc_config_t *init)
     UNUSED(init);
 #endif
 
-    uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
     memset(&adcConfig, 0, sizeof(adcConfig));
@@ -117,9 +115,9 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
-    adcDevice_t adc = adcHardware[device];  
+    const adcDevice_t adc = adcHardware[device];
 
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int  i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
@@ -163,7 +161,7 @@ void adcInit(drv_adc_config_t *init)
     ADC_Init(adc.ADCx, &ADC_InitStructure);
 
     uint8_t rank = 1;
-    for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].enabled) {
             continue;
         }
@@ -180,3 +178,4 @@ void adcInit(drv_adc_config_t *init)
 
     ADC_SoftwareStartConvCmd(adc.ADCx, ENABLE);
 }
+#endif

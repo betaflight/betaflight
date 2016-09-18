@@ -20,9 +20,11 @@
 
 #include <math.h>
 
-#include "build_config.h"
-
 #include "platform.h"
+
+#ifdef USE_MAG_AK8975
+
+#include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -30,9 +32,6 @@
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
-
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
 
 #include "sensor.h"
 #include "compass.h"
@@ -59,7 +58,7 @@
 #define AK8975_MAG_REG_CNTL         0x0a
 #define AK8975_MAG_REG_ASCT         0x0c // self test
 
-bool ak8975detect(mag_t *mag)
+bool ak8975Detect(mag_t *mag)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -155,3 +154,4 @@ bool ak8975Read(int16_t *magData)
     ack = i2cWrite(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01); // start reading again
     return true;
 }
+#endif

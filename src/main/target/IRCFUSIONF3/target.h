@@ -21,22 +21,20 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0    PB3
+#define LED0                    PB3
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready, no MAG
-
+#define USE_EXTI
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define GYRO
 #define USE_GYRO_MPU6050
-#define GYRO_MPU6050_ALIGN CW270_DEG
+#define GYRO_MPU6050_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6050
-#define ACC_MPU6050_ALIGN CW270_DEG
+#define ACC_MPU6050_ALIGN       CW270_DEG
 
 #define BARO
 #define USE_BARO_BMP085
@@ -49,17 +47,17 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 3
 
-#define UART1_TX_PIN        PA9  // PA9
-#define UART1_RX_PIN        PA10 // PA10
+#define UART1_TX_PIN            PA9
+#define UART1_RX_PIN            PA10
 
-#define UART2_TX_PIN        PA14 // PA14 / SWCLK
-#define UART2_RX_PIN        PA15 // PA15
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN        PB10 // PB10 (AF7)
-#define UART3_RX_PIN        PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
@@ -67,16 +65,16 @@
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
 
-#define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define ADC_INSTANCE                ADC2
-#define VBAT_ADC_PIN                PA4
-#define CURRENT_METER_ADC_PIN       PA5
-#define RSSI_ADC_PIN                PB2
+#define USE_ADC
+#define ADC_INSTANCE            ADC2
+#define VBAT_ADC_PIN            PA4
+#define CURRENT_METER_ADC_PIN   PA5
+#define RSSI_ADC_PIN            PB2
 
 #define SPEKTRUM_BIND
 // USART3,
-#define BIND_PIN                    PB11
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 /*
@@ -100,11 +98,11 @@
 */
 
 // IO - stm32f303cc in 48pin package
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA     0xffff
+#define TARGET_IO_PORTB     0xffff
+#define TARGET_IO_PORTC     (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF     (BIT(0)|BIT(1)|BIT(4))
 
-
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
+#define USABLE_TIMER_CHANNEL_COUNT 17
+#define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
 

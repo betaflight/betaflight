@@ -193,10 +193,6 @@ struct escAndServoConfig_s;
 struct rxConfig_s;
 
 void mixerUseConfigs(
-#ifdef USE_SERVOS
-        servoParam_t *servoConfToUse,
-        struct gimbalConfig_s *gimbalConfigToUse,
-#endif
         flight3DConfig_t *flight3DConfigToUse,
         struct escAndServoConfig_s *escAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
@@ -206,12 +202,19 @@ void mixerUseConfigs(
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 #ifdef USE_SERVOS
+void servoInit(servoMixer_t *customServoMixers);
+struct servoParam_s;
+struct gimbalConfig_s;
+void servoUseConfigs(struct servoParam_s *servoConfToUse, struct gimbalConfig_s *gimbalConfigToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 #endif
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
+struct pwmOutputConfiguration_s;
+void mixerUsePWMOutputConfiguration(struct pwmOutputConfiguration_s *pwmOutputConfiguration, bool use_unsyncedPwm);
 void mixerResetDisarmedMotors(void);
-void mixTable(void);
+void mixTable(void *pidProfilePtr);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);

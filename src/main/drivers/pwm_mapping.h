@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "timer.h"
+#include "io_types.h"
 
 #define MAX_PWM_MOTORS  12
 #define MAX_PWM_SERVOS  8
@@ -30,24 +30,8 @@
 #error Invalid motor/servo/port configuration
 #endif
 
-#define PULSE_1MS   (1000)      // 1ms pulse width
-#define MAX_INPUTS  8
 #define PWM_TIMER_MHZ 1
 
-#if defined(STM32F40_41xxx) // must be multiples of timer clock
-#define ONESHOT42_TIMER_MHZ 21
-#define ONESHOT125_TIMER_MHZ 12
-#define PWM_BRUSHED_TIMER_MHZ 21
-#define MULTISHOT_TIMER_MHZ 84
-#else
-#define PWM_BRUSHED_TIMER_MHZ 24
-#define MULTISHOT_TIMER_MHZ   72
-#define ONESHOT42_TIMER_MHZ   24
-#define ONESHOT125_TIMER_MHZ  8
-#endif
-
-#define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
-#define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
 typedef struct sonarIOConfig_s {
     ioTag_t triggerTag;
@@ -84,8 +68,9 @@ typedef struct drv_pwm_config_s {
     uint16_t motorPwmRate;
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
-    sonarIOConfig_t sonarConfig;
+    sonarIOConfig_t sonarIOConfig;
 } drv_pwm_config_t;
+
 
 enum {
     MAP_TO_PPM_INPUT = 1,
@@ -103,10 +88,11 @@ typedef enum {
     PWM_PF_OUTPUT_PROTOCOL_ONESHOT = (1 << 4)
 } pwmPortFlags_e;
 
+struct timerHardware_s;
 typedef struct pwmPortConfiguration_s {
     uint8_t index;
     pwmPortFlags_e flags;
-    const timerHardware_t *timerHardware;
+    const struct timerHardware_s *timerHardware;
 } pwmPortConfiguration_t;
 
 typedef struct pwmOutputConfiguration_s {
@@ -133,7 +119,7 @@ enum {
     PWM13,
     PWM14,
     PWM15,
-    PWM16, 
+    PWM16,
     PWM17,
     PWM18,
     PWM19,
@@ -152,4 +138,5 @@ extern const uint16_t airPPM_BP6[];
 extern const uint16_t airPWM_BP6[];
 #endif
 
+pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init);
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);

@@ -34,7 +34,7 @@ typedef enum {
 
 extern sensor_align_e accAlign;
 extern acc_t acc;
-extern uint32_t accTargetLooptime;
+extern uint32_t accSamplingInterval;
 
 extern int32_t accSmooth[XYZ_AXIS_COUNT];
 
@@ -48,9 +48,12 @@ typedef union rollAndPitchTrims_u {
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
+void accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
-void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);
-void setAccelerationFilter(float initialAccLpfCutHz);
+union flightDynamicsTrims_u;
+void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
+void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+

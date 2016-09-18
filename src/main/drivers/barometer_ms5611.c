@@ -20,13 +20,13 @@
 
 #include <platform.h>
 
+#include "build/build_config.h"
+
 #include "barometer.h"
 
 #include "gpio.h"
 #include "system.h"
 #include "bus_i2c.h"
-
-#include "build_config.h"
 
 // MS5611, Standard address 0x77
 #define MS5611_ADDR                 0x77

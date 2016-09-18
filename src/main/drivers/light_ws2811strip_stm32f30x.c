@@ -20,16 +20,16 @@
 
 #include <platform.h>
 
+#ifdef LED_STRIP
+
 #include "io.h"
 #include "nvic.h"
 
 #include "common/color.h"
-#include "drivers/light_ws2811strip.h"
+#include "light_ws2811strip.h"
 #include "dma.h"
 #include "rcc.h"
 #include "timer.h"
-
-#ifdef LED_STRIP
 
 #ifndef WS2811_PIN
 #define WS2811_PIN                      PB8 // TIM16_CH1
@@ -111,6 +111,7 @@ void ws2811LedStripHardwareInit(void)
 
     DMA_ITConfig(WS2811_DMA_CHANNEL, DMA_IT_TC, ENABLE);
 
+    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
     setStripColor(&hsv_white);
     ws2811UpdateStrip();

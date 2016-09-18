@@ -69,6 +69,7 @@ typedef union {
     fp_angles_def angles;
 } fp_angles_t;
 
+float powerf(float base, int exp);
 int32_t applyDeadband(int32_t value, int32_t deadband);
 
 void devClear(stdev_t *dev);

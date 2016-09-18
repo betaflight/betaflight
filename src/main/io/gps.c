@@ -26,8 +26,8 @@
 
 #ifdef GPS
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -50,7 +50,8 @@
 #include "flight/navigation.h"
 
 #include "config/config.h"
-#include "config/runtime_config.h"
+#include "config/feature.h"
+#include "fc/runtime_config.h"
 
 
 #define LOG_ERROR        '?'
@@ -1069,7 +1070,7 @@ static void gpsHandlePassthrough(uint8_t data)
  #endif
 
  }
- 
+
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {

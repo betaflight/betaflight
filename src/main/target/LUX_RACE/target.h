@@ -21,13 +21,20 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
- 
-#define LED0    PC15
-#define LED1    PC14
-#define LED2    PC13
 
-#define BEEPER      PB13
+#define LED0                    PC15
+#define LED1                    PC14
+#define LED2                    PC13
+
+#define BEEPER                  PB13
 #define BEEPER_INVERTED
+
+// MPU6500 interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI            PA5
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -40,19 +47,15 @@
 #define MPU6500_CS_PIN          SPI1_NSS_PIN
 #define MPU6500_SPI_INSTANCE    SPI1
 
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define USB_IO
 
@@ -60,26 +63,26 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT       4
 
-#define UART1_TX_PIN        PC4
-#define UART1_RX_PIN        PC5
+#define UART1_TX_PIN            PC4
+#define UART1_RX_PIN            PC5
 
-#define UART2_TX_PIN        PA14
-#define UART2_RX_PIN        PA15
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 
-#define UART3_TX_PIN        PB10
-#define UART3_RX_PIN        PB11
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
 
 #define USE_ADC
-#define ADC_INSTANCE                ADC1
-#define VBAT_ADC_PIN                PC0
-#define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_PIN                PC2
-#define EXTERNAL1_ADC_PIN           PC3
+#define ADC_INSTANCE            ADC1
+#define VBAT_ADC_PIN            PC0
+#define CURRENT_METER_ADC_PIN   PC1
+#define RSSI_ADC_PIN            PC2
+#define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
 #define WS2811_PIN                      PA6 // TIM16_CH1
@@ -90,27 +93,21 @@
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 
 
-// MPU6500 interrupt
-#define USE_EXTI
-#define MPU_INT_EXTI PA5
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-
-#define DEFAULT_RX_FEATURE FEATURE_RX_PPM
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
 #define SPEKTRUM_BIND
 // USART1, PC5
-#define BIND_PIN   PC5
+#define BIND_PIN                PC5
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming 303 in 64pin package, TODO
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD (BIT(2))
-#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

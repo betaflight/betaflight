@@ -1,27 +1,59 @@
 env:
-  - RUNTESTS=True
-  - PUBLISHMETA=True
-  - PUBLISHDOCS=True
+#  - RUNTESTS=True
+#  - PUBLISHMETA=True
+#  - PUBLISHDOCS=True
+#  - TARGET=AFROMINI
+#  - TARGET=AIORACERF3
+#  - TARGET=AIR32
+#  - TARGET=AIRHEROF3
+#  - TARGET=ALIENFLIGHTF1
+  - TARGET=ALIENFLIGHTF3
+  - TARGET=ALIENFLIGHTF4
+  - TARGET=BETAFLIGHTF3
+  - TARGET=BLUEJAYF4
   - TARGET=CC3D
   - TARGET=CC3D_OPBL
-  - TARGET=CC3D_BP6
-  - TARGET=CC3D_OPBL_BP6
-  - TARGET=COLIBRI_RACE
-  - TARGET=LUX_RACE
-  - TARGET=CHEBUZZF3
-  - TARGET=CJMCU
-  - TARGET=EUSTM32F103RC
-  - TARGET=SPRACINGF3
+#  - TARGET=CHEBUZZF3
+#  - TARGET=CJMCU
+#  - TARGET=COLIBRI
+#  - TARGET=COLIBRI_OPBL
+#  - TARGET=COLIBRI_RACE
+#  - TARGET=DOGE
+#  - TARGET=EUSTM32F103RC
+#  - TARGET=F4BY
+#  - TARGET=FURYF3
+  - TARGET=FURYF4
+#  - TARGET=IRCFUSIONF3
+#  - TARGET=ISHAPEDF3
+#  - TARGET=KISSFC
+#  - TARGET=LUX_RACE
+#  - TARGET=MICROSCISKY
+#  - TARGET=MOTOLAB
   - TARGET=NAZE
-  - TARGET=NAZE32PRO
-  - TARGET=OLIMEXINO
-  - TARGET=RMDO
-  - TARGET=PORT103R
+#  - TARGET=OLIMEXINO
+#  - TARGET=OMNIBUS
+#  - TARGET=OMNIBUSF4
+#  - TARGET=PIKOBLX
+#  - TARGET=PORT103R
+#  - TARGET=RACEBASE
+  - TARGET=REVO
+#  - TARGET=REVONANO
+#  - TARGET=REVO_OPBL
+#  - TARGET=RMDO
+#  - TARGET=SINGULARITY
+#  - TARGET=SIRINFPV
   - TARGET=SPARKY
+#  - TARGET=SPARKY2
+#  - TARGET=SPARKY_OPBL
+  - TARGET=SPRACINGF3
+  - TARGET=SPRACINGF3EVO
+#  - TARGET=SPRACINGF3MINI
   - TARGET=STM32F3DISCOVERY
-  - TARGET=ALIENFLIGHTF1
-  - TARGET=ALIENFLIGHTF3
-
+#  - TARGET=VRRACE
+#  - TARGET=X_RACERSPI
+#  - TARGET=ZCOREF3
+#  - TARGET=RCEXPLORERF3
+  
 # use new docker environment
 sudo: false
 
@@ -41,18 +73,24 @@ addons:
 language: cpp
 compiler: clang
 
-before_install:
-  - curl --retry 10 --retry-max-time 120 -L "https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2" | tar xfj -
-
 install:
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
+  - make arm_sdk_install
 
-before_script: arm-none-eabi-gcc --version
+before_script: tools/gcc-arm-none-eabi-5_4-2016q2/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
 cache: apt
 
+#notifications:
+#  irc: "chat.freenode.net#cleanflight"
+#  use_notice: true
+#  skip_join: true
+
 notifications:
-  irc: "chat.freenode.net#cleanflight"
-  use_notice: true
-  skip_join: true
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/0c20f7a1a7e311499a88
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: always     # options: [always|never|change] default: always
+

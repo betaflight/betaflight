@@ -19,7 +19,10 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#ifdef USE_ACC_LSM303DLHC
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -167,4 +170,4 @@ bool lsm303dlhcAccDetect(acc_t *acc)
     acc->read = lsm303dlhcAccRead;
     return true;
 }
-
+#endif

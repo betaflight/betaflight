@@ -114,8 +114,8 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
     if (options & SERIAL_BIDIR) {
-        ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, 
-            (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD, 
+        ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
+            (options & SERIAL_INVERTED) ? GPIO_OType_PP : GPIO_OType_OD,
             (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
@@ -132,7 +132,7 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
         }
 
         if (mode & MODE_RX) {
-            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
+            IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
