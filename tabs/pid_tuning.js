@@ -417,120 +417,6 @@ TABS.pid_tuning.initialize = function (callback) {
     }
 
 
-    function plotStickPosition(curveContext, rcData, rate, rcRate, rcExpo, superExpoActive, deadband, maxAngularVel, stickColor) {
-
-        const DEFAULT_SIZE = 60; // canvas units, relative size of the stick indicator (larger value is smaller indicator)
-        const rateScaling  = (curveContext.canvas.height / 2) / maxAngularVel;
-
-        var currentValue = self.rateCurve.rcCommandRawToDegreesPerSecond(rcData, rate, rcRate, rcExpo, superExpoActive, deadband);
-
-        if(rcData!=undefined) {
-            curveContext.save();
-            curveContext.fillStyle = stickColor || '#000000';
-
-            curveContext.translate(curveContext.canvas.width/2, curveContext.canvas.height/2);
-            curveContext.beginPath();
-            curveContext.arc(rcData-1500, -rateScaling * currentValue, curveContext.canvas.height / DEFAULT_SIZE, 0, 2 * Math.PI);
-            curveContext.fill();
-            curveContext.restore();
-        }
-        return currentValue.toFixed(0); // The calculated value in deg/s is returned from the function call for further processing.
-    }
-
-    function drawAxisLabel(curveContext, axisLabel, x, y, align, color) {
-
-        curveContext.fillStyle = color || '#000000' ;
-        curveContext.textAlign = align || 'center';
-        curveContext.fillText(axisLabel, x, y);
-    }
-
-    function drawBalloonLabel(curveContext, axisLabel, x, y, align, colors, dirty) {
-
-        /**
-         * curveContext is the canvas to draw on
-         * axisLabel is the string to display in the center of the balloon
-         * x, y are the coordinates of the point of the balloon
-         * align is whether the balloon appears to the left (align 'right') or right (align left) of the x,y coordinates
-         * colors is an object defining color, border and text are the fill color, border color and text color of the balloon
-         */
-
-        const DEFAULT_OFFSET        = 125; // in canvas scale; this is the horizontal length of the pointer
-        const DEFAULT_RADIUS        = 10; // in canvas scale, this is the radius around the balloon
-        const DEFAULT_MARGIN        = 5;  // in canvas scale, this is the margin around the balloon when it overlaps
-
-        const fontSize = parseInt(curveContext.font);
-
-        // calculate the width and height required for the balloon
-        const width = (curveContext.measureText(axisLabel).width * 1.2);
-        const height = fontSize * 1.5; // the balloon is bigger than the text height
-        const pointerY = y; // always point to the required Y coordinate, even if we move the balloon itself to keep it on the canvas
-
-        // setup balloon background
-        curveContext.fillStyle   = colors.color   || '#ffffff' ;
-        curveContext.strokeStyle = colors.border  || '#000000' ;
-
-        // correct x position to account for window scaling
-        x *= curveContext.canvas.clientWidth/curveContext.canvas.clientHeight;
-
-        // adjust the coordinates for determine where the balloon background should be drawn
-        x += ((align=='right')?-(width + DEFAULT_OFFSET):0) + ((align=='left')?DEFAULT_OFFSET:0);
-        y -= (height/2); if(y<0) y=0; else if(y>curveContext.height) y=curveContext.height; // prevent balloon from going out of canvas
-
-        // check that the balloon does not already overlap
-        for(var i=0; i<dirty.length; i++) {
-            if((x>=dirty[i].left && x<=dirty[i].right) || (x+width>=dirty[i].left && x+width<=dirty[i].right)) { // does it overlap horizontally
-                if((y>=dirty[i].top && y<=dirty[i].bottom) || (y+height>=dirty[i].top && y+height<=dirty[i].bottom )) { // this overlaps another balloon
-                    // snap above or snap below
-                    if(y<=(dirty[i].bottom - dirty[i].top) / 2 && (dirty[i].top - height) > 0) {
-                        y = dirty[i].top - height;
-                    } else { // snap down
-                        y = dirty[i].bottom;
-                    }
-                }
-            }
-        }
-
-        // Add the draw area to the dirty array
-        dirty.push({left:x, right:x+width, top:y-DEFAULT_MARGIN, bottom:y+height+DEFAULT_MARGIN});
-
-
-        var pointerLength =  (height - 2 * DEFAULT_RADIUS ) / 6;
-
-        curveContext.beginPath();
-        curveContext.moveTo(x + DEFAULT_RADIUS, y);
-        curveContext.lineTo(x + width - DEFAULT_RADIUS, y);
-        curveContext.quadraticCurveTo(x + width, y, x + width, y + DEFAULT_RADIUS);
-
-        if(align=='right') { // point is to the right
-            curveContext.lineTo(x + width, y + DEFAULT_RADIUS + pointerLength);
-            curveContext.lineTo(x + width + DEFAULT_OFFSET, pointerY);  // point
-            curveContext.lineTo(x + width, y + height - DEFAULT_RADIUS - pointerLength);
-        }
-        curveContext.lineTo(x + width, y + height - DEFAULT_RADIUS);
-
-        curveContext.quadraticCurveTo(x + width, y + height, x + width - DEFAULT_RADIUS, y + height);
-        curveContext.lineTo(x + DEFAULT_RADIUS, y + height);
-        curveContext.quadraticCurveTo(x, y + height, x, y + height - DEFAULT_RADIUS);
-
-        if(align=='left') { // point is to the left
-            curveContext.lineTo(x, y + height - DEFAULT_RADIUS - pointerLength);
-            curveContext.lineTo(x - DEFAULT_OFFSET, pointerY); // point
-            curveContext.lineTo(x, y + DEFAULT_RADIUS - pointerLength);
-        }
-        curveContext.lineTo(x, y + DEFAULT_RADIUS);
-
-        curveContext.quadraticCurveTo(x, y, x + DEFAULT_RADIUS, y);
-        curveContext.closePath();
-
-        // fill in the balloon background
-        curveContext.fill();
-        curveContext.stroke();
-
-        // and add the label
-        drawAxisLabel(curveContext, axisLabel, x + (width/2), y + (height + fontSize)/2 - 4, 'center', colors.text);
-
-    }
-
     function checkInput(element) {
         var value = parseFloat(element.val());
         if (value < parseFloat(element.prop('min'))
@@ -770,88 +656,19 @@ TABS.pid_tuning.initialize = function (callback) {
         }
 
         // Getting the DOM elements for curve display
-        var rcCurveElement              = $('.rate_curve canvas').get(0),
-            rcStickElement              = $('.rate_curve canvas').get(1),
+        var rcCurveElement              = $('.rate_curve canvas#rate_curve_layer0').get(0),
             curveContext                = rcCurveElement.getContext("2d"),
-            stickContext                = rcStickElement.getContext("2d"),
-            maxAngularVelRollElement    = $('.pid_tuning .maxAngularVelRoll'),
-            maxAngularVelPitchElement   = $('.pid_tuning .maxAngularVelPitch'),
-            maxAngularVelYawElement     = $('.pid_tuning .maxAngularVelYaw'),
             updateNeeded                = true,
             maxAngularVel;
 
+        // make these variables global scope so that they can be accessed by the updateRates function.
+        self.maxAngularVelRollElement    = $('.pid_tuning .maxAngularVelRoll');
+        self.maxAngularVelPitchElement   = $('.pid_tuning .maxAngularVelPitch');
+        self.maxAngularVelYawElement     = $('.pid_tuning .maxAngularVelYaw');
+
         rcCurveElement.width = 1000;
         rcCurveElement.height = 1000;
-        rcStickElement.width = 1000;
-        rcStickElement.height = 1000;
 
-        self.updateRatesLabels = function() {
-            if (!useLegacyCurve && maxAngularVel) {
-                stickContext.save();
-
-                const BALLOON_COLORS = {
-                    roll    : {color: 'rgba(255,128,128,0.4)', border: 'rgba(255,128,128,0.6)', text: '#000000'},
-                    pitch   : {color: 'rgba(128,255,128,0.4)', border: 'rgba(128,255,128,0.6)', text: '#000000'},
-                    yaw     : {color: 'rgba(128,128,255,0.4)', border: 'rgba(128,128,255,0.6)', text: '#000000'}
-                };
-
-                var maxAngularVelRoll   = maxAngularVelRollElement.text()  + ' deg/s',
-                    maxAngularVelPitch  = maxAngularVelPitchElement.text() + ' deg/s',
-                    maxAngularVelYaw    = maxAngularVelYawElement.text()   + ' deg/s',
-                    currentValues       = [],
-                    balloonsDirty       = [],
-                    curveHeight         = rcStickElement.height,
-                    curveWidth          = rcStickElement.width,
-                    windowScale         = (400 / stickContext.canvas.clientHeight),
-                    rateScale           = (curveHeight / 2) / maxAngularVel,
-                    lineScale           = stickContext.canvas.width / stickContext.canvas.clientWidth;
-
-
-                stickContext.clearRect(0, 0, curveWidth, curveHeight);
-
-                // calculate the fontSize based upon window scaling
-                if(windowScale <= 1) {
-                    stickContext.font = "24pt Verdana, Arial, sans-serif";
-                } else {
-                    stickContext.font = (24 * windowScale) + "pt Verdana, Arial, sans-serif";
-                }
-
-                currentValues.push(plotStickPosition(stickContext, RC.channels[0], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#FF8080') + ' deg/s');
-                currentValues.push(plotStickPosition(stickContext, RC.channels[1], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, '#80FF80') + ' deg/s');
-                currentValues.push(plotStickPosition(stickContext, RC.channels[2], self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, '#8080FF') + ' deg/s');
-
-                stickContext.lineWidth = 1 * lineScale;
-
-                // use a custom scale so that the text does not appear stretched
-                stickContext.scale(stickContext.canvas.clientHeight/stickContext.canvas.clientWidth,1);
-
-                // add the maximum range label
-                drawAxisLabel(stickContext, maxAngularVel.toFixed(0) + ' deg/s', curveContext.canvas.clientWidth/curveContext.canvas.clientHeight * ((curveWidth / 2) - 10), parseInt(stickContext.font)*1.2, 'right');
-
-                // and then the balloon labels.
-                balloonsDirty = []; // reset the dirty balloon draw area (for overlap detection)
-                // create an array of balloons to draw
-                var balloons = [
-                    {value: parseInt(maxAngularVelRoll), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelRoll,  curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelRoll)),  'right', BALLOON_COLORS.roll, balloonsDirty);}},
-                    {value: parseInt(maxAngularVelPitch), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelPitch, curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelPitch)), 'right', BALLOON_COLORS.pitch, balloonsDirty);}},
-                    {value: parseInt(maxAngularVelYaw), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelYaw,   curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelYaw)),   'right', BALLOON_COLORS.yaw, balloonsDirty);}}
-                ];
-                // and sort them in descending order so the largest value is at the top always
-                balloons.sort(function(a,b) {return (b.value - a.value)});
-
-                // add the current rc values
-                balloons.push(
-                    {value: parseInt(currentValues[0]), balloon: function() {drawBalloonLabel(stickContext, currentValues[0], 10, 150, 'none', BALLOON_COLORS.roll, balloonsDirty);}},
-                    {value: parseInt(currentValues[1]), balloon: function() {drawBalloonLabel(stickContext, currentValues[1], 10, 250, 'none', BALLOON_COLORS.pitch, balloonsDirty);}},
-                    {value: parseInt(currentValues[2]), balloon: function() {drawBalloonLabel(stickContext, currentValues[2], 10, 350,  'none', BALLOON_COLORS.yaw, balloonsDirty);}}
-                );
-                // then display them on the chart
-                for(var i=0; i<balloons.length; i++) balloons[i].balloon();
-
-                stickContext.restore();
-
-           }
-        };
         function updateRates (event) {
             setTimeout(function () { // let global validation trigger and adjust the values first
                 if(event) { // if an event is passed, then use it
@@ -886,18 +703,18 @@ TABS.pid_tuning.initialize = function (callback) {
                 if (updateNeeded) {
                     var curveHeight = rcCurveElement.height;
                     var curveWidth = rcCurveElement.width;
-                    var lineScale = stickContext.canvas.width / stickContext.canvas.clientWidth;
+                    var lineScale = curveContext.canvas.width / curveContext.canvas.clientWidth;
 
                     curveContext.clearRect(0, 0, curveWidth, curveHeight);
 
                     if (!useLegacyCurve) {
                         maxAngularVel = Math.max(
-                            printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelRollElement),
-                            printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVelPitchElement),
-                            printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVelYawElement));
+                            printMaxAngularVel(self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, self.maxAngularVelRollElement),
+                            printMaxAngularVel(self.currentRates.pitch_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, self.maxAngularVelPitchElement),
+                            printMaxAngularVel(self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, self.maxAngularVelYawElement));
 
                         // make maxAngularVel multiple of 200deg/s so that the auto-scale doesn't keep changing for small changes of the maximum curve
-                        maxAngularVel = Math.ceil(maxAngularVel/200) * 200;
+                        maxAngularVel = self.rateCurve.setMaxAngularVel(maxAngularVel);
 
                         drawAxes(curveContext, curveWidth, curveHeight);
 
@@ -1070,9 +887,6 @@ TABS.pid_tuning.renderModel = function () {
 
     if (!this.clock) { this.clock = new THREE.Clock(); }
 
-    if (!this.oldRC) {this.oldRC = [RC.channels[0], RC.channels[1], RC.channels[2]];}
-    if (this.updateRequired==null) this.updateRequired = new Object(false);
-
     if (RC.channels[0] && RC.channels[1] && RC.channels[2]) {
         var delta = this.clock.getDelta();
 
@@ -1082,17 +896,8 @@ TABS.pid_tuning.renderModel = function () {
 
         this.model.rotateBy(-degToRad(pitch), -degToRad(yaw), -degToRad(roll));
 
-        this.updateRequired = false;
-        for(var i=0; i<this.oldRC.length; i++) {
-            if(this.oldRC[i] != RC.channels[i]) {
-                this.oldRC[i] = RC.channels[i];
-                this.updateRequired = true;
-            }
-        }
-        if(this.updateRequired) { //TODO : find a way to trigger on screen resize and change update rate
-            this.updateRequired = false;
-            this.updateRatesLabels();
-        } // trigger a rate graph update if the RC value has changed
+        if (this.checkRC()) this.updateRatesLabels(); // has the RC data changed ?
+
     }
 };
 
@@ -1190,6 +995,22 @@ TABS.pid_tuning.checkUpdateProfile = function (updateRateProfile) {
     }
 }
 
+TABS.pid_tuning.checkRC = function() {
+    // Function monitors for change in the primary axes rc received data and returns true if a change is detected.
+
+    if (!this.oldRC) { this.oldRC = [RC.channels[0], RC.channels[1], RC.channels[2]]; }
+
+    // Monitor RC.channels and detect change of value;
+    var rateCurveUpdateRequired = false;
+    for(var i=0; i<this.oldRC.length; i++) { // has the value changed ?
+        if(this.oldRC[i] != RC.channels[i]) {
+            this.oldRC[i] = RC.channels[i];
+            rateCurveUpdateRequired = true;     // yes, then an update of the values displayed on the rate curve graph is required
+        }
+    }
+    return rateCurveUpdateRequired;
+};
+
 TABS.pid_tuning.updatePidControllerParameters = function () {
     if (semver.gte(CONFIG.flightControllerVersion, "3.0.0")) {
         if ($('.tab-pid_tuning select[name="controller"]').val() === '0') {
@@ -1209,3 +1030,186 @@ TABS.pid_tuning.updatePidControllerParameters = function () {
         }
     }
 }
+
+TABS.pid_tuning.updateRatesLabels = function() {
+    var self = this;
+    if (!self.rateCurve.useLegacyCurve && self.rateCurve.maxAngularVel) {
+
+        var drawAxisLabel = function(context, axisLabel, x, y, align, color) {
+
+            context.fillStyle = color || '#000000' ;
+            context.textAlign = align || 'center';
+            context.fillText(axisLabel, x, y);
+        }
+        var drawBalloonLabel = function(context, axisLabel, x, y, align, colors, dirty) {
+
+            /**
+             * curveContext is the canvas to draw on
+             * axisLabel is the string to display in the center of the balloon
+             * x, y are the coordinates of the point of the balloon
+             * align is whether the balloon appears to the left (align 'right') or right (align left) of the x,y coordinates
+             * colors is an object defining color, border and text are the fill color, border color and text color of the balloon
+             */
+
+            const DEFAULT_OFFSET        = 125; // in canvas scale; this is the horizontal length of the pointer
+            const DEFAULT_RADIUS        = 10; // in canvas scale, this is the radius around the balloon
+            const DEFAULT_MARGIN        = 5;  // in canvas scale, this is the margin around the balloon when it overlaps
+
+            const fontSize = parseInt(context.font);
+
+            // calculate the width and height required for the balloon
+            const width = (context.measureText(axisLabel).width * 1.2);
+            const height = fontSize * 1.5; // the balloon is bigger than the text height
+            const pointerY = y; // always point to the required Y
+            // coordinate, even if we move the balloon itself to keep it on the canvas
+
+            // setup balloon background
+            context.fillStyle   = colors.color   || '#ffffff' ;
+            context.strokeStyle = colors.border  || '#000000' ;
+
+            // correct x position to account for window scaling
+            x *= context.canvas.clientWidth/context.canvas.clientHeight;
+
+            // adjust the coordinates for determine where the balloon background should be drawn
+            x += ((align=='right')?-(width + DEFAULT_OFFSET):0) + ((align=='left')?DEFAULT_OFFSET:0);
+            y -= (height/2); if(y<0) y=0; else if(y>context.height) y=context.height; // prevent balloon from going out of canvas
+
+            // check that the balloon does not already overlap
+            for(var i=0; i<dirty.length; i++) {
+                if((x>=dirty[i].left && x<=dirty[i].right) || (x+width>=dirty[i].left && x+width<=dirty[i].right)) { // does it overlap horizontally
+                    if((y>=dirty[i].top && y<=dirty[i].bottom) || (y+height>=dirty[i].top && y+height<=dirty[i].bottom )) { // this overlaps another balloon
+                        // snap above or snap below
+                        if(y<=(dirty[i].bottom - dirty[i].top) / 2 && (dirty[i].top - height) > 0) {
+                            y = dirty[i].top - height;
+                        } else { // snap down
+                            y = dirty[i].bottom;
+                        }
+                    }
+                }
+            }
+
+            // Add the draw area to the dirty array
+            dirty.push({left:x, right:x+width, top:y-DEFAULT_MARGIN, bottom:y+height+DEFAULT_MARGIN});
+
+
+            var pointerLength =  (height - 2 * DEFAULT_RADIUS ) / 6;
+
+            context.beginPath();
+            context.moveTo(x + DEFAULT_RADIUS, y);
+            context.lineTo(x + width - DEFAULT_RADIUS, y);
+            context.quadraticCurveTo(x + width, y, x + width, y + DEFAULT_RADIUS);
+
+            if(align=='right') { // point is to the right
+                context.lineTo(x + width, y + DEFAULT_RADIUS + pointerLength);
+                context.lineTo(x + width + DEFAULT_OFFSET, pointerY);  // point
+                context.lineTo(x + width, y + height - DEFAULT_RADIUS - pointerLength);
+            }
+            context.lineTo(x + width, y + height - DEFAULT_RADIUS);
+
+            context.quadraticCurveTo(x + width, y + height, x + width - DEFAULT_RADIUS, y + height);
+            context.lineTo(x + DEFAULT_RADIUS, y + height);
+            context.quadraticCurveTo(x, y + height, x, y + height - DEFAULT_RADIUS);
+
+            if(align=='left') { // point is to the left
+                context.lineTo(x, y + height - DEFAULT_RADIUS - pointerLength);
+                context.lineTo(x - DEFAULT_OFFSET, pointerY); // point
+                context.lineTo(x, y + DEFAULT_RADIUS - pointerLength);
+            }
+            context.lineTo(x, y + DEFAULT_RADIUS);
+
+            context.quadraticCurveTo(x, y, x + DEFAULT_RADIUS, y);
+            context.closePath();
+
+            // fill in the balloon background
+            context.fill();
+            context.stroke();
+
+            // and add the label
+            drawAxisLabel(context, axisLabel, x + (width/2), y + (height + fontSize)/2 - 4, 'center', colors.text);
+
+        }
+
+        const BALLOON_COLORS = {
+            roll    : {color: 'rgba(255,128,128,0.4)', border: 'rgba(255,128,128,0.6)', text: '#000000'},
+            pitch   : {color: 'rgba(128,255,128,0.4)', border: 'rgba(128,255,128,0.6)', text: '#000000'},
+            yaw     : {color: 'rgba(128,128,255,0.4)', border: 'rgba(128,128,255,0.6)', text: '#000000'}
+        };
+
+        var rcStickElement,
+            stickContext;
+
+        if(!rcStickElement) {
+            rcStickElement  = $('.rate_curve canvas#rate_curve_layer1').get(0);
+            rcStickElement.width = 1000;
+            rcStickElement.height = 1000;
+        }
+        if(!stickContext)   stickContext    = rcStickElement.getContext("2d");
+
+        stickContext.save();
+
+        var
+            maxAngularVelRoll   = self.maxAngularVelRollElement.text()  + ' deg/s',
+            maxAngularVelPitch  = self.maxAngularVelPitchElement.text() + ' deg/s',
+            maxAngularVelYaw    = self.maxAngularVelYawElement.text()   + ' deg/s',
+            currentValues       = [],
+            balloonsDirty       = [],
+            curveHeight         = rcStickElement.height,
+            curveWidth          = rcStickElement.width,
+            maxAngularVel       = self.rateCurve.maxAngularVel,
+            windowScale         = (400 / stickContext.canvas.clientHeight),
+            rateScale           = (curveHeight / 2) / maxAngularVel,
+            lineScale           = stickContext.canvas.width / stickContext.canvas.clientWidth,
+            textScale           = stickContext.canvas.clientHeight / stickContext.canvas.clientWidth;
+
+
+        stickContext.clearRect(0, 0, curveWidth, curveHeight);
+
+        // calculate the fontSize based upon window scaling
+        if(windowScale <= 1) {
+            stickContext.font = "24pt Verdana, Arial, sans-serif";
+        } else {
+            stickContext.font = (24 * windowScale) + "pt Verdana, Arial, sans-serif";
+        }
+
+        if(RC.channels[0] && RC.channels[1] && RC.channels[2]) {
+            currentValues.push(self.rateCurve.drawStickPosition(RC.channels[0], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, stickContext, '#FF8080') + ' deg/s');
+            currentValues.push(self.rateCurve.drawStickPosition(RC.channels[1], self.currentRates.roll_rate, self.currentRates.rc_rate, self.currentRates.rc_expo, self.currentRates.superexpo, self.currentRates.deadband, maxAngularVel, stickContext, '#80FF80') + ' deg/s');
+            currentValues.push(self.rateCurve.drawStickPosition(RC.channels[2], self.currentRates.yaw_rate, self.currentRates.rc_rate_yaw, self.currentRates.rc_yaw_expo, self.currentRates.superexpo, self.currentRates.yawDeadband, maxAngularVel, stickContext, '#8080FF') + ' deg/s');
+        } else {
+            currentValues = [];
+        }
+
+        stickContext.lineWidth = 1 * lineScale;
+
+        // use a custom scale so that the text does not appear stretched
+        stickContext.scale(textScale,1);
+
+        // add the maximum range label
+        drawAxisLabel(stickContext, maxAngularVel.toFixed(0) + ' deg/s', ((curveWidth / 2) - 10) / textScale, parseInt(stickContext.font)*1.2, 'right');
+
+        // and then the balloon labels.
+        balloonsDirty = []; // reset the dirty balloon draw area (for overlap detection)
+        // create an array of balloons to draw
+        var balloons = [
+            {value: parseInt(maxAngularVelRoll), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelRoll,  curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelRoll)),  'right', BALLOON_COLORS.roll, balloonsDirty);}},
+            {value: parseInt(maxAngularVelPitch), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelPitch, curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelPitch)), 'right', BALLOON_COLORS.pitch, balloonsDirty);}},
+            {value: parseInt(maxAngularVelYaw), balloon: function() {drawBalloonLabel(stickContext, maxAngularVelYaw,   curveWidth, rateScale * (maxAngularVel - parseInt(maxAngularVelYaw)),   'right', BALLOON_COLORS.yaw, balloonsDirty);}}
+        ];
+        // and sort them in descending order so the largest value is at the top always
+        balloons.sort(function(a,b) {return (b.value - a.value)});
+
+        // add the current rc values
+        if(currentValues[0] && currentValues[1] && currentValues[2]) {
+            balloons.push(
+                {value: parseInt(currentValues[0]), balloon: function() {drawBalloonLabel(stickContext, currentValues[0], 10, 150, 'none', BALLOON_COLORS.roll, balloonsDirty);}},
+                {value: parseInt(currentValues[1]), balloon: function() {drawBalloonLabel(stickContext, currentValues[1], 10, 250, 'none', BALLOON_COLORS.pitch, balloonsDirty);}},
+                {value: parseInt(currentValues[2]), balloon: function() {drawBalloonLabel(stickContext, currentValues[2], 10, 350,  'none', BALLOON_COLORS.yaw, balloonsDirty);}}
+            );
+        }
+        // then display them on the chart
+        for(var i=0; i<balloons.length; i++) balloons[i].balloon();
+
+        stickContext.restore();
+
+    }
+};
