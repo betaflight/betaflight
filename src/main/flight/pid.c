@@ -219,33 +219,22 @@ static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidS
     }
 }
 
-// Value derived from LibrePilot:
-//   we are looking for where the stick angle == transition angle
-//   and the Att rate equals the Rate rate
-//   that's where Rate x (1-StickAngle) [Attitude pulling down max X Ratt proportion]
-//   == Rate x StickAngle [Rate pulling up according to stick angle]
-//   * StickAngle [X Ratt proportion]
-//   so 1-x == x*x or x*x+x-1=0 where xE(0,1)
-//   (-1+-sqrt(1+4))/2 = (-1+sqrt(5))/2
-//   and quadratic formula says that is 0.618033989f
-#define STICK_DEFLECTION_AT_MODE_TRANSITION 0.618033989f
 static float calcHorizonRateMagnitude(const pidProfile_t *pidProfile, const rxConfig_t *rxConfig)
 {
     // Figure out the raw stick positions
     const int32_t stickPosAil = ABS(getRcStickDeflection(FD_ROLL, rxConfig->midrc));
     const int32_t stickPosEle = ABS(getRcStickDeflection(FD_PITCH, rxConfig->midrc));
-    const int32_t mostDeflectedPos = MAX(stickPosAil, stickPosEle);
+    const float mostDeflectedStickPos = constrain(MAX(stickPosAil, stickPosEle), 0, 500) / 500.0f;
     const float modeTransitionStickPos = constrain(pidProfile->D8[PIDLEVEL], 0, 100) / 100.0f;
 
-    float horizonRateMagnitude = mostDeflectedPos / 500.0f;
+    float horizonRateMagnitude;
 
-    if (horizonRateMagnitude <= modeTransitionStickPos) {
-        horizonRateMagnitude *= STICK_DEFLECTION_AT_MODE_TRANSITION / modeTransitionStickPos;
+    // Calculate transition point according to stick deflection
+    if (mostDeflectedStickPos <= modeTransitionStickPos) {
+        horizonRateMagnitude = mostDeflectedStickPos / modeTransitionStickPos;
     }
     else {
-        horizonRateMagnitude = (horizonRateMagnitude - modeTransitionStickPos) *
-                               (1.0f - STICK_DEFLECTION_AT_MODE_TRANSITION) / (1.0f - modeTransitionStickPos) +
-                               STICK_DEFLECTION_AT_MODE_TRANSITION;
+        horizonRateMagnitude = 1.0f;
     }
 
     return horizonRateMagnitude;
