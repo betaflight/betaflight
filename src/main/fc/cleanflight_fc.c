@@ -899,8 +899,10 @@ void taskUpdateCompass(void)
 void taskUpdateBaro(void)
 {
     if (sensors(SENSOR_BARO)) {
-        uint32_t newDeadline = baroUpdate();
-        rescheduleTask(TASK_SELF, newDeadline);
+        const uint32_t newDeadline = baroUpdate();
+        if (newDeadline != 0) {
+            rescheduleTask(TASK_SELF, newDeadline);
+        }
     }
 }
 #endif
