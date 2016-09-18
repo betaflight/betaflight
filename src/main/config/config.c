@@ -244,19 +244,19 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 {
 #ifdef BRUSHED_MOTORS
-	config->minthrottle = 1000;
+    config->minthrottle = 1000;
     config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
     config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
     config->use_unsyncedPwm = true;
 #else
-	config->minthrottle = 1070;
+    config->minthrottle = 1070;
     config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
     config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
     
-	config->maxthrottle = 2000;
-	config->mincommand = 1000;
-	config->maxEscThrottleJumpMs = 0;
+    config->maxthrottle = 2000;
+    config->mincommand = 1000;
+    config->maxEscThrottleJumpMs = 0;
 
 #ifdef USE_SERVOS
     config->servoCenterPulse = 1500;
