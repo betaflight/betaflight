@@ -63,6 +63,6 @@ typedef struct {
     int16_t item_pos[OSD_MAX_ITEMS];
 } osd_profile;
 
-void updateOsd(void);
+void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile *osdProfile);

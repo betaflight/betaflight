@@ -333,7 +333,7 @@ void resumeRxSignal(void)
     failsafeOnRxResume();
 }
 
-void updateRx(uint32_t currentTime)
+bool rxUpdate(uint32_t currentTime)
 {
     resetRxSignalReceivedFlagIfNeeded(currentTime);
 
@@ -384,11 +384,7 @@ void updateRx(uint32_t currentTime)
         }
     }
 #endif
-}
-
-bool shouldProcessRx(uint32_t currentTime)
-{
-    return rxDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
+    return rxDataReceived || (currentTime >= rxUpdateAt); // data driven or 50Hz
 }
 
 static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)

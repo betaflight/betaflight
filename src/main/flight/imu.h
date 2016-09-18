@@ -80,7 +80,7 @@ void imuConfigure(
 float getCosTiltAngle(void);
 void calculateEstimatedAltitude(uint32_t currentTime);
 void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims);
-void imuUpdateAttitude(void);
+void imuUpdateAttitude(uint32_t currentTime);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_hz);

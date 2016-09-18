@@ -17,29 +17,29 @@
 
 #pragma once
 
-void taskSystem(void);
-void taskMainPidLoopCheck(void);
-void taskUpdateAccelerometer(void);
-void taskUpdateAttitude(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskHandleSerial(void);
-void taskUpdateBattery(void);
-void taskUpdateBeeper(void);
-void taskProcessGPS(void);
-void taskUpdateCompass(void);
-void taskUpdateBaro(void);
-void taskUpdateSonar(void);
-void taskCalculateAltitude(void);
-void taskUpdateDisplay(void);
-void taskTelemetry(void);
-void taskLedStrip(void);
-void taskTransponder(void);
+void taskSystem(uint32_t currentTime);
+void taskMainPidLoopCheck(uint32_t currentTime);
+void taskUpdateAccelerometer(uint32_t currentTime);
+void taskUpdateAttitude(uint32_t currentTime);
+bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime);
+void taskUpdateRxMain(uint32_t currentTime);
+void taskHandleSerial(uint32_t currentTime);
+void taskUpdateBattery(uint32_t currentTime);
+void taskUpdateBeeper(uint32_t currentTime);
+void taskProcessGPS(uint32_t currentTime);
+void taskUpdateCompass(uint32_t currentTime);
+void taskUpdateBaro(uint32_t currentTime);
+void taskUpdateSonar(uint32_t currentTime);
+void taskCalculateAltitude(uint32_t currentTime);
+void taskUpdateDisplay(uint32_t currentTime);
+void taskTelemetry(uint32_t currentTime);
+void taskLedStrip(uint32_t currentTime);
+void taskTransponder(uint32_t currentTime);
 #ifdef OSD
-void taskUpdateOsd(void);
+void taskUpdateOsd(uint32_t currentTime);
 #endif
 #ifdef USE_BST
-void taskBstReadWrite(void);
-void taskBstMasterProcess(void);
+void taskBstReadWrite(uint32_t currentTime);
+void taskBstMasterProcess(uint32_t currentTime);
 #endif
 

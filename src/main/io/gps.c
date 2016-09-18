@@ -1065,7 +1065,7 @@ static void gpsHandlePassthrough(uint8_t data)
      gpsNewData(data);
  #ifdef DISPLAY
      if (feature(FEATURE_DISPLAY)) {
-         updateDisplay();
+         updateDisplay(micros());
      }
  #endif
 

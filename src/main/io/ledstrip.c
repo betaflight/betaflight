@@ -925,7 +925,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void updateLedStrip(void)
+void updateLedStrip(uint32_t currentTime)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
@@ -940,7 +940,7 @@ void updateLedStrip(void)
     }
     ledStripEnabled = true;
 
-    uint32_t now = micros();
+    const uint32_t now = currentTime;
 
     // test all led timers, setting corresponding bits
     uint32_t timActive = 0;
