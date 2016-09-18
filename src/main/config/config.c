@@ -277,8 +277,10 @@ void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 #endif
     
 #if !defined(MOTOR1) && !defined(MOTOR2) && !defined(MOTOR3) && !defined(MOTOR4)
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
-        config->motorTags[i] = timerHardware[i].tag;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS && i < 4; i++) {
+        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+            config->motorTags[i] = timerHardware[i].tag;
+        }
     }
 #endif
 }
@@ -286,6 +288,7 @@ void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 #ifdef BEEPER
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
+
 #ifdef BEEPER_INVERTED
     beeperConfig->isInverted = true;
 #else
