@@ -16,17 +16,16 @@
  */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
 #include "build/debug.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/maths.h"
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/utils.h"
 #include "common/filter.h"
 
@@ -35,63 +34,45 @@
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
 
-#include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
 #include "io/motors.h"
 #include "io/servos.h"
+
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
+
 #include "io/serial.h"
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-#include "io/osd.h"
-
-#include "io/vtx.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "rx/rx.h"
-#include "rx/msp.h"
 
-#include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
+#include "scheduler/scheduler.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
-#include "flight/navigation.h"
 
 #include "fc/runtime_config.h"
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "scheduler/scheduler.h"
-#include "scheduler/scheduler_tasks.h"
 
 // June 2013     V2.2-dev
 
@@ -101,10 +82,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
@@ -122,7 +99,8 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint8_t PIDweight[3];
 
-static bool isRXDataNew;
+uint16_t filteredCycleTime;
+bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
 float setpointRate[3];
 float rcInput[3];
@@ -297,7 +275,7 @@ void processRcCommand(void)
     }
 }
 
-static void updateRcCommands(void)
+void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
@@ -361,7 +339,7 @@ static void updateRcCommands(void)
     }
 }
 
-static void updateLEDs(void)
+void updateLEDs(void)
 {
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
@@ -869,6 +847,7 @@ void taskMainPidLoopCheck(uint32_t currentTime)
         runTaskMainSubprocesses = true;
     }
 }
+<<<<<<< 92d2e3ae91522c306728193a386d350c612249cc
 
 void taskUpdateAccelerometer(uint32_t currentTime)
 {
@@ -1064,3 +1043,5 @@ void taskUpdateOsd(uint32_t currentTime)
     }
 }
 #endif
+=======
+>>>>>>> Reorganisation of tasks into fc_tasks.c

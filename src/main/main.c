@@ -62,6 +62,9 @@
 #include "bus_bst.h"
 #endif
 
+#include "fc/fc_tasks.h"
+#include "fc/rc_controls.h"
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
@@ -110,8 +113,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -658,6 +659,7 @@ void init(void)
     latchActiveFeatures();
     motorControlEnable = true;
 
+    fcTasksInit();
     systemState |= SYSTEM_STATE_READY;
 }
 
@@ -675,67 +677,6 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void)
-{
-    init();
-
-    /* Setup scheduler */
-    schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
-
-    if (sensors(SENSOR_ACC)) {
-        setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, accSamplingInterval);
-    }
-
-    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
-    setTaskEnabled(TASK_SERIAL, true);
-#ifdef BEEPER
-    setTaskEnabled(TASK_BEEPER, true);
-#endif
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
-    setTaskEnabled(TASK_RX, true);
-#ifdef GPS
-    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
-#endif
-#ifdef MAG
-    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#if defined(USE_SPI) && defined(USE_MAG_AK8963)
-    // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
-#endif
-#endif
-#ifdef BARO
-    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
-#endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
-#endif
-#if defined(BARO) || defined(SONAR)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
-#endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
-#endif
-#ifdef TELEMETRY
-    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-    // Reschedule telemetry to 500hz for Jeti Exbus
-    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) rescheduleTask(TASK_TELEMETRY, 2000);
-#endif
-#ifdef LED_STRIP
-    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
-#endif
-#ifdef TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
-#endif
-#ifdef OSD
-    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
-#endif
-#ifdef USE_BST
-    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
-#endif
-}
 
 void main_step(void)
 {
@@ -746,8 +687,8 @@ void main_step(void)
 #ifndef NOMAIN
 int main(void)
 {
-    main_init();
-    while(1) {
+    init();
+    while (true) {
         main_step();
     }
 }
