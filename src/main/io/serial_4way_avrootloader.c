@@ -70,10 +70,11 @@
 
 #define START_BIT_TIMEOUT_MS 2
 
-#define BIT_TIME (52)  //52uS
-#define BIT_TIME_HALVE (BIT_TIME >> 1) //26uS
-#define START_BIT_TIME (BIT_TIME_HALVE + 1)
-//#define STOP_BIT_TIME ((BIT_TIME * 9) + BIT_TIME_HALVE)
+#define BIT_TIME (52)       // 52uS
+#define BIT_TIME_HALVE      (BIT_TIME >> 1) // 26uS
+#define BIT_TIME_3_4        (BIT_TIME_HALVE + (BIT_TIME_HALVE >> 1))   // 39uS
+#define START_BIT_TIME      (BIT_TIME_3_4)
+//#define STOP_BIT_TIME     ((BIT_TIME * 9) + BIT_TIME_HALVE)
 
 static uint8_t suart_getc_(uint8_t *bt)
 {
