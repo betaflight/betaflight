@@ -64,10 +64,10 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
-static escAndServoConfig_t *escAndServoConfig;
+static motorAndServoConfig_t *motorAndServoConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
-static bool syncPwmWithPidLoop = false;
+static bool syncMotorOutputWithPidLoop = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -337,13 +337,13 @@ static motorMixer_t *customMixers;
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
-        escAndServoConfig_t *escAndServoConfigToUse,
+        motorAndServoConfig_t *motorAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse,
         rxConfig_t *rxConfigToUse)
 {
     flight3DConfig = flight3DConfigToUse;
-    escAndServoConfig = escAndServoConfigToUse;
+    motorAndServoConfig = motorAndServoConfigToUse;
     mixerConfig = mixerConfigToUse;
     airplaneConfig = airplaneConfigToUse;
     rxConfig = rxConfigToUse;
@@ -377,7 +377,7 @@ int servoDirection(int servoIndex, int inputSource)
         return 1;
 }
 
-void servoInit(servoMixer_t *initialCustomServoMixers)
+void servoMixerInit(servoMixer_t *initialCustomServoMixers)
 {
     customServoMixers = initialCustomServoMixers;
 
@@ -401,6 +401,13 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
     customMixers = initialCustomMixers;
 }
 
+uint8_t mixerMotorCount(mixerMode_e mixerMode)
+{
+#ifdef USE_QUAD_MIXER_ONLY
+    return 4;
+#else    return mixers[mixerMode].motorCount;#endif
+}
+
 #ifndef USE_QUAD_MIXER_ONLY
 
 void loadCustomServoMixer(void)
@@ -422,14 +429,14 @@ void loadCustomServoMixer(void)
     }
 }
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
+void mixerUsePWMOutputConfiguration(uint8_t servoCount, bool use_unsyncedPwm)
 {
     int i;
 
     motorCount = 0;
-    servoCount = pwmOutputConfiguration->servoCount;
+    servoCount = servoCount;
 
-    syncPwmWithPidLoop = !use_unsyncedPwm;
+    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
@@ -523,11 +530,11 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 
 #else
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
+void mixerUsePWMOutputConfiguration(uint8_t servoCount, bool use_unsyncedPwm)
 {
-    UNUSED(pwmOutputConfiguration);
+    UNUSED(servoCount);
     
-    syncPwmWithPidLoop = !use_unsyncedPwm;
+    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
     
     motorCount = 4;
 #ifdef USE_SERVOS
@@ -548,7 +555,7 @@ void mixerResetDisarmedMotors(void)
     int i;
     // set disarmed motor values
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig->mincommand;
+        motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : motorAndServoConfig->mincommand;
 }
 
 #ifdef USE_SERVOS
@@ -642,7 +649,7 @@ void writeMotors(void)
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
 
-    if (syncPwmWithPidLoop) {
+    if (syncMotorOutputWithPidLoop) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
@@ -659,7 +666,7 @@ void writeAllMotors(int16_t mc)
 
 void stopMotors(void)
 {
-    writeAllMotors(feature(FEATURE_3D) ? flight3DConfig->neutral3d : escAndServoConfig->mincommand);
+    writeAllMotors(feature(FEATURE_3D) ? flight3DConfig->neutral3d : motorAndServoConfig->mincommand);
 
     delay(50); // give the timers and ESCs a chance to react.
 }
@@ -798,25 +805,25 @@ void mixTable(void *pidProfilePtr)
 
         if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             throttleMax = flight3DConfig->deadband3d_low;
-            throttleMin = escAndServoConfig->minthrottle;
+            throttleMin = motorAndServoConfig->minthrottle;
             throttlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] + flight3DConfig->deadband3d_throttle;
         } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
-            throttleMax = escAndServoConfig->maxthrottle;
+            throttleMax = motorAndServoConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
             throttlePrevious = rcCommand[THROTTLE];
             throttle = rcCommand[THROTTLE] - flight3DConfig->deadband3d_throttle;
         } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
             throttle = throttleMax = flight3DConfig->deadband3d_low;
-            throttleMin = escAndServoConfig->minthrottle;
+            throttleMin = motorAndServoConfig->minthrottle;
         } else {  // Deadband handling from positive to negative
-            throttleMax = escAndServoConfig->maxthrottle;
+            throttleMax = motorAndServoConfig->maxthrottle;
             throttle = throttleMin = flight3DConfig->deadband3d_high;
         }
     } else {
         throttle = rcCommand[THROTTLE];
-        throttleMin = escAndServoConfig->minthrottle;
-        throttleMax = escAndServoConfig->maxthrottle;
+        throttleMin = motorAndServoConfig->minthrottle;
+        throttleMax = motorAndServoConfig->maxthrottle;
     }
 
     throttleRange = throttleMax - throttleMin;
@@ -840,34 +847,34 @@ void mixTable(void *pidProfilePtr)
         motor[i] = rollPitchYawMix[i] + constrain(throttle * currentMixer[i].throttle, throttleMin, throttleMax);
 
         if (isFailsafeActive) {
-            motor[i] = constrain(motor[i], escAndServoConfig->mincommand, escAndServoConfig->maxthrottle);
+            motor[i] = constrain(motor[i], motorAndServoConfig->mincommand, motorAndServoConfig->maxthrottle);
         } else if (feature(FEATURE_3D)) {
             if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
-                motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
+                motor[i] = constrain(motor[i], motorAndServoConfig->minthrottle, flight3DConfig->deadband3d_low);
             } else {
-                motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, escAndServoConfig->maxthrottle);
+                motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, motorAndServoConfig->maxthrottle);
             }
         } else {
-            motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+            motor[i] = constrain(motor[i], motorAndServoConfig->minthrottle, motorAndServoConfig->maxthrottle);
         }
 
         // Motor stop handling
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
-                motor[i] = escAndServoConfig->mincommand;
+                motor[i] = motorAndServoConfig->mincommand;
             }
         }
     }
 
     // Anti Desync feature for ESC's. Limit rapid throttle changes
-    if (escAndServoConfig->maxEscThrottleJumpMs) {
-        const int16_t maxThrottleStep = constrain(escAndServoConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
+    if (motorAndServoConfig->maxEscThrottleJumpMs) {
+        const int16_t maxThrottleStep = constrain(motorAndServoConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
 
         // Only makes sense when it's within the range
         if (maxThrottleStep < throttleRange) {
             static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
 
-            motor[i] = constrain(motor[i], escAndServoConfig->minthrottle, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
+            motor[i] = constrain(motor[i], motorAndServoConfig->minthrottle, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
             motorPrevious[i] = motor[i];
         }
     }

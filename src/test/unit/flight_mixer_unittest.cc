@@ -155,7 +155,7 @@ class BasicMixerIntegrationTest : public ::testing::Test {
 protected:
     mixerConfig_t mixerConfig;
     rxConfig_t rxConfig;
-    escAndServoConfig_t escAndServoConfig;
+    motorAndServoConfig_t motorAndServoConfig;
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
     gimbalConfig_t gimbalConfig = {
         .mode = GIMBAL_MODE_NORMAL
@@ -170,7 +170,7 @@ protected:
 
         memset(&mixerConfig, 0, sizeof(mixerConfig));
         memset(&rxConfig, 0, sizeof(rxConfig));
-        memset(&escAndServoConfig, 0, sizeof(escAndServoConfig));
+        memset(&motorAndServoConfig, 0, sizeof(motorAndServoConfig));
         memset(&servoConf, 0, sizeof(servoConf));
 
         memset(rcData, 0, sizeof(rcData));
@@ -180,8 +180,8 @@ protected:
         memset(&customMotorMixer, 0, sizeof(customMotorMixer));
     }
 
-    virtual void withDefaultEscAndServoConfiguration(void) {
-        escAndServoConfig.mincommand = TEST_MIN_COMMAND;
+    virtual void withDefaultmotorAndServoConfiguration(void) {
+        motorAndServoConfig.mincommand = TEST_MIN_COMMAND;
     }
 
     virtual void withDefaultRxConfig(void) {
@@ -193,7 +193,7 @@ protected:
             servoConf,
             &gimbalConfig,
             NULL,
-            &escAndServoConfig,
+            &motorAndServoConfig,
             &mixerConfig,
             NULL,
             &rxConfig
@@ -208,7 +208,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 
     mixerConfig.tri_unarmed_servo = 1;
 
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
     withDefaultRxConfig();
 
     servoConf[5].min = DEFAULT_SERVO_MIN;
@@ -244,7 +244,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 {
     // given
-    withDefaultEscAndServoConfiguration();
+    withDefaultmotorAndServoConfiguration();
 
     configureMixer();
 
@@ -296,7 +296,7 @@ protected:
             servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
         }
 
-        withDefaultEscAndServoConfiguration();
+        withDefaultmotorAndServoConfiguration();
         withDefaultRxConfig();
 
         configureMixer();

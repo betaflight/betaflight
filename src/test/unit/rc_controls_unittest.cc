@@ -45,7 +45,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 extern "C" {
-extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfig, pidProfile_t *pidProfile);
+extern void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorAndServoConfig_t *motorAndServoConfig, pidProfile_t *pidProfile);
 }
 
 class RcControlsModesTest : public ::testing::Test {
@@ -536,8 +536,8 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    escAndServoConfig_t escAndServoConfig;
-    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+    motorAndServoConfig_t motorAndServoConfig;
+    memset(&motorAndServoConfig, 0, sizeof (motorAndServoConfig));
 
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
@@ -588,7 +588,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController0)
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    useRcControlsConfig(modeActivationConditions, &motorAndServoConfig, &pidProfile);
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
@@ -613,8 +613,8 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     memset(&modeActivationConditions, 0, sizeof (modeActivationConditions));
 
-    escAndServoConfig_t escAndServoConfig;
-    memset(&escAndServoConfig, 0, sizeof (escAndServoConfig));
+    motorAndServoConfig_t motorAndServoConfig;
+    memset(&motorAndServoConfig, 0, sizeof (motorAndServoConfig));
 
     pidProfile_t pidProfile;
     memset(&pidProfile, 0, sizeof (pidProfile));
@@ -665,7 +665,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
             (1 << 5);
 
     // when
-    useRcControlsConfig(modeActivationConditions, &escAndServoConfig, &pidProfile);
+    useRcControlsConfig(modeActivationConditions, &motorAndServoConfig, &pidProfile);
     processRcAdjustments(&controlRateConfig, &rxConfig);
 
     // then
@@ -687,7 +687,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2)
 
 extern "C" {
 void saveConfigAndNotify(void) {}
-void generateThrottleCurve(controlRateConfig_t *, escAndServoConfig_t *) {}
+void generateThrottleCurve(controlRateConfig_t *, motorAndServoConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
