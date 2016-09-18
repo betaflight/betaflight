@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "drivers/timer.h"
 
 typedef enum {
@@ -27,6 +27,8 @@ typedef enum {
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED
 } motorPwmProtocolTypes_e;
+
+#define PWM_TIMER_MHZ 1
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12

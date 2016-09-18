@@ -33,7 +33,7 @@ extern "C" {
     #include "sensors/acceleration.h"
 
     #include "io/beeper.h"
-    #include "io/escservo.h"
+    #include "io/motorservo.h"
     #include "io/rc_controls.h"
 
     #include "rx/rx.h"

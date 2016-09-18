@@ -42,7 +42,6 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -69,7 +68,7 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
@@ -245,17 +244,6 @@ void init(void)
     servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
-        const sonarHardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
-        if (sonarHardware) {
-            pwm_params.useSonar = true;
-            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
-            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
-        }
-    }
-#endif
-
     uint16_t idlePulse = masterConfig.motorAndServoConfig.mincommand;
     if (feature(FEATURE_3D)) {
         idlePulse = masterConfig.flight3DConfig.neutral3d;
@@ -265,7 +253,11 @@ void init(void)
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
+#ifdef USE_QUAD_MIXER_ONLY
+    motorInit(&masterConfig.motorAndServoConfig, idlePulse, 4);
+#else
     motorInit(&masterConfig.motorAndServoConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
+#endif
 
     uint8_t servoCount = 0;
 #ifdef USE_SERVOS
@@ -684,7 +676,6 @@ int main(void)
     }
 }
 #endif
-
 
 #ifdef DEBUG_HARDFAULTS
 //from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/

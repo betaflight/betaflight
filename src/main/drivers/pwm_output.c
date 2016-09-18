@@ -23,16 +23,15 @@
 
 #include "io.h"
 #include "timer.h"
-#include "pwm_mapping.h"
 #include "pwm_output.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
-static pwmOutputPort_t motors[MAX_PWM_MOTORS];
+static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 
 #ifdef USE_SERVOS
-static pwmOutputPort_t servos[MAX_PWM_SERVOS];
+static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 #endif
 
 static bool pwmMotorsEnabled = true;
@@ -131,7 +130,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (index < MAX_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
+    if (index < MAX_SUPPORTED_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
         motors[index].pwmWritePtr(index, value);
     }
 }
@@ -210,7 +209,7 @@ void motorInit(motorAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t m
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         ioTag_t tag = motorConfig->motorTags[motorIndex];
         
-        if (tag == IOTAG_NONE) {
+	    if (DEFIO_TAG_ISEMPTY(tag)) {
             break;
         }
 
@@ -245,7 +244,7 @@ pwmOutputPort_t *pwmGetMotors()
 #ifdef USE_SERVOS
 void pwmWriteServo(uint8_t index, uint16_t value)
 {
-    if (index < MAX_SERVOS && servos[index].ccr) {
+    if (index < MAX_SUPPORTED_SERVOS && servos[index].ccr) {
         *servos[index].ccr = value;
     }
 }
@@ -255,7 +254,7 @@ void servoInit(motorAndServoConfig_t *servoConfig)
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         ioTag_t tag = servoConfig->servoTags[servoIndex];
         
-        if (tag == IOTAG_NONE) {
+	    if (DEFIO_TAG_ISEMPTY(tag)) {
             break;
         }
         

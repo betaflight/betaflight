@@ -55,7 +55,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -256,12 +256,13 @@ void resetMotorAndServoConfig(motorAndServoConfig_t *config)
     
 	config->maxthrottle = 2000;
 	config->mincommand = 1000;
-	config->servoCenterPulse = 1500;
 	config->maxEscThrottleJumpMs = 0;
+
+#ifdef USE_SERVOS
+    config->servoCenterPulse = 1500;
     config->servo_pwm_rate = 50;
-    
-    config->motor_pwm_rate = 400;
-    
+#endif
+
 #ifdef MOTOR1
     config->motorTags[0] = IO_TAG(MOTOR1);
 #endif
@@ -274,16 +275,27 @@ void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 #ifdef MOTOR4
     config->motorTags[3] = IO_TAG(MOTOR4);
 #endif
+    
+#if !defined(MOTOR1) && !defined(MOTOR2) && !defined(MOTOR3) && !defined(MOTOR4)
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
+        config->motorTags[i] = timerHardware[i].tag;
+    }
+#endif
 }
 
+#ifdef BEEPER
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
 #ifdef BEEPER_INVERTED
-    beeperConfig->isInverted = true;#else    beeperConfig->isInverted = false;
+    beeperConfig->isInverted = true;
+#else
+    beeperConfig->isInverted = false;
 #endif
+
     beeperConfig->isOD = false;
-    beeperConfig->ioTag = IO_TAG(BEEPER);
+    beeperConfig->tag = IO_TAG(BEEPER);
 }
+#endif
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {

@@ -32,7 +32,6 @@
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
@@ -40,7 +39,7 @@
 #include "rx/rx.h"
 
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
@@ -78,7 +77,6 @@ static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
 static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
-STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 #endif
 
@@ -404,8 +402,11 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 uint8_t mixerMotorCount(mixerMode_e mixerMode)
 {
 #ifdef USE_QUAD_MIXER_ONLY
+    UNUSED(mixerMode);
     return 4;
-#else    return mixers[mixerMode].motorCount;#endif
+#else
+    return mixers[mixerMode].motorCount;
+#endif
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -537,9 +538,6 @@ void mixerUsePWMOutputConfiguration(uint8_t servoCount, bool use_unsyncedPwm)
     syncMotorOutputWithPidLoop = !use_unsyncedPwm;
     
     motorCount = 4;
-#ifdef USE_SERVOS
-    servoCount = 0;
-#endif
 
     uint8_t i;
     for (i = 0; i < motorCount; i++) {

@@ -23,7 +23,7 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 
 #include "fc/rc_curves.h"
 #include "fc/rc_controls.h"

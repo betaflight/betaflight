@@ -40,7 +40,7 @@
 #include "rx/rx.h"
 
 #include "fc/rc_controls.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"

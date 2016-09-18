@@ -41,7 +41,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/lowpass.h"
 
-    #include "io/escservo.h"
+    #include "io/motorservo.h"
     #include "io/gimbal.h"
     #include "io/rc_controls.h"
 

@@ -30,7 +30,6 @@
 #include "drivers/io.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
@@ -87,7 +86,7 @@
 
 static uint8_t escCount;
 
-escHardware_t escHardware[MAX_PWM_MOTORS];
+escHardware_t escHardware[MAX_SUPPORTED_MOTORS];
 
 uint8_t selected_esc;
 

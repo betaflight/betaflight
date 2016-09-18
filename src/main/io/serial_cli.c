@@ -51,7 +51,7 @@
 
 #include "drivers/buf_writer.h"
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "fc/rc_controls.h"
@@ -672,7 +672,6 @@ const clivalue_t valueTable[] = {
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
@@ -683,7 +682,6 @@ const clivalue_t valueTable[] = {
     { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorAndServoConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
     { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorAndServoConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.motor_pwm_rate, .config.minmax = { 200, 32000 } },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
@@ -792,10 +790,13 @@ const clivalue_t valueTable[] = {
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
+
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE, &masterConfig.motorAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO, PWM_RANGE_MAX } },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE, &masterConfig.motorAndServoConfig.servo_pwm_rate, .config.minmax = { 50, 498 } },
 #endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
@@ -3638,9 +3639,13 @@ typedef struct {
 } cliResourceValue_t;
 
 const cliResourceValue_t resourceTable[] = {
-    { OWNER_BEEPER, &masterConfig.beeperConfig.ioTag, 0 },
-    { OWNER_MOTOR,  &masterConfig.motorAndServoConfig.motorTags[0], MAX_SUPPORTED_MOTORS },
+#ifdef BEEPER
+    { OWNER_BEEPER, &masterConfig.beeperConfig.tag, 0 },
+#endif // BEEPER
+    { OWNER_MOTOR, &masterConfig.motorAndServoConfig.motorTags[0], MAX_SUPPORTED_MOTORS },
+#ifdef USE_SERVOS
     { OWNER_SERVO,  &masterConfig.motorAndServoConfig.servoTags[0], MAX_SUPPORTED_SERVOS },
+#endif
 };
 
 static void cliResource(char *cmdline)

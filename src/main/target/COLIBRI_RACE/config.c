@@ -37,7 +37,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -50,7 +49,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -78,8 +77,8 @@
 
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config) {
-    config->escAndServoConfig.minthrottle = 1025;
-    config->escAndServoConfig.maxthrottle = 1980;
+    config->motorAndServoConfig.minthrottle = 1025;
+    config->motorAndServoConfig.maxthrottle = 1980;
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;
 }

@@ -53,7 +53,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -84,8 +84,8 @@ void targetConfiguration(master_t *config)
     config->mixerMode = MIXER_HEX6X;
     config->rxConfig.serialrx_provider = 2;
 
-    config->escAndServoConfig.minthrottle = 1070;
-    config->escAndServoConfig.maxthrottle = 2000;
+    config->motorAndServoConfig.minthrottle = 1070;
+    config->motorAndServoConfig.maxthrottle = 2000;
 
     config->boardAlignment.pitchDegrees = 10;
     //config->rcControlsConfig.deadband = 10;
