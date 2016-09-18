@@ -277,9 +277,15 @@ void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 #endif
     
 #if !defined(MOTOR1) && !defined(MOTOR2) && !defined(MOTOR3) && !defined(MOTOR4)
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS && i < 4; i++) {
+    /* 
+        By default just set the motors to all the available output channels.
+        Only those motors needed (e.g. 4 for a quad) will be initialised.
+    */
+    uint8_t motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
         if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
-            config->motorTags[i] = timerHardware[i].tag;
+            config->motorTags[motorIndex] = timerHardware[i].tag;
+            motorIndex++;
         }
     }
 #endif
