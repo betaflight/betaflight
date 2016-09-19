@@ -177,7 +177,7 @@ void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 {
     uint32_t timerMhzCounter;
     pwmWriteFuncPtr pwmWritePtr;
-        
+
     switch (motorConfig->motor_pwm_protocol) {
     default:
     case (PWM_TYPE_ONESHOT125):
