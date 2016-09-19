@@ -55,7 +55,6 @@
 #include "flight/gtune.h"
 #include "flight/mixer.h"
 
-extern float dT;
 extern uint8_t PIDweight[3];
 extern int32_t lastITerm[3], ITermLimit[3];
 
@@ -81,7 +80,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
     // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
     if (axis == YAW) {
         if (pidProfile->yaw_lpf_hz) {
-            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, dT);
+            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
         }
         if (pidProfile->yaw_p_limit && motorCount >= 4) {
             PTerm = constrain(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
@@ -126,7 +125,7 @@ STATIC_UNIT_TESTED int16_t pidMultiWiiRewriteCore(int axis, const pidProfile_t *
         delta = (delta * ((uint16_t)0xFFFF / ((uint16_t)targetPidLooptime >> 4))) >> 5;
         if (pidProfile->dterm_lpf_hz) {
             // DTerm delta low pass filter
-            delta = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, dT));
+            delta = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)delta, pidProfile->dterm_lpf_hz, getdT()));
         }
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
         DTerm = constrain(DTerm, -PID_MAX_D, PID_MAX_D);

@@ -89,6 +89,7 @@ extern uint32_t targetPidLooptime;
 float pidScaleITermToRcInput(int axis);
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
+float getdT(void);
 void pidInitFilters(const pidProfile_t *pidProfile);
 void pidSetController(pidControllerType_e type);
 void pidSetTargetLooptime(uint32_t pidLooptime);

@@ -57,7 +57,6 @@ static int32_t ITermAngle[2];
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 
-extern float dT;
 extern uint8_t motorCount;
 
 #ifdef BLACKBOX
@@ -150,7 +149,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         if (pidProfile->dterm_lpf_hz) {
             // Dterm delta low pass
             DTerm = delta;
-            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf_hz, dT)) * 3;  // Keep same scaling as unfiltered DTerm
+            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf_hz, getdT())) * 3;  // Keep same scaling as unfiltered DTerm
         } else {
             // When dterm filter disabled apply moving average to reduce noise
             DTerm  = delta1[axis] + delta2[axis] + delta;

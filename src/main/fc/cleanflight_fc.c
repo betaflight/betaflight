@@ -111,8 +111,6 @@ enum {
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
-float dT;
-
 int16_t magHold;
 int16_t headFreeModeHold;
 
@@ -698,7 +696,7 @@ void subTaskMainSubprocesses(void)
 #endif
 
 #if defined(BARO) || defined(SONAR)
-        // FIXME outdates comments?
+        // FIXME outdated comments?
         // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
         // this must be called here since applyAltHold directly manipulates rcCommands[]
         updateRcCommands();
@@ -794,8 +792,6 @@ void taskMainPidLoopCheck(void)
     static uint8_t pidUpdateCountdown;
 
     cycleTime = getTaskDeltaTime(TASK_SELF);
-
-    dT = (float)cycleTime * 0.000001f;
 
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = cycleTime;
