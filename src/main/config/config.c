@@ -405,7 +405,7 @@ void createDefaultConfig(master_t *config)
 #ifdef STM32F10X
     config->gyro_sync_denom = 8;
     config->pid_process_denom = 1;
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
     config->gyro_sync_denom = 1;
     config->pid_process_denom = 4;
 #else
