@@ -37,6 +37,8 @@
 
 #else
 #define LED1                    PB4
+// Revo needs the BEEPER functionality even though there is no beeper support, for LED0 flashing
+#define BEEPER                  PB6 // Unused pin on Revo.
 #endif
 
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
