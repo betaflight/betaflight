@@ -23,7 +23,7 @@ extern "C" {
     #include "config/parameter_group.h"
     #include "drivers/serial.h"
     #include "io/serial.h"
-    #include "io/rc_controls.h"
+    #include "fc/rc_controls.h"
     #include "telemetry/telemetry.h"
     #include "telemetry/ibus.h"
     #include "sensors/barometer.h"
@@ -78,8 +78,8 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing) {
 }
 
 
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
-    EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
+serialPortConfig_t *findSerialPortConfig(uint16_t mask) {
+    EXPECT_EQ(mask, FUNCTION_TELEMETRY_IBUS);
     return findSerialPortConfig_stub_retval ;
 }
 
