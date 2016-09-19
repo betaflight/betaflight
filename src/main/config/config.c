@@ -452,6 +452,7 @@ void createDefaultConfig(master_t *config)
 #else
     config->rxConfig.serialrx_provider = 0;
 #endif
+    config->rxConfig.ibus_model = 0;
     config->rxConfig.sbus_inversion = 1;
     config->rxConfig.spektrum_sat_bind = 0;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
