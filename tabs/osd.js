@@ -500,6 +500,12 @@ TABS.osd.initialize = function (callback) {
             for(var i = 0; i < OSD.data.display_size.total; i++) {
               OSD.data.preview.push([null, ' '.charCodeAt(0)]);
             }
+            // logo first, so it gets overwritten by subsequent elements
+            var x = 160;
+            for (var i = 1; i < 5; i++) {
+              for (var j = 3; j < 27; j++)
+                  OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
+            }
             // draw all the displayed items and the drag and drop preview images
             for(let field of OSD.data.display_items) {
               if (!field.preview || field.position == -1) { continue; }
@@ -518,12 +524,6 @@ TABS.osd.initialize = function (callback) {
                 ctx.drawImage(img, i*12, 0);
               }
               field.preview_img.src = canvas.toDataURL('image/png');
-            }
-            // logo
-            var x = 160;
-            for (var i = 1; i < 5; i++) {
-              for (var j = 3; j < 27; j++)
-                  OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
             }
             var centerishPosition = 194;
             // artificial horizon
