@@ -92,8 +92,8 @@ extern "C" {
 uint8_t armingFlags = 0;
 int16_t rcCommand[4] = {0,0,0,0};
 
-float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
+float applyBiQuadFilter(float sample, biquadFilter_t *state) {UNUSED(state);return sample;}
+void BiQuadNewLpf(float filterCutFreq, biquadFilter_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
 
 void failureMode(uint8_t) {}
 

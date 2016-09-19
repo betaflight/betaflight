@@ -58,6 +58,7 @@
 #include "fc/rc_adjustments.h"
 #include "fc/fc_serial.h"
 #include "fc/fc_tasks.h"
+#include "fc/fc_debug.h"
 
 #include "scheduler/scheduler.h"
 
@@ -418,6 +419,22 @@ static const char * const lookupTableHorizonTiltMode[] = {
     "SAFE", "EXPERT"
 };
 
+static const char * const lookupTableDebug[DEBUG_COUNT] = {
+    "NONE",
+    "CYCLETIME",
+    "NOTCH",
+    "GYRO",
+//    "BATTERY",
+//    "ACCELEROMETER",
+//    "MIXER",
+//    "AIRMODE",
+    "PIDLOOP",
+//    "RC_INTERPOLATION",
+//    "VELOCITY",
+//    "DFILTER",
+//    "ANGLERATE",
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -425,6 +442,7 @@ typedef struct lookupTableEntry_s {
 
 typedef enum {
     TABLE_OFF_ON = 0,
+    TABLE_DEBUG,
     TABLE_UNIT,
     TABLE_ALIGNMENT,
 #ifdef GPS
@@ -448,6 +466,7 @@ typedef enum {
 
 static const lookupTableEntry_t lookupTables[] = {
     { lookupTableOffOn, sizeof(lookupTableOffOn) / sizeof(char *) },
+    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableUnit, sizeof(lookupTableUnit) / sizeof(char *) },
     { lookupTableAlignment, sizeof(lookupTableAlignment) / sizeof(char *) },
 #ifdef GPS
@@ -521,7 +540,8 @@ typedef struct {
 } __attribute__((packed)) clivalue_t;
 
 const clivalue_t valueTable[] = {
-    { "looptime",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 9000} , PG_IMU_CONFIG, offsetof(imuConfig_t, looptime)},
+    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_DEBUG_CONFIG, offsetof(debugConfig_t, debug_mode)},
+
     { "emf_avoidance",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, emf_avoidance)},
     { "i2c_highspeed",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_highspeed)},
 #ifdef CUSTOM_FLASHCHIP
@@ -529,9 +549,6 @@ const clivalue_t valueTable[] = {
     { "flashchip_nsect",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_DRIVER_FLASHCHIP_CONFIG, offsetof(flashchipConfig_t, flashchip_nsect)},
     { "flashchip_pps",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  0xffff } ,   PG_DRIVER_FLASHCHIP_CONFIG, offsetof(flashchipConfig_t, flashchip_pps)},
 #endif
-
-    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyroSync)},
-    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyroSyncDenominator)},
 
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1200,  1700 } , PG_RX_CONFIG, offsetof(rxConfig_t, midrc)},
     { "min_check",                  VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } , PG_RX_CONFIG, offsetof(rxConfig_t, mincheck)},
@@ -564,8 +581,6 @@ const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_ARMING_CONFIG, offsetof(armingConfig_t, disarm_kill_switch)},
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  60 } , PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay)},
     { "max_arm_angle",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  180 } , PG_ARMING_CONFIG, offsetof(armingConfig_t, max_arm_angle)},
-
-    { "small_angle",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  180 } , PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle)},
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE, .config.minmax = { -1,  1 }, PG_AIRPLANE_ALT_HOLD_CONFIG, offsetof( airplaneConfig_t, fixedwing_althold_dir) },
 
@@ -629,10 +644,15 @@ const clivalue_t valueTable[] = {
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
 
+    { "small_angle",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  180 } , PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle)},
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  900 } , PG_IMU_CONFIG, offsetof(imuConfig_t, max_angle_inclination) },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 } , PG_IMU_CONFIG, offsetof(imuConfig_t, gyro_sync_denom)},
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  8 } , PG_IMU_CONFIG, offsetof(imuConfig_t, pid_process_denom)},
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf)},
-    { "gyro_soft_lpf",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, soft_gyro_lpf_hz)},
+    { "gyro_lowpass",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_lpf_hz)},
+    { "gyro_notch_hz",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz)},
+    { "gyro_notch_cutoff",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1,  500 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff)},
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  128 } , PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold)},
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_kp)},
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 } , PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_ki)},
@@ -733,8 +753,8 @@ const clivalue_t valueTable[] = {
 
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_PID_DELTA_METHOD }, PG_PID_PROFILE, offsetof(pidProfile_t, deltaMethod) },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_p_limit)},
-    { "yaw_lpf",                    VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf)},
-    { "dterm_cut_hz",               VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf)},
+    { "yaw_lpf_hz",                 VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz)},
+    { "dterm_cut_hz",               VAR_UINT16 | PROFILE_VALUE, .config.minmax = {0, 500 } , PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz)},
     { "horizon_tilt_effect",        VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0, 250 } , PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_effect)},
     { "horizon_tilt_mode",          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_HORIZON_TILT_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, horizon_tilt_mode)},
 

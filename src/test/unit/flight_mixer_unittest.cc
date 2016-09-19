@@ -443,8 +443,8 @@ uint32_t targetLooptime;
 
 void delay(uint32_t) {}
 
-float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
+float applyBiQuadFilter(float sample, biquadFilter_t *state) {UNUSED(state);return sample;}
+void BiQuadNewLpf(float filterCutFreq, biquadFilter_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
 
 
 bool feature(uint32_t mask) {

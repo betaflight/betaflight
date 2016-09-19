@@ -32,6 +32,7 @@ typedef struct gyro_s {
     sensorReadFuncPtr temperature;                          // read temperature if available
     sensorIsDataReadyFuncPtr isDataReady;                   // check if sensor has new readings
     float scale;                                            // scalefactor
+    uint32_t targetLooptime;
 } gyro_t;
 
 typedef struct acc_s {

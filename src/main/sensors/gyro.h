@@ -37,12 +37,16 @@ extern int32_t gyroADC[XYZ_AXIS_COUNT];
 typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold;   // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t gyro_lpf;                           // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    uint16_t soft_gyro_lpf_hz;                  // Software based gyro filter in hz
+    uint8_t gyro_soft_type;                     // Gyro Filter Type
+    uint16_t gyro_soft_lpf_hz;                  // Software based gyro filter in hz
+    uint16_t gyro_soft_notch_hz;                // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_cutoff;            // Biquad gyro notch low cutoff
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
 
-void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+void gyroInit(void);
 void gyroUpdate(void);
+void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 bool isGyroCalibrationComplete(void);
 

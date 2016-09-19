@@ -15,14 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
+#include <platform.h>
 
+#include "build/build_config.h"
 #include "build/debug.h"
 
-int16_t debug[DEBUG16_VALUE_COUNT];
-uint8_t debugMode;
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
-#ifdef DEBUG_SECTION_TIMES
-uint32_t sectionTimes[2][4];
-#endif
+#include "fc/fc_debug.h"
+
+PG_REGISTER(debugConfig_t, debugConfig, PG_DEBUG_CONFIG, 0);

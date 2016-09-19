@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#define DELTA_MAX_SAMPLES 12
 
 typedef struct pt1Filter_s {
     float state;
@@ -24,17 +24,30 @@ typedef struct pt1Filter_s {
 } pt1Filter_t;
 
 /* this holds the data required to update samples thru a filter */
-typedef struct biquad_s {
+typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
-    float x1, x2, y1, y2;
-} biquad_t;
+    float d1, d2;
+} biquadFilter_t;
 
-float applyBiQuadFilter(float sample, biquad_t *state);
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate);
+typedef enum {
+    FILTER_PT1 = 0,
+    FILTER_BIQUAD,
+} filterType_e;
+
+typedef enum {
+    FILTER_LPF,
+    FILTER_NOTCH
+} biquadFilterType_e;
+
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
+void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
+float biquadFilterApply(biquadFilter_t *filter, float input);
+float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
 
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT);
 
-int32_t filterApplyAverage(int32_t input, uint8_t count, int32_t averageState[]);
-float filterApplyAveragef(float input, uint8_t count, float averageState[]);
+int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]);
+float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]);
+

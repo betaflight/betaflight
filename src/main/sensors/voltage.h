@@ -41,7 +41,7 @@ typedef struct voltageMeterState_s {
     uint16_t vbat;                // battery voltage in 0.1V steps (filtered)
     uint16_t vbatRaw;
     uint16_t vbatLatestADC;       // most recent unsmoothed raw reading from vbat ADC
-    biquad_t vbatFilterState;
+    biquadFilter_t vbatFilterState;
 } voltageMeterState_t;
 
 extern voltageMeterState_t voltageMeterStates[MAX_VOLTAGE_METERS];

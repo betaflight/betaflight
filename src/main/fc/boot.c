@@ -70,6 +70,7 @@
 
 #include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
+#include "fc/fc_debug.h"
 
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -281,6 +282,8 @@ void init(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
+    debugMode = debugConfig()->debug_mode;
 
 #ifdef USE_EXTI
     EXTIInit();
@@ -542,7 +545,7 @@ void init(void)
     }
 #endif
 
-    gyroSetSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+    gyroSetSampleRate(gyroConfig()->gyro_lpf, imuConfig()->gyro_sync_denom);   // Set gyro sampling rate divider before initialization
 
     if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
@@ -554,7 +557,7 @@ void init(void)
     flashLedsAndBeep();
 
 #ifdef USE_SERVOS
-    mixerInitialiseServoFiltering(targetLooptime);
+    mixerInitialiseServoFiltering(targetPidLooptime);
 #endif
 
     imuInit();
@@ -643,6 +646,13 @@ void init(void)
     afatfs_init();
 #endif
 
+    if (gyroConfig()->gyro_lpf > GYRO_LPF_256HZ && gyroConfig()->gyro_lpf < GYRO_LPF_NONE) {
+        imuConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        imuConfig()->gyro_sync_denom = 1;
+    }
+
+    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom); // Initialize pid looptime
+
 #ifdef BLACKBOX
     initBlackbox();
 #endif
@@ -723,9 +733,32 @@ void configureScheduler(void)
 {
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
+
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
-    rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+
+    if (sensors(SENSOR_ACC)) {
+        switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc rates in the future
+        case 500:
+        case 375:
+        case 250:
+        case 125:
+            accTargetLooptime = 1000;
+            break;
+        default:
+        case 1000:
+#ifdef STM32F10X
+            accTargetLooptime = 1000;
+#else
+            accTargetLooptime = 1000;
+#endif
+        }
+
+        rescheduleTask(TASK_ACCEL, accTargetLooptime);
+        setTaskEnabled(TASK_ACCEL, true);
+    }
+
+    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);

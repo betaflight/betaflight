@@ -78,14 +78,21 @@ static bool isAccelUpdatedAtLeastOnce = false;
 static imuRuntimeConfig_t *imuRuntimeConfig;
 static accDeadband_t *accDeadband;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+#ifdef STM32F10X
+    .gyro_sync_denom = 8,
+    .pid_process_denom = 1,
+#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
+    .gyro_sync_denom = 1,
+    .pid_process_denom = 4,
+#else
+    .gyro_sync_denom = 4,
+    .pid_process_denom = 2,
+#endif
     .dcm_kp = 2500,                // 1.0 * 10000
-    .looptime = 2000,
-    .gyroSync = 1,
-    .gyroSyncDenominator = 1,
     .small_angle = 25,
     .max_angle_inclination = 500,    // 50 degrees
 );
@@ -468,10 +475,8 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateGyroAndAttitude(void)
+void imuUpdateAttitude(void)
 {
-    gyroUpdate();
-
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {

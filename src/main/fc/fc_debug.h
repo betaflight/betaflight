@@ -15,14 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stdint.h"
+typedef enum {
+    DEBUG_NONE,
+    DEBUG_CYCLETIME,
+    DEBUG_NOTCH,
+    DEBUG_GYRO,
+//    DEBUG_BATTERY,
+//    DEBUG_ACCELEROMETER,
+//    DEBUG_MIXER,
+//    DEBUG_AIRMODE,
+    DEBUG_PIDLOOP,
+//    DEBUG_RC_INTERPOLATION,
+//    DEBUG_VELOCITY,
+//    DEBUG_DTERM_FILTER,
+//    DEBUG_ANGLERATE,
+    DEBUG_COUNT
+} debugType_e;
 
+typedef struct debugConfig_s {
+    uint8_t debug_mode;
+} debugConfig_t;
 
-#include "build/debug.h"
-
-int16_t debug[DEBUG16_VALUE_COUNT];
-uint8_t debugMode;
-
-#ifdef DEBUG_SECTION_TIMES
-uint32_t sectionTimes[2][4];
-#endif
+PG_DECLARE(debugConfig_t, debugConfig);

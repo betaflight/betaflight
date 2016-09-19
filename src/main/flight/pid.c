@@ -48,6 +48,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
+uint32_t targetPidLooptime;
+
 int16_t axisPID[3];
 
 #ifdef BLACKBOX
@@ -62,6 +64,9 @@ float lastITermf[3], ITermLimitf[3];
 
 pt1Filter_t deltaFilter[3];
 pt1Filter_t yawFilter;
+biquadFilter_t dtermFilterLpf[3];
+biquadFilter_t dtermFilterNotch[3];
+static bool dtermNotchInitialised, dtermBiquadLpfInitialised;
 
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
@@ -77,7 +82,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
 pidControllerFuncPtr pid_controller = pidLuxFloat;
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 1);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .pidController = PID_CONTROLLER_LUX_FLOAT,
@@ -111,12 +116,38 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .D8[PIDVEL] = 1,
 
     .yaw_p_limit = YAW_P_LIMIT_MAX,
-    .dterm_lpf = 100,   // DTERM filtering ON by default
-    .yaw_lpf = 80,
+    .yaw_lpf_hz = 0,
+    .dterm_filter_type = FILTER_BIQUAD,
+    .dterm_lpf_hz = 100,    // filtering ON by default
+    .dterm_notch_hz = 260,
+    .dterm_notch_cutoff = 160,
     .deltaMethod = PID_DELTA_FROM_MEASUREMENT,
     .horizon_tilt_effect = 75,
     .horizon_tilt_mode = HORIZON_TILT_MODE_SAFE,
 );
+
+void pidSetTargetLooptime(uint32_t pidLooptime)
+{
+    targetPidLooptime = pidLooptime;
+}
+
+void pidInitFilters(const pidProfile_t *pidProfile)
+{
+    int axis;
+
+    if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
+        float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        for (axis = 0; axis < 3; axis++) biquadFilterInit(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, targetPidLooptime, notchQ, FILTER_NOTCH);
+        dtermNotchInitialised = true;
+    }
+
+    if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
+        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
+            for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+            dtermBiquadLpfInitialised = true;
+        }
+    }
+}
 
 void pidResetITerm(void)
 {

@@ -647,10 +647,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
             break;
 
-        case MSP_LOOP_TIME:
-            sbufWriteU16(dst, imuConfig()->looptime);
-            break;
-
         case MSP_RC_TUNING:
             sbufWriteU8(dst, currentControlRateProfile->rcRate8);
             sbufWriteU8(dst, currentControlRateProfile->rcExpo8);
@@ -1072,10 +1068,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_SET_ARMING_CONFIG:
             armingConfig()->auto_disarm_delay = sbufReadU8(src);
             armingConfig()->disarm_kill_switch = sbufReadU8(src);
-            break;
-
-        case MSP_SET_LOOP_TIME:
-            imuConfig()->looptime = sbufReadU16(src);
             break;
 
         case MSP_SET_PID_CONTROLLER:

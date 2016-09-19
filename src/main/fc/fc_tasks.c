@@ -45,7 +45,7 @@ cfTask_t cfTasks[] = {
 
     [TASK_GYROPID] = {
         .taskName = "GYRO/PID",
-        .taskFunc = taskMainPidLoopChecker,
+        .taskFunc = taskMainPidLoopCheck,
         .desiredPeriod = TASK_PERIOD_MS(1),
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
@@ -55,6 +55,21 @@ cfTask_t cfTasks[] = {
         .taskFunc = taskUpdateAccelerometer,
         .desiredPeriod = TASK_PERIOD_MS(1),
         .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_ATTITUDE] = {
+        .taskName = "ATTITUDE",
+        .taskFunc = taskUpdateAttitude,
+        .desiredPeriod = 1000000 / 100,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_RX] = {
+        .taskName = "RX",
+        .checkFunc = taskUpdateRxCheck,
+        .taskFunc = taskUpdateRxMain,
+        .desiredPeriod = 1000000 / 50,          // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_SERIAL] = {
@@ -78,14 +93,6 @@ cfTask_t cfTasks[] = {
         .taskFunc = taskUpdateBattery,
         .desiredPeriod = TASK_PERIOD_MS(20),
         .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_RX] = {
-        .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
-        .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,          // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
 #ifdef GPS

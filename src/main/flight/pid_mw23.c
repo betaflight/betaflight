@@ -79,6 +79,8 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 {
     UNUSED(rxConfig);
 
+    pidInitFilters(pidProfile);
+
     int axis, prop = 0;
     int32_t rc, error, errorAngle, delta, gyroError;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
@@ -145,10 +147,10 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         // Delta from measurement
         delta = -(gyroError - lastErrorForDelta[axis]);
         lastErrorForDelta[axis] = gyroError;
-        if (pidProfile->dterm_lpf) {
+        if (pidProfile->dterm_lpf_hz) {
             // Dterm delta low pass
             DTerm = delta;
-            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf, dT)) * 3;  // Keep same scaling as unfiltered DTerm
+            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf_hz, dT)) * 3;  // Keep same scaling as unfiltered DTerm
         } else {
             // When dterm filter disabled apply moving average to reduce noise
             DTerm  = delta1[axis] + delta2[axis] + delta;

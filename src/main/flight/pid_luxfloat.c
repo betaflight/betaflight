@@ -74,11 +74,21 @@ static const float luxITermScale = 1000000.0f / 0x1000000;
 static const float luxDTermScale = (0.000001f * (float)0xFFFF) / 512;
 static const float luxGyroScale = 16.4f / 4; // the 16.4 is needed because mwrewrite does not scale according to the gyro model gyro.scale
 
+float getdT (void)
+{
+    static float dT;
+    if (!dT) dT = (float)targetPidLooptime * 0.000001f;
+
+    return dT;
+}
+
 STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProfile, float gyroRate, float angleRate)
 {
     static float lastRateForDelta[3];
 
     SET_PID_LUX_FLOAT_CORE_LOCALS(axis);
+
+    pidInitFilters(pidProfile);
 
     const float rateError = angleRate - gyroRate;
 
@@ -86,8 +96,8 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
     // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
     if (axis == YAW) {
-        if (pidProfile->yaw_lpf) {
-            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf, dT);
+        if (pidProfile->yaw_lpf_hz) {
+            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, dT);
         }
         if (pidProfile->yaw_p_limit && motorCount >= 4) {
             PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
@@ -123,11 +133,11 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
             delta = rateError - lastRateForDelta[axis];
             lastRateForDelta[axis] = rateError;
         }
-        // Divide delta by dT to get differential (ie dr/dt)
-        delta *= (1.0f / dT);
-        if (pidProfile->dterm_lpf) {
+        // Divide delta by targetLooptime to get differential (ie dr/dt)
+        delta *= (1.0f / getdT());
+        if (pidProfile->dterm_lpf_hz) {
             // DTerm delta low pass filter
-            delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf, dT);
+            delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, dT);
         }
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
         DTerm = constrainf(DTerm, -PID_MAX_D, PID_MAX_D);

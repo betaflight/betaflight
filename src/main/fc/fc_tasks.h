@@ -22,12 +22,13 @@ typedef enum {
     TASK_SYSTEM = 0,
     TASK_GYROPID,
     TASK_ACCEL,
+    TASK_ATTITUDE,
+    TASK_RX,
     TASK_SERIAL,
+    TASK_BATTERY,
 #ifdef BEEPER
     TASK_BEEPER,
 #endif
-    TASK_BATTERY,
-    TASK_RX,
 #ifdef GPS
     TASK_GPS,
 #endif
@@ -60,12 +61,15 @@ typedef enum {
     TASK_COUNT
 } cfTaskId_e;
 
-void taskMainPidLoopChecker(void);
+void taskSystem(void);
+void taskMainPidLoopCheck(void);
 void taskUpdateAccelerometer(void);
+void taskUpdateAttitude(void);
+bool taskUpdateRxCheck(uint32_t currentDeltaTime);
+void taskUpdateRxMain(void);
 void taskHandleSerial(void);
 void taskUpdateBeeper(void);
 void taskUpdateBattery(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
 void taskUpdateRxMain(void);
 void taskProcessGPS(void);
 void taskUpdateCompass(void);
@@ -76,4 +80,3 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
-void taskSystem(void);
