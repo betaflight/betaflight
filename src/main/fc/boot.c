@@ -545,9 +545,9 @@ void init(void)
     }
 #endif
 
-    gyroSetSampleRate(gyroConfig()->gyro_lpf, imuConfig()->gyro_sync_denom);   // Set gyro sampling rate divider before initialization
+    uint32_t targetLooptime = gyroSetSampleRate(gyroConfig()->gyro_lpf, imuConfig()->gyro_sync_denom);   // Set gyro sampling rate divider before initialization
 
-    if (!sensorsAutodetect()) {
+    if (!sensorsAutodetect(targetLooptime)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }

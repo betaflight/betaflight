@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(void);
+bool sensorsAutodetect(uint32_t targetLooptime);

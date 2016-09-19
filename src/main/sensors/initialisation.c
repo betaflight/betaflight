@@ -25,7 +25,6 @@
 #include "config/parameter_group.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 
 #include "drivers/gpio.h"
 #include "drivers/system.h"
@@ -71,9 +70,6 @@
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
 #include "sensors/initialisation.h"
-
-#include "flight/imu.h" // FIXME for imuConfig() so we can get gyro_sync_denom
-
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -689,7 +685,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 #endif
 }
 
-bool sensorsAutodetect(void)
+bool sensorsAutodetect(uint32_t targetLooptime)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -705,8 +701,10 @@ bool sensorsAutodetect(void)
     if (!detectGyro()) {
         return false;
     }
+
+    gyro.targetLooptime = targetLooptime;  // Set gyro sample rate before initialisation
+
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.targetLooptime = gyroSetSampleRate(gyroConfig()->gyro_lpf, imuConfig()->gyro_sync_denom);    // Set gyro sample rate before initialisation
     gyro.init(gyroConfig()->gyro_lpf);
     gyroInit();
 
