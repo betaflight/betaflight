@@ -991,7 +991,9 @@ void taskUpdateBaro(uint32_t currentTime)
 
     if (sensors(SENSOR_BARO)) {
         const uint32_t newDeadline = baroUpdate();
-        rescheduleTask(TASK_SELF, newDeadline);
+        if (newDeadline != 0) {
+            rescheduleTask(TASK_SELF, newDeadline);
+        }
     }
 }
 #endif
