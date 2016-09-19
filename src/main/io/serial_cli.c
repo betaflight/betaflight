@@ -3737,6 +3737,7 @@ static void cliResource(char *cmdline)
         if (strcasecmp(pch, "NONE") == 0) {
             *tag = IOTAG_NONE;
             cliPrintf("Resource is freed!");
+            return;
         } else {
             uint8_t port = (*pch)-'A';
             if (port < 8) {
@@ -3749,12 +3750,14 @@ static void cliResource(char *cmdline)
                         cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
                     } else {
                         cliPrintf("Resource is invalid!");
-                        return;
                     }
+                    return;
                 }
             }
         }
     }
+
+    cliShowParseError();
 }
 #endif
 
