@@ -153,7 +153,7 @@
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN                PC0
-#define RSSI_ADC_GPIO_PIN           PB1
+#define RSSI_ADC_PIN                PB1
 #define CURRENT_METER_ADC_PIN       PA5
 
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_SOFTSERIAL | FEATURE_TELEMETRY)
