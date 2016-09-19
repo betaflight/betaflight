@@ -35,8 +35,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
@@ -48,8 +46,8 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/boardalignment.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -77,7 +75,6 @@
 
 #include "config/config.h"
 #include "config/config_eeprom.h"
-
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -93,8 +90,6 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 #endif
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
-void targetConfiguration(master_t *config);
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
