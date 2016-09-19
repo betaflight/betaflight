@@ -71,14 +71,14 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
     .gyro_soft_lpf_hz = 90,    // software based lpf filter for gyro
     .gyro_soft_notch_hz = 0,
-    .gyro_soft_notch_cutoff = 130,
+    .gyro_soft_notch_cutoff_hz = 130,
 
     .gyroMovementCalibrationThreshold = 32,
 );
 
 void gyroInit(void)
 {
-    float gyroSoftNotchQ = filterGetNotchQ(gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff);
+    float gyroSoftNotchQ = filterGetNotchQ(gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
 
     if (gyroConfig()->gyro_soft_lpf_hz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {

@@ -40,7 +40,7 @@ typedef struct gyroConfig_s {
     uint8_t gyro_soft_type;                     // Gyro Filter Type
     uint16_t gyro_soft_lpf_hz;                  // Software based gyro filter in hz
     uint16_t gyro_soft_notch_hz;                // Biquad gyro notch hz
-    uint16_t gyro_soft_notch_cutoff;            // Biquad gyro notch low cutoff
+    uint16_t gyro_soft_notch_cutoff_hz;            // Biquad gyro notch low cutoff in hz
 } gyroConfig_t;
 
 PG_DECLARE(gyroConfig_t, gyroConfig);
