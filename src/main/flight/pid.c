@@ -66,7 +66,7 @@ pt1Filter_t deltaFilter[3];
 pt1Filter_t yawFilter;
 biquadFilter_t dtermFilterLpf[3];
 biquadFilter_t dtermFilterNotch[3];
-static bool dtermNotchInitialised, dtermBiquadLpfInitialised;
+bool dtermNotchInitialised, dtermBiquadLpfInitialised;
 
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,

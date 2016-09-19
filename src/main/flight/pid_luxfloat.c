@@ -62,6 +62,10 @@ extern float lastITermf[3], ITermLimitf[3];
 extern pt1Filter_t deltaFilter[3];
 extern pt1Filter_t yawFilter;
 
+extern bool dtermNotchInitialised, dtermBiquadLpfInitialised;
+extern biquadFilter_t dtermFilterNotch[3];
+extern biquadFilter_t dtermFilterLpf[3];
+
 extern uint8_t motorCount;
 
 #ifdef BLACKBOX
@@ -135,9 +139,17 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         }
         // Divide delta by targetLooptime to get differential (ie dr/dt)
         delta *= (1.0f / getdT());
+
+        // Filter delta
+        if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
+
         if (pidProfile->dterm_lpf_hz) {
-            // DTerm delta low pass filter
-            delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, dT);
+            if (dtermBiquadLpfInitialised) {
+                delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+            } else {
+                // DTerm delta low pass filter
+                delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+            }
         }
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
         DTerm = constrainf(DTerm, -PID_MAX_D, PID_MAX_D);
