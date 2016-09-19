@@ -60,7 +60,7 @@ cfTask_t cfTasks[] = {
     [TASK_ATTITUDE] = {
         .taskName = "ATTITUDE",
         .taskFunc = taskUpdateAttitude,
-        .desiredPeriod = 1000000 / 100,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
@@ -68,7 +68,7 @@ cfTask_t cfTasks[] = {
         .taskName = "RX",
         .checkFunc = taskUpdateRxCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,          // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .desiredPeriod = TASK_PERIOD_HZ(50),          // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -79,6 +79,14 @@ cfTask_t cfTasks[] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
+    [TASK_BATTERY] = {
+        .taskName = "BATTERY",
+        .taskFunc = taskUpdateBattery,
+        .desiredPeriod = TASK_PERIOD_MS(20),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
@@ -87,13 +95,6 @@ cfTask_t cfTasks[] = {
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
-
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = TASK_PERIOD_MS(20),
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
 
 #ifdef GPS
     [TASK_GPS] = {
