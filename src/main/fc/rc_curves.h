@@ -19,7 +19,7 @@
 
 struct controlRateConfig_s;
 struct escAndServoConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct escAndServoConfig_s *escAndServoConfig);
+void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorAndServoConfig_s *motorAndServoConfig);
 
 int16_t rcLookupThrottle(int32_t tmp);
 

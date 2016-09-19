@@ -31,7 +31,7 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -72,7 +72,7 @@
 #include "bus_bst.h"
 #include "i2c_bst.h"
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorAndServoConfig_t *motorAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define BST_PROTOCOL_VERSION                0
 
@@ -749,9 +749,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
         case BST_MISC:
             bstWrite16(masterConfig.rxConfig.midrc);
 
-            bstWrite16(masterConfig.escAndServoConfig.minthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.maxthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.mincommand);
+            bstWrite16(masterConfig.motorAndServoConfig.minthrottle);
+            bstWrite16(masterConfig.motorAndServoConfig.maxthrottle);
+            bstWrite16(masterConfig.motorAndServoConfig.mincommand);
 
             bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1062,7 +1062,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorAndServoConfig, &currentProfile->pidProfile);
                 } else {
                     ret = BST_FAILED;
                 }
@@ -1114,9 +1114,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             if (tmp < 1600 && tmp > 1400)
                 masterConfig.rxConfig.midrc = tmp;
 
-            masterConfig.escAndServoConfig.minthrottle = bstRead16();
-            masterConfig.escAndServoConfig.maxthrottle = bstRead16();
-            masterConfig.escAndServoConfig.mincommand = bstRead16();
+            masterConfig.motorAndServoConfig.minthrottle = bstRead16();
+            masterConfig.motorAndServoConfig.maxthrottle = bstRead16();
+            masterConfig.motorAndServoConfig.mincommand = bstRead16();
 
             masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
 

@@ -30,7 +30,7 @@
 #endif
 
 typedef struct beeperConfig_s {
-    ioTag_t ioTag;
+    ioTag_t tag;
     unsigned isInverted : 1;
     unsigned isOD : 1;
 } beeperConfig_t;

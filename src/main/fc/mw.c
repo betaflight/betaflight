@@ -53,7 +53,7 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/gimbal.h"

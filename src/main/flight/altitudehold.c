@@ -40,7 +40,7 @@
 #include "rx/rx.h"
 
 #include "fc/rc_controls.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -60,19 +60,19 @@ int32_t vario = 0;                      // variometer in cm/s
 static barometerConfig_t *barometerConfig;
 static pidProfile_t *pidProfile;
 static rcControlsConfig_t *rcControlsConfig;
-static escAndServoConfig_t *escAndServoConfig;
+static motorAndServoConfig_t *motorAndServoConfig;
 
 void configureAltitudeHold(
         pidProfile_t *initialPidProfile,
         barometerConfig_t *intialBarometerConfig,
         rcControlsConfig_t *initialRcControlsConfig,
-        escAndServoConfig_t *initialEscAndServoConfig
+        motorAndServoConfig_t *initialmotorAndServoConfig
 )
 {
     pidProfile = initialPidProfile;
     barometerConfig = intialBarometerConfig;
     rcControlsConfig = initialRcControlsConfig;
-    escAndServoConfig = initialEscAndServoConfig;
+    motorAndServoConfig = initialmotorAndServoConfig;
 }
 
 #if defined(BARO) || defined(SONAR)
@@ -100,7 +100,7 @@ static void applyMultirotorAltHold(void)
                 AltHold = EstAlt;
                 isAltHoldChanged = 0;
             }
-            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+	        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig->minthrottle, motorAndServoConfig->maxthrottle);
         }
     } else {
         // slow alt changes, mostly used for aerial photography
@@ -114,7 +114,7 @@ static void applyMultirotorAltHold(void)
             velocityControl = 0;
             isAltHoldChanged = 0;
         }
-        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+	    rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorAndServoConfig->minthrottle, motorAndServoConfig->maxthrottle);
     }
 }
 

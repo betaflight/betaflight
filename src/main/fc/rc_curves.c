@@ -23,7 +23,7 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 
 #include "fc/rc_curves.h"
 #include "fc/rc_controls.h"
@@ -34,10 +34,10 @@
 #define THROTTLE_LOOKUP_LENGTH 12
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
+void generateThrottleCurve(controlRateConfig_t *controlRateConfig, motorAndServoConfig_t *motorAndServoConfig)
 {
     uint8_t i;
-    uint16_t minThrottle = (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) ? PWM_RANGE_MIN : escAndServoConfig->minthrottle);
+    uint16_t minThrottle = (feature(FEATURE_3D && IS_RC_MODE_ACTIVE(BOX3DDISABLESWITCH)) ? PWM_RANGE_MIN : motorAndServoConfig->minthrottle);
 
     for (i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         int16_t tmp = 10 * i - controlRateConfig->thrMid8;
@@ -47,7 +47,7 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
         if (tmp < 0)
             y = controlRateConfig->thrMid8;
         lookupThrottleRC[i] = 10 * controlRateConfig->thrMid8 + tmp * (100 - controlRateConfig->thrExpo8 + (int32_t) controlRateConfig->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = minThrottle + (int32_t) (escAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = minThrottle + (int32_t) (motorAndServoConfig->maxthrottle - minThrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 }
 

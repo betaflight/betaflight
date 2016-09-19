@@ -51,7 +51,7 @@
 
 #include "drivers/buf_writer.h"
 
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "fc/rc_controls.h"
@@ -669,24 +669,19 @@ const clivalue_t valueTable[] = {
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
+    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-#ifdef CC3D
-    { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
-#endif
-    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200, 32000 } },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
+    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorAndServoConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorAndServoConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorAndServoConfig.motor_pwm_rate, .config.minmax = { 200, 32000 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
@@ -795,10 +790,13 @@ const clivalue_t valueTable[] = {
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
+
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE, &masterConfig.motorAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO, PWM_RANGE_MAX } },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE, &masterConfig.motorAndServoConfig.servo_pwm_rate, .config.minmax = { 50, 498 } },
 #endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
@@ -1209,12 +1207,12 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
     serialConfig_t *serialConfigDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
-	serialConfig = &masterConfig.serialConfig;
+    serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-	serialConfigDefault = &defaultConfig->serialConfig;
-	equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+    serialConfigDefault = &defaultConfig->serialConfig;
+    equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
             && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
             && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
             && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
@@ -1494,10 +1492,10 @@ static void cliAdjustmentRange(char *cmdline)
 
 static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
 {
-	char buf0[8];
-	char buf1[8];
-	char buf2[8];
-	char buf3[8];
+    char buf0[8];
+    char buf1[8];
+    char buf2[8];
+    char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (masterConfig.customMotorMixer[i].throttle == 0.0f)
             break;
@@ -1537,7 +1535,7 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-		printMotorMix(DUMP_MASTER, NULL);
+        printMotorMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
@@ -1586,7 +1584,7 @@ static void cliMotorMix(char *cmdline)
             if (check != 4) {
                 cliShowParseError();
             } else {
-		        printMotorMix(DUMP_MASTER, NULL);
+                printMotorMix(DUMP_MASTER, NULL);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -1921,11 +1919,11 @@ static void cliServo(char *cmdline)
 static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
-		servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
-		servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+        servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
+        servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
         if (customServoMixer.rate == 0) {
             break;
-		}
+        }
 
         bool equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
             && customServoMixer.inputSource == customServoMixerDefault.inputSource
@@ -1935,7 +1933,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
             && customServoMixer.max == customServoMixerDefault.max
             && customServoMixer.box == customServoMixerDefault.box;
 
-		const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
+        const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
             customServoMixerDefault.targetChannel,
@@ -1958,7 +1956,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-	cliPrint("\r\n");
+    cliPrint("\r\n");
 
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -1986,7 +1984,7 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-		printServoMix(DUMP_MASTER, NULL);
+        printServoMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
@@ -2331,7 +2329,7 @@ static void cliVtx(char *cmdline)
 static void printName(uint8_t dumpMask)
 {
     bool equalsDefault = strlen(masterConfig.name) == 0;
-	cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
 }
 
 static void cliName(char *cmdline)
@@ -2559,7 +2557,7 @@ static void cliMap(char *cmdline)
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Map: ");
-	uint32_t i;
+    uint32_t i;
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
@@ -2709,7 +2707,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mixer\r\n");
 #endif
-		bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
+        bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
@@ -2722,33 +2720,33 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo\r\n");
 #endif
-		printServo(dumpMask, &defaultConfig);
+        printServo(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo mix\r\n");
 #endif
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-		printServoMix(dumpMask, &defaultConfig);
+        printServoMix(dumpMask, &defaultConfig);
 #endif
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# feature\r\n");
 #endif
-		printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &defaultConfig);
 
 #ifdef BEEPER
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# beeper\r\n");
 #endif
-		printBeeper(dumpMask, &defaultConfig);
+        printBeeper(dumpMask, &defaultConfig);
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
 #endif
-		printMap(dumpMask, &defaultConfig);
+        printMap(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");
@@ -3403,7 +3401,6 @@ static void cliGet(char *cmdline)
         }
     }
 
-
     if (matchedCommands) {
         return;
     }
@@ -3634,21 +3631,125 @@ void cliProcess(void)
 }
 
 #if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+
+typedef struct {
+    const uint8_t owner;
+    ioTag_t *ptr;
+    const uint8_t maxIndex;
+} cliResourceValue_t;
+
+const cliResourceValue_t resourceTable[] = {
+#ifdef BEEPER
+    { OWNER_BEEPER, &masterConfig.beeperConfig.tag, 0 },
+#endif // BEEPER
+    { OWNER_MOTOR, &masterConfig.motorAndServoConfig.motorTags[0], MAX_SUPPORTED_MOTORS },
+#ifdef USE_SERVOS
+    { OWNER_SERVO,  &masterConfig.motorAndServoConfig.servoTags[0], MAX_SUPPORTED_SERVOS },
+#endif
+};
+
 static void cliResource(char *cmdline)
 {
-    UNUSED(cmdline);
-    cliPrintf("IO:\r\n----------------------\r\n");
-    for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
-        const char* owner;
-        owner = ownerNames[ioRecs[i].owner];
+    int len;
+    len = strlen(cmdline);
 
-        const char* resource;
-        resource = resourceNames[ioRecs[i].resource];
+    if (len == 0) {
+        cliPrintf("IO:\r\n----------------------\r\n");
+        for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+            const char* owner;
+            owner = ownerNames[ioRecs[i].owner];
 
-        if (ioRecs[i].index > 0) {
-            cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+            const char* resource;
+            resource = resourceNames[ioRecs[i].resource];
+
+            if (ioRecs[i].index > 0) {
+                cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+            } else {
+                cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+            }
+        }
+        cliPrintf("\r\nUse: 'resource list' to see how to change resources.\r\n");
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+        for (uint8_t i = 0; i < ARRAYLEN(resourceTable); i++) {
+            const char* owner;
+            owner = ownerNames[resourceTable[i].owner];
+
+            if (resourceTable[i].maxIndex > 0) {
+                for (int index = 0; index < resourceTable[i].maxIndex; index++) {
+                    
+                    if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr + index))) {
+                        continue;
+                    }
+                    
+                    IO_t io = IOGetByTag(*(resourceTable[i].ptr + index));
+                    if (!io) {
+                        continue;
+                    }
+                    cliPrintf("resource %s %d %c%02d\r\n", owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                }
+            } else {
+                if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr))) {
+                    continue;
+                }
+                IO_t io = IOGetByTag(*resourceTable[i].ptr);
+                cliPrintf("resource %s %c%02d\r\n", owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+            }
+        }
+        return;
+    }
+
+    uint8_t resourceIndex = 0;
+    int index = 0;
+    char *pch = NULL;
+    char *saveptr;
+    
+    pch = strtok_r(cmdline, " ", &saveptr);
+    for (resourceIndex = 0; ; resourceIndex++) {
+        if (resourceIndex >= ARRAYLEN(resourceTable)) {
+            cliPrint("Invalid resource\r\n");
+            return;
+        }
+        
+        if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
+            break;
+        }
+    }
+
+    if (resourceTable[resourceIndex].maxIndex > 0) {
+        pch = strtok_r(NULL, " ", &saveptr);
+        index = atoi(pch);
+        
+        if (index <= 0 || index > resourceTable[resourceIndex].maxIndex) {
+            cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
+            return;
+        }
+    }
+
+    pch = strtok_r(NULL, " ", &saveptr);
+    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
+    
+    uint8_t pin = 0;
+    if (strlen(pch) > 0) {
+        if (strcasecmp(pch, "NONE") == 0) {
+            *tag = IOTAG_NONE;
+            cliPrintf("Resource is freed!");
         } else {
-            cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+            uint8_t port = (*pch)-'A';
+            if (port < 8) {
+                pch++;
+                pin = atoi(pch);
+                if (pin < 16) {
+                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin))); 
+                    if (rec) {
+                        *tag = DEFIO_TAG_MAKE(port, pin);
+                        cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
+                    } else {
+                        cliPrintf("Resource is invalid!");
+                        return;
+                    }
+                }
+            }                            
         }
     }
 }

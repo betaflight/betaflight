@@ -54,7 +54,7 @@ void beeperInit(const beeperConfig_t *config)
 #ifndef BEEPER
     UNUSED(config);
 #else
-    beeperIO = IOGetByTag(config->ioTag);
+    beeperIO = IOGetByTag(config->tag);
     beeperInverted = config->isInverted;
 
     if (beeperIO) {

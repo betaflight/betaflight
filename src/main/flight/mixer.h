@@ -178,7 +178,7 @@ typedef struct servoParam_s {
 } __attribute__ ((__packed__)) servoParam_t;
 
 struct gimbalConfig_s;
-struct escAndServoConfig_s;
+struct motorAndServoConfig_s;
 struct rxConfig_s;
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
@@ -187,14 +187,15 @@ void writeServos(void);
 void filterServos(void);
 #endif
 
+extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-struct escAndServoConfig_s;
+struct motorAndServoConfig_s;
 struct rxConfig_s;
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
-        struct escAndServoConfig_s *escAndServoConfigToUse,
+        struct motorAndServoConfig_s *motorAndServoConfigToUse,
         mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse,
         struct rxConfig_s *rxConfigToUse);
@@ -202,7 +203,7 @@ void mixerUseConfigs(
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 #ifdef USE_SERVOS
-void servoInit(servoMixer_t *customServoMixers);
+void servoMixerInit(servoMixer_t *customServoMixers);
 struct servoParam_s;
 struct gimbalConfig_s;
 void servoUseConfigs(struct servoParam_s *servoConfToUse, struct gimbalConfig_s *gimbalConfigToUse);
@@ -210,9 +211,11 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 #endif
+
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 struct pwmOutputConfiguration_s;
-void mixerUsePWMOutputConfiguration(struct pwmOutputConfiguration_s *pwmOutputConfiguration, bool use_unsyncedPwm);
+
+void mixerUsePWMOutputConfiguration(uint8_t servoCount, bool use_unsyncedPwm);
 void mixerResetDisarmedMotors(void);
 void mixTable(void *pidProfilePtr);
 void syncMotors(bool enabled);

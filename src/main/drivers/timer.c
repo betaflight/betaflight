@@ -509,8 +509,6 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
 
-
-
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + timHw->channel);
@@ -783,4 +781,14 @@ void timerForceOverflow(TIM_TypeDef *tim)
         // Force an overflow by setting the UG bit
         tim->EGR |= TIM_EGR_UG;
     }
+}
+
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_t flag)
+{
+    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].tag == tag && (timerHardware[i].output & flag) == flag) {
+            return &timerHardware[i];
+        }
+    }
+    return NULL;
 }

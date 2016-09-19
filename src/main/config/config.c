@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -52,7 +53,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -235,18 +236,70 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
-void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
+void resetMotorAndServoConfig(motorAndServoConfig_t *config)
 {
 #ifdef BRUSHED_MOTORS
-    escAndServoConfig->minthrottle = 1000;
+    config->minthrottle = 1000;
+    config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+    config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    config->use_unsyncedPwm = true;
 #else
-    escAndServoConfig->minthrottle = 1070;
+    config->minthrottle = 1070;
+    config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+    config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
-    escAndServoConfig->maxthrottle = 2000;
-    escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->maxEscThrottleJumpMs = 0;
+    
+    config->maxthrottle = 2000;
+    config->mincommand = 1000;
+    config->maxEscThrottleJumpMs = 0;
+
+#ifdef USE_SERVOS
+    config->servoCenterPulse = 1500;
+    config->servo_pwm_rate = 50;
+#endif
+
+#ifdef MOTOR1
+    config->motorTags[0] = IO_TAG(MOTOR1);
+#endif
+#ifdef MOTOR2
+    config->motorTags[1] = IO_TAG(MOTOR2);
+#endif
+#ifdef MOTOR3
+    config->motorTags[2] = IO_TAG(MOTOR3);
+#endif
+#ifdef MOTOR4
+    config->motorTags[3] = IO_TAG(MOTOR4);
+#endif
+    
+#if !defined(MOTOR1) && !defined(MOTOR2) && !defined(MOTOR3) && !defined(MOTOR4)
+    /* 
+        By default just set the motors to all the available output channels.
+        Only those motors needed (e.g. 4 for a quad) will be initialised.
+    */
+    uint8_t motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
+        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+            config->motorTags[motorIndex] = timerHardware[i].tag;
+            motorIndex++;
+        }
+    }
+#endif
 }
+
+#ifdef BEEPER
+void resetBeeperConfig(beeperConfig_t *beeperConfig)
+{
+
+#ifdef BEEPER_INVERTED
+    beeperConfig->isInverted = true;
+#else
+    beeperConfig->isInverted = false;
+#endif
+
+    beeperConfig->isOD = false;
+    beeperConfig->tag = IO_TAG(BEEPER);
+}
+#endif
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {
@@ -368,7 +421,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return masterConfig.escAndServoConfig.minthrottle;
+    return masterConfig.motorAndServoConfig.minthrottle;
 }
 
 // Default settings
@@ -388,6 +441,10 @@ void createDefaultConfig(master_t *config)
     resetOsdConfig(&config->osdProfile);
 #endif
 
+#ifdef BEEPER 
+    resetBeeperConfig(&config->beeperConfig);
+#endif
+    
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
@@ -485,23 +542,8 @@ void createDefaultConfig(master_t *config)
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-    resetEscAndServoConfig(&config->escAndServoConfig);
+    resetMotorAndServoConfig(&config->motorAndServoConfig);
     resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef BRUSHED_MOTORS
-    config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
-    config->use_unsyncedPwm = true;
-#else
-    config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
-#endif
-
-    config->servo_pwm_rate = 50;
-
-#ifdef CC3D
-    config->use_buzzer_p6 = 0;
-#endif
 
 #ifdef GPS
     // gps/nav stuff
@@ -618,7 +660,6 @@ void createDefaultConfig(master_t *config)
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
-
    
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
@@ -639,7 +680,7 @@ static void resetConf(void)
 
 void activateControlRateConfig(void)
 {
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
+    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorAndServoConfig);
 }
 
 void activateConfig(void)
@@ -652,7 +693,7 @@ void activateConfig(void)
 
     useRcControlsConfig(
         masterConfig.modeActivationConditions,
-        &masterConfig.escAndServoConfig,
+        &masterConfig.motorAndServoConfig,
         &currentProfile->pidProfile
     );
 
@@ -674,7 +715,7 @@ void activateConfig(void)
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig,
+        &masterConfig.motorAndServoConfig,
         &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
@@ -700,7 +741,7 @@ void activateConfig(void)
         &currentProfile->pidProfile,
         &masterConfig.barometerConfig,
         &masterConfig.rcControlsConfig,
-        &masterConfig.escAndServoConfig
+        &masterConfig.motorAndServoConfig
     );
 
 #ifdef BARO

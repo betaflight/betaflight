@@ -37,7 +37,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
@@ -54,7 +53,7 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"

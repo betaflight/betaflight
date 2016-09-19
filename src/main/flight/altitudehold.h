@@ -25,8 +25,8 @@ void calculateEstimatedAltitude(uint32_t currentTime);
 struct pidProfile_s;
 struct barometerConfig_s;
 struct rcControlsConfig_s;
-struct escAndServoConfig_s;
-void configureAltitudeHold(struct pidProfile_s *initialPidProfile, struct barometerConfig_s *intialBarometerConfig, struct rcControlsConfig_s *initialRcControlsConfig, struct escAndServoConfig_s *initialEscAndServoConfig);
+struct motorAndServoConfig_s;
+void configureAltitudeHold(struct pidProfile_s *initialPidProfile, struct barometerConfig_s *intialBarometerConfig, struct rcControlsConfig_s *initialRcControlsConfig, struct motorAndServoConfig_s *initialMotorAndServoConfig);
 
 struct airplaneConfig_t;
 void applyAltHold(struct airplaneConfig_s *airplaneConfig);

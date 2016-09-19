@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/sound_beeper.h"
+
 // System-wide
 typedef struct master_s {
     uint8_t version;
@@ -28,13 +30,9 @@ typedef struct master_s {
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    escAndServoConfig_t escAndServoConfig;
     flight3DConfig_t flight3DConfig;
 
-    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
-    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t motor_pwm_protocol;             // Pwm Protocol
-    uint8_t use_unsyncedPwm;
+    motorAndServoConfig_t motorAndServoConfig;
 
 #ifdef USE_SERVOS
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
@@ -42,10 +40,6 @@ typedef struct master_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-#endif
-
-#ifdef CC3D
-    uint8_t use_buzzer_p6;
 #endif
 
     // global sensor-related stuff
@@ -91,6 +85,7 @@ typedef struct master_s {
 
 #ifdef GPS
     gpsProfile_t gpsProfile;
+    gpsConfig_t gpsConfig;
 #endif
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
@@ -99,7 +94,6 @@ typedef struct master_s {
 
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
-
 
     uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
@@ -110,14 +104,14 @@ typedef struct master_s {
     mixerConfig_t mixerConfig;
     airplaneConfig_t airplaneConfig;
 
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
-
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
+#ifdef BEEPER
+    beeperConfig_t beeperConfig;
+#endif
+    
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
     hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
@@ -164,11 +158,10 @@ typedef struct master_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
+    char name[MAX_NAME_LENGTH + 1];
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
-   
-    char name[MAX_NAME_LENGTH+1];
-   
 } master_t;
 
 extern master_t masterConfig;

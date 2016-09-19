@@ -51,7 +51,7 @@
 #include "rx/msp.h"
 
 #include "io/beeper.h"
-#include "io/escservo.h"
+#include "io/motorservo.h"
 #include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -110,7 +110,7 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorAndServoConfig_t *motorAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -926,9 +926,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
         serialize16(masterConfig.rxConfig.midrc);
 
-        serialize16(masterConfig.escAndServoConfig.minthrottle);
-        serialize16(masterConfig.escAndServoConfig.maxthrottle);
-        serialize16(masterConfig.escAndServoConfig.mincommand);
+        serialize16(masterConfig.motorAndServoConfig.minthrottle);
+        serialize16(masterConfig.motorAndServoConfig.maxthrottle);
+        serialize16(masterConfig.motorAndServoConfig.mincommand);
 
         serialize16(masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1288,9 +1288,9 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.gyro_sync_denom);
             serialize8(masterConfig.pid_process_denom);
         }
-        serialize8(masterConfig.use_unsyncedPwm);
-        serialize8(masterConfig.motor_pwm_protocol);
-        serialize16(masterConfig.motor_pwm_rate);
+        serialize8(masterConfig.motorAndServoConfig.use_unsyncedPwm);
+        serialize8(masterConfig.motorAndServoConfig.motor_pwm_protocol);
+        serialize16(masterConfig.motorAndServoConfig.motor_pwm_rate);
         break;
     case MSP_FILTER_CONFIG :
         headSerialReply(13);
@@ -1419,7 +1419,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorAndServoConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1475,9 +1475,9 @@ static bool processInCommand(void)
         if (tmp < 1600 && tmp > 1400)
             masterConfig.rxConfig.midrc = tmp;
 
-        masterConfig.escAndServoConfig.minthrottle = read16();
-        masterConfig.escAndServoConfig.maxthrottle = read16();
-        masterConfig.escAndServoConfig.mincommand = read16();
+        masterConfig.motorAndServoConfig.minthrottle = read16();
+        masterConfig.motorAndServoConfig.maxthrottle = read16();
+        masterConfig.motorAndServoConfig.mincommand = read16();
 
         masterConfig.failsafeConfig.failsafe_throttle = read16();
 
@@ -1890,9 +1890,9 @@ static bool processInCommand(void)
     case MSP_SET_ADVANCED_CONFIG :
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
-        masterConfig.use_unsyncedPwm = read8();
-        masterConfig.motor_pwm_protocol = read8();
-        masterConfig.motor_pwm_rate = read16();
+        masterConfig.motorAndServoConfig.use_unsyncedPwm = read8();
+        masterConfig.motorAndServoConfig.motor_pwm_protocol = read8();
+        masterConfig.motorAndServoConfig.motor_pwm_rate = read16();
         break;
     case MSP_SET_FILTER_CONFIG :
         masterConfig.gyro_soft_lpf_hz = read8();
