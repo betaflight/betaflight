@@ -20,7 +20,6 @@
 #if defined(STM32F745xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
-#include "portable.h"
 
 // Chip Unique ID on F7
 #define U_ID_0 (*(uint32_t*)0x1ff0f420)
