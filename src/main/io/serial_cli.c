@@ -2495,13 +2495,12 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
+    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d%%\r\n",
         millis() / 1000,
         vbat,
         batteryCellCount,
         getBatteryStateString(),
-        averageSystemLoadPercent / 100,
-        averageSystemLoadPercent % 100
+        constrain(averageSystemLoadPercent, 0, 100)
     );
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
