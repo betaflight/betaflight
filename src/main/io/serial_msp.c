@@ -1197,10 +1197,11 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_OSD_CONFIG:
 #ifdef OSD
-        headSerialReply(7 + (OSD_MAX_ITEMS * 2));
+        headSerialReply(8 + (OSD_MAX_ITEMS * 2));
         serialize8(1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
         serialize8(masterConfig.osdProfile.video_system);
+        serialize8(masterConfig.osdProfile.units);
         serialize8(masterConfig.osdProfile.rssi_alarm);
         serialize16(masterConfig.osdProfile.cap_alarm);
         serialize16(masterConfig.osdProfile.time_alarm);
@@ -1585,6 +1586,7 @@ static bool processInCommand(void)
         // set all the other settings
         if ((int8_t)addr == -1) {
             masterConfig.osdProfile.video_system = read8();
+            masterConfig.osdProfile.units = read8();
         }
         // set a position setting
         else {

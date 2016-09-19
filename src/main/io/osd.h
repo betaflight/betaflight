@@ -17,8 +17,14 @@ typedef enum {
     OSD_MAH_DRAWN,
     OSD_GPS_SPEED,
     OSD_GPS_SATS,
+    OSD_ALTITUDE,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
+
+typedef enum {
+    OSD_UNIT_IMPERIAL,
+    OSD_UNIT_METRIC
+} osd_unit_t;
 
 typedef struct {
 	uint16_t item_pos[OSD_MAX_ITEMS];
@@ -26,7 +32,10 @@ typedef struct {
 	uint8_t rssi_alarm;
 	uint16_t cap_alarm;
 	uint16_t time_alarm;
+	uint16_t alt_alarm;
+
 	uint8_t video_system;
+    osd_unit_t units;
 } osd_profile;
 
 typedef struct {

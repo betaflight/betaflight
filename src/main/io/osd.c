@@ -520,6 +520,7 @@ OSD_Entry MenuLayout[]=
 OSD_UINT8_Struct RSSI_entry = {&OSD_cfg.rssi_alarm,5,90,5};
 OSD_UINT16_Struct CAP_entry = {&OSD_cfg.cap_alarm, 50, 30000, 50};
 OSD_UINT16_Struct FLY_TIME_entry = {&OSD_cfg.time_alarm, 1, 200, 1};
+OSD_UINT16_Struct ALT_ALARM_entry = {&OSD_cfg.alt_alarm, 1, 200, 1};
 
 OSD_Entry MenuAlarms[]=
 {
@@ -527,6 +528,7 @@ OSD_Entry MenuAlarms[]=
 	{"RSSI", OME_UINT8, NULL, &RSSI_entry},
 	{"MAIN BATT.", OME_UINT16, NULL, &CAP_entry},
 	{"FLY TIME", OME_UINT16, NULL, &FLY_TIME_entry},
+	{"MAX ALTITUDE", OME_UINT16, NULL, &ALT_ALARM_entry},
 	{"BACK", OME_Back, NULL, NULL},
 	{NULL, OME_END, NULL, NULL}
 };
@@ -550,6 +552,7 @@ OSD_Entry MenuLayoutPos[]=
 	{"GPS SPEED", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
 	{"GPS SATS.", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
 #endif
+	{"ALTITUDE", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
 	{"BACK", OME_Back, NULL, NULL},
 	{NULL, OME_END, NULL, NULL}
 };
@@ -575,6 +578,7 @@ OSD_Entry MenuLayoutActiv[]=
 	{"GPS SPEED", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
 	{"GPS SATS.", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
 #endif
+	{"ALTITUDE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
 	{"BACK", OME_Back, NULL, NULL},
 	{NULL, OME_END, NULL, NULL}
 };
@@ -596,10 +600,12 @@ void resetOsdConfig(osd_profile *osdProfile)
 	osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(15,3);
 	osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2,2);
 	osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2,12);
+	osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1,5);
 
 	osdProfile->rssi_alarm = 20;
 	osdProfile->cap_alarm = 2200;
 	osdProfile->time_alarm = 10; //in minutes
+	osdProfile->alt_alarm = 100; //meters or feet depend on configuration
 
 	osdProfile->video_system = 0;
 }
@@ -777,6 +783,25 @@ void OSD_SPEED(void)
 
 #endif
 
+void OSD_BARO_ALTITUDE(void)
+{
+
+	char buff[16];
+	int32_t alt = BaroAlt; // Metre x 100
+	char unitSym = 0xC; // m
+
+	if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
+		return;
+
+    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+		alt = (alt * 328) / 100; // Convert to feet x 100
+        unitSym = 0xF; // ft
+	}
+
+    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ALTITUDE]), OSD_Y(OSD_cfg.item_pos[OSD_ALTITUDE]), buff);
+}
+
 void OSD_ON_TIME(void)
 {
 	char buff[8];
@@ -873,6 +898,7 @@ void OSD_VTX_CHAN(void)
 void OSD_UpdateAlarms(void)
 {
 	uint16_t rval = rssi * 100 / 1024; //zmiana zakresu
+	int32_t alt = BaroAlt/100;
 
 	if (rval < OSD_cfg.rssi_alarm)
 		OSD_cfg.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
@@ -898,6 +924,16 @@ void OSD_UpdateAlarms(void)
 		OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
 	else
 		OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+
+    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+		alt = (alt * 328) / 100; // Convert to feet
+	}
+
+	if (alt >= OSD_cfg.alt_alarm)
+		OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+	else
+		OSD_cfg.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+
 }
 
 void OSD_TurnOffAlarms(void)
@@ -947,6 +983,7 @@ void OSD_DrawElements(void)
 		OSD_SPEED();
 	}
 #endif
+	OSD_BARO_ALTITUDE();
 }
 
 uint8_t OSDHandleKey(uint8_t key)
