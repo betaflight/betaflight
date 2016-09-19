@@ -111,8 +111,16 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;
+
     filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
     filter->d2 = filter->b2 * input - filter->a2 * result;
+
+#ifdef DEBUG_BIQUAD_INFINITY
+    if (!isfinite(filter->d1) || !isfinite(filter->d2) ) {
+        failureMode(FAILURE_DEVELOPER);
+    }
+#endif
+
     return result;
 }
 
