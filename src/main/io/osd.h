@@ -30,7 +30,6 @@ typedef struct {
 } osd_profile;
 
 typedef struct {
-	int16_t max_height;
 	int16_t max_speed;
 	int16_t min_voltage;	// /10
 	int16_t max_current;  // /10
