@@ -188,7 +188,7 @@ FONT.preview = function($el) {
   $el.empty()
   for (var i = 0; i < SYM.LOGO; i++) {
     var url = FONT.data.character_image_urls[i];
-    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"></img>');
+    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"/>');
   }
 };
 
@@ -339,7 +339,12 @@ OSD.updateDisplaySize = function() {
 
 OSD.msp = {
   encodeOther: function() {
-    return [-1, OSD.data.video_system, OSD.data.unit_mode];
+    var result = [-1, OSD.data.video_system];
+    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+      result.push(OSD.data.unit_mode);
+    }
+
+    return result;
   },
   encode: function(display_item) {
     return [
@@ -352,12 +357,16 @@ OSD.msp = {
   decode: function(payload) {
     var view = payload.data;
     var d = OSD.data;
+    var i = 2;
     d.compiled_in = view.getUint8(0, 1);
     d.video_system = view.getUint8(1, 1);
-    d.unit_mode = view.getUint8(2, 1);
+    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+      d.unit_mode = view.getUint8(2, 1);
+      i = 3;
+    }
     d.display_items = [];
     // start at the offset from the other fields
-    for (var i = 3; i < view.byteLength; i = i + 2) {
+    for (; i < view.byteLength; i = i + 2) {
       var v = view.getInt16(i, 1)
       var j = d.display_items.length;
       var c = OSD.constants.DISPLAY_FIELDS[j];
@@ -451,7 +460,7 @@ TABS.osd.initialize = function (callback) {
             // show Betaflight logo in preview
             var $previewLogo = $('.preview-logo').empty();
             $previewLogo.append(
-              $('<input type="checkbox" name="preview-logo" class="togglesmall"></input>')
+              $('<input type="checkbox" name="preview-logo" class="togglesmall"/>')
               .attr('checked', OSD.data.preview_logo)
               .change(function(e) {
                 OSD.data.preview_logo = $(this).attr('checked') == undefined;
@@ -499,11 +508,11 @@ TABS.osd.initialize = function (callback) {
 
             // display fields on/off and position
             var $displayFields = $('.display-fields').empty();
-            for (let field of OSD.data.display_items) {
+            for (var field in OSD.data.display_items) {
               var checked = (-1 != field.position) ? 'checked' : '';
               var $field = $('<div class="display-field"/>');
               $field.append(
-                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"></input>')
+                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"/>')
                 .data('field', field)
                 .attr('checked', field.position != -1)
                 .change(function(e) {
@@ -527,7 +536,7 @@ TABS.osd.initialize = function (callback) {
               $field.append('<label for="'+field.name+'">'+inflection.titleize(field.name)+'</label>');
               if (field.positionable && field.position != -1) {
                 $field.append(
-                  $('<input type="number" class="'+field.index+' position"></input>')
+                  $('<input type="number" class="'+field.index+' position"/>')
                   .data('field', field)
                   .val(field.position)
                   .change($.debounce(250, function(e) {
@@ -560,7 +569,7 @@ TABS.osd.initialize = function (callback) {
               }
             }
             // draw all the displayed items and the drag and drop preview images
-            for(let field of OSD.data.display_items) {
+            for(var field in OSD.data.display_items) {
               if (!field.preview || field.position == -1) { continue; }
               var j = (field.position >= 0) ? field.position : field.position + OSD.data.display_size.total;
               // create the preview image
@@ -609,7 +618,7 @@ TABS.osd.initialize = function (callback) {
                 var field = OSD.data.preview[i][0];
                 var charCode = OSD.data.preview[i][1];
               }
-              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'></img></div>')
+              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'/></div>')
                 .on('dragover', OSD.GUI.preview.onDragOver)
                 .on('dragleave', OSD.GUI.preview.onDragLeave)
                 .on('drop', OSD.GUI.preview.onDrop)
