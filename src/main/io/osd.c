@@ -787,6 +787,19 @@ void updateOsd(void)
             sprintf(line+2, "%3d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
             max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]);
         }
+
+        if (masterConfig.osdProfile.item_pos[OSD_ALTITUDE] != -1) {
+            int16_t alt = BaroAlt; // Metre x 100
+            char unitSym = 0xC; // m
+            if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+                alt = (alt * 328) / 100; // Convert to feet x 100
+                unitSym = 0xF; // ft
+            }
+
+            sprintf(line, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+            max7456_write_string(line, masterConfig.osdProfile.item_pos[OSD_ALTITUDE]);
+        }
+
         if (masterConfig.osdProfile.item_pos[OSD_TIMER] != -1) {
             if (armed) {
                 seconds = armed_seconds + ((now-armed_at) / 1000000);
@@ -834,6 +847,7 @@ void osdInit(void)
 void resetOsdConfig(osd_profile *osdProfile)
 {
     osdProfile->video_system = AUTO;
+    osdProfile->units = OSD_UNIT_IMPERIAL;
     osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE]  = -29;
     osdProfile->item_pos[OSD_RSSI_VALUE]         = -59;
     osdProfile->item_pos[OSD_TIMER]              = -39;
@@ -848,5 +862,6 @@ void resetOsdConfig(osd_profile *osdProfile)
     osdProfile->item_pos[OSD_CURRENT_DRAW]       = -23;
     osdProfile->item_pos[OSD_MAH_DRAWN]          = -18;
     osdProfile->item_pos[OSD_CRAFT_NAME]         = 1;
+    osdProfile->item_pos[OSD_ALTITUDE]           = 60;
 }
 #endif
