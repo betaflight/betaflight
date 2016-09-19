@@ -53,13 +53,19 @@ typedef enum {
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
     OSD_CRAFT_NAME,
+    OSD_ALTITUDE,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
 
+typedef enum {
+    OSD_UNIT_IMPERIAL,
+    OSD_UNIT_METRIC
+} osd_unit_t;
 
 typedef struct {
     // AUTO / PAL / NTSC in VIDEO_TYPES enum
     uint8_t video_system;
+    osd_unit_t units;
     int16_t item_pos[OSD_MAX_ITEMS];
 } osd_profile;
 
