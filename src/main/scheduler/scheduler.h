@@ -68,7 +68,6 @@ typedef struct {
 #endif
 } cfTask_t;
 
-extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
 
 extern cfTask_t* taskQueueArray[];
