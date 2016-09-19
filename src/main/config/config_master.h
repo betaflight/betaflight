@@ -20,7 +20,7 @@
 #include "drivers/sound_beeper.h"
 
 // System-wide
-typedef struct master_t {
+typedef struct master_s {
     uint8_t version;
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE

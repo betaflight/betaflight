@@ -17,7 +17,5 @@
 
 #pragma once
 
-struct rxConfig_s;
-struct rxRuntimeConfig_s;
-bool xBusInit(struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 uint8_t xBusFrameStatus(void);
