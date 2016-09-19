@@ -179,31 +179,31 @@ void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     pwmWriteFuncPtr pwmWritePtr;
         
     switch (motorConfig->motor_pwm_protocol) {
-        default:
-        case (PWM_TYPE_ONESHOT125):
-            timerMhzCounter = ONESHOT125_TIMER_MHZ;
-            pwmWritePtr = pwmWriteOneShot125;
-            break;
-        case (PWM_TYPE_ONESHOT42):
-            timerMhzCounter = ONESHOT42_TIMER_MHZ;
-            pwmWritePtr = pwmWriteOneShot42;
-            break;
-        case (PWM_TYPE_MULTISHOT):
-            timerMhzCounter = MULTISHOT_TIMER_MHZ;
-            pwmWritePtr = pwmWriteMultiShot;
-            break;
-        case (PWM_TYPE_BRUSHED):
-            timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
-            pwmWritePtr = pwmWriteBrushed;
-            motorConfig->use_unsyncedPwm = true;
-            idlePulse = 0;
-            break;
-        case (PWM_TYPE_CONVENTIONAL):
-            timerMhzCounter = PWM_TIMER_MHZ;
-            pwmWritePtr = pwmWriteStandard;
-            motorConfig->use_unsyncedPwm = true;
-            idlePulse = 0;
-            break;
+    default:
+    case (PWM_TYPE_ONESHOT125):
+        timerMhzCounter = ONESHOT125_TIMER_MHZ;
+        pwmWritePtr = pwmWriteOneShot125;
+        break;
+    case (PWM_TYPE_ONESHOT42):
+        timerMhzCounter = ONESHOT42_TIMER_MHZ;
+        pwmWritePtr = pwmWriteOneShot42;
+        break;
+    case (PWM_TYPE_MULTISHOT):
+        timerMhzCounter = MULTISHOT_TIMER_MHZ;
+        pwmWritePtr = pwmWriteMultiShot;
+        break;
+    case (PWM_TYPE_BRUSHED):
+        timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
+        pwmWritePtr = pwmWriteBrushed;
+        motorConfig->use_unsyncedPwm = true;
+        idlePulse = 0;
+        break;
+    case (PWM_TYPE_CONVENTIONAL):
+        timerMhzCounter = PWM_TIMER_MHZ;
+        pwmWritePtr = pwmWriteStandard;
+        motorConfig->use_unsyncedPwm = true;
+        idlePulse = 0;
+        break;
     }
     
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
@@ -221,7 +221,7 @@ void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         const timerHardware_t *timer = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
         
         if (timer == NULL) {
-            /* flag failure and disable ability to arm */
+            /* TODO: flag failure and disable ability to arm */
             break;
         }
         
@@ -266,7 +266,7 @@ void servoInit(escAndServoConfig_t *servoConfig)
         const timerHardware_t *timer = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
         
         if (timer == NULL) {
-            /* flag failure and disable ability to arm */
+            /* TODO: flag failure and disable ability to arm */
             break;
         }
         
