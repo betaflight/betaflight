@@ -415,7 +415,6 @@ COMMON_SRC = \
             drivers/gyro_sync.c \
             drivers/io.c \
             drivers/light_led.c \
-            drivers/pwm_mapping.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
             drivers/rcc.c \

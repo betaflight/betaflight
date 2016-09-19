@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -239,14 +240,44 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
 {
 #ifdef BRUSHED_MOTORS
     escAndServoConfig->minthrottle = 1000;
+    escAndServoConfig->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+    escAndServoConfig->motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    escAndServoConfig->use_unsyncedPwm = true;
 #else
     escAndServoConfig->minthrottle = 1070;
+    escAndServoConfig->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+    escAndServoConfig->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
 #endif
     escAndServoConfig->maxthrottle = 2000;
     escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
     escAndServoConfig->maxEscThrottleJumpMs = 0;
+
+#ifdef USE_SERVOS
+    escAndServoConfig->servoCenterPulse = 1500;
+    escAndServoConfig->servo_pwm_rate = 50;
+#endif
+
+    uint8_t motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS && i < 4; i++) {
+        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+            escAndServoConfig->motorTags[motorIndex] = timerHardware[i].tag;
+            motorIndex++;
+        }
+    }
 }
+
+#ifdef BEEPER
+void resetBeeperConfig(beeperConfig_t *beeperConfig)
+{
+#ifdef BEEPER_INVERTED
+    beeperConfig->isInverted = true;
+#else
+    beeperConfig->isInverted = false;
+#endif
+    beeperConfig->isOD = false;
+    beeperConfig->ioTag = IO_TAG(BEEPER);
+}
+#endif
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {
@@ -487,21 +518,6 @@ void createDefaultConfig(master_t *config)
     // Motor/ESC/Servo
     resetEscAndServoConfig(&config->escAndServoConfig);
     resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef BRUSHED_MOTORS
-    config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
-    config->use_unsyncedPwm = true;
-#else
-    config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
-#endif
-
-    config->servo_pwm_rate = 50;
-
-#ifdef CC3D
-    config->use_buzzer_p6 = 0;
-#endif
 
 #ifdef GPS
     // gps/nav stuff

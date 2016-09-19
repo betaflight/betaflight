@@ -42,7 +42,6 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -242,115 +241,41 @@ void init(void)
 
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
-    servoInit(masterConfig.customServoMixer);
+    servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-    drv_pwm_config_t pwm_params;
-    memset(&pwm_params, 0, sizeof(pwm_params));
-
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
-        const sonarHardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
-        if (sonarHardware) {
-            pwm_params.useSonar = true;
-            pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
-            pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
-        }
+    uint16_t idlePulse = masterConfig.escAndServoConfig.mincommand;
+    if (feature(FEATURE_3D)) {
+        idlePulse = masterConfig.flight3DConfig.neutral3d;
     }
-#endif
 
-    // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
-        pwm_params.airplane = true;
-    else
-        pwm_params.airplane = false;
-#if defined(USE_UART2) && defined(STM32F10X)
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+    if (masterConfig.escAndServoConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
+        featureClear(FEATURE_3D);
+        idlePulse = 0; // brushed motors
+    }
+#ifdef USE_QUAD_MIXER_ONLY
+    motorInit(&masterConfig.escAndServoConfig, idlePulse, 4);
+#else
+    motorInit(&masterConfig.escAndServoConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
 #endif
-#ifdef STM32F303xC
-    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
-#endif
-#if defined(USE_UART2) && defined(STM32F40_41xxx)
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
-#endif
-#if defined(USE_UART6) && defined(STM32F40_41xxx)
-    pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
-#endif
-    pwm_params.useVbat = feature(FEATURE_VBAT);
-    pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
-    pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
-    pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
-    pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
-    pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
-    pwm_params.usePPM = feature(FEATURE_RX_PPM);
-    pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
 
 #ifdef USE_SERVOS
-    pwm_params.useServos = isMixerUsingServos();
-    pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
-#endif
-
-    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
-
-    // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
-    pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
-    pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
-    pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
-    if (feature(FEATURE_3D))
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
-        featureClear(FEATURE_3D);
-        pwm_params.idlePulse = 0; // brushed motors
+    if (isMixerUsingServos()) {
+        //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
+        servoInit(&masterConfig.escAndServoConfig);
     }
-#ifdef CC3D
-    pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
 #endif
+
 #ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
 #endif
 
-    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
-    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
-
-    mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
+    mixerUsePWMOutputConfiguration(masterConfig.escAndServoConfig.use_unsyncedPwm);
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperConfig_t beeperConfig = {
-        .ioTag = IO_TAG(BEEPER),
-#ifdef BEEPER_INVERTED
-        .isOD = false,
-        .isInverted = true
-#else
-        .isOD = true,
-        .isInverted = false
-#endif
-    };
-#ifdef NAZE
-    if (hardwareRevision >= NAZE32_REV5) {
-        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.isOD = false;
-        beeperConfig.isInverted = true;
-    }
-#endif
-/* temp until PGs are implemented. */
-#ifdef BLUEJAYF4
-    if (hardwareRevision <= BJF4_REV2) {
-        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
-    }
-#endif
-#ifdef CC3D
-    if (masterConfig.use_buzzer_p6 == 1)
-        beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
-#endif
-
-    beeperInit(&beeperConfig);
+    beeperInit(&masterConfig.beeperConfig);
 #endif
 
 #ifdef INVERTER

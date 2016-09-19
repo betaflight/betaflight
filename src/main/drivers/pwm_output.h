@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "io/escservo.h"
+#include "drivers/timer.h"
+
 typedef enum {
     PWM_TYPE_CONVENTIONAL = 0,
     PWM_TYPE_ONESHOT125,
@@ -24,6 +27,8 @@ typedef enum {
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED
 } motorPwmProtocolTypes_e;
+
+#define PWM_TIMER_MHZ 1
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
@@ -38,9 +43,20 @@ typedef enum {
 #endif
 
 struct timerHardware_s;
-void pwmBrushedMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate);
-void pwmBrushlessMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmFastPwmMotorConfig(const struct timerHardware_s *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, uint8_t fastPwmProtocolType);
+typedef void(*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+
+typedef struct {
+    volatile timCCR_t *ccr;
+    TIM_TypeDef *tim;
+    uint16_t period;
+    pwmWriteFuncPtr pwmWritePtr;
+    bool enabled;
+    IO_t io;
+} pwmOutputPort_t;
+
+void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount);
+void servoInit(escAndServoConfig_t *servoConfig);
+
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 void pwmWriteMotor(uint8_t index, uint16_t value);
@@ -49,5 +65,7 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
 
 void pwmWriteServo(uint8_t index, uint16_t value);
 
+pwmOutputPort_t *pwmGetMotors();
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
+
