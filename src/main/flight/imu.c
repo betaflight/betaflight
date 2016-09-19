@@ -374,7 +374,7 @@ static bool isMagnetometerHealthy(void)
     return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
 }
 
-static void imuCalculateEstimatedAttitude(void)
+static void imuCalculateEstimatedAttitude(uint32_t currentTime)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
@@ -382,7 +382,6 @@ static void imuCalculateEstimatedAttitude(void)
     bool useMag = false;
     bool useYaw = false;
 
-    uint32_t currentTime = micros();
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
@@ -420,10 +419,10 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateAttitude(void)
+void imuUpdateAttitude(uint32_t currentTime)
 {
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
-        imuCalculateEstimatedAttitude();
+        imuCalculateEstimatedAttitude(currentTime);
     } else {
         accSmooth[X] = 0;
         accSmooth[Y] = 0;

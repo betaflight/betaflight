@@ -151,10 +151,9 @@ typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t
 struct modeActivationCondition_s;
 void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(rxConfig_t *rxConfigToUse);
-void updateRx(uint32_t currentTime);
+bool rxUpdate(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);

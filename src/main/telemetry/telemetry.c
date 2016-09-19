@@ -90,10 +90,10 @@ void telemetryCheckState(void)
     checkJetiExBusTelemetryState();
 }
 
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
-    handleHoTTTelemetry();
+    handleHoTTTelemetry(currentTime);
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleJetiExBusTelemetry();

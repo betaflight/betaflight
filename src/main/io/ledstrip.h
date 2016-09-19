@@ -165,7 +165,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
-void updateLedStrip(void);
+void updateLedStrip(uint32_t currentTime);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 

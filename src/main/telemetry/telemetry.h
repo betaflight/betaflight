@@ -53,7 +53,7 @@ extern serialPort_t *telemetrySharedPort;
 
 void telemetryCheckState(void);
 struct rxConfig_s;
-void telemetryProcess(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void telemetryProcess(uint32_t currentTime, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
