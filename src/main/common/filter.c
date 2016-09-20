@@ -26,7 +26,7 @@
 #define M_PI_FLOAT  3.14159265358979323846f
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
-#define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
+#define BIQUAD_Q (1.0f / sqrtf(2.0f))     /* quality factor - butterworth*/
 
 // PT1 Low Pass filter
 
