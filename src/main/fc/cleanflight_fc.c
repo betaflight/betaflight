@@ -777,7 +777,7 @@ void subTaskMotorUpdate(void)
 
 
 
-uint8_t setPidUpdateCountDown(void) {
+uint8_t pidCalculateCountdown(void) {
     if (gyroConfig()->gyro_soft_lpf_hz) {
         return imuConfig()->pid_process_denom - 1;
     } else {
@@ -808,7 +808,7 @@ void taskMainPidLoopCheck(void)
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
     } else {
-        pidUpdateCountdown = setPidUpdateCountDown();
+        pidUpdateCountdown = pidCalculateCountdown();
         subTaskPidController();
         subTaskMotorUpdate();
         runTaskMainSubprocesses = true;
