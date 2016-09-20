@@ -284,9 +284,9 @@ static void dispatchMeasurementReply(ibusAddress_t address) {
         {
             //TODO: handle arithmetric better
             #ifdef BARO
-                uint16_t temperature = (baroTemperature + 50) / 10;
+                int temperature = (baroTemperature + 50) / 10;
             #else
-                uint16_t temperature = telemTemperature1;
+                int temperature = telemTemperature1;
             #endif
             sendIbusMeasurement(address, temperature + IBUS_TEMPERATURE_OFFSET);
         }
