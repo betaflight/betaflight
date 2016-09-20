@@ -556,6 +556,13 @@ void init(void)
 
     flashLedsAndBeep();
 
+    if (gyroConfig()->gyro_lpf > GYRO_LPF_256HZ && gyroConfig()->gyro_lpf < GYRO_LPF_NONE) {
+        imuConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        imuConfig()->gyro_sync_denom = 1;
+    }
+
+    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom); // Initialize pid looptime
+
 #ifdef USE_SERVOS
     mixerInitialiseServoFiltering(targetPidLooptime);
 #endif
@@ -645,13 +652,6 @@ void init(void)
 
     afatfs_init();
 #endif
-
-    if (gyroConfig()->gyro_lpf > GYRO_LPF_256HZ && gyroConfig()->gyro_lpf < GYRO_LPF_NONE) {
-        imuConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        imuConfig()->gyro_sync_denom = 1;
-    }
-
-    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom); // Initialize pid looptime
 
 #ifdef BLACKBOX
     initBlackbox();
