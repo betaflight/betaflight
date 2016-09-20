@@ -781,7 +781,7 @@ uint8_t pidCalculateCountdown(void) {
     if (gyroConfig()->gyro_soft_lpf_hz) {
         return imuConfig()->pid_process_denom - 1;
     } else {
-        return 1;
+        return 0; // boris says: `prevent unnecessary gyro reads while there is no filtering enabled at all`
     }
 }
 
