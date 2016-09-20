@@ -37,7 +37,7 @@ extern "C" {
     #include "drivers/adc.h"
     #include "drivers/serial.h"
     #include "drivers/video_textscreen.h"
-    #include "../../main/sensors/amperage.h"
+    #include "sensors/amperage.h"
     #include "sensors/voltage.h"
     #include "sensors/battery.h"
     #include "osd/fc_state.h"

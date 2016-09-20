@@ -55,7 +55,7 @@ extern "C" {
     #include "sensors/barometer.h"
     #include "sensors/compass.h"
     #include "sensors/gyro.h"
-    #include "../../main/sensors/amperage.h"
+    #include "sensors/amperage.h"
     #include "sensors/voltage.h"
     #include "sensors/battery.h"
     #include "sensors/boardalignment.h"

@@ -25,7 +25,7 @@ extern "C" {
     #include "common/filter.h"
 
     #include "sensors/voltage.h"
-    #include "../../main/sensors/amperage.h"
+    #include "sensors/amperage.h"
     #include "sensors/battery.h"
 
     #include "io/beeper.h"
