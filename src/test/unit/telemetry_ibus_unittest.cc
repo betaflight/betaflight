@@ -19,14 +19,14 @@
 #include <string.h>
 
 extern "C" {
-    #include <platform.h>
-    #include "config/parameter_group.h"
-    #include "drivers/serial.h"
-    #include "io/serial.h"
-    #include "fc/rc_controls.h"
-    #include "telemetry/telemetry.h"
-    #include "telemetry/ibus.h"
-    #include "sensors/barometer.h"
+#include <platform.h>
+#include "config/parameter_group.h"
+#include "drivers/serial.h"
+#include "io/serial.h"
+#include "fc/rc_controls.h"
+#include "telemetry/telemetry.h"
+#include "telemetry/ibus.h"
+#include "sensors/barometer.h"
 }
 
 #include "unittest_macros.h"
@@ -42,7 +42,7 @@ extern "C" {
     int32_t baroTemperature = 50;
 }
 
-        
+
 #define SERIAL_BUFFER_SIZE 256
 
 typedef struct serialPortStub_s {
@@ -60,38 +60,42 @@ serialPortConfig_t serialTestInstanceConfig = {
     .identifier = SERIAL_PORT_DUMMY_IDENTIFIER
 };
 
-static serialPortConfig_t * findSerialPortConfig_stub_retval;
+static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static portSharing_e determinePortSharing_stub_retval;
 static bool openSerial_called = false;
 static bool telemetryDetermineEnabledState_stub_retval;
 
-portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function) {
+portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function)
+{
     EXPECT_EQ(portConfig, findSerialPortConfig_stub_retval);
     EXPECT_EQ(function, FUNCTION_TELEMETRY_IBUS);
     return PORTSHARING_UNUSED;
 }
 
 
-bool telemetryDetermineEnabledState(portSharing_e portSharing) {
+bool telemetryDetermineEnabledState(portSharing_e portSharing)
+{
     (void) portSharing;
     return telemetryDetermineEnabledState_stub_retval;
 }
 
 
-serialPortConfig_t *findSerialPortConfig(uint16_t mask) {
+serialPortConfig_t *findSerialPortConfig(uint16_t mask)
+{
     EXPECT_EQ(mask, FUNCTION_TELEMETRY_IBUS);
     return findSerialPortConfig_stub_retval ;
 }
 
 
-serialPort_t * openSerialPort(
+serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
     serialReceiveCallbackPtr callback,
     uint32_t baudrate,
     portMode_t mode,
     portOptions_t options
-) {
+)
+{
     openSerial_called = true;
     (void) callback;
     EXPECT_EQ(identifier, SERIAL_PORT_DUMMY_IDENTIFIER);
@@ -103,7 +107,8 @@ serialPort_t * openSerialPort(
 }
 
 
-void closeSerialPort(serialPort_t *serialPort) {
+void closeSerialPort(serialPort_t *serialPort)
+{
     EXPECT_EQ(serialPort, &serialTestInstance);
 }
 
@@ -122,7 +127,7 @@ uint8_t serialRxBytesWaiting(serialPort_t *instance)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_GE(serialReadStub.end, serialReadStub.pos);
     int ret = serialReadStub.end - serialReadStub.pos;
-    if(ret >= 0) return ret;
+    if (ret >= 0) return ret;
     return 0;
 }
 
@@ -154,15 +159,18 @@ void serialTestResetPort()
 
 
 
-class IbusTelemteryInitUnitTest : public ::testing::Test {
+class IbusTelemteryInitUnitTest : public ::testing::Test
+{
 protected:
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         serialTestResetPort();
     }
 };
 
 
-TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled) {
+TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled)
+{
     findSerialPortConfig_stub_retval = NULL;
     telemetryDetermineEnabledState_stub_retval = false;
 
@@ -180,7 +188,8 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitNotEnabled) {
 }
 
 
-TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
+TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled)
+{
     findSerialPortConfig_stub_retval = &serialTestInstanceConfig;
 
     //given stuff in serial read
@@ -198,16 +207,19 @@ TEST_F(IbusTelemteryInitUnitTest, Test_IbusInitEnabled) {
 
 
 
-class IbusTelemetryProtocolUnitTestBase : public ::testing::Test {
+class IbusTelemetryProtocolUnitTestBase : public ::testing::Test
+{
 protected:
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         ibusTelemetryConfig()->report_cell_voltage = false;
         serialTestResetBuffers();
         initIbusTelemetry();
         checkIbusTelemetryState();
     }
 
-    void checkResponseToCommand(const char * rx, uint8_t rxCnt, const char * expectedTx, uint8_t expectedTxCnt) {
+    void checkResponseToCommand(const char *rx, uint8_t rxCnt, const char *expectedTx, uint8_t expectedTxCnt)
+    {
         serialTestResetBuffers();
 
         memcpy(serialReadStub.buffer, rx, rxCnt);
@@ -220,12 +232,14 @@ protected:
         EXPECT_EQ(0, memcmp(serialWriteStub.buffer, expectedTx, expectedTxCnt));
     }
 
-    void setupBaseAddressOne(void) {
+    void setupBaseAddressOne(void)
+    {
         checkResponseToCommand("\x04\x81\x7a\xff", 4, "\x04\x81\x7a\xff", 4);
         serialTestResetBuffers();
     }
 
-    void setupBaseAddressThree(void) {
+    void setupBaseAddressThree(void)
+    {
         checkResponseToCommand("\x04\x83\x78\xff", 4, "\x04\x83\x78\xff", 4);
         serialTestResetBuffers();
     }
@@ -233,9 +247,11 @@ protected:
 
 
 
-class IbusTelemteryProtocolUnitTest : public ::IbusTelemetryProtocolUnitTestBase {
+class IbusTelemteryProtocolUnitTest : public ::IbusTelemetryProtocolUnitTestBase
+{
 protected:
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         IbusTelemetryProtocolUnitTestBase::SetUp();
         setupBaseAddressOne();
     }
@@ -293,7 +309,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattZero)
 TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementVbattCellVoltage)
 {
     ibusTelemetryConfig()->report_cell_voltage = true;
- 
+
     //Given ibus command: Sensor at address 1, please send your measurement
     //then we respond with: I'm reading 0.1 volts
     batteryCellCount = 3;
@@ -342,7 +358,7 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperatur
     //then we respond with: I'm reading 0 degrees + constant offset 0x190
     telemTemperature1 = 0;
     checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
- 
+
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond with: I'm reading 100 degrees + constant offset 0x190
     telemTemperature1 = 100;
@@ -366,9 +382,11 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementRpm)
 
 
 
-class IbusTelemteryProtocolUnitTestDaisyChained : public ::IbusTelemetryProtocolUnitTestBase {
+class IbusTelemteryProtocolUnitTestDaisyChained : public ::IbusTelemetryProtocolUnitTestBase
+{
 protected:
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         IbusTelemetryProtocolUnitTestBase::SetUp();
         setupBaseAddressThree();
     }
