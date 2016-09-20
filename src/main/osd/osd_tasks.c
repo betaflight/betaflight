@@ -37,56 +37,56 @@ cfTask_t cfTasks[] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
+        .desiredPeriod = TASK_PERIOD_MS(100),
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_CYCLE_TIME] = {
         .taskName = "CYCLE_TIME",
         .taskFunc = taskUpdateCycleTime,
-        .desiredPeriod = 1000000 / 1000, // 1khz
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_MSP_SERVER] = {
         .taskName = "MSP_SERVER",
         .taskFunc = taskMSP,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .desiredPeriod = TASK_PERIOD_HZ(100),     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_STATUS_LED] = {
         .taskName = "STATUS_LED",
         .taskFunc = taskStatusLed,
-        .desiredPeriod = 1000000 / 100,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_HARDWARE_WATCHDOG] = {
         .taskName = "HW_WATCHDOG",
         .taskFunc = taskHardwareWatchdog,
-        .desiredPeriod = 1000000 / 1,      // 1 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(1),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 30,      // 30 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(30),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_DRAW_SCREEN] = {
         .taskName = "DRAW_SCREEN",
         .taskFunc = taskDrawScreen,
-        .desiredPeriod = 1000000 / 30,      // 30 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(30),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_UPDATE_FC_STATE] = {
         .taskName = "UPDATE_FC_STATE",
         .taskFunc = taskUpdateFCState,
-        .desiredPeriod = 1000000 / 30,      // 30 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(30),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
@@ -94,7 +94,7 @@ cfTask_t cfTasks[] = {
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
         .taskFunc = taskTransponder,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz, every 4 ms
+        .desiredPeriod = TASK_PERIOD_MS(4),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -102,7 +102,7 @@ cfTask_t cfTasks[] = {
     [TASK_TEST] = {
         .taskName = "TEST",
         .taskFunc = taskTest,
-        .desiredPeriod = 1000000 / 1,      // 1 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(1),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 };
