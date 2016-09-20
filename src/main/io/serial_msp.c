@@ -484,7 +484,7 @@ void mspInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
 
-    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+    if (sensors(SENSOR_ACC) && sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
