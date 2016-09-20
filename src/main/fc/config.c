@@ -106,11 +106,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
 #endif
 
-#if defined(COLIBRI_RACE)
-    // alternative defaults settings for COLIBRI RACE targets
-    imuConfig()->looptime = 1000;
-#endif
-
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHT
 #ifdef ALIENFLIGHTF3
