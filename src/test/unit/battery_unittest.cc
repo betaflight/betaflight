@@ -218,7 +218,6 @@ TEST(BatteryTest, RollOverPattern2)
 // STUBS
 
 extern "C" {
-#include "common/filter.h"
 
 uint16_t getVoltageForADCChannel(uint8_t channel)
 {
