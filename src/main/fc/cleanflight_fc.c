@@ -788,8 +788,8 @@ uint8_t pidCalculateCountdown(void) {
 // Function for loop trigger
 void taskMainPidLoopCheck(void)
 {
-    static bool runTaskMainSubprocesses;
-    static uint8_t pidUpdateCountdown;
+    static bool runTaskMainSubprocesses = false;
+    static uint8_t pidUpdateCountdown = 0;
 
     cycleTime = getTaskDeltaTime(TASK_SELF);
 
