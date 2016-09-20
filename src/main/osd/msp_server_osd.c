@@ -127,7 +127,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, CAP_DYNBALANCE); // "capability"
             break;
 
-        case MSP_STATUS_EX:
         case MSP_STATUS:
             sbufWriteU16(dst, cycleTime);
 #ifdef USE_I2C
@@ -138,9 +137,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, 0); // sensors
             sbufWriteU32(dst, 0); // flight mode flags
             sbufWriteU8(dst, 0);  // profile index
-            if(cmd->cmd == MSP_STATUS_EX) {
-                sbufWriteU16(dst, averageSystemLoadPercent);
-            }
+            sbufWriteU16(dst, averageSystemLoadPercent);
             break;
 
         case MSP_DEBUG:
