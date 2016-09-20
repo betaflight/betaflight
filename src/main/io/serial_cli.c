@@ -920,6 +920,7 @@ const clivalue_t valueTable[] = {
     { "osd_rssi_alarm",             VAR_UINT8 | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.cap_alarm, .config.minmax = { 0, 20000 } },
     { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.time_alarm, .config.minmax = { 0, 60 } },
+    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.alt_alarm, .config.minmax = { 0, 10000 } },
 
     { "osd_main_voltage_pos",       VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, 65536 } },
     { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, 65536 } },

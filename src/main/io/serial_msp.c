@@ -1205,6 +1205,7 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.osdProfile.rssi_alarm);
         serialize16(masterConfig.osdProfile.cap_alarm);
         serialize16(masterConfig.osdProfile.time_alarm);
+        serialize16(masterConfig.osdProfile.alt_alarm);
 
         for (i = 0; i < OSD_MAX_ITEMS; i++) {
             serialize16(masterConfig.osdProfile.item_pos[i]);
