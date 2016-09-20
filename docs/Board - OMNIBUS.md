@@ -18,6 +18,9 @@ The RAM is user defined power rail, and all RAM through holes (J6, J7 and J11) a
 3. RSSI (J4)
 The pin is labelled as RSSI, but it will not be used for RSSI input for a hardware configuration limitation. In this document, the "RSSI" is used to indicate the pin location, not the function.
 
+4. UART1 in boot-loader/DFU mode
+The UART1 is scanned during boot-loader/DFU mode, together with USB for possible interaction with a host PC. It is observed that devices that autonomously transmits some data, such as GPS, will prevent the MCU to talk to the USB. It is advised not to connect or disconnect such devices to/from UART1. UART2 is safe from this catch.
+
 ## iNav Specific Target Configuration
 
 The first support for the OMNIBUS F3 appeared in BetaFlight.
