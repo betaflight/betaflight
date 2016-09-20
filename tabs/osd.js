@@ -19,6 +19,7 @@ SYM.AMP = 0x9A;
 SYM.MAH = 0x07;
 SYM.METRE = 0xC;
 SYM.FEET = 0xF;
+SYM.GPS_SAT = 0x1F;
 
 
 var FONT = FONT || {};
@@ -203,6 +204,7 @@ OSD.initData = function() {
   OSD.data = {
     video_system: null,
     unit_mode: null,
+    alarms: [],
     display_items: [],
     last_positions: {},
     preview_logo: true,
@@ -231,99 +233,174 @@ OSD.constants = {
   ],
   AHISIDEBARWIDTHPOSITION: 7,
   AHISIDEBARHEIGHTPOSITION: 3,
-  // order matters, so these are going in an array... pry could iterate the example map instead
-  DISPLAY_FIELDS: [
-    {
+
+  // All display fields, from every version, do not remove elements, only add!
+  ALL_DISPLAY_FIELDS: {
+    MAIN_BATT_VOLTAGE: {
       name: 'MAIN_BATT_VOLTAGE',
       default_position: -29,
       positionable: true,
       preview: FONT.symbol(SYM.VOLT) + '16.8'
     },
-    {
+    RSSI_VALUE: {
       name: 'RSSI_VALUE',
       default_position: -59,
       positionable: true,
       preview: FONT.symbol(SYM.RSSI) + '99'
     },
-    {
+    TIMER: {
       name: 'TIMER',
       default_position: -39,
       positionable: true,
       preview: FONT.symbol(SYM.ON_M) + ' 11:11'
     },
-    {
+    THROTTLE_POSITION: {
       name: 'THROTTLE_POSITION',
       default_position: -9,
       positionable: true,
       preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + ' 69'
     },
-    {
+    CPU_LOAD: {
       name: 'CPU_LOAD',
       default_position: 26,
       positionable: true,
       preview: '15'
     },
-    {
+    VTX_CHANNEL: {
       name: 'VTX_CHANNEL',
       default_position: 1,
       positionable: true,
       preview: 'CH:1'
     },
-    {
+    VOLTAGE_WARNING: {
       name: 'VOLTAGE_WARNING',
       default_position: -80,
       positionable: true,
       preview: 'LOW VOLTAGE'
     },
-    {
+    ARMED: {
       name: 'ARMED',
       default_position: -107,
       positionable: true,
       preview: 'ARMED'
     },
-    {
+    DIASRMED: {
       name: 'DIASRMED',
       default_position: -109,
       positionable: true,
       preview: 'DISARMED'
     },
-    {
+    ARTIFICIAL_HORIZON: {
       name: 'ARTIFICIAL_HORIZON',
       default_position: -1,
       positionable: false
     },
-    {
+    HORIZON_SIDEBARS: {
       name: 'HORIZON_SIDEBARS',
       default_position: -1,
       positionable: false
     },
-    {
+    CURRENT_DRAW: {
       name: 'CURRENT_DRAW',
       default_position: -23,
       positionable: true,
       preview: FONT.symbol(SYM.AMP) + '42.0'
     },
-    {
+    MAH_DRAWN: {
       name: 'MAH_DRAWN',
       default_position: -18,
       positionable: true,
       preview: FONT.symbol(SYM.MAH) + '690'
     },
-    {
+    CRAFT_NAME: {
       name: 'CRAFT_NAME',
       default_position: -77,
       positionable: true,
       preview: '[CRAFT_NAME]'
     },
-    {
+    ALTITUDE: {
       name: 'ALTITUDE',
       default_position: 62,
       positionable: true,
       preview: function(osd_data) {
         return '13.7' + FONT.symbol(osd_data.unit_mode === 0 ? SYM.FEET : SYM.METRE)
       }
+    },
+    ONTIME: {
+      name: 'ONTIME',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.ON_M) + '  4:11'
+    },
+    FLYTIME: {
+      name: 'FLYTIME',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.FLY_M) + '  4:11'
+    },
+    FLYMODE: {
+      name: 'FLYMODE',
+      default_position: -1,
+      positionable: true,
+      preview: 'AIR'
+    },
+    GPS_SPEED: {
+      name: 'GPS_SPEED',
+      default_position: -1,
+      positionable: true,
+      preview: '40'
+    },
+    GPS_SATS: {
+      name: 'GPS_SATS',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.GPS_SAT) + '3'
     }
-  ],
+  }
+};
+
+// Pick display fields by version, order matters, so these are going in an array... pry could iterate the example map instead
+OSD.chooseFields = function () {
+  var F = OSD.constants.ALL_DISPLAY_FIELDS;
+  if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+    OSD.constants.DISPLAY_FIELDS = [
+      F.RSSI_VALUE,
+      F.MAIN_BATT_VOLTAGE,
+      F.ARTIFICIAL_HORIZON,
+      F.HORIZON_SIDEBARS,
+      F.ONTIME,
+      F.FLYTIME,
+      F.FLYMODE,
+      F.CRAFT_NAME,
+      F.THROTTLE_POSITION,
+      F.VTX_CHANNEL,
+      F.CURRENT_DRAW,
+      F.MAH_DRAWN,
+      F.GPS_SPEED,
+      F.GPS_SATS,
+      F.ALTITUDE
+    ]
+  }
+  // version 3.0.0
+  else {
+    OSD.constants.DISPLAY_FIELDS = [
+      F.MAIN_BATT_VOLTAGE,
+      F.RSSI_VALUE,
+      F.TIMER,
+      F.THROTTLE_POSITION,
+      F.CPU_LOAD,
+      F.VTX_CHANNEL,
+      F.VOLTAGE_WARNING,
+      F.ARMED,
+      F.DIASRMED,
+      F.ARTIFICIAL_HORIZON,
+      F.HORIZON_SIDEBARS,
+      F.CURRENT_DRAW,
+      F.MAH_DRAWN,
+      F.CRAFT_NAME,
+      F.ALTITUDE
+    ]
+  }
 };
 
 OSD.updateDisplaySize = function() {
@@ -359,16 +436,21 @@ OSD.msp = {
     var view = payload.data;
     var d = OSD.data;
     var i = 2;
-    d.compiled_in = view.getUint8(0, 1);
-    d.video_system = view.getUint8(1, 1);
+    d.compiled_in = view.readU8();
+    d.video_system = view.readU8();
+
     if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
-      d.unit_mode = view.getUint8(2, 1);
-      i += 1;
+      d.unit_mode = view.readU8();
+      d.alarms = [];
+      d.alarms.push({name: 'rssi', display_name: 'Rssi', value: view.readU8()});
+      d.alarms.push({name: 'cap', display_name: 'Capacity', value: view.readU16()});
+      d.alarms.push({name: 'time', display_name: 'Minutes', value: view.readU16()});
+      i += 6;
     }
     d.display_items = [];
     // start at the offset from the other fields
     for (; i < view.byteLength; i = i + 2) {
-      var v = view.getInt16(i, 1)
+      var v = view.readU16()
       var j = d.display_items.length;
       var c = OSD.constants.DISPLAY_FIELDS[j];
       d.display_items.push({
@@ -447,6 +529,9 @@ TABS.osd.initialize = function (callback) {
           // ask for the OSD config data
           MSP.promise(MSPCodes.MSP_OSD_CONFIG)
           .then(function(info) {
+            if (!('DISPLAY_FIELDS' in OSD.constants)) {
+                OSD.chooseFields();
+            }
             if (!info.length) {
               $('.unsupported').fadeIn();
               return;
@@ -457,7 +542,7 @@ TABS.osd.initialize = function (callback) {
             // show Betaflight logo in preview
             var $previewLogo = $('.preview-logo').empty();
             $previewLogo.append(
-              $('<input type="checkbox" name="preview-logo" class="togglesmall"></input>')
+              $('<label for="preview-logo">Logo:</label><input type="checkbox" name="preview-logo" class="togglesmall"></input>')
               .attr('checked', OSD.data.preview_logo)
               .change(function(e) {
                 OSD.data.preview_logo = $(this).attr('checked') == undefined;
@@ -484,8 +569,8 @@ TABS.osd.initialize = function (callback) {
               });
             });
 
-            // units
             if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+              // units
               $('.units-container').show();
               var $unitMode = $('.units').empty();
               for (var i = 0; i < OSD.constants.UNIT_TYPES.length; i++) {
@@ -504,6 +589,17 @@ TABS.osd.initialize = function (callback) {
                   updateOsdView();
                 });
               });
+              // alarms
+              $('.alarms-container').show();
+              var $alarms = $('.alarms').empty();
+              for (var i = 0; i < OSD.data.alarms.length; i++) {
+                var alarm = OSD.data.alarms[i];
+                var $input = $('<label/>').append(
+                  $('<input name="alarm" type="number"/>'+alarm.display_name+'</label>')
+                    .val(alarm.value)
+                );
+                $alarms.append($input);
+              }
             }
 
             // display fields on/off and position
