@@ -224,14 +224,6 @@ static void validateAndFixConfig(void)
         mixerConfig()->pid_at_min_throttle = 0;
     }
 
-
-#ifdef STM32F10X
-    // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (imuConfig()->gyro_sync_denom < 2 && featureConfigured(FEATURE_GPS)) {
-        imuConfig()->gyro_sync_denom = 2;
-    }
-#endif
-
     if (gyroConfig()->gyro_soft_notch_hz < gyroConfig()->gyro_soft_notch_cutoff_hz) {
         gyroConfig()->gyro_soft_notch_hz = 0;
     }
