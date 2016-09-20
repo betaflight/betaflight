@@ -81,17 +81,20 @@ static accDeadband_t *accDeadband;
 PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
-PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+#if !defined(DEFAULT_GYRO_SYNC_DENOM) && !defined(DEFAULT_PID_PROCESS_DENOM)
+
 #ifdef STM32F10X
-    .gyro_sync_denom = 8,
-    .pid_process_denom = 1,
-#elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)
-    .gyro_sync_denom = 1,
-    .pid_process_denom = 4,
+#define DEFAULT_GYRO_SYNC_DENOM 8
+#define DEFAULT_PID_PROCESS_DENOM 1
 #else
-    .gyro_sync_denom = 4,
-    .pid_process_denom = 2,
+#define DEFAULT_GYRO_SYNC_DENOM 4
+#define DEFAULT_PID_PROCESS_DENOM 2
 #endif
+#endif
+
+PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+    .gyro_sync_denom = DEFAULT_GYRO_SYNC_DENOM,
+    .pid_process_denom = DEFAULT_PID_PROCESS_DENOM,
     .dcm_kp = 2500,                // 1.0 * 10000
     .small_angle = 25,
     .max_angle_inclination = 500,    // 50 degrees
