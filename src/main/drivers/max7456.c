@@ -17,6 +17,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 #include "version.h"
@@ -29,29 +32,44 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
+#include "drivers/gpio.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"
 
-#define DISABLE_MAX7456       IOHi(max7456CsPin)
-#define ENABLE_MAX7456        IOLo(max7456CsPin)
+//on shared SPI buss we want to change clock for OSD chip and restore for other devices
+#ifdef MAX7456_SPI_CLK
+    #define ENABLE_MAX7456        {spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLK);IOLo(max7456CsPin);}
+#else
+    #define ENABLE_MAX7456        IOLo(max7456CsPin)
+#endif
 
-uint16_t max_screen_size;
-static MAX7456_CHAR_TYPE max7456_screen[VIDEO_BUFFER_CHARS_PAL + 5];
-#define SCREEN_BUFFER ((MAX7456_CHAR_TYPE*)&max7456_screen[3])
+#ifdef MAX7456_RESTORE_CLK
+    #define DISABLE_MAX7456       {IOHi(max7456CsPin);spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_RESTORE_CLK);}
+#else
+    #define DISABLE_MAX7456       IOHi(max7456CsPin)
+#endif
 
+uint16_t max_screen_size = VIDEO_BUFFER_CHARS_PAL;
+// we write everything in SCREEN_BUFFER and then comapre
+// SCREEN_BUFFER with SHADOW_BUFFER to upgrade only changed chars
+// this solution is faster then redraw all screen
+
+static uint8_t SCREEN_BUFFER[VIDEO_BUFFER_CHARS_PAL+40]; //for faster writes we use memcpy so we need some space to don't overwrite buffer
+static uint8_t SHADOW_BUFFER[VIDEO_BUFFER_CHARS_PAL];
+
+//max chars to update in one idle
+#define MAX_CHARS2UPDATE    100
 #ifdef MAX7456_DMA_CHANNEL_TX
 volatile uint8_t dma_transaction_in_progress = 0;
 #endif
 
-static uint8_t  video_signal_type   = 0;
+static uint8_t spi_buff[MAX_CHARS2UPDATE*6];
+
+static uint8_t  video_signal_cfg   = 0;
+static uint8_t  video_signal_reg   = VIDEO_MODE_PAL | OSD_ENABLE; //PAL by default
 static uint8_t  max7456_lock        = 0;
 static IO_t max7456CsPin            = IO_NONE;
-
-
-MAX7456_CHAR_TYPE* max7456_get_screen_buffer(void) {
-    return SCREEN_BUFFER;
-}
 
 static uint8_t max7456_send(uint8_t add, uint8_t data)
 {
@@ -130,15 +148,21 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
 }
 
 void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
+
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 #ifdef MAX7456_DMA_CHANNEL_RX
         DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
-#else
+#endif
+        // make sure spi dmd transfer is complete
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_TXE) == RESET) {};
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_BSY) == SET) {};
+
         //Empty RX buffer. RX DMA takes care of it if enabled
+        //this should be done after transmission finish!!!
         while (SPI_I2S_GetFlagStatus(MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_RXNE) == SET) {
             MAX7456_SPI_INSTANCE->DR;
         }
-#endif
+
         DMA_Cmd(MAX7456_DMA_CHANNEL_TX, DISABLE);
 
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
@@ -150,56 +174,59 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
                 SPI_I2S_DMAReq_Tx, DISABLE);
 
         DISABLE_MAX7456;
-        for (uint16_t x = 0; x < max_screen_size; x++)
-            max7456_screen[x + 3] = MAX7456_CHAR(' ');
         dma_transaction_in_progress = 0;
     }
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_HTIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
 }
+
 #endif
 
-void max7456_init(uint8_t video_system)
+uint8_t max7456_get_rows_count(void)
+{
+    if (video_signal_reg & VIDEO_MODE_PAL)
+        return VIDEO_LINES_PAL;
+
+    return VIDEO_LINES_NTSC;
+}
+
+//because MAX7456 need some time to detect video system etc. we need to wait for a while to initialize it at startup
+//and in case of restart we need to reinitialize chip
+void max7456_init2(void)
 {
     uint8_t max_screen_rows;
     uint8_t srdata = 0;
     uint16_t x;
+    static uint8_t first_init = 1;
 
-#ifdef MAX7456_SPI_CS_PIN
-    max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
-#endif
-    IOInit(max7456CsPin, OWNER_OSD, RESOURCE_SPI_CS, 0);
-    IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
+    //do not init MAX before camera power up correctly
+    if (millis() < 1500)
+        return;
 
-    //Minimum spi clock period for max7456 is 100ns (10Mhz)
-    spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
-
-    delay(1000);
-    // force soft reset on Max7456
     ENABLE_MAX7456;
-    max7456_send(VM0_REG, MAX7456_RESET);
-    delay(100);
 
-    srdata = max7456_send(0xA0, 0xFF);
-    if ((0x01 & srdata) == 0x01) {     //PAL
-          video_signal_type = VIDEO_MODE_PAL;
-    }
-    else if ((0x02 & srdata) == 0x02) { //NTSC
-        video_signal_type = VIDEO_MODE_NTSC;
-    }
-
-    // Override detected type: 0-AUTO, 1-PAL, 2-NTSC
-    switch(video_system) {
+    switch(video_signal_cfg) {
         case PAL:
-            video_signal_type = VIDEO_MODE_PAL;
+            video_signal_reg = VIDEO_MODE_PAL | OSD_ENABLE;
             break;
         case NTSC:
-            video_signal_type = VIDEO_MODE_NTSC;
+            video_signal_reg = VIDEO_MODE_NTSC | OSD_ENABLE;
             break;
+        default:
+            srdata = max7456_send(MAX7456ADD_STAT, 0x00);
+            if ((0x02 & srdata) == 0x02)
+                video_signal_reg = VIDEO_MODE_NTSC | OSD_ENABLE;
     }
 
-    if (video_signal_type) { //PAL
+    if (video_signal_reg & VIDEO_MODE_PAL) { //PAL
         max_screen_size = VIDEO_BUFFER_CHARS_PAL;
         max_screen_rows = VIDEO_LINES_PAL;
-    } else {                 // NTSC
+    } else {              // NTSC
         max_screen_size = VIDEO_BUFFER_CHARS_NTSC;
         max_screen_rows = VIDEO_LINES_NTSC;
     }
@@ -210,60 +237,151 @@ void max7456_init(uint8_t video_system)
     }
 
     // make sure the Max7456 is enabled
-    max7456_send(VM0_REG, OSD_ENABLE | video_signal_type);
-
+    max7456_send(VM0_REG, video_signal_reg);
+    max7456_send(DMM_REG, CLEAR_DISPLAY);
     DISABLE_MAX7456;
-    delay(100);
 
-    for (x = 0; x < max_screen_size; x++)
-        SCREEN_BUFFER[x] = MAX7456_CHAR(' ');
-
-#ifdef MAX7456_DMA_CHANNEL_TX
-    max7456_screen[0] = (uint16_t)(MAX7456ADD_DMAH | (0 << 8));
-    max7456_screen[1] = (uint16_t)(MAX7456ADD_DMAL | (0 << 8));
-    max7456_screen[2] = (uint16_t)(MAX7456ADD_DMM | (1 << 8));
-    max7456_screen[max_screen_size + 3] = (uint16_t)(MAX7456ADD_DMDI | (0xFF << 8));
-    max7456_screen[max_screen_size + 4] = (uint16_t)(MAX7456ADD_DMM  | (0 << 8));
-
-    dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
-#endif
-}
-
-// Copy string from ram into screen buffer
-void max7456_write_string(const char *string, int16_t address) {
-    MAX7456_CHAR_TYPE *dest;
-
-    if (address >= 0)
-        dest  = SCREEN_BUFFER + address;
-    else
-        dest  = SCREEN_BUFFER + (max_screen_size + address);
-
-    while(*string && dest < (SCREEN_BUFFER + max_screen_size)) {
-        *dest++ = MAX7456_CHAR(*string++);
+    //clear shadow to force redraw all screen in non-dma mode
+    memset(SHADOW_BUFFER, 0, max_screen_size);
+    if (first_init)
+    {
+        max7456_refresh_all();
+        first_init = 0;
     }
 }
 
+
+//here we init only CS and try to init MAX for first time
+void max7456_init(uint8_t video_system)
+{
+#ifdef MAX7456_SPI_CS_PIN
+    max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
+#endif
+    IOInit(max7456CsPin, OWNER_OSD, RESOURCE_SPI_CS, 0);
+    IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
+
+    spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
+    // force soft reset on Max7456
+    ENABLE_MAX7456;
+    max7456_send(VM0_REG, MAX7456_RESET);
+    DISABLE_MAX7456;
+    video_signal_cfg = video_system;
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+    dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
+#endif
+    //real init will be made letter when driver idle detect
+}
+
+//just fill with spaces with some tricks
+void max7456_clear_screen(void)
+{
+	uint16_t x;
+	uint32_t *p = (uint32_t*)&SCREEN_BUFFER[0];
+	for (x = 0; x < VIDEO_BUFFER_CHARS_PAL/4; x++)
+		p[x] = 0x20202020;
+}
+
+uint8_t* max7456_get_screen_buffer(void) {
+    return SCREEN_BUFFER;
+}
+
+void max7456_write_char(uint8_t x, uint8_t y, uint8_t c)
+{
+	SCREEN_BUFFER[y*30+x] = c;
+}
+
+void max7456_write(uint8_t x, uint8_t y, char *buff)
+{
+	uint8_t i = 0;
+	for (i = 0; *(buff+i); i++)
+		if (x+i < 30) //do not write over screen
+			SCREEN_BUFFER[y*30+x+i] = *(buff+i);
+}
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+uint8_t max7456_dma_in_progres(void)
+{
+    return dma_transaction_in_progress;
+}
+#endif
+
 void max7456_draw_screen(void) {
+    uint8_t check;
+    static uint16_t pos = 0;
+    int k = 0, buff_len=0;
+
+    if (!max7456_lock) {
+        //-----------------detect MAX7456 fail, or initialize it at startup when it is ready--------
+        max7456_lock = 1;
+        ENABLE_MAX7456;
+        check = max7456_send(VM0_REG | 0x80, 0x00);
+        DISABLE_MAX7456;
+
+        if ( check != video_signal_reg )
+            max7456_init2();
+
+        //------------   end of (re)init-------------------------------------
+
+        for (k=0; k< MAX_CHARS2UPDATE; k++)
+        {
+            if (SCREEN_BUFFER[pos] != SHADOW_BUFFER[pos])
+            {
+                spi_buff[buff_len++] = MAX7456ADD_DMAH;
+                spi_buff[buff_len++] = pos >> 8;
+                spi_buff[buff_len++] = MAX7456ADD_DMAL;
+                spi_buff[buff_len++] = pos & 0xff;
+                spi_buff[buff_len++] = MAX7456ADD_DMDI;
+                spi_buff[buff_len++] = SCREEN_BUFFER[pos];
+                SHADOW_BUFFER[pos] = SCREEN_BUFFER[pos];
+                k++;
+            }
+
+            if (++pos >= max_screen_size) {
+                pos = 0;
+                break;
+            }
+        }
+
+        if (buff_len) {
+            #ifdef MAX7456_DMA_CHANNEL_TX
+            if (buff_len > 0)
+                max7456_send_dma(spi_buff, NULL, buff_len);
+            #else
+            ENABLE_MAX7456;
+            for (k=0; k < buff_len; k++)
+                spiTransferByte(MAX7456_SPI_INSTANCE, spi_buff[k]);
+            DISABLE_MAX7456;
+            #endif // MAX7456_DMA_CHANNEL_TX
+        }
+        max7456_lock = 0;
+    }
+}
+
+// this funcktion refresh all and should not be used when copter is armed
+void max7456_refresh_all(void)
+{
     if (!max7456_lock) {
 #ifdef MAX7456_DMA_CHANNEL_TX
-        max7456_send_dma(max7456_screen, NULL, max_screen_size * 2 + 10);
-#else
+    while (dma_transaction_in_progress);
+#endif
         uint16_t xx;
         max7456_lock = 1;
-
         ENABLE_MAX7456;
         max7456_send(MAX7456ADD_DMAH, 0);
         max7456_send(MAX7456ADD_DMAL, 0);
         max7456_send(MAX7456ADD_DMM, 1);
-        for (xx = 0; xx < max_screen_size; ++xx) {
+
+        for (xx = 0; xx < max_screen_size; ++xx)
+        {
             max7456_send(MAX7456ADD_DMDI, SCREEN_BUFFER[xx]);
-            SCREEN_BUFFER[xx] = MAX7456_CHAR(' ');
+            SHADOW_BUFFER[xx] = SCREEN_BUFFER[xx];
         }
+
         max7456_send(MAX7456ADD_DMDI, 0xFF);
         max7456_send(MAX7456ADD_DMM, 0);
         DISABLE_MAX7456;
         max7456_lock = 0;
-#endif
     }
 }
 
@@ -275,10 +393,10 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
 #endif
     while (max7456_lock);
     max7456_lock = 1;
-    ENABLE_MAX7456;
 
+    ENABLE_MAX7456;
     // disable display
-    max7456_send(VM0_REG, video_signal_type);
+    max7456_send(VM0_REG, 0);
 
     max7456_send(MAX7456ADD_CMAH, char_address); // set start address high
 
@@ -296,10 +414,10 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     max7456_send(MAX7456ADD_CMM, WRITE_NVR);
 
     // wait until bit 5 in the status register returns to 0 (12ms)
-    while ((max7456_send(MAX7456ADD_STAT, 0) & STATUS_REG_NVR_BUSY) != 0x00);
+    while ((max7456_send(MAX7456ADD_STAT, 0x00) & STATUS_REG_NVR_BUSY) != 0x00);
 
-    max7456_send(VM0_REG, video_signal_type | 0x0C);
     DISABLE_MAX7456;
+
     max7456_lock = 0;
 }
 
