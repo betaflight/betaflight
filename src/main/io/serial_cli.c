@@ -419,20 +419,12 @@ static const char * const lookupTableHorizonTiltMode[] = {
     "SAFE", "EXPERT"
 };
 
-static const char * const lookupTableDebug[DEBUG_COUNT] = {
+static const char * const lookupTableDebug[DEBUG_MODE_COUNT] = {
     "NONE",
     "CYCLETIME",
     "NOTCH",
     "GYRO",
-//    "BATTERY",
-//    "ACCELEROMETER",
-//    "MIXER",
-//    "AIRMODE",
     "PIDLOOP",
-//    "RC_INTERPOLATION",
-//    "VELOCITY",
-//    "DFILTER",
-//    "ANGLERATE",
 };
 
 typedef struct lookupTableEntry_s {

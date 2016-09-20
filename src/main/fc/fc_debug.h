@@ -16,21 +16,15 @@
  */
 
 typedef enum {
+    // NOTE: only add new ones to the end of this list (before DEBUG_MODE_COUNT), otherwise a PG version bump is required.
     DEBUG_NONE,
     DEBUG_CYCLETIME,
     DEBUG_NOTCH,
     DEBUG_GYRO,
-//    DEBUG_BATTERY,
-//    DEBUG_ACCELEROMETER,
-//    DEBUG_MIXER,
-//    DEBUG_AIRMODE,
     DEBUG_PIDLOOP,
-//    DEBUG_RC_INTERPOLATION,
-//    DEBUG_VELOCITY,
-//    DEBUG_DTERM_FILTER,
-//    DEBUG_ANGLERATE,
-    DEBUG_COUNT
-} debugType_e;
+
+    DEBUG_MODE_COUNT
+} debugMode_e;
 
 typedef struct debugConfig_s {
     uint8_t debug_mode;
