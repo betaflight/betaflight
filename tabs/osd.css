@@ -294,6 +294,10 @@
   margin-top: -7px;
 }
 
+.tab-osd .preview .gui_box_titlebar {
+  position: relative;
+}
+
 .tab-osd .preview .char {
   display: inline-block;
   padding: 0;
@@ -302,6 +306,12 @@
 
 .tab-osd .preview .char[draggable="true"] {
   cursor: move;
+}
+
+.tab-osd .preview-logo {
+  position: absolute;
+  font-weight: 800;
+  right: 0;
 }
 
 .tab-osd .preview .row {
