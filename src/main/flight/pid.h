@@ -65,13 +65,13 @@ typedef struct pidProfile_s {
     uint16_t dterm_lpf_hz;                  // Delta Filter in hz
     uint16_t yaw_lpf_hz;                    // additional yaw filter when yaw axis too noisy
     uint8_t  deltaMethod;
-    uint8_t dterm_filter_type;              // Filter selection for dterm
-    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
-    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     uint8_t horizon_tilt_mode;              // SAFE or EXPERT
 
+    uint8_t dterm_filter_type;              // Filter selection for dterm
+    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
+    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);

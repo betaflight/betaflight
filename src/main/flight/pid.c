@@ -82,7 +82,7 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
 pidControllerFuncPtr pid_controller = pidLuxFloat;
 
-PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 1);
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .pidController = PID_CONTROLLER_LUX_FLOAT,
