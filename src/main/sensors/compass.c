@@ -84,9 +84,6 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     static flightDynamicsTrims_t magZeroTempMax;
 
     if (!mag.read(magADCRaw)) {
-        magADC[X] = 0;
-        magADC[Y] = 0;
-        magADC[Z] = 0;
         return;
     }
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
