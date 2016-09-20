@@ -17,84 +17,70 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "RBFC"
-#define USE_HARDWARE_REVISION_DETECTION
-#define TARGET_CONFIG
+#define TARGET_BOARD_IDENTIFIER "IMF3"
 
-#define LED0                    PB3
-#define LED0_INVERTED
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED1                    PB4
-#define LED1_INVERTED
+#define LED0                    PB7
 
-#define BEEPER                  PA12
-#define BEEPER_INVERTED
+#define BEEPER                  PC15
+
+#define USABLE_TIMER_CHANNEL_COUNT 8
+
+#define USB_IO
 
 #define USE_EXTI
-#define MPU_INT_EXTI            PC5
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define MPU_INT_EXTI            PC13
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-
-#define MPU6000_CS_PIN          PB5
-#define MPU6000_SPI_INSTANCE    SPI2
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW0_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW0_DEG
 
-#define ACC_MPU6000_ALIGN CW90_DEG
-#define GYRO_MPU6000_ALIGN CW90_DEG
+#define USE_FLASHFS
+#define USE_FLASH_M25P16
 
+#define USE_VCP
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       3
+#define SERIAL_PORT_COUNT 4
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
-#define UART2_TX_PIN            PA2
-#define UART2_RX_PIN            PA3
+#define UART2_TX_PIN            PA14
+#define UART2_RX_PIN            PA15
 
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
-#define SERIALRX_UART           SERIAL_PORT_USART2
-
-
 #define USE_SPI
+#define USE_SPI_DEVICE_1 // PA4, 5, 6, 7
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
-#define SPI2_NSS_PIN            PB12
-#define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN           PB14
-#define SPI2_MOSI_PIN           PB15
-
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI2
-#define MAX7456_SPI_CS_PIN      PA7
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-
-
+#define M25P16_CS_GPIO          GPIOB
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2
-#define M25P16_SPI_SHARED
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
+
+#define MPU6000_CS_PIN          PA4
+#define MPU6000_SPI_INSTANCE    SPI1
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define ADC_INSTANCE            ADC2
-#define VBAT_ADC_PIN            PA4
-#define CURRENT_METER_ADC_PIN   PA5
-#define RSSI_ADC_PIN            PA6
+#define ADC_INSTANCE            ADC1
+#define CURRENT_METER_ADC_PIN   PA0
+#define RSSI_ADC_PIN            PA1
+#define VBAT_ADC_PIN            PA2
 
 #define LED_STRIP
+
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_PIN                      PA8
 #define WS2811_TIMER                    TIM1
@@ -103,26 +89,25 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-#define OSD
+#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
-
-#define USE_SERVOS
-
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_VBAT | FEATURE_RSSI_ADC)
+#define SERIALRX_UART           SERIAL_PORT_USART3
+
+#define SPEKTRUM_BIND
+// USART2, PA15
+#define BIND_PIN                PA15
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         (BIT(5))
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+//#define TARGET_IO_PORTF (BIT(0)|BIT(1))
+// !!TODO - check the following line is correct
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 5
-#define USED_TIMERS  (TIM_N(2) | TIM_N(4))
-#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM4)
-#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
-
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) |TIM_N(17))
 

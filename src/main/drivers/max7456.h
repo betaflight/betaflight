@@ -144,17 +144,17 @@ enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
 
 extern uint16_t max_screen_size;
 
+void    max7456_init(uint8_t system);
+void    max7456_draw_screen(void);
+void    max7456_write_string(const char *string, int16_t address);
+void    max7456_write_nvm(uint8_t char_address, uint8_t *font_data);
+uint8_t max7456_get_rows_count(void);
+void    max7456_write(uint8_t x, uint8_t y, char *buff);
+void    max7456_write_char(uint8_t x, uint8_t y, uint8_t c);
+void    max7456_clear_screen(void);
+void    max7456_refresh_all(void);
+uint8_t* max7456_get_screen_buffer(void);
+
 #ifdef MAX7456_DMA_CHANNEL_TX
-    #define MAX7456_CHAR_TYPE           uint16_t
-    #define MAX7456_CHAR(X)             (MAX7456ADD_DMDI | ((X) << 8))
-#else
-    #define MAX7456_CHAR_TYPE           char
-    #define MAX7456_CHAR(X)             (X)
-#endif
-
-void max7456_init(uint8_t system);
-void max7456_draw_screen(void);
-void max7456_write_string(const char *string, int16_t address);
-void max7456_write_nvm(uint8_t char_address, uint8_t *font_data);
-MAX7456_CHAR_TYPE* max7456_get_screen_buffer(void);
-
+uint8_t max7456_dma_in_progres(void);
+#endif // MAX7456_DMA_CHANNEL_TX
