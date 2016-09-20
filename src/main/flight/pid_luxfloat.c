@@ -130,7 +130,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
             lastRateForDelta[axis] = rateError;
         }
         // Divide delta by targetLooptime to get differential (ie dr/dt)
-        delta *= (1.0f / getdT());
+        delta /= getdT();
 
         // Filter delta
         if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
