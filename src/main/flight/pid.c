@@ -126,9 +126,17 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
     .horizon_tilt_mode = HORIZON_TILT_MODE_SAFE,
 );
 
+
+static float dT;
+
+#ifdef UNIT_TEST
+STATIC_UNIT_TESTED void pidResetDt(void)
+{
+    dT = 0.0f;
+}
+#endif
 float getdT(void)
 {
-    static float dT;
     if (!dT) dT = (float)targetPidLooptime * 0.000001f;
 
     return dT;
