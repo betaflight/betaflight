@@ -284,16 +284,16 @@ TEST(configTest, modify)
 {
     resetEEPROM();
 
-    imuConfig()->looptime = 123;
+    imuConfig()->small_angle = 90;
     writeEEPROM();
 
-    EXPECT_EQ(123, imuConfig()->looptime);
+    EXPECT_EQ(90, imuConfig()->small_angle);
 
     // overwrite the values with something else before loading
-    imuConfig()->looptime = 456;
+    imuConfig()->small_angle = 45;
 
     readEEPROM();
-    EXPECT_EQ(123, imuConfig()->looptime);
+    EXPECT_EQ(90, imuConfig()->small_angle);
 }
 
 TEST(configTest, modifyProfiles)
