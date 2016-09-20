@@ -78,11 +78,9 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
 void gyroInit(void)
 {
-    float gyroSoftNotchQ = filterGetNotchQ(gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
-
     if (gyroConfig()->gyro_soft_lpf_hz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch[axis], gyroConfig()->gyro_soft_notch_hz, gyro.targetLooptime, gyroSoftNotchQ, FILTER_NOTCH);
+            biquadFilterInitNotch(&gyroFilterNotch[axis], gyroConfig()->gyro_soft_notch_hz, gyro.targetLooptime, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
             if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz, gyro.targetLooptime);
             else
