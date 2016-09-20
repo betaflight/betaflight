@@ -28,6 +28,7 @@ extern "C" {
 enum {
     systemTime = 10,
     pidLoopCheckerTime = 650,
+    updateAttitudeTime = 200,
     updateAccelerometerTime = 192,
     handleSerialTime = 30,
     updateBeeperTime = 1,
@@ -56,8 +57,9 @@ extern "C" {
     uint32_t simulatedTime = 0;
     uint32_t micros(void) {return simulatedTime;}
 // set up tasks to take a simulated representative time to execute
-    void taskMainPidLoopChecker(void) {simulatedTime+=pidLoopCheckerTime;}
+    void taskMainPidLoopCheck(void) {simulatedTime+=pidLoopCheckerTime;}
     void taskUpdateAccelerometer(void) {simulatedTime+=updateAccelerometerTime;}
+    void taskUpdateAttitude(void) {simulatedTime+=updateAttitudeTime;}
     void taskHandleSerial(void) {simulatedTime+=handleSerialTime;}
     void taskUpdateBeeper(void) {simulatedTime+=updateBeeperTime;}
     void taskUpdateBattery(void) {simulatedTime+=updateBatteryTime;}
@@ -84,7 +86,7 @@ extern "C" {
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(14, taskCount);
+    EXPECT_EQ(15, taskCount);
           // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYROPID].staticPriority);
