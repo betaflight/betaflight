@@ -116,8 +116,8 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
-    pidProfile->dterm_lpf = 0;
-    pidProfile->yaw_lpf = 0;
+    pidProfile->dterm_lpf_hz = 0;
+    pidProfile->yaw_lpf_hz = 0;
 }
 
 void resetRcCommands(void)
