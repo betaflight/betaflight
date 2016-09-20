@@ -188,7 +188,7 @@ FONT.preview = function($el) {
   $el.empty()
   for (var i = 0; i < SYM.LOGO; i++) {
     var url = FONT.data.character_image_urls[i];
-    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"/>');
+    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"></img>');
   }
 };
 
@@ -340,10 +340,9 @@ OSD.updateDisplaySize = function() {
 OSD.msp = {
   encodeOther: function() {
     var result = [-1, OSD.data.video_system];
-    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
       result.push(OSD.data.unit_mode);
     }
-
     return result;
   },
   encode: function(display_item) {
@@ -360,9 +359,9 @@ OSD.msp = {
     var i = 2;
     d.compiled_in = view.getUint8(0, 1);
     d.video_system = view.getUint8(1, 1);
-    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
       d.unit_mode = view.getUint8(2, 1);
-      i = 3;
+      i += 1;
     }
     d.display_items = [];
     // start at the offset from the other fields
@@ -382,7 +381,9 @@ OSD.msp = {
 
     // Update the altitude preview to reflect the unit system
     var altitude_index = OSD.constants.DISPLAY_FIELDS.map(function(item) { return item.name; }).indexOf('ALTITUDE');
-    OSD.constants.DISPLAY_FIELDS[altitude_index].preview = '13.7' + FONT.symbol(d.unit_mode == 0 ? SYM.FEET : SYM.METRE);
+    if (altitude_index >= 0) {
+      OSD.constants.DISPLAY_FIELDS[altitude_index].preview = '13.7' + FONT.symbol(d.unit_mode == 0 ? SYM.FEET : SYM.METRE);
+    }
   }
 };
 
@@ -460,7 +461,7 @@ TABS.osd.initialize = function (callback) {
             // show Betaflight logo in preview
             var $previewLogo = $('.preview-logo').empty();
             $previewLogo.append(
-              $('<input type="checkbox" name="preview-logo" class="togglesmall"/>')
+              $('<input type="checkbox" name="preview-logo" class="togglesmall"></input>')
               .attr('checked', OSD.data.preview_logo)
               .change(function(e) {
                 OSD.data.preview_logo = $(this).attr('checked') == undefined;
@@ -488,31 +489,37 @@ TABS.osd.initialize = function (callback) {
             });
 
             // units
-            var $unitMode = $('.units').empty();
-            for (var i = 0; i < OSD.constants.UNIT_TYPES.length; i++) {
-              var type = OSD.constants.UNIT_TYPES[i];
-              var $checkbox = $('<label/>').append($('<input name="unit_mode" type="radio"/>'+type+'</label>')
-                .prop('checked', i === OSD.data.unit_mode)
-                .data('type', type)
-                .data('type', i)
-              );
-              $unitMode.append($checkbox);
-            }
-            $unitMode.find(':radio').click(function(e) {
-              OSD.data.unit_mode = $(this).data('type');
-              MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
-              .then(function() {
-                updateOsdView();
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+              $('.units-container').show();
+              var $unitMode = $('.units').empty();
+              for (var i = 0; i < OSD.constants.UNIT_TYPES.length; i++) {
+                var type = OSD.constants.UNIT_TYPES[i];
+                var $checkbox = $('<label/>').append($('<input name="unit_mode" type="radio"/>'+type+'</label>')
+                  .prop('checked', i === OSD.data.unit_mode)
+                  .data('type', type)
+                  .data('type', i)
+                );
+                $unitMode.append($checkbox);
+              }
+              $unitMode.find(':radio').click(function(e) {
+                OSD.data.unit_mode = $(this).data('type');
+                MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
+                .then(function() {
+                  updateOsdView();
+                });
               });
-            });
+            }
 
             // display fields on/off and position
             var $displayFields = $('.display-fields').empty();
-            for (var field in OSD.data.display_items) {
+            for (let field of OSD.data.display_items) {
+              // versioning related, if the field doesn't exist at the current flight controller version, just skip it
+              if (!field.name) { continue; }
+
               var checked = (-1 != field.position) ? 'checked' : '';
               var $field = $('<div class="display-field"/>');
               $field.append(
-                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"/>')
+                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"></input>')
                 .data('field', field)
                 .attr('checked', field.position != -1)
                 .change(function(e) {
@@ -536,7 +543,7 @@ TABS.osd.initialize = function (callback) {
               $field.append('<label for="'+field.name+'">'+inflection.titleize(field.name)+'</label>');
               if (field.positionable && field.position != -1) {
                 $field.append(
-                  $('<input type="number" class="'+field.index+' position"/>')
+                  $('<input type="number" class="'+field.index+' position"></input>')
                   .data('field', field)
                   .val(field.position)
                   .change($.debounce(250, function(e) {
@@ -569,7 +576,7 @@ TABS.osd.initialize = function (callback) {
               }
             }
             // draw all the displayed items and the drag and drop preview images
-            for(var field in OSD.data.display_items) {
+            for(let field of OSD.data.display_items) {
               if (!field.preview || field.position == -1) { continue; }
               var j = (field.position >= 0) ? field.position : field.position + OSD.data.display_size.total;
               // create the preview image
@@ -618,7 +625,7 @@ TABS.osd.initialize = function (callback) {
                 var field = OSD.data.preview[i][0];
                 var charCode = OSD.data.preview[i][1];
               }
-              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'/></div>')
+              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'></img></div>')
                 .on('dragover', OSD.GUI.preview.onDragOver)
                 .on('dragleave', OSD.GUI.preview.onDragLeave)
                 .on('drop', OSD.GUI.preview.onDrop)
