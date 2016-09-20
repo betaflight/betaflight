@@ -17,6 +17,9 @@ SYM.AH_DECORATION = 0x13;
 SYM.LOGO = 0xA0;
 SYM.AMP = 0x9A;
 SYM.MAH = 0x07;
+SYM.METRE = 0xC;
+SYM.FEET = 0xF;
+
 
 var FONT = FONT || {};
 
@@ -185,7 +188,7 @@ FONT.preview = function($el) {
   $el.empty()
   for (var i = 0; i < SYM.LOGO; i++) {
     var url = FONT.data.character_image_urls[i];
-    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"></img>');
+    $el.append('<img src="'+url+'" title="0x'+i.toString(16)+'"/>');
   }
 };
 
@@ -199,8 +202,10 @@ var OSD = OSD || {};
 OSD.initData = function() {
   OSD.data = {
     video_system: null,
+    unit_mode: null,
     display_items: [],
     last_positions: {},
+    preview_logo: true,
     preview: []
   };
 };
@@ -220,6 +225,10 @@ OSD.constants = {
     PAL: 480,
     NTSC: 390
   },
+  UNIT_TYPES: [
+    'IMPERIAL',
+    'METRIC'
+  ],
   AHISIDEBARWIDTHPOSITION: 7,
   AHISIDEBARHEIGHTPOSITION: 3,
   // order matters, so these are going in an array... pry could iterate the example map instead
@@ -305,6 +314,12 @@ OSD.constants = {
       default_position: -77,
       positionable: true,
       preview: '[CRAFT_NAME]'
+    },
+    {
+      name: 'ALTITUDE',
+      default_position: 62,
+      positionable: true,
+      preview: '13.7' + FONT.symbol(SYM.METRE)
     }
   ],
 };
@@ -324,7 +339,12 @@ OSD.updateDisplaySize = function() {
 
 OSD.msp = {
   encodeOther: function() {
-    return [-1, OSD.data.video_system];
+    var result = [-1, OSD.data.video_system];
+    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+      result.push(OSD.data.unit_mode);
+    }
+
+    return result;
   },
   encode: function(display_item) {
     return [
@@ -337,11 +357,16 @@ OSD.msp = {
   decode: function(payload) {
     var view = payload.data;
     var d = OSD.data;
+    var i = 2;
     d.compiled_in = view.getUint8(0, 1);
     d.video_system = view.getUint8(1, 1);
+    if (semver.gte(CONFIG.apiVersion, "1.21.0")) {
+      d.unit_mode = view.getUint8(2, 1);
+      i = 3;
+    }
     d.display_items = [];
     // start at the offset from the other fields
-    for (var i = 2; i < view.byteLength; i = i + 2) {
+    for (; i < view.byteLength; i = i + 2) {
       var v = view.getInt16(i, 1)
       var j = d.display_items.length;
       var c = OSD.constants.DISPLAY_FIELDS[j];
@@ -354,6 +379,10 @@ OSD.msp = {
       });
     }
     OSD.updateDisplaySize();
+
+    // Update the altitude preview to reflect the unit system
+    var altitude_index = OSD.constants.DISPLAY_FIELDS.map(function(item) { return item.name; }).indexOf('ALTITUDE');
+    OSD.constants.DISPLAY_FIELDS[altitude_index].preview = '13.7' + FONT.symbol(d.unit_mode == 0 ? SYM.FEET : SYM.METRE);
   }
 };
 
@@ -427,6 +456,18 @@ TABS.osd.initialize = function (callback) {
             }
             $('.supported').fadeIn();
             OSD.msp.decode(info);
+
+            // show Betaflight logo in preview
+            var $previewLogo = $('.preview-logo').empty();
+            $previewLogo.append(
+              $('<input type="checkbox" name="preview-logo" class="togglesmall"/>')
+              .attr('checked', OSD.data.preview_logo)
+              .change(function(e) {
+                OSD.data.preview_logo = $(this).attr('checked') == undefined;
+                updateOsdView();
+              })
+            );
+
             // video mode
             var $videoTypes = $('.video-types').empty();
             for (var i = 0; i < OSD.constants.VIDEO_TYPES.length; i++) {
@@ -446,13 +487,32 @@ TABS.osd.initialize = function (callback) {
               });
             });
 
+            // units
+            var $unitMode = $('.units').empty();
+            for (var i = 0; i < OSD.constants.UNIT_TYPES.length; i++) {
+              var type = OSD.constants.UNIT_TYPES[i];
+              var $checkbox = $('<label/>').append($('<input name="unit_mode" type="radio"/>'+type+'</label>')
+                .prop('checked', i === OSD.data.unit_mode)
+                .data('type', type)
+                .data('type', i)
+              );
+              $unitMode.append($checkbox);
+            }
+            $unitMode.find(':radio').click(function(e) {
+              OSD.data.unit_mode = $(this).data('type');
+              MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
+              .then(function() {
+                updateOsdView();
+              });
+            });
+
             // display fields on/off and position
             var $displayFields = $('.display-fields').empty();
-            for (let field of OSD.data.display_items) {
+            for (var field in OSD.data.display_items) {
               var checked = (-1 != field.position) ? 'checked' : '';
               var $field = $('<div class="display-field"/>');
               $field.append(
-                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"></input>')
+                $('<input type="checkbox" name="'+field.name+'" class="togglesmall"/>')
                 .data('field', field)
                 .attr('checked', field.position != -1)
                 .change(function(e) {
@@ -476,7 +536,7 @@ TABS.osd.initialize = function (callback) {
               $field.append('<label for="'+field.name+'">'+inflection.titleize(field.name)+'</label>');
               if (field.positionable && field.position != -1) {
                 $field.append(
-                  $('<input type="number" class="'+field.index+' position"></input>')
+                  $('<input type="number" class="'+field.index+' position"/>')
                   .data('field', field)
                   .val(field.position)
                   .change($.debounce(250, function(e) {
@@ -501,13 +561,15 @@ TABS.osd.initialize = function (callback) {
               OSD.data.preview.push([null, ' '.charCodeAt(0)]);
             }
             // logo first, so it gets overwritten by subsequent elements
-            var x = 160;
-            for (var i = 1; i < 5; i++) {
-              for (var j = 3; j < 27; j++)
-                  OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
+            if (OSD.data.preview_logo) {
+              var x = 160;
+              for (var i = 1; i < 5; i++) {
+                for (var j = 3; j < 27; j++)
+                    OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
+              }
             }
             // draw all the displayed items and the drag and drop preview images
-            for(let field of OSD.data.display_items) {
+            for(var field in OSD.data.display_items) {
               if (!field.preview || field.position == -1) { continue; }
               var j = (field.position >= 0) ? field.position : field.position + OSD.data.display_size.total;
               // create the preview image
@@ -556,7 +618,7 @@ TABS.osd.initialize = function (callback) {
                 var field = OSD.data.preview[i][0];
                 var charCode = OSD.data.preview[i][1];
               }
-              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'></img></div>')
+              var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'/></div>')
                 .on('dragover', OSD.GUI.preview.onDragOver)
                 .on('dragleave', OSD.GUI.preview.onDragLeave)
                 .on('drop', OSD.GUI.preview.onDrop)
