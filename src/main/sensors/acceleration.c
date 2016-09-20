@@ -70,7 +70,6 @@ int32_t accADC[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
-uint32_t accTargetLooptime;
 
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
