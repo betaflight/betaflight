@@ -319,7 +319,9 @@ OSD.constants = {
       name: 'ALTITUDE',
       default_position: 62,
       positionable: true,
-      preview: '13.7' + FONT.symbol(SYM.METRE)
+      preview: function(osd_data) {
+        return '13.7' + FONT.symbol(osd_data.unit_mode === 0 ? SYM.FEET : SYM.METRE)
+      }
     }
   ],
 };
@@ -374,16 +376,10 @@ OSD.msp = {
         index: j,
         position: v,
         positionable: c.positionable,
-        preview: c.preview
+        preview: typeof(c.preview) === 'function' ? c.preview(d) : c.preview
       });
     }
     OSD.updateDisplaySize();
-
-    // Update the altitude preview to reflect the unit system
-    var altitude_index = OSD.constants.DISPLAY_FIELDS.map(function(item) { return item.name; }).indexOf('ALTITUDE');
-    if (altitude_index >= 0) {
-      OSD.constants.DISPLAY_FIELDS[altitude_index].preview = '13.7' + FONT.symbol(d.unit_mode == 0 ? SYM.FEET : SYM.METRE);
-    }
   }
 };
 
