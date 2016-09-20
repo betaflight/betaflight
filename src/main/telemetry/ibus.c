@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "common/utils.h"
 
 #ifdef TELEMETRY
 
@@ -181,7 +182,6 @@ PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
 
 #define IBUS_TEMPERATURE_OFFSET  400
 
-#define ARRAYLEN(array)   (sizeof(array)/sizeof(array[0]))
 
 typedef uint8_t ibusAddress_t;
 
