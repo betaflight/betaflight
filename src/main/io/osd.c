@@ -712,6 +712,9 @@ void OSD_HORIZON() {
     int rollAngle = attitude.values.roll;
     int pitchAngle = attitude.values.pitch;
 
+	if (!VISIBLE(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]))
+		return;
+
 	if (max_screen_size == VIDEO_BUFFER_CHARS_PAL)
 		position += 30;
 
