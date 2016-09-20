@@ -78,6 +78,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     float b0, b1, b2, a0, a1, a2;
 
     switch (filterType) {
+        default:
         case FILTER_LPF:
             b0 = (1 - cs) / 2;
             b1 = 1 - cs;
