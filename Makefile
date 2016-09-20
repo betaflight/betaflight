@@ -59,18 +59,19 @@ HSE_VALUE       = 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
-ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
-OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
+ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk))))) #Extract names of 'path/target/name.mk' for all .mk files cointained in /target directory but not names target.mk 
+OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS)) #Extract OPBL targets
 
 #VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
-VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
-VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
-VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
-VALID_TARGETS  := $(sort $(VALID_TARGETS))
+VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk)) #Extract paths where target.mk can be found
+VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))  #Extract only targets names removing head directory and remaining '/'
+VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS) #Concatenate targets names
+VALID_TARGETS  := $(sort $(VALID_TARGETS)) #Sort target names
 
-ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET))
+ifeq ($(filter $(TARGET),$(ALT_TARGETS)), $(TARGET)) #If target found in ALT_TARGETS
+#Extract only single directory name (just before target makefile)
 BASE_TARGET    := $(firstword $(subst /,, $(subst ./src/main/target/,, $(dir $(wildcard $(ROOT)/src/main/target/*/$(TARGET).mk)))))
--include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk
+-include $(ROOT)/src/main/target/$(BASE_TARGET)/$(TARGET).mk #Include target makefile 
 else
 BASE_TARGET    := $(TARGET)
 endif
