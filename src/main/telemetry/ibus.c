@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -178,7 +179,9 @@ PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
 #define IBUS_MAX_RX_LEN    (4)
 #define IBUS_RX_BUF_LEN    (IBUS_MAX_RX_LEN)
 
-#define IBUS_TEMPERATURE_OFFSET (0x0190)
+#define IBUS_TEMPERATURE_OFFSET  400
+
+#define ARRAYLEN(array)   (sizeof(array)/sizeof(array[0]))
 
 typedef uint8_t ibusAddress_t;
 
@@ -195,7 +198,7 @@ typedef enum {
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE = 0x03
 } ibusSensorType_e;
 
-static const uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
+static const uint8_t sensorAddressTypeLookup[] = {
     // IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE,  // Address 0, not usable since it is reserved for internal voltage
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,  // Address 1, VBAT
     IBUS_SENSOR_TYPE_TEMPERATURE,       // Address 2, Gyro Temp
@@ -213,7 +216,7 @@ static ibusAddress_t ibusBaseAddress = INVALID_IBUS_ADDRESS;
 
 static uint8_t ibusReceiveBuffer[IBUS_RX_BUF_LEN] = { 0x0 };
 
-static uint16_t calculateChecksum(uint8_t ibusPacket[static IBUS_CHECKSUM_SIZE], size_t packetLength) {
+static uint16_t calculateChecksum(const uint8_t * ibusPacket, size_t packetLength) {
     uint16_t checksum = 0xFFFF;
     for (size_t i = 0; i < packetLength - IBUS_CHECKSUM_SIZE; i++) {
         checksum -= ibusPacket[i];
@@ -222,13 +225,15 @@ static uint16_t calculateChecksum(uint8_t ibusPacket[static IBUS_CHECKSUM_SIZE],
     return checksum;
 }
 
-static bool isChecksumOk(uint8_t ibusPacket[static IBUS_CHECKSUM_SIZE], size_t packetLength, uint16_t calcuatedChecksum) {
+static bool isChecksumOk(const uint8_t * ibusPacket, size_t packetLength) {
+    uint16_t calculatedChecksum = calculateChecksum(ibusReceiveBuffer, IBUS_RX_BUF_LEN);
+
     // Note that there's a byte order swap to little endian here
-    return (calcuatedChecksum >> 8) == ibusPacket[packetLength - 1]
-            && (calcuatedChecksum & 0xFF) == ibusPacket[packetLength - 2];
+    return (calculatedChecksum >> 8) == ibusPacket[packetLength - 1]
+            && (calculatedChecksum & 0xFF) == ibusPacket[packetLength - 2];
 }
 
-static void transmitIbusPacket(uint8_t ibusPacket[static IBUS_MIN_LEN], size_t packetLength) {
+static void transmitIbusPacket(uint8_t * ibusPacket, size_t packetLength) {
     uint16_t checksum = calculateChecksum(ibusPacket, packetLength);
     ibusPacket[packetLength - IBUS_CHECKSUM_SIZE] = (checksum & 0xFF);
     ibusPacket[packetLength - IBUS_CHECKSUM_SIZE + 1] = (checksum >> 8);
@@ -237,22 +242,22 @@ static void transmitIbusPacket(uint8_t ibusPacket[static IBUS_MIN_LEN], size_t p
     }
 }
 
-static void sendIbusCommand(ibusAddress_t address) {
+static void sendIbusDiscoverSensorReply(ibusAddress_t address) {
     uint8_t sendBuffer[] = { 0x04, IBUS_COMMAND_DISCOVER_SENSOR | address, 0x00, 0x00 };
-    transmitIbusPacket(sendBuffer, sizeof sendBuffer);
+    transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
 static void sendIbusSensorType(ibusAddress_t address) {
     uint8_t sendBuffer[] = {0x06,
                             IBUS_COMMAND_SENSOR_TYPE | address,
-                            SENSOR_ADDRESS_TYPE_LOOKUP[address - ibusBaseAddress],
+                            sensorAddressTypeLookup[address - ibusBaseAddress],
                             0x02, 0x0, 0x0 };
-    transmitIbusPacket(sendBuffer, sizeof sendBuffer);
+    transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
 static void sendIbusMeasurement(ibusAddress_t address, uint16_t measurement) {
     uint8_t sendBuffer[] = { 0x06, IBUS_COMMAND_MEASUREMENT | address, measurement & 0xFF, measurement >> 8, 0x0, 0x0 };
-    transmitIbusPacket(sendBuffer, sizeof sendBuffer);
+    transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
 static bool isCommand(ibusCommand_e expected, uint8_t ibusPacket[static IBUS_MIN_LEN]) {
@@ -263,8 +268,8 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
     return (ibusPacket[1] & 0x0F);
 }
 
-static void dispatchMeasurementRequest(ibusAddress_t address) {
-    switch (SENSOR_ADDRESS_TYPE_LOOKUP[address - ibusBaseAddress]) {
+static void dispatchMeasurementReply(ibusAddress_t address) {
+    switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
         {
             uint16_t value = vbat * 10;
@@ -277,12 +282,13 @@ static void dispatchMeasurementRequest(ibusAddress_t address) {
 
     case IBUS_SENSOR_TYPE_TEMPERATURE:
         {
+            //TODO: handle arithmetric better
             #ifdef BARO
-                float temperature = (baroTemperature + 50) / 100.f;
+                uint16_t temperature = (baroTemperature + 50) / 10;
             #else
-                float temperature = telemTemperature1 / 10.f;
+                uint16_t temperature = telemTemperature1;
             #endif
-            sendIbusMeasurement(address, (uint16_t) ((temperature + 40)*10));
+            sendIbusMeasurement(address, temperature + IBUS_TEMPERATURE_OFFSET);
         }
         break;
 
@@ -303,21 +309,19 @@ static void respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN]) {
     }
 
     if ((returnAddress >= ibusBaseAddress) &&
-        (ibusAddress_t)(returnAddress - ibusBaseAddress) < sizeof SENSOR_ADDRESS_TYPE_LOOKUP) {
+        (ibusAddress_t)(returnAddress - ibusBaseAddress) < ARRAYLEN(sensorAddressTypeLookup)) {
         if (isCommand(IBUS_COMMAND_DISCOVER_SENSOR, ibusPacket)) {
-            sendIbusCommand(returnAddress);
+            sendIbusDiscoverSensorReply(returnAddress);
         } else if (isCommand(IBUS_COMMAND_SENSOR_TYPE, ibusPacket)) {
             sendIbusSensorType(returnAddress);
         } else if (isCommand(IBUS_COMMAND_MEASUREMENT, ibusPacket)) {
-            dispatchMeasurementRequest(returnAddress);
+            dispatchMeasurementReply(returnAddress);
         }
     }
 }
 
 static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint8_t value) {
-    for (size_t i = 0; i < bufferLength - 1; i++) {
-        buffer[i] = buffer[i + 1];
-    }
+    memmove(buffer, buffer + 1, bufferLength - 1);
     ibusReceiveBuffer[bufferLength - 1] = value;
 }
 
@@ -335,9 +339,8 @@ void handleIbusTelemetry(void) {
     while (serialRxBytesWaiting(ibusSerialPort) > 0) {
         uint8_t c = serialRead(ibusSerialPort);
         pushOntoTail(ibusReceiveBuffer, IBUS_RX_BUF_LEN, c);
-        uint16_t expectedChecksum = calculateChecksum(ibusReceiveBuffer, IBUS_RX_BUF_LEN);
 
-        if (isChecksumOk(ibusReceiveBuffer, IBUS_RX_BUF_LEN, expectedChecksum)) {
+        if (isChecksumOk(ibusReceiveBuffer, IBUS_RX_BUF_LEN)) {
             respondToIbusRequest(ibusReceiveBuffer);
         }
     }
