@@ -125,7 +125,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorAndServoConfig()->minthrottle = 1000;
     motorAndServoConfig()->maxthrottle = 2000;
     motorAndServoConfig()->motor_pwm_rate = 32000;
-    imuConfig()->looptime = 2000;
     pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
