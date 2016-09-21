@@ -305,18 +305,27 @@ static void dispatchMeasurementReply(ibusAddress_t address)
     }
 }
 
-static void respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN])
+static void autodetectFirstReceivedAddressAsBaseAddress(ibusAddress_t returnAddress)
 {
-    ibusAddress_t returnAddress = getAddress(ibusPacket);
-
-    //autodetect first received address as our base address
     if ((INVALID_IBUS_ADDRESS == ibusBaseAddress) &&
         (INVALID_IBUS_ADDRESS != returnAddress)) {
         ibusBaseAddress = returnAddress;
     }
+}
 
-    if ((returnAddress >= ibusBaseAddress) &&
-        (ibusAddress_t)(returnAddress - ibusBaseAddress) < ARRAYLEN(sensorAddressTypeLookup)) {
+static bool theAddressIsWithinOurRange(ibusAddress_t returnAddress)
+{
+    return (returnAddress >= ibusBaseAddress) &&
+           (ibusAddress_t)(returnAddress - ibusBaseAddress) < ARRAYLEN(sensorAddressTypeLookup);
+}
+
+static void respondToIbusRequest(uint8_t ibusPacket[static IBUS_RX_BUF_LEN])
+{
+    ibusAddress_t returnAddress = getAddress(ibusPacket);
+
+    autodetectFirstReceivedAddressAsBaseAddress(returnAddress);
+
+    if (theAddressIsWithinOurRange(returnAddress)) {
         if (isCommand(IBUS_COMMAND_DISCOVER_SENSOR, ibusPacket)) {
             sendIbusDiscoverSensorReply(returnAddress);
         } else if (isCommand(IBUS_COMMAND_SENSOR_TYPE, ibusPacket)) {
