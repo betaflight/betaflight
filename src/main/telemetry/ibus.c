@@ -226,28 +226,28 @@ static uint16_t calculateChecksum(const uint8_t *ibusPacket, size_t packetLength
     return checksum;
 }
 
-static bool isChecksumOk(const uint8_t *ibusPacket, size_t packetLength)
+static bool isChecksumOk(const uint8_t *ibusPacket)
 {
     uint16_t calculatedChecksum = calculateChecksum(ibusReceiveBuffer, IBUS_RX_BUF_LEN);
 
     // Note that there's a byte order swap to little endian here
-    return (calculatedChecksum >> 8) == ibusPacket[packetLength - 1]
-           && (calculatedChecksum & 0xFF) == ibusPacket[packetLength - 2];
+    return (calculatedChecksum >> 8) == ibusPacket[IBUS_RX_BUF_LEN - 1]
+           && (calculatedChecksum & 0xFF) == ibusPacket[IBUS_RX_BUF_LEN - 2];
 }
 
-static void transmitIbusPacket(uint8_t *ibusPacket, size_t packetLength)
+static void transmitIbusPacket(uint8_t *ibusPacket, size_t payloadLength)
 {
-    uint16_t checksum = calculateChecksum(ibusPacket, packetLength);
-    ibusPacket[packetLength - IBUS_CHECKSUM_SIZE] = (checksum & 0xFF);
-    ibusPacket[packetLength - IBUS_CHECKSUM_SIZE + 1] = (checksum >> 8);
-    for (size_t i = 0; i < packetLength; i++) {
+    uint16_t checksum = calculateChecksum(ibusPacket, payloadLength + IBUS_CHECKSUM_SIZE);
+    for (size_t i = 0; i < payloadLength; i++) {
         serialWrite(ibusSerialPort, ibusPacket[i]);
     }
+    serialWrite(ibusSerialPort, checksum & 0xFF);
+    serialWrite(ibusSerialPort, checksum >> 8);
 }
 
 static void sendIbusDiscoverSensorReply(ibusAddress_t address)
 {
-    uint8_t sendBuffer[] = { 0x04, IBUS_COMMAND_DISCOVER_SENSOR | address, 0x00, 0x00 };
+    uint8_t sendBuffer[] = { 0x04, IBUS_COMMAND_DISCOVER_SENSOR | address};
     transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
@@ -256,23 +256,23 @@ static void sendIbusSensorType(ibusAddress_t address)
     uint8_t sendBuffer[] = {0x06,
                             IBUS_COMMAND_SENSOR_TYPE | address,
                             sensorAddressTypeLookup[address - ibusBaseAddress],
-                            0x02, 0x0, 0x0
+                            0x02
                            };
     transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
 static void sendIbusMeasurement(ibusAddress_t address, uint16_t measurement)
 {
-    uint8_t sendBuffer[] = { 0x06, IBUS_COMMAND_MEASUREMENT | address, measurement & 0xFF, measurement >> 8, 0x0, 0x0 };
+    uint8_t sendBuffer[] = { 0x06, IBUS_COMMAND_MEASUREMENT | address, measurement & 0xFF, measurement >> 8};
     transmitIbusPacket(sendBuffer, sizeof(sendBuffer));
 }
 
-static bool isCommand(ibusCommand_e expected, uint8_t ibusPacket[static IBUS_MIN_LEN])
+static bool isCommand(ibusCommand_e expected, const uint8_t *ibusPacket)
 {
     return (ibusPacket[1] & 0xF0) == expected;
 }
 
-static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN])
+static ibusAddress_t getAddress(const uint8_t *ibusPacket)
 {
     return (ibusPacket[1] & 0x0F);
 }
@@ -350,7 +350,7 @@ void handleIbusTelemetry(void)
         uint8_t c = serialRead(ibusSerialPort);
         pushOntoTail(ibusReceiveBuffer, IBUS_RX_BUF_LEN, c);
 
-        if (isChecksumOk(ibusReceiveBuffer, IBUS_RX_BUF_LEN)) {
+        if (isChecksumOk(ibusReceiveBuffer)) {
             respondToIbusRequest(ibusReceiveBuffer);
         }
     }
