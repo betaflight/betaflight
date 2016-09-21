@@ -292,9 +292,9 @@ static void dispatchMeasurementReply(ibusAddress_t address)
 
     case IBUS_SENSOR_TYPE_TEMPERATURE:
         #ifdef BARO
-            value = (baroTemperature + 50) / 10;
+            value = (baroTemperature + 5) / 10; // +5 to make integer division rounding correct
         #else
-            value = telemTemperature1;
+            value = telemTemperature1 * 10;
         #endif
         sendIbusMeasurement(address, value + IBUS_TEMPERATURE_OFFSET);
         break;

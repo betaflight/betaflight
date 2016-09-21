@@ -118,7 +118,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
-    // printf("w: 0x%02x\n", ch);
+    //printf("w: 0x%02x\n", ch);
 }
 
 
@@ -347,22 +347,28 @@ TEST_F(IbusTelemteryProtocolUnitTest, Test_IbusRespondToGetMeasurementTemperatur
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
     baroTemperature = 50;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x9a\x01\xbc\xFE", 6);
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x95\x01\xc1\xFE", 6);
+
+    //Given ibus command: Sensor at address 2, please send your measurement
+    //then we respond
+    baroTemperature = 59;  //test integer rounding
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x96\x01\xc0\xFE", 6);
 
     //Given ibus command: Sensor at address 2, please send your measurement
     //then we respond
     baroTemperature = 150;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xA4\x01\xb2\xFE", 6);
+    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x9f\x01\xb7\xFE", 6);
 #else
-    //Given ibus command: Sensor at address 2, please send your measurement
-    //then we respond with: I'm reading 0 degrees + constant offset 0x190
-    telemTemperature1 = 0;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
+    #error not tested, may be obsolete
+    // //Given ibus command: Sensor at address 2, please send your measurement
+    // //then we respond with: I'm reading 0 degrees + constant offset 0x190
+    // telemTemperature1 = 0;
+    // checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\x90\x01\xC6\xFE", 6);
 
-    //Given ibus command: Sensor at address 2, please send your measurement
-    //then we respond with: I'm reading 100 degrees + constant offset 0x190
-    telemTemperature1 = 100;
-    checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xF4\x01\x62\xFE", 6);
+    // //Given ibus command: Sensor at address 2, please send your measurement
+    // //then we respond with: I'm reading 100 degrees + constant offset 0x190
+    // telemTemperature1 = 100;
+    // checkResponseToCommand("\x04\xA2\x59\xff", 4, "\x06\xA2\xF4\x01\x62\xFE", 6);
 #endif
 }
 
@@ -438,7 +444,7 @@ TEST_F(IbusTelemteryProtocolUnitTestDaisyChained, Test_IbusRespondToGetMeasureme
     //Given ibus command: Sensor at address 4, please send your measurement
     //then we respond
     baroTemperature = 150;
-    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\xA4\x01\xb0\xFE", 6);
+    checkResponseToCommand("\x04\xA4\x57\xff", 4, "\x06\xA4\x9f\x01\xb5\xFE", 6);
 #else
     //Given ibus command: Sensor at address 4, please send your measurement
     //then we respond with: I'm reading 100 degrees + constant offset 0x190
