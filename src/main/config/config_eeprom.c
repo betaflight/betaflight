@@ -179,7 +179,7 @@ bool loadEEPROM(void)
             const configRecord_t *rec = findEEPROM(reg, cls);
             if (rec) {
                 // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
-                pgLoad(reg, profileIndex, rec->pg, rec->size, rec->version);
+                pgLoad(reg, profileIndex, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
             } else {
                 pgReset(reg, profileIndex);
             }
