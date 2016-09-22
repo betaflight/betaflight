@@ -1588,6 +1588,10 @@ static bool processInCommand(void)
         if ((int8_t)addr == -1) {
             masterConfig.osdProfile.video_system = read8();
             masterConfig.osdProfile.units = read8();
+            masterConfig.osdProfile.rssi_alarm = read8();
+            masterConfig.osdProfile.cap_alarm = read16();
+            masterConfig.osdProfile.time_alarm = read16();
+            masterConfig.osdProfile.alt_alarm = read16();
         }
         // set a position setting
         else {
