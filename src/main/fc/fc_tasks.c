@@ -53,7 +53,7 @@ cfTask_t cfTasks[] = {
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = TASK_PERIOD_HZ(1),
+        .desiredPeriod = TASK_PERIOD_MS(1),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
