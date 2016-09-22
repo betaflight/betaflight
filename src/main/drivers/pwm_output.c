@@ -198,7 +198,7 @@ void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         motorConfig->use_unsyncedPwm = true;
         idlePulse = 0;
         break;
-    case (PWM_TYPE_CONVENTIONAL):
+    case (PWM_TYPE_STANDARD):
         timerMhzCounter = PWM_TIMER_MHZ;
         pwmWritePtr = pwmWriteStandard;
         motorConfig->use_unsyncedPwm = true;

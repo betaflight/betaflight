@@ -21,7 +21,7 @@
 #include "drivers/timer.h"
 
 typedef enum {
-    PWM_TYPE_CONVENTIONAL = 0,
+    PWM_TYPE_STANDARD = 0,
     PWM_TYPE_ONESHOT125,
     PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
