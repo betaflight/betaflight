@@ -208,8 +208,7 @@ void motorInit(escAndServoConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         ioTag_t tag = motorConfig->motorTags[motorIndex];
-        
-        if (DEFIO_TAG_ISEMPTY(tag)) {
+        if (!tag) {
             break;
         }
 
@@ -253,8 +252,7 @@ void servoInit(escAndServoConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         ioTag_t tag = servoConfig->servoTags[servoIndex];
-        
-        if (DEFIO_TAG_ISEMPTY(tag)) {
+        if (!tag) {
             break;
         }
         
