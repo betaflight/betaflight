@@ -381,15 +381,22 @@ OSD_Entry MenuVtx[]=
 
 OSD_UINT16_Struct minthrottle_entry = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_Struct gyro_soft_lpf_hz_entry = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
-OSD_UINT16_Struct dterm_lpf_entry = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 1};
-
+OSD_UINT16_Struct dterm_lpf_entry = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
+OSD_UINT16_Struct yaw_lpf_entry = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
+OSD_UINT16_Struct yaw_p_limit_entry = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
+OSD_UINT8_Struct vbat_scale_entry = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
+OSD_UINT8_Struct vbat_max_cell_entry = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
 
 OSD_Entry MenuMisc[]=
 {
 	{"----- MISC -----", OME_Label, NULL, NULL},
 	{"GYRO LOWPASS", OME_UINT8, NULL, &gyro_soft_lpf_hz_entry},
 	{"DTERM LPF", OME_UINT16, NULL, &dterm_lpf_entry},
+	{"YAW LPF", OME_UINT16, NULL, &yaw_lpf_entry},
+	{"YAW P LIMIT", OME_UINT16, NULL, &yaw_p_limit_entry},
 	{"MINTHROTTLE", OME_UINT16, NULL, &minthrottle_entry},
+	{"VBAT SCALE", OME_UINT8, NULL, &vbat_scale_entry},
+	{"VBAT CELL MAX", OME_UINT8, NULL, &vbat_max_cell_entry},
 	{"BACK", OME_Back, NULL, NULL},
 	{NULL, OME_END, NULL, NULL}
 };
@@ -455,15 +462,15 @@ controlRateConfig_t rateProfile;
 
 static OSD_FLOAT_Struct RollRate = {&rateProfile.rates[0],0,250,1,10};
 static OSD_FLOAT_Struct PitchRate = {&rateProfile.rates[1],0,250,1,10};
-static OSD_FLOAT_Struct YawRate = {&rateProfile.rates[2],1,250,1,10};
-static OSD_FLOAT_Struct RCRate = {&rateProfile.rcRate8,30,200,1,10};
-static OSD_FLOAT_Struct RCExpo = {&rateProfile.rcExpo8,1,100,1,10};
-static OSD_FLOAT_Struct RCYawExpo = {&rateProfile.rcYawExpo8,1,100,1,10};
+static OSD_FLOAT_Struct YawRate = {&rateProfile.rates[2],0,250,1,10};
+static OSD_FLOAT_Struct RCRate = {&rateProfile.rcRate8,0,200,1,10};
+static OSD_FLOAT_Struct RCExpo = {&rateProfile.rcExpo8,0,100,1,10};
+static OSD_FLOAT_Struct RCYawExpo = {&rateProfile.rcYawExpo8,0,100,1,10};
 static OSD_FLOAT_Struct TPAentry = {&rateProfile.dynThrPID,0,70,1,10};
 static OSD_UINT16_Struct TPAbreak = {&rateProfile.tpa_breakpoint,1100,1800,10};
 
-static OSD_FLOAT_Struct P_Setpoint_entry = {&masterConfig.profile[0].pidProfile.ptermSRateWeight,0,100,1,100};
-static OSD_FLOAT_Struct D_Setpoint_entry = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight,0,255,1,100};
+static OSD_FLOAT_Struct P_Setpoint_entry = {&masterConfig.profile[0].pidProfile.ptermSRateWeight,0,100,1,10};
+static OSD_FLOAT_Struct D_Setpoint_entry = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight,0,255,1,10};
 
 OSD_Entry MenuRateExpo[]=
 {
@@ -711,6 +718,9 @@ void OSD_HORIZON() {
     uint16_t position = 194;
     int rollAngle = attitude.values.roll;
     int pitchAngle = attitude.values.pitch;
+
+	if (!VISIBLE(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]))
+		return;
 
 	if (max_screen_size == VIDEO_BUFFER_CHARS_PAL)
 		position += 30;
@@ -1459,7 +1469,7 @@ void OSD_Stats(void)
 void OSD_ArmMotors(void)
 {
 	max7456_clear_screen();
-	max7456_write(7, 5, " ARMED ");
+	max7456_write(12, 7, "ARMED");
 	RefreshTimeout = REFRESH_1S/2;
 	OSD_ResetStats();
 }
@@ -1698,7 +1708,9 @@ void OSD_Exit(void * ptr)
 	max7456_clear_screen();
 	max7456_write(5, 3, "RESTARTING IMU...");
 	max7456_refresh_all();
+	stopMotors();
 	stopPwmAllMotors();
+	delay(200);
 	if (ptr)
 	{
 		//save local variables to configuration
