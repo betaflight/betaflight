@@ -42,8 +42,6 @@
 // Sonar measurements are in cm, a value of SONAR_OUT_OF_RANGE indicates sonar is not in range.
 // Inclination is adjusted by imu
 
-extern sonarHardware_t sonarHardwareHCSR04;
-
 int16_t sonarMaxRangeCm;
 int16_t sonarMaxAltWithTiltCm;
 int16_t sonarCfAltCm; // Complimentary Filter altitude
@@ -52,38 +50,11 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e currentSensor)
-{
-#if defined(SONAR_TRIGGER_PIN_PWM) && defined(SONAR_ECHO_PIN_PWM)
-    // If we are using softserial, parallel PWM or ADC current sensor, then use motor pins for sonar, otherwise use RC pins
-    if (feature(FEATURE_SOFTSERIAL)
-            || feature(FEATURE_RX_PARALLEL_PWM )
-            || (feature(FEATURE_CURRENT_METER) && currentSensor == CURRENT_SENSOR_ADC)) {
-        sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN_PWM);
-        sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN_PWM);
-    } else {
-        sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-        sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN);
-    }
-    return &sonarHardwareHCSR04;
-#elif defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
-    UNUSED(currentSensor);
-    sonarHardwareHCSR04.triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-    sonarHardwareHCSR04.echoTag = IO_TAG(SONAR_ECHO_PIN);
-    return &sonarHardwareHCSR04;
-#elif defined(UNIT_TEST)
-    UNUSED(currentSensor);
-    return NULL;
-#else
-#error Sonar not defined for target
-#endif
-}
-
-void sonarInit(void)
+void sonarInit(sonarConfig_t *sonarConfig)
 {
     sonarRange_t sonarRange;
 
-    hcsr04_init(&sonarRange);
+    hcsr04_init(&sonarRange, sonarConfig);
     sensorsSet(SENSOR_SONAR);
     sonarMaxRangeCm = sonarRange.maxRangeCm;
     sonarCfAltCm = sonarMaxRangeCm / 2;

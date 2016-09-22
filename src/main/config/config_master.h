@@ -18,6 +18,7 @@
 #pragma once
 
 #include "drivers/sound_beeper.h"
+#include "drivers/sonar_hcsr04.h"
  
 // System-wide
 typedef struct master_s {
@@ -110,6 +111,10 @@ typedef struct master_s {
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
+#endif
+
+#ifdef SONAR
+    sonarConfig_t sonarConfig;
 #endif
 
 #ifdef LED_STRIP

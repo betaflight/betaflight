@@ -266,6 +266,18 @@ void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
     }
 }
 
+#ifdef SONAR
+void resetSonarConfig(sonarConfig_t *sonarConfig)
+{
+#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
+    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
+#else
+#error Sonar not defined for target
+#endif
+}
+#endif
+
 #ifdef BEEPER
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
@@ -471,6 +483,14 @@ void createDefaultConfig(master_t *config)
 
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
+#endif
+
+#ifdef BEEPER 
+    resetBeeperConfig(&config->beeperConfig);
+#endif
+
+#ifdef SONAR
+    resetSonarConfig(&config->sonarConfig);
 #endif
 
 #ifdef SERIALRX_PROVIDER

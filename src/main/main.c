@@ -454,7 +454,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        sonarInit();
+        sonarInit(&masterConfig.sonarConfig);
     }
 #endif
 

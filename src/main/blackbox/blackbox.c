@@ -40,7 +40,8 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
-
+#include "drivers/sonar_hcsr04.h"
+ 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sonar.h"

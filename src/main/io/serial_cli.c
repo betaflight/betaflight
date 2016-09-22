@@ -3654,6 +3654,10 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SERVOS
     { OWNER_SERVO, &masterConfig.escAndServoConfig.servoTags[0], MAX_SUPPORTED_SERVOS },
 #endif // USE_SERVOS
+#ifdef SONAR
+    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+    { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
+#endif // USE_SERVOS    
 };
 
 static void cliResource(char *cmdline)
