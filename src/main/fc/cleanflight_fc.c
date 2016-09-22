@@ -1079,7 +1079,9 @@ void taskTransponder(void)
 void taskHardwareWatchdog(void)
 {
 #ifdef OSD
-    osdHardwareCheck();
+    if (feature(FEATURE_OSD)) {
+        osdHardwareCheck();
+    }
 #endif
 }
 
