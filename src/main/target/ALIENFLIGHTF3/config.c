@@ -37,7 +37,6 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -77,7 +76,8 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config) {
+void targetConfiguration(master_t *config) 
+{
     config->mag_hardware = MAG_NONE;            // disabled by default
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;

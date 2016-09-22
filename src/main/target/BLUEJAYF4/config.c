@@ -37,7 +37,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
+
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
