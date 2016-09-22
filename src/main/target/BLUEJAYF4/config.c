@@ -37,7 +37,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
+
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -84,5 +84,6 @@ void targetConfiguration(master_t *config)
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         config->sensorAlignmentConfig.gyro_align = CW180_DEG;
         config->sensorAlignmentConfig.acc_align  = CW180_DEG;
+        config->beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
     }
 }

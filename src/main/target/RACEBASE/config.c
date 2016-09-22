@@ -37,7 +37,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
+
 
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
@@ -77,7 +77,8 @@
 #include "config/config_master.h"
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config) {
+void targetConfiguration(master_t *config) 
+{
     config->rxConfig.sbus_inversion = 0;
     config->rxConfig.rssi_scale = 19;
     config->rxConfig.serialrx_provider = SERIALRX_SBUS;
