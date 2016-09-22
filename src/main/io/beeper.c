@@ -138,7 +138,7 @@ static uint32_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
-static void beeperProcessCommand(void);
+static void beeperProcessCommand(uint32_t currentTime);
 
 typedef struct beeperTableEntry_s {
     uint8_t mode;
@@ -331,13 +331,13 @@ void beeperUpdate(uint32_t currentTime)
         }
     }
 
-    beeperProcessCommand();
+    beeperProcessCommand(currentTime);
 }
 
 /*
  * Calculates array position when next to change beeper state is due.
  */
-static void beeperProcessCommand(void)
+static void beeperProcessCommand(uint32_t currentTime)
 {
     if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
         beeperPos = 0;
@@ -345,7 +345,7 @@ static void beeperProcessCommand(void)
         beeperSilence();
     } else {
         // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = millis() + 10 * currentBeeperEntry->sequence[beeperPos];
+        beeperNextToggleTime = currentTime + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
         beeperPos++;
     }
 }
