@@ -70,8 +70,9 @@ void telemetryInit(void)
     initSmartPortTelemetry();
     initLtmTelemetry();
     initMAVLinkTelemetry();
-    initIbusTelemetry();
-
+    #ifdef TELEMETRY_IBUS
+        initIbusTelemetry();
+    #endif
     telemetryCheckState();
 }
 
