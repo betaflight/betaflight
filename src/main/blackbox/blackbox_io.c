@@ -692,22 +692,12 @@ static void blackboxCreateLogFile()
 {
     uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
-    char filename[13];
-
-    filename[0] = 'L';
-    filename[1] = 'O';
-    filename[2] = 'G';
+    char *filename = "log00000.bfl";
 
     for (int i = 7; i >= 3; i--) {
         filename[i] = (remainder % 10) + '0';
         remainder /= 10;
     }
-
-    filename[8] = '.';
-    filename[9] = 'T';
-    filename[10] = 'X';
-    filename[11] = 'T';
-    filename[12] = 0;
 
     blackboxSDCard.state = BLACKBOX_SDCARD_WAITING;
 
