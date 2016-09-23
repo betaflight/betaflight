@@ -24,7 +24,7 @@
 
 #include "build/build_config.h"
 
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -208,4 +208,3 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 }
 
 #endif
-

@@ -26,6 +26,8 @@
 
 #include "build/build_config.h"
 
+#ifdef USE_PID_MWREWRITE
+
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
@@ -199,3 +201,4 @@ void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_
     }
 }
 
+#endif

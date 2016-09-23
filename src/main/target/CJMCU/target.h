@@ -77,7 +77,6 @@
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SERIAL_RX
-//#define USE_SERVOS
 #define USE_CLI
 
 #define SPEKTRUM_BIND
@@ -91,14 +90,14 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define GTUNE
 #else
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
+#define SKIP_PID_MWREWRITE
+#define SKIP_PID_MW23
 #endif
 
-//#undef USE_CLI
-//#define GTUNE
-//#define BLACKBOX
 
 // IO - assuming all IOs on 48pin package TODO
 #define TARGET_IO_PORTA 0xffff

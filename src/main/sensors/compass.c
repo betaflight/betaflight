@@ -53,7 +53,9 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
 
 mag_t mag;                   // mag access functions
 
+#ifdef GPS
 float magneticDeclination = 0.0f;
+#endif
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
@@ -128,6 +130,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
 }
 #endif
 
+#ifdef GPS
 void recalculateMagneticDeclination(void)
 {
     int16_t deg, min;
@@ -143,3 +146,4 @@ void recalculateMagneticDeclination(void)
     }
 
 }
+#endif

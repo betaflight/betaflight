@@ -133,7 +133,10 @@ static void cliDump(char *cmdLine);
 static void cliExit(char *cmdline);
 static void cliFeature(char *cmdline);
 static void cliMotor(char *cmdline);
+#ifdef BUZZER
 static void cliPlaySound(char *cmdline);
+#endif
+
 static void cliProfile(char *cmdline);
 static void cliRateProfile(char *cmdline);
 static void cliReboot(void);
@@ -300,8 +303,10 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
+#ifdef BUZZER
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
+#endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile",
@@ -367,9 +372,11 @@ static const char * const lookupTableAmperageMeter[] = {
     "VIRTUAL", "ADC"
 };
 
+#ifdef USE_SERVOS
 static const char * const lookupTableGimbalMode[] = {
     "NORMAL", "MIXTILT"
 };
+#endif
 
 static const char * const lookupTablePidController[] = {
     "MW23", "MWREWRITE", "LUX"
@@ -428,7 +435,9 @@ typedef enum {
     TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_AMPERAGE_METER,
+#ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
+#endif
     TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
@@ -449,7 +458,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
 #endif
     { lookupTableAmperageMeter, sizeof(lookupTableAmperageMeter) / sizeof(char *) },
+#ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
+#endif
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
@@ -2155,11 +2166,9 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
 }
 
+#ifdef BUZZER
 static void cliPlaySound(char *cmdline)
 {
-#if FLASH_SIZE <= 64
-    UNUSED(cmdline);
-#else
     int i;
     const char *name;
     static int lastSoundIdx = -1;
@@ -2189,8 +2198,8 @@ static void cliPlaySound(char *cmdline)
     beeperSilence();
     cliPrintf("Playing sound %d: %s\r\n", i, name);
     beeper(beeperModeForTableIndex(i));
-#endif
 }
+#endif
 
 static void cliProfile(char *cmdline)
 {

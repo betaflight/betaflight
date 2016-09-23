@@ -177,7 +177,9 @@ static void activateConfig(void)
     mixerUseConfigs(servoProfile()->servoConf);
 #endif
 
+#ifdef GPS
     recalculateMagneticDeclination();
+#endif
 
     static imuRuntimeConfig_t imuRuntimeConfig;
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
