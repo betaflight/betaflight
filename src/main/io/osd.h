@@ -1,3 +1,20 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <stdint.h>
@@ -27,29 +44,25 @@ typedef enum {
 } osd_unit_t;
 
 typedef struct {
-	uint16_t item_pos[OSD_MAX_ITEMS];
-	//alarms
-	uint8_t rssi_alarm;
-	uint16_t cap_alarm;
-	uint16_t time_alarm;
-	uint16_t alt_alarm;
+    uint16_t item_pos[OSD_MAX_ITEMS];
 
-	uint8_t video_system;
+    // Alarms
+    uint8_t rssi_alarm;
+    uint16_t cap_alarm;
+    uint16_t time_alarm;
+    uint16_t alt_alarm;
+
+    uint8_t video_system;
     osd_unit_t units;
-} osd_profile;
+} osd_profile_t;
 
 typedef struct {
-	int16_t max_speed;
-	int16_t min_voltage;	// /10
-	int16_t max_current;  // /10
-	int16_t min_rssi;
-} tStatistic;
+    int16_t max_speed;
+    int16_t min_voltage; // /10
+    int16_t max_current; // /10
+    int16_t min_rssi;
+} statistic_t;
 
 void osdInit(void);
-void OSD_Update(uint8_t guiKey);
-void OSD_OpenMenu(void);
-void OSD_HandleGui(uint8_t cmd);
-void OSD_ResetSettings(void);
-void OSD_Message(char *line1, char *line2, uint8_t timeout);
-void resetOsdConfig(osd_profile *osdProfile);
+void resetOsdConfig(osd_profile_t *osdProfile);
 void updateOsd(void);
