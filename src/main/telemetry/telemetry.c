@@ -98,7 +98,9 @@ uint8_t telemetryCheckState(void)
     telemetryStateChangeMask |= (checkSmartPortTelemetryState() << 2);
     telemetryStateChangeMask |= (checkLtmTelemetryState() << 3);
     telemetryStateChangeMask |= (checkMAVLinkTelemetryState() << 4);
-    telemetryStateChangeMask |= (checkIbusTelemetryState() << 5);
+    #ifdef TELEMETRY_IBUS
+        telemetryStateChangeMask |= (checkIbusTelemetryState() << 5);
+    #endif
     return telemetryStateChangeMask;
 }
 
@@ -109,7 +111,9 @@ void telemetryProcess(uint16_t deadband3d_throttle)
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleMAVLinkTelemetry();
-    handleIbusTelemetry();
+    #ifdef TELEMETRY_IBUS
+        handleIbusTelemetry();
+    #endif
 }
 
 #endif

@@ -30,7 +30,7 @@
 #include "platform.h"
 #include "common/utils.h"
 
-#ifdef TELEMETRY
+#if defined(TELEMETRY) && defined(TELEMETRY_IBUS)
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"

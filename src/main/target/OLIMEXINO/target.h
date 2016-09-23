@@ -132,6 +132,7 @@
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1Channel6Descriptor
 
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define BLACKBOX
 #define USE_SERVOS

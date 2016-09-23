@@ -22,6 +22,7 @@
 #define GPS
 #define DISPLAY
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER

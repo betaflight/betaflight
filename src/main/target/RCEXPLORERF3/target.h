@@ -178,6 +178,7 @@
 #define GPS
 #define BLACKBOX
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define AUTOTUNE
 #define DISPLAY

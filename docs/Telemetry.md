@@ -271,6 +271,12 @@ It should be possible to daisy chain multiple sensors with ibus. This is impleme
 
 ### Configuration
 
+Ibus telemetry can be enabled in the firmware at build time using defines in target.h. It is enabled by default in those targets that have space left.
+```
+#define TELEMETRY
+#define TELEMETRY_IBUS
+```
+
 CLI command to enable:
 ```
 serial 1 1024 115200 57600 115200 115200
