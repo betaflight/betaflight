@@ -163,6 +163,8 @@
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11
 
+#define USE_SLOW_SERIAL_CLI
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff

@@ -3130,6 +3130,10 @@ static void cliPrint(const char *str)
     while (*str) {
         bufWriterAppend(cliWriter, *str++);
     }
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 }
 
 static void cliPutp(void *p, char ch)
@@ -3144,6 +3148,10 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         va_start(va, format);
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 
         return true;
     } else {
@@ -3161,6 +3169,10 @@ static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *f
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
+
         return true;
     } else {
         return false;
@@ -3173,11 +3185,19 @@ static void cliPrintf(const char *fmt, ...)
     va_start(va, fmt);
     tfp_format(cliWriter, cliPutp, fmt, va);
     va_end(va);
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 }
 
 static void cliWrite(uint8_t ch)
 {
     bufWriterAppend(cliWriter, ch);
+
+#ifdef USE_SLOW_SERIAL_CLI
+    delay(1);
+#endif
 }
 
 static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_t full)
