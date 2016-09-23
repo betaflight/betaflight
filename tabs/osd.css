@@ -304,6 +304,18 @@
   margin: 0;
 }
 
+.tab-osd .char.mouseover {
+  background: rgba(255,255,255,0.4);
+}
+
+.tab-osd .char.dragging {
+  background: rgba(255,255,255,0.4);
+}
+
+.tab-osd .char-label.mouseover {
+  background: rgba(255,255,255,0.4);
+}
+
 .tab-osd .preview .char[draggable="true"] {
   cursor: move;
 }
@@ -345,9 +357,15 @@ button {
 }
 
 .tab-osd .display-field {
-  padding-bottom: 4px;
-  padding-top: 4px;
+  padding: .3em;
+  border: 1px solid transparent;
   border-bottom: 1px solid #ddd;
+}
+
+.tab-osd .display-field.mouseover {
+  background: #fff;
+  border: 1px solid #ccc;
+  font-weight: 800;
 }
 
 .tab-osd .display-field input {
