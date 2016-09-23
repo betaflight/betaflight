@@ -46,8 +46,6 @@ typedef enum {
     PID_COUNT
 } pidControllerType_e;
 
-#define IS_PID_CONTROLLER_FP_BASED(pidController) (pidController == PID_CONTROLLER_LUX_FLOAT)
-
 typedef enum {
     PID_DELTA_FROM_MEASUREMENT = 0,
     PID_DELTA_FROM_ERROR
