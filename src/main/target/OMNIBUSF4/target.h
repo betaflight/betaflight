@@ -40,11 +40,11 @@
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
+#define GYRO_MPU6000_ALIGN      CW180_DEG
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_MPU6000_ALIGN       CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
