@@ -695,7 +695,7 @@ static void blackboxCreateLogFile()
 {
     uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
-    char *filename = LOGFILE_PREFIX "00000" LOGFILE_SUFFIX; 
+    char filename[] = LOGFILE_PREFIX "00000" LOGFILE_SUFFIX; 
 
     for (int i = 7; i >= 3; i--) {
         filename[i] = (remainder % 10) + '0';
