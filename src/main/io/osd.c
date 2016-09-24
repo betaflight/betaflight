@@ -755,120 +755,120 @@ uint8_t osdHandleKey(uint8_t key)
     p = currentMenu + currentMenuPos;
 
     switch (p->type) {
-    case OME_POS:
-        if (key == KEY_RIGHT) {
-            uint32_t address = (uint32_t)p->data;
-            uint16_t *val;
-
-            val = (uint16_t *)address;
-            if (!(*val & VISIBLE_FLAG)) // no submenu for hidden elements
-                break;
-        }
-    case OME_Submenu:
-    case OME_OSD_Exit:
-        if (p->func && key == KEY_RIGHT) {
-            p->func(p->data);
-            res = BUTTON_PAUSE;
-        }
-        break;
-    case OME_Back:
-        osdMenuBack();
-        res = BUTTON_PAUSE;
-        break;
-    case OME_Bool:
-        if (p->data) {
-            uint8_t *val = p->data;
-            if (key == KEY_RIGHT)
-                *val = 1;
-            else
-                *val = 0;
-        }
-        break;
-    case OME_VISIBLE:
-        if (p->data) {
-            uint32_t address = (uint32_t)p->data;
-            uint16_t *val;
-
-            val = (uint16_t *)address;
-
-            if (key == KEY_RIGHT)
-                *val |= VISIBLE_FLAG;
-            else
-                *val %= ~VISIBLE_FLAG;
-        }
-        break;
-    case OME_UINT8:
-    case OME_FLOAT:
-        if (p->data) {
-            OSD_UINT8_t *ptr = p->data;
+        case OME_POS:
             if (key == KEY_RIGHT) {
-                if (*ptr->val < ptr->max)
-                    *ptr->val += ptr->step;
-            }
-            else {
-                if (*ptr->val > ptr->min)
-                    *ptr->val -= ptr->step;
-            }
-        }
-        break;
-    case OME_TAB:
-        if (p->type == OME_TAB) {
-            OSD_TAB_t *ptr = p->data;
+                uint32_t address = (uint32_t)p->data;
+                uint16_t *val;
 
-            if (key == KEY_RIGHT) {
-                if (*ptr->val < ptr->max)
-                    *ptr->val += 1;
+                val = (uint16_t *)address;
+                if (!(*val & VISIBLE_FLAG)) // no submenu for hidden elements
+                    break;
             }
-            else {
-                if (*ptr->val > 0)
-                    *ptr->val -= 1;
-            }
-            if (p->func)
+        case OME_Submenu:
+        case OME_OSD_Exit:
+            if (p->func && key == KEY_RIGHT) {
                 p->func(p->data);
-        }
-        break;
-    case OME_INT8:
-        if (p->data) {
-            OSD_INT8_t *ptr = p->data;
-            if (key == KEY_RIGHT) {
-                if (*ptr->val < ptr->max)
-                    *ptr->val += ptr->step;
+                res = BUTTON_PAUSE;
             }
-            else {
-                if (*ptr->val > ptr->min)
-                    *ptr->val -= ptr->step;
+            break;
+        case OME_Back:
+            osdMenuBack();
+            res = BUTTON_PAUSE;
+            break;
+        case OME_Bool:
+            if (p->data) {
+                uint8_t *val = p->data;
+                if (key == KEY_RIGHT)
+                    *val = 1;
+                else
+                    *val = 0;
             }
-        }
-        break;
-    case OME_UINT16:
-        if (p->data) {
-            OSD_UINT16_t *ptr = p->data;
-            if (key == KEY_RIGHT) {
-                if (*ptr->val < ptr->max)
-                    *ptr->val += ptr->step;
+            break;
+        case OME_VISIBLE:
+            if (p->data) {
+                uint32_t address = (uint32_t)p->data;
+                uint16_t *val;
+
+                val = (uint16_t *)address;
+
+                if (key == KEY_RIGHT)
+                    *val |= VISIBLE_FLAG;
+                else
+                    *val %= ~VISIBLE_FLAG;
             }
-            else {
-                if (*ptr->val > ptr->min)
-                    *ptr->val -= ptr->step;
+            break;
+        case OME_UINT8:
+        case OME_FLOAT:
+            if (p->data) {
+                OSD_UINT8_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
             }
-        }
-        break;
-    case OME_INT16:
-        if (p->data) {
-            OSD_INT16_t *ptr = p->data;
-            if (key == KEY_RIGHT) {
-                if (*ptr->val < ptr->max)
-                    *ptr->val += ptr->step;
+            break;
+        case OME_TAB:
+            if (p->type == OME_TAB) {
+                OSD_TAB_t *ptr = p->data;
+
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += 1;
+                }
+                else {
+                    if (*ptr->val > 0)
+                        *ptr->val -= 1;
+                }
+                if (p->func)
+                    p->func(p->data);
             }
-            else {
-                if (*ptr->val > ptr->min)
-                    *ptr->val -= ptr->step;
+            break;
+        case OME_INT8:
+            if (p->data) {
+                OSD_INT8_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
             }
-        }
-        break;
-    case OME_Label:
-    case OME_END:
-        break;
+            break;
+        case OME_UINT16:
+            if (p->data) {
+                OSD_UINT16_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_INT16:
+            if (p->data) {
+                OSD_INT16_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_Label:
+        case OME_END:
+            break;
     }
     return res;
 }
@@ -968,87 +968,88 @@ void osdDrawMenu(void)
         max7456_write(LEFT_MENU_COLUMN + 2, i + top, p->text);
 
         switch (p->type) {
-        case OME_POS: {
-            uint32_t address = (uint32_t)p->data;
-            uint16_t *val;
-
-            val = (uint16_t *)address;
-            if (!(*val & VISIBLE_FLAG))
-                break;
-        }
-        case OME_Submenu:
-            max7456_write(RIGHT_MENU_COLUMN, i + top, ">");
-            break;
-        case OME_Bool:
-            if (p->data) {
-                if (*((uint8_t *)(p->data)))
-                    max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
-                else
-                    max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
-            }
-            break;
-        case OME_TAB: {
-            OSD_TAB_t *ptr = p->data;
-            max7456_write(RIGHT_MENU_COLUMN - 5, i + top, (char *)ptr->names[*ptr->val]);
-        } break;
-        case OME_VISIBLE:
-            if (p->data) {
+            case OME_POS: {
                 uint32_t address = (uint32_t)p->data;
                 uint16_t *val;
 
                 val = (uint16_t *)address;
+                if (!(*val & VISIBLE_FLAG))
+                    break;
+            }
+            case OME_Submenu:
+                max7456_write(RIGHT_MENU_COLUMN, i + top, ">");
+                break;
+            case OME_Bool:
+                if (p->data) {
+                    if (*((uint8_t *)(p->data)))
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
+                    else
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
+                }
+                break;
+            case OME_TAB: {
+                OSD_TAB_t *ptr = p->data;
+                max7456_write(RIGHT_MENU_COLUMN - 5, i + top, (char *)ptr->names[*ptr->val]);
+                break;
+            }
+            case OME_VISIBLE:
+                if (p->data) {
+                    uint32_t address = (uint32_t)p->data;
+                    uint16_t *val;
 
-                if (VISIBLE(*val))
-                    max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
-                else
-                    max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
-            }
-            break;
-        case OME_UINT8:
-            if (p->data) {
-                OSD_UINT8_t *ptr = p->data;
-                itoa(*ptr->val, buff, 10);
-                max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
-                max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
-            }
-            break;
-        case OME_INT8:
-            if (p->data) {
-                OSD_INT8_t *ptr = p->data;
-                itoa(*ptr->val, buff, 10);
-                max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
-                max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
-            }
-            break;
-        case OME_UINT16:
-            if (p->data) {
-                OSD_UINT16_t *ptr = p->data;
-                itoa(*ptr->val, buff, 10);
-                max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
-                max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
-            }
-            break;
-        case OME_INT16:
-            if (p->data) {
-                OSD_UINT16_t *ptr = p->data;
-                itoa(*ptr->val, buff, 10);
-                max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
-                max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
-            }
-            break;
-        case OME_FLOAT:
-            if (p->data) {
-                OSD_FLOAT_t *ptr = p->data;
-                simple_ftoa(*ptr->val * ptr->multipler, buff);
-                max7456_write(RIGHT_MENU_COLUMN - 1, i + top, "      ");
-                max7456_write(RIGHT_MENU_COLUMN - 1, i + top, buff);
-            }
-            break;
-        case OME_OSD_Exit:
-        case OME_Label:
-        case OME_END:
-        case OME_Back:
-            break;
+                    val = (uint16_t *)address;
+
+                    if (VISIBLE(*val))
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
+                    else
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
+                }
+                break;
+            case OME_UINT8:
+                if (p->data) {
+                    OSD_UINT8_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_INT8:
+                if (p->data) {
+                    OSD_INT8_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_UINT16:
+                if (p->data) {
+                    OSD_UINT16_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_INT16:
+                if (p->data) {
+                    OSD_UINT16_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_FLOAT:
+                if (p->data) {
+                    OSD_FLOAT_t *ptr = p->data;
+                    simple_ftoa(*ptr->val * ptr->multipler, buff);
+                    max7456_write(RIGHT_MENU_COLUMN - 1, i + top, "      ");
+                    max7456_write(RIGHT_MENU_COLUMN - 1, i + top, buff);
+                }
+                break;
+            case OME_OSD_Exit:
+            case OME_Label:
+            case OME_END:
+            case OME_Back:
+                break;
         }
         i++;
 
@@ -1245,18 +1246,18 @@ void osdUpdate(uint8_t guiKey)
                     x = OSD_X(*currentElement);
                     y = OSD_Y(*currentElement);
                     switch (key) {
-                    case KEY_UP:
-                        y--;
-                        break;
-                    case KEY_DOWN:
-                        y++;
-                        break;
-                    case KEY_RIGHT:
-                        x++;
-                        break;
-                    case KEY_LEFT:
-                        x--;
-                        break;
+                        case KEY_UP:
+                            y--;
+                            break;
+                        case KEY_DOWN:
+                            y++;
+                            break;
+                        case KEY_RIGHT:
+                            x++;
+                            break;
+                        case KEY_LEFT:
+                            x--;
+                            break;
                     }
 
                     *currentElement &= 0xFC00;
@@ -1414,7 +1415,7 @@ void osdOpenMenu(void)
 #endif // LED_STRIP
 }
 
-void drawElementPositioningHelp(void)
+void osdDrawElementPositioningHelp(void)
 {
     max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
     max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
@@ -1428,7 +1429,7 @@ void osdDrawElements(void)
     max7456_clear_screen();
 
     if (currentElement)
-        drawElementPositioningHelp();
+        osdDrawElementPositioningHelp();
     else if (sensors(SENSOR_ACC) || inMenu)
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
 
