@@ -734,8 +734,8 @@ static bool blackboxSDCardBeginLog()
             while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
                 if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
                     // If this is a log file, parse the log number from the filename
-                    if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX))
-                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX))) {
+                    if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
+                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
                         char logSequenceNumberString[6];
 
                         memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
