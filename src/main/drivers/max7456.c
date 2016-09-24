@@ -39,15 +39,15 @@
 
 // On shared SPI bus we want to change clock for OSD chip and restore for other devices
 #ifdef MAX7456_SPI_CLK
-    #define ENABLE_MAX7456        {spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLK);IOLo(max7456CsPin);}
+    #define ENABLE_MAX7456  {spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLK);IOLo(max7456CsPin);}
 #else
-    #define ENABLE_MAX7456        IOLo(max7456CsPin)
+    #define ENABLE_MAX7456  IOLo(max7456CsPin)
 #endif
 
 #ifdef MAX7456_RESTORE_CLK
-    #define DISABLE_MAX7456       {IOHi(max7456CsPin);spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_RESTORE_CLK);}
+    #define DISABLE_MAX7456 {IOHi(max7456CsPin);spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_RESTORE_CLK);}
 #else
-    #define DISABLE_MAX7456       IOHi(max7456CsPin)
+    #define DISABLE_MAX7456 IOHi(max7456CsPin)
 #endif
 
 uint16_t maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
@@ -61,14 +61,14 @@ static uint8_t SHADOW_BUFFER[VIDEO_BUFFER_CHARS_PAL];
 //max chars to update in one idle
 #define MAX_CHARS2UPDATE    100
 #ifdef MAX7456_DMA_CHANNEL_TX
-volatile uint8_t dmaTxInProgress = 0;
+volatile bool dmaTxInProgress = false;
 #endif // MAX7456_DMA_CHANNEL_TX
 
 static uint8_t spiBuffer[MAX_CHARS2UPDATE * 6];
 
 static uint8_t videoSignalCfg = 0;
 static uint8_t videoSignalReg = VIDEO_MODE_PAL | OSD_ENABLE; //PAL by default
-static uint8_t max7456Lock    = 0;
+static bool    max7456Lock    = false;
 static IO_t    max7456CsPin   = IO_NONE;
 static bool    fontIsLoading  = false;
 
@@ -138,7 +138,7 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
 
     // Enable SPI TX/RX request
     ENABLE_MAX7456;
-    dmaTxInProgress = 1;
+    dmaTxInProgress = true;
 
     SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
 #ifdef MAX7456_DMA_CHANNEL_RX
@@ -174,7 +174,7 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
                 SPI_I2S_DMAReq_Tx, DISABLE);
 
         DISABLE_MAX7456;
-        dmaTxInProgress = 0;
+        dmaTxInProgress = false;
     }
 
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_HTIF)) {
@@ -196,10 +196,10 @@ uint8_t max7456_get_rows_count(void) {
 //because MAX7456 need some time to detect video system etc. we need to wait for a while to initialize it at startup
 //and in case of restart we need to reinitialize chip
 void max7456_init2(void) {
-    uint8_t max_screen_rows;
+    uint8_t maxScreenRows;
     uint8_t srdata = 0;
     uint16_t x;
-    static uint8_t first_init = 1;
+    static bool firstInit = true;
 
     //do not init MAX before camera power up correctly
     if (millis() < 1500)
@@ -222,14 +222,14 @@ void max7456_init2(void) {
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
-        max_screen_rows = VIDEO_LINES_PAL;
+        maxScreenRows = VIDEO_LINES_PAL;
     } else {              // NTSC
         maxScreenSize = VIDEO_BUFFER_CHARS_NTSC;
-        max_screen_rows = VIDEO_LINES_NTSC;
+        maxScreenRows = VIDEO_LINES_NTSC;
     }
 
     // set all rows to same charactor black/white level
-    for(x = 0; x < max_screen_rows; x++) {
+    for(x = 0; x < maxScreenRows; x++) {
         max7456_send(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
     }
 
@@ -240,14 +240,14 @@ void max7456_init2(void) {
 
     //clear shadow to force redraw all screen in non-dma mode
     memset(SHADOW_BUFFER, 0, maxScreenSize);
-    if (first_init) {
+    if (firstInit) {
         max7456_refresh_all();
-        first_init = 0;
+        firstInit = false;
     }
 }
 
 //here we init only CS and try to init MAX for first time
-void max7456_init(uint8_t video_system) {
+void max7456_init(uint8_t videoSystem) {
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif // MAX7456_SPI_CS_PIN
@@ -259,7 +259,7 @@ void max7456_init(uint8_t video_system) {
     ENABLE_MAX7456;
     max7456_send(VM0_REG, MAX7456_RESET);
     DISABLE_MAX7456;
-    videoSignalCfg = video_system;
+    videoSignalCfg = videoSystem;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
     dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
@@ -303,7 +303,7 @@ void max7456_draw_screen(void) {
 
     if (!max7456Lock && !fontIsLoading) {
         //-----------------detect MAX7456 fail, or initialize it at startup when it is ready--------
-        max7456Lock = 1;
+        max7456Lock = true;
         ENABLE_MAX7456;
         check = max7456_send(VM0_REG | 0x80, 0x00);
         DISABLE_MAX7456;
@@ -353,7 +353,7 @@ void max7456_refresh_all(void) {
     while (dmaTxInProgress);
 #endif
         uint16_t xx;
-        max7456Lock = 1;
+        max7456Lock = true;
         ENABLE_MAX7456;
         max7456_send(MAX7456ADD_DMAH, 0);
         max7456_send(MAX7456ADD_DMAL, 0);
@@ -378,7 +378,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
     while (dmaTxInProgress);
 #endif
     while (max7456Lock);
-    max7456Lock = 1;
+    max7456Lock = true;
 
     ENABLE_MAX7456;
     // disable display

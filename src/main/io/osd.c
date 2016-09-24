@@ -174,6 +174,8 @@ void osdEditElement(void *ptr);
 void osdEraseFlash(void *ptr);
 void osdUpdateMaxRows(void);
 void osdChangeScreen(void * ptr);
+void osdDrawElements(void);
+void osdDrawSingleElement(uint8_t item);
 
 typedef struct
 {
@@ -649,261 +651,6 @@ void osdInit(void)
     refreshTimeout = 4 * REFRESH_1S;
 }
 
-extern uint16_t rssi; // FIXME dependency on mw.c
-void OSD_RSSI(void)
-{
-    uint16_t val;
-    char buff[5];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_RSSI_VALUE]) || BLINK(OSD_cfg.item_pos[OSD_RSSI_VALUE]))
-        return;
-
-    val = rssi * 100 / 1024; // change range
-
-    if (val >= 100)
-        val = 99;
-
-    buff[0] = SYM_RSSI;
-    sprintf(buff + 1, "%d", val);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_RSSI_VALUE]), OSD_Y(OSD_cfg.item_pos[OSD_RSSI_VALUE]), buff);
-}
-
-void OSD_VBAT(void)
-{
-    char buff[8];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]) || BLINK(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]))
-        return;
-
-    buff[0] = SYM_BATT_5;
-    sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]), OSD_Y(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]), buff);
-}
-
-void OSD_CURRENT(void)
-{
-    char buff[10];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_CURRENT_DRAW]) || BLINK(OSD_cfg.item_pos[OSD_CURRENT_DRAW]))
-        return;
-
-    buff[0] = SYM_AMP;
-    sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_CURRENT_DRAW]), OSD_Y(OSD_cfg.item_pos[OSD_CURRENT_DRAW]), buff);
-}
-
-void OSD_CAPACITY(void)
-{
-    char buff[10];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_MAH_DRAWN]) || BLINK(OSD_cfg.item_pos[OSD_MAH_DRAWN]))
-        return;
-
-    buff[0] = SYM_MAH;
-    sprintf(buff + 1, "%d", mAhDrawn);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_MAH_DRAWN]), OSD_Y(OSD_cfg.item_pos[OSD_MAH_DRAWN]), buff);
-}
-
-#define AHIPITCHMAX 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
-#define AHIROLLMAX 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
-#define AHISIDEBARWIDTHPOSITION 7
-#define AHISIDEBARHEIGHTPOSITION 3
-
-// Write the artifical horizon to the screen buffer
-void OSD_HORIZON()
-{
-    uint16_t position = 194;
-    int rollAngle = attitude.values.roll;
-    int pitchAngle = attitude.values.pitch;
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]))
-        return;
-
-    if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-        position += 30;
-
-    uint8_t *screenBuffer = max7456_get_screen_buffer();
-
-    if (pitchAngle > AHIPITCHMAX)
-        pitchAngle = AHIPITCHMAX;
-    if (pitchAngle < -AHIPITCHMAX)
-        pitchAngle = -AHIPITCHMAX;
-    if (rollAngle > AHIROLLMAX)
-        rollAngle = AHIROLLMAX;
-    if (rollAngle < -AHIROLLMAX)
-        rollAngle = -AHIROLLMAX;
-
-    for (uint8_t X = 0; X <= 8; X++) {
-        if (X == 4)
-            X = 5;
-        int Y = (rollAngle * (4 - X)) / 64;
-        Y -= pitchAngle / 8;
-        Y += 41;
-        if (Y >= 0 && Y <= 81) {
-            uint16_t pos = position - 7 + LINE * (Y / 9) + 3 - 4 * LINE + X;
-            screenBuffer[pos] = (SYM_AH_BAR9_0 + (Y % 9));
-        }
-    }
-    screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-    screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-    screenBuffer[position] = (SYM_AH_CENTER);
-
-    if (VISIBLE(OSD_cfg.item_pos[OSD_HORIZON_SIDEBARS])) {
-        // Draw AH sides
-        int8_t hudwidth = AHISIDEBARWIDTHPOSITION;
-        int8_t hudheight = AHISIDEBARHEIGHTPOSITION;
-        for (int8_t X = -hudheight; X <= hudheight; X++) {
-            screenBuffer[position - hudwidth + (X * LINE)] = (SYM_AH_DECORATION);
-            screenBuffer[position + hudwidth + (X * LINE)] = (SYM_AH_DECORATION);
-        }
-        // AH level indicators
-        screenBuffer[position - hudwidth + 1] = (SYM_AH_LEFT);
-        screenBuffer[position + hudwidth - 1] = (SYM_AH_RIGHT);
-    }
-}
-
-#ifdef GPS
-void OSD_SATS(void)
-{
-    char buff[8];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_GPS_SATS]) || BLINK(OSD_cfg.item_pos[OSD_GPS_SATS]))
-        return;
-
-    buff[0] = 0x1f;
-    sprintf(buff + 1, "%d", GPS_numSat);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_GPS_SATS]), OSD_Y(OSD_cfg.item_pos[OSD_GPS_SATS]), buff);
-}
-
-void OSD_SPEED(void)
-{
-    char buff[8];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_GPS_SPEED]) || BLINK(OSD_cfg.item_pos[OSD_GPS_SPEED]))
-        return;
-
-    sprintf(buff, "%d", GPS_speed * 36 / 1000);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_GPS_SPEED]), OSD_Y(OSD_cfg.item_pos[OSD_GPS_SPEED]), buff);
-}
-#endif // GPS
-
-void OSD_BARO_ALTITUDE(void)
-{
-
-    char buff[16];
-    int32_t alt = BaroAlt; // Metre x 100
-    char unitSym = 0xC;    // m
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
-        return;
-
-    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-        alt = (alt * 328) / 100; // Convert to feet x 100
-        unitSym = 0xF;           // ft
-    }
-
-    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ALTITUDE]), OSD_Y(OSD_cfg.item_pos[OSD_ALTITUDE]), buff);
-}
-
-void OSD_ON_TIME(void)
-{
-    char buff[8];
-    uint32_t seconds;
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_ONTIME]) || BLINK(OSD_cfg.item_pos[OSD_ONTIME]))
-        return;
-
-    buff[0] = SYM_ON_M;
-    seconds = micros() / 1000000;
-    sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ONTIME]), OSD_Y(OSD_cfg.item_pos[OSD_ONTIME]), buff);
-}
-
-void OSD_FLY_TIME(void)
-{
-    char buff[8];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_FLYTIME]) || BLINK(OSD_cfg.item_pos[OSD_FLYTIME]))
-        return;
-
-    buff[0] = SYM_FLY_M;
-    sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_FLYTIME]), OSD_Y(OSD_cfg.item_pos[OSD_FLYTIME]), buff);
-}
-
-void OSD_MODE(void)
-{
-    char *p = "ACRO";
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_FLYMODE]) || BLINK(OSD_cfg.item_pos[OSD_FLYMODE]))
-        return;
-
-    if (isAirmodeActive())
-        p = "AIR";
-
-    if (FLIGHT_MODE(FAILSAFE_MODE))
-        p = "!FS";
-    else if (FLIGHT_MODE(ANGLE_MODE))
-        p = "STAB";
-    else if (FLIGHT_MODE(HORIZON_MODE))
-        p = "HOR";
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_FLYMODE]), OSD_Y(OSD_cfg.item_pos[OSD_FLYMODE]), p);
-}
-
-void OSD_NAME(void)
-{
-    char line[32];
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_CRAFT_NAME]) || BLINK(OSD_cfg.item_pos[OSD_CRAFT_NAME]))
-        return;
-
-    if (strlen(masterConfig.name) == 0)
-        strcpy(line, "CRAFT_NAME");
-    else
-        for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
-            line[i] = toupper((unsigned char)masterConfig.name[i]);
-            if (masterConfig.name[i] == 0)
-                break;
-        }
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_CRAFT_NAME]), OSD_Y(OSD_cfg.item_pos[OSD_CRAFT_NAME]), line);
-}
-
-void OSD_THROTTLE(void)
-{
-    char line[32];
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_THROTTLE_POS]) || BLINK(OSD_cfg.item_pos[OSD_THROTTLE_POS]))
-        return;
-
-    line[0] = SYM_THR;
-    line[1] = SYM_THR1;
-    sprintf(line + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_THROTTLE_POS]), OSD_Y(OSD_cfg.item_pos[OSD_THROTTLE_POS]), line);
-}
-
-#ifdef VTX
-void OSD_VTX_CHAN(void)
-{
-    char line[32];
-
-    if (!VISIBLE(OSD_cfg.item_pos[OSD_VTX_CHANNEL]) || BLINK(OSD_cfg.item_pos[OSD_VTX_CHANNEL]))
-        return;
-
-    sprintf(line, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_VTX_CHANNEL]), OSD_Y(OSD_cfg.item_pos[OSD_VTX_CHANNEL]), line);
-}
-#endif // VTX
-
 void osdUpdateAlarms(void)
 {
     uint16_t rval = rssi * 100 / 1024; // zmiana zakresu
@@ -951,47 +698,6 @@ void osdResetAlarms(void)
     OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
     OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
     OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
-}
-
-void OSD_HELP(void)
-{
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 2, "TO MOVE ELEM. ");
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 3, "              ");
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
-}
-
-void osdDrawElements(void)
-{
-    max7456_clear_screen();
-
-    if (currentElement)
-        OSD_HELP();
-    else if (sensors(SENSOR_ACC) || inMenu)
-        OSD_HORIZON();
-
-    OSD_VBAT();
-    OSD_RSSI();
-    OSD_FLY_TIME();
-    OSD_ON_TIME();
-    OSD_MODE();
-    OSD_THROTTLE();
-#ifdef VTX
-    OSD_VTX_CHAN();
-#endif // VTX
-    OSD_CURRENT();
-    OSD_CAPACITY();
-    OSD_NAME();
-
-#ifdef GPS
-    if (sensors(SENSOR_GPS) || inMenu) {
-        OSD_SATS();
-        OSD_SPEED();
-    }
-#endif // GPS
-
-    OSD_BARO_ALTITUDE();
 }
 
 uint8_t osdHandleKey(uint8_t key)
@@ -1430,17 +1136,6 @@ void osdArmMotors(void)
     osdResetStats();
 }
 
-// simple function used to display message with defined timeout 10 = 1sec
-void OSD_Message(char *line1, char *line2, uint8_t timeout)
-{
-    max7456_clear_screen();
-    if (line1)
-        max7456_write(1, 6, line1);
-    if (line2)
-        max7456_write(1, 7, line2);
-    refreshTimeout = timeout * REFRESH_1S / 10;
-}
-
 void updateOsd(void)
 {
     static uint32_t counter;
@@ -1717,4 +1412,257 @@ void osdOpenMenu(void)
 #ifdef LED_STRIP
     getLedColor();
 #endif // LED_STRIP
+}
+
+void drawElementPositioningHelp(void)
+{
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 2, "TO MOVE ELEM. ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 3, "              ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
+}
+
+void osdDrawElements(void)
+{
+    max7456_clear_screen();
+
+    if (currentElement)
+        drawElementPositioningHelp();
+    else if (sensors(SENSOR_ACC) || inMenu)
+        osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+
+    osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
+    osdDrawSingleElement(OSD_RSSI_VALUE);
+    osdDrawSingleElement(OSD_FLYTIME);
+    osdDrawSingleElement(OSD_ONTIME);
+    osdDrawSingleElement(OSD_FLYMODE);
+    osdDrawSingleElement(OSD_THROTTLE_POS);
+    osdDrawSingleElement(OSD_VTX_CHANNEL);
+    osdDrawSingleElement(OSD_CURRENT_DRAW);
+    osdDrawSingleElement(OSD_MAH_DRAWN);
+    osdDrawSingleElement(OSD_CRAFT_NAME);
+    osdDrawSingleElement(OSD_ALTITUDE);
+
+#ifdef GPS
+    if (sensors(SENSOR_GPS) || inMenu) {
+        osdDrawSingleElement(OSD_GPS_SATS);
+        osdDrawSingleElement(OSD_GPS_SPEED);
+    }
+#endif // GPS
+}
+
+#define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
+#define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AH_SIDEBAR_WIDTH_POS 7
+#define AH_SIDEBAR_HEIGHT_POS 3
+extern uint16_t rssi; // FIXME dependency on mw.c
+
+void osdDrawSingleElement(uint8_t item)
+{
+    if (!VISIBLE(OSD_cfg.item_pos[item]) || BLINK(OSD_cfg.item_pos[item]))
+        return;
+
+    uint8_t elemPosX = OSD_X(OSD_cfg.item_pos[item]);
+    uint8_t elemPosY = OSD_Y(OSD_cfg.item_pos[item]);
+    char buff[32];
+
+    switch(item) {
+        case OSD_RSSI_VALUE:
+        {
+            uint16_t osdRssi = rssi * 100 / 1024; // change range
+            if (osdRssi >= 100)
+                osdRssi = 99;
+
+            buff[0] = SYM_RSSI;
+            sprintf(buff + 1, "%d", osdRssi);
+            break;
+        }
+
+        case OSD_MAIN_BATT_VOLTAGE:
+        {
+            buff[0] = SYM_BATT_5;
+            sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
+            break;
+        }
+
+        case OSD_CURRENT_DRAW:
+        {
+            buff[0] = SYM_AMP;
+            sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+            break;
+        }
+
+        case OSD_MAH_DRAWN:
+        {
+            buff[0] = SYM_MAH;
+            sprintf(buff + 1, "%d", mAhDrawn);
+            break;
+        }
+
+#ifdef GPS
+        case OSD_GPS_SATS:
+        {
+            buff[0] = 0x1f;
+            sprintf(buff + 1, "%d", GPS_numSat);
+            break;
+        }
+
+        case OSD_GPS_SPEED:
+        {
+            sprintf(buff, "%d", GPS_speed * 36 / 1000);
+            break;
+        }
+#endif // GPS
+
+        case OSD_ALTITUDE:
+        {
+            int32_t alt = BaroAlt; // Metre x 100
+            char unitSym = 0xC;    // m
+
+            if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
+                return;
+
+            if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+                alt = (alt * 328) / 100; // Convert to feet x 100
+                unitSym = 0xF;           // ft
+            }
+
+            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+            break;
+        }
+
+        case OSD_ONTIME:
+        {
+            uint32_t seconds = micros() / 1000000;
+            buff[0] = SYM_ON_M;
+            sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
+            break;
+        }
+
+        case OSD_FLYTIME:
+        {
+            buff[0] = SYM_FLY_M;
+            sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
+            break;
+        }
+
+        case OSD_FLYMODE:
+        {
+            char *p = "ACRO";
+
+            if (isAirmodeActive())
+                p = "AIR";
+
+            if (FLIGHT_MODE(FAILSAFE_MODE))
+                p = "!FS";
+            else if (FLIGHT_MODE(ANGLE_MODE))
+                p = "STAB";
+            else if (FLIGHT_MODE(HORIZON_MODE))
+                p = "HOR";
+
+            max7456_write(elemPosX, elemPosY, p);
+            return;
+        }
+
+        case OSD_CRAFT_NAME:
+        {
+            if (strlen(masterConfig.name) == 0)
+                strcpy(buff, "CRAFT_NAME");
+            else {
+                for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
+                    buff[i] = toupper((unsigned char)masterConfig.name[i]);
+                    if (masterConfig.name[i] == 0)
+                        break;
+                }
+            }
+
+            break;
+        }
+
+        case OSD_THROTTLE_POS:
+        {
+            buff[0] = SYM_THR;
+            buff[1] = SYM_THR1;
+            sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+            break;
+        }
+
+#ifdef VTX
+        case OSD_VTX_CHANNEL:
+        {
+            sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
+            break;
+        }
+#endif // VTX
+
+        case OSD_ARTIFICIAL_HORIZON:
+        {
+            uint8_t *screenBuffer = max7456_get_screen_buffer();
+            uint16_t position = 194;
+
+            int rollAngle = attitude.values.roll;
+            int pitchAngle = attitude.values.pitch;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+
+            if (pitchAngle > AH_MAX_PITCH)
+                pitchAngle = AH_MAX_PITCH;
+            if (pitchAngle < -AH_MAX_PITCH)
+                pitchAngle = -AH_MAX_PITCH;
+            if (rollAngle > AH_MAX_ROLL)
+                rollAngle = AH_MAX_ROLL;
+            if (rollAngle < -AH_MAX_ROLL)
+                rollAngle = -AH_MAX_ROLL;
+
+            for (uint8_t x = 0; x <= 8; x++) {
+                if (x == 4)
+                    x = 5;
+                int y = (rollAngle * (4 - x)) / 64;
+                y -= pitchAngle / 8;
+                y += 41;
+                if (y >= 0 && y <= 81) {
+                    uint16_t pos = position - 7 + LINE * (y / 9) + 3 - 4 * LINE + x;
+                    screenBuffer[pos] = (SYM_AH_BAR9_0 + (y % 9));
+                }
+            }
+
+            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
+            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
+            screenBuffer[position] = (SYM_AH_CENTER);
+
+            osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+            return;
+        }
+
+        case OSD_HORIZON_SIDEBARS:
+        {
+            uint8_t *screenBuffer = max7456_get_screen_buffer();
+            uint16_t position = 194;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+            // Draw AH sides
+            int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
+            int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
+            for (int8_t x = -hudheight; x <= hudheight; x++) {
+                screenBuffer[position - hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+                screenBuffer[position + hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+            }
+
+            // AH level indicators
+            screenBuffer[position - hudwidth + 1] = (SYM_AH_LEFT);
+            screenBuffer[position + hudwidth - 1] = (SYM_AH_RIGHT);
+
+            return;
+        }
+
+        default:
+            return;
+    }
+
+    max7456_write(elemPosX, elemPosY, buff);
 }
