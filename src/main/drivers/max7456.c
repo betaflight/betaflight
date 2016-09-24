@@ -70,7 +70,7 @@ static uint8_t  video_signal_cfg   = 0;
 static uint8_t  video_signal_reg   = VIDEO_MODE_PAL | OSD_ENABLE; //PAL by default
 static uint8_t  max7456_lock        = 0;
 static IO_t max7456CsPin            = IO_NONE;
-static uint8_t font_is_loading = 0;
+static bool fontIsLoading = false;
 
 static uint8_t max7456_send(uint8_t add, uint8_t data)
 {
@@ -312,7 +312,7 @@ void max7456_draw_screen(void) {
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
 
-    if (!max7456_lock && !font_is_loading) {
+    if (!max7456_lock && !fontIsLoading) {
         //-----------------detect MAX7456 fail, or initialize it at startup when it is ready--------
         max7456_lock = 1;
         ENABLE_MAX7456;
@@ -397,7 +397,7 @@ void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
 
     ENABLE_MAX7456;
     // disable display
-    font_is_loading = 1;
+    fontIsLoading = true;
     max7456_send(VM0_REG, 0);
 
     max7456_send(MAX7456ADD_CMAH, char_address); // set start address high
