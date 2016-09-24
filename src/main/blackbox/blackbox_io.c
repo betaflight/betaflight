@@ -96,6 +96,9 @@ static struct {
     } state;
 } blackboxSDCard;
 
+#define LOGFILE_PREFIX "LOG"
+#define LOGFILE_SUFFIX "BFL"
+
 #endif
 
 void blackboxWrite(uint8_t value)
@@ -692,22 +695,12 @@ static void blackboxCreateLogFile()
 {
     uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
-    char filename[13];
-
-    filename[0] = 'L';
-    filename[1] = 'O';
-    filename[2] = 'G';
+    char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX; 
 
     for (int i = 7; i >= 3; i--) {
         filename[i] = (remainder % 10) + '0';
         remainder /= 10;
     }
-
-    filename[8] = '.';
-    filename[9] = 'T';
-    filename[10] = 'X';
-    filename[11] = 'T';
-    filename[12] = 0;
 
     blackboxSDCard.state = BLACKBOX_SDCARD_WAITING;
 
@@ -741,10 +734,8 @@ static bool blackboxSDCardBeginLog()
             while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
                 if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
                     // If this is a log file, parse the log number from the filename
-                    if (
-                        directoryEntry->filename[0] == 'L' && directoryEntry->filename[1] == 'O' && directoryEntry->filename[2] == 'G'
-                        && directoryEntry->filename[8] == 'T' && directoryEntry->filename[9] == 'X' && directoryEntry->filename[10] == 'T'
-                    ) {
+                    if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX))
+                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX))) {
                         char logSequenceNumberString[6];
 
                         memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
