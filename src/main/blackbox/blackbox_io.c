@@ -97,7 +97,7 @@ static struct {
 } blackboxSDCard;
 
 #define LOGFILE_PREFIX "LOG"
-#define LOGFILE_SUFFIX ".BFL"
+#define LOGFILE_SUFFIX "BFL"
 
 #endif
 
@@ -695,7 +695,7 @@ static void blackboxCreateLogFile()
 {
     uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
-    char filename[] = LOGFILE_PREFIX "00000" LOGFILE_SUFFIX; 
+    char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX; 
 
     for (int i = 7; i >= 3; i--) {
         filename[i] = (remainder % 10) + '0';
@@ -735,8 +735,7 @@ static bool blackboxSDCardBeginLog()
                 if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
                     // If this is a log file, parse the log number from the filename
                     if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX))
-                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX))
-                       && strlen(directoryEntry->filename) == 12) {
+                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX))) {
                         char logSequenceNumberString[6];
 
                         memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);
