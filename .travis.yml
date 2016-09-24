@@ -36,7 +36,7 @@ env:
 #  - TARGET=REVO_OPBL
 #  - TARGET=RMDO
 #  - TARGET=SINGULARITY
-#  - TARGET=SIRINFPV
+  - TARGET=SIRINFPV
   - TARGET=SPARKY
 #  - TARGET=SPARKY2
 #  - TARGET=SPARKY_OPBL
@@ -48,7 +48,7 @@ env:
 #  - TARGET=X_RACERSPI
 #  - TARGET=ZCOREF3
 #  - TARGET=RCEXPLORERF3
-  
+
 # use new docker environment
 sudo: false
 
