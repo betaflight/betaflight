@@ -396,7 +396,7 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS) || defined(X_RACERSPI)
 #if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
