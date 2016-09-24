@@ -36,29 +36,29 @@
 
 // Direction arrows
 #define SYM_ARROW_SOUTH 0x60
-#define SYM_ARROW_2 0x61
-#define SYM_ARROW_3 0x62
-#define SYM_ARROW_4 0x63
-#define SYM_ARROW_EAST 0x64
-#define SYM_ARROW_6 0x65
-#define SYM_ARROW_7 0x66
-#define SYM_ARROW_8 0x67
+#define SYM_ARROW_2     0x61
+#define SYM_ARROW_3     0x62
+#define SYM_ARROW_4     0x63
+#define SYM_ARROW_EAST  0x64
+#define SYM_ARROW_6     0x65
+#define SYM_ARROW_7     0x66
+#define SYM_ARROW_8     0x67
 #define SYM_ARROW_NORTH 0x68
-#define SYM_ARROW_10 0x69
-#define SYM_ARROW_11 0x6A
-#define SYM_ARROW_12 0x6B
-#define SYM_ARROW_WEST 0x6C
-#define SYM_ARROW_14 0x6D
-#define SYM_ARROW_15 0x6E
-#define SYM_ARROW_16 0x6F
+#define SYM_ARROW_10    0x69
+#define SYM_ARROW_11    0x6A
+#define SYM_ARROW_12    0x6B
+#define SYM_ARROW_WEST  0x6C
+#define SYM_ARROW_14    0x6D
+#define SYM_ARROW_15    0x6E
+#define SYM_ARROW_16    0x6F
 
 // Heading Graphics
-#define SYM_HEADING_N 0x18
-#define SYM_HEADING_S 0x19
-#define SYM_HEADING_E 0x1A
-#define SYM_HEADING_W 0x1B
-#define SYM_HEADING_DIVIDED_LINE 0x1C
-#define SYM_HEADING_LINE 0x1D
+#define SYM_HEADING_N             0x18
+#define SYM_HEADING_S             0x19
+#define SYM_HEADING_E             0x1A
+#define SYM_HEADING_W             0x1B
+#define SYM_HEADING_DIVIDED_LINE  0x1C
+#define SYM_HEADING_LINE          0x1D
 
 // FRSKY HUB
 #define SYM_CELL0      0xF0
@@ -93,63 +93,60 @@
 #define SYM_ALT 0xCC
 
 // GPS Mode and Autopilot
-#define SYM_3DFIX 0xDF
-#define SYM_HOLD 0xEF
-#define SYM_G_HOME 0xFF
-#define SYM_GHOME 0x9D
-#define SYM_GHOME1 0x9E
-#define SYM_GHOLD 0xCD
-#define SYM_GHOLD1 0xCE
-#define SYM_GMISSION 0xB5
+#define SYM_3DFIX     0xDF
+#define SYM_HOLD      0xEF
+#define SYM_G_HOME    0xFF
+#define SYM_GHOME     0x9D
+#define SYM_GHOME1    0x9E
+#define SYM_GHOLD     0xCD
+#define SYM_GHOLD1    0xCE
+#define SYM_GMISSION  0xB5
 #define SYM_GMISSION1 0xB6
-#define SYM_GLAND 0xB7
-#define SYM_GLAND1 0xB8
+#define SYM_GLAND     0xB7
+#define SYM_GLAND1    0xB8
 
 // Gimbal active Mode
-#define SYM_GIMBAL 0x16
+#define SYM_GIMBAL  0x16
 #define SYM_GIMBAL1 0x17
 
-
 // Sensor´s Presence
-#define SYM_ACC 0xA0
-#define SYM_MAG 0xA1
-#define SYM_BAR 0xA2
-#define SYM_GPS 0xA3
-#define SYM_MAN 0xC0
-#define SYM_MAN1 0xC1
-#define SYM_MAN2 0xC2
-#define SYM_CHECK 0xBE
-#define SYM_BARO10 0xB7
-#define SYM_BARO11 0xB8
-#define SYM_MAG10 0xB5
-#define SYM_MAG11 0xB6
+#define SYM_ACC     0xA0
+#define SYM_MAG     0xA1
+#define SYM_BAR     0xA2
+#define SYM_GPS     0xA3
+#define SYM_MAN     0xC0
+#define SYM_MAN1    0xC1
+#define SYM_MAN2    0xC2
+#define SYM_CHECK   0xBE
+#define SYM_BARO10  0xB7
+#define SYM_BARO11  0xB8
+#define SYM_MAG10   0xB5
+#define SYM_MAG11   0xB6
 
 // AH Center screen Graphics
-#define SYM_AH_CENTER_LINE 0x26
-#define SYM_AH_CENTER_LINE_RIGHT 0x27
-#define SYM_AH_CENTER 0x7E
-#define SYM_AH_RIGHT 0x02
-#define SYM_AH_LEFT 0x03
-#define SYM_AH_DECORATION_UP 0xC9
-#define SYM_AH_DECORATION_DOWN 0xCF
-
+#define SYM_AH_CENTER_LINE        0x26
+#define SYM_AH_CENTER_LINE_RIGHT  0x27
+#define SYM_AH_CENTER             0x7E
+#define SYM_AH_RIGHT              0x02
+#define SYM_AH_LEFT               0x03
+#define SYM_AH_DECORATION_UP      0xC9
+#define SYM_AH_DECORATION_DOWN    0xCF
 
 // AH Bars
 #define SYM_AH_BAR9_0 0x80
-
 
 // Temperature
 #define SYM_TEMP_F 0x0D
 #define SYM_TEMP_C 0x0E
 
 // Batt evolution
-#define SYM_BATT_FULL 0x90
-#define SYM_BATT_5 0x91
-#define SYM_BATT_4 0x92
-#define SYM_BATT_3 0x93
-#define SYM_BATT_2 0x94
-#define SYM_BATT_1 0x95
-#define SYM_BATT_EMPTY 0x96
+#define SYM_BATT_FULL   0x90
+#define SYM_BATT_5      0x91
+#define SYM_BATT_4      0x92
+#define SYM_BATT_3      0x93
+#define SYM_BATT_2      0x94
+#define SYM_BATT_1      0x95
+#define SYM_BATT_EMPTY  0x96
 
 // Vario
 #define SYM_VARIO 0x7F
@@ -159,41 +156,41 @@
 
 // Batt Icon´s
 #define SYM_MAIN_BATT 0x97
-#define SYM_VID_BAT 0xBF
+#define SYM_VID_BAT   0xBF
 
 // Unit Icon´s (Metric)
-#define SYM_MS 0x9F
-#define SYM_KMH 0xA5
-#define SYM_ALTM 0xA7
-#define SYM_DISTHOME_M 0xBB
-#define SYM_M 0x0C
+#define SYM_MS          0x9F
+#define SYM_KMH         0xA5
+#define SYM_ALTM        0xA7
+#define SYM_DISTHOME_M  0xBB
+#define SYM_M           0x0C
 
 // Unit Icon´s (Imperial)
-#define SYM_FTS 0x99
-#define SYM_MPH 0xA6
-#define SYM_ALTFT 0xA8
+#define SYM_FTS         0x99
+#define SYM_MPH         0xA6
+#define SYM_ALTFT       0xA8
 #define SYM_DISTHOME_FT 0xB9
-#define SYM_FT 0x0F
+#define SYM_FT          0x0F
 
 // Voltage and amperage
-#define SYM_VOLT 0x06
-#define SYM_AMP 0x9A
-#define SYM_MAH 0x07
-#define SYM_WATT 0x57
+#define SYM_VOLT  0x06
+#define SYM_AMP   0x9A
+#define SYM_MAH   0x07
+#define SYM_WATT  0x57
 
 // Flying Mode
-#define SYM_ACRO 0xAE
-#define SYM_ACROGY 0x98
-#define SYM_ACRO1 0xAF
-#define SYM_STABLE 0xAC
-#define SYM_STABLE1 0xAD
-#define SYM_HORIZON 0xC4
-#define SYM_HORIZON1 0xC5
-#define SYM_PASS 0xAA
-#define SYM_PASS1 0xAB
-#define SYM_AIR 0xEA
-#define SYM_AIR1 0xEB
-#define SYM_PLUS 0x89
+#define SYM_ACRO      0xAE
+#define SYM_ACROGY    0x98
+#define SYM_ACRO1     0xAF
+#define SYM_STABLE    0xAC
+#define SYM_STABLE1   0xAD
+#define SYM_HORIZON   0xC4
+#define SYM_HORIZON1  0xC5
+#define SYM_PASS      0xAA
+#define SYM_PASS1     0xAB
+#define SYM_AIR       0xEA
+#define SYM_AIR1      0xEB
+#define SYM_PLUS      0x89
 
 // Note, these change with scrolling enabled (scrolling is TODO)
 //#define SYM_AH_DECORATION_LEFT 0x13
@@ -201,14 +198,14 @@
 #define SYM_AH_DECORATION 0x13
 
 // Time
-#define SYM_ON_M 0x9B
+#define SYM_ON_M  0x9B
 #define SYM_FLY_M 0x9C
-#define SYM_ON_H 0x70
+#define SYM_ON_H  0x70
 #define SYM_FLY_H 0x71
 
 // Throttle Position (%)
-#define SYM_THR 0x04
-#define SYM_THR1 0x05
+#define SYM_THR   0x04
+#define SYM_THR1  0x05
 
 // RSSI
 #define SYM_RSSI 0x01
@@ -223,4 +220,4 @@
 #define SYM_MIN 0xB3
 #define SYM_AVG 0xB4
 
-#endif
+#endif // USE_MAX7456

@@ -1,4 +1,21 @@
 /*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  Created by Marcin Baliniak
  some functions based on MinimOSD
  */
@@ -69,48 +86,51 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#define IS_HI(X) (rcData[X] > 1750)
-#define IS_LO(X) (rcData[X] < 1250)
+#define IS_HI(X)  (rcData[X] > 1750)
+#define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
 //key definiotion because API provide menu navigation over MSP/GUI app - not used NOW
-#define KEY_ENTER	0
-#define KEY_UP		1
-#define KEY_DOWN	2
-#define KEY_LEFT	3
-#define KEY_RIGHT	4
-#define KEY_ESC		5
+#define KEY_ENTER   0
+#define KEY_UP      1
+#define KEY_DOWN    2
+#define KEY_LEFT    3
+#define KEY_RIGHT   4
+#define KEY_ESC     5
 
 //osd current screen - to reduce long lines ;-)
 #define OSD_cfg masterConfig.osdProfile
 #define curr_profile masterConfig.profile[masterConfig.current_profile_index]
 
-uint16_t RefreshTimeout = 0;
+uint16_t refreshTimeout = 0;
 
-#define VISIBLE_FLAG	0x0800
-#define BLINK_FLAG	0x0400
-uint8_t BLINK_STATE = 1;
+#define VISIBLE_FLAG  0x0800
+#define BLINK_FLAG    0x0400
+uint8_t blinkState = 1;
 
-#define OSD_POS(x,y)	(x | (y << 5))
-#define OSD_X(x)	(x & 0x001F)
-#define OSD_Y(x)	((x >> 5) & 0x001F)
-#define VISIBLE(x)	(x & VISIBLE_FLAG)
-#define BLINK(x)	((x & BLINK_FLAG) && BLINK_STATE)
-#define BLINK_OFF(x) (x & ~BLINK_FLAG)
-extern uint8_t RSSI;
-static uint16_t fly_time = 0;
+#define OSD_POS(x,y)  (x | (y << 5))
+#define OSD_X(x)      (x & 0x001F)
+#define OSD_Y(x)      ((x >> 5) & 0x001F)
+#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
+#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
 
-tStatistic stats;
+extern uint8_t RSSI; // TODO: not used?
 
-#define BUTTON_TIME		2
-#define BUTTON_PAUSE	5
-#define REFRESH_1S	12
+static uint16_t flyTime = 0;
+uint8_t statRssi;
 
-#define LEFT_MENU_COLUMN	1
-#define RIGHT_MENU_COLUMN	23
-#define MAX_MENU_ITEMS	(max7456_get_rows_count()-2)
+statistic_t stats;
 
-uint8_t OSD_ROWS;
+#define BUTTON_TIME   2
+#define BUTTON_PAUSE  5
+#define REFRESH_1S    12
+
+#define LEFT_MENU_COLUMN  1
+#define RIGHT_MENU_COLUMN 23
+#define MAX_MENU_ITEMS    (max7456_get_rows_count() - 2)
+
+uint8_t osdRows;
 
 //type of elements
 typedef enum
@@ -133,159 +153,160 @@ typedef enum
 } OSD_MenuElement;
 
 //local variable to detect arm/disarm and show statistic etc
-uint8_t arm_state;
-uint8_t	blackbox_feature = 0;
-uint8_t	ledstrip_feature = 0;
+uint8_t armState;
+uint8_t featureBlackbox = 0;
+uint8_t featureLedstrip = 0;
 
 #if defined(VTX) || defined(USE_RTC6705)
-uint8_t vtx_feature = 0, vtx_band, vtx_channel;
-#endif
+uint8_t featureVtx = 0, vtxBand, vtxChannel;
+#endif // VTX || USE_RTC6705
 
-//we are in menu flag
-uint8_t OSD_MENU = 0;
+// We are in menu flag
+bool inMenu = false;
 
 typedef void (* OSDMenuFuncPtr)(void *data);
 
-void OSD_Exit(void * ptr);
-void OSD_MenuBack(void);
-void OSD_EditElement(void *ptr);
-void OSD_EraseFlash(void *ptr);
-void OSD_UpdateMaxRows(void);
-void OSD_ChangeScreen(void * ptr);
+void osdUpdate(uint8_t guiKey);
+void osdOpenMenu(void);
+void osdExitMenu(void * ptr);
+void osdMenuBack(void);
+void osdEditElement(void *ptr);
+void osdEraseFlash(void *ptr);
+void osdUpdateMaxRows(void);
+void osdChangeScreen(void * ptr);
+void osdDrawElements(void);
+void osdDrawSingleElement(uint8_t item);
 
 typedef struct
 {
-	char *text;
-	OSD_MenuElement type;
-	OSDMenuFuncPtr func;
-	void *data;
+    char *text;
+    OSD_MenuElement type;
+    OSDMenuFuncPtr func;
+    void *data;
 } OSD_Entry;
 
 typedef struct
 {
-	uint8_t *val;
-	uint8_t min;
-	uint8_t max;
-	uint8_t step;
-} OSD_UINT8_Struct;
+    uint8_t *val;
+    uint8_t min;
+    uint8_t max;
+    uint8_t step;
+} OSD_UINT8_t;
 
 typedef struct
 {
-	int8_t *val;
-	int8_t min;
-	int8_t max;
-	int8_t step;
-} OSD_INT8_Struct;
+    int8_t *val;
+    int8_t min;
+    int8_t max;
+    int8_t step;
+} OSD_INT8_t;
 
 typedef struct
 {
-	int16_t *val;
-	int16_t min;
-	int16_t max;
-	int16_t step;
-} OSD_INT16_Struct;
+    int16_t *val;
+    int16_t min;
+    int16_t max;
+    int16_t step;
+} OSD_INT16_t;
 
 typedef struct
 {
-	uint16_t *val;
-	uint16_t min;
-	uint16_t max;
-	uint16_t step;
-} OSD_UINT16_Struct;
+    uint16_t *val;
+    uint16_t min;
+    uint16_t max;
+    uint16_t step;
+} OSD_UINT16_t;
 
 typedef struct
 {
-	uint8_t *val;
-	uint8_t min;
-	uint8_t max;
-	uint8_t step;
-	uint16_t multipler;
-} OSD_FLOAT_Struct;
+    uint8_t *val;
+    uint8_t min;
+    uint8_t max;
+    uint8_t step;
+    uint16_t multipler;
+} OSD_FLOAT_t;
 
 typedef struct
 {
-	uint8_t *val;
-	uint8_t max;
-	const char * const *names;
-} OSD_TAB_Struct;
+    uint8_t *val;
+    uint8_t max;
+    const char * const *names;
+} OSD_TAB_t;
 
-OSD_Entry *MenuStack[10]; //tab to save menu stack
-uint8_t MenuStackPos[10]; //current position in menu stack
-uint8_t MenuStackIdx = 0;
+OSD_Entry *menuStack[10]; //tab to save menu stack
+uint8_t menuStackHistory[10]; //current position in menu stack
+uint8_t menuStackIdx = 0;
 
-OSD_Entry *CurrentMenu;
-OSD_Entry *NextPage = NULL;
+OSD_Entry *currentMenu;
+OSD_Entry *nextPage = NULL;
 
-int8_t CurrentMenuPos = 0;
-uint8_t CurrentMaxIdx = 0;
-uint16_t *CurrentElement = NULL;
+int8_t currentMenuPos = 0;
+uint8_t currentMenuIdx = 0;
+uint16_t *currentElement = NULL;
 
-OSD_Entry MenuAlarms[];
-OSD_Entry MenuLayout[];
-OSD_Entry MenuLayoutActiv[];
-OSD_Entry MenuLayoutPos[];
-OSD_Entry MenuFeatures[];
-OSD_Entry MenuBlackbox[];
+OSD_Entry menuAlarms[];
+OSD_Entry menuOsdLayout[];
+OSD_Entry menuOsdActiveElems[];
+OSD_Entry menuOsdElemsPositions[];
+OSD_Entry menuFeatures[];
+OSD_Entry menuBlackbox[];
 #ifdef LED_STRIP
-OSD_Entry MenuLedstrip[];
-#endif
+OSD_Entry menuLedstrip[];
+#endif // LED_STRIP
 #if defined(VTX) || defined(USE_RTC6705)
-OSD_Entry MenuVtx[];
-#endif
-OSD_Entry MenuIMU[];
-OSD_Entry MenuPID[];
-OSD_Entry MenuRc[];
-OSD_Entry MenuRateExpo[];
+OSD_Entry menu_vtx[];
+#endif // VTX || USE_RTC6705
+OSD_Entry menuImu[];
+OSD_Entry menuPid[];
+OSD_Entry menuRc[];
+OSD_Entry menuRateExpo[];
+OSD_Entry menuMisc[];
 
-uint8_t stat_RSSI;
-
-OSD_Entry MainMenu[]=
+OSD_Entry menuMain[] =
 {
-	{"----MAIN MENU----", OME_Label, NULL, NULL},
-	{"SCREEN LAYOUT", OME_Submenu, OSD_ChangeScreen, &MenuLayout[0]},
-	{"ALARMS", OME_Submenu, OSD_ChangeScreen, &MenuAlarms[0]},
-	{"CFG. IMU", OME_Submenu, OSD_ChangeScreen, &MenuIMU[0]},
-	{"FEATURES", OME_Submenu, OSD_ChangeScreen, &MenuFeatures[0]},
-	{"SAVE & EXIT", OME_OSD_Exit, OSD_Exit, (void*)1},
-	{"EXIT", OME_OSD_Exit, OSD_Exit, (void*)0},
-	{NULL,OME_END, NULL, NULL}
+    {"----MAIN MENU----", OME_Label, NULL, NULL},
+    {"SCREEN LAYOUT", OME_Submenu, osdChangeScreen, &menuOsdLayout[0]},
+    {"ALARMS", OME_Submenu, osdChangeScreen, &menuAlarms[0]},
+    {"CFG. IMU", OME_Submenu, osdChangeScreen, &menuImu[0]},
+    {"FEATURES", OME_Submenu, osdChangeScreen, &menuFeatures[0]},
+    {"SAVE & EXIT", OME_OSD_Exit, osdExitMenu, (void*)1},
+    {"EXIT", OME_OSD_Exit, osdExitMenu, (void*)0},
+    {NULL,OME_END, NULL, NULL}
 };
 
-OSD_Entry MenuFeatures[]=
+OSD_Entry menuFeatures[] =
 {
-	{"----- FEATURES -----", OME_Label, NULL, NULL},
-	{"BLACKBOX", OME_Submenu, OSD_ChangeScreen, &MenuBlackbox[0]},
-	#ifdef LED_STRIP
-	{"LED STRIP", OME_Submenu, OSD_ChangeScreen, &MenuLedstrip[0]},
-	#endif
-	#if defined(VTX) || defined(USE_RTC6705)
-	{"VTX", OME_Submenu, OSD_ChangeScreen, &MenuVtx[0]},
-	#endif
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"----- FEATURES -----", OME_Label, NULL, NULL},
+    {"BLACKBOX", OME_Submenu, osdChangeScreen, &menuBlackbox[0]},
+#ifdef LED_STRIP
+    {"LED STRIP", OME_Submenu, osdChangeScreen, &menuLedstrip[0]},
+#endif // LED_STRIP
+#if defined(VTX) || defined(USE_RTC6705)
+    {"VTX", OME_Submenu, osdChangeScreen, &menu_vtx[0]},
+#endif // VTX || USE_RTC6705
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
+OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
 
-OSD_UINT8_Struct blackbox_rate_denom_entry = {&masterConfig.blackbox_rate_denom,1,32,1};
-
-OSD_Entry MenuBlackbox[]=
+OSD_Entry menuBlackbox[] =
 {
-	{"--- BLACKBOX ---", OME_Label, NULL, NULL},
-	{"ENABLED", OME_Bool, NULL, &blackbox_feature},
-	{"RATE DENOM", OME_UINT8, NULL, &blackbox_rate_denom_entry},
+    {"--- BLACKBOX ---", OME_Label, NULL, NULL},
+    {"ENABLED", OME_Bool, NULL, &featureBlackbox},
+    {"RATE DENOM", OME_UINT8, NULL, &entryBlackboxRateDenom},
 #ifdef USE_FLASHFS
-	{"ERASE FLASH", OME_Submenu, OSD_EraseFlash, NULL},
-#endif
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"ERASE FLASH", OME_Submenu, osdEraseFlash, NULL},
+#endif // USE_FLASHFS
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
 #ifdef LED_STRIP
-
 //local variable to keep color value
 uint8_t ledColor;
 
-static const char * const ledColorNames[] = {
+static const char * const LED_COLOR_NAMES[] = {
     "      BLACK",
     "      WHITE",
     "        RED",
@@ -299,7 +320,7 @@ static const char * const ledColorNames[] = {
     "       BLUE",
     "DARK VIOLET",
     "    MAGNETA",
-    "  DEEP PINK",
+    "  DEEP PINK"
 };
 
 //find first led with color flag and restore color index
@@ -311,18 +332,17 @@ void getLedColor(void)
 
         int fn = ledGetFunction(ledConfig);
 
-        if (fn == LED_FUNCTION_COLOR)
-		{
-			ledColor = ledGetColor(ledConfig);
-			break;
-		}
+        if (fn == LED_FUNCTION_COLOR) {
+            ledColor = ledGetColor(ledConfig);
+            break;
+        }
     }
 }
 
 //udate all leds with flag color
 void applyLedColor(void * ptr)
 {
-	UNUSED(ptr);
+    UNUSED(ptr);
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
         ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
         if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR)
@@ -331,311 +351,296 @@ void applyLedColor(void * ptr)
     updateLedStrip();
 }
 
-OSD_TAB_Struct led_entry = {&ledColor,13,&ledColorNames[0]};
+OSD_TAB_t entryLed = {&ledColor, 13, &LED_COLOR_NAMES[0]};
 
-OSD_Entry MenuLedstrip[]=
+OSD_Entry menuLedstrip[] =
 {
-	{"--- LED TRIP ---", OME_Label, NULL, NULL},
-	{"ENABLED", OME_Bool, NULL, &ledstrip_feature},
-	{"LED COLOR", OME_TAB, applyLedColor, &led_entry},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"--- LED TRIP ---", OME_Label, NULL, NULL},
+    {"ENABLED", OME_Bool, NULL, &featureLedstrip},
+    {"LED COLOR", OME_TAB, applyLedColor, &entryLed},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
-#endif
-
+#endif // LED_STRIP
 
 #if defined(VTX) || defined(USE_RTC6705)
 static const char * const vtxBandNames[] = {
-	"BOACAM A",
-	"BOSCAM B",
-	"BOSCAM E",
-	"FATSHARK",
-	"RACEBAND",
+    "BOACAM A",
+    "BOSCAM B",
+    "BOSCAM E",
+    "FATSHARK",
+    "RACEBAND",
 };
 
-OSD_TAB_Struct vtx_band_entry = {&vtx_band,4,&vtxBandNames[0]};
-OSD_UINT8_Struct vtx_channel_entry =  {&vtx_channel, 1, 8, 1};
+OSD_TAB_t entryVtxBand = {&vtxBand,4,&vtxBandNames[0]};
+OSD_UINT8_t entryVtxChannel =  {&vtxChannel, 1, 8, 1};
 
 #ifdef VTX
-OSD_UINT8_Struct vtx_mode_entry =  {&masterConfig.vtx_mode, 0, 2, 1};
-OSD_UINT16_Struct vtx_mhz_entry =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
-#endif
+OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
+OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
+#endif // VTX
 
-OSD_Entry MenuVtx[]=
+OSD_Entry menu_vtx[] =
 {
-	{"--- VTX ---", OME_Label, NULL, NULL},
-	{"ENABLED", OME_Bool, NULL, &vtx_feature},
+    {"--- VTX ---", OME_Label, NULL, NULL},
+    {"ENABLED", OME_Bool, NULL, &featureVtx},
 #ifdef VTX
-	{"VTX MODE", OME_UINT8, NULL, &vtx_mode_entry},
-	{"VTX MHZ", OME_UINT16, NULL, &vtx_mhz_entry},
-#endif
-	{"BAND", OME_TAB, NULL, &vtx_band_entry},
-	{"CHANNEL", OME_UINT8, NULL, &vtx_channel_entry},
+    {"VTX MODE", OME_UINT8, NULL, &entryVtxMode},
+    {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz},
+#endif // VTX
+    {"BAND", OME_TAB, NULL, &entryVtxBand},
+    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel},
 #ifdef USE_RTC6705
-	{"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
-#endif
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
+#endif // USE_RTC6705
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
-#endif
+#endif // VTX || USE_RTC6705
 
-OSD_UINT16_Struct minthrottle_entry = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
-OSD_UINT8_Struct gyro_soft_lpf_hz_entry = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
-OSD_UINT16_Struct dterm_lpf_entry = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
-OSD_UINT16_Struct yaw_lpf_entry = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
-OSD_UINT16_Struct yaw_p_limit_entry = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
-OSD_UINT8_Struct vbat_scale_entry = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
-OSD_UINT8_Struct vbat_max_cell_entry = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
+OSD_UINT16_t entryMinThrottle = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
+OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
+OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
+OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
+OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
+OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
+OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
 
-OSD_Entry MenuMisc[]=
+OSD_Entry menuMisc[]=
 {
-	{"----- MISC -----", OME_Label, NULL, NULL},
-	{"GYRO LOWPASS", OME_UINT8, NULL, &gyro_soft_lpf_hz_entry},
-	{"DTERM LPF", OME_UINT16, NULL, &dterm_lpf_entry},
-	{"YAW LPF", OME_UINT16, NULL, &yaw_lpf_entry},
-	{"YAW P LIMIT", OME_UINT16, NULL, &yaw_p_limit_entry},
-	{"MINTHROTTLE", OME_UINT16, NULL, &minthrottle_entry},
-	{"VBAT SCALE", OME_UINT8, NULL, &vbat_scale_entry},
-	{"VBAT CELL MAX", OME_UINT8, NULL, &vbat_max_cell_entry},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
-};
-
-
-OSD_UINT8_Struct pid_profile_entry = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
-
-OSD_Entry MenuIMU[]=
-{
-	{"-----CFG. IMU-----", OME_Label, NULL, NULL},
-	{"PID", OME_Submenu, OSD_ChangeScreen, &MenuPID[0]},
-	{"PID PROFILE", OME_UINT8, NULL, &pid_profile_entry},
-	{"RATE & RXPO", OME_Submenu, OSD_ChangeScreen, &MenuRateExpo[0]},
-	{"RC PREVIEW", OME_Submenu, OSD_ChangeScreen, &MenuRc[0]},
-	{"MISC", OME_Submenu, OSD_ChangeScreen, &MenuMisc[0]},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"----- MISC -----", OME_Label, NULL, NULL},
+    {"GYRO LOWPASS", OME_UINT8, NULL, &entryGyroSoftLpfHz},
+    {"DTERM LPF", OME_UINT16, NULL, &entryDtermLpf},
+    {"YAW LPF", OME_UINT16, NULL, &entryYawLpf},
+    {"YAW P LIMIT", OME_UINT16, NULL, &entryYawPLimit},
+    {"MINTHROTTLE", OME_UINT16, NULL, &entryMinThrottle},
+    {"VBAT SCALE", OME_UINT8, NULL, &entryVbatScale},
+    {"VBAT CELL MAX", OME_UINT8, NULL, &entryVbatMaxCell},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
+OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
 
-uint8_t temp_pids[4][3];
-
-static OSD_UINT8_Struct RollP = {&temp_pids[PIDROLL][0],10,150,1};
-static OSD_UINT8_Struct RollI = {&temp_pids[PIDROLL][1],1,150,1};
-static OSD_UINT8_Struct RollD = {&temp_pids[PIDROLL][2],0,150,1};
-
-static OSD_UINT8_Struct PitchP = {&temp_pids[PIDPITCH][0],10,150,1};
-static OSD_UINT8_Struct PitchI = {&temp_pids[PIDPITCH][1],1,150,1};
-static OSD_UINT8_Struct PitchD = {&temp_pids[PIDPITCH][2],0,150,1};
-
-static OSD_UINT8_Struct YawP = {&temp_pids[PIDYAW][0],10,150,1};
-static OSD_UINT8_Struct YawI = {&temp_pids[PIDYAW][1],1,150,1};
-static OSD_UINT8_Struct YawD = {&temp_pids[PIDYAW][2],0,150,1};
-
-//static OSD_UINT8_Struct LevelP = {&temp_pids[3][0],10,150,1};
-//static OSD_FLOAT_Struct LevelI = {&temp_pids[3][1],1,150,1,1};
-//static OSD_FLOAT_Struct LevelD = {&temp_pids[3][2],10,150,1,1000};
-
-OSD_Entry MenuPID[]=
+OSD_Entry menuImu[] =
 {
-	{"------- PID -------", OME_Label, NULL, NULL},
-	{"ROLL P", OME_UINT8, NULL, &RollP},
-	{"ROLL I", OME_UINT8, NULL, &RollI},
-	{"ROLL D", OME_UINT8, NULL, &RollD},
+    {"-----CFG. IMU-----", OME_Label, NULL, NULL},
+    {"PID", OME_Submenu, osdChangeScreen, &menuPid[0]},
+    {"PID PROFILE", OME_UINT8, NULL, &entryPidProfile},
+    {"RATE & RXPO", OME_Submenu, osdChangeScreen, &menuRateExpo[0]},
+    {"RC PREVIEW", OME_Submenu, osdChangeScreen, &menuRc[0]},
+    {"MISC", OME_Submenu, osdChangeScreen, &menuMisc[0]},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
+};
 
-	{"PITCH P", OME_UINT8, NULL, &PitchP},
-	{"PITCH I", OME_UINT8, NULL, &PitchI},
-	{"PITCH D", OME_UINT8, NULL, &PitchD},
+uint8_t tempPid[4][3];
 
-	{"YAW P", OME_UINT8, NULL, &YawP},
-	{"YAW I", OME_UINT8, NULL, &YawI},
-	{"YAW D", OME_UINT8, NULL, &YawD},
+static OSD_UINT8_t entryRollP = {&tempPid[PIDROLL][0], 10, 150, 1};
+static OSD_UINT8_t entryRollI = {&tempPid[PIDROLL][1], 1, 150, 1};
+static OSD_UINT8_t entryRollD = {&tempPid[PIDROLL][2], 0, 150, 1};
 
-//	{"LEVEL A", OME_FLOAT, NULL, &LevelP},
-	//{"LEVEL H", OME_FLOAT, NULL, &LevelI},
-	//{"LEVEL H SENS.", OME_FLOAT, NULL, &LevelD},
+static OSD_UINT8_t entryPitchP = {&tempPid[PIDPITCH][0], 10, 150, 1};
+static OSD_UINT8_t entryPitchI = {&tempPid[PIDPITCH][1], 1, 150, 1};
+static OSD_UINT8_t entryPitchD = {&tempPid[PIDPITCH][2], 0, 150, 1};
 
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+static OSD_UINT8_t entryYawP = {&tempPid[PIDYAW][0], 10, 150, 1};
+static OSD_UINT8_t entryYawI = {&tempPid[PIDYAW][1], 1, 150, 1};
+static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
+
+OSD_Entry menuPid[] =
+{
+    {"------- PID -------", OME_Label, NULL, NULL},
+    {"ROLL P", OME_UINT8, NULL, &entryRollP},
+    {"ROLL I", OME_UINT8, NULL, &entryRollI},
+    {"ROLL D", OME_UINT8, NULL, &entryRollD},
+
+    {"PITCH P", OME_UINT8, NULL, &entryPitchP},
+    {"PITCH I", OME_UINT8, NULL, &entryPitchI},
+    {"PITCH D", OME_UINT8, NULL, &entryPitchD},
+
+    {"YAW P", OME_UINT8, NULL, &entryYawP},
+    {"YAW I", OME_UINT8, NULL, &entryYawI},
+    {"YAW D", OME_UINT8, NULL, &entryYawD},
+
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
 controlRateConfig_t rateProfile;
 
-static OSD_FLOAT_Struct RollRate = {&rateProfile.rates[0],0,250,1,10};
-static OSD_FLOAT_Struct PitchRate = {&rateProfile.rates[1],0,250,1,10};
-static OSD_FLOAT_Struct YawRate = {&rateProfile.rates[2],0,250,1,10};
-static OSD_FLOAT_Struct RCRate = {&rateProfile.rcRate8,0,200,1,10};
-static OSD_FLOAT_Struct RCExpo = {&rateProfile.rcExpo8,0,100,1,10};
-static OSD_FLOAT_Struct RCYawExpo = {&rateProfile.rcYawExpo8,0,100,1,10};
-static OSD_FLOAT_Struct TPAentry = {&rateProfile.dynThrPID,0,70,1,10};
-static OSD_UINT16_Struct TPAbreak = {&rateProfile.tpa_breakpoint,1100,1800,10};
+static OSD_FLOAT_t entryRollRate = {&rateProfile.rates[0], 0, 250, 1, 10};
+static OSD_FLOAT_t entryPitchRate = {&rateProfile.rates[1], 0, 250, 1, 10};
+static OSD_FLOAT_t entryYawRate = {&rateProfile.rates[2], 0, 250, 1, 10};
+static OSD_FLOAT_t entryRcRate = {&rateProfile.rcRate8, 0, 200, 1, 10};
+static OSD_FLOAT_t entryRcExpo = {&rateProfile.rcExpo8, 0, 100, 1, 10};
+static OSD_FLOAT_t entryRcExpoYaw = {&rateProfile.rcYawExpo8, 0, 100, 1, 10};
+static OSD_FLOAT_t extryTpaEntry = {&rateProfile.dynThrPID, 0, 70, 1, 10};
+static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10};
+static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.ptermSRateWeight, 0, 100, 1, 10};
+static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
 
-static OSD_FLOAT_Struct P_Setpoint_entry = {&masterConfig.profile[0].pidProfile.ptermSRateWeight,0,100,1,10};
-static OSD_FLOAT_Struct D_Setpoint_entry = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight,0,255,1,10};
-
-OSD_Entry MenuRateExpo[]=
+OSD_Entry menuRateExpo[] =
 {
-	{"----RATE & EXPO----", OME_Label, NULL, NULL},
-	{"ROLL RATE", OME_FLOAT, NULL, &RollRate},
-	{"PITCH RATE", OME_FLOAT, NULL, &PitchRate},
-	{"YAW RATE", OME_FLOAT, NULL, &YawRate},
-	{"RC RATE", OME_FLOAT, NULL, &RCRate},
-	{"RC EXPO", OME_FLOAT, NULL, &RCExpo},
-	{"RC YAW EXPO", OME_FLOAT, NULL, &RCYawExpo},
-	{"THR. PID ATT.", OME_FLOAT, NULL, &TPAentry},
-	{"TPA BREAKPOINT", OME_UINT16, NULL, &TPAbreak},
-	{"PTERM SRATE RATIO", OME_FLOAT, NULL, &P_Setpoint_entry},
-	{"D SETPOINT", OME_FLOAT, NULL, &D_Setpoint_entry},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"----RATE & EXPO----", OME_Label, NULL, NULL},
+    {"ROLL RATE", OME_FLOAT, NULL, &entryRollRate},
+    {"PITCH RATE", OME_FLOAT, NULL, &entryPitchRate},
+    {"YAW RATE", OME_FLOAT, NULL, &entryYawRate},
+    {"RC RATE", OME_FLOAT, NULL, &entryRcRate},
+    {"RC EXPO", OME_FLOAT, NULL, &entryRcExpo},
+    {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw},
+    {"THR. PID ATT.", OME_FLOAT, NULL, &extryTpaEntry},
+    {"TPA BREAKPOINT", OME_UINT16, NULL, &entryTpaBreak},
+    {"PTERM SRATE RATIO", OME_FLOAT, NULL, &entryPSetpoint},
+    {"D SETPOINT", OME_FLOAT, NULL, &entryDSetpoint},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
-static OSD_INT16_Struct rollEntry = {&rcData[ROLL],1,2500,0};
-static OSD_INT16_Struct pitchEntry = {&rcData[PITCH],1,2500,0};
-static OSD_INT16_Struct throttleEntry = {&rcData[THROTTLE],1,2500,0};
-static OSD_INT16_Struct yawEntry = {&rcData[YAW],1,2500,0};
-static OSD_INT16_Struct aux1Entry = {&rcData[AUX1],1,2500,0};
-static OSD_INT16_Struct aux2Entry = {&rcData[AUX2],1,2500,0};
-static OSD_INT16_Struct aux3Entry = {&rcData[AUX3],1,2500,0};
-static OSD_INT16_Struct aux4Entry = {&rcData[AUX4],1,2500,0};
+static OSD_INT16_t entryRcRoll = {&rcData[ROLL], 1, 2500, 0};
+static OSD_INT16_t entryRcPitch = {&rcData[PITCH], 1, 2500, 0};
+static OSD_INT16_t entryRcThrottle = {&rcData[THROTTLE], 1, 2500, 0};
+static OSD_INT16_t entryRcYaw = {&rcData[YAW], 1, 2500, 0};
+static OSD_INT16_t entryRcAux1 = {&rcData[AUX1], 1, 2500, 0};
+static OSD_INT16_t entryRcAux2 = {&rcData[AUX2], 1, 2500, 0};
+static OSD_INT16_t entryRcAux3 = {&rcData[AUX3], 1, 2500, 0};
+static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
 
-OSD_Entry MenuRc[]=
+OSD_Entry menuRc[] =
 {
-	{"---- RC PREVIEW ----", OME_Label, NULL, NULL},
-	{"ROLL", OME_INT16, NULL, &rollEntry},
-	{"PITCH", OME_INT16, NULL, &pitchEntry},
-	{"THROTTLE", OME_INT16, NULL, &throttleEntry},
-	{"YAW", OME_INT16, NULL, &yawEntry},
-	{"AUX1", OME_INT16, NULL, &aux1Entry},
-	{"AUX2", OME_INT16, NULL, &aux2Entry},
-	{"AUX3", OME_INT16, NULL, &aux3Entry},
-	{"AUX4", OME_INT16, NULL, &aux4Entry},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"---- RC PREVIEW ----", OME_Label, NULL, NULL},
+    {"ROLL", OME_INT16, NULL, &entryRcRoll},
+    {"PITCH", OME_INT16, NULL, &entryRcPitch},
+    {"THROTTLE", OME_INT16, NULL, &entryRcThrottle},
+    {"YAW", OME_INT16, NULL, &entryRcYaw},
+    {"AUX1", OME_INT16, NULL, &entryRcAux1},
+    {"AUX2", OME_INT16, NULL, &entryRcAux2},
+    {"AUX3", OME_INT16, NULL, &entryRcAux3},
+    {"AUX4", OME_INT16, NULL, &entryRcAux4},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
-
-OSD_Entry MenuLayout[]=
+OSD_Entry menuOsdLayout[] =
 {
-	{"---SCREEN LAYOUT---", OME_Label, NULL, NULL},
-	{"ACTIVE ELEM.", OME_Submenu, OSD_ChangeScreen, &MenuLayoutActiv[0]},
-	{"POSITION", OME_Submenu, OSD_ChangeScreen, &MenuLayoutPos[0]},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"---SCREEN LAYOUT---", OME_Label, NULL, NULL},
+    {"ACTIVE ELEM.", OME_Submenu, osdChangeScreen, &menuOsdActiveElems[0]},
+    {"POSITION", OME_Submenu, osdChangeScreen, &menuOsdElemsPositions[0]},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
+OSD_UINT8_t entryAlarmRssi = {&OSD_cfg.rssi_alarm, 5, 90, 5};
+OSD_UINT16_t entryAlarmCapacity = {&OSD_cfg.cap_alarm, 50, 30000, 50};
+OSD_UINT16_t enryAlarmFlyTime = {&OSD_cfg.time_alarm, 1, 200, 1};
+OSD_UINT16_t entryAlarmAltitude = {&OSD_cfg.alt_alarm, 1, 200, 1};
 
-OSD_UINT8_Struct RSSI_entry = {&OSD_cfg.rssi_alarm,5,90,5};
-OSD_UINT16_Struct CAP_entry = {&OSD_cfg.cap_alarm, 50, 30000, 50};
-OSD_UINT16_Struct FLY_TIME_entry = {&OSD_cfg.time_alarm, 1, 200, 1};
-OSD_UINT16_Struct ALT_ALARM_entry = {&OSD_cfg.alt_alarm, 1, 200, 1};
-
-OSD_Entry MenuAlarms[]=
+OSD_Entry menuAlarms[] =
 {
-	{"------ ALARMS ------", OME_Label, NULL, NULL},
-	{"RSSI", OME_UINT8, NULL, &RSSI_entry},
-	{"MAIN BATT.", OME_UINT16, NULL, &CAP_entry},
-	{"FLY TIME", OME_UINT16, NULL, &FLY_TIME_entry},
-	{"MAX ALTITUDE", OME_UINT16, NULL, &ALT_ALARM_entry},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"------ ALARMS ------", OME_Label, NULL, NULL},
+    {"RSSI", OME_UINT8, NULL, &entryAlarmRssi},
+    {"MAIN BATT.", OME_UINT16, NULL, &entryAlarmCapacity},
+    {"FLY TIME", OME_UINT16, NULL, &enryAlarmFlyTime},
+    {"MAX ALTITUDE", OME_UINT16, NULL, &entryAlarmAltitude},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
-OSD_Entry MenuLayoutPos[]=
+OSD_Entry menuOsdElemsPositions[] =
 {
-	{"---POSITION---", OME_Label, NULL, NULL},
-	{"RSSI", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]},
-	{"MAIN BATTERY", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]},
-	{"UPTIME", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_ONTIME]},
-	{"FLY TIME", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_FLYTIME]},
-	{"FLY MODE", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_FLYMODE]},
-	{"NAME", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]},
-	{"THROTTLE POS", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]},
+    {"---POSITION---", OME_Label, NULL, NULL},
+    {"RSSI", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]},
+    {"MAIN BATTERY", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]},
+    {"UPTIME", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_ONTIME]},
+    {"FLY TIME", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_FLYTIME]},
+    {"FLY MODE", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_FLYMODE]},
+    {"NAME", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]},
+    {"THROTTLE POS", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]},
 #ifdef VTX
-	{"VTX CHAN", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
-#endif
-	{"CURRENT (A)", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]},
-	{"USED MAH", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]},
+    {"VTX CHAN", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
+#endif // VTX
+    {"CURRENT (A)", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]},
+    {"USED MAH", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]},
 #ifdef GPS
-	{"GPS SPEED", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
-	{"GPS SATS.", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
-#endif
-	{"ALTITUDE", OME_POS, OSD_EditElement, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"GPS SPEED", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
+    {"GPS SATS.", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
+#endif // GPS
+    {"ALTITUDE", OME_POS, osdEditElement, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
-OSD_Entry MenuLayoutActiv[]=
+OSD_Entry menuOsdActiveElems[] =
 {
-	{" --ACTIV ELEM.-- ", OME_Label, NULL, NULL},
-	{"RSSI", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]},
-	{"MAIN BATTERY", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]},
-	{"HORIZON", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]},
-	{"HORIZON SIDEBARS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]},
-	{"UPTIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ONTIME]},
-	{"FLY TIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYTIME]},
-	{"FLY MODE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYMODE]},
-	{"NAME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]},
-	{"THROTTLE POS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]},
+    {" --ACTIV ELEM.-- ", OME_Label, NULL, NULL},
+    {"RSSI", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE]},
+    {"MAIN BATTERY", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE]},
+    {"HORIZON", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]},
+    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS]},
+    {"UPTIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ONTIME]},
+    {"FLY TIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYTIME]},
+    {"FLY MODE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYMODE]},
+    {"NAME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME]},
+    {"THROTTLE POS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS]},
 #ifdef VTX
-	{"VTX CHAN", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
-#endif
-	{"CURRENT (A)", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]},
-	{"USED MAH", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]},
+    {"VTX CHAN", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
+#endif // VTX
+    {"CURRENT (A)", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW]},
+    {"USED MAH", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN]},
 #ifdef GPS
-	{"GPS SPEED", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
-	{"GPS SATS.", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
-#endif
-	{"ALTITUDE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
-	{"BACK", OME_Back, NULL, NULL},
-	{NULL, OME_END, NULL, NULL}
+    {"GPS SPEED", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED]},
+    {"GPS SATS.", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS]},
+#endif // GPS
+    {"ALTITUDE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE]},
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
 };
 
-void resetOsdConfig(osd_profile *osdProfile)
+void resetOsdConfig(osd_profile_t *osdProfile)
 {
+    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_FLYTIME] = OSD_POS(22, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(12, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(12, 12);
+    osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 4);
+    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
+    osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3);
+    osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(15, 3);
+    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
+    osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
+    osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
 
-	osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22,0) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12,0) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8,6) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8,6) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22,11) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_FLYTIME] = OSD_POS(22,12) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(12,11) | VISIBLE_FLAG;
-	osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(12,12);
-	osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1,4);
-	osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8,6);
-	osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1,3);
-	osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(15,3);
-	osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2,2);
-	osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2,12);
-	osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1,5);
+    osdProfile->rssi_alarm = 20;
+    osdProfile->cap_alarm = 2200;
+    osdProfile->time_alarm = 10; // in minutes
+    osdProfile->alt_alarm = 100; // meters or feet depend on configuration
 
-	osdProfile->rssi_alarm = 20;
-	osdProfile->cap_alarm = 2200;
-	osdProfile->time_alarm = 10; //in minutes
-	osdProfile->alt_alarm = 100; //meters or feet depend on configuration
-
-	osdProfile->video_system = 0;
+    osdProfile->video_system = 0;
 }
-
-
 
 void osdInit(void)
 {
-	char x, string_buffer[30];
+    char x, string_buffer[30];
 
-    arm_state = ARMING_FLAG(ARMED);
+    armState = ARMING_FLAG(ARMED);
 
-	max7456_init(masterConfig.osdProfile.video_system);
+    max7456_init(masterConfig.osdProfile.video_system);
 
-	max7456_clear_screen();
+    max7456_clear_screen();
 
     // display logo and help
-    x =  160;
+    x = 160;
     for (int i = 1; i < 5; i++) {
-        for (int j = 3; j < 27; j++)
+        for (int j = 3; j < 27; j++) {
             if (x != 255)
-				max7456_write_char(j,i,x++);
+                max7456_write_char(j, i, x++);
+        }
     }
+
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456_write(5, 6, string_buffer);
     max7456_write(7, 7, "MENU: THRT MID");
@@ -643,1148 +648,1022 @@ void osdInit(void)
     max7456_write(13, 9, "PITCH UP");
     max7456_refresh_all();
 
-    RefreshTimeout = 4*REFRESH_1S;
+    refreshTimeout = 4 * REFRESH_1S;
 }
 
-extern uint16_t rssi; // FIXME dependency on mw.c
-void OSD_RSSI(void)
+void osdUpdateAlarms(void)
 {
-	uint16_t val;
-	char buff[5];
+    uint16_t rval = rssi * 100 / 1024; // zmiana zakresu
+    int32_t alt = BaroAlt / 100;
 
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_RSSI_VALUE]) || BLINK(OSD_cfg.item_pos[OSD_RSSI_VALUE]))
-		return;
+    if (rval < OSD_cfg.rssi_alarm)
+        OSD_cfg.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
-	val = rssi * 100 / 1024; //change range
+    if (vbat <= (batteryWarningVoltage - 1))
+        OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
 
-	if (val >= 100)
-		val = 99;
+    if (STATE(GPS_FIX) == 0)
+        OSD_cfg.item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
 
-	buff[0] = SYM_RSSI;
-	sprintf(buff+1, "%d", val);
+    if (flyTime / 60 >= OSD_cfg.time_alarm && ARMING_FLAG(ARMED))
+        OSD_cfg.item_pos[OSD_FLYTIME] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
 
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_RSSI_VALUE]), OSD_Y(OSD_cfg.item_pos[OSD_RSSI_VALUE]), buff);
-}
-
-void OSD_VBAT(void)
-{
-	char buff[8];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]) || BLINK(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]))
-		return;
-
-	buff[0] = SYM_BATT_5;
-	sprintf(buff+1, "%d.%1dV", vbat / 10, vbat % 10);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]), OSD_Y(OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE]), buff);
-}
-
-
-void OSD_CURRENT(void)
-{
-	char buff[10];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_CURRENT_DRAW]) || BLINK(OSD_cfg.item_pos[OSD_CURRENT_DRAW]))
-		return;
-
-	buff[0] = SYM_AMP;
-    sprintf(buff+1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_CURRENT_DRAW]), OSD_Y(OSD_cfg.item_pos[OSD_CURRENT_DRAW]), buff);
-}
-
-
-
-void OSD_CAPACITY(void)
-{
-	char buff[10];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_MAH_DRAWN]) || BLINK(OSD_cfg.item_pos[OSD_MAH_DRAWN]))
-		return;
-
-    buff[0] = SYM_MAH;
-	sprintf(buff+1, "%d", mAhDrawn);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_MAH_DRAWN]), OSD_Y(OSD_cfg.item_pos[OSD_MAH_DRAWN]), buff);
-}
-
-#define AHIPITCHMAX 200             // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
-#define AHIROLLMAX  400             // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
-#define AHISIDEBARWIDTHPOSITION 7
-#define AHISIDEBARHEIGHTPOSITION 3
-
-// Write the artifical horizon to the screen buffer
-void OSD_HORIZON() {
-    uint16_t position = 194;
-    int rollAngle = attitude.values.roll;
-    int pitchAngle = attitude.values.pitch;
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]))
-		return;
-
-	if (max_screen_size == VIDEO_BUFFER_CHARS_PAL)
-		position += 30;
-
-    uint8_t *screenBuffer = max7456_get_screen_buffer();
-
-    if (pitchAngle > AHIPITCHMAX)
-        pitchAngle = AHIPITCHMAX;
-    if (pitchAngle < -AHIPITCHMAX)
-        pitchAngle = -AHIPITCHMAX;
-    if (rollAngle > AHIROLLMAX)
-        rollAngle = AHIROLLMAX;
-    if (rollAngle < -AHIROLLMAX)
-        rollAngle = -AHIROLLMAX;
-
-    for (uint8_t X = 0; X <= 8; X++) {
-        if (X == 4)
-            X = 5;
-        int Y = (rollAngle * (4 - X)) / 64;
-        Y -= pitchAngle / 8;
-        Y += 41;
-        if (Y >= 0 && Y <= 81) {
-            uint16_t pos = position - 7 + LINE * (Y / 9) + 3 - 4 * LINE + X;
-            screenBuffer[pos] = (SYM_AH_BAR9_0 + (Y % 9));
-        }
-    }
-    screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-    screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-    screenBuffer[position]     = (SYM_AH_CENTER);
-
-    if (VISIBLE(OSD_cfg.item_pos[OSD_HORIZON_SIDEBARS])) {
-        // Draw AH sides
-        int8_t hudwidth  = AHISIDEBARWIDTHPOSITION;
-        int8_t hudheight = AHISIDEBARHEIGHTPOSITION;
-        for (int8_t X = -hudheight; X <= hudheight; X++) {
-            screenBuffer[position - hudwidth + (X * LINE)] = (SYM_AH_DECORATION);
-            screenBuffer[position + hudwidth + (X * LINE)] = (SYM_AH_DECORATION);
-        }
-        // AH level indicators
-        screenBuffer[position-hudwidth+1] =  (SYM_AH_LEFT);
-        screenBuffer[position+hudwidth-1] =  (SYM_AH_RIGHT);
-    }
-}
-
-#ifdef GPS
-void OSD_SATS(void)
-{
-	char buff[8];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_GPS_SATS]) || BLINK(OSD_cfg.item_pos[OSD_GPS_SATS]))
-		return;
-
-	buff[0] = 0x1f;
-	sprintf(buff+1, "%d", GPS_numSat);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_GPS_SATS]), OSD_Y(OSD_cfg.item_pos[OSD_GPS_SATS]), buff);
-}
-
-void OSD_SPEED(void)
-{
-	char buff[8];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_GPS_SPEED]) || BLINK(OSD_cfg.item_pos[OSD_GPS_SPEED]))
-		return;
-
-	sprintf(buff, "%d", GPS_speed * 36 / 1000);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_GPS_SPEED]), OSD_Y(OSD_cfg.item_pos[OSD_GPS_SPEED]), buff);
-}
-
-#endif
-
-void OSD_BARO_ALTITUDE(void)
-{
-
-	char buff[16];
-	int32_t alt = BaroAlt; // Metre x 100
-	char unitSym = 0xC; // m
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
-		return;
+    if (mAhDrawn >= OSD_cfg.cap_alarm)
+        OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 
     if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-		alt = (alt * 328) / 100; // Convert to feet x 100
-        unitSym = 0xF; // ft
-	}
-
-    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ALTITUDE]), OSD_Y(OSD_cfg.item_pos[OSD_ALTITUDE]), buff);
-}
-
-void OSD_ON_TIME(void)
-{
-	char buff[8];
-	uint32_t seconds;
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_ONTIME]) || BLINK(OSD_cfg.item_pos[OSD_ONTIME]))
-		return;
-
-	buff[0] = SYM_ON_M;
-    seconds = micros() / 1000000;
-	sprintf(buff+1, "%02d:%02d", seconds / 60, seconds % 60);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ONTIME]), OSD_Y(OSD_cfg.item_pos[OSD_ONTIME]), buff);
-}
-
-void OSD_FLY_TIME(void)
-{
-	char buff[8];
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_FLYTIME]) || BLINK(OSD_cfg.item_pos[OSD_FLYTIME]))
-		return;
-
-	buff[0] = SYM_FLY_M;
-	sprintf(buff+1, "%02d:%02d", fly_time / 60, fly_time % 60);
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_FLYTIME]), OSD_Y(OSD_cfg.item_pos[OSD_FLYTIME]), buff);
-}
-
-void OSD_MODE(void)
-{
-	char *p = "ACRO";
-
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_FLYMODE]) || BLINK(OSD_cfg.item_pos[OSD_FLYMODE]))
-		return;
-
-	if (isAirmodeActive())
-		p = "AIR";
-
-	if (FLIGHT_MODE(FAILSAFE_MODE))
-		p = "!FS";
-	else if (FLIGHT_MODE(ANGLE_MODE))
-		p = "STAB";
-	else if (FLIGHT_MODE(HORIZON_MODE))
-		p = "HOR";
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_FLYMODE]), OSD_Y(OSD_cfg.item_pos[OSD_FLYMODE]), p);
-}
-
-void OSD_NAME(void)
-{
-	char line[32];
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_CRAFT_NAME]) || BLINK(OSD_cfg.item_pos[OSD_CRAFT_NAME]))
-		return;
-
-	if (strlen(masterConfig.name) == 0)
-		strcpy(line,"CRAFT_NAME");
-	else
-	for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
-		line[i] = toupper((unsigned char)masterConfig.name[i]);
-		if (masterConfig.name[i] == 0)
-			break;
+        alt = (alt * 328) / 100; // Convert to feet
     }
 
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_CRAFT_NAME]), OSD_Y(OSD_cfg.item_pos[OSD_CRAFT_NAME]), line);
+    if (alt >= OSD_cfg.alt_alarm)
+        OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+    else
+        OSD_cfg.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
 }
 
-void OSD_THROTTLE(void)
+void osdResetAlarms(void)
 {
-	char line[32];
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_THROTTLE_POS]) || BLINK(OSD_cfg.item_pos[OSD_THROTTLE_POS]))
-		return;
-
-	line[0] = SYM_THR;
-	line[1] = SYM_THR1;
-	sprintf(line+2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
-
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_THROTTLE_POS]), OSD_Y(OSD_cfg.item_pos[OSD_THROTTLE_POS]), line);
+    OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+    OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+    OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+    OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 }
 
-#ifdef VTX
-
-void OSD_VTX_CHAN(void)
+uint8_t osdHandleKey(uint8_t key)
 {
-	char line[32];
+    uint8_t res = BUTTON_TIME;
+    OSD_Entry *p;
 
-	if (!VISIBLE(OSD_cfg.item_pos[OSD_VTX_CHANNEL]) || BLINK(OSD_cfg.item_pos[OSD_VTX_CHANNEL]))
-		return;
+    if (!currentMenu)
+        return res;
 
-    sprintf(line,  "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
-    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_VTX_CHANNEL]), OSD_Y(OSD_cfg.item_pos[OSD_VTX_CHANNEL]), line);
-}
-#endif
+    if (key == KEY_ESC) {
+        osdMenuBack();
+        return BUTTON_PAUSE;
+    }
 
-void OSD_UpdateAlarms(void)
-{
-	uint16_t rval = rssi * 100 / 1024; //zmiana zakresu
-	int32_t alt = BaroAlt/100;
+    if (key == KEY_DOWN) {
+        if (currentMenuPos < currentMenuIdx)
+            currentMenuPos++;
+        else {
+            if (nextPage) // we have more pages
+            {
+                max7456_clear_screen();
+                p = nextPage;
+                nextPage = currentMenu;
+                currentMenu = (OSD_Entry *)p;
+                currentMenuPos = 0;
+                osdUpdateMaxRows();
+            }
+            currentMenuPos = 0;
+        }
+    }
 
-	if (rval < OSD_cfg.rssi_alarm)
-		OSD_cfg.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+    if (key == KEY_UP) {
+        currentMenuPos--;
 
-	if (vbat <= (batteryWarningVoltage - 1))
-		OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+        if ((currentMenu + currentMenuPos)->type == OME_Label && currentMenuPos > 0)
+            currentMenuPos--;
 
-	if (STATE(GPS_FIX) == 0)
-		OSD_cfg.item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+        if (currentMenuPos == -1 || (currentMenu + currentMenuPos)->type == OME_Label) {
+            if (nextPage) {
+                max7456_clear_screen();
+                p = nextPage;
+                nextPage = currentMenu;
+                currentMenu = (OSD_Entry *)p;
+                currentMenuPos = 0;
+                osdUpdateMaxRows();
+            }
+            currentMenuPos = currentMenuIdx;
+        }
+    }
 
-	if (fly_time / 60 >= OSD_cfg.time_alarm && ARMING_FLAG(ARMED))
-		OSD_cfg.item_pos[OSD_FLYTIME] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+    if (key == KEY_DOWN || key == KEY_UP)
+        return res;
 
-	if (mAhDrawn >= OSD_cfg.cap_alarm)
-		OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+    p = currentMenu + currentMenuPos;
 
-    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-		alt = (alt * 328) / 100; // Convert to feet
-	}
+    switch (p->type) {
+        case OME_POS:
+            if (key == KEY_RIGHT) {
+                uint32_t address = (uint32_t)p->data;
+                uint16_t *val;
 
-	if (alt >= OSD_cfg.alt_alarm)
-		OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
-	else
-		OSD_cfg.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+                val = (uint16_t *)address;
+                if (!(*val & VISIBLE_FLAG)) // no submenu for hidden elements
+                    break;
+            }
+        case OME_Submenu:
+        case OME_OSD_Exit:
+            if (p->func && key == KEY_RIGHT) {
+                p->func(p->data);
+                res = BUTTON_PAUSE;
+            }
+            break;
+        case OME_Back:
+            osdMenuBack();
+            res = BUTTON_PAUSE;
+            break;
+        case OME_Bool:
+            if (p->data) {
+                uint8_t *val = p->data;
+                if (key == KEY_RIGHT)
+                    *val = 1;
+                else
+                    *val = 0;
+            }
+            break;
+        case OME_VISIBLE:
+            if (p->data) {
+                uint32_t address = (uint32_t)p->data;
+                uint16_t *val;
 
-}
+                val = (uint16_t *)address;
 
-void OSD_TurnOffAlarms(void)
-{
-	OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
-	OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
-	OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
-	OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
-	OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
-}
+                if (key == KEY_RIGHT)
+                    *val |= VISIBLE_FLAG;
+                else
+                    *val %= ~VISIBLE_FLAG;
+            }
+            break;
+        case OME_UINT8:
+        case OME_FLOAT:
+            if (p->data) {
+                OSD_UINT8_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_TAB:
+            if (p->type == OME_TAB) {
+                OSD_TAB_t *ptr = p->data;
 
-void OSD_HELP(void)
-{
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]),   "---  HELP --- ");
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON])+1, "USE ROLL/PITCH");
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON])+2, "TO MOVE ELEM. ");
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON])+3, "              ");
-	max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON])+4, "YAW - EXIT    ");
-}
-
-void OSD_DrawElements(void)
-{
-	max7456_clear_screen();
-
-	if (CurrentElement)
-		OSD_HELP();
-	else if (sensors(SENSOR_ACC) || OSD_MENU)
-		OSD_HORIZON();
-
-	OSD_VBAT();
-	OSD_RSSI();
-	OSD_FLY_TIME();
-	OSD_ON_TIME();
-	OSD_MODE();
-	OSD_THROTTLE();
-#ifdef VTX
-    OSD_VTX_CHAN();
-#endif
-	OSD_CURRENT();
-	OSD_CAPACITY();
-	OSD_NAME();
-
-#ifdef GPS
-	if (sensors(SENSOR_GPS) || OSD_MENU)
-	{
-		OSD_SATS();
-		OSD_SPEED();
-	}
-#endif
-	OSD_BARO_ALTITUDE();
-}
-
-uint8_t OSDHandleKey(uint8_t key)
-{
-	uint8_t res = BUTTON_TIME;
-	OSD_Entry *p;
-
-	if (!CurrentMenu)
-		return res;
-
-	if (key == KEY_ESC)
-	{
-		OSD_MenuBack();
-		return BUTTON_PAUSE;
-	}
-
-	if (key == KEY_DOWN)
-	{
-		if (CurrentMenuPos < CurrentMaxIdx)
-			CurrentMenuPos++;
-		else
-		{
-			if (NextPage) //we have more pages
-			{
-				max7456_clear_screen();
-				p = NextPage;
-				NextPage = CurrentMenu;
-				CurrentMenu = (OSD_Entry*)p;
-				CurrentMenuPos = 0;
-				OSD_UpdateMaxRows();
-			}
-			CurrentMenuPos = 0;
-		}
-	}
-
-	if (key == KEY_UP)
-	{
-		CurrentMenuPos--;
-
-		if ((CurrentMenu+CurrentMenuPos)->type == OME_Label && CurrentMenuPos > 0)
-			CurrentMenuPos--;
-
-		if (CurrentMenuPos == -1 || (CurrentMenu+CurrentMenuPos)->type == OME_Label)
-		{
-			if (NextPage)
-			{
-				max7456_clear_screen();
-				p = NextPage;
-				NextPage = CurrentMenu;
-				CurrentMenu = (OSD_Entry*)p;
-				CurrentMenuPos = 0;
-				OSD_UpdateMaxRows();
-			}
-			CurrentMenuPos = CurrentMaxIdx;
-		}
-	}
-
-	if (key == KEY_DOWN || key == KEY_UP)
-		return res;
-
-	p = CurrentMenu+CurrentMenuPos;
-
-	switch (p->type)
-	{
-	case OME_POS:
-		if (key == KEY_RIGHT)
-		{
-			uint32_t address = (uint32_t)p->data;
-			uint16_t *val;
-
-			val = (uint16_t*)address;
-			if ( !(*val & VISIBLE_FLAG) ) //no submenu for hidden elements
-				break;
-		}
-	case OME_Submenu:
-	case OME_OSD_Exit:
-		if (p->func && key == KEY_RIGHT)
-		{
-			p->func(p->data);
-			res = BUTTON_PAUSE;
-		}
-		break;
-	case OME_Back:
-		OSD_MenuBack();
-		res = BUTTON_PAUSE;
-		break;
-	case OME_Bool:
-		if (p->data)
-		{
-			uint8_t *val = p->data;
-			if (key == KEY_RIGHT)
-				*val = 1;
-			else
-				*val = 0;
-		}
-		break;
-	case OME_VISIBLE:
-		if (p->data)
-		{
-			uint32_t address = (uint32_t)p->data;
-			uint16_t *val;
-
-			val = (uint16_t*)address;
-
-			if (key == KEY_RIGHT)
-				*val |= VISIBLE_FLAG;
-			else
-				*val %= ~VISIBLE_FLAG;
-		}
-		break;
-	case OME_UINT8:
-	case OME_FLOAT:
-		if (p->data)
-		{
-			OSD_UINT8_Struct *ptr = p->data;
-			if (key == KEY_RIGHT)
-			{
-				if (*ptr->val < ptr->max)
-					*ptr->val+=ptr->step;
-			}
-			else
-			{
-				if (*ptr->val > ptr->min)
-					*ptr->val-=ptr->step;
-			}
-		}
-		break;
-	case OME_TAB:
-		if (p->type == OME_TAB)
-		{
-			OSD_TAB_Struct *ptr = p->data;
-
-			if (key == KEY_RIGHT)
-			{
-				if (*ptr->val < ptr->max)
-					*ptr->val+=1;
-			}
-			else
-			{
-				if (*ptr->val > 0)
-					*ptr->val-=1;
-			}
-			if (p->func)
-				p->func(p->data);
-		}
-		break;
-	case OME_INT8:
-		if (p->data)
-		{
-			OSD_INT8_Struct *ptr = p->data;
-			if (key == KEY_RIGHT)
-			{
-				if (*ptr->val < ptr->max)
-					*ptr->val+=ptr->step;
-			}
-			else
-			{
-				if (*ptr->val > ptr->min)
-					*ptr->val-=ptr->step;
-			}
-		}
-		break;
-	case OME_UINT16:
-		if (p->data)
-		{
-			OSD_UINT16_Struct *ptr = p->data;
-			if (key == KEY_RIGHT)
-			{
-				if (*ptr->val < ptr->max)
-					*ptr->val+=ptr->step;
-			}
-			else
-			{
-				if (*ptr->val > ptr->min)
-					*ptr->val-=ptr->step;
-			}
-		}
-		break;
-	case OME_INT16:
-		if (p->data)
-		{
-			OSD_INT16_Struct *ptr = p->data;
-			if (key == KEY_RIGHT)
-			{
-				if (*ptr->val < ptr->max)
-					*ptr->val+=ptr->step;
-			}
-			else
-			{
-				if (*ptr->val > ptr->min)
-					*ptr->val-=ptr->step;
-			}
-		}
-		break;
-	case OME_Label:
-	case OME_END:
-		break;
-	}
-	return res;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += 1;
+                }
+                else {
+                    if (*ptr->val > 0)
+                        *ptr->val -= 1;
+                }
+                if (p->func)
+                    p->func(p->data);
+            }
+            break;
+        case OME_INT8:
+            if (p->data) {
+                OSD_INT8_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_UINT16:
+            if (p->data) {
+                OSD_UINT16_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_INT16:
+            if (p->data) {
+                OSD_INT16_t *ptr = p->data;
+                if (key == KEY_RIGHT) {
+                    if (*ptr->val < ptr->max)
+                        *ptr->val += ptr->step;
+                }
+                else {
+                    if (*ptr->val > ptr->min)
+                        *ptr->val -= ptr->step;
+                }
+            }
+            break;
+        case OME_Label:
+        case OME_END:
+            break;
+    }
+    return res;
 }
 
-void OSD_UpdateMaxRows(void)
+void osdUpdateMaxRows(void)
 {
-	OSD_Entry *ptr;
+    OSD_Entry *ptr;
 
-	CurrentMaxIdx = 0;
-	for (ptr=CurrentMenu; ptr->type != OME_END; ptr++)
-		CurrentMaxIdx++;
+    currentMenuIdx = 0;
+    for (ptr = currentMenu; ptr->type != OME_END; ptr++)
+        currentMenuIdx++;
 
-	if (CurrentMaxIdx > MAX_MENU_ITEMS)
-		CurrentMaxIdx = MAX_MENU_ITEMS;
+    if (currentMenuIdx > MAX_MENU_ITEMS)
+        currentMenuIdx = MAX_MENU_ITEMS;
 
-	CurrentMaxIdx--;
+    currentMenuIdx--;
 }
 
-void OSD_MenuBack(void)
+void osdMenuBack(void)
 {
-	uint8_t i;
+    uint8_t i;
 
-	//becasue pids and rates meybe stored in profiles we need some thicks to manipulate it
-	//hack to save pid profile
-	if (CurrentMenu == &MenuPID[0])
-	{
-		for (i = 0; i < 3; i++) {
-			curr_profile.pidProfile.P8[i] = temp_pids[i][0];
-			curr_profile.pidProfile.I8[i] = temp_pids[i][1];
-			curr_profile.pidProfile.D8[i] = temp_pids[i][2];
-		}
+    // becasue pids and rates meybe stored in profiles we need some thicks to manipulate it
+    // hack to save pid profile
+    if (currentMenu == &menuPid[0]) {
+        for (i = 0; i < 3; i++) {
+            curr_profile.pidProfile.P8[i] = tempPid[i][0];
+            curr_profile.pidProfile.I8[i] = tempPid[i][1];
+            curr_profile.pidProfile.D8[i] = tempPid[i][2];
+        }
 
-		curr_profile.pidProfile.P8[PIDLEVEL] = temp_pids[3][0];
-		curr_profile.pidProfile.I8[PIDLEVEL] = temp_pids[3][1];
-		curr_profile.pidProfile.D8[PIDLEVEL] = temp_pids[3][2];
-	}
+        curr_profile.pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+        curr_profile.pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+        curr_profile.pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+    }
 
-	//hack - save rate config for current profile
-	if (CurrentMenu == &MenuRateExpo[0])
-		memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+    // hack - save rate config for current profile
+    if (currentMenu == &menuRateExpo[0])
+        memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
 
-	if (MenuStackIdx)
-	{
-		max7456_clear_screen();
-		MenuStackIdx--;
-		NextPage = NULL;
-		CurrentMenu = MenuStack[MenuStackIdx];
-		CurrentMenuPos = MenuStackPos[MenuStackIdx];
+    if (menuStackIdx) {
+        max7456_clear_screen();
+        menuStackIdx--;
+        nextPage = NULL;
+        currentMenu = menuStack[menuStackIdx];
+        currentMenuPos = menuStackHistory[menuStackIdx];
 
-		OSD_UpdateMaxRows();
-	}
-	else
-		OSD_OpenMenu();
+        osdUpdateMaxRows();
+    }
+    else
+        osdOpenMenu();
 }
 
 void simple_ftoa(int32_t value, char *floatString)
 {
-		uint8_t k;
-		//np. 3450
+    uint8_t k;
+    // np. 3450
 
-    itoa(100000+value, floatString, 10);   // Create string from abs of integer value
+    itoa(100000 + value, floatString, 10); // Create string from abs of integer value
 
-		// 103450
+    // 103450
 
-		floatString[0] = floatString[1];
-		floatString[1] = floatString[2];
-		floatString[2] = '.';
+    floatString[0] = floatString[1];
+    floatString[1] = floatString[2];
+    floatString[2] = '.';
 
-		// 03.450
-		//usuwam koncowe zera i kropke
-		for (k = 5;k > 1; k--)
-			if (floatString[k] == '0' || floatString[k] == '.')
-				floatString[k]=0;
-			else
-				break;
+    // 03.450
+    // usuwam koncowe zera i kropke
+    for (k = 5; k > 1; k--)
+        if (floatString[k] == '0' || floatString[k] == '.')
+            floatString[k] = 0;
+        else
+            break;
 
-			//oraz zero wiodonce
-		if (floatString[0] == '0')
-			floatString[0] = ' ';
+    // oraz zero wiodonce
+    if (floatString[0] == '0')
+        floatString[0] = ' ';
 }
 
-void OSD_DrawMenu(void)
+void osdDrawMenu(void)
 {
-	uint8_t i = 0;
-	OSD_Entry *p;
-	char buff[10];
-	uint8_t top = (OSD_ROWS - CurrentMaxIdx)/2 - 1;
-	if (!CurrentMenu)
-		return;
+    uint8_t i = 0;
+    OSD_Entry *p;
+    char buff[10];
+    uint8_t top = (osdRows - currentMenuIdx) / 2 - 1;
+    if (!currentMenu)
+        return;
 
-	if ((CurrentMenu+CurrentMenuPos)->type == OME_Label) //skip label
-		CurrentMenuPos++;
+    if ((currentMenu + currentMenuPos)->type == OME_Label) // skip label
+        currentMenuPos++;
 
-	for (p=CurrentMenu; p->type != OME_END; p++)
-	{
-		if (CurrentMenuPos == i)
-			max7456_write(LEFT_MENU_COLUMN, i+top, " >");
-		else
-			max7456_write(LEFT_MENU_COLUMN, i+top, "  ");
-		max7456_write(LEFT_MENU_COLUMN+2, i+top, p->text);
+    for (p = currentMenu; p->type != OME_END; p++) {
+        if (currentMenuPos == i)
+            max7456_write(LEFT_MENU_COLUMN, i + top, " >");
+        else
+            max7456_write(LEFT_MENU_COLUMN, i + top, "  ");
+        max7456_write(LEFT_MENU_COLUMN + 2, i + top, p->text);
 
-		switch (p->type)
-		{
-		case OME_POS:
-		{
-			uint32_t address = (uint32_t)p->data;
-			uint16_t *val;
+        switch (p->type) {
+            case OME_POS: {
+                uint32_t address = (uint32_t)p->data;
+                uint16_t *val;
 
-			val = (uint16_t*)address;
-			if ( !(*val & VISIBLE_FLAG) )
-				break;
-		}
-		case OME_Submenu:
-			max7456_write(RIGHT_MENU_COLUMN, i+top, ">");
-			break;
-		case OME_Bool:
-			if (p->data)
-			{
-				if (*((uint8_t*)(p->data)))
-					max7456_write(RIGHT_MENU_COLUMN, i+top, "YES");
-				else
-					max7456_write(RIGHT_MENU_COLUMN, i+top, "NO ");
-			}
-			break;
-		case OME_TAB:
-			{
-				OSD_TAB_Struct *ptr = p->data;
-				max7456_write(RIGHT_MENU_COLUMN-5, i+top, (char*)ptr->names[*ptr->val]);
-			}
-			break;
-		case OME_VISIBLE:
-			if (p->data)
-			{
-				uint32_t address = (uint32_t)p->data;
-				uint16_t *val;
+                val = (uint16_t *)address;
+                if (!(*val & VISIBLE_FLAG))
+                    break;
+            }
+            case OME_Submenu:
+                max7456_write(RIGHT_MENU_COLUMN, i + top, ">");
+                break;
+            case OME_Bool:
+                if (p->data) {
+                    if (*((uint8_t *)(p->data)))
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
+                    else
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
+                }
+                break;
+            case OME_TAB: {
+                OSD_TAB_t *ptr = p->data;
+                max7456_write(RIGHT_MENU_COLUMN - 5, i + top, (char *)ptr->names[*ptr->val]);
+                break;
+            }
+            case OME_VISIBLE:
+                if (p->data) {
+                    uint32_t address = (uint32_t)p->data;
+                    uint16_t *val;
 
-				val = (uint16_t*)address;
+                    val = (uint16_t *)address;
 
-				if (VISIBLE(*val))
-					max7456_write(RIGHT_MENU_COLUMN, i+top, "YES");
-				else
-					max7456_write(RIGHT_MENU_COLUMN, i+top, "NO ");
-			}
-			break;
-		case OME_UINT8:
-			if (p->data)
-			{
-				OSD_UINT8_Struct *ptr = p->data;
-				itoa( *ptr->val, buff, 10);
-				max7456_write(RIGHT_MENU_COLUMN, i+top, "     ");
-				max7456_write(RIGHT_MENU_COLUMN, i+top, buff);
-			}
-			break;
-		case OME_INT8:
-			if (p->data)
-			{
-				OSD_INT8_Struct *ptr = p->data;
-				itoa( *ptr->val, buff, 10);
-				max7456_write(RIGHT_MENU_COLUMN, i+top, "     ");
-				max7456_write(RIGHT_MENU_COLUMN, i+top, buff);
-			}
-			break;
-		case OME_UINT16:
-			if (p->data)
-			{
-				OSD_UINT16_Struct *ptr = p->data;
-				itoa( *ptr->val, buff, 10);
-				max7456_write(RIGHT_MENU_COLUMN, i+top, "     ");
-				max7456_write(RIGHT_MENU_COLUMN, i+top, buff);
-			}
-			break;
-		case OME_INT16:
-			if (p->data)
-			{
-				OSD_UINT16_Struct *ptr = p->data;
-				itoa( *ptr->val, buff, 10);
-				max7456_write(RIGHT_MENU_COLUMN, i+top, "     ");
-				max7456_write(RIGHT_MENU_COLUMN, i+top, buff);
-			}
-			break;
-		case OME_FLOAT:
-			if (p->data)
-			{
-				OSD_FLOAT_Struct *ptr = p->data;
-				simple_ftoa(*ptr->val * ptr->multipler, buff);
-				max7456_write(RIGHT_MENU_COLUMN-1, i+top, "      ");
-				max7456_write(RIGHT_MENU_COLUMN-1, i+top, buff);
-			}
-			break;
-		case OME_OSD_Exit:
-		case OME_Label:
-		case OME_END:
-		case OME_Back:
-			break;
-		}
-		i++;
+                    if (VISIBLE(*val))
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "YES");
+                    else
+                        max7456_write(RIGHT_MENU_COLUMN, i + top, "NO ");
+                }
+                break;
+            case OME_UINT8:
+                if (p->data) {
+                    OSD_UINT8_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_INT8:
+                if (p->data) {
+                    OSD_INT8_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_UINT16:
+                if (p->data) {
+                    OSD_UINT16_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_INT16:
+                if (p->data) {
+                    OSD_UINT16_t *ptr = p->data;
+                    itoa(*ptr->val, buff, 10);
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, "     ");
+                    max7456_write(RIGHT_MENU_COLUMN, i + top, buff);
+                }
+                break;
+            case OME_FLOAT:
+                if (p->data) {
+                    OSD_FLOAT_t *ptr = p->data;
+                    simple_ftoa(*ptr->val * ptr->multipler, buff);
+                    max7456_write(RIGHT_MENU_COLUMN - 1, i + top, "      ");
+                    max7456_write(RIGHT_MENU_COLUMN - 1, i + top, buff);
+                }
+                break;
+            case OME_OSD_Exit:
+            case OME_Label:
+            case OME_END:
+            case OME_Back:
+                break;
+        }
+        i++;
 
-		if (i == MAX_MENU_ITEMS) //max per page
-		{
-			NextPage=CurrentMenu+i;
-			if (NextPage->type == OME_END)
-				NextPage = NULL;
-			break;
-		}
-	}
+        if (i == MAX_MENU_ITEMS) // max per page
+        {
+            nextPage = currentMenu + i;
+            if (nextPage->type == OME_END)
+                nextPage = NULL;
+            break;
+        }
+    }
 }
 
-void OSD_ResetStats(void)
+void osdResetStats(void)
 {
-	stats.max_current = 0;
-	stats.max_speed = 0;
-	stats.min_voltage = 500;
-	stats.max_current = 0;
-	stats.min_rssi = 99;
+    stats.max_current = 0;
+    stats.max_speed = 0;
+    stats.min_voltage = 500;
+    stats.max_current = 0;
+    stats.min_rssi = 99;
 }
 
-void OSD_UpdateStats(void)
+void osdUpdateStats(void)
 {
-	int16_t value;
+    int16_t value;
 
-	value = GPS_speed * 36 / 1000;
-	if (stats.max_speed < value)
-		stats.max_speed = value;
+    value = GPS_speed * 36 / 1000;
+    if (stats.max_speed < value)
+        stats.max_speed = value;
 
-	if (stats.min_voltage > vbat)
-		stats.min_voltage = vbat;
+    if (stats.min_voltage > vbat)
+        stats.min_voltage = vbat;
 
-	value = amperage / 100;
-	if (stats.max_current < value)
-		stats.max_current = value;
+    value = amperage / 100;
+    if (stats.max_current < value)
+        stats.max_current = value;
 
-	if (stats.min_rssi > stat_RSSI)
-		stats.min_rssi = stat_RSSI;
+    if (stats.min_rssi > statRssi)
+        stats.min_rssi = statRssi;
 }
 
-void OSD_Stats(void)
+void osdShowStats(void)
 {
-	uint8_t top = 2;
-	char buff[10];
+    uint8_t top = 2;
+    char buff[10];
 
-	max7456_clear_screen();
-	max7456_write(2, top++, "  --- STATS ---");
+    max7456_clear_screen();
+    max7456_write(2, top++, "  --- STATS ---");
 
-	if (STATE(GPS_FIX))
-	{
-		max7456_write(2, top, "MAX SPEED        :");
-		itoa(stats.max_speed, buff, 10);
-		max7456_write(22, top++, buff);
-	}
+    if (STATE(GPS_FIX)) {
+        max7456_write(2, top, "MAX SPEED        :");
+        itoa(stats.max_speed, buff, 10);
+        max7456_write(22, top++, buff);
+    }
 
-	max7456_write(2, top, "MIN BATTERY      :");
-	sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
-	max7456_write(22, top++, buff);
+    max7456_write(2, top, "MIN BATTERY      :");
+    sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
+    max7456_write(22, top++, buff);
 
-	max7456_write(2, top, "MIN RSSI         :");
-	itoa(stats.min_rssi, buff, 10);
-	strcat(buff,"%");
-	max7456_write(22, top++, buff);
+    max7456_write(2, top, "MIN RSSI         :");
+    itoa(stats.min_rssi, buff, 10);
+    strcat(buff, "%");
+    max7456_write(22, top++, buff);
 
-	if (feature(FEATURE_CURRENT_METER))
-	{
-		max7456_write(2, top, "MAX CURRENT     :");
-		itoa(stats.max_current/10, buff, 10);
-		strcat(buff, "A");
-		max7456_write(22, top++, buff);
+    if (feature(FEATURE_CURRENT_METER)) {
+        max7456_write(2, top, "MAX CURRENT     :");
+        itoa(stats.max_current / 10, buff, 10);
+        strcat(buff, "A");
+        max7456_write(22, top++, buff);
 
-		max7456_write(2, top, "USED MAH          :");
-		itoa(mAhDrawn, buff, 10);
-		strcat(buff,"\x07");
-		max7456_write(22, top++, buff);
-	}
-	RefreshTimeout = 60*REFRESH_1S;
+        max7456_write(2, top, "USED MAH          :");
+        itoa(mAhDrawn, buff, 10);
+        strcat(buff, "\x07");
+        max7456_write(22, top++, buff);
+    }
+    refreshTimeout = 60 * REFRESH_1S;
 }
 
-//called when motors armed
-void OSD_ArmMotors(void)
+// called when motors armed
+void osdArmMotors(void)
 {
-	max7456_clear_screen();
-	max7456_write(12, 7, "ARMED");
-	RefreshTimeout = REFRESH_1S/2;
-	OSD_ResetStats();
-}
-
-//simple function used to display message with defined timeout 10 = 1sec
-void OSD_Message(char *line1, char *line2, uint8_t timeout)
-{
-	max7456_clear_screen();
-	if (line1)
-		max7456_write(1, 6, line1);
-	if (line2)
-		max7456_write(1, 7, line2);
-	RefreshTimeout = timeout * REFRESH_1S / 10;
+    max7456_clear_screen();
+    max7456_write(12, 7, "ARMED");
+    refreshTimeout = REFRESH_1S / 2;
+    osdResetStats();
 }
 
 void updateOsd(void)
 {
-	static uint32_t counter;
+    static uint32_t counter;
 #ifdef MAX7456_DMA_CHANNEL_TX
-	//don't touch buffers if DMA transaction is in progress
-	if (max7456_dma_in_progres())
-		return;
-#endif
-    //redraw values in buffer
+    // don't touch buffers if DMA transaction is in progress
+    if (max7456_dma_in_progres())
+        return;
+#endif // MAX7456_DMA_CHANNEL_TX
+
+    // redraw values in buffer
     if (counter++ % 5 == 0)
-        OSD_Update(0);
-    else //rest of time redraw screen 10 chars per idle to don't lock the main idle
-		max7456_draw_screen();
-	//do not allow ARM if we are in menu
-	if (OSD_MENU)
-		DISABLE_ARMING_FLAG(OK_TO_ARM);
+        osdUpdate(0);
+    else // rest of time redraw screen 10 chars per idle to don't lock the main idle
+        max7456_draw_screen();
+
+    // do not allow ARM if we are in menu
+    if (inMenu)
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
 }
 
-void OSD_Update(uint8_t guiKey)
+void osdUpdate(uint8_t guiKey)
 {
-	static uint8_t rcDelay = BUTTON_TIME;
-	static uint8_t last_sec = 0;
-	uint8_t	key=0, sec;
+    static uint8_t rcDelay = BUTTON_TIME;
+    static uint8_t last_sec = 0;
+    uint8_t key = 0, sec;
 
-	//detect enter to menu
-	if (IS_MID(THROTTLE) && IS_HI(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED))
-		OSD_OpenMenu();
+    // detect enter to menu
+    if (IS_MID(THROTTLE) && IS_HI(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED))
+        osdOpenMenu();
 
-    //detect arm/disarm
-    if (arm_state != ARMING_FLAG(ARMED))
-    {
+    // detect arm/disarm
+    if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED))
-            OSD_ArmMotors(); //reset statistic etc
+            osdArmMotors(); // reset statistic etc
         else
-            OSD_Stats(); //schow statistic
+            osdShowStats(); // schow statistic
 
-        arm_state = ARMING_FLAG(ARMED);
+        armState = ARMING_FLAG(ARMED);
     }
 
-	OSD_UpdateStats();
+    osdUpdateStats();
 
-	sec = millis()/1000;
+    sec = millis() / 1000;
 
-	if (ARMING_FLAG(ARMED) && sec != last_sec)
-	{
-		fly_time++;
-		last_sec = sec;
-	}
+    if (ARMING_FLAG(ARMED) && sec != last_sec) {
+        flyTime++;
+        last_sec = sec;
+    }
 
-	if (RefreshTimeout)
-	{
-		if (IS_HI(THROTTLE) || IS_HI(PITCH)) //hide statistics
-			RefreshTimeout = 1;
-		RefreshTimeout--;
-		if (!RefreshTimeout)
-			max7456_clear_screen();
-		return;
-	}
+    if (refreshTimeout) {
+        if (IS_HI(THROTTLE) || IS_HI(PITCH)) // hide statistics
+            refreshTimeout = 1;
+        refreshTimeout--;
+        if (!refreshTimeout)
+            max7456_clear_screen();
+        return;
+    }
 
-	BLINK_STATE	= (millis()/200) % 2;
+    blinkState = (millis() / 200) % 2;
 
-	if (OSD_MENU)
-	{
-		if (rcDelay)
-		{
-			rcDelay--;
-		}
-		else if (IS_HI(PITCH))
-		{
-			key = KEY_UP;
-			rcDelay = BUTTON_TIME;
-		}
-		else if (IS_LO(PITCH))
-		{
-			key = KEY_DOWN;
-			rcDelay = BUTTON_TIME;
-		}
-		else if (IS_LO(ROLL))
-		{
-			key = KEY_LEFT;
-			rcDelay = BUTTON_TIME;
-		}
-		else if (IS_HI(ROLL))
-		{
-			key = KEY_RIGHT;
-			rcDelay = BUTTON_TIME;
-		}
-		else if ((IS_HI(YAW) || IS_LO(YAW)) && CurrentMenu != MenuRc) //this menu is used to check transmitter signals so can exit using YAW
-		{
-			key = KEY_ESC;
-			rcDelay = BUTTON_TIME;
-		}
+    if (inMenu) {
+        if (rcDelay) {
+            rcDelay--;
+        }
+        else if (IS_HI(PITCH)) {
+            key = KEY_UP;
+            rcDelay = BUTTON_TIME;
+        }
+        else if (IS_LO(PITCH)) {
+            key = KEY_DOWN;
+            rcDelay = BUTTON_TIME;
+        }
+        else if (IS_LO(ROLL)) {
+            key = KEY_LEFT;
+            rcDelay = BUTTON_TIME;
+        }
+        else if (IS_HI(ROLL)) {
+            key = KEY_RIGHT;
+            rcDelay = BUTTON_TIME;
+        }
+        else if ((IS_HI(YAW) || IS_LO(YAW)) && currentMenu != menuRc) // this menu is used to check transmitter signals so can exit using YAW
+        {
+            key = KEY_ESC;
+            rcDelay = BUTTON_TIME;
+        }
 
-		if (guiKey)
-			key = guiKey;
+        if (guiKey)
+            key = guiKey;
 
-		if (key && !CurrentElement)
-		{
-			rcDelay = OSDHandleKey(key);
-			return;
-		}
-		if (CurrentElement) //edit position of element
-		{
-			if (key)
-			{
-				if (key == KEY_ESC)
-				{
-					//exit
-					OSD_MenuBack();
-					rcDelay = BUTTON_PAUSE;
-					*CurrentElement &= ~BLINK_FLAG;
-					CurrentElement = NULL;
-					return;
-				}
-				else
-				{
-					uint8_t x,y;
-					x = OSD_X(*CurrentElement);
-					y = OSD_Y(*CurrentElement);
-					switch (key)
-					{
-					case KEY_UP:
-						y--;
-						break;
-					case KEY_DOWN:
-						y++;
-						break;
-					case KEY_RIGHT:
-						x++;
-						break;
-					case KEY_LEFT:
-						x--;
-						break;
-					}
+        if (key && !currentElement) {
+            rcDelay = osdHandleKey(key);
+            return;
+        }
+        if (currentElement) // edit position of element
+        {
+            if (key) {
+                if (key == KEY_ESC) {
+                    // exit
+                    osdMenuBack();
+                    rcDelay = BUTTON_PAUSE;
+                    *currentElement &= ~BLINK_FLAG;
+                    currentElement = NULL;
+                    return;
+                }
+                else {
+                    uint8_t x, y;
+                    x = OSD_X(*currentElement);
+                    y = OSD_Y(*currentElement);
+                    switch (key) {
+                        case KEY_UP:
+                            y--;
+                            break;
+                        case KEY_DOWN:
+                            y++;
+                            break;
+                        case KEY_RIGHT:
+                            x++;
+                            break;
+                        case KEY_LEFT:
+                            x--;
+                            break;
+                    }
 
-					*CurrentElement &= 0xFC00;
-					*CurrentElement |=OSD_POS(x,y);
-					max7456_clear_screen();
-				}
-			}
-			OSD_DrawElements();
-		}
-		else
-			OSD_DrawMenu();
-	}
-	else
-	{
-		OSD_UpdateAlarms();
-		OSD_DrawElements();
-	}
+                    *currentElement &= 0xFC00;
+                    *currentElement |= OSD_POS(x, y);
+                    max7456_clear_screen();
+                }
+            }
+            osdDrawElements();
+        }
+        else
+            osdDrawMenu();
+    }
+    else {
+        osdUpdateAlarms();
+        osdDrawElements();
+    }
 }
 
-void OSD_ChangeScreen(void * ptr)
+void osdChangeScreen(void *ptr)
 {
-	uint8_t i;
-	if (ptr)
-	{
-		max7456_clear_screen();
-		//hack - save profile to temp
-		if (ptr == &MenuPID[0])
-		{
-			for (i = 0; i < 3; i++) {
-				temp_pids[i][0] = curr_profile.pidProfile.P8[i];
-				temp_pids[i][1] = curr_profile.pidProfile.I8[i];
-				temp_pids[i][2] = curr_profile.pidProfile.D8[i];
-			}
-			temp_pids[3][0] = curr_profile.pidProfile.P8[PIDLEVEL];
-			temp_pids[3][1] = curr_profile.pidProfile.I8[PIDLEVEL];
-			temp_pids[3][2] = curr_profile.pidProfile.D8[PIDLEVEL];
-		}
+    uint8_t i;
+    if (ptr) {
+        max7456_clear_screen();
+        // hack - save profile to temp
+        if (ptr == &menuPid[0]) {
+            for (i = 0; i < 3; i++) {
+                tempPid[i][0] = curr_profile.pidProfile.P8[i];
+                tempPid[i][1] = curr_profile.pidProfile.I8[i];
+                tempPid[i][2] = curr_profile.pidProfile.D8[i];
+            }
+            tempPid[3][0] = curr_profile.pidProfile.P8[PIDLEVEL];
+            tempPid[3][1] = curr_profile.pidProfile.I8[PIDLEVEL];
+            tempPid[3][2] = curr_profile.pidProfile.D8[PIDLEVEL];
+        }
 
-		if (ptr == &MenuRateExpo[0])
-			memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+        if (ptr == &menuRateExpo[0])
+            memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
 
-		MenuStack[MenuStackIdx] = CurrentMenu;
-		MenuStackPos[MenuStackIdx] = CurrentMenuPos;
-		MenuStackIdx++;
+        menuStack[menuStackIdx] = currentMenu;
+        menuStackHistory[menuStackIdx] = currentMenuPos;
+        menuStackIdx++;
 
-		CurrentMenu = (OSD_Entry*)ptr;
-		CurrentMenuPos = 0;
-		OSD_UpdateMaxRows();
-	}
+        currentMenu = (OSD_Entry *)ptr;
+        currentMenuPos = 0;
+        osdUpdateMaxRows();
+    }
 }
 
 #ifdef USE_FLASHFS
-
-void OSD_EraseFlash(void *ptr)
+void osdEraseFlash(void *ptr)
 {
     UNUSED(ptr);
 
-	max7456_clear_screen();
-	max7456_write(5, 3, "ERASING FLASH...");
-	max7456_refresh_all();
+    max7456_clear_screen();
+    max7456_write(5, 3, "ERASING FLASH...");
+    max7456_refresh_all();
 
-	flashfsEraseCompletely();
-	while (!flashfsIsReady()) {
+    flashfsEraseCompletely();
+    while (!flashfsIsReady()) {
         delay(100);
     }
-	max7456_clear_screen();
-	max7456_refresh_all();
+    max7456_clear_screen();
+    max7456_refresh_all();
 }
-
 #endif // USE_FLASHFS
 
-void OSD_EditElement(void *ptr)
+void osdEditElement(void *ptr)
 {
-	uint32_t address = (uint32_t)ptr;
-	//zsave position on menu stack
-	MenuStack[MenuStackIdx] = CurrentMenu;
-	MenuStackPos[MenuStackIdx] = CurrentMenuPos;
-	MenuStackIdx++;
+    uint32_t address = (uint32_t)ptr;
 
-	CurrentElement = (uint16_t*)address;
+    // zsave position on menu stack
+    menuStack[menuStackIdx] = currentMenu;
+    menuStackHistory[menuStackIdx] = currentMenuPos;
+    menuStackIdx++;
 
-	*CurrentElement |= BLINK_FLAG;
-	max7456_clear_screen();
+    currentElement = (uint16_t *)address;
+
+    *currentElement |= BLINK_FLAG;
+    max7456_clear_screen();
 }
 
-void OSD_Exit(void * ptr)
+void osdExitMenu(void *ptr)
 {
-	max7456_clear_screen();
-	max7456_write(5, 3, "RESTARTING IMU...");
-	max7456_refresh_all();
-	stopMotors();
-	stopPwmAllMotors();
-	delay(200);
-	if (ptr)
-	{
-		//save local variables to configuration
-		if (blackbox_feature)
-			featureSet(FEATURE_BLACKBOX);
+    max7456_clear_screen();
+    max7456_write(5, 3, "RESTARTING IMU...");
+    max7456_refresh_all();
+    stopMotors();
+    stopPwmAllMotors();
+    delay(200);
 
-		if (ledstrip_feature)
-			featureSet(FEATURE_LED_STRIP);
+    if (ptr) {
+        // save local variables to configuration
+        if (featureBlackbox)
+            featureSet(FEATURE_BLACKBOX);
+
+        if (featureLedstrip)
+            featureSet(FEATURE_LED_STRIP);
+
 #if defined(VTX) || defined(USE_RTC6705)
-		if (vtx_feature)
-			featureSet(FEATURE_VTX);
-#endif
+        if (featureVtx)
+            featureSet(FEATURE_VTX);
+#endif // VTX || USE_RTC6705
+
 #ifdef VTX
-        masterConfig.vtx_band = vtx_band;
-        masterConfig.vtx_channel = vtx_channel-1;
-#endif
+        masterConfig.vtxBand = vtxBand;
+        masterConfig.vtxChannel = vtxChannel - 1;
+#endif // VTX
 
 #ifdef USE_RTC6705
-        masterConfig.vtx_channel = vtx_band*8 + vtx_channel-1;
+        masterConfig.vtxChannel = vtxBand * 8 + vtxChannel - 1;
 #endif // USE_RTC6705
 
-		saveConfigAndNotify();
-	}
-	systemReset();
+        saveConfigAndNotify();
+    }
+
+    systemReset();
 }
 
-void OSD_HandleGui(uint8_t cmd)
+void osdOpenMenu(void)
 {
-	switch (cmd)
-	{
-		case KEY_ENTER:
-			OSD_OpenMenu();
-		break;
-		default:
-			OSD_Update(cmd);
-			break;
-	}
-}
+    if (inMenu)
+        return;
 
-void OSD_OpenMenu(void)
-{
-	if (OSD_MENU)
-		return;
+    if (feature(FEATURE_LED_STRIP))
+        featureLedstrip = 1;
 
-	if (feature(FEATURE_LED_STRIP))
-		ledstrip_feature = 1;
+    if (feature(FEATURE_BLACKBOX))
+        featureBlackbox = 1;
 
-	if (feature(FEATURE_BLACKBOX))
-		blackbox_feature = 1;
 #if defined(VTX) || defined(USE_RTC6705)
-	if (feature(FEATURE_VTX))
-		vtx_feature = 1;
-#endif
+    if (feature(FEATURE_VTX))
+        featureVtx = 1;
+#endif // VTX || USE_RTC6705
 
 #ifdef VTX
-        vtx_band = masterConfig.vtx_band;
-        vtx_channel = masterConfig.vtx_channel +1;
-#endif
+    vtxBand = masterConfig.vtxBand;
+    vtxChannel = masterConfig.vtxChannel + 1;
+#endif // VTX
 
 #ifdef USE_RTC6705
-		vtx_band = masterConfig.vtx_channel / 8;
-		vtx_channel = masterConfig.vtx_channel%8 + 1;
-#endif
+    vtxBand = masterConfig.vtxChannel / 8;
+    vtxChannel = masterConfig.vtxChannel % 8 + 1;
+#endif // USE_RTC6705
 
-	OSD_ROWS = max7456_get_rows_count();
-	OSD_MENU = 1;
-	RefreshTimeout = 0;
-	max7456_clear_screen();
-	CurrentMenu = &MainMenu[0];
-	OSD_TurnOffAlarms();
-	OSD_ChangeScreen(CurrentMenu);
+    osdRows = max7456_get_rows_count();
+    inMenu = true;
+    refreshTimeout = 0;
+    max7456_clear_screen();
+    currentMenu = &menuMain[0];
+    osdResetAlarms();
+    osdChangeScreen(currentMenu);
+
 #ifdef LED_STRIP
-	getLedColor();
+    getLedColor();
 #endif // LED_STRIP
 }
 
+void osdDrawElementPositioningHelp(void)
+{
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 2, "TO MOVE ELEM. ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 3, "              ");
+    max7456_write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
+}
 
+void osdDrawElements(void)
+{
+    max7456_clear_screen();
+
+    if (currentElement)
+        osdDrawElementPositioningHelp();
+    else if (sensors(SENSOR_ACC) || inMenu)
+        osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+
+    osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
+    osdDrawSingleElement(OSD_RSSI_VALUE);
+    osdDrawSingleElement(OSD_FLYTIME);
+    osdDrawSingleElement(OSD_ONTIME);
+    osdDrawSingleElement(OSD_FLYMODE);
+    osdDrawSingleElement(OSD_THROTTLE_POS);
+    osdDrawSingleElement(OSD_VTX_CHANNEL);
+    osdDrawSingleElement(OSD_CURRENT_DRAW);
+    osdDrawSingleElement(OSD_MAH_DRAWN);
+    osdDrawSingleElement(OSD_CRAFT_NAME);
+    osdDrawSingleElement(OSD_ALTITUDE);
+
+#ifdef GPS
+    if (sensors(SENSOR_GPS) || inMenu) {
+        osdDrawSingleElement(OSD_GPS_SATS);
+        osdDrawSingleElement(OSD_GPS_SPEED);
+    }
+#endif // GPS
+}
+
+#define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
+#define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
+#define AH_SIDEBAR_WIDTH_POS 7
+#define AH_SIDEBAR_HEIGHT_POS 3
+extern uint16_t rssi; // FIXME dependency on mw.c
+
+void osdDrawSingleElement(uint8_t item)
+{
+    if (!VISIBLE(OSD_cfg.item_pos[item]) || BLINK(OSD_cfg.item_pos[item]))
+        return;
+
+    uint8_t elemPosX = OSD_X(OSD_cfg.item_pos[item]);
+    uint8_t elemPosY = OSD_Y(OSD_cfg.item_pos[item]);
+    char buff[32];
+
+    switch(item) {
+        case OSD_RSSI_VALUE:
+        {
+            uint16_t osdRssi = rssi * 100 / 1024; // change range
+            if (osdRssi >= 100)
+                osdRssi = 99;
+
+            buff[0] = SYM_RSSI;
+            sprintf(buff + 1, "%d", osdRssi);
+            break;
+        }
+
+        case OSD_MAIN_BATT_VOLTAGE:
+        {
+            buff[0] = SYM_BATT_5;
+            sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
+            break;
+        }
+
+        case OSD_CURRENT_DRAW:
+        {
+            buff[0] = SYM_AMP;
+            sprintf(buff + 1, "%d.%02d", abs(amperage) / 100, abs(amperage) % 100);
+            break;
+        }
+
+        case OSD_MAH_DRAWN:
+        {
+            buff[0] = SYM_MAH;
+            sprintf(buff + 1, "%d", mAhDrawn);
+            break;
+        }
+
+#ifdef GPS
+        case OSD_GPS_SATS:
+        {
+            buff[0] = 0x1f;
+            sprintf(buff + 1, "%d", GPS_numSat);
+            break;
+        }
+
+        case OSD_GPS_SPEED:
+        {
+            sprintf(buff, "%d", GPS_speed * 36 / 1000);
+            break;
+        }
+#endif // GPS
+
+        case OSD_ALTITUDE:
+        {
+            int32_t alt = BaroAlt; // Metre x 100
+            char unitSym = 0xC;    // m
+
+            if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
+                return;
+
+            if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+                alt = (alt * 328) / 100; // Convert to feet x 100
+                unitSym = 0xF;           // ft
+            }
+
+            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+            break;
+        }
+
+        case OSD_ONTIME:
+        {
+            uint32_t seconds = micros() / 1000000;
+            buff[0] = SYM_ON_M;
+            sprintf(buff + 1, "%02d:%02d", seconds / 60, seconds % 60);
+            break;
+        }
+
+        case OSD_FLYTIME:
+        {
+            buff[0] = SYM_FLY_M;
+            sprintf(buff + 1, "%02d:%02d", flyTime / 60, flyTime % 60);
+            break;
+        }
+
+        case OSD_FLYMODE:
+        {
+            char *p = "ACRO";
+
+            if (isAirmodeActive())
+                p = "AIR";
+
+            if (FLIGHT_MODE(FAILSAFE_MODE))
+                p = "!FS";
+            else if (FLIGHT_MODE(ANGLE_MODE))
+                p = "STAB";
+            else if (FLIGHT_MODE(HORIZON_MODE))
+                p = "HOR";
+
+            max7456_write(elemPosX, elemPosY, p);
+            return;
+        }
+
+        case OSD_CRAFT_NAME:
+        {
+            if (strlen(masterConfig.name) == 0)
+                strcpy(buff, "CRAFT_NAME");
+            else {
+                for (uint8_t i = 0; i < MAX_NAME_LENGTH; i++) {
+                    buff[i] = toupper((unsigned char)masterConfig.name[i]);
+                    if (masterConfig.name[i] == 0)
+                        break;
+                }
+            }
+
+            break;
+        }
+
+        case OSD_THROTTLE_POS:
+        {
+            buff[0] = SYM_THR;
+            buff[1] = SYM_THR1;
+            sprintf(buff + 2, "%d", (constrain(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX) - PWM_RANGE_MIN) * 100 / (PWM_RANGE_MAX - PWM_RANGE_MIN));
+            break;
+        }
+
+#ifdef VTX
+        case OSD_VTX_CHANNEL:
+        {
+            sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
+            break;
+        }
+#endif // VTX
+
+        case OSD_ARTIFICIAL_HORIZON:
+        {
+            uint8_t *screenBuffer = max7456_get_screen_buffer();
+            uint16_t position = 194;
+
+            int rollAngle = attitude.values.roll;
+            int pitchAngle = attitude.values.pitch;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+
+            if (pitchAngle > AH_MAX_PITCH)
+                pitchAngle = AH_MAX_PITCH;
+            if (pitchAngle < -AH_MAX_PITCH)
+                pitchAngle = -AH_MAX_PITCH;
+            if (rollAngle > AH_MAX_ROLL)
+                rollAngle = AH_MAX_ROLL;
+            if (rollAngle < -AH_MAX_ROLL)
+                rollAngle = -AH_MAX_ROLL;
+
+            for (uint8_t x = 0; x <= 8; x++) {
+                if (x == 4)
+                    x = 5;
+                int y = (rollAngle * (4 - x)) / 64;
+                y -= pitchAngle / 8;
+                y += 41;
+                if (y >= 0 && y <= 81) {
+                    uint16_t pos = position - 7 + LINE * (y / 9) + 3 - 4 * LINE + x;
+                    screenBuffer[pos] = (SYM_AH_BAR9_0 + (y % 9));
+                }
+            }
+
+            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
+            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
+            screenBuffer[position] = (SYM_AH_CENTER);
+
+            osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+            return;
+        }
+
+        case OSD_HORIZON_SIDEBARS:
+        {
+            uint8_t *screenBuffer = max7456_get_screen_buffer();
+            uint16_t position = 194;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+            // Draw AH sides
+            int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
+            int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
+            for (int8_t x = -hudheight; x <= hudheight; x++) {
+                screenBuffer[position - hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+                screenBuffer[position + hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+            }
+
+            // AH level indicators
+            screenBuffer[position - hudwidth + 1] = (SYM_AH_LEFT);
+            screenBuffer[position + hudwidth - 1] = (SYM_AH_RIGHT);
+
+            return;
+        }
+
+        default:
+            return;
+    }
+
+    max7456_write(elemPosX, elemPosY, buff);
+}
