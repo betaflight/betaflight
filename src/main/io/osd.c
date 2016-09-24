@@ -298,7 +298,7 @@ static const char * const ledColorNames[] = {
     " LIGHT BLUE",
     "       BLUE",
     "DARK VIOLET",
-    "    MAGNETA",
+    "    MAGENTA",
     "  DEEP PINK",
 };
 
@@ -346,7 +346,7 @@ OSD_Entry MenuLedstrip[]=
 
 #if defined(VTX) || defined(USE_RTC6705)
 static const char * const vtxBandNames[] = {
-	"BOACAM A",
+	"BOSCAM A",
 	"BOSCAM B",
 	"BOSCAM E",
 	"FATSHARK",
@@ -1453,7 +1453,7 @@ void OSD_Stats(void)
 	if (feature(FEATURE_CURRENT_METER))
 	{
 		max7456_write(2, top, "MAX CURRENT     :");
-		itoa(stats.max_current/10, buff, 10);
+		itoa(stats.max_current, buff, 10);
 		strcat(buff, "A");
 		max7456_write(22, top++, buff);
 
@@ -1519,7 +1519,7 @@ void OSD_Update(uint8_t guiKey)
         if (ARMING_FLAG(ARMED))
             OSD_ArmMotors(); //reset statistic etc
         else
-            OSD_Stats(); //schow statistic
+            OSD_Stats(); //show statistic
 
         arm_state = ARMING_FLAG(ARMED);
     }
