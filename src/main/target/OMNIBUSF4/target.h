@@ -27,9 +27,10 @@
 #endif
 
 #define LED0                    PB5
-#define LED1                    PB4
+//#define LED1                    PB4
 
 #define BEEPER                  PB4
+#define BEEPER_INVERTED
 
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
@@ -39,11 +40,11 @@
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
+#define GYRO_MPU6000_ALIGN      CW180_DEG
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+#define ACC_MPU6000_ALIGN       CW180_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -131,4 +132,4 @@
 #define TARGET_IO_PORTD 0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))

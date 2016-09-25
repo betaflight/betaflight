@@ -89,5 +89,5 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM9,  IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM9_IRQn,  1, IOCFG_AF_PP_PD, GPIO_AF_TIM9 }, // S4_OUT
     { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM2 }, // S4_OUT
     { TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM5 }, // S5_OUT - GPIO_PartialRemap_TIM3
-    { TIM5,  IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM5 }, // S6_OUT
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,        1, IOCFG_AF_PP_PD, GPIO_AF_TIM1 }, // S6_OUT
 };
