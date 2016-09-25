@@ -23,6 +23,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
@@ -36,9 +37,9 @@ uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)
 {
     int gyroSamplePeriod;
     if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        gyroSamplePeriod = 125;
+        gyroSamplePeriod = PERIOD_HZ(8000);
     } else {
-        gyroSamplePeriod = 1000;
+        gyroSamplePeriod = PERIOD_HZ(1000);
         gyroSyncDenominator = 1; // Always full Sampling 1khz
     }
 
