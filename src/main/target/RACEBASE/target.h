@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "RBFC"
+#define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_CONFIG
 
 #define LED0                    PB3
@@ -76,6 +77,9 @@
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      PA7
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
 
 #define M25P16_CS_PIN           PB12
 #define M25P16_SPI_INSTANCE     SPI2

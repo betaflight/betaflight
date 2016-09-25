@@ -15,44 +15,25 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MAX_MENU_ROWS 8
-#define MAX_MENU_COLS 3
+#pragma once
 
-typedef struct {
-    const char* title;
-    uint8_t x_pos;
-} osd_col_t;
-
-typedef struct {
-    const char* title;
-    void (*update)(int value_change_direction, uint8_t col);
-    void (*print)(uint16_t pos, uint8_t col);
-} osd_row_t;
-
-typedef struct {
-    const char* title;
-    uint8_t     cols_number;
-    uint8_t     rows_number;
-    osd_col_t       cols[MAX_MENU_COLS];
-    osd_row_t       rows[MAX_MENU_ROWS];
-} osd_page_t;
-
+#include <stdint.h>
 
 typedef enum {
-    OSD_MAIN_BATT_VOLTAGE,
     OSD_RSSI_VALUE,
-    OSD_TIMER,
-    OSD_THROTTLE_POS,
-    OSD_CPU_LOAD,
-    OSD_VTX_CHANNEL,
-    OSD_VOLTAGE_WARNING,
-    OSD_ARMED,
-    OSD_DISARMED,
+    OSD_MAIN_BATT_VOLTAGE,
     OSD_ARTIFICIAL_HORIZON,
     OSD_HORIZON_SIDEBARS,
+    OSD_ONTIME,
+    OSD_FLYTIME,
+    OSD_FLYMODE,
+    OSD_CRAFT_NAME,
+    OSD_THROTTLE_POS,
+    OSD_VTX_CHANNEL,
     OSD_CURRENT_DRAW,
     OSD_MAH_DRAWN,
-    OSD_CRAFT_NAME,
+    OSD_GPS_SPEED,
+    OSD_GPS_SATS,
     OSD_ALTITUDE,
     OSD_MAX_ITEMS, // MUST BE LAST
 } osd_items_t;
@@ -63,12 +44,25 @@ typedef enum {
 } osd_unit_t;
 
 typedef struct {
-    // AUTO / PAL / NTSC in VIDEO_TYPES enum
+    uint16_t item_pos[OSD_MAX_ITEMS];
+
+    // Alarms
+    uint8_t rssi_alarm;
+    uint16_t cap_alarm;
+    uint16_t time_alarm;
+    uint16_t alt_alarm;
+
     uint8_t video_system;
     osd_unit_t units;
-    int16_t item_pos[OSD_MAX_ITEMS];
-} osd_profile;
+} osd_profile_t;
+
+typedef struct {
+    int16_t max_speed;
+    int16_t min_voltage; // /10
+    int16_t max_current; // /10
+    int16_t min_rssi;
+} statistic_t;
 
 void updateOsd(uint32_t currentTime);
 void osdInit(void);
-void resetOsdConfig(osd_profile *osdProfile);
+void resetOsdConfig(osd_profile_t *osdProfile);
