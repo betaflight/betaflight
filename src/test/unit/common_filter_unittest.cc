@@ -29,4 +29,72 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-// FIXME no remaining filter tests.  test the biquad and notch filters here.
+
+TEST(NotchFilterTest, Initialise)
+{
+    // given
+    biquadFilter_t filter;
+
+    // when
+    biquadFilterInitNotch(&filter, 100, 1000, 100, 70);
+
+    // then
+    EXPECT_FLOAT_EQ( 0.82364058f, filter.b0);
+    EXPECT_FLOAT_EQ(-1.3326783f,  filter.b1);
+    EXPECT_FLOAT_EQ( 0.82364058f, filter.b2);
+    EXPECT_FLOAT_EQ(-1.3326783f,  filter.a1);
+    EXPECT_FLOAT_EQ( 0.64728117f, filter.a2);
+
+    // and
+    EXPECT_FLOAT_EQ( 0.0f, filter.d1);
+    EXPECT_FLOAT_EQ( 0.0f, filter.d2);
+}
+
+
+TEST(NotchFilterTest, ApplyZero)
+{
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 100, 1000, 100, 70);
+
+    // when
+    float result = biquadFilterApply(&filter, 0);
+
+    // then
+    EXPECT_FLOAT_EQ(0.0f, result);
+}
+
+
+TEST(NotchFilterTest, ApplySweepWithNoFiltering)
+{
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 100, 1000, 100, 100);
+
+    float result;
+
+    // when
+    for (int i = 0; i <= 100; i++) {
+        result = biquadFilterApply(&filter, i);
+    }
+
+    // then
+    EXPECT_FLOAT_EQ(100.0f, result);
+}
+
+TEST(NotchFilterTest, ApplySweepWithDefaults)
+{
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 260, 1000, 260, 160);
+
+    float result;
+
+    // when
+    for (int i = 0; i <= 100; i++) {
+        result = biquadFilterApply(&filter, i);
+    }
+
+    // then
+    EXPECT_FLOAT_EQ(99.525948f, result);
+}
