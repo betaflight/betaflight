@@ -66,8 +66,6 @@ pt1Filter_t deltaFilter[3];
 pt1Filter_t yawFilter;
 biquadFilter_t dtermFilterLpf[3];
 biquadFilter_t dtermFilterNotch[3];
-bool dtermNotchInitialised, dtermBiquadLpfInitialised;
-
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
