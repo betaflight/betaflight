@@ -307,19 +307,19 @@ OSD_Entry menuBlackbox[] =
 uint8_t ledColor;
 
 static const char * const LED_COLOR_NAMES[] = {
-    "      BLACK",
-    "      WHITE",
-    "        RED",
-    "     ORANGE",
-    "     YELLOW",
+    "   BLACK   ",
+    "   WHITE   ",
+    "   RED     ",
+    "   ORANGE  ",
+    "   YELLOW  ",
     " LIME GREEN",
-    "      GREEN",
+    "   GREEN   ",
     " MINT GREEN",
-    "       CYAN",
+    "   CYAN    ",
     " LIGHT BLUE",
-    "       BLUE",
+    "   BLUE    ",
     "DARK VIOLET",
-    "    MAGENTA",
+    "   MAGENTA ",
     "  DEEP PINK"
 };
 
@@ -1353,13 +1353,18 @@ void osdExitMenu(void *ptr)
         // save local variables to configuration
         if (featureBlackbox)
             featureSet(FEATURE_BLACKBOX);
+        else
+            featureClear(FEATURE_BLACKBOX);
 
         if (featureLedstrip)
             featureSet(FEATURE_LED_STRIP);
-
+        else
+            featureClear(FEATURE_LED_STRIP);
 #if defined(VTX) || defined(USE_RTC6705)
         if (featureVtx)
             featureSet(FEATURE_VTX);
+        else
+            featureClear(FEATURE_VTX);
 #endif // VTX || USE_RTC6705
 
 #ifdef VTX
