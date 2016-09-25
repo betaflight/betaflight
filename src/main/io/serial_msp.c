@@ -1603,7 +1603,7 @@ static bool processInCommand(void)
         for (i = 0; i < 54; i++) {
             font_data[i] = read8();
         }
-        max7456_write_nvm(addr, font_data);
+        max7456WriteNvm(addr, font_data);
         break;
 #endif
 
