@@ -205,7 +205,7 @@ void max7456ReInit(void)
     uint8_t maxScreenRows;
     uint8_t srdata = 0;
     uint16_t x;
-    static uint8_t firstInit = 1;
+    static bool firstInit = true;
 
     //do not init MAX before camera power up correctly
     if (millis() < 1500)
@@ -249,7 +249,7 @@ void max7456ReInit(void)
     if (firstInit)
     {
         max7456RefreshAll();
-        firstInit = 0;
+        firstInit = false;
     }
 }
 
@@ -327,10 +327,8 @@ void max7456DrawScreen(void)
 
         //------------   end of (re)init-------------------------------------
 
-        for (k=0; k< MAX_CHARS2UPDATE; k++)
-        {
-            if (screenBuffer[pos] != shadowBuffer[pos])
-            {
+        for (k=0; k< MAX_CHARS2UPDATE; k++) {
+            if (screenBuffer[pos] != shadowBuffer[pos]) {
                 spiBuff[buff_len++] = MAX7456ADD_DMAH;
                 spiBuff[buff_len++] = pos >> 8;
                 spiBuff[buff_len++] = MAX7456ADD_DMAL;

@@ -35,15 +35,15 @@
 #define VM1_REG   0x01
 
 // video mode register 0 bits
-#define VIDEO_BUFFER_DISABLE 0x01
-#define MAX7456_RESET 0x02
-#define VERTICAL_SYNC_NEXT_VSYNC 0x04
-#define OSD_ENABLE 0x08
-#define SYNC_MODE_AUTO 0x00
-#define SYNC_MODE_INTERNAL 0x30
-#define SYNC_MODE_EXTERNAL 0x20
-#define VIDEO_MODE_PAL 0x40
-#define VIDEO_MODE_NTSC 0x00
+#define VIDEO_BUFFER_DISABLE        0x01
+#define MAX7456_RESET               0x02
+#define VERTICAL_SYNC_NEXT_VSYNC    0x04
+#define OSD_ENABLE                  0x08
+#define SYNC_MODE_AUTO              0x00
+#define SYNC_MODE_INTERNAL          0x30
+#define SYNC_MODE_EXTERNAL          0x20
+#define VIDEO_MODE_PAL              0x40
+#define VIDEO_MODE_NTSC             0x00
 
 // video mode register 1 bits
 

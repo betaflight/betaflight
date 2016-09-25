@@ -1143,7 +1143,7 @@ void updateOsd(void)
     static uint32_t counter;
 #ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
-    if (max7456_dma_in_progres())
+    if (max7456DmaInProgres())
         return;
 #endif // MAX7456_DMA_CHANNEL_TX
 
