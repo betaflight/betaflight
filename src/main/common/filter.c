@@ -97,16 +97,16 @@ static void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t 
     filter->d1 = filter->d2 = 0;
 }
 
-static float biquadFilterCalculateNotchQ(uint16_t centerFreq, uint16_t cutoff) {
-    float octaves = log2f((float) centerFreq  / (float) cutoff) * 2;
+static float biquadFilterCalculateNotchQ(uint16_t filterHz, uint16_t cutoffHz) {
+    float octaves = log2f((float) filterHz  / (float) cutoffHz) * 2;
     float x = powf(2, octaves);
     return sqrtf(x) / (x - 1);
 }
 
-void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, uint16_t centerFreq, uint16_t cutoff)
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterHz, uint16_t cutoffHz)
 {
-    float Q = biquadFilterCalculateNotchQ(centerFreq, cutoff);
-    biquadFilterInit(filter, filterFreq, refreshRate, Q, FILTER_NOTCH);
+    float Q = biquadFilterCalculateNotchQ(filterHz, cutoffHz);
+    biquadFilterInit(filter, filterHz, refreshRate, Q, FILTER_NOTCH);
 }
 
 /* sets up a biquad Filter */

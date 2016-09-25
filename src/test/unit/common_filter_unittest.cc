@@ -36,7 +36,7 @@ TEST(NotchFilterTest, Initialise)
     biquadFilter_t filter;
 
     // when
-    biquadFilterInitNotch(&filter, 100, 1000, 100, 70);
+    biquadFilterInitNotch(&filter, 1000, 100, 70);
 
     // then
     EXPECT_FLOAT_EQ( 0.82364058f, filter.b0);
@@ -55,7 +55,7 @@ TEST(NotchFilterTest, ApplyZero)
 {
     // given
     biquadFilter_t filter;
-    biquadFilterInitNotch(&filter, 100, 1000, 100, 70);
+    biquadFilterInitNotch(&filter, 1000, 100, 70);
 
     // when
     float result = biquadFilterApply(&filter, 0);
@@ -69,7 +69,7 @@ TEST(NotchFilterTest, ApplySweepWithNoFiltering)
 {
     // given
     biquadFilter_t filter;
-    biquadFilterInitNotch(&filter, 100, 1000, 100, 100);
+    biquadFilterInitNotch(&filter, 1000, 100, 100);
 
     float result;
 
@@ -86,7 +86,7 @@ TEST(NotchFilterTest, ApplySweepWithDefaults)
 {
     // given
     biquadFilter_t filter;
-    biquadFilterInitNotch(&filter, 260, 1000, 260, 160);
+    biquadFilterInitNotch(&filter, 1000, 260, 160);
 
     float result;
 

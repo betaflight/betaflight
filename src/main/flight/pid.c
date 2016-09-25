@@ -152,7 +152,7 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     int axis;
 
     if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
-        for (axis = 0; axis < 3; axis++) biquadFilterInitNotch(&dtermFilterNotch[axis], pidProfile->dterm_notch_hz, targetPidLooptime, pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        for (axis = 0; axis < 3; axis++) biquadFilterInitNotch(&dtermFilterNotch[axis], targetPidLooptime, pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
         dtermNotchInitialised = true;
     }
 

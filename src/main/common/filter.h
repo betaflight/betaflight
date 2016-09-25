@@ -39,7 +39,7 @@ typedef enum {
     FILTER_NOTCH
 } biquadFilterType_e;
 
-void biquadFilterInitNotch(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, uint16_t centerFreq, uint16_t cutoff);
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterHz, uint16_t cutoffHz);
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 
 float biquadFilterApply(biquadFilter_t *filter, float input);
