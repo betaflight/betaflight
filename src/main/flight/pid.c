@@ -151,15 +151,15 @@ void pidInitFilters(const pidProfile_t *pidProfile)
 {
     int axis;
 
-    if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
-        for (axis = 0; axis < 3; axis++) biquadFilterInitNotch(&dtermFilterNotch[axis], targetPidLooptime, pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
-        dtermNotchInitialised = true;
+    if (pidProfile->dterm_notch_hz) {
+        for (axis = 0; axis < 3; axis++) {
+            biquadFilterInitNotch(&dtermFilterNotch[axis], targetPidLooptime, pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
+        }
     }
 
-    if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
-        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
-            for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
-            dtermBiquadLpfInitialised = true;
+    if (pidProfile->dterm_filter_type == FILTER_BIQUAD && pidProfile->dterm_lpf_hz) {
+        for (axis = 0; axis < 3; axis++) {
+            biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
     }
 }

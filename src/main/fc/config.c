@@ -159,6 +159,7 @@ static void activateConfig(void)
 
     useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
+    pidInitFilters(pidProfile());
     pidSetController(pidProfile()->pidController);
 
 #ifdef GPS
