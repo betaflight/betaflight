@@ -46,8 +46,7 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 {
     // Pre calculate and store RC
     if (!filter->RC) {
-        filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
-        filter->dT = dT;
+        pt1FilterInit(filter, f_cut, dT);
     }
 
     filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
