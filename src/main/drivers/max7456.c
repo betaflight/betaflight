@@ -73,14 +73,15 @@ static bool fontIsLoading       = false;
 static IO_t max7456CsPin        = IO_NONE;
 
 
-static uint8_t max7456_send(uint8_t add, uint8_t data)
+static uint8_t max7456Send(uint8_t add, uint8_t data)
 {
     spiTransferByte(MAX7456_SPI_INSTANCE, add);
     return spiTransferByte(MAX7456_SPI_INSTANCE, data);
 }
 
 #ifdef MAX7456_DMA_CHANNEL_TX
-static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_size) {
+static void max7456SendDma(void* tx_buffer, void* rx_buffer, uint16_t buffer_size)
+{
     DMA_InitTypeDef DMA_InitStructure;
 #ifdef MAX7456_DMA_CHANNEL_RX
     static uint16_t dummy[] = {0xffff};
@@ -149,8 +150,8 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
             SPI_I2S_DMAReq_Tx, ENABLE);
 }
 
-void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
-
+void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
+{
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 #ifdef MAX7456_DMA_CHANNEL_RX
         DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
@@ -220,7 +221,7 @@ void max7456ReInit(void)
             videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
             break;
         default:
-            srdata = max7456_send(MAX7456ADD_STAT, 0x00);
+            srdata = max7456Send(MAX7456ADD_STAT, 0x00);
             if ((0x02 & srdata) == 0x02)
                 videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
     }
@@ -235,12 +236,12 @@ void max7456ReInit(void)
 
     // set all rows to same charactor black/white level
     for(x = 0; x < maxScreenRows; x++) {
-        max7456_send(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
+        max7456Send(MAX7456ADD_RB0 + x, BWBRIGHTNESS);
     }
 
     // make sure the Max7456 is enabled
-    max7456_send(VM0_REG, videoSignalReg);
-    max7456_send(DMM_REG, CLEAR_DISPLAY);
+    max7456Send(VM0_REG, videoSignalReg);
+    max7456Send(DMM_REG, CLEAR_DISPLAY);
     DISABLE_MAX7456;
 
     //clear shadow to force redraw all screen in non-dma mode
@@ -265,7 +266,7 @@ void max7456Init(uint8_t video_system)
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);
     // force soft reset on Max7456
     ENABLE_MAX7456;
-    max7456_send(VM0_REG, MAX7456_RESET);
+    max7456Send(VM0_REG, MAX7456_RESET);
     DISABLE_MAX7456;
     videoSignalCfg = video_system;
 
@@ -308,7 +309,8 @@ bool max7456DmaInProgres(void)
 }
 #endif
 
-void max7456DrawScreen(void) {
+void max7456DrawScreen(void)
+{
     uint8_t check;
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
@@ -317,7 +319,7 @@ void max7456DrawScreen(void) {
         //-----------------detect MAX7456 fail, or initialize it at startup when it is ready--------
         max7456Lock = true;
         ENABLE_MAX7456;
-        check = max7456_send(VM0_REG | 0x80, 0x00);
+        check = max7456Send(VM0_REG | 0x80, 0x00);
         DISABLE_MAX7456;
 
         if ( check != videoSignalReg)
@@ -348,7 +350,7 @@ void max7456DrawScreen(void) {
         if (buff_len) {
             #ifdef MAX7456_DMA_CHANNEL_TX
             if (buff_len > 0)
-                max7456_send_dma(spiBuff, NULL, buff_len);
+                max7456SendDma(spiBuff, NULL, buff_len);
             #else
             ENABLE_MAX7456;
             for (k=0; k < buff_len; k++)
@@ -370,24 +372,25 @@ void max7456RefreshAll(void)
         uint16_t xx;
         max7456Lock = true;
         ENABLE_MAX7456;
-        max7456_send(MAX7456ADD_DMAH, 0);
-        max7456_send(MAX7456ADD_DMAL, 0);
-        max7456_send(MAX7456ADD_DMM, 1);
+        max7456Send(MAX7456ADD_DMAH, 0);
+        max7456Send(MAX7456ADD_DMAL, 0);
+        max7456Send(MAX7456ADD_DMM, 1);
 
         for (xx = 0; xx < maxScreenSize; ++xx)
         {
-            max7456_send(MAX7456ADD_DMDI, screenBuffer[xx]);
+            max7456Send(MAX7456ADD_DMDI, screenBuffer[xx]);
             shadowBuffer[xx] = screenBuffer[xx];
         }
 
-        max7456_send(MAX7456ADD_DMDI, 0xFF);
-        max7456_send(MAX7456ADD_DMM, 0);
+        max7456Send(MAX7456ADD_DMDI, 0xFF);
+        max7456Send(MAX7456ADD_DMM, 0);
         DISABLE_MAX7456;
         max7456Lock = false;
     }
 }
 
-void max7456WriteNvm(uint8_t char_address, uint8_t *font_data) {
+void max7456WriteNvm(uint8_t char_address, uint8_t *font_data)
+{
     uint8_t x;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -399,13 +402,13 @@ void max7456WriteNvm(uint8_t char_address, uint8_t *font_data) {
     ENABLE_MAX7456;
     // disable display
     fontIsLoading = true;
-    max7456_send(VM0_REG, 0);
+    max7456Send(VM0_REG, 0);
 
-    max7456_send(MAX7456ADD_CMAH, char_address); // set start address high
+    max7456Send(MAX7456ADD_CMAH, char_address); // set start address high
 
     for(x = 0; x < 54; x++) {
-        max7456_send(MAX7456ADD_CMAL, x); //set start address low
-        max7456_send(MAX7456ADD_CMDI, font_data[x]);
+        max7456Send(MAX7456ADD_CMAL, x); //set start address low
+        max7456Send(MAX7456ADD_CMDI, font_data[x]);
 #ifdef LED0_TOGGLE
         LED0_TOGGLE;
 #else
@@ -414,10 +417,10 @@ void max7456WriteNvm(uint8_t char_address, uint8_t *font_data) {
     }
 
     // transfer 54 bytes from shadow ram to NVM
-    max7456_send(MAX7456ADD_CMM, WRITE_NVR);
+    max7456Send(MAX7456ADD_CMM, WRITE_NVR);
 
     // wait until bit 5 in the status register returns to 0 (12ms)
-    while ((max7456_send(MAX7456ADD_STAT, 0x00) & STATUS_REG_NVR_BUSY) != 0x00);
+    while ((max7456Send(MAX7456ADD_STAT, 0x00) & STATUS_REG_NVR_BUSY) != 0x00);
 
     DISABLE_MAX7456;
 

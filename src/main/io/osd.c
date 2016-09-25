@@ -1369,11 +1369,11 @@ void osdExitMenu(void *ptr)
 
 #ifdef VTX
         masterConfig.vtxBand = vtxBand;
-        masterConfig.vtxChannel = vtxChannel - 1;
+        masterConfig.vtx_channel = vtxChannel - 1;
 #endif // VTX
 
 #ifdef USE_RTC6705
-        masterConfig.vtxChannel = vtxBand * 8 + vtxChannel - 1;
+        masterConfig.vtx_channel = vtxBand * 8 + vtxChannel - 1;
 #endif // USE_RTC6705
 
         saveConfigAndNotify();
@@ -1400,12 +1400,12 @@ void osdOpenMenu(void)
 
 #ifdef VTX
     vtxBand = masterConfig.vtxBand;
-    vtxChannel = masterConfig.vtxChannel + 1;
+    vtxChannel = masterConfig.vtx_channel + 1;
 #endif // VTX
 
 #ifdef USE_RTC6705
-    vtxBand = masterConfig.vtxChannel / 8;
-    vtxChannel = masterConfig.vtxChannel % 8 + 1;
+    vtxBand = masterConfig.vtx_channel / 8;
+    vtxChannel = masterConfig.vtx_channel % 8 + 1;
 #endif // USE_RTC6705
 
     osdRows = max7456GetRowsCount();
