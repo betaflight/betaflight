@@ -72,13 +72,15 @@ static bool    max7456Lock    = false;
 static IO_t    max7456CsPin   = IO_NONE;
 static bool    fontIsLoading  = false;
 
-static uint8_t max7456_send(uint8_t add, uint8_t data) {
+static uint8_t max7456_send(uint8_t add, uint8_t data)
+{
     spiTransferByte(MAX7456_SPI_INSTANCE, add);
     return spiTransferByte(MAX7456_SPI_INSTANCE, data);
 }
 
 #ifdef MAX7456_DMA_CHANNEL_TX
-static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_size) {
+static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_size)
+{
     DMA_InitTypeDef DMA_InitStructure;
 #ifdef MAX7456_DMA_CHANNEL_RX
     static uint16_t dummy[] = {0xffff};
@@ -147,8 +149,8 @@ static void max7456_send_dma(void* tx_buffer, void* rx_buffer, uint16_t buffer_s
             SPI_I2S_DMAReq_Tx, ENABLE);
 }
 
-void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
-
+void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
+{
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
 #ifdef MAX7456_DMA_CHANNEL_RX
         DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
@@ -186,7 +188,8 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor) {
 }
 #endif // MAX7456_DMA_CHANNEL_TX
 
-uint8_t max7456_get_rows_count(void) {
+uint8_t max7456_get_rows_count(void)
+{
     if (videoSignalReg & VIDEO_MODE_PAL)
         return VIDEO_LINES_PAL;
 
@@ -195,7 +198,8 @@ uint8_t max7456_get_rows_count(void) {
 
 //because MAX7456 need some time to detect video system etc. we need to wait for a while to initialize it at startup
 //and in case of restart we need to reinitialize chip
-void max7456_init2(void) {
+void max7456_init2(void)
+{
     uint8_t maxScreenRows;
     uint8_t srdata = 0;
     uint16_t x;
@@ -247,7 +251,8 @@ void max7456_init2(void) {
 }
 
 //here we init only CS and try to init MAX for first time
-void max7456_init(uint8_t videoSystem) {
+void max7456_init(uint8_t videoSystem)
+{
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif // MAX7456_SPI_CS_PIN
@@ -268,22 +273,26 @@ void max7456_init(uint8_t videoSystem) {
 }
 
 //just fill with spaces with some tricks
-void max7456_clear_screen(void) {
+void max7456_clear_screen(void)
+{
     uint16_t x;
     uint32_t *p = (uint32_t*)&SCREEN_BUFFER[0];
     for (x = 0; x < VIDEO_BUFFER_CHARS_PAL/4; x++)
         p[x] = 0x20202020;
 }
 
-uint8_t* max7456_get_screen_buffer(void) {
+uint8_t* max7456_get_screen_buffer(void)
+{
     return SCREEN_BUFFER;
 }
 
-void max7456_write_char(uint8_t x, uint8_t y, uint8_t c) {
+void max7456_write_char(uint8_t x, uint8_t y, uint8_t c)
+{
     SCREEN_BUFFER[y*30+x] = c;
 }
 
-void max7456_write(uint8_t x, uint8_t y, char *buff) {
+void max7456_write(uint8_t x, uint8_t y, char *buff)
+{
     uint8_t i = 0;
     for (i = 0; *(buff+i); i++)
         if (x+i < 30) //do not write over screen
@@ -291,12 +300,14 @@ void max7456_write(uint8_t x, uint8_t y, char *buff) {
 }
 
 #ifdef MAX7456_DMA_CHANNEL_TX
-uint8_t max7456_dma_in_progres(void) {
+uint8_t max7456_dma_in_progres(void)
+{
     return dmaTxInProgress;
 }
 #endif // MAX7456_DMA_CHANNEL_TX
 
-void max7456_draw_screen(void) {
+void max7456_draw_screen(void)
+{
     uint8_t check;
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
@@ -347,7 +358,8 @@ void max7456_draw_screen(void) {
 }
 
 // this funcktion refresh all and should not be used when copter is armed
-void max7456_refresh_all(void) {
+void max7456_refresh_all(void)
+{
     if (!max7456Lock) {
 #ifdef MAX7456_DMA_CHANNEL_TX
     while (dmaTxInProgress);
@@ -371,7 +383,8 @@ void max7456_refresh_all(void) {
     }
 }
 
-void max7456_write_nvm(uint8_t char_address, uint8_t *font_data) {
+void max7456_write_nvm(uint8_t char_address, uint8_t *font_data)
+{
     uint8_t x;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
