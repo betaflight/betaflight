@@ -555,7 +555,7 @@ void mspSerialInit(serialConfig_t *serialConfig)
 #endif
 
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
-    
+
     if (feature(FEATURE_3D)) {
     	activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
     }
@@ -567,11 +567,11 @@ void mspSerialInit(serialConfig_t *serialConfig)
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
     }
-	
+
     if (feature(FEATURE_OSD)) {
 	activeBoxIds[activeBoxIdCount++] = BOXOSD;
     }
-	
+
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch) {
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
@@ -1238,11 +1238,16 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_OSD_CONFIG:
 #ifdef OSD
-        headSerialReply(3 + (OSD_MAX_ITEMS * 2));
+        headSerialReply(10 + (OSD_MAX_ITEMS * 2));
         serialize8(1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
         serialize8(masterConfig.osdProfile.video_system);
         serialize8(masterConfig.osdProfile.units);
+        serialize8(masterConfig.osdProfile.rssi_alarm);
+        serialize16(masterConfig.osdProfile.cap_alarm);
+        serialize16(masterConfig.osdProfile.time_alarm);
+        serialize16(masterConfig.osdProfile.alt_alarm);
+
         for (i = 0; i < OSD_MAX_ITEMS; i++) {
             serialize16(masterConfig.osdProfile.item_pos[i]);
         }
@@ -1624,6 +1629,10 @@ static bool processInCommand(void)
         if ((int8_t)addr == -1) {
             masterConfig.osdProfile.video_system = read8();
             masterConfig.osdProfile.units = read8();
+            masterConfig.osdProfile.rssi_alarm = read8();
+            masterConfig.osdProfile.cap_alarm = read16();
+            masterConfig.osdProfile.time_alarm = read16();
+            masterConfig.osdProfile.alt_alarm = read16();
         }
         // set a position setting
         else {
@@ -1926,7 +1935,7 @@ static bool processInCommand(void)
         masterConfig.baro_hardware = read8();
         masterConfig.mag_hardware = read8();
         break;
-       
+
     case MSP_SET_NAME:
         memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
         for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
