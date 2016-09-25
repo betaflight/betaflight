@@ -55,11 +55,11 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
-static void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType)
+static void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t sampleDeltaUs, float Q, biquadFilterType_e filterType)
 {
     // setup variables
-    const float sampleRate = 1 / ((float)refreshRate * 0.000001f);
-    const float omega = 2 * M_PI_FLOAT * filterFreq / sampleRate;
+    const float sampleHz = 1 / ((float)sampleDeltaUs * 0.000001f);
+    const float omega = 2 * M_PI_FLOAT * filterFreq / sampleHz;
     const float sn = sinf(omega);
     const float cs = cosf(omega);
     const float alpha = sn / (2 * Q);
@@ -103,16 +103,16 @@ static float biquadFilterCalculateNotchQ(uint16_t filterHz, uint16_t cutoffHz) {
     return sqrtf(x) / (x - 1);
 }
 
-void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterHz, uint16_t cutoffHz)
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t sampleDeltaUs, uint16_t filterHz, uint16_t cutoffHz)
 {
     float Q = biquadFilterCalculateNotchQ(filterHz, cutoffHz);
-    biquadFilterInit(filter, filterHz, refreshRate, Q, FILTER_NOTCH);
+    biquadFilterInit(filter, filterHz, sampleDeltaUs, Q, FILTER_NOTCH);
 }
 
 /* sets up a biquad Filter */
-void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate)
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t sampleDeltaUs)
 {
-    biquadFilterInit(filter, filterFreq, refreshRate, BIQUAD_Q, FILTER_LPF);
+    biquadFilterInit(filter, filterFreq, sampleDeltaUs, BIQUAD_Q, FILTER_LPF);
 }
 
 /* Computes a biquadFilter_t filter on a sample */
