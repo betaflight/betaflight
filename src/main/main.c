@@ -263,6 +263,7 @@ void init(void)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
 #ifdef STM32F303xC
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
 #if defined(USE_UART2) && defined(STM32F40_41xxx)
