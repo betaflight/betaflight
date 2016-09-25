@@ -56,7 +56,6 @@ static int16_t gyroADCRaw[XYZ_AXIS_COUNT];
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 
 static uint16_t calibratingG = 0;
-static float gyroDt;
 
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch[XYZ_AXIS_COUNT];
@@ -78,13 +77,15 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 
 void gyroInit(void)
 {
-    if (gyroConfig()->gyro_soft_lpf_hz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+    if (gyroConfig()->gyro_soft_lpf_hz) {  // Initialisation needs to happen once sampling rate is known
         for (int axis = 0; axis < 3; axis++) {
             biquadFilterInitNotch(&gyroFilterNotch[axis], gyro.targetLooptime, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
-            if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD)
+            if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD) {
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz, gyro.targetLooptime);
-            else
-                gyroDt = (float) gyro.targetLooptime * 0.000001f;
+            } else {
+                float gyroDt = (float) gyro.targetLooptime * 0.000001f;
+                pt1FilterInit(&gyroFilterPt1[axis], gyroConfig()->gyro_soft_lpf_hz, gyroDt);
+            }
         }
     }
 }
@@ -183,7 +184,7 @@ void gyroUpdate(void)
             if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD)
                 gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]);
             else
-                gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], (float) gyroADC[axis], gyroConfig()->gyro_soft_lpf_hz, gyroDt);
+                gyroADCf[axis] = pt1FilterApply(&gyroFilterPt1[axis], (float) gyroADC[axis]);
 
             if (debugMode == DEBUG_NOTCH)
                 debug[axis] = lrintf(gyroADCf[axis]);
