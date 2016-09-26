@@ -296,7 +296,7 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }
-            } else {
+            } else
 #endif
 
 #if defined(SPRACINGF3) || defined(NAZE)
