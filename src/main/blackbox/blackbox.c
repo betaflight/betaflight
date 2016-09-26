@@ -1280,7 +1280,7 @@ static bool blackboxWriteSysinfo()
 
         // Betaflight PID controller parameters
         BLACKBOX_PRINT_HEADER_LINE("itermThrottleGain:%d",                masterConfig.profile[masterConfig.current_profile_index].pidProfile.itermThrottleGain);
-        BLACKBOX_PRINT_HEADER_LINE("ptermSRateWeight:%d",                 masterConfig.profile[masterConfig.current_profile_index].pidProfile.ptermSRateWeight);
+        BLACKBOX_PRINT_HEADER_LINE("ptermAccelRatio:%d",                  masterConfig.profile[masterConfig.current_profile_index].pidProfile.ptermAccelRatio);
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              masterConfig.profile[masterConfig.current_profile_index].pidProfile.dtermSetpointWeight);
         BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawRateAccelLimit);
         BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   masterConfig.profile[masterConfig.current_profile_index].pidProfile.rateAccelLimit);
