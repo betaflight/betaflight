@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "drivers/resource.h"
+#include "resource.h"
 
 // IO pin identification
 // make sure that ioTag_t can't be assigned into IO_t without warning

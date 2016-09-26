@@ -49,6 +49,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/system.h"
 
+#include "rx/rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -59,7 +60,6 @@
 #include "rx/ibus.h"
 #include "rx/srxl.h"
 
-#include "rx/rx.h"
 
 //#define DEBUG_RX_SIGNAL_LOSS
 

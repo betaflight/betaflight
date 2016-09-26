@@ -133,4 +133,5 @@ PG_DECLARE_PROFILE(adjustmentProfile_t, adjustmentProfile);
 void resetAdjustmentStates(void);
 void configureAdjustmentState(adjustmentRange_t *adjustmentRange);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+struct rxConfig_s;
+void processRcAdjustments(controlRateConfig_t *controlRateConfig, struct rxConfig_s *rxConfig);

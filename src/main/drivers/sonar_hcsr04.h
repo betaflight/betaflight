@@ -19,7 +19,7 @@
 
 
 #include "platform.h"
-#include "drivers/io.h"
+#include "io.h"
 
 typedef struct sonarHardware_s {
     uint16_t trigger_pin;

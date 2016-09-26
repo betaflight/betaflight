@@ -71,6 +71,7 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/motor_and_servo.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"

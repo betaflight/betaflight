@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "io.h"
 
 typedef struct hmc5883Config_s {
 #ifdef STM32F303

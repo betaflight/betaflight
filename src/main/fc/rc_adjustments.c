@@ -47,6 +47,8 @@
 #include "fc/rc_adjustments.h"
 #include "fc/config.h"
 
+#include "rx/rx.h"
+
 PG_REGISTER_PROFILE(adjustmentProfile_t, adjustmentProfile, PG_ADJUSTMENT_PROFILE, 0);
 
 uint8_t adjustmentStateMask = 0;

@@ -15,12 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fc/rc_controls.h"
-
-#include "flight/pid.h"
-
-#include "sensors/barometer.h"
-
 extern int32_t AltHold;
 extern int32_t vario;
 
