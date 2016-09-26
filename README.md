@@ -45,8 +45,11 @@ Make sure Settings -> System -> "User hardware acceleration when available" is c
 
 ### Linux users
 
-1. Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access
-2. If you have 3D model animation problems, enable "Override software rendering list" in Chrome flags chrome://flags/#ignore-gpu-blacklist
+Dont forget to add your user into dialout group "sudo usermod -aG dialout YOUR_USERNAME" for serial access
+
+### Linux / MacOSX users
+
+If you have 3D model animation problems, enable "Override software rendering list" in Chrome flags chrome://flags/#ignore-gpu-blacklist
 
 ## Support
 
