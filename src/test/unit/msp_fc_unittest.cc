@@ -54,7 +54,7 @@ extern "C" {
     #include "io/gps.h"
     #include "io/gimbal.h"
     #include "io/ledstrip.h"
-    #include "io/motor_and_servo.h"
+    #include "io/motors.h"
     #include "io/transponder_ir.h"
     #include "io/serial.h"
 
@@ -93,7 +93,7 @@ extern "C" {
 
 extern "C" {
     PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
     PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);

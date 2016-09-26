@@ -49,7 +49,6 @@ extern "C" {
     #include "fc/runtime_config.h"
 
     #include "io/motors.h"
-    #include "io/servos.h"
     #include "fc/rc_controls.h"
 
     #include "rx/rx.h"
@@ -64,7 +63,7 @@ extern "C" {
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
     PG_REGISTER_PROFILE(barometerConfig_t, barometerConfig, PG_BAROMETER_CONFIG, 0);
     PG_REGISTER_PROFILE(compassConfig_t, compassConfig, PG_COMPASS_CONFIGURATION, 0);
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 
 }
 

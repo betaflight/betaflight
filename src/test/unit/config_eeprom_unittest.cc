@@ -96,7 +96,8 @@ extern "C" {
     PG_REGISTER_PROFILE(modeActivationProfile_t, modeActivationProfile, PG_MODE_ACTIVATION_PROFILE, 0);
     PG_REGISTER_PROFILE(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
 
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
+    PG_REGISTER(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
     PG_REGISTER(gyroConfig_t, gyroConfig, PG_GYRO_CONFIG, 0);
     PG_REGISTER(sensorTrims_t, sensorTrims, PG_SENSOR_TRIMS, 0);
     PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);

@@ -38,7 +38,7 @@ extern "C" {
     #include "sensors/acceleration.h"
 
     #include "io/beeper.h"
-    #include "io/motor_and_servo.h"
+    #include "io/motors.h"
     #include "fc/rc_controls.h"
     #include "fc/rate_profile.h"
     #include "fc/rc_adjustments.h"
@@ -52,7 +52,7 @@ extern "C" {
 
     PG_REGISTER_PROFILE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -265,7 +265,7 @@ protected:
         adjustmentStateMask = 0;
         memset(&adjustmentStates, 0, sizeof(adjustmentStates));
 
-        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
+        memset(motorConfig(), 0, sizeof(*motorConfig()));
 
         memset(rxConfig(), 0, sizeof(*rxConfig()));
         rxConfig()->mincheck = DEFAULT_MIN_CHECK;
@@ -766,7 +766,7 @@ TEST_F(RcControlsAdjustmentsTest, processPIDIncreasePidController2) // uses floa
 
 extern "C" {
 void saveConfigAndNotify(void) {}
-void generateThrottleCurve(controlRateConfig_t *, motorAndServoConfig_t *) {}
+void generateThrottleCurve(controlRateConfig_t *, motorConfig_t *) {}
 void changeProfile(uint8_t) {}
 void accSetCalibrationCycles(uint16_t) {}
 void gyroSetCalibrationCycles(uint16_t) {}
