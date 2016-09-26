@@ -606,7 +606,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef ASYNC_GYRO_PROCESSING
     { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.accTaskFrequency, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX } },
-    { "atti_task_frequency",        VAR_UINT16 | MASTER_VALUE,  &masterConfig.attiTaskFrequency, .config.minmax = { ATTI_TASK_FREQUENCY_MIN,  ATTI_TASK_FREQUENCY_MAX } },
+    { "attitude_task_frequency",        VAR_UINT16 | MASTER_VALUE,  &masterConfig.attitudeTaskFrequency, .config.minmax = { ATTITUDE_TASK_FREQUENCY_MIN,  ATTITUDE_TASK_FREQUENCY_MAX } },
     { "async_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.asyncMode, .config.lookup = { TABLE_ASYNC_MODE } },
 #endif
 

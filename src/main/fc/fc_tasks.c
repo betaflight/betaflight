@@ -389,7 +389,6 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
 void fcTasksInit(void)
 {
-    /* Setup scheduler */
     schedulerInit();
 
 #ifdef ASYNC_GYRO_PROCESSING
@@ -405,7 +404,7 @@ void fcTasksInit(void)
         rescheduleTask(TASK_ACC, getAccUpdateRate());
         setTaskEnabled(TASK_ACC, true);
 
-        rescheduleTask(TASK_ATTI, getAttiUpdateRate());
+        rescheduleTask(TASK_ATTI, getAttitudeUpdateRate());
         setTaskEnabled(TASK_ATTI, true);
     }
 

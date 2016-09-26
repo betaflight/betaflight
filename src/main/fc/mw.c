@@ -543,6 +543,7 @@ void taskGyro(void) {
         }
     }
 
+    /* Update actual hardware readings */
     gyroUpdate();
 
 #ifdef ASYNC_GYRO_PROCESSING

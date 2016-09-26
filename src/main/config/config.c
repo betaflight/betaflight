@@ -402,9 +402,9 @@ uint16_t getAccUpdateRate(void) {
     }
 }
 
-uint16_t getAttiUpdateRate(void) {
+uint16_t getAttitudeUpdateRate(void) {
     if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
-        return 1000000 / masterConfig.attiTaskFrequency;
+        return 1000000 / masterConfig.attitudeTaskFrequency;
     } else {
         return getPidUpdateRate();
     }
@@ -558,7 +558,7 @@ static void resetConf(void)
 
 #ifdef ASYNC_GYRO_PROCESSING
     masterConfig.accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
-    masterConfig.attiTaskFrequency = ATTI_TASK_FREQUENCY_DEFAULT;
+    masterConfig.attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT;
     masterConfig.asyncMode = ASYNC_MODE_NONE;
 #endif
 

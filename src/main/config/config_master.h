@@ -76,7 +76,7 @@ typedef struct master_s {
 
 #ifdef ASYNC_GYRO_PROCESSING
     uint16_t accTaskFrequency;
-    uint16_t attiTaskFrequency;
+    uint16_t attitudeTaskFrequency;
     uint8_t asyncMode;
 #endif
 
