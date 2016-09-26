@@ -15,25 +15,34 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fc/rc_controls.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "flight/pid.h"
+#include <platform.h>
 
-#include "sensors/barometer.h"
+#include "build/debug.h"
 
-extern int32_t AltHold;
-extern int32_t vario;
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
 
-typedef struct airplaneConfig_s {
-    int8_t fixedwing_althold_dir;           // +1 or -1 for pitch/althold gain. later check if need more than just sign
-} airplaneConfig_t;
+#include "motors.h"
 
-PG_DECLARE(airplaneConfig_t, airplaneConfig);
+#define BRUSHED_MOTORS_PWM_RATE 16000
+#define BRUSHLESS_MOTORS_PWM_RATE 400
 
-void calculateEstimatedAltitude(uint32_t currentTime);
+#ifdef BRUSHED_MOTORS
+#define DEFAULT_PWM_RATE BRUSHED_MOTORS_PWM_RATE
+#else
+#define DEFAULT_PWM_RATE BRUSHLESS_MOTORS_PWM_RATE
+#endif
 
-void applyAltHold(void);
-void updateAltHoldState(void);
-void updateSonarAltHoldState(void);
+PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 
-int32_t altitudeHoldGetEstimatedAltitude(void);
+PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
+    .minthrottle = 1150,
+    .maxthrottle = 1850,
+    .mincommand = 1000,
+    .motor_pwm_rate = DEFAULT_PWM_RATE,
+);

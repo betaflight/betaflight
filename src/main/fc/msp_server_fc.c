@@ -66,9 +66,8 @@
 
 #include "scheduler/scheduler.h"
 
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
@@ -712,9 +711,9 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_MISC:
             sbufWriteU16(dst, rxConfig()->midrc);
 
-            sbufWriteU16(dst, motorAndServoConfig()->minthrottle);
-            sbufWriteU16(dst, motorAndServoConfig()->maxthrottle);
-            sbufWriteU16(dst, motorAndServoConfig()->mincommand);
+            sbufWriteU16(dst, motorConfig()->minthrottle);
+            sbufWriteU16(dst, motorConfig()->maxthrottle);
+            sbufWriteU16(dst, motorConfig()->mincommand);
 
             sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
 
@@ -1144,9 +1143,9 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             if (midrc > 1400 && midrc < 1600)
                 rxConfig()->midrc = midrc;
 
-            motorAndServoConfig()->minthrottle = sbufReadU16(src);
-            motorAndServoConfig()->maxthrottle = sbufReadU16(src);
-            motorAndServoConfig()->mincommand = sbufReadU16(src);
+            motorConfig()->minthrottle = sbufReadU16(src);
+            motorConfig()->maxthrottle = sbufReadU16(src);
+            motorConfig()->mincommand = sbufReadU16(src);
 
             failsafeConfig()->failsafe_throttle = sbufReadU16(src);
 

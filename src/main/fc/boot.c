@@ -76,7 +76,8 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
@@ -411,13 +412,13 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = motorAndServoConfig()->servoCenterPulse;
-    pwm_params.servoPwmRate = motorAndServoConfig()->servo_pwm_rate;
+    pwm_params.servoCenterPulse = servoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = servoConfig()->servo_pwm_rate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = motorAndServoConfig()->motor_pwm_rate;
-    pwm_params.idlePulse = motorAndServoConfig()->mincommand;
+    pwm_params.motorPwmRate = motorConfig()->motor_pwm_rate;
+    pwm_params.idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = motor3DConfig()->neutral3d;
     if (pwm_params.motorPwmRate > 500)

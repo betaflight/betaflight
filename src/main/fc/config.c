@@ -68,7 +68,7 @@
 
 // FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
 
 
 #ifndef DEFAULT_RX_FEATURE
@@ -117,9 +117,9 @@ STATIC_UNIT_TESTED void resetConf(void)
 # endif
     rxConfig()->serialrx_provider = SERIALRX_SPEKTRUM2048;
     rxConfig()->spektrum_sat_bind = 5;
-    motorAndServoConfig()->minthrottle = 1000;
-    motorAndServoConfig()->maxthrottle = 2000;
-    motorAndServoConfig()->motor_pwm_rate = 32000;
+    motorConfig()->minthrottle = 1000;
+    motorConfig()->maxthrottle = 2000;
+    motorConfig()->motor_pwm_rate = 32000;
     pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;

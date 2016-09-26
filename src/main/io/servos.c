@@ -27,24 +27,12 @@
 #include "config/parameter_group_ids.h"
 #include "config/config_reset.h"
 
-#include "motor_and_servo.h"
+#include "servos.h"
 
-#define BRUSHED_MOTORS_PWM_RATE 16000
-#define BRUSHLESS_MOTORS_PWM_RATE 400
 
-#ifdef BRUSHED_MOTORS
-#define DEFAULT_PWM_RATE BRUSHED_MOTORS_PWM_RATE
-#else
-#define DEFAULT_PWM_RATE BRUSHLESS_MOTORS_PWM_RATE
-#endif
+PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
-PG_REGISTER_WITH_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
-
-PG_RESET_TEMPLATE(motorAndServoConfig_t, motorAndServoConfig,
-    .minthrottle = 1150,
-    .maxthrottle = 1850,
-    .mincommand = 1000,
+PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .servoCenterPulse = 1500,
-    .motor_pwm_rate = DEFAULT_PWM_RATE,
     .servo_pwm_rate = 50,
 );

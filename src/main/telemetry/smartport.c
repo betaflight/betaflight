@@ -26,13 +26,12 @@
 
 #include "fc/fc_serial.h"
 
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 
 #include "sensors/sensors.h"
-#include "../sensors/amperage.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 #include "sensors/acceleration.h"
 

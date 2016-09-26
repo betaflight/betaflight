@@ -48,7 +48,8 @@ extern "C" {
 
     #include "fc/runtime_config.h"
 
-    #include "io/motor_and_servo.h"
+    #include "io/motors.h"
+    #include "io/servos.h"
     #include "fc/rc_controls.h"
 
     #include "rx/rx.h"

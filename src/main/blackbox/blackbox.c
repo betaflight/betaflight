@@ -57,9 +57,8 @@
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
-
 #include "io/gps.h"
-
+#include "io/motors.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -528,7 +527,7 @@ static void writeIntraframe(void)
      * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
      * Throttle lies in range [minthrottle..maxthrottle]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorAndServoConfig()->minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorConfig()->minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -570,7 +569,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->accSmooth, XYZ_AXIS_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorAndServoConfig()->minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
@@ -1140,10 +1139,10 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rcRate:%d", controlRateProfiles(getCurrentProfile())->rcRate8);
         break;
         case 6:
-            blackboxPrintfHeaderLine("minthrottle:%d", motorAndServoConfig()->minthrottle);
+            blackboxPrintfHeaderLine("minthrottle:%d", motorConfig()->minthrottle);
         break;
         case 7:
-            blackboxPrintfHeaderLine("maxthrottle:%d", motorAndServoConfig()->maxthrottle);
+            blackboxPrintfHeaderLine("maxthrottle:%d", motorConfig()->maxthrottle);
         break;
         case 8:
             blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));

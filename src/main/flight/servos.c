@@ -49,7 +49,7 @@
 #include "rx/rx.h"
 
 #include "io/gimbal.h"
-#include "io/motor_and_servo.h"
+#include "io/servos.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"

@@ -294,7 +294,8 @@ FC_COMMON_SRC = \
 		   drivers/gyro_sync.c \
 		   io/beeper.c \
 		   io/gimbal.c \
-		   io/motor_and_servo.c \
+		   io/servos.c \
+		   io/motors.c \
 		   io/serial_4way.c \
 		   io/serial_4way_avrootloader.c \
 		   io/serial_4way_stk500v2.c \

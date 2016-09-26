@@ -119,10 +119,6 @@ typedef struct servoProfile_s {
 
 PG_DECLARE_PROFILE(servoProfile_t, servoProfile);
 
-struct gimbalConfig_s;
-struct motorAndServoConfig_s;
-struct rxConfig_s;
-
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isMixerUsingServos(void);
 void writeServos(void);
