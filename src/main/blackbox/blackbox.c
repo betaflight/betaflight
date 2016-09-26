@@ -52,7 +52,8 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -530,7 +531,7 @@ static void writeIntraframe(void)
      * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
      * Throttle lies in range [minthrottle..maxthrottle]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -574,7 +575,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->debug, 4);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.escAndServoConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.motorConfig.minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
@@ -931,7 +932,7 @@ void stopInTestMode(void)
  */
 bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
-    uint16_t inactiveMotorCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.escAndServoConfig.mincommand);
+    uint16_t inactiveMotorCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.motorConfig.mincommand);
     int i;
     bool atLeastOneMotorActivated = false;
 
@@ -1198,8 +1199,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
-        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.escAndServoConfig.minthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.escAndServoConfig.maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.motorConfig.minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.motorConfig.maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.acc_1G);
 

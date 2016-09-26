@@ -263,5 +263,5 @@ bool isUsingSticksForArming(void);
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
 struct pidProfile_s;
-struct escAndServoConfig_s;
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, struct escAndServoConfig_s *escAndServoConfigToUse, struct pidProfile_s *pidProfileToUse);
+struct motorConfig_s;
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, struct motorConfig_s *motorConfigToUse, struct pidProfile_s *pidProfileToUse);

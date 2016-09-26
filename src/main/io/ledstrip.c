@@ -55,7 +55,8 @@
 
 #include "io/ledstrip.h"
 #include "io/beeper.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/gps.h"

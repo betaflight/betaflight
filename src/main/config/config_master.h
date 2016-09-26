@@ -28,7 +28,8 @@ typedef struct master_s {
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    escAndServoConfig_t escAndServoConfig;
+    motorConfig_t motorConfig;
+    servoConfig_t servoConfig;
     flight3DConfig_t flight3DConfig;
 
     uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)

@@ -178,7 +178,7 @@ typedef struct servoParam_s {
 } __attribute__ ((__packed__)) servoParam_t;
 
 struct gimbalConfig_s;
-struct escAndServoConfig_s;
+struct motorConfig_s;
 struct rxConfig_s;
 
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
@@ -189,12 +189,12 @@ void filterServos(void);
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-struct escAndServoConfig_s;
+struct motorConfig_s;
 struct rxConfig_s;
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
-        struct escAndServoConfig_s *escAndServoConfigToUse,
+        struct motorConfig_s *motorConfigToUse,
         mixerConfig_t *mixerConfigToUse,
         airplaneConfig_t *airplaneConfigToUse,
         struct rxConfig_s *rxConfigToUse);

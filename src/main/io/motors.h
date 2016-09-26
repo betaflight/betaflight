@@ -17,9 +17,11 @@
 
 #pragma once
 
-struct controlRateConfig_s;
-struct motorConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorConfig_s *motorConfig);
+typedef struct motorConfig_s {
 
-int16_t rcLookupThrottle(int32_t tmp);
-
+    // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)
+    uint16_t minthrottle;                   // Set the minimum throttle command sent to the ESC (Electronic Speed Controller). This is the minimum value that allow motors to run at a idle speed.
+    uint16_t maxthrottle;                   // This is the maximum value for the ESCs at full power this value can be increased up to 2000
+    uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
+    uint16_t maxEscThrottleJumpMs;
+} motorConfig_t;

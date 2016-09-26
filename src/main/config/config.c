@@ -52,7 +52,8 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -235,18 +236,24 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
-void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
+void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
-    escAndServoConfig->minthrottle = 1000;
+    motorConfig->minthrottle = 1000;
 #else
-    escAndServoConfig->minthrottle = 1070;
+    motorConfig->minthrottle = 1070;
 #endif
-    escAndServoConfig->maxthrottle = 2000;
-    escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
-    escAndServoConfig->maxEscThrottleJumpMs = 0;
+    motorConfig->maxthrottle = 2000;
+    motorConfig->mincommand = 1000;
+    motorConfig->maxEscThrottleJumpMs = 0;
 }
+
+#ifdef USE_SERVOS
+void resetServoConfig(servoConfig_t *servoConfig)
+{
+    servoConfig->servoCenterPulse = 1500;
+}
+#endif
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {
@@ -368,7 +375,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return masterConfig.escAndServoConfig.minthrottle;
+    return masterConfig.motorConfig.minthrottle;
 }
 
 // Default settings
@@ -485,7 +492,10 @@ void createDefaultConfig(master_t *config)
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
-    resetEscAndServoConfig(&config->escAndServoConfig);
+    resetMotorConfig(&config->motorConfig);
+#ifdef USE_SERVOS
+    resetServoConfig(&config->servoConfig);
+#endif
     resetFlight3DConfig(&config->flight3DConfig);
 
 #ifdef BRUSHED_MOTORS
@@ -639,7 +649,7 @@ static void resetConf(void)
 
 void activateControlRateConfig(void)
 {
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
+    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
 }
 
 void activateConfig(void)
@@ -652,7 +662,7 @@ void activateConfig(void)
 
     useRcControlsConfig(
         masterConfig.modeActivationConditions,
-        &masterConfig.escAndServoConfig,
+        &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
 
@@ -674,7 +684,7 @@ void activateConfig(void)
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig,
+        &masterConfig.motorConfig,
         &masterConfig.mixerConfig,
         &masterConfig.airplaneConfig,
         &masterConfig.rxConfig
@@ -700,7 +710,7 @@ void activateConfig(void)
         &currentProfile->pidProfile,
         &masterConfig.barometerConfig,
         &masterConfig.rcControlsConfig,
-        &masterConfig.escAndServoConfig
+        &masterConfig.motorConfig
     );
 
 #ifdef BARO

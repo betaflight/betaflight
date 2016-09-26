@@ -51,7 +51,8 @@
 
 #include "drivers/buf_writer.h"
 
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "fc/rc_controls.h"
@@ -670,11 +671,13 @@ const clivalue_t valueTable[] = {
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
+    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
+#ifdef USE_SERVOS
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+#endif
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,

@@ -50,7 +50,8 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -78,8 +79,8 @@
 
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config) {
-    config->escAndServoConfig.minthrottle = 1025;
-    config->escAndServoConfig.maxthrottle = 1980;
+    config->motorConfig.minthrottle = 1025;
+    config->motorConfig.maxthrottle = 1980;
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;
 }
