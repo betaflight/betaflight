@@ -296,3 +296,11 @@ Tmp1 : baro temp if available, gyro otherwise.
 RPM : throttle value
 
 Vbatt : configurable battery voltage or the average cell value, vbat divided by number of cells.
+
+### RX hardware ###
+
+These receivers are reported to work with i-bus telemetry:
+
+- FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html)
+- FlySky/Turnigy FS-iA6B 6-Channel Receiver (http://www.flysky-cn.com/products_detail/&productId=51.html)
+- FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
