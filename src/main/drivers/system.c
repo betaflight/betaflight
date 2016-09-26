@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "common/atomic.h"
 
 #include "gpio.h"
 #include "light_led.h"
@@ -61,10 +62,18 @@ void cycleCounterInit(void)
 }
 
 // SysTick
+static volatile int sysTickPending = 0;
+
 void SysTick_Handler(void)
 {
-    sysTickUptime++;
+    ATOMIC_BLOCK_NB(NVIC_PRIO_MAX) {
+        sysTickUptime++;
+        *(volatile uint32_t *)&(SysTick->CTRL); // Clear COUNTFLAG
+        sysTickPending = 0;
+    }
 }
+
+#include "debug.h"
 
 // Return system uptime in microseconds (rollover in 70minutes)
 uint32_t micros(void)
@@ -79,7 +88,19 @@ uint32_t micros(void)
          */
         asm volatile("\tnop\n");
     } while (ms != sysTickUptime);
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+
+    // SysTick interrupts never get delivered above if called from ISRs.
+    // Treat COUNTFLAG like a pending interrupt flag.
+
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+        // COUNTFLAG is cleared when CTRL is read.
+        // Remember it until corresponding interrupt is actually delivered.
+        sysTickPending = 1;
+        debug[2]++;
+    }
+
+    // Convert (ms,cycle_cnt) pair into us, taking sysTickPending into account.
+    return ((ms + sysTickPending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

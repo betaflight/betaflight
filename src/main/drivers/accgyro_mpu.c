@@ -211,6 +211,8 @@ static void mpu6050FindRevision(void)
 
 extiCallbackRec_t mpuIntCallbackRec;
 
+#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
@@ -221,6 +223,10 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
     uint32_t now = micros();
     uint32_t callDelta = now - lastCalledAt;
     debug[0] = callDelta;
+
+    if (now < lastCalledAt)
+        debug[1]++;
+
     lastCalledAt = now;
 #endif
 }
