@@ -244,10 +244,6 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 if ((timerIndex == PWM13 || timerIndex == PWM14) && timerHardwarePtr->tim == TIM15)
                     type = MAP_TO_SERVO_OUTPUT;
             }
-
-            // skip UART3 ports when necessary - this board maps UART3 and PWM3,PWM4 to the same pins
-            if ((init->useUART3) && (timerIndex == PWM3 || timerIndex == PWM4))
-                continue;
 #endif
 
 #if defined(SPRACINGF3MINI) || defined(OMNIBUS)
@@ -308,11 +304,8 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
 #elif defined(X_RACERSPI)
-                // remap PWM3..6 as servos when used in extended servo mode ... except if using UART3
-                if (!init->useUART3 && (timerIndex >= PWM3 && timerIndex <= PWM4))
-                    type = MAP_TO_SERVO_OUTPUT;
-                // don't do this if softserial, but that's up above
-                if (timerIndex >= PWM5 && timerIndex <= PWM6)
+                // remap PWM3..6 as servos when used in extended servo mode
+                if (timerIndex >= PWM3 && timerIndex <= PWM6)
                     type = MAP_TO_SERVO_OUTPUT;
 #endif
 
