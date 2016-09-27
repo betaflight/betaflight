@@ -804,6 +804,7 @@ bool shouldProcessGyro(void)
                 return true;
             }
         }
+        return false;
     }
 
     int32_t diff = currentTime - gyroUpdateAt;
