@@ -223,7 +223,7 @@ static void mpu6000AccAndGyroInit(void)
 
     // Accel Sample Rate 1kHz
     // Gyroscope Output Rate =  1kHz when the DLPF is enabled
-    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider());
+    mpu6000WriteRegister(MPU_RA_SMPLRT_DIV, gyroGetMPU6xxxDivider());
     delayMicroseconds(1);
 
     // Gyro +/- 1000 DPS Full Scale
