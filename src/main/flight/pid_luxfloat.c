@@ -202,7 +202,7 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
         }
 
         // --------low-level gyro-based PID. ----------
-        const float gyroRate = luxGyroScale * gyroADC[axis] * gyro.scale;
+        const float gyroRate = luxGyroScale * gyroADCf[axis] * gyro.scale;
         axisPID[axis] = pidLuxFloatCore(axis, pidProfile, gyroRate, angleRate);
         //axisPID[axis] = constrain(axisPID[axis], -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
 #ifdef GTUNE

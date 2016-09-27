@@ -134,6 +134,11 @@ void resetGyroADC(void)
     gyroADC[ROLL] = 0;
     gyroADC[PITCH] = 0;
     gyroADC[YAW] = 0;
+
+    gyroADCf[ROLL] = 0;
+    gyroADCf[PITCH] = 0;
+    gyroADCf[YAW] = 0;
+
 }
 
 void pidControllerInitLuxFloatCore(void)
@@ -266,9 +271,9 @@ TEST(PIDUnittest, TestPidLuxFloat)
     // run the PID controller. Check expected PID values
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
 
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
-    gyroADC[PITCH] = -rateErrorPitch / (luxGyroScale * gyro.scale);
-    gyroADC[YAW] = -rateErrorYaw / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[PITCH] = -rateErrorPitch / (luxGyroScale * gyro.scale);
+    gyroADCf[YAW] = -rateErrorYaw / (luxGyroScale * gyro.scale);
     resetRcCommands();
     float ITermRoll = calcLuxITermDelta(pidProfile, FD_ROLL, rateErrorRoll);
     float ITermPitch = calcLuxITermDelta(pidProfile, FD_PITCH, rateErrorPitch);
@@ -479,7 +484,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     // set rateError to zero, DTerm should be zero
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     float rateErrorRoll = 0;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_EQ(0, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -487,7 +492,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     // set rateError to 100, DTerm should not be constrained
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     rateErrorRoll = 100;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxDTerm(pidProfile, FD_ROLL, rateErrorRoll) / DTermAverageCount, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -495,7 +500,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     // set up a very large rateError to force DTerm to be constrained
     pidControllerInitLuxFloat(&controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     rateErrorRoll = 10000;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     //!!EXPECT_FLOAT_EQ(PID_LUX_FLOAT_MAX_D, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -508,7 +513,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     actualDeltaTime = getdT();
     EXPECT_FLOAT_EQ(expectedDeltaTime, actualDeltaTime);
     rateErrorRoll = 50;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxDTerm(pidProfile, FD_ROLL, rateErrorRoll) / DTermAverageCount, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -521,7 +526,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     actualDeltaTime = getdT();
     EXPECT_FLOAT_EQ(expectedDeltaTime, actualDeltaTime);
     rateErrorRoll = 30;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     EXPECT_FLOAT_EQ(calcLuxDTerm(pidProfile, FD_ROLL, rateErrorRoll) / DTermAverageCount, unittest_pidLuxFloatCore_DTerm[FD_ROLL]);
@@ -533,7 +538,7 @@ TEST(PIDUnittest, TestPidLuxFloatDTermConstrain)
     actualDeltaTime = getdT();
     EXPECT_FLOAT_EQ(expectedDeltaTime, actualDeltaTime);
     rateErrorRoll = 32;
-    gyroADC[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
+    gyroADCf[ROLL] = -rateErrorRoll / (luxGyroScale * gyro.scale);
     resetRcCommands();
     pid_controller(pidProfile, &controlRate, max_angle_inclination, &rollAndPitchTrims, &rxConfig);
     // following test will fail, since DTerm will be constrained for when dT = 0.001
@@ -768,7 +773,7 @@ TEST(PIDUnittest, TestPidMultiWiiRewritePidLuxFloatEquivalence)
 
     // set up a rateError of 200 on the roll axis
     const float rateErrorRollf = 200;
-    gyroADC[ROLL] = -rateErrorRollf / (luxGyroScale * gyro.scale);
+    gyroADC[ROLL] = gyroADCf[ROLL] = -rateErrorRollf / (luxGyroScale * gyro.scale);
     resetRcCommands();
 
     float ITermRoll = calcLuxITermDelta(pidProfile, FD_ROLL, rateErrorRollf);
@@ -819,6 +824,7 @@ uint8_t stateFlags = 0;
 uint8_t motorCount = 4;
 gyro_t gyro;
 int32_t gyroADC[XYZ_AXIS_COUNT];
+float gyroADCf[XYZ_AXIS_COUNT];
 int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+500] for ROLL/PITCH/YAW
 int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 bool motorLimitReached;
