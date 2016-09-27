@@ -110,7 +110,7 @@
 //#define RSSI_ADC_PIN            PA0
 
 #define LED_STRIP
-// LED Strip can run off Pin 6 (PA0) of the MOTOR outputs.
+// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
 #define WS2811_GPIO_AF                  GPIO_AF_TIM5
 #define WS2811_PIN                      PA1 
 #define WS2811_TIMER                    TIM5
