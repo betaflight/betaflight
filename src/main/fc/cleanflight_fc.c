@@ -777,7 +777,8 @@ void subTaskMotorUpdate(void)
 uint32_t gyroUpdateAt = 0;
 uint32_t gyroIntPeriod = 0;
 
-#define GYRO_TASK_OVERHEAD 10
+#define MAX_SYNC_PERIOD_ERROR 5
+
 bool shouldProcessGyro(void)
 {
     if (imuConfig()->gyro_sync) {
@@ -785,20 +786,20 @@ bool shouldProcessGyro(void)
 
         if (gyroSyncIsDataReady()) {
             gyroIntPeriod += gyroIntSignalDelta;
+            syncCounter++;
 
             if (debugMode == DEBUG_GYRO_SYNC) {
-                syncCounter++;
                 debug[0] = gyroIntSignalDelta;
             }
 
 
-            if (gyroIntPeriod >= gyro.refreshPeriod) {
+            if (gyroIntPeriod >= (uint16_t)(gyro.refreshPeriod - (syncCounter * MAX_SYNC_PERIOD_ERROR))) {
                 if (debugMode == DEBUG_GYRO_SYNC) {
                     debug[1] = gyroIntPeriod;
                     debug[2] = syncCounter;
                     debug[3]++;
-                    syncCounter = 0;
                 }
+                syncCounter = 0;
                 gyroIntPeriod = 0;
                 return true;
             }
