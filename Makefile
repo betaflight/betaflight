@@ -65,7 +65,7 @@ BIN_DIR         = $(ROOT)/obj
 CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
-LINKER_DIR      = $(ROOT)/src/main/target
+LINKER_DIR      = $(ROOT)/src/main/target/link
 
 ## Build tools, so we all share the same versions
 # import macros common to all supported build systems
