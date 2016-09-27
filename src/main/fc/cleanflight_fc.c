@@ -854,7 +854,7 @@ bool taskPidCheck(uint32_t currentDeltaTime) {
     if (imuConfig()->gyro_sync) {
         shouldRunPid = gyroReady;
     } else {
-        shouldRunPid = currentDeltaTime >= targetPidLooptime;
+        shouldRunPid = gyroReady && currentDeltaTime >= targetPidLooptime;
     }
 
     if (!shouldRunPid) {
