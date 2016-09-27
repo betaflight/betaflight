@@ -73,7 +73,6 @@ bool mpu6500GyroDetect(gyro_t *gyro)
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
     gyro->temperature = mpu6500ReadTemp;
-    gyro->isDataReady = mpuIsDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -102,7 +101,7 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroGetMPU6xxxDivider()); // Get Divider
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG

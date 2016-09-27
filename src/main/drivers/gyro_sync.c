@@ -21,34 +21,43 @@
 #include <platform.h>
 #include "build/build_config.h"
 
-#include "common/axis.h"
-#include "common/maths.h"
-#include "common/time.h"
-
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "drivers/system.h"
 #include "drivers/gyro_sync.h"
 
-extern gyro_t gyro;
+volatile bool gyroDataReady = false;
 
-static uint8_t mpuDividerDrops;
+uint32_t gyroIntSignalledAt = 0;
+int32_t gyroIntSignalDelta = 0;
 
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)
+void gyroSyncIntHandler(void)
 {
-    int gyroSamplePeriod;
-    if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
-        gyroSamplePeriod = PERIOD_HZ(8000);
-    } else {
-        gyroSamplePeriod = PERIOD_HZ(1000);
-        gyroSyncDenominator = 1; // Always full Sampling 1khz
-    }
+    gyroDataReady = true;
 
-    mpuDividerDrops = gyroSyncDenominator - 1;
-    const uint32_t targetLooptime = gyroSyncDenominator * gyroSamplePeriod;
-    return targetLooptime;
+    uint32_t now = micros();
+    gyroIntSignalDelta = now - gyroIntSignalledAt;
+
+    gyroIntSignalledAt = now;
 }
 
-uint8_t gyroMPU6xxxCalculateDivider(void)
+bool gyroSyncIsDataReady(void)
+{
+    if (gyroDataReady) {
+        gyroDataReady = false;
+        return true;
+    }
+
+    return false;
+}
+
+static uint8_t mpuDividerDrops = 0;
+
+
+void gyroSetMPU6xxxDivider(uint8_t mpuDividerDropsToUse)
+{
+    mpuDividerDrops = mpuDividerDropsToUse;
+}
+
+uint8_t gyroGetMPU6xxxDivider(void)
 {
     return mpuDividerDrops;
 }

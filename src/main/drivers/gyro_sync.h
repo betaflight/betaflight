@@ -15,5 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-uint8_t gyroMPU6xxxCalculateDivider(void);
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);
+extern uint32_t gyroIntSignalledAt;
+extern int32_t gyroIntSignalDelta;
+
+void gyroSyncIntHandler(void);
+bool gyroSyncIsDataReady(void);
+
+void gyroSetMPU6xxxDivider(uint8_t mpuDividerDropsToUse);
+uint8_t gyroGetMPU6xxxDivider(void);

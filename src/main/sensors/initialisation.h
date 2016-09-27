@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(uint32_t targetLooptime);
+bool sensorsAutodetect(uint16_t gyro_sample_hz);

@@ -79,11 +79,11 @@ void gyroInit(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {  // Initialisation needs to happen once sampling rate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInitNotch(&gyroFilterNotch[axis], gyro.targetLooptime, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
+            biquadFilterInitNotch(&gyroFilterNotch[axis], gyro.refreshPeriod, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
             if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD) {
-                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz, gyro.targetLooptime);
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz,  gyro.refreshPeriod);
             } else {
-                float gyroDt = (float) gyro.targetLooptime * 0.000001f;
+                float gyroDt = (float)  gyro.refreshPeriod * 0.000001f;
                 pt1FilterInit(&gyroFilterPt1[axis], gyroConfig()->gyro_soft_lpf_hz, gyroDt);
             }
         }

@@ -20,7 +20,8 @@
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
-    TASK_GYROPID,
+    TASK_GYRO,
+    TASK_PID,
     TASK_ACCEL,
     TASK_ATTITUDE,
     TASK_RX,
@@ -62,7 +63,10 @@ typedef enum {
 } cfTaskId_e;
 
 void taskSystem(void);
-void taskMainPidLoopCheck(void);
+bool taskGyroCheck(uint32_t currentDeltaTime);
+void taskGyro(void);
+bool taskPidCheck(uint32_t currentDeltaTime);
+void taskPid(void);
 void taskUpdateAccelerometer(void);
 void taskUpdateAttitude(void);
 bool taskUpdateRxCheck(uint32_t currentDeltaTime);

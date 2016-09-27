@@ -32,6 +32,7 @@
 #include "common/printf.h"
 #include "common/streambuf.h"
 #include "common/filter.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -545,9 +546,7 @@ void init(void)
     }
 #endif
 
-    uint32_t targetLooptime = gyroSetSampleRate(gyroConfig()->gyro_lpf, imuConfig()->gyro_sync_denom);   // Set gyro sampling rate divider before initialization
-
-    if (!sensorsAutodetect(targetLooptime)) {
+    if (!sensorsAutodetect(imuConfig()->gyro_sample_hz)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -556,7 +555,7 @@ void init(void)
 
     flashLedsAndBeep();
 
-    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom);
+    pidSetTargetLooptime(gyro.refreshPeriod * imuConfig()->pid_process_denom);
     pidInitFilters(pidProfile());
 
 #ifdef USE_SERVOS
@@ -730,8 +729,11 @@ void configureScheduler(void)
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
 
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
+    rescheduleTask(TASK_GYRO, gyro.refreshPeriod);
+    setTaskEnabled(TASK_GYRO, true);
+
+    rescheduleTask(TASK_PID, gyro.refreshPeriod);
+    setTaskEnabled(TASK_PID, true);
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);

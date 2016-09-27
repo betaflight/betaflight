@@ -774,45 +774,107 @@ void subTaskMotorUpdate(void)
     if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
 }
 
+uint32_t gyroUpdateAt = 0;
+uint32_t gyroIntPeriod = 0;
+
+#define GYRO_TASK_OVERHEAD 10
+bool shouldProcessGyro(void)
+{
+    if (imuConfig()->gyro_sync) {
+        static uint8_t syncCounter = 0;
+
+        if (gyroSyncIsDataReady()) {
+            gyroIntPeriod += gyroIntSignalDelta;
+
+            if (debugMode == DEBUG_GYRO_SYNC) {
+                syncCounter++;
+                debug[0] = gyroIntSignalDelta;
+            }
 
 
+            if (gyroIntPeriod >= gyro.refreshPeriod) {
+                if (debugMode == DEBUG_GYRO_SYNC) {
+                    debug[1] = gyroIntPeriod;
+                    debug[2] = syncCounter;
+                    debug[3]++;
+                    syncCounter = 0;
+                }
+                gyroIntPeriod = 0;
+                return true;
+            }
+        }
+    }
 
-uint8_t pidCalculateCountdown(void) {
-    if (gyroConfig()->gyro_soft_lpf_hz) {
-        return imuConfig()->pid_process_denom - 1;
-    } else {
-        return 0; // boris says: `prevent unnecessary gyro reads while there is no filtering enabled at all`
+    int32_t diff = currentTime - gyroUpdateAt;
+    bool timeout = (diff >= 0);
+
+    if (debugMode == DEBUG_GYRO_SYNC) {
+        if (timeout) {
+            debug[2] = diff;
+            debug[3]++;
+        }
+    }
+
+    return timeout;
+}
+
+bool taskGyroCheck(uint32_t currentDeltaTime)
+{
+    UNUSED(currentDeltaTime);
+    return shouldProcessGyro();
+}
+
+bool gyroReady = false;
+
+void taskGyro(void)
+{
+    uint32_t startTime = micros();
+
+    gyroUpdate();
+    gyroUpdateAt += gyro.refreshPeriod;
+    gyroReady = true;
+
+    if (debugMode == DEBUG_GYRO_UPDATE) {
+        debug[0] = micros() - startTime;
     }
 }
 
-// Function for loop trigger
-void taskMainPidLoopCheck(void)
-{
-    static bool runTaskMainSubprocesses = false;
-    static uint8_t pidUpdateCountdown = 0;
+bool taskPidCheck(uint32_t currentDeltaTime) {
+    if (imuConfig()->gyro_sync) {
+        return gyroReady;
+    }
 
-    cycleTime = getTaskDeltaTime(TASK_SELF);
+    return currentDeltaTime >= targetPidLooptime / imuConfig()->pid_process_denom;
+}
+
+void taskPid(void)
+{
+    static uint8_t pidCounter = 0;
+
+    pidCounter++;
+
+    if (pidCounter != imuConfig()->pid_process_denom) {
+        return;
+    }
+
+    pidCounter = 0;
+
+    static uint32_t previousPidUpdateTime;
+    cycleTime = currentTime - previousPidUpdateTime;
+    previousPidUpdateTime = currentTime;
+
+    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (debugMode == DEBUG_CYCLETIME) {
         debug[0] = cycleTime;
         debug[1] = averageSystemLoadPercent;
     }
 
-    if (runTaskMainSubprocesses) {
-        subTaskMainSubprocesses();
-        runTaskMainSubprocesses = false;
-    }
+    subTaskPidController();
+    gyroReady = false;
 
-    gyroUpdate();
-
-    if (pidUpdateCountdown) {
-        pidUpdateCountdown--;
-    } else {
-        pidUpdateCountdown = pidCalculateCountdown();
-        subTaskPidController();
-        subTaskMotorUpdate();
-        runTaskMainSubprocesses = true;
-    }
+    subTaskMotorUpdate();
+    subTaskMainSubprocesses();
 }
 
 void taskUpdateAccelerometer(void)
