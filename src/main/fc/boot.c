@@ -556,7 +556,8 @@ void init(void)
 
     flashLedsAndBeep();
 
-    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom); // Initialize pid looptime
+    pidSetTargetLooptime(gyro.targetLooptime * imuConfig()->pid_process_denom);
+    pidInitFilters(pidProfile());
 
 #ifdef USE_SERVOS
     mixerInitialiseServoFiltering(targetPidLooptime);

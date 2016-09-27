@@ -48,7 +48,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-uint32_t targetPidLooptime;
+uint32_t targetPidLooptime = 0;
 
 int16_t axisPID[3];
 
@@ -150,6 +150,12 @@ void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
     int axis;
+
+    if (!targetPidLooptime) {
+        // loop time needs to be set.  currently activateConfig calls this but the gyro has not been initialised yet
+        // this requires an additional call after pidSetTargetLooptime has been used.
+        return;
+    }
 
     if (pidProfile->dterm_notch_hz) {
         for (axis = 0; axis < 3; axis++) {
