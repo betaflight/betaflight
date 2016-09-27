@@ -19,6 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "IFF3"
 
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define LED0
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_3

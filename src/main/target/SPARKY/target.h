@@ -19,6 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB

@@ -18,6 +18,10 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
+
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define USE_CLI
 #define USE_EXTI
 
