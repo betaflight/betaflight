@@ -882,6 +882,9 @@ void taskPid(void)
     const uint32_t currentDeltaTime = currentTime - previousPidUpdateTime;
     previousPidUpdateTime = currentTime;
 
+    if (debugMode == DEBUG_PIDLOOP) {
+        debug[0] = currentDeltaTime;
+    }
 
     subTaskPidController();
 
