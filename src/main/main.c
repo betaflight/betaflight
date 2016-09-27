@@ -99,6 +99,7 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
@@ -315,9 +316,12 @@ void init(void)
 #endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
-    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
+    const pwmOutputConfiguration_t *pwmOutputConfiguration = pwmInit(&pwm_params);
 
-    mixerUsePWMOutputConfiguration(pwmOutputConfiguration, use_unsyncedPwm);
+    mixerUsePWMOutputConfiguration(use_unsyncedPwm);
+#ifdef USE_SERVOS
+    servoUsePWMOutputConfiguration(pwmOutputConfiguration->servoCount);
+#endif
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
