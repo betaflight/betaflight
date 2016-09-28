@@ -334,7 +334,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
     }
 
 #ifdef USE_SERVOS
-    if (STATE(FIXED_WING)) {
+    if (STATE(FIXED_WING) && pidProfile->fixedWingItermThrowLimit != 0) {
         pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidProfile->fixedWingItermThrowLimit, pidProfile->fixedWingItermThrowLimit);
     }
 #endif
