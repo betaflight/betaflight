@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "common/atomic.h"
 
 #include "gpio.h"
 #include "light_led.h"
@@ -61,24 +60,60 @@ void cycleCounterInit(void)
     usTicks = clocks.SYSCLK_Frequency / 1000000;
 }
 
-// SysTick
-static volatile int sysTickPending = 0;
+#include "common/atomic.h"
+#include "debug.h"
 
+static volatile int sysTickRollover = 0;
+
+// SysTick
 void SysTick_Handler(void)
 {
-    ATOMIC_BLOCK_NB(NVIC_PRIO_MAX) {
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         sysTickUptime++;
-        *(volatile uint32_t *)&(SysTick->CTRL); // Clear COUNTFLAG
-        sysTickPending = 0;
+        sysTickRollover = 0;
+        *(volatile uint32_t *)&(SysTick->CTRL);
     }
 }
 
-#include "debug.h"
+uint32_t microsISR(void)
+{
+    register uint32_t ms, cycle_cnt;
+
+    ATOMIC_BLOCK(NVIC_PRIO_MAX) {
+        cycle_cnt = SysTick->VAL;
+
+        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+            // Update pending.
+            // Remember it for calls within the same rollover period
+            // (Will be cleared when serviced).
+
+            // XXX Do we care for multiple rollovers?
+            // sysTickUptime would be incorrect in that case...
+
+            ++sysTickRollover;
+
+            // Read VAL again to ensure the value is read after the rollover.
+
+            cycle_cnt = SysTick->VAL;
+        }
+
+        ms = sysTickUptime;
+    }
+
+    return ((ms + sysTickRollover) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+}
 
 // Return system uptime in microseconds (rollover in 70minutes)
 uint32_t micros(void)
 {
     register uint32_t ms, cycle_cnt;
+
+    // Call microsISR() in interrupt context
+
+    if (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) {
+        return microsISR();
+    }
+
     do {
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
@@ -88,19 +123,7 @@ uint32_t micros(void)
          */
         asm volatile("\tnop\n");
     } while (ms != sysTickUptime);
-
-    // SysTick interrupts never get delivered above if called from ISRs.
-    // Treat COUNTFLAG like a pending interrupt flag.
-
-    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
-        // COUNTFLAG is cleared when CTRL is read.
-        // Remember it until corresponding interrupt is actually delivered.
-        sysTickPending = 1;
-        debug[2]++;
-    }
-
-    // Convert (ms,cycle_cnt) pair into us, taking sysTickPending into account.
-    return ((ms + sysTickPending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)

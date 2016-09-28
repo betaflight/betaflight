@@ -213,6 +213,8 @@ extiCallbackRec_t mpuIntCallbackRec;
 
 #define DEBUG_MPU_DATA_READY_INTERRUPT
 
+extern uint32_t isr_micros(void);
+
 void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
@@ -221,6 +223,7 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     static uint32_t lastCalledAt = 0;
     uint32_t now = micros();
+    //uint32_t now = isr_micros();
     uint32_t callDelta = now - lastCalledAt;
     debug[0] = callDelta;
 
