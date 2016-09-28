@@ -20,6 +20,3 @@ extern int32_t gyroIntSignalDelta;
 
 void gyroSyncIntHandler(void);
 bool gyroSyncIsDataReady(void);
-
-void gyroSetMPU6xxxDivider(uint8_t mpuDividerDropsToUse);
-uint8_t gyroGetMPU6xxxDivider(void);

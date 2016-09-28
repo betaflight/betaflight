@@ -101,7 +101,7 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroGetMPU6xxxDivider()); // Get Divider
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0); // Get Divider
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG

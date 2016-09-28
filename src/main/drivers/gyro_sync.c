@@ -48,16 +48,3 @@ bool gyroSyncIsDataReady(void)
 
     return false;
 }
-
-static uint8_t mpuDividerDrops = 0;
-
-
-void gyroSetMPU6xxxDivider(uint8_t mpuDividerDropsToUse)
-{
-    mpuDividerDrops = mpuDividerDropsToUse;
-}
-
-uint8_t gyroGetMPU6xxxDivider(void)
-{
-    return mpuDividerDrops;
-}
