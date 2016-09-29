@@ -8,8 +8,7 @@ Altitude hold requires a valid source of altitude - barometer or sonar. The best
 In this mode THROTTLE stick controls climb rate (vertical velocity). When pilot moves stick up - quad goes up, pilot moves stick down - quad descends, you keep stick at neutral position - quad hovers.
 
 ### CLI parameters affecting ALTHOLD mode:
-* *nav_use_midrc_for_althold* - when set to "0", firmware will remember where your throttle stick was when ALTHOLD was activated - this will be considered neutral position. When set to "1" - 50% throttle will be considered neutral position.
-* *nav_throttle_tilt_comp* - when set to "1" firmware will automatically increase throttle when copter is tilted and in ALTHOLD mode.
+* *nav_use_midthr_for_althold* - when set to "0", firmware will remember where your throttle stick was when ALTHOLD was activated - this will be considered neutral position. When set to "1" - 50% throttle will be considered neutral position.
 
 ### Related PIDs
 PIDs affecting altitude hold: ALT & VEL
@@ -19,7 +18,7 @@ PID meaning:
 
 ## Throttle tilt compensation
 
-Throttle tilt compensation attempts to maintain constant vertical thrust when copter is tilted giving additional throttle if tilt angle (pitch/roll) is not zero. Controlled by *nav_throttle_tilt_comp* CLI variable.
+Throttle tilt compensation attempts to maintain constant vertical thrust when copter is tilted giving additional throttle if tilt angle (pitch/roll) is not zero. Controlled by *throttle_tilt_comp_str* CLI variable.
 
 ## NAV POSHOLD mode - position hold
 
