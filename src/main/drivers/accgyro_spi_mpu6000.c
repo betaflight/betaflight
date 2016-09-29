@@ -30,6 +30,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "system.h"
 #include "gpio.h"
@@ -46,6 +47,7 @@ static void mpu6000AccAndGyroInit(void);
 
 static bool mpuSpi6000InitDone = false;
 
+extern uint8_t mpuIntDenominator;
 // Bits
 #define BIT_SLEEP				    0x40
 #define BIT_H_RESET				    0x80
@@ -119,8 +121,25 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu6000SpiGyroInit(uint8_t lpf)
+void mpu6000SpiGyroInit(gyro_t *gyro, uint8_t lpf)
 {
+    uint16_t intPeriod;
+    switch(lpf) {
+        case 0:
+            intPeriod = PERIOD_HZ(8000);
+        break;
+        default:
+            intPeriod = PERIOD_HZ(1000);
+        break;
+    }
+
+    mpuIntDenominator = gyro->refreshPeriod / intPeriod;
+
+    // handle cases where the refresh period was set lower than the LPF allows
+    if (mpuIntDenominator == 0) {
+        mpuIntDenominator = 1;
+        gyro->refreshPeriod = intPeriod;
+    }
     mpuIntExtiInit();
 
     mpu6000AccAndGyroInit();
