@@ -502,12 +502,14 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 
 #endif
 
+    bool skipBMP085 = false;
 #ifdef NAZE
     if (hardwareRevision == NAZE32) {
         bmp085Disable(bmp085Config);
     }
     if (hardwareRevision > NAZE32) {
         bmp085Config = NULL; // pins used for different purposes on the NAZE32_REV5 and later.
+        skipBMP085 = true;
     }
 #endif
 
@@ -519,7 +521,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 
         case BARO_BMP085: // Always test before MS5611 as some BMP180's can pass MS5611 CRC test
 #ifdef USE_BARO_BMP085
-            if (bmp085Detect(bmp085Config, &baro)) {
+            if (!skipBMP085 && bmp085Detect(bmp085Config, &baro)) {
                 baroHardware = BARO_BMP085;
                 break;
             }
