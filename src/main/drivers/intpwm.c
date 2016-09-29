@@ -120,21 +120,36 @@ static uint32_t tmax = 0;
 
 void computePulse(void)
 {
-    if (pwmRec.sigs != SIGPAT1 && pwmRec.sigs != SIGPAT2)
+    uint32_t sigbits;
+
+    sigbits = (pwmRec.sb[0] << 3)
+        |(pwmRec.sb[1] << 2)
+        |(pwmRec.sb[2] << 1)
+        |(pwmRec.sb[3] << 0);
+
+    debug[0] = sigbits;
+
+#if 0
+    if (pwmRec.sigs != SIGPAT1 && pwmRec.sigs != SIGPAT2) {
+        //debug[0]++;
         return;
+    }
+#endif
 
     // Compute intervals
 
     int i;
 
-    for (i = 0 ; i < 3 ; i++)
+    for (i = 0 ; i < 3 ; i++) {
         tStamp[i] = tStamp[i+1] - tStamp[i];
+
+        debug[i+1] = tStamp[i];
+    }
+
+    return;
 
     // After converting to intervals, check for invalid intervals,
     // discard the whole measurement if found.
-
-    for (i = 0 ; i < 3 ; i++)
-
 
     for (i = 0 ; i < 3 ; i++) {
         // If the measurement contains out range values,
@@ -142,17 +157,6 @@ void computePulse(void)
 
         if (tStamp[i] > INTPWM_MAX_PULSE)
             return;
-
-        // Monitor pulseWidths for parameter decision.
-
-        if (pulseWidth > tmax)
-            tmax = pulseWidth;
-
-        if (pulseWidth < tmin)
-            tmin = pulseWidth;
-
-        debug[2] = tmin;
-        debug[3] = tmax;
 
         if (tStamp[i] > 1023 || tStamp[i] < 20)
             return;
@@ -165,6 +169,17 @@ void computePulse(void)
     }
 
     debug[1] = pulseWidth;
+
+    // Monitor pulseWidths for parameter decision.
+
+    if (pulseWidth > tmax)
+        tmax = pulseWidth;
+
+    if (pulseWidth < tmin)
+        tmin = pulseWidth;
+
+    debug[2] = tmin;
+    debug[3] = tmax;
 }
 
 bool intpwmInit(void)
