@@ -555,6 +555,9 @@ void init(void)
 
     flashLedsAndBeep();
 
+    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the best sample frequency possible for the desired LPF
+    imuConfig()->gyro_sample_hz = HZ_FROM_PERIOD(gyro.refreshPeriod);
+
     pidSetTargetLooptime(gyro.refreshPeriod * imuConfig()->pid_process_denom);
     pidInitFilters(pidProfile());
 

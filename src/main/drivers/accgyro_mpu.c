@@ -57,8 +57,12 @@ static bool detectSPISensorsAndUpdateDetectionResult(void);
 
 mpuDetectionResult_t mpuDetectionResult;
 
+
 mpuConfiguration_t mpuConfiguration;
 static const extiConfig_t *mpuIntExtiConfig = NULL;
+
+// interrupt is triggered when internal gyro registers are updated at 8KHz, regardless of the desired sample frequency.
+uint8_t mpuIntDenominator;
 
 #define MPU_ADDRESS             0x68
 
@@ -186,6 +190,13 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     UNUSED(cb);
 
+    static uint8_t counter = 0;
+
+    if (++counter < mpuIntDenominator) {
+        return;
+    }
+
+    counter = 0;
     gyroSyncIntHandler();
 }
 

@@ -44,8 +44,6 @@
 
 static void mpu6000AccAndGyroInit(void);
 
-extern uint8_t mpuLowPassFilter;
-
 static bool mpuSpi6000InitDone = false;
 
 // Bits

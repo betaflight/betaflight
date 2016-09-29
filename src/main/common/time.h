@@ -20,3 +20,5 @@
 #define PERIOD_HZ(hz) (1000000 / (hz))
 #define PERIOD_MS(ms) ((ms) * 1000)
 #define PERIOD_US(us) (us)
+
+#define HZ_FROM_PERIOD(period) (1000000 / (period))

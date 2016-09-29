@@ -706,7 +706,7 @@ bool sensorsAutodetect(uint16_t gyro_sample_hz)
     gyro.refreshPeriod = PERIOD_HZ(gyro_sample_hz);
 
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.init(gyroConfig()->gyro_lpf);
+    gyro.init(&gyro, gyroConfig()->gyro_lpf);
     gyroInit();
 
     if (detectAcc(sensorSelectionConfig()->acc_hardware)) {
