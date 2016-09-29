@@ -51,7 +51,7 @@ BIN_DIR         = $(ROOT)/obj
 CMSIS_DIR       = $(ROOT)/lib/main/CMSIS
 INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
-LINKER_DIR      = $(ROOT)/src/main/target
+LINKER_DIR      = $(ROOT)/src/main/target/link
 
 # default xtal value for F4 targets
 HSE_VALUE       = 8000000
