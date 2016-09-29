@@ -120,7 +120,6 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
 
-uint16_t filteredCycleTime;
 static bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
 float setpointRate[3], ptermSetpointRate[3];
