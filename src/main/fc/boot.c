@@ -546,6 +546,12 @@ void init(void)
     }
 #endif
 
+#ifdef NAZE
+    if (hardwareRevision < NAZE32_REV5) {
+        imuConfig()->gyro_sync = 0;
+    }
+#endif
+
     if (!sensorsAutodetect(imuConfig()->gyro_sample_hz)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
