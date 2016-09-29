@@ -17,6 +17,10 @@ SYM.AH_DECORATION = 0x13;
 SYM.LOGO = 0xA0;
 SYM.AMP = 0x9A;
 SYM.MAH = 0x07;
+SYM.METRE = 0xC;
+SYM.FEET = 0xF;
+SYM.GPS_SAT = 0x1F;
+
 
 var FONT = FONT || {};
 
@@ -199,14 +203,18 @@ var OSD = OSD || {};
 OSD.initData = function() {
   OSD.data = {
     video_system: null,
+    unit_mode: null,
+    alarms: [],
     display_items: [],
     last_positions: {},
+    preview_logo: true,
     preview: []
   };
 };
 OSD.initData();
 
 OSD.constants = {
+  VISIBLE: 0x0800,
   VIDEO_TYPES: [
     'AUTO',
     'PAL',
@@ -220,93 +228,180 @@ OSD.constants = {
     PAL: 480,
     NTSC: 390
   },
+  UNIT_TYPES: [
+    'IMPERIAL',
+    'METRIC'
+  ],
   AHISIDEBARWIDTHPOSITION: 7,
   AHISIDEBARHEIGHTPOSITION: 3,
-  // order matters, so these are going in an array... pry could iterate the example map instead
-  DISPLAY_FIELDS: [
-    {
+
+  // All display fields, from every version, do not remove elements, only add!
+  ALL_DISPLAY_FIELDS: {
+    MAIN_BATT_VOLTAGE: {
       name: 'MAIN_BATT_VOLTAGE',
       default_position: -29,
       positionable: true,
       preview: FONT.symbol(SYM.VOLT) + '16.8'
     },
-    {
+    RSSI_VALUE: {
       name: 'RSSI_VALUE',
       default_position: -59,
       positionable: true,
       preview: FONT.symbol(SYM.RSSI) + '99'
     },
-    {
+    TIMER: {
       name: 'TIMER',
       default_position: -39,
       positionable: true,
       preview: FONT.symbol(SYM.ON_M) + ' 11:11'
     },
-    {
+    THROTTLE_POSITION: {
       name: 'THROTTLE_POSITION',
       default_position: -9,
       positionable: true,
       preview: FONT.symbol(SYM.THR) + FONT.symbol(SYM.THR1) + ' 69'
     },
-    {
+    CPU_LOAD: {
       name: 'CPU_LOAD',
       default_position: 26,
       positionable: true,
       preview: '15'
     },
-    {
+    VTX_CHANNEL: {
       name: 'VTX_CHANNEL',
       default_position: 1,
       positionable: true,
       preview: 'CH:1'
     },
-    {
+    VOLTAGE_WARNING: {
       name: 'VOLTAGE_WARNING',
       default_position: -80,
       positionable: true,
       preview: 'LOW VOLTAGE'
     },
-    {
+    ARMED: {
       name: 'ARMED',
       default_position: -107,
       positionable: true,
       preview: 'ARMED'
     },
-    {
+    DIASRMED: {
       name: 'DIASRMED',
       default_position: -109,
       positionable: true,
       preview: 'DISARMED'
     },
-    {
+    ARTIFICIAL_HORIZON: {
       name: 'ARTIFICIAL_HORIZON',
       default_position: -1,
       positionable: false
     },
-    {
+    HORIZON_SIDEBARS: {
       name: 'HORIZON_SIDEBARS',
       default_position: -1,
       positionable: false
     },
-    {
+    CURRENT_DRAW: {
       name: 'CURRENT_DRAW',
       default_position: -23,
       positionable: true,
       preview: FONT.symbol(SYM.AMP) + '42.0'
     },
-    {
+    MAH_DRAWN: {
       name: 'MAH_DRAWN',
       default_position: -18,
       positionable: true,
       preview: FONT.symbol(SYM.MAH) + '690'
     },
-    {
+    CRAFT_NAME: {
       name: 'CRAFT_NAME',
       default_position: -77,
       positionable: true,
       preview: '[CRAFT_NAME]'
+    },
+    ALTITUDE: {
+      name: 'ALTITUDE',
+      default_position: 62,
+      positionable: true,
+      preview: function(osd_data) {
+        return '399.7' + FONT.symbol(osd_data.unit_mode === 0 ? SYM.FEET : SYM.METRE)
+      }
+    },
+    ONTIME: {
+      name: 'ONTIME',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.ON_M) + '  4:11'
+    },
+    FLYTIME: {
+      name: 'FLYTIME',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.FLY_M) + '  4:11'
+    },
+    FLYMODE: {
+      name: 'FLYMODE',
+      default_position: -1,
+      positionable: true,
+      preview: 'STAB'
+    },
+    GPS_SPEED: {
+      name: 'GPS_SPEED',
+      default_position: -1,
+      positionable: true,
+      preview: '40'
+    },
+    GPS_SATS: {
+      name: 'GPS_SATS',
+      default_position: -1,
+      positionable: true,
+      preview: FONT.symbol(SYM.GPS_SAT) + '14'
     }
-  ],
+  }
+};
+
+// Pick display fields by version, order matters, so these are going in an array... pry could iterate the example map instead
+OSD.chooseFields = function () {
+  var F = OSD.constants.ALL_DISPLAY_FIELDS;
+  if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+    OSD.constants.DISPLAY_FIELDS = [
+      F.RSSI_VALUE,
+      F.MAIN_BATT_VOLTAGE,
+      F.ARTIFICIAL_HORIZON,
+      F.HORIZON_SIDEBARS,
+      F.ONTIME,
+      F.FLYTIME,
+      F.FLYMODE,
+      F.CRAFT_NAME,
+      F.THROTTLE_POSITION,
+      F.VTX_CHANNEL,
+      F.CURRENT_DRAW,
+      F.MAH_DRAWN,
+      F.GPS_SPEED,
+      F.GPS_SATS,
+      F.ALTITUDE
+    ]
+  }
+  // version 3.0.0
+  else {
+    OSD.constants.DISPLAY_FIELDS = [
+      F.MAIN_BATT_VOLTAGE,
+      F.RSSI_VALUE,
+      F.TIMER,
+      F.THROTTLE_POSITION,
+      F.CPU_LOAD,
+      F.VTX_CHANNEL,
+      F.VOLTAGE_WARNING,
+      F.ARMED,
+      F.DIASRMED,
+      F.ARTIFICIAL_HORIZON,
+      F.HORIZON_SIDEBARS,
+      F.CURRENT_DRAW,
+      F.MAH_DRAWN,
+      F.CRAFT_NAME,
+      F.ALTITUDE
+    ]
+  }
 };
 
 OSD.updateDisplaySize = function() {
@@ -316,42 +411,100 @@ OSD.updateDisplaySize = function() {
   }
   // compute the size
   OSD.data.display_size = {
-    x: 30,
+    x: FONT.constants.SIZES.LINE,
     y: OSD.constants.VIDEO_LINES[video_type],
     total: null
   };
 };
 
+
 OSD.msp = {
+  /**
+   * Note, unsigned 16 bit int for position ispacked:
+   * 0: unused
+   * v: visible flag
+   * b: blink flag
+   * y: y coordinate
+   * x: x coordinate
+   * 0000 vbyy yyyx xxxx
+   */
+  helpers: {
+    unpack: {
+      position: function(bits, c) {
+        var display_item = {};
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+          // size * y + x
+          display_item.position = FONT.constants.SIZES.LINE * ((bits >> 5) & 0x001F) + (bits & 0x001F);
+          display_item.isVisible = (bits & OSD.constants.VISIBLE) != 0;
+        } else {
+          display_item.position = (bits === -1) ? c.default_position : bits;
+          display_item.isVisible = bits !== -1;
+        }
+        return display_item;
+      }
+    },
+    pack: {
+      position: function(display_item) {
+        var isVisible = display_item.isVisible;
+        var position = display_item.position;
+        if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+          return (isVisible ? 0x0800 : 0) | (((position / FONT.constants.SIZES.LINE) & 0x001F) << 5) | (position % FONT.constants.SIZES.LINE);
+        } else {
+          return isVisible ? (position == -1 ? 0 : position): -1;
+        }
+      }
+    }
+  },
   encodeOther: function() {
-    return [-1, OSD.data.video_system];
+    var result = [-1, OSD.data.video_system];
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+      result.push8(OSD.data.unit_mode);
+      // watch out, order matters! match the firmware
+      result.push8(OSD.data.alarms.rssi.value);
+      result.push16(OSD.data.alarms.cap.value);
+      result.push16(OSD.data.alarms.time.value);
+      result.push16(OSD.data.alarms.alt.value);
+    }
+    return result;
   },
   encode: function(display_item) {
-    return [
-      display_item.index,
-      specificByte(display_item.position, 0),
-      specificByte(display_item.position, 1)
-    ];
+    var buffer = [];
+    buffer.push8(display_item.index);
+    buffer.push16(this.helpers.pack.position(display_item));
+    return buffer;
   },
   // Currently only parses MSP_MAX_OSD responses, add a switch on payload.code if more codes are handled
   decode: function(payload) {
     var view = payload.data;
     var d = OSD.data;
-    d.compiled_in = view.getUint8(0, 1);
-    d.video_system = view.getUint8(1, 1);
+    d.compiled_in = view.readU8();
+    d.video_system = view.readU8();
+
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+      d.unit_mode = view.readU8();
+      d.alarms = {};
+      d.alarms['rssi'] = { display_name: 'Rssi', value: view.readU8() };
+      d.alarms['cap']= { display_name: 'Capacity', value: view.readU16() };
+      d.alarms['time'] = { display_name: 'Minutes', value: view.readU16() };
+      d.alarms['alt'] = { display_name: 'Altitude', value: view.readU16() };
+    }
     d.display_items = [];
     // start at the offset from the other fields
-    for (var i = 2; i < view.byteLength; i = i + 2) {
-      var v = view.getInt16(i, 1)
+    while (view.offset < view.byteLength) {
+      var v = null;
+      if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+        v = view.readU16();
+      } else {
+        v = view.read16();
+      }
       var j = d.display_items.length;
       var c = OSD.constants.DISPLAY_FIELDS[j];
-      d.display_items.push({
+      d.display_items.push($.extend({
         name: c.name,
         index: j,
-        position: v,
         positionable: c.positionable,
-        preview: c.preview
-      });
+        preview: typeof(c.preview) === 'function' ? c.preview(d) : c.preview
+      }, this.helpers.unpack.position(v, c)));
     }
     OSD.updateDisplaySize();
   }
@@ -359,9 +512,17 @@ OSD.msp = {
 
 OSD.GUI = {};
 OSD.GUI.preview = {
+  onMouseEnter: function() {
+    if (!$(this).data('field')) { return; }
+    $('.field-'+$(this).data('field').index).addClass('mouseover')
+  },
+  onMouseLeave: function() {
+    if (!$(this).data('field')) { return; }
+    $('.field-'+$(this).data('field').index).removeClass('mouseover')
+  },
   onDragStart: function(e) {
     var ev = e.originalEvent;
-    ev.dataTransfer.setData("text/plain", ev.target.id);
+    ev.dataTransfer.setData("text/plain", $(ev.target).data('field').index);
     ev.dataTransfer.setDragImage($(this).data('field').preview_img, 6, 9);
   },
   onDragOver: function(e) {
@@ -379,14 +540,18 @@ OSD.GUI.preview = {
   onDrop: function(e) {
     var ev = e.originalEvent;
     var position = $(this).removeAttr('style').data('position');
-    var field_id = parseInt(ev.dataTransfer.getData('text').split('field-')[1])
+    var field_id = parseInt(ev.dataTransfer.getData('text'))
     var display_item = OSD.data.display_items[field_id];
     var overflows_line = FONT.constants.SIZES.LINE - ((position % FONT.constants.SIZES.LINE) + display_item.preview.length);
     if (overflows_line < 0) {
       position += overflows_line;
     }
-    if (position > OSD.data.display_size.total/2) {
-      position = position - OSD.data.display_size.total;
+    if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+      // unsigned now
+    } else {
+      if (position > OSD.data.display_size.total/2) {
+        position = position - OSD.data.display_size.total;
+      }
     }
     $('input.'+field_id+'.position').val(position).change();
   },
@@ -421,12 +586,25 @@ TABS.osd.initialize = function (callback) {
           // ask for the OSD config data
           MSP.promise(MSPCodes.MSP_OSD_CONFIG)
           .then(function(info) {
+            OSD.chooseFields();
             if (!info.length) {
               $('.unsupported').fadeIn();
               return;
             }
             $('.supported').fadeIn();
             OSD.msp.decode(info);
+
+            // show Betaflight logo in preview
+            var $previewLogo = $('.preview-logo').empty();
+            $previewLogo.append(
+              $('<label for="preview-logo">Logo:</label><input type="checkbox" name="preview-logo" class="togglesmall"></input>')
+              .attr('checked', OSD.data.preview_logo)
+              .change(function(e) {
+                OSD.data.preview_logo = $(this).attr('checked') == undefined;
+                updateOsdView();
+              })
+            );
+
             // video mode
             var $videoTypes = $('.video-types').empty();
             for (var i = 0; i < OSD.constants.VIDEO_TYPES.length; i++) {
@@ -446,26 +624,59 @@ TABS.osd.initialize = function (callback) {
               });
             });
 
+            if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
+              // units
+              $('.units-container').show();
+              var $unitMode = $('.units').empty();
+              for (var i = 0; i < OSD.constants.UNIT_TYPES.length; i++) {
+                var type = OSD.constants.UNIT_TYPES[i];
+                var $checkbox = $('<label/>').append($('<input name="unit_mode" type="radio"/>'+type+'</label>')
+                  .prop('checked', i === OSD.data.unit_mode)
+                  .data('type', type)
+                  .data('type', i)
+                );
+                $unitMode.append($checkbox);
+              }
+              $unitMode.find(':radio').click(function(e) {
+                OSD.data.unit_mode = $(this).data('type');
+                MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
+                .then(function() {
+                  updateOsdView();
+                });
+              });
+              // alarms
+              $('.alarms-container').show();
+              var $alarms = $('.alarms').empty();
+              for (let k in OSD.data.alarms) {
+                var alarm = OSD.data.alarms[k];
+                var $input = $('<label/>').append(
+                  $('<input name="alarm" type="number"/>'+alarm.display_name+'</label>')
+                    .val(alarm.value)
+                );
+                $alarms.append($input);
+              }
+            }
+
             // display fields on/off and position
             var $displayFields = $('.display-fields').empty();
             for (let field of OSD.data.display_items) {
-              var checked = (-1 != field.position) ? 'checked' : '';
-              var $field = $('<div class="display-field"/>');
+              // versioning related, if the field doesn't exist at the current flight controller version, just skip it
+              if (!field.name) { continue; }
+
+              var checked = field.isVisible ? 'checked' : '';
+              var $field = $('<div class="display-field field-'+field.index+'"/>');
               $field.append(
                 $('<input type="checkbox" name="'+field.name+'" class="togglesmall"></input>')
                 .data('field', field)
-                .attr('checked', field.position != -1)
+                .attr('checked', field.isVisible)
                 .change(function(e) {
                   var field = $(this).data('field');
                   var $position = $(this).parent().find('.position.'+field.name);
-                  if (field.position == -1) {
+                  field.isVisible = !field.isVisible;
+                  if (field.isVisible) {
                     $position.show();
-                    field.position = OSD.data.last_positions[field.name]
-                  }
-                  else {
+                  } else {
                     $position.hide();
-                    OSD.data.last_positions[field.name] = field.position
-                    field.position = -1
                   }
                   MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encode(field))
                   .then(function() {
@@ -473,8 +684,8 @@ TABS.osd.initialize = function (callback) {
                   });
                 })
               );
-              $field.append('<label for="'+field.name+'">'+inflection.titleize(field.name)+'</label>');
-              if (field.positionable && field.position != -1) {
+              $field.append('<label for="'+field.name+'" class="char-label">'+inflection.titleize(field.name)+'</label>');
+              if (field.positionable && field.isVisible) {
                 $field.append(
                   $('<input type="number" class="'+field.index+' position"></input>')
                   .data('field', field)
@@ -496,13 +707,27 @@ TABS.osd.initialize = function (callback) {
             // buffer the preview
             OSD.data.preview = [];
             OSD.data.display_size.total = OSD.data.display_size.x * OSD.data.display_size.y;
+            for(let field of OSD.data.display_items) {
+              // reset fields that somehow end up off the screen
+              if (field.position > OSD.data.display_size.total) {
+                field.position = 0;
+              }
+            }
             // clear the buffer
             for(var i = 0; i < OSD.data.display_size.total; i++) {
               OSD.data.preview.push([null, ' '.charCodeAt(0)]);
             }
+            // logo first, so it gets overwritten by subsequent elements
+            if (OSD.data.preview_logo) {
+              var x = 160;
+              for (var i = 1; i < 5; i++) {
+                for (var j = 3; j < 27; j++)
+                    OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
+              }
+            }
             // draw all the displayed items and the drag and drop preview images
             for(let field of OSD.data.display_items) {
-              if (!field.preview || field.position == -1) { continue; }
+              if (!field.preview || !field.isVisible) { continue; }
               var j = (field.position >= 0) ? field.position : field.position + OSD.data.display_size.total;
               // create the preview image
               field.preview_img = new Image();
@@ -518,12 +743,6 @@ TABS.osd.initialize = function (callback) {
                 ctx.drawImage(img, i*12, 0);
               }
               field.preview_img.src = canvas.toDataURL('image/png');
-            }
-            // logo
-            var x = 160;
-            for (var i = 1; i < 5; i++) {
-              for (var j = 3; j < 27; j++)
-                  OSD.data.preview[i * 30 + j] = [{name: 'LOGO', positionable: false}, x++];
             }
             var centerishPosition = 194;
             // artificial horizon
@@ -557,13 +776,16 @@ TABS.osd.initialize = function (callback) {
                 var charCode = OSD.data.preview[i][1];
               }
               var $img = $('<div class="char"><img src='+FONT.draw(charCode)+'></img></div>')
+                .on('mouseenter', OSD.GUI.preview.onMouseEnter)
+                .on('mouseleave', OSD.GUI.preview.onMouseLeave)
                 .on('dragover', OSD.GUI.preview.onDragOver)
                 .on('dragleave', OSD.GUI.preview.onDragLeave)
                 .on('drop', OSD.GUI.preview.onDrop)
+                .data('field', field)
                 .data('position', i);
               if (field && field.positionable) {
                 $img
-                  .attr('id', 'field-'+field.index)
+                  .addClass('field-'+field.index)
                   .data('field', field)
                   .prop('draggable', true)
                   .on('dragstart', OSD.GUI.preview.onDragStart);
