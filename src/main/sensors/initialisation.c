@@ -127,7 +127,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &cc3dMPUIntExtiConfig;
 #endif
 
-#if defined(MOTOLAB) || defined(RCEXPLORERF3)
+#if defined(MOTOLAB) || defined(RCEXPLORERF3) || defined(SPARKY)
     static const extiConfig_t MotolabF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,
