@@ -477,7 +477,7 @@ static OSD_FLOAT_t entryRcExpo = {&rateProfile.rcExpo8, 0, 100, 1, 10};
 static OSD_FLOAT_t entryRcExpoYaw = {&rateProfile.rcYawExpo8, 0, 100, 1, 10};
 static OSD_FLOAT_t extryTpaEntry = {&rateProfile.dynThrPID, 0, 70, 1, 10};
 static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10};
-static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.ptermSRateWeight, 0, 100, 1, 10};
+static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.ptermAccelRatio, 0, 100, 1, 10};
 static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
 
 OSD_Entry menuRateExpo[] =
