@@ -215,7 +215,9 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
         EXTIRelease(eocIO);
 #endif
 
-    BMP085_OFF;
+    if (config) {
+        BMP085_OFF;
+    }
 
     return false;
 }

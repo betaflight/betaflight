@@ -499,11 +499,15 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             .eocGpioPort = BARO_EOC_GPIO
     };
     bmp085Config = &defaultBMP085Config;
+
 #endif
 
 #ifdef NAZE
     if (hardwareRevision == NAZE32) {
         bmp085Disable(bmp085Config);
+    }
+    if (hardwareRevision > NAZE32) {
+        bmp085Config = NULL; // pins used for different purposes on the NAZE32_REV5 and later.
     }
 #endif
 
