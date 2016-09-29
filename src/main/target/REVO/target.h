@@ -118,6 +118,24 @@
 //#define RSSI_ADC_PIN            PA0
 
 #define LED_STRIP
+#ifdef AIRBOTF4
+
+// Dedicated LED-strip connector J9
+#define WS2811_PIN                      PD2
+
+// FIX-ME.Timers and DMA probably needs re-assigned too. Not sure how and what though.
+#define WS2811_GPIO_AF                  GPIO_AF_TIM5
+#define WS2811_TIMER                    TIM5
+#define WS2811_TIMER_CHANNEL            TIM_Channel_2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream4
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
+#define WS2811_DMA_IT                   DMA_IT_TCIF4
+
+#else //REVO
+
 // LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
 #define WS2811_GPIO_AF                  GPIO_AF_TIM5
 #define WS2811_PIN                      PA1 
@@ -129,6 +147,8 @@
 #define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
 #define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
 #define WS2811_DMA_IT                   DMA_IT_TCIF4
+
+#endif // AIRBOTF4/REVO
 
 #define SENSORS_SET (SENSOR_ACC)
 
