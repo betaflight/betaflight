@@ -136,7 +136,7 @@
 #define SONAR_TRIGGER_IO            PB5
 #define SONAR_ECHO_IO               PB1
 
-#define GPS
+//#define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
