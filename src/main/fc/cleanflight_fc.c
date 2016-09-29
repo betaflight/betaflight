@@ -782,40 +782,17 @@ uint32_t gyroIntPeriod = 0;
 bool shouldProcessGyro(void)
 {
     if (imuConfig()->gyro_sync) {
-        static uint8_t syncCounter = 0;
-
-        if (gyroSyncIsDataReady()) {
-            gyroIntPeriod += gyroIntSignalDelta;
-            syncCounter++;
-
-            if (debugMode == DEBUG_GYRO_SYNC) {
-                debug[0] = gyroIntSignalDelta;
-            }
-
-
-            if (gyroIntPeriod >= (uint16_t)(gyro.refreshPeriod - (syncCounter * MAX_SYNC_PERIOD_ERROR))) {
-                if (debugMode == DEBUG_GYRO_SYNC) {
-                    debug[1] = gyroIntPeriod;
-                    debug[2] = syncCounter;
-                    debug[3]++;
-                }
-                syncCounter = 0;
-                gyroIntPeriod = 0;
-                return true;
+        bool sync = gyroSyncIsDataReady();
+        if (debugMode == DEBUG_GYRO_SYNC) {
+            if (sync) {
+                debug[0]++;
             }
         }
-        return false;
+        return sync;
     }
 
     int32_t diff = currentTime - gyroUpdateAt;
     bool timeout = (diff >= 0);
-
-    if (debugMode == DEBUG_GYRO_SYNC) {
-        if (timeout) {
-            debug[2] = diff;
-            debug[3]++;
-        }
-    }
 
     return timeout;
 }

@@ -26,17 +26,9 @@
 
 volatile bool gyroDataReady = false;
 
-uint32_t gyroIntSignalledAt = 0;
-int32_t gyroIntSignalDelta = 0;
-
 void gyroSyncIntHandler(void)
 {
     gyroDataReady = true;
-
-    uint32_t now = micros();
-    gyroIntSignalDelta = now - gyroIntSignalledAt;
-
-    gyroIntSignalledAt = now;
 }
 
 bool gyroSyncIsDataReady(void)
