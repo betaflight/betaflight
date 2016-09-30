@@ -51,7 +51,8 @@
 #include "rx/msp.h"
 
 #include "io/beeper.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -89,6 +90,7 @@
 #include "fc/mw.h"
 
 #include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
 
 #include "config/config.h"
 #include "config/config_eeprom.h"
@@ -109,8 +111,6 @@ static serialPort_t *mspSerialPort;
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
-
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
 const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -869,9 +869,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         headSerialReply(2 * 5 + 3 + 3 + 2 + 4);
         serialize16(masterConfig.rxConfig.midrc);
 
-        serialize16(masterConfig.escAndServoConfig.minthrottle);
-        serialize16(masterConfig.escAndServoConfig.maxthrottle);
-        serialize16(masterConfig.escAndServoConfig.mincommand);
+        serialize16(masterConfig.motorConfig.minthrottle);
+        serialize16(masterConfig.motorConfig.maxthrottle);
+        serialize16(masterConfig.motorConfig.mincommand);
 
         serialize16(masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1368,7 +1368,7 @@ static bool processInCommand(void)
                 mac->range.startStep = read8();
                 mac->range.endStep = read8();
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 headSerialError(0);
             }
@@ -1424,9 +1424,9 @@ static bool processInCommand(void)
         if (tmp < 1600 && tmp > 1400)
             masterConfig.rxConfig.midrc = tmp;
 
-        masterConfig.escAndServoConfig.minthrottle = read16();
-        masterConfig.escAndServoConfig.maxthrottle = read16();
-        masterConfig.escAndServoConfig.mincommand = read16();
+        masterConfig.motorConfig.minthrottle = read16();
+        masterConfig.motorConfig.maxthrottle = read16();
+        masterConfig.motorConfig.mincommand = read16();
 
         masterConfig.failsafeConfig.failsafe_throttle = read16();
 
