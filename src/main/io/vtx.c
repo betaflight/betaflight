@@ -50,6 +50,7 @@
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -70,6 +71,7 @@
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/config_eeprom.h"
 #include "fc/runtime_config.h"
 
 
