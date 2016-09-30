@@ -127,8 +127,6 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
-static void CPU_CACHE_Enable(void);
-
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
     SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
