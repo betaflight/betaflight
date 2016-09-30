@@ -32,7 +32,8 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "rx/rx.h"
 #include "fc/rc_controls.h"
 #include "io/osd.h"

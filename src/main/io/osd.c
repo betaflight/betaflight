@@ -74,7 +74,8 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
@@ -434,7 +435,7 @@ OSD_Entry menu_vtx[] =
 };
 #endif // VTX || USE_RTC6705
 
-OSD_UINT16_t entryMinThrottle = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
+OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
 OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
 OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};

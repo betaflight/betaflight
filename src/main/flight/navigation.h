@@ -52,7 +52,7 @@ void GPS_reset_home_position(void);
 void GPS_reset_nav(void);
 void GPS_set_next_wp(int32_t* lat, int32_t* lon);
 void gpsUseProfile(gpsProfile_t *gpsProfileToUse);
-void gpsUsePIDs(pidProfile_t *pidProfile);
+void gpsUsePIDs(struct pidProfile_s *pidProfile);
 void updateGpsStateForHomeAndHoldMode(void);
 void updateGpsWaypointsAndMode(void);
 
