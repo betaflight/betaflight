@@ -336,6 +336,19 @@ uint8_t vcpAvailable()
     return rxAvailable;
 }
 
+uint32_t CDC_Send_FreeBytes(void)
+{
+    /*
+        return the bytes free in the circular buffer
+
+        functionally equivalent to:
+        (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
+        but without the impact of the condition check.
+    */
+    return ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_RX_DATA_SIZE)) - 1;
+}
+
+
 /**
  * @brief  vcpWrite
  *         CDC received data to be send over USB IN endpoint are managed in

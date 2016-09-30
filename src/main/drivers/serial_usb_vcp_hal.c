@@ -84,9 +84,8 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 
     uint32_t start = millis();
     uint8_t *p = data;
-    uint32_t txed = 0;
     while (count > 0) {
-        txed = vcpWrite(p, count);
+        uint32_t txed = vcpWrite(p, count);
         count -= txed;
         p += txed;
 
@@ -110,9 +109,8 @@ static bool usbVcpFlush(vcpPort_t *port)
 
     uint32_t start = millis();
     uint8_t *p = port->txBuf;
-    uint32_t txed = 0;
     while (count > 0) {
-        txed = vcpWrite(p, count);
+        uint32_t txed = vcpWrite(p, count);
         count -= txed;
         p += txed;
 
@@ -141,8 +139,7 @@ static void usbVcpBeginWrite(serialPort_t *instance)
 
 uint32_t usbTxBytesFree()
 {
-    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
-    return 255;
+    return CDC_Send_FreeBytes();
 }
 
 static void usbVcpEndWrite(serialPort_t *instance)

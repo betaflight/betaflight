@@ -276,9 +276,9 @@ void SystemInit(void)
   /* Configure the system clock to 216 MHz */
   SystemClock_Config();
   
-  if(SystemCoreClock != 216000000)
+  //if(SystemCoreClock != 260000000)
   {
-      while(1)
+      //while(1)
       {
           // There is a mismatch between the configured clock and the expected clock in portable.h
       }
