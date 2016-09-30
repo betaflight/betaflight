@@ -210,5 +210,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 8 // 6 Outputs; PPM; LED Strip;
+#define USABLE_TIMER_CHANNEL_COUNT 7 // 6 Outputs; PPM;
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
