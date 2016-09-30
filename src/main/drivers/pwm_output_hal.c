@@ -77,7 +77,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
     configTimeBase(timerHardware->tim, period, mhz);
 
-    IO_t io = IOGetByTag(timerHardware->tag);
+    const IO_t io = IOGetByTag(timerHardware->tag);
     IOInit(io, OWNER_MOTOR, RESOURCE_OUTPUT, allocatedOutputPortCount);
     IOConfigGPIOAF(io, IOCFG_AF_PP, timerHardware->alternateFunction);
 
@@ -107,7 +107,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
     p->tim = timerHardware->tim;
 
     *p->ccr = 0;
-
+   
     return p;
 }
 
@@ -121,14 +121,14 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
     *motors[index]->ccr = value;
 }
 
-static void pwmWriteOneShot42(uint8_t index, uint16_t value)
-{
-    *motors[index]->ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
-}
-
 static void pwmWriteOneShot125(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = lrintf((float)(value * ONESHOT125_TIMER_MHZ/8.0f));
+}
+
+static void pwmWriteOneShot42(uint8_t index, uint16_t value)
+{
+    *motors[index]->ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
 }
 
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
@@ -138,15 +138,14 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (motors[index] && index < MAX_MOTORS && pwmMotorsEnabled)
+    if (motors[index] && index < MAX_MOTORS && pwmMotorsEnabled) {
         motors[index]->pwmWritePtr(index, value);
+    }
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
-    uint8_t index;
-
-    for(index = 0; index < motorCount; index++){
+    for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         *motors[index]->ccr = 0;
     }
@@ -184,14 +183,14 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
 
 void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate)
 {
-    uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
+    const uint32_t hz = PWM_BRUSHED_TIMER_MHZ * 1000000;
     motors[motorIndex] = pwmOutConfig(timerHardware, PWM_BRUSHED_TIMER_MHZ, hz / motorPwmRate, 0);
     motors[motorIndex]->pwmWritePtr = pwmWriteBrushed;
 }
 
 void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse)
 {
-    uint32_t hz = PWM_TIMER_MHZ * 1000000;
+    const uint32_t hz = PWM_TIMER_MHZ * 1000000;
     motors[motorIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, hz / motorPwmRate, idlePulse);
     motors[motorIndex]->pwmWritePtr = pwmWriteStandard;
 }
@@ -234,7 +233,8 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
 
 void pwmWriteServo(uint8_t index, uint16_t value)
 {
-    if (servos[index] && index < MAX_SERVOS)
+    if (servos[index] && index < MAX_SERVOS) {
         *servos[index]->ccr = value;
+    }
 }
 #endif
