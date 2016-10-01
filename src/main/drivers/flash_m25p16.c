@@ -22,6 +22,7 @@
 
 #ifdef USE_FLASH_M25P16
 
+#include "flash.h"
 #include "flash_m25p16.h"
 #include "io.h"
 #include "bus_spi.h"

@@ -32,8 +32,9 @@ typedef enum {
 
 #define MSP_PORT_INBUF_SIZE 64
 
+struct serialPort_s;
 typedef struct mspPort_s {
-    serialPort_t *port; // null when port unused.
+    struct serialPort_s *port; // null when port unused.
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;

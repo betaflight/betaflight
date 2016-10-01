@@ -22,91 +22,28 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <ctype.h>
 
 #include "platform.h"
 
 #ifdef OSD
 
-#include "build/atomic.h"
-#include "build/build_config.h"
-#include "build/debug.h"
 #include "build/version.h"
 
-#include "scheduler/scheduler.h"
+#include "common/utils.h"
 
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/maths.h"
-#include "common/typeconversion.h"
-
-#include "drivers/nvic.h"
-
-#include "drivers/sensor.h"
 #include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
-#include "drivers/timer.h"
-#include "drivers/serial.h"
-#include "drivers/serial_softserial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/pwm_mapping.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/bus_spi.h"
-#include "drivers/inverter.h"
-#include "drivers/flash_m25p16.h"
-#include "drivers/sonar_hcsr04.h"
-#include "drivers/usb_io.h"
-#include "drivers/transponder_ir.h"
-#include "drivers/sdcard.h"
 
-#include "rx/rx.h"
-
-#include "io/beeper.h"
-#include "io/serial.h"
 #include "io/flashfs.h"
-#include "io/gps.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "fc/rc_controls.h"
-#include "io/gimbal.h"
-#include "io/ledstrip.h"
-#include "io/display.h"
-#include "io/asyncfatfs/asyncfatfs.h"
-#include "io/transponder_ir.h"
 #include "io/osd.h"
 
-#include "sensors/sensors.h"
-#include "sensors/sonar.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-#include "sensors/boardalignment.h"
-#include "sensors/initialisation.h"
-
-#include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/pid.h"
+
 #include "config/config.h"
-#include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"

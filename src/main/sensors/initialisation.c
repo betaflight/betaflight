@@ -43,6 +43,7 @@
 #include "drivers/accgyro_lsm303dlhc.h"
 
 #include "drivers/bus_spi.h"
+#include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro_spi_mpu9250.h"

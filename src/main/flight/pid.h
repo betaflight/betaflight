@@ -114,7 +114,7 @@ void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
 void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);
 
-extern int16_t axisPID[XYZ_AXIS_COUNT];
+extern int16_t axisPID[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;

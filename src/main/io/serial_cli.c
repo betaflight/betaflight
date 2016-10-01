@@ -25,38 +25,46 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-#include "build/debug.h"
+// FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
+// signal that we're in cli mode
+uint8_t cliMode = 0;
+
+#ifdef USE_CLI
+
 #include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/color.h"
+#include "common/maths.h"
+#include "common/printf.h"
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
-
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/flash.h"
 #include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
-
 #include "drivers/buf_writer.h"
+
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "fc/rc_controls.h"
 #include "io/serial.h"
+#include "io/serial_cli.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -66,6 +74,8 @@
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -84,24 +94,11 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "common/printf.h"
-
-#include "io/serial_cli.h"
-#include "scheduler/scheduler.h"
-
-// FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
-// signal that we're in cli mode
-uint8_t cliMode = 0;
-
-#ifdef USE_CLI
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
@@ -1503,12 +1500,13 @@ static void cliAdjustmentRange(char *cmdline)
     }
 }
 
+#ifndef USE_QUAD_MIXER_ONLY
 static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
 {
-	char buf0[8];
-	char buf1[8];
-	char buf2[8];
-	char buf3[8];
+    char buf0[8];
+    char buf1[8];
+    char buf2[8];
+    char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (masterConfig.customMotorMixer[i].throttle == 0.0f)
             break;
@@ -1537,6 +1535,7 @@ static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
             ftoa(yaw, buf3));
     }
 }
+#endif // USE_QUAD_MIXER_ONLY
 
 static void cliMotorMix(char *cmdline)
 {
@@ -1548,7 +1547,7 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-		printMotorMix(DUMP_MASTER, NULL);
+        printMotorMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
@@ -1597,7 +1596,7 @@ static void cliMotorMix(char *cmdline)
             if (check != 4) {
                 cliShowParseError();
             } else {
-		        printMotorMix(DUMP_MASTER, NULL);
+                printMotorMix(DUMP_MASTER, NULL);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -2720,7 +2719,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mixer\r\n");
 #endif
-		bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
+        const bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
@@ -2733,33 +2732,33 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo\r\n");
 #endif
-		printServo(dumpMask, &defaultConfig);
+        printServo(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo mix\r\n");
 #endif
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-		printServoMix(dumpMask, &defaultConfig);
+        printServoMix(dumpMask, &defaultConfig);
 #endif
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# feature\r\n");
 #endif
-		printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &defaultConfig);
 
 #ifdef BEEPER
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# beeper\r\n");
 #endif
-		printBeeper(dumpMask, &defaultConfig);
+        printBeeper(dumpMask, &defaultConfig);
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
 #endif
-		printMap(dumpMask, &defaultConfig);
+        printMap(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");

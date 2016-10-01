@@ -16,76 +16,42 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
 
 #ifdef BLACKBOX
 
-#include "build/version.h"
 #include "build/debug.h"
+#include "build/version.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/encoding.h"
 #include "common/utils.h"
 
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
+#include "blackbox.h"
+#include "blackbox_io.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
+#include "drivers/sensor.h"
+#include "drivers/compass.h"
+#include "drivers/system.h"
+
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
-#include "io/motors.h"
-#include "io/servos.h"
-#include "fc/rc_controls.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/serial_cli.h"
-#include "io/serial_msp.h"
-#include "io/statusindicator.h"
-#include "io/osd.h"
-#include "io/vtx.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/pid.h"
-#include "flight/navigation.h"
-
-#include "fc/runtime_config.h"
+#include "sensors/sensors.h"
+#include "sensors/compass.h"
+#include "sensors/sonar.h"
 
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "blackbox.h"
-#include "blackbox_io.h"
 
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
