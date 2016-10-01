@@ -291,20 +291,20 @@ void init(void)
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
     pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
 #endif
 
-    bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
+    bool use_unsyncedPwm = masterConfig.motorConfig.useUnsyncedPwm || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_CONVENTIONAL || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
-    pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
-    pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
+    pwm_params.useFastPwm = (masterConfig.motorConfig.motorPwmProtocol != PWM_TYPE_CONVENTIONAL && masterConfig.motorConfig.motorPwmProtocol != PWM_TYPE_BRUSHED);
+    pwm_params.pwmProtocolType = masterConfig.motorConfig.motorPwmProtocol;
+    pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motorConfig.motorPwmRate : 0;
     pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
 
-    if (masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED) {
+    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
     }
