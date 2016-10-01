@@ -1258,14 +1258,16 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize16(masterConfig.motor_pwm_rate);
         break;
     case MSP_FILTER_CONFIG :
-        headSerialReply(13);
+        headSerialReply(17);
         serialize8(masterConfig.gyro_soft_lpf_hz);
         serialize16(currentProfile->pidProfile.dterm_lpf_hz);
         serialize16(currentProfile->pidProfile.yaw_lpf_hz);
-        serialize16(masterConfig.gyro_soft_notch_hz);
-        serialize16(masterConfig.gyro_soft_notch_cutoff);
+        serialize16(masterConfig.gyro_soft_notch_hz_1);
+        serialize16(masterConfig.gyro_soft_notch_cutoff_1);
         serialize16(currentProfile->pidProfile.dterm_notch_hz);
         serialize16(currentProfile->pidProfile.dterm_notch_cutoff);
+        serialize16(masterConfig.gyro_soft_notch_hz_2);
+        serialize16(masterConfig.gyro_soft_notch_cutoff_2);
         break;
     case MSP_PID_ADVANCED:
         headSerialReply(17);
@@ -1865,10 +1867,14 @@ static bool processInCommand(void)
         currentProfile->pidProfile.dterm_lpf_hz = read16();
         currentProfile->pidProfile.yaw_lpf_hz = read16();
         if (currentPort->dataSize > 5) {
-            masterConfig.gyro_soft_notch_hz = read16();
-            masterConfig.gyro_soft_notch_cutoff = read16();
+            masterConfig.gyro_soft_notch_hz_1 = read16();
+            masterConfig.gyro_soft_notch_cutoff_1 = read16();
             currentProfile->pidProfile.dterm_notch_hz = read16();
             currentProfile->pidProfile.dterm_notch_cutoff = read16();
+        }
+        if (currentPort->dataSize > 13) {
+            serialize16(masterConfig.gyro_soft_notch_hz_2);
+            serialize16(masterConfig.gyro_soft_notch_cutoff_2);
         }
         break;
     case MSP_SET_PID_ADVANCED:
