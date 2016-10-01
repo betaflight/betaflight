@@ -1270,9 +1270,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        masterConfig.rxConfig.rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider:%d",                masterConfig.rxConfig.serialrx_provider);
-        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                masterConfig.use_unsyncedPwm);
-        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                masterConfig.motor_pwm_protocol);
-        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   masterConfig.motor_pwm_rate);
+        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                masterConfig.motorConfig.use_unsyncedPwm);
+        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                masterConfig.motorConfig.motor_pwm_protocol);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   masterConfig.motorConfig.motor_pwm_rate);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                       masterConfig.debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
 
