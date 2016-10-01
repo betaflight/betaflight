@@ -402,7 +402,7 @@ bool isBeeperOn(void) {
 void beeper(beeperMode_e mode) {UNUSED(mode);}
 void beeperSilence(void) {}
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(uint32_t currentTime) {}
+void beeperUpdate(uint32_t currentTime) {UNUSED(currentTime);}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}

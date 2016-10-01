@@ -51,7 +51,7 @@ typedef struct fp_vector {
     float Z;
 } t_fp_vector_def;
 
-typedef union {
+typedef union u_fp_vector {
     float A[3];
     t_fp_vector_def V;
 } t_fp_vector;

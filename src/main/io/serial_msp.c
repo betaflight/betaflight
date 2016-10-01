@@ -27,19 +27,20 @@
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
 
 #include "drivers/system.h"
-
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/io.h"
+#include "drivers/flash.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
@@ -47,13 +48,14 @@
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
-#include "rx/rx.h"
-#include "rx/msp.h"
+
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -62,10 +64,13 @@
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/osd.h"
+#include "io/serial_4way.h"
+#include "io/serial_msp.h"
 #include "io/vtx.h"
 #include "io/msp_protocol.h"
 
-#include "telemetry/telemetry.h"
+#include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "scheduler/scheduler.h"
 
@@ -78,18 +83,14 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
-
-#include "blackbox/blackbox.h"
-
-#include "fc/mw.h"
-
-#include "fc/runtime_config.h"
 
 #include "config/config.h"
 #include "config/config_eeprom.h"
@@ -100,10 +101,6 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
-
-#include "serial_msp.h"
-
-#include "io/serial_4way.h"
 
 static serialPort_t *mspSerialPort;
 

@@ -16,8 +16,6 @@
  */
 #pragma once
 
-#include "drivers/exti.h"
-
 extern uint8_t hardwareRevision;
 
 void updateHardwareRevision(void);
