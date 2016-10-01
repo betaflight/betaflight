@@ -28,9 +28,13 @@
 #include "timer.h"
 #include "pwm_mapping.h"
 #include "pwm_output.h"
-#include "drivers/io_pca9685.h"
+#include "io_pca9685.h"
+
 #include "io/pwmdriver_i2c.h"
+
 #include "config/config.h"
+#include "config/feature.h"
+
 #include "fc/runtime_config.h"
 
 typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors

@@ -41,7 +41,7 @@
 #include "rx/rx.h"
 
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"

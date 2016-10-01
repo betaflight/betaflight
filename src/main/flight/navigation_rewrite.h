@@ -21,7 +21,7 @@
 #include "common/filter.h"
 
 #include "fc/rc_controls.h"
-#include "io/escservo.h"
+#include "io/motors.h"
 #include "io/gps.h"
 
 #include "flight/pid.h"
@@ -220,14 +220,14 @@ void navigationUsePIDs(pidProfile_t *pidProfile);
 void navigationUseConfig(navConfig_t *navConfigToUse);
 void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig);
 void navigationUseRxConfig(rxConfig_t * initialRxConfig);
-void navigationUseEscAndServoConfig(escAndServoConfig_t * initialEscAndServoConfig);
+void navigationUsemotorConfig(motorConfig_t * initialmotorConfig);
 void navigationUseFlight3DConfig(flight3DConfig_t * initialFlight3DConfig);
 void navigationInit(navConfig_t *initialnavConfig,
                     pidProfile_t *initialPidProfile,
                     rcControlsConfig_t *initialRcControlsConfig,
                     rxConfig_t * initialRxConfig,
                     flight3DConfig_t * initialFlight3DConfig,
-                    escAndServoConfig_t * initialEscAndServoConfig);
+                    motorConfig_t * initialmotorConfig);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);

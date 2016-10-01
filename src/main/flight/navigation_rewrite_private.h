@@ -281,7 +281,7 @@ typedef struct {
     pidProfile_t *              pidProfile;
     rxConfig_t *                rxConfig;
     flight3DConfig_t *          flight3DConfig;
-    escAndServoConfig_t *       escAndServoConfig;
+    motorConfig_t *             motorConfig;
 } navigationPosControl_t;
 
 extern navigationPosControl_t posControl;

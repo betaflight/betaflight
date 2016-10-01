@@ -49,7 +49,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -100,7 +101,7 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse);
 
 static mspPostProcessFuncPtr mspPostProcessFn = NULL;
 
@@ -738,9 +739,9 @@ static bool processOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src)
     case MSP_MISC:
         sbufWriteU16(dst, masterConfig.rxConfig.midrc);
 
-        sbufWriteU16(dst, masterConfig.escAndServoConfig.minthrottle);
-        sbufWriteU16(dst, masterConfig.escAndServoConfig.maxthrottle);
-        sbufWriteU16(dst, masterConfig.escAndServoConfig.mincommand);
+        sbufWriteU16(dst, masterConfig.motorConfig.minthrottle);
+        sbufWriteU16(dst, masterConfig.motorConfig.maxthrottle);
+        sbufWriteU16(dst, masterConfig.motorConfig.mincommand);
 
         sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1148,7 +1149,7 @@ static mspResult_e processInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1208,9 +1209,9 @@ static mspResult_e processInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (tmp < 1600 && tmp > 1400)
             masterConfig.rxConfig.midrc = tmp;
 
-        masterConfig.escAndServoConfig.minthrottle = sbufReadU16(src);
-        masterConfig.escAndServoConfig.maxthrottle = sbufReadU16(src);
-        masterConfig.escAndServoConfig.mincommand = sbufReadU16(src);
+        masterConfig.motorConfig.minthrottle = sbufReadU16(src);
+        masterConfig.motorConfig.maxthrottle = sbufReadU16(src);
+        masterConfig.motorConfig.mincommand = sbufReadU16(src);
 
         masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
 

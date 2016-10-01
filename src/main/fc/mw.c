@@ -60,7 +60,8 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -588,10 +589,10 @@ void taskMainPidLoop(void)
         }
 
         if (thrTiltCompStrength) {
-            rcCommand[THROTTLE] = constrain(masterConfig.escAndServoConfig.minthrottle
-                                            + (rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
-                                            masterConfig.escAndServoConfig.minthrottle,
-                                            masterConfig.escAndServoConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(masterConfig.motorConfig.minthrottle
+                                            + (rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
+                                            masterConfig.motorConfig.minthrottle,
+                                            masterConfig.motorConfig.maxthrottle);
         }
     }
 

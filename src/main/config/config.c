@@ -50,7 +50,8 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -244,16 +245,20 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
-void resetEscAndServoConfig(escAndServoConfig_t *escAndServoConfig)
+void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
-    escAndServoConfig->minthrottle = 1000;
+    motorConfig->minthrottle = 1000;
 #else
-    escAndServoConfig->minthrottle = 1150;
+    motorConfig->minthrottle = 1150;
 #endif
-    escAndServoConfig->maxthrottle = 1850;
-    escAndServoConfig->mincommand = 1000;
-    escAndServoConfig->servoCenterPulse = 1500;
+    motorConfig->maxthrottle = 1850;
+    motorConfig->mincommand = 1000;
+}
+
+void resetServoConfig(servoConfig_t *servoConfig)
+{
+    servoConfig->servoCenterPulse = 1500;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -390,7 +395,7 @@ void setControlRateProfile(uint8_t profileIndex)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return masterConfig.escAndServoConfig.minthrottle;
+    return masterConfig.motorConfig.minthrottle;
 }
 
 // Default settings
@@ -481,7 +486,8 @@ static void resetConf(void)
 #endif
 
     // Motor/ESC/Servo
-    resetEscAndServoConfig(&masterConfig.escAndServoConfig);
+    resetMotorConfig(&masterConfig.motorConfig);
+    resetServoConfig(&masterConfig.servoConfig);
     resetFlight3DConfig(&masterConfig.flight3DConfig);
 
 #ifdef BRUSHED_MOTORS
@@ -615,8 +621,8 @@ static void resetConf(void)
     masterConfig.serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 #endif
     masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.escAndServoConfig.minthrottle = 1000;
-    masterConfig.escAndServoConfig.maxthrottle = 2000;
+    masterConfig.motorConfig.minthrottle = 1000;
+    masterConfig.motorConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
     masterConfig.looptime = 2000;
     currentProfile->pidProfile.P8[ROLL] = 36;
@@ -694,7 +700,7 @@ static void resetConf(void)
 
 void activateControlRateConfig(void)
 {
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.escAndServoConfig);
+    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
 }
 
 void activateConfig(void)
@@ -707,7 +713,7 @@ void activateConfig(void)
 
     useRcControlsConfig(
         currentProfile->modeActivationConditions,
-        &masterConfig.escAndServoConfig,
+        &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
 
@@ -723,7 +729,7 @@ void activateConfig(void)
     setAccelerationGain(&masterConfig.accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
-    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.escAndServoConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
+    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
     servosUseConfigs(&masterConfig.servoConfig, currentProfile->servoConf, &currentProfile->gimbalConfig);
 #endif
@@ -744,7 +750,7 @@ void activateConfig(void)
     navigationUseRcControlsConfig(&currentProfile->rcControlsConfig);
     navigationUseRxConfig(&masterConfig.rxConfig);
     navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
-    navigationUseEscAndServoConfig(&masterConfig.escAndServoConfig);
+    navigationUsemotorConfig(&masterConfig.motorConfig);
 #endif
 
 #ifdef BARO
