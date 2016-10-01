@@ -249,16 +249,20 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
     motorConfig->minthrottle = 1000;
+    motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
 #else
     motorConfig->minthrottle = 1150;
+    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     motorConfig->maxthrottle = 1850;
     motorConfig->mincommand = 1000;
+
 }
 
 void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
+    servoConfig->servoPwmRate = 50;
 }
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
@@ -489,13 +493,6 @@ static void resetConf(void)
     resetMotorConfig(&masterConfig.motorConfig);
     resetServoConfig(&masterConfig.servoConfig);
     resetFlight3DConfig(&masterConfig.flight3DConfig);
-
-#ifdef BRUSHED_MOTORS
-    masterConfig.motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-#else
-    masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-#endif
-    masterConfig.servo_pwm_rate = 50;
 
 #ifdef GPS
     // gps/nav stuff

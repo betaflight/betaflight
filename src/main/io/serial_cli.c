@@ -604,7 +604,7 @@ const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 50,  32000 }, 0 },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 50,  32000 }, 0 },
 
     { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
@@ -761,7 +761,7 @@ const clivalue_t valueTable[] = {
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE }, 0 },
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 }, 0 },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoPwmRate, .config.minmax = { 50,  498 }, 0 },
     { "fw_iterm_throw_limit",       VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.fixedWingItermThrowLimit, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, 0 },
 #endif
 
