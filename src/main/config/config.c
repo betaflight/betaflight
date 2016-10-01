@@ -620,7 +620,7 @@ static void resetConf(void)
     masterConfig.rxConfig.spektrum_sat_bind = 5;
     masterConfig.motorConfig.minthrottle = 1000;
     masterConfig.motorConfig.maxthrottle = 2000;
-    masterConfig.motor_pwm_rate = 32000;
+    masterConfig.motorConfig.motorPwmRate = 32000;
     masterConfig.looptime = 2000;
     currentProfile->pidProfile.P8[ROLL] = 36;
     currentProfile->pidProfile.P8[PITCH] = 36;
@@ -794,8 +794,8 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_ONESHOT125);
 
         // Brushed motors on CC3D are not possible when using PWM RX
-        if (masterConfig.motor_pwm_rate > BRUSHLESS_MOTORS_PWM_RATE) {
-            masterConfig.motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+        if (masterConfig.motorConfig.motorPwmRate > BRUSHLESS_MOTORS_PWM_RATE) {
+            masterConfig.motorConfig.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
         }
 #endif
 #endif
