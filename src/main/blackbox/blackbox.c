@@ -36,6 +36,8 @@
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
+#include "drivers/sonar_hcsr04.h"
+ 
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"

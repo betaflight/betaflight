@@ -27,6 +27,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/sonar_hcsr04.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -153,6 +154,10 @@ typedef struct master_s {
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
+#endif
+
+#ifdef SONAR
+    sonarConfig_t sonarConfig;
 #endif
 
 #ifdef LED_STRIP
