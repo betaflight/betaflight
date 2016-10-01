@@ -67,7 +67,8 @@
 #include "io/serial_4way.h"
 #include "io/serial_msp.h"
 #include "io/vtx.h"
-#include "io/msp_protocol.h"
+
+#include "msp/msp_protocol.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -101,6 +102,10 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+
+#include "io/serial_msp.h"
+
+#include "io/serial_4way.h"
 
 static serialPort_t *mspSerialPort;
 
@@ -164,6 +169,10 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 // cause reboot after MSP processing complete
 static bool isRebootScheduled = false;
+STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
+STATIC_UNIT_TESTED mspPort_t *currentPort;
+STATIC_UNIT_TESTED bufWriter_t *writer;
+
 
 static const char pidnames[] =
     "ROLL;"
@@ -185,11 +194,6 @@ typedef enum {
     MSP_SDCARD_STATE_READY       = 4
 } mspSDCardState_e;
 
-
-STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-
-STATIC_UNIT_TESTED mspPort_t *currentPort;
-STATIC_UNIT_TESTED bufWriter_t *writer;
 
 #define RATEPROFILE_MASK (1 << 7)
 
@@ -490,7 +494,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-void mspSerialInit(serialConfig_t *serialConfig)
+static void mspInit(void)
 {
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
@@ -587,7 +591,11 @@ void mspSerialInit(serialConfig_t *serialConfig)
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
     }
 #endif
+}
 
+void mspSerialInit(serialConfig_t *serialConfig)
+{
+    mspInit();
     memset(mspPorts, 0x00, sizeof(mspPorts));
     mspSerialAllocatePorts(serialConfig);
 }

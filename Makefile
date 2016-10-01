@@ -439,8 +439,8 @@ COMMON_SRC = \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/serial_cli.c \
-            io/serial_msp.c \
             io/statusindicator.c \
+            msp/msp_server_fc.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
