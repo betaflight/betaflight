@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,

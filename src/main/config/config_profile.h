@@ -17,6 +17,11 @@
 
 #pragma once
 
+#include "config/config.h"
+#include "common/axis.h"
+#include "fc/rc_controls.h"
+#include "flight/pid.h"
+
 typedef struct profile_s {
     pidProfile_t pidProfile;
     uint8_t activeRateProfile;

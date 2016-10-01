@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <string.h>
+#include "common/color.h"
+
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6

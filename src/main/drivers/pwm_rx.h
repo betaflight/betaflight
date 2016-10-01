@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/timer.h"
+
 typedef enum {
     INPUT_FILTERING_DISABLED = 0,
     INPUT_FILTERING_ENABLED
