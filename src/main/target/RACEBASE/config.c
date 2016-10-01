@@ -27,7 +27,7 @@
 
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(master_t *config) 
 {
     config->rxConfig.sbus_inversion = 0;
     config->rxConfig.rssi_scale = 19;

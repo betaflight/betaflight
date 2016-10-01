@@ -42,12 +42,12 @@
 
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(master_t *config) 
 {
     config->mag_hardware = MAG_NONE;            // disabled by default
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->motor_pwm_rate = 32000;
+    config->motorConfig.motor_pwm_rate = 32000;
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
     config->gyro_sync_denom = 1;

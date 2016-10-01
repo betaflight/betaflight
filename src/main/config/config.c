@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -236,22 +237,60 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
-void resetMotorConfig(motorConfig_t *motorConfig)
-{
-#ifdef BRUSHED_MOTORS
-    motorConfig->minthrottle = 1000;
-#else
-    motorConfig->minthrottle = 1070;
-#endif
-    motorConfig->maxthrottle = 2000;
-    motorConfig->mincommand = 1000;
-    motorConfig->maxEscThrottleJumpMs = 0;
-}
-
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
+    servoConfig->servo_pwm_rate = 50;
+}
+#endif
+
+void resetMotorConfig(motorConfig_t *motorConfig)
+{
+#ifdef BRUSHED_MOTORS
+    motorConfig->minthrottle = 1000;
+    motorConfig->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
+    motorConfig->motor_pwm_protocol = PWM_TYPE_BRUSHED;
+    motorConfig->use_unsyncedPwm = true;
+#else
+    motorConfig->minthrottle = 1070;
+    motorConfig->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorConfig->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
+#endif
+    motorConfig->maxthrottle = 2000;
+    motorConfig->mincommand = 1000;
+
+    uint8_t motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS && i < 4; i++) {
+        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+            motorConfig->motorTags[motorIndex] = timerHardware[i].tag;
+            motorIndex++;
+        }
+    }
+}
+
+#ifdef SONAR
+void resetSonarConfig(sonarConfig_t *sonarConfig)
+{
+#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
+    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
+#else
+#error Sonar not defined for target
+#endif
+}
+#endif
+
+#ifdef BEEPER
+void resetBeeperConfig(beeperConfig_t *beeperConfig)
+{
+#ifdef BEEPER_INVERTED
+    beeperConfig->isInverted = true;
+#else
+    beeperConfig->isInverted = false;
+#endif
+    beeperConfig->isOD = false;
+    beeperConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
 
@@ -449,6 +488,14 @@ void createDefaultConfig(master_t *config)
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
+#ifdef BEEPER 
+    resetBeeperConfig(&config->beeperConfig);
+#endif
+
+#ifdef SONAR
+    resetSonarConfig(&config->sonarConfig);
+#endif
+
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -497,21 +544,6 @@ void createDefaultConfig(master_t *config)
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef BRUSHED_MOTORS
-    config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
-    config->use_unsyncedPwm = true;
-#else
-    config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
-#endif
-
-    config->servo_pwm_rate = 50;
-
-#ifdef CC3D
-    config->use_buzzer_p6 = 0;
-#endif
 
 #ifdef GPS
     // gps/nav stuff

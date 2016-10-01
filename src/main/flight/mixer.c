@@ -32,7 +32,6 @@
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
@@ -68,7 +67,7 @@ static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
-static bool syncPwmWithPidLoop = false;
+static bool syncMotorOutputWithPidLoop = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -79,7 +78,6 @@ static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
 static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
-STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
 #endif
 
@@ -378,7 +376,7 @@ int servoDirection(int servoIndex, int inputSource)
         return 1;
 }
 
-void servoInit(servoMixer_t *initialCustomServoMixers)
+void servoMixerInit(servoMixer_t *initialCustomServoMixers)
 {
     customServoMixers = initialCustomServoMixers;
 
@@ -423,14 +421,13 @@ void loadCustomServoMixer(void)
     }
 }
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
+void mixerUsePWMOutputConfiguration(bool use_unsyncedPwm)
 {
     int i;
 
     motorCount = 0;
-    servoCount = pwmOutputConfiguration->servoCount;
 
-    syncPwmWithPidLoop = !use_unsyncedPwm;
+    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
@@ -524,16 +521,12 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 
 #else
 
-void mixerUsePWMOutputConfiguration(pwmOutputConfiguration_t *pwmOutputConfiguration, bool use_unsyncedPwm)
+void mixerUsePWMOutputConfiguration(bool use_unsyncedPwm)
 {
-    UNUSED(pwmOutputConfiguration);
     
-    syncPwmWithPidLoop = !use_unsyncedPwm;
+    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
     
     motorCount = 4;
-#ifdef USE_SERVOS
-    servoCount = 0;
-#endif
 
     uint8_t i;
     for (i = 0; i < motorCount; i++) {
@@ -643,7 +636,7 @@ void writeMotors(void)
     for (i = 0; i < motorCount; i++)
         pwmWriteMotor(i, motor[i]);
 
-    if (syncPwmWithPidLoop) {
+    if (syncMotorOutputWithPidLoop) {
         pwmCompleteOneshotMotorUpdate(motorCount);
     }
 }
