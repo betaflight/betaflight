@@ -174,7 +174,7 @@ bool areUsingSticksToArm(void);
 bool areSticksInApModePosition(uint16_t ap_mode);
 throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch);
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, modeActivationOperator_e modeActivationOperator);
 

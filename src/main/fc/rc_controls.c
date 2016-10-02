@@ -145,7 +145,7 @@ rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
     return NOT_CENTERED;
 }
 
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch)
+void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -170,7 +170,6 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 
     // perform actions
     if (!isUsingSticksToArm) {
-
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
@@ -195,17 +194,22 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
-    if (isUsingSticksToArm) {
+   if (isUsingSticksToArm) {
         // Disarm on throttle down + yaw
         if (rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) {
-            if (ARMING_FLAG(ARMED))
+            // Dont disarm if fixedwing and motorstop
+            if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP) && fixed_wing_auto_arm) {
+                return;
+            }
+            else if (ARMING_FLAG(ARMED)) {
                 mwDisarm();
+            }
             else {
                 beeper(BEEPER_DISARM_REPEAT);    // sound tone while stick held
                 rcDelayCommand = 0;              // reset so disarm tone will repeat
             }
         }
-    }
+   }
 
     if (ARMING_FLAG(ARMED)) {
         // actions during armed
@@ -233,18 +237,30 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
+
     if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_HI) {
         saveConfigAndNotify();
     }
 
-    if (isUsingSticksToArm) {
 
-        if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
-            // Arm via YAW
-            mwArm();
-            return;
+    if (isUsingSticksToArm) {
+        if (STATE(FIXED_WING) && feature(FEATURE_MOTOR_STOP) && fixed_wing_auto_arm) {
+            // Auto arm on throttle when using fixedwing and motorstop
+            if (throttleStatus != THROTTLE_LOW) {
+                // Arm via YAW
+                mwArm();
+                return;
+            }
+        }
+        else {
+            if (rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) {
+                // Arm via YAW
+                mwArm();
+                return;
+            }
         }
     }
+
 
     if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) {
         // Calibrating Acc
