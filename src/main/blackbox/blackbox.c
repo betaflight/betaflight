@@ -1266,10 +1266,10 @@ static bool blackboxWriteSysinfo()
                                                                           masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDVEL],
                                                                           masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDVEL]);
         BLACKBOX_PRINT_HEADER_LINE("dterm_filter_type:%d",                masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_filter_type);
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",               (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                 (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",             (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_cutoff * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",                   masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_hz);
+        BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_cutoff);
         BLACKBOX_PRINT_HEADER_LINE("deltaMethod:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.deltaMethod);
         BLACKBOX_PRINT_HEADER_LINE("rollPitchItermIgnoreRate:%d",         masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("yawItermIgnoreRate:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
@@ -1290,11 +1290,11 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                     masterConfig.rcControlsConfig.yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                         masterConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_soft_type:%d",                   masterConfig.gyro_soft_type);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",            (int)(masterConfig.gyro_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz_1:%d",            (int)(masterConfig.gyro_soft_notch_hz_1 * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff_1:%d",        (int)(masterConfig.gyro_soft_notch_cutoff_1 * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz_2:%d",            (int)(masterConfig.gyro_soft_notch_hz_2 * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff_2:%d",        (int)(masterConfig.gyro_soft_notch_cutoff_2 * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                  masterConfig.gyro_soft_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz:%d,%d",                 masterConfig.gyro_soft_notch_hz_1,
+                                                                          masterConfig.gyro_soft_notch_hz_2);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff:%d,%d",             masterConfig.gyro_soft_notch_cutoff_1,
+                                                                          masterConfig.gyro_soft_notch_cutoff_2);
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                 (int)(masterConfig.acc_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     masterConfig.acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.baro_hardware);
