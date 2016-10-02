@@ -36,3 +36,4 @@ void taskSystem(void);
 #ifdef USE_PMW_SERVO_DRIVER
 void taskSyncPwmDriver(void);
 #endif
+void taskStackCheck(void);

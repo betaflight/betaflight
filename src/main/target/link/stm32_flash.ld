@@ -110,6 +110,9 @@ SECTIONS
   } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
+  _heap_stack_end = ORIGIN(RAM)+LENGTH(RAM) - 8; /* 8 bytes to allow for alignment */
+  _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
+  . = _heap_stack_begin;
   ._user_heap_stack :
   {
     . = ALIGN(4);
@@ -118,7 +121,7 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
-  } >RAM
+  } >RAM = 0xa5
 
   /* MEMORY_bank1 section, code must be located here explicitly            */
   /* Example: extern int foo(void) __attribute__ ((section (".mb1text"))); */

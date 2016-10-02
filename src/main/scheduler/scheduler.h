@@ -71,6 +71,9 @@ typedef enum {
 #ifdef USE_PMW_SERVO_DRIVER
     TASK_PWMDRIVER,
 #endif
+#ifdef STACK_CHECK
+    TASK_STACK_CHECK,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
