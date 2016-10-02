@@ -242,7 +242,7 @@ void processTxState(softSerial_t *softSerial)
 
     if (!softSerial->isTransmittingData) {
         char byteToSend;
-        if (isSoftSerialTransmitBufferEmpty((serialPort_t *)softSerial)) {
+        if (isSoftSerialTransmitBufferEmpty((const serialPort_t *)softSerial)) {
             return;
         }
 
@@ -409,24 +409,24 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
+uint8_t softSerialRxBytesWaiting(const serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;
     }
 
-    softSerial_t *s = (softSerial_t *)instance;
+    const softSerial_t *s = (const softSerial_t *)instance;
 
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
-uint8_t softSerialTxBytesFree(serialPort_t *instance)
+uint8_t softSerialTxBytesFree(const serialPort_t *instance)
 {
     if ((instance->mode & MODE_TX) == 0) {
         return 0;
     }
 
-    softSerial_t *s = (softSerial_t *)instance;
+    const softSerial_t *s = (const softSerial_t *)instance;
 
     uint8_t bytesUsed = (s->port.txBufferHead - s->port.txBufferTail) & (s->port.txBufferSize - 1);
 
@@ -471,7 +471,7 @@ void softSerialSetMode(serialPort_t *instance, portMode_t mode)
     instance->mode = mode;
 }
 
-bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
+bool isSoftSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     return instance->txBufferHead == instance->txBufferTail;
 }

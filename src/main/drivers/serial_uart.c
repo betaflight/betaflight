@@ -280,9 +280,9 @@ void uartStartTxDMA(uartPort_t *s)
     DMA_Cmd(s->txDMAChannel, ENABLE);
 }
 
-uint8_t uartTotalRxBytesWaiting(serialPort_t *instance)
+uint8_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t*)instance;
     if (s->rxDMAChannel) {
         uint32_t rxDMAHead = s->rxDMAChannel->CNDTR;
         if (rxDMAHead >= s->rxDMAPos) {
@@ -299,9 +299,9 @@ uint8_t uartTotalRxBytesWaiting(serialPort_t *instance)
     }
 }
 
-uint8_t uartTotalTxBytesFree(serialPort_t *instance)
+uint8_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t*)instance;
 
     uint32_t bytesUsed;
 
@@ -334,7 +334,7 @@ uint8_t uartTotalTxBytesFree(serialPort_t *instance)
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
 
-bool isUartTransmitBufferEmpty(serialPort_t *instance)
+bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t *)instance;
     if (s->txDMAChannel)
