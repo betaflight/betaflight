@@ -112,7 +112,7 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
 // cause reboot after MSP processing complete
-mspPostProcessFuncPtr mspPostProcessFn = NULL;
+static mspPostProcessFuncPtr mspPostProcessFn = NULL;
 static mspPort_t *currentPort;
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -1914,14 +1914,16 @@ static bool processInCommand(uint8_t cmdMSP)
     return true;
 }
 
-void mspProcessReceivedCommand(mspPort_t *mspPort)
+mspPostProcessFuncPtr mspProcessReceivedCommand(mspPort_t *mspPort)
 {
     currentPort = mspPort;
+    mspPostProcessFn = NULL;
     if (!(processOutCommand(mspPort->cmdMSP) || processInCommand(mspPort->cmdMSP))) {
         headSerialError(0);
     }
     tailSerialReply();
     mspPort->c_state = IDLE;
+    return mspPostProcessFn;
 }
 
 bool mspProcessReceivedData(mspPort_t *mspPort, uint8_t c)

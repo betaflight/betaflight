@@ -109,6 +109,7 @@ void mspSerialProcess(void)
         uint8_t buf[sizeof(bufWriter_t) + 20];
         writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, mspPort->port);
 
+        mspPostProcessFuncPtr mspPostProcessFn = NULL;
         while (serialRxBytesWaiting(mspPort->port)) {
 
             const uint8_t c = serialRead(mspPort->port);
@@ -119,7 +120,7 @@ void mspSerialProcess(void)
             }
 
             if (mspPort->c_state == COMMAND_RECEIVED) {
-                mspProcessReceivedCommand(mspPort);
+                mspPostProcessFn = mspProcessReceivedCommand(mspPort);
                 break; // process one command at a time so as not to block.
             }
         }
@@ -128,7 +129,6 @@ void mspSerialProcess(void)
 
         if (mspPostProcessFn) {
             mspPostProcessFn(mspPort);
-            mspPostProcessFn = NULL;
         }
     }
 }
