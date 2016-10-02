@@ -267,7 +267,9 @@ STM32_protocol.prototype.verify_chip_signature = function (signature) {
             this.available_flash_size = 131072;
             this.page_size = 1024;
             break;
-        case 0x414: // not tested
+        case 0x414:
+            this.available_flash_size =  0x40000;
+            this.page_size = 2048;
             console.log('Chip recognized as F1 High-density');
             break;
         case 0x418: // not tested
