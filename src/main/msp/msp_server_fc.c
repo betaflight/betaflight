@@ -613,7 +613,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-    const unsigned int len = currentPort->dataSize;
+    const unsigned int dataSize = currentPort->dataSize;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -708,7 +708,7 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_NAME:
         {
-            const int nameLen = strlen(masterConfig.name);
+            const unsigned int nameLen = strlen(masterConfig.name);
             headSerialReply(nameLen);
             for (i = 0; i < nameLen; i++) {
                 serialize8(masterConfig.name[i]);
@@ -1160,7 +1160,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             uint32_t readAddress = read32();
             uint16_t readLength;
             bool useLegacyFormat;
-            if (len >= sizeof(uint32_t) + sizeof(uint16_t)) {
+            if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
                 readLength = read16();
                 useLegacyFormat = false;
             } else {
@@ -1315,7 +1315,7 @@ static bool processInCommand(uint8_t cmdMSP)
     uint32_t i;
     uint16_t tmp;
     uint8_t value;
-    const unsigned int len = currentPort->dataSize;
+    const unsigned int dataSize = currentPort->dataSize;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1349,7 +1349,7 @@ static bool processInCommand(uint8_t cmdMSP)
     case MSP_SET_RAW_RC:
 #ifndef SKIP_RX_MSP
         {
-            uint8_t channelCount = len / sizeof(uint16_t);
+            uint8_t channelCount = dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
                 headSerialError(0);
             } else {
@@ -1429,7 +1429,7 @@ static bool processInCommand(uint8_t cmdMSP)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (len >= 10) {
+        if (dataSize >= 10) {
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
@@ -1441,10 +1441,10 @@ static bool processInCommand(uint8_t cmdMSP)
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
-            if (len >= 11) {
+            if (dataSize >= 11) {
                 currentControlRateProfile->rcYawExpo8 = read8();
             }
-            if (len >= 12) {
+            if (dataSize >= 12) {
                 currentControlRateProfile->rcYawRate8 = read8();
             }
         } else {
@@ -1488,7 +1488,7 @@ static bool processInCommand(uint8_t cmdMSP)
         break;
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (len != 1 + sizeof(servoParam_t)) {
+        if (dataSize != 1 + sizeof(servoParam_t)) {
             headSerialError(0);
             break;
         }
@@ -1585,7 +1585,7 @@ static bool processInCommand(uint8_t cmdMSP)
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (len != sizeof(masterConfig.transponderData)) {
+        if (dataSize != sizeof(masterConfig.transponderData)) {
             headSerialError(0);
             break;
         }
@@ -1717,16 +1717,16 @@ static bool processInCommand(uint8_t cmdMSP)
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();
         masterConfig.rxConfig.spektrum_sat_bind = read8();
-        if (len > 8) {
+        if (dataSize > 8) {
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
-        if (len > 12) {
+        if (dataSize > 12) {
             masterConfig.rxConfig.rcInterpolation = read8();
             masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
-        if (len > 16) {
+        if (dataSize > 16) {
             masterConfig.rxConfig.rx_spi_protocol = read8();
             masterConfig.rxConfig.rx_spi_id = read32();
             masterConfig.rxConfig.rx_spi_rf_channel_count = read8();
@@ -1786,12 +1786,12 @@ static bool processInCommand(uint8_t cmdMSP)
         {
             uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
 
-            if (len % portConfigSize != 0) {
+            if (dataSize % portConfigSize != 0) {
                 headSerialError(0);
                 break;
             }
 
-            uint8_t remainingPortsInPacket = len / portConfigSize;
+            uint8_t remainingPortsInPacket = dataSize / portConfigSize;
 
             while (remainingPortsInPacket--) {
                 uint8_t identifier = read8();
@@ -1825,7 +1825,7 @@ static bool processInCommand(uint8_t cmdMSP)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= LED_MAX_STRIP_LENGTH || len != (1 + 4)) {
+            if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 headSerialError(0);
                 break;
             }
@@ -1879,13 +1879,13 @@ static bool processInCommand(uint8_t cmdMSP)
         masterConfig.gyro_soft_lpf_hz = read8();
         currentProfile->pidProfile.dterm_lpf_hz = read16();
         currentProfile->pidProfile.yaw_lpf_hz = read16();
-        if (len > 5) {
+        if (dataSize > 5) {
             masterConfig.gyro_soft_notch_hz_1 = read16();
             masterConfig.gyro_soft_notch_cutoff_1 = read16();
             currentProfile->pidProfile.dterm_notch_hz = read16();
             currentProfile->pidProfile.dterm_notch_cutoff = read16();
         }
-        if (len > 13) {
+        if (dataSize > 13) {
             serialize16(masterConfig.gyro_soft_notch_hz_2);
             serialize16(masterConfig.gyro_soft_notch_cutoff_2);
         }
@@ -1912,7 +1912,7 @@ static bool processInCommand(uint8_t cmdMSP)
 
     case MSP_SET_NAME:
         memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
-        for (i = 0; i < MIN(MAX_NAME_LENGTH, len); i++) {
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
             masterConfig.name[i] = read8();
         }
         break;
