@@ -192,9 +192,22 @@ typedef enum {
 
 #define DATAFLASH_BUFFER_SIZE 4096
 
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+void msp4WayIfFn(mspPort_t *mspPort)
+{
+    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
+    // bootloader mode before try to connect any ESC
+    // Start to activate here
+    esc4wayProcess(mspPort->port);
+    // former used MSP uart is still active
+    // proceed as usual with MSP commands
+}
+#endif
+
 void mspRebootFn(mspPort_t *mspPort)
 {
-    waitForSerialPortToFinishTransmitting(mspPort->port);
+    UNUSED(mspPort);
+
     stopPwmAllMotors();
     // On real flight controllers, systemReset() will do a soft reset of the device,
     // reloading the program.  But to support offline testing this flag needs to be
@@ -1849,12 +1862,7 @@ static bool processInCommand(uint8_t cmdMSP)
         bufWriterFlush(writer);
         // wait for all data to send
         waitForSerialPortToFinishTransmitting(currentPort->port);
-        // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-        // bootloader mode before try to connect any ESC
-        // Start to activate here
-        esc4wayProcess(currentPort->port);
-        // former used MSP uart is still active
-        // proceed as usual with MSP commands
+        msp4WayIfFn(currentPort);
         break;
 #endif
 

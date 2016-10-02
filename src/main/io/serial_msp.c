@@ -120,6 +120,7 @@ void mspSerialProcess(void)
         bufWriterFlush(writer);
 
         if (mspPostProcessFn) {
+            waitForSerialPortToFinishTransmitting(mspPort->port);
             mspPostProcessFn(mspPort);
         }
     }
