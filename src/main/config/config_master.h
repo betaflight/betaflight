@@ -132,6 +132,7 @@ typedef struct master_s {
 
 #ifdef GPS
     gpsProfile_t gpsProfile;
+    gpsConfig_t gpsConfig;
 #endif
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
@@ -150,10 +151,6 @@ typedef struct master_s {
     // mixer-related configuration
     mixerConfig_t mixerConfig;
     airplaneConfig_t airplaneConfig;
-
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
 
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
@@ -205,11 +202,14 @@ typedef struct master_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
+    char name[MAX_NAME_LENGTH + 1];
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
-    uint8_t chk;                            // XOR checksum
-   
-    char name[MAX_NAME_LENGTH+1];
-   
+    uint8_t chk;                            // XOR checksum 
+    /* 
+        do not add properties after the CHK
+        as it is assumed to exist at length-1 
+    */
 } master_t;
 
 extern master_t masterConfig;
