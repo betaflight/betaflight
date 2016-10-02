@@ -49,7 +49,7 @@
 
 extern uint8_t motorCount;
 uint32_t targetPidLooptime;
-extern float setpointRate[3], ptermSetpointRate[3];
+extern float setpointRate[3];
 extern float rcInput[3];
 
 static bool pidStabilisationEnabled;
@@ -132,10 +132,10 @@ void initFilters(const pidProfile_t *pidProfile) {
 static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
-    float errorRate = 0, rP = 0, rD = 0, PVRate = 0;
+    float errorRate = 0, rD = 0, PVRate = 0, dynC;
     float ITerm,PTerm,DTerm;
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3];
+    static float Kp[3], Ki[3], Kd[3], c[3], rollPitchMaxVelocity, yawMaxVelocity, previousSetpoint[3], relaxFactor[3];
     float delta;
     int axis;
     float horizonLevelStrength = 1;
@@ -188,6 +188,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
             Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
             c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
+            relaxFactor[axis] = 1.0f - (pidProfile->setpointRelaxRatio / 100.0f);
             yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * getdT();
             rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * getdT();
 
@@ -218,11 +219,11 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
-                ptermSetpointRate[axis] = setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
+                setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
             } else {
                 // HORIZON mode - direct sticks control is applied to rate PID
                 // mix up angle error to desired AngleRate to add a little auto-level feel
-                ptermSetpointRate[axis] = setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
+                setpointRate[axis] = setpointRate[axis] + (errorAngle * pidProfile->I8[PIDLEVEL] * horizonLevelStrength / 10.0f);
             }
         }
 
@@ -233,10 +234,9 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
         // Used in stand-alone mode for ACRO, controlled by higher level regulators in other modes
         // ----- calculate error / angle rates  ----------
         errorRate = setpointRate[axis] - PVRate;       // r - y
-        rP = ptermSetpointRate[axis] - PVRate;         // br - y
 
-        // -----calculate P component
-        PTerm = Kp[axis] * rP * tpaFactor;
+        // -----calculate P component and add Dynamic Part based on stick input
+        PTerm = Kp[axis] * errorRate * tpaFactor;
 
         // -----calculate I component.
         // Reduce strong Iterm accumulation during higher stick inputs
@@ -254,7 +254,11 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
         //-----calculate D-term (Yaw D not yet supported)
         if (axis != YAW) {
-            rD = c[axis] * setpointRate[axis] - PVRate;    // cr - y
+            if (pidProfile->setpointRelaxRatio < 100)
+                dynC = c[axis] * powerf(rcInput[axis], 2) * relaxFactor[axis] + c[axis] * (1-relaxFactor[axis]);
+            else
+                dynC = c[axis];
+            rD = dynC * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
 

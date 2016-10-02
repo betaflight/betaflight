@@ -207,10 +207,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 20;
+    pidProfile->D8[ROLL] = 16;
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 65;
-    pidProfile->D8[PITCH] = 22;
+    pidProfile->D8[PITCH] = 19;
     pidProfile->P8[YAW] = 70;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
@@ -247,8 +247,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->ptermSRateWeight = 85;
-    pidProfile->dtermSetpointWeight = 150;
+    pidProfile->setpointRelaxRatio = 70;
+    pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
     pidProfile->itermThrottleGain = 0;
@@ -487,9 +487,11 @@ void createDefaultConfig(master_t *config)
     config->pid_process_denom = 2;
 #endif
     config->gyro_soft_type = FILTER_PT1;
-    config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz = 0;
-    config->gyro_soft_notch_cutoff = 130;
+    config->gyro_soft_lpf_hz = 80;
+    config->gyro_soft_notch_hz_1 = 400;
+    config->gyro_soft_notch_cutoff_1 = 300;
+    config->gyro_soft_notch_hz_2 = 0;
+    config->gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_NONE;
 
@@ -762,7 +764,20 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz, masterConfig.gyro_soft_notch_hz, masterConfig.gyro_soft_notch_cutoff, masterConfig.gyro_soft_type);
+    // Prevent invalid notch cutoff
+    if (masterConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyro_soft_notch_hz_1)
+        masterConfig.gyro_soft_notch_hz_1 = 0;
+
+    if (masterConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyro_soft_notch_hz_2)
+        masterConfig.gyro_soft_notch_hz_2 = 0;
+
+    gyroUseConfig(&masterConfig.gyroConfig,
+        masterConfig.gyro_soft_lpf_hz,
+        masterConfig.gyro_soft_notch_hz_1,
+        masterConfig.gyro_soft_notch_cutoff_1,
+        masterConfig.gyro_soft_notch_hz_2,
+        masterConfig.gyro_soft_notch_cutoff_2,
+        masterConfig.gyro_soft_type);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

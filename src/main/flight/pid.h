@@ -90,7 +90,7 @@ typedef struct pidProfile_s {
 
     // Betaflight PID controller parameters
     uint8_t itermThrottleGain;              // Throttle coupling to iterm. Quick throttle changes will bump iterm
-    uint8_t ptermSRateWeight;               // Setpoint super expo ratio for Pterm (lower means that pretty much only P has super expo rates)
+    uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
     uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
     uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms

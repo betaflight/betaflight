@@ -106,7 +106,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     filter->d1 = filter->d2 = 0;
 }
 
-/* Computes a biquad_t filter on a sample */
+/* Computes a biquadFilter_t filter on a sample */
 float biquadFilterApply(biquadFilter_t *filter, float input)
 {
     const float result = filter->b0 * input + filter->d1;
