@@ -1433,7 +1433,7 @@ void osdDrawElements(void)
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
-extern uint16_t rssi; // FIXME dependency on mw.c
+
 
 void osdDrawSingleElement(uint8_t item)
 {

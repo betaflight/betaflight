@@ -108,7 +108,6 @@
 #include "io/serial_4way.h"
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse);
