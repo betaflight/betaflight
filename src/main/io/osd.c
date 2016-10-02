@@ -106,7 +106,7 @@ uint16_t refreshTimeout = 0;
 
 #define VISIBLE_FLAG  0x0800
 #define BLINK_FLAG    0x0400
-uint8_t blinkState = 1;
+bool blinkState = true;
 
 #define OSD_POS(x,y)  (x | (y << 5))
 #define OSD_X(x)      (x & 0x001F)
@@ -1071,6 +1071,7 @@ void osdResetStats(void)
     stats.min_voltage = 500;
     stats.max_current = 0;
     stats.min_rssi = 99;
+    stats.max_altitude = 0;
 }
 
 void osdUpdateStats(void)
@@ -1090,6 +1091,9 @@ void osdUpdateStats(void)
 
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
+
+    if (stats.max_altitude < BaroAlt)
+        stats.max_altitude = BaroAlt;
 }
 
 void osdShowStats(void)
@@ -1126,6 +1130,17 @@ void osdShowStats(void)
         strcat(buff, "\x07");
         max7456Write(22, top++, buff);
     }
+
+    max7456Write(2, top, "MAX ALTITUDE     :");
+    int32_t alt = stats.max_altitude; // Metre x 100
+    char unitSym = 0xC;               // m
+    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
+        alt = (alt * 328) / 100; // Convert to feet x 100
+        unitSym = 0xF;           // ft
+    }
+    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+    max7456Write(22, top++, buff);
+
     refreshTimeout = 60 * REFRESH_1S;
 }
 
@@ -1161,7 +1176,7 @@ void updateOsd(void)
 void osdUpdate(uint8_t guiKey)
 {
     static uint8_t rcDelay = BUTTON_TIME;
-    static uint8_t last_sec = 0;
+    static uint8_t lastSec = 0;
     uint8_t key = 0, sec;
 
     // detect enter to menu
@@ -1182,9 +1197,9 @@ void osdUpdate(uint8_t guiKey)
 
     sec = millis() / 1000;
 
-    if (ARMING_FLAG(ARMED) && sec != last_sec) {
+    if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
-        last_sec = sec;
+        lastSec = sec;
     }
 
     if (refreshTimeout) {
@@ -1525,9 +1540,6 @@ void osdDrawSingleElement(uint8_t item)
         {
             int32_t alt = BaroAlt; // Metre x 100
             char unitSym = 0xC;    // m
-
-            if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
-                return;
 
             if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
                 alt = (alt * 328) / 100; // Convert to feet x 100

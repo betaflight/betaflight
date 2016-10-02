@@ -61,6 +61,7 @@ typedef struct {
     int16_t min_voltage; // /10
     int16_t max_current; // /10
     int16_t min_rssi;
+    int16_t max_altitude;
 } statistic_t;
 
 void osdInit(void);
