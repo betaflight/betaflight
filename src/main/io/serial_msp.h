@@ -45,13 +45,8 @@ typedef struct mspPort_s {
 } mspPort_t;
 
 
-extern struct serialPort_s *mspSerialPort;
-extern mspPort_t *currentPort;
-
 struct bufWriter_s;
 extern struct bufWriter_s *writer;
-
-extern bool isRebootScheduled;
 
 
 void mspSerialInit(void);

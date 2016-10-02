@@ -69,6 +69,7 @@
 #include "io/vtx.h"
 
 #include "msp/msp_protocol.h"
+#include "msp/msp.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -110,9 +111,11 @@
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse);
+// cause reboot after MSP processing complete
+mspPostProcessFuncPtr mspPostProcessFn = NULL;
+static mspPort_t *currentPort;
 
-const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
+static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
@@ -161,12 +164,6 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
 // this is the number of filled indexes in above array
 static uint8_t activeBoxIdCount = 0;
-// from mixer.c
-extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
-
-// cause reboot after MSP processing complete
-bool isRebootScheduled = false;
-
 
 static const char pidnames[] =
     "ROLL;"
@@ -194,6 +191,19 @@ typedef enum {
 #define JUMBO_FRAME_SIZE_LIMIT 255
 
 #define DATAFLASH_BUFFER_SIZE 4096
+
+void mspRebootFn(mspPort_t *mspPort)
+{
+    waitForSerialPortToFinishTransmitting(mspPort->port);
+    stopPwmAllMotors();
+    // On real flight controllers, systemReset() will do a soft reset of the device,
+    // reloading the program.  But to support offline testing this flag needs to be
+    // cleared so that the software doesn't continuously attempt to reboot itself.
+    systemReset();
+
+    // control should never return here.
+    while(1) ;
+}
 
 static void serialize8(uint8_t a)
 {
@@ -234,7 +244,7 @@ static uint32_t read32(void)
 
 static void headSerialResponse(uint8_t err, uint16_t responseBodySize)
 {
-    serialBeginWrite(mspSerialPort);
+    serialBeginWrite(currentPort->port);
 
     serialize8('$');
     serialize8('M');
@@ -264,7 +274,7 @@ static void headSerialError(uint8_t responseBodySize)
 static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
-    serialEndWrite(mspSerialPort);
+    serialEndWrite(currentPort->port);
 }
 
 static void s_struct(uint8_t *cb, uint8_t siz)
@@ -1135,7 +1145,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             uint32_t readAddress = read32();
             uint16_t readLength;
             bool useLegacyFormat;
-            if (currentPort->dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+            if (len >= sizeof(uint32_t) + sizeof(uint16_t)) {
                 readLength = read16();
                 useLegacyFormat = false;
             } else {
@@ -1285,11 +1295,12 @@ static bool processOutCommand(uint8_t cmdMSP)
     return true;
 }
 
-static bool processInCommand(void)
+static bool processInCommand(uint8_t cmdMSP)
 {
     uint32_t i;
     uint16_t tmp;
     uint8_t value;
+    const unsigned int len = currentPort->dataSize;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1297,7 +1308,7 @@ static bool processInCommand(void)
 #ifdef OSD
     uint8_t addr, font_data[64];
 #endif
-    switch (currentPort->cmdMSP) {
+    switch (cmdMSP) {
     case MSP_SELECT_SETTING:
         value = read8();
         if ((value & RATEPROFILE_MASK) == 0) {
@@ -1323,7 +1334,7 @@ static bool processInCommand(void)
     case MSP_SET_RAW_RC:
 #ifndef SKIP_RX_MSP
         {
-            uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
+            uint8_t channelCount = len / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
                 headSerialError(0);
             } else {
@@ -1403,7 +1414,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (currentPort->dataSize >= 10) {
+        if (len >= 10) {
             currentControlRateProfile->rcRate8 = read8();
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
@@ -1415,10 +1426,10 @@ static bool processInCommand(void)
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
-            if (currentPort->dataSize >= 11) {
+            if (len >= 11) {
                 currentControlRateProfile->rcYawExpo8 = read8();
             }
-            if (currentPort->dataSize >= 12) {
+            if (len >= 12) {
                 currentControlRateProfile->rcYawRate8 = read8();
             }
         } else {
@@ -1462,7 +1473,7 @@ static bool processInCommand(void)
         break;
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (currentPort->dataSize != 1 + sizeof(servoParam_t)) {
+        if (len != 1 + sizeof(servoParam_t)) {
             headSerialError(0);
             break;
         }
@@ -1559,7 +1570,7 @@ static bool processInCommand(void)
 
 #ifdef TRANSPONDER
     case MSP_SET_TRANSPONDER_CONFIG:
-        if (currentPort->dataSize != sizeof(masterConfig.transponderData)) {
+        if (len != sizeof(masterConfig.transponderData)) {
             headSerialError(0);
             break;
         }
@@ -1691,16 +1702,16 @@ static bool processInCommand(void)
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();
         masterConfig.rxConfig.spektrum_sat_bind = read8();
-        if (currentPort->dataSize > 8) {
+        if (len > 8) {
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
-        if (currentPort->dataSize > 12) {
+        if (len > 12) {
             masterConfig.rxConfig.rcInterpolation = read8();
             masterConfig.rxConfig.rcInterpolationInterval = read8();
             masterConfig.rxConfig.airModeActivateThreshold = read16();
         }
-        if (currentPort->dataSize > 16) {
+        if (len > 16) {
             masterConfig.rxConfig.rx_spi_protocol = read8();
             masterConfig.rxConfig.rx_spi_id = read32();
             masterConfig.rxConfig.rx_spi_rf_channel_count = read8();
@@ -1760,12 +1771,12 @@ static bool processInCommand(void)
         {
             uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
 
-            if (currentPort->dataSize % portConfigSize != 0) {
+            if (len % portConfigSize != 0) {
                 headSerialError(0);
                 break;
             }
 
-            uint8_t remainingPortsInPacket = currentPort->dataSize / portConfigSize;
+            uint8_t remainingPortsInPacket = len / portConfigSize;
 
             while (remainingPortsInPacket--) {
                 uint8_t identifier = read8();
@@ -1799,7 +1810,7 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= LED_MAX_STRIP_LENGTH || currentPort->dataSize != (1 + 4)) {
+            if (i >= LED_MAX_STRIP_LENGTH || len != (1 + 4)) {
                 headSerialError(0);
                 break;
             }
@@ -1821,7 +1832,7 @@ static bool processInCommand(void)
         break;
 #endif
     case MSP_REBOOT:
-        isRebootScheduled = true;
+        mspPostProcessFn = mspRebootFn;
         break;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -1858,13 +1869,13 @@ static bool processInCommand(void)
         masterConfig.gyro_soft_lpf_hz = read8();
         currentProfile->pidProfile.dterm_lpf_hz = read16();
         currentProfile->pidProfile.yaw_lpf_hz = read16();
-        if (currentPort->dataSize > 5) {
+        if (len > 5) {
             masterConfig.gyro_soft_notch_hz_1 = read16();
             masterConfig.gyro_soft_notch_cutoff_1 = read16();
             currentProfile->pidProfile.dterm_notch_hz = read16();
             currentProfile->pidProfile.dterm_notch_cutoff = read16();
         }
-        if (currentPort->dataSize > 13) {
+        if (len > 13) {
             serialize16(masterConfig.gyro_soft_notch_hz_2);
             serialize16(masterConfig.gyro_soft_notch_cutoff_2);
         }
@@ -1891,7 +1902,7 @@ static bool processInCommand(void)
 
     case MSP_SET_NAME:
         memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
-        for (i = 0; i < MIN(MAX_NAME_LENGTH, currentPort->dataSize); i++) {
+        for (i = 0; i < MIN(MAX_NAME_LENGTH, len); i++) {
             masterConfig.name[i] = read8();
         }
         break;
@@ -1903,51 +1914,52 @@ static bool processInCommand(void)
     return true;
 }
 
-void mspProcessReceivedCommand(void)
+void mspProcessReceivedCommand(mspPort_t *mspPort)
 {
-    if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
+    currentPort = mspPort;
+    if (!(processOutCommand(mspPort->cmdMSP) || processInCommand(mspPort->cmdMSP))) {
         headSerialError(0);
     }
     tailSerialReply();
-    currentPort->c_state = IDLE;
+    mspPort->c_state = IDLE;
 }
 
-bool mspProcessReceivedData(uint8_t c)
+bool mspProcessReceivedData(mspPort_t *mspPort, uint8_t c)
 {
-    if (currentPort->c_state == IDLE) {
+    if (mspPort->c_state == IDLE) {
         if (c == '$') {
-            currentPort->c_state = HEADER_START;
+            mspPort->c_state = HEADER_START;
         } else {
             return false;
         }
-    } else if (currentPort->c_state == HEADER_START) {
-        currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;
-    } else if (currentPort->c_state == HEADER_M) {
-        currentPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
-    } else if (currentPort->c_state == HEADER_ARROW) {
+    } else if (mspPort->c_state == HEADER_START) {
+        mspPort->c_state = (c == 'M') ? HEADER_M : IDLE;
+    } else if (mspPort->c_state == HEADER_M) {
+        mspPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
+    } else if (mspPort->c_state == HEADER_ARROW) {
         if (c > MSP_PORT_INBUF_SIZE) {
-            currentPort->c_state = IDLE;
+            mspPort->c_state = IDLE;
 
         } else {
-            currentPort->dataSize = c;
-            currentPort->offset = 0;
-            currentPort->checksum = 0;
-            currentPort->indRX = 0;
-            currentPort->checksum ^= c;
-            currentPort->c_state = HEADER_SIZE;
+            mspPort->dataSize = c;
+            mspPort->offset = 0;
+            mspPort->checksum = 0;
+            mspPort->indRX = 0;
+            mspPort->checksum ^= c;
+            mspPort->c_state = HEADER_SIZE;
         }
-    } else if (currentPort->c_state == HEADER_SIZE) {
-        currentPort->cmdMSP = c;
-        currentPort->checksum ^= c;
-        currentPort->c_state = HEADER_CMD;
-    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset < currentPort->dataSize) {
-        currentPort->checksum ^= c;
-        currentPort->inBuf[currentPort->offset++] = c;
-    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset >= currentPort->dataSize) {
-        if (currentPort->checksum == c) {
-            currentPort->c_state = COMMAND_RECEIVED;
+    } else if (mspPort->c_state == HEADER_SIZE) {
+        mspPort->cmdMSP = c;
+        mspPort->checksum ^= c;
+        mspPort->c_state = HEADER_CMD;
+    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset < mspPort->dataSize) {
+        mspPort->checksum ^= c;
+        mspPort->inBuf[mspPort->offset++] = c;
+    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset >= mspPort->dataSize) {
+        if (mspPort->checksum == c) {
+            mspPort->c_state = COMMAND_RECEIVED;
         } else {
-            currentPort->c_state = IDLE;
+            mspPort->c_state = IDLE;
         }
     }
     return true;

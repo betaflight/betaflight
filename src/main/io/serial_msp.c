@@ -38,8 +38,6 @@
 
 
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-serialPort_t *mspSerialPort;
-mspPort_t *currentPort;
 bufWriter_t *writer;
 
 
@@ -94,12 +92,6 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
-static void setCurrentPort(mspPort_t *port)
-{
-    currentPort = port;
-    mspSerialPort = currentPort->port;
-}
-
 /*
  * Process MSP commands from serial ports configured as MSP ports.
  *
@@ -107,46 +99,36 @@ static void setCurrentPort(mspPort_t *port)
  */
 void mspSerialProcess(void)
 {
-    uint8_t portIndex;
-    mspPort_t *candidatePort;
-
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        candidatePort = &mspPorts[portIndex];
-        if (!candidatePort->port) {
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
             continue;
         }
 
-        setCurrentPort(candidatePort);
         // Big enough to fit a MSP_STATUS in one write.
         uint8_t buf[sizeof(bufWriter_t) + 20];
-        writer = bufWriterInit(buf, sizeof(buf),
-                               (bufWrite_t)serialWriteBufShim, currentPort->port);
+        writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, mspPort->port);
 
-        while (serialRxBytesWaiting(mspSerialPort)) {
+        while (serialRxBytesWaiting(mspPort->port)) {
 
-            uint8_t c = serialRead(mspSerialPort);
-            bool consumed = mspProcessReceivedData(c);
+            const uint8_t c = serialRead(mspPort->port);
+            const bool consumed = mspProcessReceivedData(mspPort, c);
 
             if (!consumed && !ARMING_FLAG(ARMED)) {
-                evaluateOtherData(mspSerialPort, c);
+                evaluateOtherData(mspPort->port, c);
             }
 
-            if (currentPort->c_state == COMMAND_RECEIVED) {
-                mspProcessReceivedCommand();
+            if (mspPort->c_state == COMMAND_RECEIVED) {
+                mspProcessReceivedCommand(mspPort);
                 break; // process one command at a time so as not to block.
             }
         }
 
         bufWriterFlush(writer);
 
-        if (isRebootScheduled) {
-            waitForSerialPortToFinishTransmitting(candidatePort->port);
-            stopPwmAllMotors();
-            // On real flight controllers, systemReset() will do a soft reset of the device,
-            // reloading the program.  But to support offline testing this flag needs to be
-            // cleared so that the software doesn't continuously attempt to reboot itself.
-            isRebootScheduled = false;
-            systemReset();
+        if (mspPostProcessFn) {
+            mspPostProcessFn(mspPort);
+            mspPostProcessFn = NULL;
         }
     }
 }
