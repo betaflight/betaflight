@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <string.h>
 #include "common/color.h"
 
 #define LED_MAX_STRIP_LENGTH           32

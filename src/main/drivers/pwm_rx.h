@@ -26,7 +26,6 @@ typedef enum {
 
 #define PPM_RCVR_TIMEOUT            0
 
-struct timerHardware_s;
 void ppmInConfig(const struct timerHardware_s *timerHardwarePtr);
 void ppmAvoidPWMTimerClash(const struct timerHardware_s *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer, uint8_t pwmProtocol);
 
