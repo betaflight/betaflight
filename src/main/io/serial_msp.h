@@ -54,8 +54,7 @@ extern struct bufWriter_s *writer;
 extern bool isRebootScheduled;
 
 
-struct serialConfig_s;
-void mspSerialInit(struct serialConfig_s *serialConfig);
+void mspSerialInit(void);
 void mspSerialProcess(void);
-void mspSerialAllocatePorts(struct serialConfig_s *serialConfig);
+void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

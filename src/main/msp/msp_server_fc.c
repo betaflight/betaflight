@@ -1898,7 +1898,7 @@ static bool processInCommand(void)
     return true;
 }
 
-void mspProcessReceivedCommand()
+void mspProcessReceivedCommand(void)
 {
     if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
         headSerialError(0);

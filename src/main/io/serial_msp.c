@@ -50,10 +50,8 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
     mspPortToReset->port = serialPort;
 }
 
-void mspSerialAllocatePorts(serialConfig_t *serialConfig)
+void mspSerialAllocatePorts(void)
 {
-    UNUSED(serialConfig);
-
     serialPort_t *serialPort;
 
     uint8_t portIndex = 0;
@@ -89,11 +87,11 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-void mspSerialInit(serialConfig_t *serialConfig)
+void mspSerialInit(void)
 {
     mspInit();
-    memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspSerialAllocatePorts(serialConfig);
+    memset(mspPorts, 0, sizeof(mspPorts));
+    mspSerialAllocatePorts();
 }
 
 static void setCurrentPort(mspPort_t *port)
