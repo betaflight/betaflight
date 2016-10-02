@@ -52,6 +52,7 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
+#include "drivers/stack_check.h"
 
 #include "drivers/buf_writer.h"
 
@@ -2815,6 +2816,10 @@ static void cliStatus(char *cmdline)
     const uint16_t i2cErrorCounter = i2cGetErrorCounter();
 #else
     const uint16_t i2cErrorCounter = 0;
+#endif
+
+#ifdef STACK_CHECK
+    cliPrintf("Used stack: %d, Total stack: %d\r\n", getUsedStackSize(), getTotalStackSize());
 #endif
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));

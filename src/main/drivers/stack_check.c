@@ -19,6 +19,7 @@
 
 extern char _estack; // end of stack, declared in .LD file
 extern char _Min_Stack_Size; // declared in .LD file
+static uint32_t _Used_Stack_Size;
 
 /*
  * The ARM processor uses a full descending stack. This means the stack pointer holds the address
@@ -54,11 +55,25 @@ void taskStackCheck(void)
 			break;
 		}
 	}
+
+    _Used_Stack_Size = (uint32_t)stackHighMem - (uint32_t)p;
+
 #ifdef DEBUG_STACK
 	debug[0] = (uint32_t)stackHighMem & 0xffff;
 	debug[1] = (uint32_t)stackLowMem & 0xffff;
 	debug[2] = (uint32_t)stackCurrent & 0xffff;
-	debug[3] = (uint32_t)p & 0xffff; // watermark
+	debug[3] = (uint32_t)p & 0xffff;
 #endif
 }
+
+uint32_t getTotalStackSize(void)
+{
+    return (uint32_t)&_Min_Stack_Size;
+}
+
+uint32_t getUsedStackSize(void)
+{
+    return _Used_Stack_Size;
+}
+
 #endif
