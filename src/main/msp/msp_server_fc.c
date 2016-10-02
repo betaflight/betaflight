@@ -613,7 +613,7 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-    uint8_t len;
+    const unsigned int len = currentPort->dataSize;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -707,10 +707,12 @@ static bool processOutCommand(uint8_t cmdMSP)
         break;
 
     case MSP_NAME:
-        len = strlen(masterConfig.name);
-        headSerialReply(len);
-        for (uint8_t i=0; i<len; i++) {
-            serialize8(masterConfig.name[i]);
+        {
+            const int nameLen = strlen(masterConfig.name);
+            headSerialReply(nameLen);
+            for (i = 0; i < nameLen; i++) {
+                serialize8(masterConfig.name[i]);
+            }
         }
         break;
 
