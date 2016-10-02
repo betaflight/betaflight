@@ -270,7 +270,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern uint16_t rssi; // FIXME dependency on mw.c
 
 // this is calculated at startup based on enabled features.
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];

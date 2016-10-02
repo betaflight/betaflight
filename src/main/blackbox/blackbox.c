@@ -290,9 +290,6 @@ typedef struct blackboxSlowState_s {
 //From mixer.c:
 extern uint8_t motorCount;
 
-//From rx.c:
-extern uint16_t rssi;
-
 //From rc_controls.c
 extern uint32_t rcModeActivationMask;
 

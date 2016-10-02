@@ -169,9 +169,6 @@ void updateLedStrip(uint32_t currentTime);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 
-extern uint16_t rssi; // FIXME dependency on mw.c
-
-
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void applyDefaultColors(hsvColor_t *colors);
 void applyDefaultModeColors(modeColorIndexes_t *modeColors);
