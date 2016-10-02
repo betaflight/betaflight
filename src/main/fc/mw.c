@@ -718,7 +718,7 @@ void processRx(uint32_t currentTime)
         } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
-            mspSerialAllocatePorts(&masterConfig.serialConfig);
+            mspSerialAllocatePorts();
         }
     }
 #endif

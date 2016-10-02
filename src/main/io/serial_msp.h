@@ -44,8 +44,17 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
-struct serialConfig_s;
-void mspSerialInit(struct serialConfig_s *serialConfig);
+
+extern struct serialPort_s *mspSerialPort;
+extern mspPort_t *currentPort;
+
+struct bufWriter_s;
+extern struct bufWriter_s *writer;
+
+extern bool isRebootScheduled;
+
+
+void mspSerialInit(void);
 void mspSerialProcess(void);
-void mspSerialAllocatePorts(struct serialConfig_s *serialConfig);
+void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

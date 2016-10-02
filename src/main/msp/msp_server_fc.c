@@ -107,8 +107,6 @@
 
 #include "io/serial_4way.h"
 
-static serialPort_t *mspSerialPort;
-
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
@@ -168,10 +166,7 @@ static uint8_t activeBoxIdCount = 0;
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 // cause reboot after MSP processing complete
-static bool isRebootScheduled = false;
-STATIC_UNIT_TESTED mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-STATIC_UNIT_TESTED mspPort_t *currentPort;
-STATIC_UNIT_TESTED bufWriter_t *writer;
+bool isRebootScheduled = false;
 
 
 static const char pidnames[] =
@@ -448,53 +443,7 @@ static void serializeDataflashReadReply(uint32_t address, uint16_t size, bool us
 }
 #endif
 
-static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
-{
-    memset(mspPortToReset, 0, sizeof(mspPort_t));
-
-    mspPortToReset->port = serialPort;
-}
-
-void mspSerialAllocatePorts(serialConfig_t *serialConfig)
-{
-    UNUSED(serialConfig);
-
-    serialPort_t *serialPort;
-
-    uint8_t portIndex = 0;
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
-
-    while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
-        mspPort_t *mspPort = &mspPorts[portIndex];
-        if (mspPort->port) {
-            portIndex++;
-            continue;
-        }
-
-        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
-        if (serialPort) {
-            resetMspPort(mspPort, serialPort);
-            portIndex++;
-        }
-
-        portConfig = findNextSerialPortConfig(FUNCTION_MSP);
-    }
-}
-
-void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
-{
-    uint8_t portIndex;
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        mspPort_t *candidateMspPort = &mspPorts[portIndex];
-        if (candidateMspPort->port == serialPort) {
-            closeSerialPort(serialPort);
-            memset(candidateMspPort, 0, sizeof(mspPort_t));
-        }
-    }
-}
-
-static void mspInit(void)
+void mspInit(void)
 {
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
@@ -591,13 +540,6 @@ static void mspInit(void)
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
     }
 #endif
-}
-
-void mspSerialInit(serialConfig_t *serialConfig)
-{
-    mspInit();
-    memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspSerialAllocatePorts(serialConfig);
 }
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
@@ -1956,7 +1898,8 @@ static bool processInCommand(void)
     return true;
 }
 
-STATIC_UNIT_TESTED void mspProcessReceivedCommand() {
+void mspProcessReceivedCommand(void)
+{
     if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
         headSerialError(0);
     }
@@ -1964,7 +1907,7 @@ STATIC_UNIT_TESTED void mspProcessReceivedCommand() {
     currentPort->c_state = IDLE;
 }
 
-static bool mspProcessReceivedData(uint8_t c)
+bool mspProcessReceivedData(uint8_t c)
 {
     if (currentPort->c_state == IDLE) {
         if (c == '$') {
@@ -2005,54 +1948,3 @@ static bool mspProcessReceivedData(uint8_t c)
     return true;
 }
 
-STATIC_UNIT_TESTED void setCurrentPort(mspPort_t *port)
-{
-    currentPort = port;
-    mspSerialPort = currentPort->port;
-}
-
-void mspSerialProcess(void)
-{
-    uint8_t portIndex;
-    mspPort_t *candidatePort;
-
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        candidatePort = &mspPorts[portIndex];
-        if (!candidatePort->port) {
-            continue;
-        }
-
-        setCurrentPort(candidatePort);
-        // Big enough to fit a MSP_STATUS in one write.
-        uint8_t buf[sizeof(bufWriter_t) + 20];
-        writer = bufWriterInit(buf, sizeof(buf),
-                               (bufWrite_t)serialWriteBufShim, currentPort->port);
-
-        while (serialRxBytesWaiting(mspSerialPort)) {
-
-            uint8_t c = serialRead(mspSerialPort);
-            bool consumed = mspProcessReceivedData(c);
-
-            if (!consumed && !ARMING_FLAG(ARMED)) {
-                evaluateOtherData(mspSerialPort, c);
-            }
-
-            if (currentPort->c_state == COMMAND_RECEIVED) {
-                mspProcessReceivedCommand();
-                break; // process one command at a time so as not to block.
-            }
-        }
-
-        bufWriterFlush(writer);
-
-        if (isRebootScheduled) {
-            waitForSerialPortToFinishTransmitting(candidatePort->port);
-            stopPwmAllMotors();
-            // On real flight controllers, systemReset() will do a soft reset of the device,
-            // reloading the program.  But to support offline testing this flag needs to be
-            // cleared so that the software doesn't continuously attempt to reboot itself.
-            isRebootScheduled = false;
-            systemReset();
-        }
-    }
-}
