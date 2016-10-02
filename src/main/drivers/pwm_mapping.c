@@ -109,7 +109,9 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #else
     setup = hardwareMaps[i];
 #endif
-	TIM_TypeDef* ppmTimer = NULL;
+#ifndef SKIP_RX_PWM_PPM
+    TIM_TypeDef* ppmTimer = NULL;
+#endif
     for (i = 0; i < USABLE_TIMER_CHANNEL_COUNT && setup[i] != 0xFFFF; i++) {
         uint8_t timerIndex = setup[i] & 0x00FF;
         uint8_t type = (setup[i] & 0xFF00) >> 8;
@@ -325,12 +327,13 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                     continue;
             }
 #endif
+#ifndef SKIP_RX_PWM_PPM
             if (init->usePPM) {
                 if (init->pwmProtocolType != PWM_TYPE_CONVENTIONAL && timerHardwarePtr->tim == ppmTimer) {
                     ppmAvoidPWMTimerClash(timerHardwarePtr, ppmTimer, init->pwmProtocolType);
                 }
             }
-
+#endif
             if (init->useFastPwm) {
                 pwmFastPwmMotorConfig(timerHardwarePtr, pwmOutputConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->pwmProtocolType);
                 pwmOutputConfiguration.portConfigurations[pwmOutputConfiguration.outputCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM | PWM_PF_OUTPUT_PROTOCOL_ONESHOT;

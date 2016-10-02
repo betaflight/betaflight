@@ -67,7 +67,7 @@ typedef struct SPIDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     volatile uint16_t errorCount;
-    bool sdcard;
+    bool leadingEdge;
 } spiDevice_t;
 
 bool spiInit(SPIDevice device);
@@ -79,4 +79,5 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
+SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 

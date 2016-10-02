@@ -336,3 +336,17 @@ int16_t qMultiply(fix12_t q, int16_t input) {
 fix12_t  qConstruct(int16_t num, int16_t den) {
     return (num << 12) / den;
 }
+
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
+{
+    crc ^= a << 8;
+    for (int ii = 0; ii < 8; ++ii) {
+        if (crc & 0x8000) {
+            crc = (crc << 1) ^ 0x1021;
+        } else {
+            crc = crc << 1;
+        }
+    }
+    return crc;
+}
+

@@ -113,9 +113,9 @@ typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
-    uint8_t nrf24rx_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
-    uint32_t nrf24rx_id;
-    uint8_t nrf24rx_channel_count;
+    uint8_t rx_spi_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
+    uint32_t rx_spi_id;
+    uint8_t rx_spi_rf_channel_count;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;
@@ -144,8 +144,8 @@ typedef uint16_t (*rcReadRawDataPtr)(const struct rxRuntimeConfig_s *rxRuntimeCo
 typedef uint8_t (*rcFrameStatusPtr)(void);
 
 typedef struct rxRuntimeConfig_s {
-    uint8_t channelCount;                  // number of rc channels as reported by current input driver
-    uint16_t rxRefreshRate;
+    uint8_t          channelCount; // number of RC channels as reported by current input driver
+    uint16_t         rxRefreshRate;
     rcReadRawDataPtr rcReadRawFunc;
     rcFrameStatusPtr rcFrameStatusFunc;
 } rxRuntimeConfig_t;
