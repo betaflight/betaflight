@@ -1241,9 +1241,9 @@ static bool processOutCommand(uint8_t cmdMSP)
             serialize8(masterConfig.gyro_sync_denom);
             serialize8(masterConfig.pid_process_denom);
         }
-        serialize8(masterConfig.use_unsyncedPwm);
-        serialize8(masterConfig.motor_pwm_protocol);
-        serialize16(masterConfig.motor_pwm_rate);
+        serialize8(masterConfig.motorConfig.useUnsyncedPwm);
+        serialize8(masterConfig.motorConfig.motorPwmProtocol);
+        serialize16(masterConfig.motorConfig.motorPwmRate);
         break;
     case MSP_FILTER_CONFIG :
         headSerialReply(13);
@@ -1848,9 +1848,9 @@ static bool processInCommand(void)
     case MSP_SET_ADVANCED_CONFIG :
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
-        masterConfig.use_unsyncedPwm = read8();
-        masterConfig.motor_pwm_protocol = read8();
-        masterConfig.motor_pwm_rate = read16();
+        masterConfig.motorConfig.useUnsyncedPwm = read8();
+        masterConfig.motorConfig.motorPwmProtocol = read8();
+        masterConfig.motorConfig.motorPwmRate = read16();
         break;
     case MSP_SET_FILTER_CONFIG :
         masterConfig.gyro_soft_lpf_hz = read8();

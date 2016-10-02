@@ -245,18 +245,25 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
     motorConfig->minthrottle = 1000;
+    motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+    motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
+    motorConfig->useUnsyncedPwm = true;
 #else
     motorConfig->minthrottle = 1070;
+    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+    motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
     motorConfig->maxEscThrottleJumpMs = 0;
+
 }
 
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
+    servoConfig->servoPwmRate = 50;
 }
 #endif
 
@@ -503,17 +510,6 @@ void createDefaultConfig(master_t *config)
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef BRUSHED_MOTORS
-    config->motor_pwm_rate = BRUSHED_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_BRUSHED;
-    config->use_unsyncedPwm = true;
-#else
-    config->motor_pwm_rate = BRUSHLESS_MOTORS_PWM_RATE;
-    config->motor_pwm_protocol = PWM_TYPE_ONESHOT125;
-#endif
-
-    config->servo_pwm_rate = 50;
 
 #ifdef CC3D
     config->use_buzzer_p6 = 0;
