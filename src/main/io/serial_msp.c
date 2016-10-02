@@ -25,11 +25,8 @@
 
 #include "drivers/buf_writer.h"
 #include "drivers/serial.h"
-#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
-
-#include "flight/mixer.h"
 
 #include "io/serial.h"
 #include "io/serial_msp.h"
@@ -50,12 +47,8 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
 
 void mspSerialAllocatePorts(void)
 {
-    serialPort_t *serialPort;
-
     uint8_t portIndex = 0;
-
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
-
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
         if (mspPort->port) {
@@ -63,7 +56,7 @@ void mspSerialAllocatePorts(void)
             continue;
         }
 
-        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
             portIndex++;
@@ -75,8 +68,7 @@ void mspSerialAllocatePorts(void)
 
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
-    uint8_t portIndex;
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->port == serialPort) {
             closeSerialPort(serialPort);
