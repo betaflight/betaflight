@@ -54,7 +54,7 @@ void sonarInit(const sonarConfig_t *sonarConfig)
 {
     sonarRange_t sonarRange;
 
-    hcsr04_init(&sonarRange, sonarConfig);
+    hcsr04_init(sonarConfig, &sonarRange);
 
     sensorsSet(SENSOR_SONAR);
     sonarMaxRangeCm = sonarRange.maxRangeCm;

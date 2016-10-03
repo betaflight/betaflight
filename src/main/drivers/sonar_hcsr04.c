@@ -63,7 +63,7 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void hcsr04_init(sonarRange_t *sonarRange, sonarConfig_t *sonarConfig)
+void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
 {
     sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
     sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;

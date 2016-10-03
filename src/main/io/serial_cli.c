@@ -3691,6 +3691,10 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT, &masterConfig.ppmConfig.ioTag, 0 },
     { OWNER_PWMINPUT, &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif 
+#ifdef SONAR
+    { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
+    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+#endif
 };
 
 static void cliResource(char *cmdline)
