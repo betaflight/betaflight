@@ -38,7 +38,7 @@ static bool pwmMotorsEnabled = true;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
-    TIM_OCInitTypeDef  TIM_OCInitStructure;
+    TIM_OCInitTypeDef TIM_OCInitStructure;
 
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
@@ -208,9 +208,9 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     }
 
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
-        ioTag_t tag = motorConfig->ioTags[motorIndex];
+        const ioTag_t tag = motorConfig->ioTags[motorIndex];
         
-        if (DEFIO_TAG_ISEMPTY(tag)) {
+        if (!tag) {
             break;
         }
 
@@ -253,9 +253,9 @@ void pwmWriteServo(uint8_t index, uint16_t value)
 void servoInit(const servoConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
-        ioTag_t tag = servoConfig->ioTags[servoIndex];
+        const ioTag_t tag = servoConfig->ioTags[servoIndex];
         
-        if (DEFIO_TAG_ISEMPTY(tag)) {
+        if (!tag) {
             break;
         }
         
