@@ -209,9 +209,6 @@ void mspRebootFn(mspPort_t *mspPort)
     UNUSED(mspPort);
 
     stopPwmAllMotors();
-    // On real flight controllers, systemReset() will do a soft reset of the device,
-    // reloading the program.  But to support offline testing this flag needs to be
-    // cleared so that the software doesn't continuously attempt to reboot itself.
     systemReset();
 
     // control should never return here.
@@ -1304,6 +1301,22 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.mag_hardware);
         break;
 
+    case MSP_REBOOT:
+        headSerialReply(0);
+        mspPostProcessFn = mspRebootFn;
+        break;
+
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    case MSP_SET_4WAY_IF:
+        headSerialReply(1);
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        serialize8(esc4wayInit());
+        mspPostProcessFn = msp4WayIfFn;
+        break;
+#endif
+
     default:
         return false;
     }
@@ -1844,27 +1857,6 @@ static bool processInCommand(uint8_t cmdMSP)
             if (!setModeColor(modeIdx, funIdx, color))
                 return false;
         }
-        break;
-#endif
-    case MSP_REBOOT:
-        mspPostProcessFn = mspRebootFn;
-        break;
-
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        // get channel number
-        // switch all motor lines HI
-        // reply the count of ESC found
-        headSerialReply(1);
-        serialize8(esc4wayInit());
-        // because we do not come back after calling Process4WayInterface
-        // proceed with a success reply first
-        tailSerialReply();
-        // flush the transmit buffer
-        bufWriterFlush(writer);
-        // wait for all data to send
-        waitForSerialPortToFinishTransmitting(currentPort->port);
-        msp4WayIfFn(currentPort);
         break;
 #endif
 
