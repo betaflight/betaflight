@@ -656,10 +656,16 @@ TABS.osd.initialize = function (callback) {
               var $alarms = $('.alarms').empty();
               for (let k in OSD.data.alarms) {
                 var alarm = OSD.data.alarms[k];
-                var $input = $('<label/>').append(
-                  $('<input name="alarm" type="number"/>'+alarm.display_name+'</label>')
-                    .val(alarm.value)
-                );
+                var alarmInput = $('<input name="alarm" type="number" id="'+k+'"/>'+alarm.display_name+'</label>');
+                alarmInput.val(alarm.value);
+                alarmInput.blur(function(e) {
+                  OSD.data.alarms[$(this)[0].id].value = $(this)[0].value;
+                  MSP.promise(MSPCodes.MSP_SET_OSD_CONFIG, OSD.msp.encodeOther())
+                  .then(function() {
+                    updateOsdView();
+                  });
+                });
+                var $input = $('<label/>').append(alarmInput);
                 $alarms.append($input);
               }
             }
