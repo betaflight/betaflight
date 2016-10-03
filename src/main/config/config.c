@@ -292,11 +292,12 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
 #ifdef BEEPER_INVERTED
+    beeperConfig->isOD = false;
     beeperConfig->isInverted = true;
 #else
+    beeperConfig->isOD = true;
     beeperConfig->isInverted = false;
 #endif
-    beeperConfig->isOD = false;
     beeperConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
