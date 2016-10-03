@@ -173,11 +173,12 @@ void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
     }
 }
 
-void motorInit(motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
+void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     uint32_t timerMhzCounter;
     pwmWriteFuncPtr pwmWritePtr;
-        
+    bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
+
     switch (motorConfig->motorPwmProtocol) {
     default:
     case (PWM_TYPE_ONESHOT125):
@@ -195,17 +196,17 @@ void motorInit(motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCoun
     case (PWM_TYPE_BRUSHED):
         timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
         pwmWritePtr = pwmWriteBrushed;
-        motorConfig->useUnsyncedPwm = true;
+        useUnsyncedPwm = true;
         idlePulse = 0;
         break;
     case (PWM_TYPE_STANDARD):
         timerMhzCounter = PWM_TIMER_MHZ;
         pwmWritePtr = pwmWriteStandard;
-        motorConfig->useUnsyncedPwm = true;
+        useUnsyncedPwm = true;
         idlePulse = 0;
         break;
     }
-    
+
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         ioTag_t tag = motorConfig->ioTags[motorIndex];
         
@@ -226,7 +227,7 @@ void motorInit(motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCoun
         }
         
         motors[motorIndex].pwmWritePtr = pwmWritePtr;
-        if (motorConfig->useUnsyncedPwm) {
+        if (useUnsyncedPwm) {
             const uint32_t hz = timerMhzCounter * 1000000;
             pwmOutConfig(&motors[motorIndex], timer, timerMhzCounter, hz / motorConfig->motorPwmProtocol, idlePulse);
         } else {
@@ -249,7 +250,7 @@ void pwmWriteServo(uint8_t index, uint16_t value)
     }
 }
 
-void servoInit(servoConfig_t *servoConfig)
+void servoInit(const servoConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         ioTag_t tag = servoConfig->ioTags[servoIndex];

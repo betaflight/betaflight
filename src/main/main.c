@@ -280,8 +280,11 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    mixerUsePWMOutputConfiguration(masterConfig.motorConfig.useUnsyncedPwm);
-
+    bool usingUnsyncedOutput = (masterConfig.motorConfig.useUnsyncedPwm 
+        || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED 
+        || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_STANDARD); 
+    mixerUsePWMOutputConfiguration(usingUnsyncedOutput);
+    
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER

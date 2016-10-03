@@ -50,7 +50,7 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-void sonarInit(sonarConfig_t *sonarConfig)
+void sonarInit(const sonarConfig_t *sonarConfig)
 {
     sonarRange_t sonarRange;
 

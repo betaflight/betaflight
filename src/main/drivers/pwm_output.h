@@ -55,8 +55,8 @@ typedef struct {
     IO_t io;
 } pwmOutputPort_t;
 
-void motorInit(motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount);
-void servoInit(servoConfig_t *servoConfig);
+void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount);
+void servoInit(const servoConfig_t *servoConfig);
 
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
