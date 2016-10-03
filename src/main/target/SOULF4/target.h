@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "SOULF4"
+#define TARGET_BOARD_IDENTIFIER "SOUL"
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -96,8 +96,18 @@
 
 #define SENSORS_SET (SENSOR_ACC)
 
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+
+#define LED_STRIP
+#define WS2811_PIN                      PA0
+#define WS2811_TIMER                    TIM5
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream2
+#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_TIMER_CHANNEL            TIM_Channel_1
 
 #define SPEKTRUM_BIND
 // USART3,
