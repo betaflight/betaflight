@@ -48,7 +48,6 @@ typedef struct mspPort_s {
 struct bufWriter_s;
 extern struct bufWriter_s *writer;
 
-
 void mspSerialInit(void);
 void mspSerialProcess(void);
 void mspSerialAllocatePorts(void);

@@ -204,7 +204,7 @@ void msp4WayIfFn(mspPort_t *mspPort)
 }
 #endif
 
-void mspRebootFn(mspPort_t *mspPort)
+static void mspRebootFn(mspPort_t *mspPort)
 {
     UNUSED(mspPort);
 
