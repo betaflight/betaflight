@@ -62,15 +62,15 @@ typedef struct serialPort_s {
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
 
-    uint32_t (*serialTotalRxWaiting)(serialPort_t *instance);
-    uint8_t (*serialTotalTxFree)(serialPort_t *instance);
+    uint32_t (*serialTotalRxWaiting)(const serialPort_t *instance);
+    uint8_t (*serialTotalTxFree)(const serialPort_t *instance);
 
     uint8_t (*serialRead)(serialPort_t *instance);
 
     // Specified baud rate may not be allowed by an implementation, use serialGetBaudRate to determine actual baud rate in use.
     void (*serialSetBaudRate)(serialPort_t *instance, uint32_t baudRate);
 
-    bool (*isSerialTransmitBufferEmpty)(serialPort_t *instance);
+    bool (*isSerialTransmitBufferEmpty)(const serialPort_t *instance);
 
     void (*setMode)(serialPort_t *instance, portMode_t mode);
 
@@ -81,13 +81,13 @@ struct serialPortVTable {
 };
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
-uint32_t serialRxBytesWaiting(serialPort_t *instance);
-uint8_t serialTxBytesFree(serialPort_t *instance);
+uint32_t serialRxBytesWaiting(const serialPort_t *instance);
+uint8_t serialTxBytesFree(const serialPort_t *instance);
 void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
 void serialSetMode(serialPort_t *instance, portMode_t mode);
-bool isSerialTransmitBufferEmpty(serialPort_t *instance);
+bool isSerialTransmitBufferEmpty(const serialPort_t *instance);
 void serialPrint(serialPort_t *instance, const char *str);
 uint32_t serialGetBaudRate(serialPort_t *instance);
 

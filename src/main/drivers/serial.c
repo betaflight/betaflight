@@ -56,12 +56,12 @@ void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
     }
 }
 
-uint32_t serialRxBytesWaiting(serialPort_t *instance)
+uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 {
     return instance->vTable->serialTotalRxWaiting(instance);
 }
 
-uint8_t serialTxBytesFree(serialPort_t *instance)
+uint8_t serialTxBytesFree(const serialPort_t *instance)
 {
     return instance->vTable->serialTotalTxFree(instance);
 }
@@ -76,7 +76,7 @@ void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     instance->vTable->serialSetBaudRate(instance, baudRate);
 }
 
-bool isSerialTransmitBufferEmpty(serialPort_t *instance)
+bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     return instance->vTable->isSerialTransmitBufferEmpty(instance);
 }
