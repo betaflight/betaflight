@@ -104,13 +104,14 @@
 #include "io/serial_4way.h"
 #endif
 
-extern serialPort_t *mspSerialPort;
-
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+
+static mspPostProcessFuncPtr mspPostProcessFn = NULL;
+static mspPort_t *currentPort;
 
 static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -195,6 +196,30 @@ typedef enum {
     MSP_FLASHFS_BIT_SUPPORTED    = 2,
 } mspFlashfsFlags_e;
 
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+void msp4WayIfFn(mspPort_t *mspPort)
+{
+    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
+    // bootloader mode before try to connect any ESC
+    // Start to activate here
+    esc4wayProcess(mspPort->port);
+    // former used MSP uart is still active
+    // proceed as usual with MSP commands
+}
+#endif
+
+static void mspRebootFn(mspPort_t *mspPort)
+{
+    UNUSED(mspPort);
+
+    stopMotors();
+    handleOneshotFeatureChangeOnRestart();
+    systemReset();
+
+    // control should never return here.
+    while(1) ;
+}
+
 static void serialize8(uint8_t a)
 {
     bufWriterAppend(writer, a);
@@ -234,7 +259,7 @@ static uint32_t read32(void)
 
 static void headSerialResponse(uint8_t err, uint8_t responseBodySize)
 {
-    serialBeginWrite(mspSerialPort);
+    serialBeginWrite(currentPort->port);
 
     serialize8('$');
     serialize8('M');
@@ -257,7 +282,7 @@ static void headSerialError(uint8_t responseBodySize)
 static void tailSerialReply(void)
 {
     serialize8(currentPort->checksum);
-    serialEndWrite(mspSerialPort);
+    serialEndWrite(currentPort->port);
 }
 
 #ifdef USE_SERVOS
@@ -1199,24 +1224,42 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.sensorAlignmentConfig.mag_align);
         break;
 
+    case MSP_REBOOT:
+        headSerialReply(0);
+        mspPostProcessFn = mspRebootFn;
+        break;
+
+
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    case MSP_SET_4WAY_IF:
+        headSerialReply(1);
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        serialize8(esc4wayInit());
+        mspPostProcessFn = msp4WayIfFn;
+        break;
+#endif
+
     default:
         return false;
     }
     return true;
 }
 
-static bool processInCommand(void)
+static bool processInCommand(uint8_t cmdMSP)
 {
     uint32_t i;
     uint16_t tmp;
     uint8_t rate;
 
+    const unsigned int dataSize = currentPort->dataSize;
 #ifdef NAV
     uint8_t msp_wp_no;
     navWaypoint_t msp_wp;
 #endif
 
-    switch (currentPort->cmdMSP) {
+    switch (cmdMSP) {
 #ifdef HIL
     case MSP_SET_HIL_STATE:
         hilToFC.rollAngle = read16();
@@ -1247,7 +1290,7 @@ static bool processInCommand(void)
     case MSP_SET_RAW_RC:
 #ifndef SKIP_RX_MSP
         {
-            uint8_t channelCount = currentPort->dataSize / sizeof(uint16_t);
+            uint8_t channelCount = dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
                 headSerialError(0);
             } else {
@@ -1326,7 +1369,7 @@ static bool processInCommand(void)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (currentPort->dataSize >= 10) {
+        if (dataSize >= 10) {
             read8(); //Read rcRate8, kept for protocol compatibility reasons
             currentControlRateProfile->rcExpo8 = read8();
             for (i = 0; i < 3; i++) {
@@ -1343,7 +1386,7 @@ static bool processInCommand(void)
             currentControlRateProfile->thrMid8 = read8();
             currentControlRateProfile->thrExpo8 = read8();
             currentControlRateProfile->tpa_breakpoint = read16();
-            if (currentPort->dataSize >= 11) {
+            if (dataSize >= 11) {
                 currentControlRateProfile->rcYawExpo8 = read8();
             }
         } else {
@@ -1394,7 +1437,7 @@ static bool processInCommand(void)
 
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (currentPort->dataSize != 1 + sizeof(servoParam_t)) {
+        if (dataSize != 1 + sizeof(servoParam_t)) {
             headSerialError(0);
             break;
         }
@@ -1574,23 +1617,23 @@ static bool processInCommand(void)
         masterConfig.rxConfig.midrc = read16();
         masterConfig.rxConfig.mincheck = read16();
         masterConfig.rxConfig.spektrum_sat_bind = read8();
-        if (currentPort->dataSize > 8) {
+        if (dataSize > 8) {
             masterConfig.rxConfig.rx_min_usec = read16();
             masterConfig.rxConfig.rx_max_usec = read16();
         }
-        if (currentPort->dataSize > 12) {
+        if (dataSize > 12) {
             // for compatibility with betaflight
             read8();
             read8();
             read16();
         }
-        if (currentPort->dataSize > 16) {
+        if (dataSize > 16) {
             masterConfig.rxConfig.rx_spi_protocol = read8();
         }
-        if (currentPort->dataSize > 17) {
+        if (dataSize > 17) {
             masterConfig.rxConfig.rx_spi_id = read32();
         }
-        if (currentPort->dataSize > 21) {
+        if (dataSize > 21) {
             masterConfig.rxConfig.rx_spi_rf_channel_count = read8();
         }
         break;
@@ -1648,12 +1691,12 @@ static bool processInCommand(void)
         {
             uint8_t portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);
 
-            if (currentPort->dataSize % portConfigSize != 0) {
+            if (dataSize % portConfigSize != 0) {
                 headSerialError(0);
                 break;
             }
 
-            uint8_t remainingPortsInPacket = currentPort->dataSize / portConfigSize;
+            uint8_t remainingPortsInPacket = dataSize / portConfigSize;
 
             while (remainingPortsInPacket--) {
                 uint8_t identifier = read8();
@@ -1687,7 +1730,7 @@ static bool processInCommand(void)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = read8();
-            if (i >= LED_MAX_STRIP_LENGTH || currentPort->dataSize != (1 + 4)) {
+            if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 headSerialError(0);
                 break;
             }
@@ -1708,32 +1751,6 @@ static bool processInCommand(void)
         }
         break;
 #endif
-    case MSP_REBOOT:
-        isRebootScheduled = true;
-        break;
-
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        // get channel number
-        // switch all motor lines HI
-        // reply the count of ESC found
-        headSerialReply(1);
-        serialize8(esc4wayInit());
-        // because we do not come back after calling Process4WayInterface
-        // proceed with a success reply first
-        tailSerialReply();
-        // flush the transmit buffer
-        bufWriterFlush(writer);
-        // wait for all data to send
-        waitForSerialPortToFinishTransmitting(currentPort->port);
-        // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-        // bootloader mode before try to connect any ESC
-        // Start to activate here
-        esc4wayProcess(currentPort->port);
-        // former used MSP uart is still active
-        // proceed as usual with MSP commands
-        break;
-#endif
     default:
         // we do not know how to handle the (valid) message, indicate error MSP $M!
         return false;
@@ -1742,20 +1759,20 @@ static bool processInCommand(void)
     return true;
 }
 
-void mspProcessReceivedCommand(void)
+mspPostProcessFuncPtr mspProcessReceivedCommand(mspPort_t *mspPort)
 {
-    if (!(processOutCommand(currentPort->cmdMSP) || processInCommand())) {
+    currentPort = mspPort;
+    mspPostProcessFn = NULL;
+    if (!(processOutCommand(currentPort->cmdMSP) || processInCommand(currentPort->cmdMSP))) {
         headSerialError(0);
     }
     tailSerialReply();
     currentPort->c_state = IDLE;
+    return mspPostProcessFn;
 }
 
-void mspSerialInit(void)
+void mspInit(void)
 {
     initActiveBoxIds();
-
-    memset(mspPorts, 0x00, sizeof(mspPorts));
-    mspSerialAllocatePorts();
 }
 
