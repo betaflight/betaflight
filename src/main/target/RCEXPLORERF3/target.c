@@ -20,46 +20,8 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
+
 #include "drivers/timer.h"
-
-const uint16_t multiPPM[] = {
-    PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-        PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-        PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-        PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-        PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-        PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM6  | (MAP_TO_PPM_INPUT << 8),    // PPM input
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM17 - can be switched to servo
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM1
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8), // TIM3
-    0xFFFF
-};
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  IO_TAG(PA4),  TIM_Channel_2, TIM3_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2}, // PWM1 - PA4
