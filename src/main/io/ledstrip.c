@@ -166,6 +166,19 @@ static const ledConfig_t defaultLedStripConfig[] = {
     DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
     DEFINE_LED( 1,  1, 3, 0, LF(THRUST_RING), 0, 0),
 };
+#elif defined(USE_COLIBTI_RACE_LED_DEFAULT_CONFIG)
+static const ledConfig_t defaultLedStripConfig[] = {
+    DEFINE_LED( 0,   0, 	6, 	LD(WEST), LF(COLOR), LO(WARNING), 	0),
+    DEFINE_LED( 0,   1, 	6, 	LD(WEST), LF(COLOR), LO(WARNING), 	0),
+    DEFINE_LED( 0,   8, 	6, 	LD(WEST), LF(COLOR), LO(WARNING), 	0),
+    DEFINE_LED( 7,  15, 	6, 	0, 		LF(COLOR), 0, 			0),
+    DEFINE_LED( 8,  15, 	6, 	0, 		LF(COLOR), 0, 			0),
+    DEFINE_LED( 7,  14, 	6, 	0, 		LF(COLOR), 0, 			0),
+    DEFINE_LED( 8,  14, 	6, 	0, 		LF(COLOR), 0, 			0),
+    DEFINE_LED( 15,  8, 	6, 	LD(EAST), LF(COLOR), LO(WARNING), 	0),
+    DEFINE_LED( 15,  1, 	6, 	LD(EAST), LF(COLOR), LO(WARNING), 	0),
+    DEFINE_LED( 15,  0, 	6, 	LD(EAST), LF(COLOR), LO(WARNING), 	0),
+};
 #else
 static const ledConfig_t defaultLedStripConfig[] = {
     DEFINE_LED(15, 15, 0, LD(SOUTH) | LD(EAST), LF(ARM_STATE),   LO(INDICATOR), 0),
@@ -1146,6 +1159,9 @@ void pgResetFn_specialColors(specialColorIndexes_t *instance)
 void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
+    memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
+
+    reevaluateLedConfig();
 }
 
 void applyDefaultColors(hsvColor_t *colors)

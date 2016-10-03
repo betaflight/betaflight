@@ -79,6 +79,54 @@
 void targetConfiguration(master_t *config) {
     config->escAndServoConfig.minthrottle = 1025;
     config->escAndServoConfig.maxthrottle = 1980;
+    config->escAndServoConfig.mincommand = 1000;
+    config->escAndServoConfig.servoCenterPulse = 1500;
+
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;
+    config->batteryConfig.vbatwarningcellvoltage = 35;
+
+    config->flight3DConfig.deadband3d_low = 1406;
+    config->flight3DConfig.deadband3d_high = 1514;
+    config->flight3DConfig.neutral3d = 1460;
+    config->flight3DConfig.deadband3d_throttle = 0;
+    
+    config->failsafeConfig.failsafe_procedure = 1;
+    config->failsafeConfig.failsafe_throttle_low_delay = 10;
+
+    config->gyro_sync_denom = 1;
+    config->pid_process_denom = 3;
+    config->blackbox_rate_num = 1;
+    config->blackbox_rate_denom = 1;
+
+    config->rcControlsConfig.deadband = 5;
+    config->rcControlsConfig.yaw_deadband = 5;
+
+    config->failsafeConfig.failsafe_delay = 10;
+
+    config->telemetryConfig.telemetry_inversion = 1;
+
+    config->pid_process_denom = 4;
+
+    config->profile[0].pidProfile.vbatPidCompensation = 1;
+
+    config->profile[0].pidProfile.P8[ROLL] = 46;     // new PID with preliminary defaults test carefully
+    config->profile[0].pidProfile.I8[ROLL] = 48;
+    config->profile[0].pidProfile.D8[ROLL] = 23;
+    config->profile[0].pidProfile.P8[PITCH] = 89;
+    config->profile[0].pidProfile.I8[PITCH] = 59;
+    config->profile[0].pidProfile.D8[PITCH] = 25;
+    config->profile[0].pidProfile.P8[YAW] = 129;
+    config->profile[0].pidProfile.I8[YAW] = 50;
+    config->profile[0].pidProfile.D8[YAW] = 20;
+
+    config->profile[0].controlRateProfile[0].rates[FD_ROLL] = 86;
+    config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
+    config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
+
+
+    featureSet(FEATURE_VBAT);
+    featureSet(FEATURE_RX_SERIAL);
+    featureSet(FEATURE_FAILSAFE);
+    featureSet(FEATURE_AIRMODE);
 }
