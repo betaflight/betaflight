@@ -291,6 +291,11 @@ OSD.constants = {
       positionable: true,
       preview: 'DISARMED'
     },
+    CROSSHAIRS: {
+      name: 'CROSSHAIRS',
+      default_position: -1,
+      positionable: false
+    },
     ARTIFICIAL_HORIZON: {
       name: 'ARTIFICIAL_HORIZON',
       default_position: -1,
@@ -363,10 +368,12 @@ OSD.constants = {
 // Pick display fields by version, order matters, so these are going in an array... pry could iterate the example map instead
 OSD.chooseFields = function () {
   var F = OSD.constants.ALL_DISPLAY_FIELDS;
+  // version 3.0.1
   if (semver.gte(CONFIG.flightControllerVersion, "3.0.1")) {
     OSD.constants.DISPLAY_FIELDS = [
       F.RSSI_VALUE,
       F.MAIN_BATT_VOLTAGE,
+      F.CROSSHAIRS,
       F.ARTIFICIAL_HORIZON,
       F.HORIZON_SIDEBARS,
       F.ONTIME,
@@ -750,6 +757,9 @@ TABS.osd.initialize = function (callback) {
               for (var i = 0; i < 9; i++) {
                 OSD.data.preview[centerishPosition - 4 + i] = SYM.AH_BAR9_0 + 4;
               }
+            }
+            // crosshairs
+            if ($('input[name="CROSSHAIRS"]').prop('checked')) {
               OSD.data.preview[centerishPosition - 1] = SYM.AH_CENTER_LINE;
               OSD.data.preview[centerishPosition + 1] = SYM.AH_CENTER_LINE_RIGHT;
               OSD.data.preview[centerishPosition]     = SYM.AH_CENTER;
