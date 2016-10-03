@@ -22,6 +22,8 @@
 #include "config/config_profile.h"
 
 #include "drivers/pwm_rx.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/sonar_hcsr04.h"
 
 #include "fc/rc_controls.h"
 
@@ -72,10 +74,6 @@ typedef struct master_s {
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-#endif
-
-#ifdef CC3D
-    uint8_t use_buzzer_p6;
 #endif
 
     // global sensor-related stuff
@@ -146,6 +144,19 @@ typedef struct master_s {
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
+
+#ifndef SKIP_RX_PWM_PPM
+    ppmConfig_t ppmConfig;
+    pwmConfig_t pwmConfig;
+#endif
+    
+#ifdef BEEPER
+    beeperConfig_t beeperConfig;
+#endif
+
+#ifdef SONAR
+    sonarConfig_t sonarConfig;
+#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];

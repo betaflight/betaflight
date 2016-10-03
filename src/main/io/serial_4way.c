@@ -28,7 +28,6 @@
 #include "drivers/io.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
@@ -84,7 +83,7 @@
 
 static uint8_t escCount;
 
-escHardware_t escHardware[MAX_PWM_MOTORS];
+escHardware_t escHardware[MAX_SUPPORTED_MOTORS];
 
 uint8_t selected_esc;
 
@@ -132,11 +131,11 @@ uint8_t esc4wayInit(void)
     pwmDisableMotors();
     escCount = 0;
     memset(&escHardware, 0, sizeof(escHardware));
-    pwmOutputConfiguration_t *pwmOutputConfiguration = pwmGetOutputConfiguration();
-    for (volatile uint8_t i = 0; i < pwmOutputConfiguration->outputCount; i++) {
-        if ((pwmOutputConfiguration->portConfigurations[i].flags & PWM_PF_MOTOR) == PWM_PF_MOTOR) {
-            if(motor[pwmOutputConfiguration->portConfigurations[i].index] > 0) {
-                escHardware[escCount].io = IOGetByTag(pwmOutputConfiguration->portConfigurations[i].timerHardware->tag);
+    pwmOutputPort_t *pwmMotors = pwmGetMotors();
+    for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        if (pwmMotors[i].enabled) {
+            if (pwmMotors[i].io != IO_NONE) {
+                escHardware[escCount].io = pwmMotors[i].io;
                 setEscInput(escCount);
                 setEscHi(escCount);
                 escCount++;

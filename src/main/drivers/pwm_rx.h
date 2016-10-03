@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "drivers/timer.h"
+#include "drivers/io.h"
 
 typedef enum {
     INPUT_FILTERING_DISABLED = 0,
@@ -25,17 +25,25 @@ typedef enum {
 } inputFilteringMode_e;
 
 #define PPM_RCVR_TIMEOUT            0
+#define PWM_INPUT_PORT_COUNT        8
 
-void ppmInConfig(const struct timerHardware_s *timerHardwarePtr);
-void ppmAvoidPWMTimerClash(const struct timerHardware_s *timerHardwarePtr, TIM_TypeDef *sharedPwmTimer, uint8_t pwmProtocol);
+typedef struct ppmConfig_s {
+    ioTag_t ioTag;
+} ppmConfig_t;
 
-void pwmInConfig(const struct timerHardware_s *timerHardwarePtr, uint8_t channel);
+typedef struct pwmConfig_s {
+    ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
+} pwmConfig_t;
+
+void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
+void pwmRxInit(const pwmConfig_t *pwmConfig);
+
 uint16_t pwmRead(uint8_t channel);
 uint16_t ppmRead(uint8_t channel);
 
 bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
 
-void pwmRxInit(inputFilteringMode_e initialInputFilteringMode);
+void pwmRxSetInputFilteringMode(inputFilteringMode_e initialInputFilteringMode);
 
 bool isPWMDataBeingReceived(void);

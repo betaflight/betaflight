@@ -41,6 +41,7 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -243,6 +244,14 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
+#ifdef USE_SERVOS
+void resetServoConfig(servoConfig_t *servoConfig)
+{
+    servoConfig->servoCenterPulse = 1500;
+    servoConfig->servoPwmRate = 50;
+}
+#endif
+
 void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
@@ -257,15 +266,60 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-    motorConfig->maxEscThrottleJumpMs = 0;
 
+    uint8_t motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
+        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+            motorConfig->ioTags[motorIndex] = timerHardware[i].tag;
+            motorIndex++;
+        }
+    }
 }
 
-#ifdef USE_SERVOS
-void resetServoConfig(servoConfig_t *servoConfig)
+#ifdef SONAR
+void resetSonarConfig(sonarConfig_t *sonarConfig)
 {
-    servoConfig->servoCenterPulse = 1500;
-    servoConfig->servoPwmRate = 50;
+#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
+    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
+    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
+#else
+#error Sonar not defined for target
+#endif
+}
+#endif
+
+#ifdef BEEPER
+void resetBeeperConfig(beeperConfig_t *beeperConfig)
+{
+#ifdef BEEPER_INVERTED
+    beeperConfig->isInverted = true;
+#else
+    beeperConfig->isInverted = false;
+#endif
+    beeperConfig->isOD = false;
+    beeperConfig->ioTag = IO_TAG(BEEPER);
+}
+#endif
+
+#ifndef SKIP_RX_PWM_PPM
+void resetPpmConfig(ppmConfig_t *ppmConfig)
+{
+#ifdef PPM_PIN
+    ppmConfig->ioTag = IO_TAG(PPM_PIN);
+#else
+    ppmConfig->ioTag = IO_TAG_NONE;
+#endif
+}
+
+void resetPwmConfig(pwmConfig_t *pwmConfig)
+{
+    uint8_t inputIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < PWM_INPUT_PORT_COUNT; i++) {
+        if ((timerHardware[i].output == TIMER_INPUT_ENABLED)) {
+            pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
+            inputIndex++;
+        }
+    }
 }
 #endif
 
@@ -461,10 +515,23 @@ void createDefaultConfig(master_t *config)
 
     resetBatteryConfig(&config->batteryConfig);
 
+#ifndef SKIP_RX_PWM_PPM
+    resetPpmConfig(&config->ppmConfig);
+    resetPwmConfig(&config->pwmConfig);
+#endif
+
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
+#ifdef BEEPER 
+    resetBeeperConfig(&config->beeperConfig);
+#endif
+
+#ifdef SONAR
+    resetSonarConfig(&config->sonarConfig);
+#endif
+    
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -514,10 +581,6 @@ void createDefaultConfig(master_t *config)
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
-
-#ifdef CC3D
-    config->use_buzzer_p6 = 0;
-#endif
 
 #ifdef GPS
     // gps/nav stuff
