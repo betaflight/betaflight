@@ -78,7 +78,7 @@ void SysTick_Handler(void)
 
 uint32_t microsISR(void)
 {
-    register uint32_t ms, cycle_cnt;
+    register uint32_t ms, pending, cycle_cnt;
 
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         cycle_cnt = SysTick->VAL;
@@ -97,9 +97,10 @@ uint32_t microsISR(void)
         }
 
         ms = sysTickUptime;
+        pending = sysTickPending;
     }
 
-    return ((ms + sysTickPending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+    return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
 uint32_t micros(void)
