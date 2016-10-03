@@ -24,6 +24,7 @@
 #include "light_led.h"
 #include "sound_beeper.h"
 #include "nvic.h"
+#include "common/atomic.h"
 
 #include "system.h"
 
@@ -60,20 +61,20 @@ void cycleCounterInit(void)
     usTicks = clocks.SYSCLK_Frequency / 1000000;
 }
 
-#include "common/atomic.h"
-#include "debug.h"
+// SysTick
 
 static volatile int sysTickRollover = 0;
 
-// SysTick
 void SysTick_Handler(void)
 {
     ATOMIC_BLOCK(NVIC_PRIO_MAX) {
         sysTickUptime++;
         sysTickRollover = 0;
-        *(volatile uint32_t *)&(SysTick->CTRL);
+        (void)(SysTick->CTRL);
     }
 }
+
+// Return system uptime in microseconds (rollover in 70minutes)
 
 uint32_t microsISR(void)
 {
@@ -86,11 +87,9 @@ uint32_t microsISR(void)
             // Update pending.
             // Remember it for multiple calls within the same rollover period
             // (Will be cleared when serviced).
+            // Note that multiple rollovers are not considered.
 
-            // XXX Do we care for multiple rollovers?
-            // sysTickUptime would be incorrect in that case...
-
-            ++sysTickRollover;
+            sysTickRollover = 1;
 
             // Read VAL again to ensure the value is read after the rollover.
 
@@ -103,14 +102,13 @@ uint32_t microsISR(void)
     return ((ms + sysTickRollover) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
-// Return system uptime in microseconds (rollover in 70minutes)
 uint32_t micros(void)
 {
     register uint32_t ms, cycle_cnt;
 
-    // Call microsISR() in interrupt context
+    // Call microsISR() in interrupt and elevated (non-zero) BASEPRI context
 
-    if (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) {
+    if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) || (__get_BASEPRI())) {
         return microsISR();
     }
 
