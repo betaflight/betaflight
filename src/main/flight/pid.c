@@ -281,7 +281,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             DTerm = Kd[axis] * delta * tpaFactor;
 
             // -----calculate total PID output
-            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -900, 900);
+            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -800, 800);
         } else {
             if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
 
