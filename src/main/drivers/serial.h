@@ -31,7 +31,9 @@ typedef enum portOptions_t {
     SERIAL_PARITY_NO     = 0 << 2,
     SERIAL_PARITY_EVEN   = 1 << 2,
     SERIAL_UNIDIR        = 0 << 3,
-    SERIAL_BIDIR         = 1 << 3
+    SERIAL_BIDIR         = 1 << 3,
+    SERIAL_BIDIR_OD      = 0 << 4,
+    SERIAL_BIDIR_PP      = 1 << 4
 } portOptions_t;
 
 typedef void (*serialReceiveCallbackPtr)(uint16_t data);   // used by serial drivers to return frames to app
