@@ -78,9 +78,8 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
+#define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
 
 #define LED_STRIP
 #define WS2811_TIMER                    TIM3
