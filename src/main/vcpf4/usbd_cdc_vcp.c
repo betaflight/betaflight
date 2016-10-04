@@ -51,7 +51,7 @@ usbStruct_t usbData;
 static uint16_t VCP_Init(void);
 static uint16_t VCP_DeInit(void);
 static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len);
-static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len);
+static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len);
 static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len);
 
 CDC_IF_Prop_TypeDef VCP_fops = {VCP_Init, VCP_DeInit, VCP_Ctrl, VCP_DataTx, VCP_DataRx };
@@ -151,7 +151,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint8_t sendLength)
 {
     uint32_t i = 0;
     if(USB_Tx_State!=1)
@@ -169,7 +169,7 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
-static uint16_t VCP_DataTx(uint8_t* Buf, uint32_t Len)
+static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
 {
     uint16_t ptr_head = APP_Rx_ptr_in;
     uint16_t ptr_tail = APP_Rx_ptr_out;
