@@ -127,7 +127,6 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXLEDMAX, "LEDMAX;", 14 },
     { BOXLEDLOW, "LEDLOW;", 15 },
     { BOXLLIGHTS, "LLIGHTS;", 16 },
-    { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     //{ BOXGTUNE, "GTUNE;", 21 },
@@ -356,7 +355,6 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
@@ -1599,4 +1597,3 @@ mspProcessCommandFnPtr mspFcInit(void)
     initActiveBoxIds();
     return mspFcProcessCommand;
 }
-
