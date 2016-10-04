@@ -62,6 +62,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -347,15 +348,20 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
     rcControlsConfig->alt_hold_deadband = 50;
 }
 
-void resetMixerConfig(mixerConfig_t *mixerConfig) {
+static void resetMixerConfig(mixerConfig_t *mixerConfig)
+{
     mixerConfig->yaw_motor_direction = 1;
     mixerConfig->yaw_jump_prevention_limit = 200;
-#ifdef USE_SERVOS
-    mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400;
-    mixerConfig->servo_lowpass_enable = 0;
-#endif
 }
+
+#ifdef USE_SERVOS
+static void resetServoConfig(servoConfig_t *servoConfig)
+{
+    servoConfig->tri_unarmed_servo = 1;
+    servoConfig->servo_lowpass_freq = 400;
+    servoConfig->servo_lowpass_enable = 0;
+}
+#endif
 
 uint8_t getCurrentProfile(void)
 {
@@ -470,6 +476,9 @@ static void resetConf(void)
     masterConfig.small_angle = 25;
 
     resetMixerConfig(&masterConfig.mixerConfig);
+#ifdef USE_SERVOS
+    resetServoConfig(&masterConfig.servoConfig);
+#endif
 
     // Motor/ESC/Servo
     resetEscAndServoConfig(&masterConfig.escAndServoConfig);
@@ -716,7 +725,7 @@ void activateConfig(void)
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.escAndServoConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(currentProfile->servoConf, &currentProfile->gimbalConfig);
+    servosUseConfigs(&masterConfig.servoConfig, currentProfile->servoConf, &currentProfile->gimbalConfig);
 #endif
 
     imuRuntimeConfig.dcm_kp_acc = masterConfig.dcm_kp_acc / 10000.0f;

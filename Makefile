@@ -404,6 +404,7 @@ COMMON_SRC = \
             flight/imu.c \
             flight/hil.c \
             flight/mixer.c \
+            flight/servos.c \
             flight/pid.c \
             io/beeper.c \
             fc/rc_controls.c \
