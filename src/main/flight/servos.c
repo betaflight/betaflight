@@ -85,23 +85,23 @@ static bool servoFilterIsSet;
 #define COUNT_SERVO_RULES(rules) (sizeof(rules) / sizeof(servoMixer_t))
 // mixer rule format servo, input, rate, speed, min, max, box
 static const servoMixer_t servoMixerAirplane[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
-    { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
+    { SERVO_ELEVATOR, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
+    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerFlyingWing[] = {
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100, 0 },
-    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100, 0 },
-    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100, 0 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_ROLL,  100, 0, 0, 100 },
+    { SERVO_FLAPPERON_1, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_ROLL,  -100, 0, 0, 100 },
+    { SERVO_FLAPPERON_2, INPUT_STABILIZED_PITCH, 100, 0, 0, 100 },
+    { SERVO_THROTTLE, INPUT_STABILIZED_THROTTLE, 100, 0, 0, 100 },
 };
 
 static const servoMixer_t servoMixerTri[] = {
-    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100, 0 },
+    { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
 };
 
 const mixerRules_t servoMixers[] = {
@@ -274,7 +274,7 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
     index++;
     // clear existing
     for (i = 0; i < MAX_SERVO_RULES; i++)
-        customServoMixers[i].targetChannel = customServoMixers[i].inputSource = customServoMixers[i].rate = customServoMixers[i].box = 0;
+        customServoMixers[i].targetChannel = customServoMixers[i].inputSource = customServoMixers[i].rate = 0;
 
     for (i = 0; i < servoMixers[index].servoRuleCount; i++) {
         customServoMixers[i] = servoMixers[index].rule[i];
@@ -377,40 +377,35 @@ void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
 
     // mix servos according to rules
     for (i = 0; i < servoRuleCount; i++) {
-        // consider rule if no box assigned or box is active
-        if (currentServoMixer[i].box == 0 || IS_RC_MODE_ACTIVE(BOXSERVO1 + currentServoMixer[i].box - 1)) {
-            uint8_t target = currentServoMixer[i].targetChannel;
-            uint8_t from = currentServoMixer[i].inputSource;
-            uint16_t servo_width = servoConf[target].max - servoConf[target].min;
-            int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
-            int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
+        uint8_t target = currentServoMixer[i].targetChannel;
+        uint8_t from = currentServoMixer[i].inputSource;
+        uint16_t servo_width = servoConf[target].max - servoConf[target].min;
+        int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
+        int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
 
-            if (currentServoMixer[i].speed == 0) {
-                currentOutput[i] = input[from];
-            } else {
-                if (currentOutput[i] < input[from]) {
-                    currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
-                } else if (currentOutput[i] > input[from]) {
-                    currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
-                }
-            }
-
-            /*
-            Flaperon fligh mode
-            */
-            if (FLIGHT_MODE(FLAPERON) && (target == SERVO_FLAPPERON_1 || target == SERVO_FLAPPERON_2)) {
-                int8_t multiplier = 1;
-
-                if (flaperon_throw_inverted == 1) {
-                    multiplier = -1;
-                }
-                currentOutput[i] += flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
-            }
-
-            servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
+        if (currentServoMixer[i].speed == 0) {
+            currentOutput[i] = input[from];
         } else {
-            currentOutput[i] = 0;
+            if (currentOutput[i] < input[from]) {
+                currentOutput[i] = constrain(currentOutput[i] + currentServoMixer[i].speed, currentOutput[i], input[from]);
+            } else if (currentOutput[i] > input[from]) {
+                currentOutput[i] = constrain(currentOutput[i] - currentServoMixer[i].speed, input[from], currentOutput[i]);
+            }
         }
+
+        /*
+        Flaperon fligh mode
+        */
+        if (FLIGHT_MODE(FLAPERON) && (target == SERVO_FLAPPERON_1 || target == SERVO_FLAPPERON_2)) {
+            int8_t multiplier = 1;
+
+            if (flaperon_throw_inverted == 1) {
+                multiplier = -1;
+            }
+            currentOutput[i] += flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
+        }
+
+        servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
     }
 
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
