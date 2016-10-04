@@ -270,8 +270,8 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.servoPwmConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servoPwmConfig.servoPwmRate;
+    pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
+    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);

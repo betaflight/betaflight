@@ -260,10 +260,10 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 }
 
 #ifdef USE_SERVOS
-void resetServoPwmConfig(servoPwmConfig_t *servoPwmConfig)
+void resetServoConfig(servoConfig_t *servoConfig)
 {
-    servoPwmConfig->servoCenterPulse = 1500;
-    servoPwmConfig->servoPwmRate = 50;
+    servoConfig->servoCenterPulse = 1500;
+    servoConfig->servoPwmRate = 50;
 }
 #endif
 
@@ -366,7 +366,7 @@ static void resetMixerConfig(mixerConfig_t *mixerConfig)
 }
 
 #ifdef USE_SERVOS
-static void resetServoConfig(servoMixerConfig_t *servoMixerConfig)
+static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 {
     servoMixerConfig->tri_unarmed_servo = 1;
     servoMixerConfig->servo_lowpass_freq = 400;
@@ -488,8 +488,8 @@ static void resetConf(void)
 
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
-    resetServoConfig(&masterConfig.servoMixerConfig);
-    resetServoPwmConfig(&masterConfig.servoPwmConfig);
+    resetServoMixerConfig(&masterConfig.servoMixerConfig);
+    resetServoConfig(&masterConfig.servoConfig);
 #endif
 
     resetMotorConfig(&masterConfig.motorConfig);
