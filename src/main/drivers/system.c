@@ -122,6 +122,7 @@ uint32_t micros(void)
          */
         asm volatile("\tnop\n");
     } while (ms != sysTickUptime);
+
     return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
