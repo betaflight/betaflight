@@ -167,6 +167,8 @@ bool inMenu = false;
 typedef void (* OSDMenuFuncPtr)(void *data);
 
 void osdUpdate(uint8_t guiKey);
+char osdGetAltitudeSymbol();
+int32_t osdGetAltitude(int32_t alt);
 void osdOpenMenu(void);
 void osdExitMenu(void * ptr);
 void osdMenuBack(void);
@@ -651,10 +653,36 @@ void osdInit(void)
     refreshTimeout = 4 * REFRESH_1S;
 }
 
+/**
+ * Gets the correct altitude symbol for the current unit system
+ */
+char osdGetAltitudeSymbol()
+{
+    switch (masterConfig.osdProfile.units) {
+        case OSD_UNIT_IMPERIAL:
+            return 0xF;
+        default:
+            return 0xC;
+    }
+}
+
+/**
+ * Converts altitude based on the current unit system.
+ * @param alt Raw altitude (i.e. as taken from BaroAlt)
+ */
+int32_t osdGetAltitude(int32_t alt)
+{
+    switch (masterConfig.osdProfile.units) {
+        case OSD_UNIT_IMPERIAL:
+            return (alt * 328) / 100; // Convert to feet / 100
+        default:
+            return alt;               // Already in metre / 100
+    }
+}
+
 void osdUpdateAlarms(void)
 {
-    int32_t alt = BaroAlt / 100;
-
+    int32_t alt = osdGetAltitude(BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < OSD_cfg.rssi_alarm)
@@ -681,10 +709,6 @@ void osdUpdateAlarms(void)
         OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
     else
         OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
-
-    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-        alt = (alt * 328) / 100; // Convert to feet
-    }
 
     if (alt >= OSD_cfg.alt_alarm)
         OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
@@ -1132,13 +1156,8 @@ void osdShowStats(void)
     }
 
     max7456Write(2, top, "MAX ALTITUDE     :");
-    int32_t alt = stats.max_altitude; // Metre x 100
-    char unitSym = 0xC;               // m
-    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-        alt = (alt * 328) / 100; // Convert to feet x 100
-        unitSym = 0xF;           // ft
-    }
-    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+    int32_t alt = osdGetAltitude(stats.max_altitude);
+    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
     max7456Write(22, top++, buff);
 
     refreshTimeout = 60 * REFRESH_1S;
@@ -1451,7 +1470,10 @@ void osdDrawElements(void)
     if (currentElement)
         osdDrawElementPositioningHelp();
     else if (sensors(SENSOR_ACC) || inMenu)
+    {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+        osdDrawSingleElement(OSD_CROSSHAIRS);
+    }
 
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
@@ -1538,15 +1560,8 @@ void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
-            int32_t alt = BaroAlt; // Metre x 100
-            char unitSym = 0xC;    // m
-
-            if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-                alt = (alt * 328) / 100; // Convert to feet x 100
-                unitSym = 0xF;           // ft
-            }
-
-            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+            int32_t alt = osdGetAltitude(BaroAlt);
+            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
@@ -1614,6 +1629,21 @@ void osdDrawSingleElement(uint8_t item)
         }
 #endif // VTX
 
+        case OSD_CROSSHAIRS:
+        {
+            uint8_t *screenBuffer = max7456GetScreenBuffer();
+            uint16_t position = 194;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
+            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
+            screenBuffer[position] = (SYM_AH_CENTER);
+
+            return;
+        }
+
         case OSD_ARTIFICIAL_HORIZON:
         {
             uint8_t *screenBuffer = max7456GetScreenBuffer();
@@ -1625,7 +1655,6 @@ void osdDrawSingleElement(uint8_t item)
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
                 position += 30;
 
-
             if (pitchAngle > AH_MAX_PITCH)
                 pitchAngle = AH_MAX_PITCH;
             if (pitchAngle < -AH_MAX_PITCH)
@@ -1636,8 +1665,6 @@ void osdDrawSingleElement(uint8_t item)
                 rollAngle = -AH_MAX_ROLL;
 
             for (uint8_t x = 0; x <= 8; x++) {
-                if (x == 4)
-                    x = 5;
                 int y = (rollAngle * (4 - x)) / 64;
                 y -= pitchAngle / 8;
                 y += 41;
@@ -1647,11 +1674,8 @@ void osdDrawSingleElement(uint8_t item)
                 }
             }
 
-            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-            screenBuffer[position] = (SYM_AH_CENTER);
-
             osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+
             return;
         }
 
