@@ -7,8 +7,8 @@ env:
   - TARGET=SPRACINGF3EVO
   - TARGET=SPARKY
   - TARGET=FURYF3
-  - TARGET=FURYF3_SPIFLASH
   - TARGET=RCEXPLORERF3
+  - TARGET=REVO
   
 # use new docker environment
 sudo: false
