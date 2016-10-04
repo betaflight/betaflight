@@ -21,16 +21,17 @@
 #define MAX_MSP_PORT_COUNT 2
 
 typedef enum {
-    IDLE,
-    HEADER_START,
-    HEADER_M,
-    HEADER_ARROW,
-    HEADER_SIZE,
-    HEADER_CMD,
-    COMMAND_RECEIVED
+    MSP_IDLE,
+    MSP_HEADER_START,
+    MSP_HEADER_M,
+    MSP_HEADER_ARROW,
+    MSP_HEADER_SIZE,
+    MSP_HEADER_CMD,
+    MSP_COMMAND_RECEIVED
 } mspState_e;
 
 #define MSP_PORT_INBUF_SIZE 64
+#define MSP_PORT_OUTBUF_SIZE 256
 
 struct serialPort_s;
 typedef struct mspPort_s {
@@ -38,15 +39,11 @@ typedef struct mspPort_s {
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
-    uint8_t indRX;
-    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
-    mspState_e c_state;
     uint8_t cmdMSP;
+    mspState_e c_state;
+    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
 } mspPort_t;
 
-
-struct bufWriter_s;
-extern struct bufWriter_s *writer;
 
 void mspSerialInit(void);
 void mspSerialProcess(void);

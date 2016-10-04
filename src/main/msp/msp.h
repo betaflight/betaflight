@@ -17,8 +17,21 @@
 
 #pragma once
 
-struct mspPort_s;
-typedef void (*mspPostProcessFuncPtr)(struct mspPort_s *); // msp post process function, used for gracefully handling reboots, etc.
+struct serialPort_s;
+typedef void (*mspPostProcessFuncPtr)(struct serialPort_s *); // msp post process function, used for gracefully handling reboots, etc.
+
+// return positive for ACK, negative on error, zero for no reply
+typedef enum {
+    MSP_RESULT_ACK = 1,
+    MSP_RESULT_ERROR = -1,
+    MSP_RESULT_NO_REPLY = 0
+} mspResult_e;
+
+typedef struct mspPacket_s {
+    sbuf_t buf;
+    int16_t cmd;
+    int16_t result;
+} mspPacket_t;
 
 void mspInit(void);
-mspPostProcessFuncPtr mspProcessReceivedCommand(struct mspPort_s *mspPort);
+mspResult_e mspProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFuncPtr *mspPostProcessFunc);
