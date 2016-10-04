@@ -62,8 +62,9 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
-#include "io/pwmdriver_i2c.h"
 #include "drivers/io_pca9685.h"
+
+#include "fc/msp_fc.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -80,8 +81,10 @@
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/serial_msp.h"
+#include "io/pwmdriver_i2c.h"
 #include "io/serial_cli.h"
+
+#include "msp/msp_serial.h"
 
 #include "scheduler/scheduler.h"
 
@@ -468,7 +471,7 @@ void init(void)
 
     imuInit();
 
-    mspSerialInit();
+    mspSerialInit(mspFcInit());
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

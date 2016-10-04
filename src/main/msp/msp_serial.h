@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "msp/msp.h"
+
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
 #define MAX_MSP_PORT_COUNT 2
 
@@ -29,6 +31,11 @@ typedef enum {
     MSP_HEADER_CMD,
     MSP_COMMAND_RECEIVED
 } mspState_e;
+
+typedef enum {
+    MSP_NOT_ARMED,
+    MSP_ARMED
+} mspArmedState_e;
 
 #define MSP_PORT_INBUF_SIZE 64
 #define MSP_PORT_OUTBUF_SIZE 256
@@ -45,7 +52,7 @@ typedef struct mspPort_s {
 } mspPort_t;
 
 
-void mspSerialInit(void);
-void mspSerialProcess(void);
+void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
+void mspSerialProcess(mspArmedState_e armedState);
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

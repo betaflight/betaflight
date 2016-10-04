@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "build/debug.h"
 
 #include "scheduler/scheduler.h"
@@ -67,15 +69,15 @@
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
 
 #include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -659,7 +661,14 @@ void taskMainPidLoopChecker(void) {
 
 void taskHandleSerial(void)
 {
-    handleSerial();
+#ifdef USE_CLI
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
+#endif
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_ARMED : MSP_NOT_ARMED);
 }
 
 void taskUpdateBeeper(void)

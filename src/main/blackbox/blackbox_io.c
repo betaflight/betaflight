@@ -28,6 +28,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/encoding.h"
+#include "common/streambuf.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -52,18 +53,20 @@
 #include "io/display.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "rx/rx.h"
 #include "fc/rc_controls.h"
-
 
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
+
+#include "msp/msp_serial.h"
+
 #include "rx/msp.h"
+#include "rx/rx.h"
+
 #include "telemetry/telemetry.h"
 #include "common/printf.h"
 

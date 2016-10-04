@@ -399,7 +399,7 @@ COMMON_SRC = \
             drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
-			drivers/io_pca9685.c \
+            drivers/io_pca9685.c \
             flight/failsafe.c \
             flight/imu.c \
             flight/hil.c \
@@ -407,6 +407,7 @@ COMMON_SRC = \
             flight/servos.c \
             flight/pid.c \
             io/beeper.c \
+            fc/msp_fc.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             io/serial.c \
@@ -414,10 +415,9 @@ COMMON_SRC = \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/serial_cli.c \
-            io/serial_msp.c \
             io/statusindicator.c \
-            fc/msp_server_fc.c \
-			io/pwmdriver_i2c.c \
+            io/pwmdriver_i2c.c \
+            msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \

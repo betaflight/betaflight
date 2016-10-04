@@ -26,14 +26,12 @@
 
 #include "drivers/serial.h"
 
-#include "fc/runtime_config.h"
-
 #include "io/serial.h"
-#include "io/serial_msp.h"
 
 #include "msp/msp.h"
+#include "msp/msp_serial.h"
 
-
+static mspProcessCommandFnPtr mspProcessCommandFn;
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 
@@ -76,14 +74,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-void mspSerialInit(void)
-{
-    mspInit();
-    memset(mspPorts, 0, sizeof(mspPorts));
-    mspSerialAllocatePorts();
-}
-
-static bool mspProcessReceivedData(mspPort_t * mspPort, uint8_t c)
+static bool mspSerialProcessReceivedData(mspPort_t * mspPort, uint8_t c)
 {
     if (mspPort->c_state == MSP_IDLE) {
         if (c == '$') {
@@ -145,7 +136,7 @@ static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
     serialEndWrite(msp->port);
 }
 
-static mspPostProcessFuncPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
+static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
 {
     static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
 
@@ -162,8 +153,8 @@ static mspPostProcessFuncPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
         .result = 0,
     };
 
-    mspPostProcessFuncPtr mspPostProcessFn = NULL;
-    const mspResult_e status = mspProcessCommand(&command, &reply, &mspPostProcessFn);
+    mspPostProcessFnPtr mspPostProcessFn = NULL;
+    const mspResult_e status = mspProcessCommandFn(&command, &reply, &mspPostProcessFn);
 
     if (status != MSP_RESULT_NO_REPLY) {
         sbufSwitchToReader(&reply.buf, outBufHead); // change streambuf direction
@@ -174,20 +165,20 @@ static mspPostProcessFuncPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
     return mspPostProcessFn;
 }
 
-void mspSerialProcess(void)
+void mspSerialProcess(mspArmedState_e armedState)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
         if (!mspPort->port) {
             continue;
         }
-        mspPostProcessFuncPtr mspPostProcessFn = NULL;
+        mspPostProcessFnPtr mspPostProcessFn = NULL;
         while (serialRxBytesWaiting(mspPort->port)) {
 
             const uint8_t c = serialRead(mspPort->port);
-            const bool consumed = mspProcessReceivedData(mspPort, c);
+            const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
-            if (!consumed && !ARMING_FLAG(ARMED)) {
+            if (!consumed && armedState == MSP_ARMED) {
                 evaluateOtherData(mspPort->port, c);
             }
 
@@ -202,3 +193,11 @@ void mspSerialProcess(void)
         }
     }
 }
+
+void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFnToUse)
+{
+    mspProcessCommandFn = mspProcessCommandFnToUse;
+    memset(mspPorts, 0, sizeof(mspPorts));
+    mspSerialAllocatePorts();
+}
+

@@ -99,11 +99,6 @@
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
-extern void resetPidProfile(pidProfile_t *pidProfile);
-
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse);
-
-static mspPostProcessFuncPtr mspPostProcessFn = NULL;
 
 static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -473,7 +468,11 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint8_t s
 }
 #endif
 
-static bool processOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src)
+/*
+ * Returns true if the command was processd, false otherwise.
+ * May set mspPostProcessFunc to a function to be called once the command has been processed
+ */
+static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
 {
 #if !defined(NAV) && !defined(USE_FLASHFS)
     UNUSED(src);
@@ -1037,7 +1036,9 @@ static bool processOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src)
         break;
 
     case MSP_REBOOT:
-        mspPostProcessFn = mspRebootFn;
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = mspRebootFn;
+        }
         break;
 
 
@@ -1047,7 +1048,9 @@ static bool processOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src)
         // switch all motor lines HI
         // reply with the count of ESC found
         sbufWriteU8(dst, esc4wayInit());
-        mspPostProcessFn = msp4WayIfFn;
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = msp4WayIfFn;
+        }
         break;
 #endif
 
@@ -1057,7 +1060,7 @@ static bool processOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src)
     return true;
 }
 
-static mspResult_e processInCommand(uint8_t cmdMSP, sbuf_t *src)
+static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
     uint16_t tmp;
@@ -1567,29 +1570,33 @@ static mspResult_e processInCommand(uint8_t cmdMSP, sbuf_t *src)
     return MSP_RESULT_ACK;
 }
 
-// return positive for ACK, negative on error, zero for no reply
-mspResult_e mspProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFuncPtr *mspPostProcessFunc)
+/*
+ * Returns MSP_RESULT_ACK, MSP_RESULT_ERROR or MSP_RESULT_NO_REPLY
+ */
+mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
     int ret = MSP_RESULT_ACK;
-    mspPostProcessFn = NULL;
     sbuf_t *dst = &reply->buf;
     sbuf_t *src = &cmd->buf;
     const uint8_t cmdMSP = cmd->cmd;
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (processOutCommand(cmdMSP, dst, src)) {
+    if (mspFcProcessOutCommand(cmdMSP, dst, src, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
     } else {
-        ret = processInCommand(cmdMSP, src);
+        ret = mspFcProcessInCommand(cmdMSP, src);
     }
-    *mspPostProcessFunc = mspPostProcessFn;
     reply->result = ret;
     return ret;
 }
 
-void mspInit(void)
+/*
+ * Return a pointer to the process command function
+ */
+mspProcessCommandFnPtr mspFcInit(void)
 {
     initActiveBoxIds();
+    return mspFcProcessCommand;
 }
 

@@ -32,7 +32,6 @@
 #include "drivers/system.h"
 #include "config/config.h"
 #include "io/serial.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_stk500v2.h"
