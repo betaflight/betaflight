@@ -63,7 +63,8 @@
 extern mixerMode_e currentMixerMode;
 extern const mixer_t mixers[];
 extern mixerConfig_t *mixerConfig;
-extern rxConfig_t *rxConfig;
+
+static rxConfig_t *rxConfig;
 
 servoConfig_t *servoConfig;
 
@@ -134,11 +135,12 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servosUseConfigs(servoConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse)
+void servosUseConfigs(servoConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, rxConfig_t *rxConfigToUse)
 {
     servoConfig = servoConfigToUse;
     servoConf = servoParamsToUse;
     gimbalConfig = gimbalConfigToUse;
+    rxConfig = rxConfigToUse;
 }
 
 int16_t getFlaperonDirection(uint8_t servoPin) {

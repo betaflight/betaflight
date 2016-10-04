@@ -259,11 +259,13 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 
 }
 
-void resetServoConfig(servoConfig_t *servoConfig)
+#ifdef USE_SERVOS
+void resetServoPwmConfig(servoPwmConfig_t *servoPwmConfig)
 {
-    servoConfig->servoCenterPulse = 1500;
-    servoConfig->servoPwmRate = 50;
+    servoPwmConfig->servoCenterPulse = 1500;
+    servoPwmConfig->servoPwmRate = 50;
 }
+#endif
 
 void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 {
@@ -487,11 +489,10 @@ static void resetConf(void)
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
     resetServoConfig(&masterConfig.servoConfig);
+    resetServoPwmConfig(&masterConfig.servoPwmConfig);
 #endif
 
-    // Motor/ESC/Servo
     resetMotorConfig(&masterConfig.motorConfig);
-    resetServoConfig(&masterConfig.servoConfig);
     resetFlight3DConfig(&masterConfig.flight3DConfig);
 
 #ifdef GPS
@@ -728,7 +729,7 @@ void activateConfig(void)
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoConfig, currentProfile->servoConf, &currentProfile->gimbalConfig);
+    servosUseConfigs(&masterConfig.servoConfig, currentProfile->servoConf, &currentProfile->gimbalConfig, &masterConfig.rxConfig);
 #endif
 
     imuRuntimeConfig.dcm_kp_acc = masterConfig.dcm_kp_acc / 10000.0f;

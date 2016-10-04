@@ -73,13 +73,8 @@ bool motorLimitReached = false;
 
 mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
-<<<<<<< 8e828b19d6c2105114ebe7dfa31f114733ca326d
-static escAndServoConfig_t *escAndServoConfig;
-rxConfig_t *rxConfig;
-=======
 static motorConfig_t *motorConfig;
 static rxConfig_t *rxConfig;
->>>>>>> Split escAndServoConfig into motor and servo parts, as per betaflight
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];

@@ -37,7 +37,7 @@ typedef struct master_s {
 #endif
     // motor/esc/servo related stuff
     motorConfig_t motorConfig;
-    servoConfig_t servoConfig;
+    servoPwmConfig_t servoPwmConfig;
     flight3DConfig_t flight3DConfig;
 
     // global sensor-related stuff
