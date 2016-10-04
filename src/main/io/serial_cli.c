@@ -154,7 +154,7 @@ static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
 static void cliPFlags(char *cmdline);
 
-#ifndef SKIP_TASK_STATISTICS
+#if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
 static void cliResource(char *cmdline);
 #endif
 #ifdef GPS
@@ -324,7 +324,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#ifndef SKIP_TASK_STATISTICS
+#if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -2985,7 +2985,7 @@ void cliProcess(void)
     }
 }
 
-#ifndef SKIP_TASK_STATISTICS
+#if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
 static void cliResource(char *cmdline)
 {
     UNUSED(cmdline);

@@ -199,6 +199,7 @@
 #endif //OPBL
 
 
+#define SKIP_CLI_RESOURCES
 #define SKIP_RX_MSP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
