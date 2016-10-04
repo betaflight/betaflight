@@ -79,7 +79,7 @@ typedef struct master_s {
 
     // mixer-related configuration
     mixerConfig_t mixerConfig;
-    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
 
 #ifdef GPS
     gpsConfig_t gpsConfig;

@@ -366,11 +366,11 @@ static void resetMixerConfig(mixerConfig_t *mixerConfig)
 }
 
 #ifdef USE_SERVOS
-static void resetServoConfig(servoConfig_t *servoConfig)
+static void resetServoConfig(servoMixerConfig_t *servoMixerConfig)
 {
-    servoConfig->tri_unarmed_servo = 1;
-    servoConfig->servo_lowpass_freq = 400;
-    servoConfig->servo_lowpass_enable = 0;
+    servoMixerConfig->tri_unarmed_servo = 1;
+    servoMixerConfig->servo_lowpass_freq = 400;
+    servoMixerConfig->servo_lowpass_enable = 0;
 }
 #endif
 
@@ -488,7 +488,7 @@ static void resetConf(void)
 
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
-    resetServoConfig(&masterConfig.servoConfig);
+    resetServoConfig(&masterConfig.servoMixerConfig);
     resetServoPwmConfig(&masterConfig.servoPwmConfig);
 #endif
 
@@ -729,7 +729,7 @@ void activateConfig(void)
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoConfig, currentProfile->servoConf, &currentProfile->gimbalConfig, &masterConfig.rxConfig);
+    servosUseConfigs(&masterConfig.servoMixerConfig, currentProfile->servoConf, &currentProfile->gimbalConfig, &masterConfig.rxConfig);
 #endif
 
     imuRuntimeConfig.dcm_kp_acc = masterConfig.dcm_kp_acc / 10000.0f;
