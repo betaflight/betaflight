@@ -28,7 +28,6 @@ typedef enum {
     BOXHEADFREE,
     BOXHEADADJ,
     BOXCAMSTAB,
-    BOXCAMTRIG,
     BOXNAVRTH,      // old GPSHOME
     BOXNAVPOSHOLD,  // old GPSHOLD
     BOXPASSTHRU,
