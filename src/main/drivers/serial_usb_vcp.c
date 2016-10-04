@@ -59,13 +59,13 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-static uint32_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
 
@@ -84,7 +84,7 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     }
 }
 
-static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
+static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
 
@@ -93,7 +93,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
     }
 
     uint32_t start = millis();
-    uint8_t *p = data;
+    const uint8_t *p = data;
     uint32_t txed = 0;
     while (count > 0) {
         txed = CDC_Send_DATA(p, count);
