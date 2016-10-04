@@ -33,7 +33,6 @@ typedef enum {
     BOXNAVPOSHOLD,  // old GPSHOLD
     BOXPASSTHRU,
     BOXBEEPERON,
-    BOXLEDMAX,
     BOXLEDLOW,
     BOXLLIGHTS,
     BOXOSD,
