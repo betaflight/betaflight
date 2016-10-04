@@ -68,7 +68,7 @@
 #define SPI1_MOSI_PIN           RX_MOSI_PIN
 
 #define USE_RX_NRF24
-#define USE_RX_CX10
+//#define USE_RX_CX10
 #define USE_RX_H8_3D
 #define USE_RX_INAV
 #define USE_RX_SYMA

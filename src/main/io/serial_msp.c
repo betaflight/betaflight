@@ -17,39 +17,26 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "platform.h"
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
-#include "common/streambuf.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
 #include "drivers/buf_writer.h"
+#include "drivers/serial.h"
 
 #include "fc/runtime_config.h"
 
 #include "io/serial.h"
+#include "io/serial_msp.h"
 
-#include "msp/msp_protocol.h"
 #include "msp/msp.h"
 
-#include "flight/mixer.h"
 
-#include "config/config.h"
-
-#include "serial_msp.h"
-
-serialPort_t *mspSerialPort;
-mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-mspPort_t *currentPort;
+static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 bufWriter_t *writer;
-// cause reboot after MSP processing complete
-bool isRebootScheduled = false;
+
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
 {
@@ -60,12 +47,8 @@ static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
 
 void mspSerialAllocatePorts(void)
 {
-    serialPort_t *serialPort;
-
     uint8_t portIndex = 0;
-
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MSP);
-
     while (portConfig && portIndex < MAX_MSP_PORT_COUNT) {
         mspPort_t *mspPort = &mspPorts[portIndex];
         if (mspPort->port) {
@@ -73,7 +56,7 @@ void mspSerialAllocatePorts(void)
             continue;
         }
 
-        serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
+        serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_MSP, NULL, baudRates[portConfig->msp_baudrateIndex], MODE_RXTX, SERIAL_NOT_INVERTED);
         if (serialPort) {
             resetMspPort(mspPort, serialPort);
             portIndex++;
@@ -85,8 +68,7 @@ void mspSerialAllocatePorts(void)
 
 void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
 {
-    uint8_t portIndex;
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t *candidateMspPort = &mspPorts[portIndex];
         if (candidateMspPort->port == serialPort) {
             closeSerialPort(serialPort);
@@ -95,92 +77,87 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-static bool mspProcessReceivedData(uint8_t c)
+void mspSerialInit(void)
 {
-    if (currentPort->c_state == IDLE) {
+    mspInit();
+    memset(mspPorts, 0, sizeof(mspPorts));
+    mspSerialAllocatePorts();
+}
+
+static bool mspProcessReceivedData(mspPort_t * mspPort, uint8_t c)
+{
+    if (mspPort->c_state == IDLE) {
         if (c == '$') {
-            currentPort->c_state = HEADER_START;
+            mspPort->c_state = HEADER_START;
         } else {
             return false;
         }
-    } else if (currentPort->c_state == HEADER_START) {
-        currentPort->c_state = (c == 'M') ? HEADER_M : IDLE;
-    } else if (currentPort->c_state == HEADER_M) {
-        currentPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
-    } else if (currentPort->c_state == HEADER_ARROW) {
+    } else if (mspPort->c_state == HEADER_START) {
+        mspPort->c_state = (c == 'M') ? HEADER_M : IDLE;
+    } else if (mspPort->c_state == HEADER_M) {
+        mspPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
+    } else if (mspPort->c_state == HEADER_ARROW) {
         if (c > MSP_PORT_INBUF_SIZE) {
-            currentPort->c_state = IDLE;
+            mspPort->c_state = IDLE;
 
         } else {
-            currentPort->dataSize = c;
-            currentPort->offset = 0;
-            currentPort->checksum = 0;
-            currentPort->indRX = 0;
-            currentPort->checksum ^= c;
-            currentPort->c_state = HEADER_SIZE;
+            mspPort->dataSize = c;
+            mspPort->offset = 0;
+            mspPort->checksum = 0;
+            mspPort->indRX = 0;
+            mspPort->checksum ^= c;
+            mspPort->c_state = HEADER_SIZE;
         }
-    } else if (currentPort->c_state == HEADER_SIZE) {
-        currentPort->cmdMSP = c;
-        currentPort->checksum ^= c;
-        currentPort->c_state = HEADER_CMD;
-    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset < currentPort->dataSize) {
-        currentPort->checksum ^= c;
-        currentPort->inBuf[currentPort->offset++] = c;
-    } else if (currentPort->c_state == HEADER_CMD && currentPort->offset >= currentPort->dataSize) {
-        if (currentPort->checksum == c) {
-            currentPort->c_state = COMMAND_RECEIVED;
+    } else if (mspPort->c_state == HEADER_SIZE) {
+        mspPort->cmdMSP = c;
+        mspPort->checksum ^= c;
+        mspPort->c_state = HEADER_CMD;
+    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset < mspPort->dataSize) {
+        mspPort->checksum ^= c;
+        mspPort->inBuf[mspPort->offset++] = c;
+    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset >= mspPort->dataSize) {
+        if (mspPort->checksum == c) {
+            mspPort->c_state = COMMAND_RECEIVED;
         } else {
-            currentPort->c_state = IDLE;
+            mspPort->c_state = IDLE;
         }
     }
     return true;
 }
 
-static void setCurrentPort(mspPort_t *port)
-{
-    currentPort = port;
-    mspSerialPort = currentPort->port;
-}
-
 void mspSerialProcess(void)
 {
-    uint8_t portIndex;
-    mspPort_t *candidatePort;
-
-    for (portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
-        candidatePort = &mspPorts[portIndex];
-        if (!candidatePort->port) {
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
             continue;
         }
 
-        setCurrentPort(candidatePort);
         // Big enough to fit a MSP_STATUS in one write.
         uint8_t buf[sizeof(bufWriter_t) + 20];
-        writer = bufWriterInit(buf, sizeof(buf),
-                               (bufWrite_t)serialWriteBufShim, currentPort->port);
+        writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, mspPort->port);
 
-        while (serialRxBytesWaiting(mspSerialPort)) {
+        mspPostProcessFuncPtr mspPostProcessFn = NULL;
+        while (serialRxBytesWaiting(mspPort->port)) {
 
-            uint8_t c = serialRead(mspSerialPort);
-            bool consumed = mspProcessReceivedData(c);
+            const uint8_t c = serialRead(mspPort->port);
+            const bool consumed = mspProcessReceivedData(mspPort, c);
 
             if (!consumed && !ARMING_FLAG(ARMED)) {
-                evaluateOtherData(mspSerialPort, c);
+                evaluateOtherData(mspPort->port, c);
             }
 
-            if (currentPort->c_state == COMMAND_RECEIVED) {
-                mspProcessReceivedCommand();
+            if (mspPort->c_state == COMMAND_RECEIVED) {
+                mspPostProcessFn = mspProcessReceivedCommand(mspPort);
                 break; // process one command at a time so as not to block.
             }
         }
 
         bufWriterFlush(writer);
 
-        if (isRebootScheduled) {
-            waitForSerialPortToFinishTransmitting(candidatePort->port);
-            stopMotors();
-            handleOneshotFeatureChangeOnRestart();
-            systemReset();
+        if (mspPostProcessFn) {
+            waitForSerialPortToFinishTransmitting(mspPort->port);
+            mspPostProcessFn(mspPort);
         }
     }
 }

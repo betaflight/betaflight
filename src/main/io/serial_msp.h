@@ -32,7 +32,7 @@ typedef enum {
 
 #define MSP_PORT_INBUF_SIZE 64
 
-struct serial_port_s;
+struct serialPort_s;
 typedef struct mspPort_s {
     struct serialPort_s *port; // null when port unused.
     uint8_t offset;
@@ -44,11 +44,9 @@ typedef struct mspPort_s {
     uint8_t cmdMSP;
 } mspPort_t;
 
-extern mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-extern mspPort_t *currentPort;
+
 struct bufWriter_s;
 extern struct bufWriter_s *writer;
-extern bool isRebootScheduled;
 
 void mspSerialInit(void);
 void mspSerialProcess(void);

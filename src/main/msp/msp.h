@@ -17,4 +17,8 @@
 
 #pragma once
 
-void mspProcessReceivedCommand(void);
+struct mspPort_s;
+typedef void (*mspPostProcessFuncPtr)(struct mspPort_s *); // msp post process function, used for gracefully handling reboots, etc.
+
+void mspInit(void);
+mspPostProcessFuncPtr mspProcessReceivedCommand(struct mspPort_s *mspPort);
