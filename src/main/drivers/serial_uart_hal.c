@@ -262,7 +262,7 @@ void uartStartTxDMA(uartPort_t *s)
     s->txDMAEmpty = false;
 }
 
-uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
+uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
 
@@ -283,7 +283,7 @@ uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
     }
 }
 
-uint32_t uartTotalTxBytesFree(serialPort_t *instance)
+uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t*)instance;
 
@@ -318,7 +318,7 @@ uint32_t uartTotalTxBytesFree(serialPort_t *instance)
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
 
-bool isUartTransmitBufferEmpty(serialPort_t *instance)
+bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
     uartPort_t *s = (uartPort_t *)instance;
     if (s->txDMAStream)
@@ -371,13 +371,13 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 
 const struct serialPortVTable uartVTable[] = {
     {
-        uartWrite,
-        uartTotalRxBytesWaiting,
-        uartTotalTxBytesFree,
-        uartRead,
-        uartSetBaudRate,
-        isUartTransmitBufferEmpty,
-        uartSetMode,
+        .serialWrite = uartWrite,
+        .serialTotalRxWaiting = uartTotalRxBytesWaiting,
+        .serialTotalTxFree = uartTotalTxBytesFree,
+        .serialRead = uartRead,
+        .serialSetBaudRate = uartSetBaudRate,
+        .isSerialTransmitBufferEmpty = isUartTransmitBufferEmpty,
+        .setMode = uartSetMode,
         .writeBuf = NULL,
         .beginWrite = NULL,
         .endWrite = NULL,

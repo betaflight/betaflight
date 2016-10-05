@@ -357,7 +357,7 @@ uint32_t CDC_Send_FreeBytes(void)
  * @param  Len: Number of data to be sent (in bytes)
  * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
  */
-uint32_t vcpWrite(uint8_t* Buf, uint32_t Len)
+uint32_t vcpWrite(const uint8_t* Buf, uint32_t Len)
 {
     uint32_t ptr_head = UserTxBufPtrIn;
     uint32_t ptr_tail = UserTxBufPtrOut;

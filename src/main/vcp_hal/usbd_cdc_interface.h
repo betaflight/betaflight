@@ -69,7 +69,7 @@ extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
 
 uint8_t vcpRead();
 uint8_t vcpAvailable();
-uint32_t vcpWrite(uint8_t* Buf, uint32_t Len);
+uint32_t vcpWrite(const uint8_t* Buf, uint32_t Len);
 uint32_t vcpBaudrate();
 uint8_t vcpIsConnected();
 uint32_t CDC_Send_FreeBytes(void);

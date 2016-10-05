@@ -54,13 +54,13 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-static uint32_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
     uint32_t receiveLength = vcpAvailable();
@@ -73,7 +73,7 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return vcpRead();
 }
 
-static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
+static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
 
@@ -83,7 +83,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
     }
 
     uint32_t start = millis();
-    uint8_t *p = data;
+    const uint8_t *p = data;
     while (count > 0) {
         uint32_t txed = vcpWrite(p, count);
         count -= txed;

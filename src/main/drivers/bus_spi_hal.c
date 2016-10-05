@@ -141,8 +141,14 @@ void spiInitDevice(SPIDevice device)
 
 
 #ifdef SDCARD_SPI_INSTANCE
-    if (spi->dev == SDCARD_SPI_INSTANCE)
-        spi->sdcard = true;
+    if (spi->dev == SDCARD_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
+#endif
+#ifdef RX_SPI_INSTANCE
+    if (spi->dev == RX_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
 #endif
 
     // Enable SPI clock
@@ -157,15 +163,19 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
-    if (spi->nss)
+
+    if (spi->nss) {
         IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
+    }
 #endif
 #if defined(STM32F10X)
     IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
     IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
     IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
-    if (spi->nss)
+
+    if (spi->nss) {
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
+    }
 #endif
     SPI_HandleTypeDef Handle;
     Handle.Instance = spi->dev;
@@ -182,7 +192,7 @@ void spiInitDevice(SPIDevice device)
     spiInit.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     spiInit.TIMode = SPI_TIMODE_DISABLED;
 
-    if (spi->sdcard) {
+    if (spi->leadingEdge) {
         spiInit.CLKPolarity = SPI_POLARITY_LOW;
         spiInit.CLKPhase = SPI_PHASE_1EDGE;
     }
@@ -200,8 +210,9 @@ void spiInitDevice(SPIDevice device)
     if (HAL_SPI_Init(&Handle) == HAL_OK)
     {
         spiHandle[device].Handle = Handle;
-        if (spi->nss)
+        if (spi->nss) {
             IOHi(IOGetByTag(spi->nss));
+        }
     }
 }
 
