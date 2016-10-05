@@ -52,6 +52,7 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
+#include "rx/crsf.h"
 #include "rx/rx_spi.h"
 
 
@@ -188,9 +189,13 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
+#ifdef USE_SERIALRX_CRSF
+    case SERIALRX_CRSF:
+        enabled = crsfInit(rxConfig, rxRuntimeConfig);
+        break;
+#endif
     default:
         enabled = false;
-        break;
     }
     return enabled;
 }

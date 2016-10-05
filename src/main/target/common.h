@@ -44,6 +44,7 @@
 #endif
 
 #define SERIAL_RX
+#define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
@@ -80,6 +81,7 @@
 #define CMS
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
+#define TELEMETRY_CRSF
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define USE_RX_MSP
