@@ -181,6 +181,7 @@ FONT.upload = function($progress) {
     return MSP.promise(MSPCodes.MSP_OSD_CHAR_WRITE, FONT.msp.encode(i));
   })
   .then(function() {
+    OSD.GUI.jbox.close();
     return MSP.promise(MSPCodes.MSP_SET_REBOOT);
   });
 };
@@ -578,7 +579,7 @@ TABS.osd.initialize = function (callback) {
         localize();
 
         // Open modal window
-        new jBox('Modal', {
+        OSD.GUI.jbox = new jBox('Modal', {
             width: 600,
             height: 240,
             closeButton: 'title',
