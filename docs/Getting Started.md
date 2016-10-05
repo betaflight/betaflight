@@ -22,7 +22,7 @@ For an overview of the hardware INAV (hereby CF) can run on, see [Boards.md](Boa
 
 * Do you want your RC Receiver's RSSI to be sent to the board? [The RSSI chapter](Rssi.md) explains how. You may or may not need to make an additional connection from your Receiver to the FC.
 
-* Would you like to try using a GPS unit to get your aircraft to Loiter or Return-To-Launch? Take a look at the [GPS](Gps.md) and [GPS Tested Hardware](Gps_-_Tested_Hardware.md) chapters.
+* Would you like to try using a GPS unit to get your aircraft to Loiter or Return-To-Launch? Take a look at the [GPS](Gps.md) and [GPS Tested Hardware](Gps.md#hardware) chapters.
 
 * You may also want to read the [Serial](Serial.md) chapter to determine what extra devices (such as Blackbox, OSD, Telemetry) you may want to use, and how they should be connected.
 
