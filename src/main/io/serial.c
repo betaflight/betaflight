@@ -42,7 +42,6 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_cli.h"
 #include "serial_msp.h"
 
 
@@ -421,19 +420,6 @@ bool serialIsPortAvailable(serialPortIdentifier_e identifier)
         }
     }
     return false;
-}
-
-void handleSerial(void)
-{
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-
-    mspSerialProcess();
 }
 
 void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)

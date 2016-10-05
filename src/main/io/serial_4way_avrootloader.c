@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+
 #include "platform.h"
 
 #ifdef  USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -31,13 +31,13 @@
 #include "drivers/serial.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
+
 #include "io/serial.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"
 #include "io/serial_4way_avrootloader.h"
-#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_FAKE_ESC)
 
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER) && !defined(USE_FAKE_ESC)
 
 // Bootloader commands
 // RunCmd

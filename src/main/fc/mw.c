@@ -898,8 +898,14 @@ void taskUpdateAttitude(uint32_t currentTime)
 void taskHandleSerial(uint32_t currentTime)
 {
     UNUSED(currentTime);
-
-    handleSerial();
+#ifdef USE_CLI
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
+#endif
+    mspSerialProcess();
 }
 
 void taskUpdateBeeper(uint32_t currentTime)
