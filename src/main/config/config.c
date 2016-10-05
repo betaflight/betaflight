@@ -226,6 +226,13 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw_pitch_to_throttle = 10;
     navConfig->fw_roll_to_pitch = 75;
     navConfig->fw_loiter_radius = 5000;     // 50m
+
+    // Fixed wing launch
+    navConfig->fw_launch_accel_thresh = 1.9f * 981;     // cm/s/s (1.9*G)
+    navConfig->fw_launch_time_thresh = 40;              // 40ms
+    navConfig->fw_launch_throttle = 1700;
+    navConfig->fw_launch_motor_timer = 500;             // ms
+    navConfig->fw_launch_climb_angle = 10;              // 10 deg
 }
 
 void validateNavConfig(navConfig_t * navConfig)

@@ -39,17 +39,17 @@ typedef enum {
     NAV_RTH_MODE    = (1 << 4), // old GPS_HOME
     NAV_POSHOLD_MODE= (1 << 5), // old GPS_HOLD
     HEADFREE_MODE   = (1 << 6),
-    UNUSED_MODE     = (1 << 7), // old autotune
+    LAUNCH_MODE     = (1 << 7),
     PASSTHRU_MODE   = (1 << 8),
     FAILSAFE_MODE   = (1 << 10),
-    UNUSED_MODE2    = (1 << 11), // old G-Tune
+    UNUSED_MODE     = (1 << 11), // old G-Tune
     NAV_WP_MODE     = (1 << 12),
     HEADING_LOCK    = (1 << 13),
     FLAPERON        = (1 << 14),
     TURN_ASSISTANT  = (1 << 15),
 } flightModeFlags_e;
 
-extern uint16_t flightModeFlags;
+extern uint32_t flightModeFlags;
 
 #define DISABLE_FLIGHT_MODE(mask) disableFlightMode(mask)
 #define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
@@ -72,8 +72,8 @@ typedef enum {
 
 extern uint8_t stateFlags;
 
-uint16_t enableFlightMode(flightModeFlags_e mask);
-uint16_t disableFlightMode(flightModeFlags_e mask);
+uint32_t enableFlightMode(flightModeFlags_e mask);
+uint32_t disableFlightMode(flightModeFlags_e mask);
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);

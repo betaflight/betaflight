@@ -23,7 +23,7 @@
 
 uint8_t armingFlags = 0;
 uint8_t stateFlags = 0;
-uint16_t flightModeFlags = 0;
+uint32_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;
 
@@ -31,9 +31,9 @@ static uint32_t enabledSensors = 0;
  * Enables the given flight mode.  A beep is sounded if the flight mode
  * has changed.  Returns the new 'flightModeFlags' value.
  */
-uint16_t enableFlightMode(flightModeFlags_e mask)
+uint32_t enableFlightMode(flightModeFlags_e mask)
 {
-    uint16_t oldVal = flightModeFlags;
+    uint32_t oldVal = flightModeFlags;
 
     flightModeFlags |= (mask);
     if (flightModeFlags != oldVal)
@@ -45,9 +45,9 @@ uint16_t enableFlightMode(flightModeFlags_e mask)
  * Disables the given flight mode.  A beep is sounded if the flight mode
  * has changed.  Returns the new 'flightModeFlags' value.
  */
-uint16_t disableFlightMode(flightModeFlags_e mask)
+uint32_t disableFlightMode(flightModeFlags_e mask)
 {
-    uint16_t oldVal = flightModeFlags;
+    uint32_t oldVal = flightModeFlags;
 
     flightModeFlags &= ~(mask);
     if (flightModeFlags != oldVal)

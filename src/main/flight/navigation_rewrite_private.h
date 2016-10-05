@@ -36,6 +36,7 @@
 
 #define HZ2US(hz)   (1000000 / (hz))
 #define US2S(us)    ((us) * 1e-6f)
+#define US2MS(us)   ((us) * 1e-3f)
 #define MS2US(ms)   ((ms) * 1000)
 #define HZ2S(hz)    US2S(HZ2US(hz))
 
@@ -148,6 +149,7 @@ typedef enum {
     NAV_FSM_EVENT_SWITCH_TO_RTH_3D,
     NAV_FSM_EVENT_SWITCH_TO_WAYPOINT,
     NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING,
+    NAV_FSM_EVENT_SWITCH_TO_LAUNCH,
 
     NAV_FSM_EVENT_STATE_SPECIFIC_1,             // State-specific event
     NAV_FSM_EVENT_STATE_SPECIFIC_2,             // State-specific event
@@ -197,9 +199,14 @@ typedef enum {
     NAV_STATE_WAYPOINT_FINISHED,                // 27
     NAV_STATE_WAYPOINT_RTH_LAND,                // 28
 
-    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
-    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,
-    NAV_STATE_EMERGENCY_LANDING_FINISHED,
+    NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 29
+    NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 30
+    NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 31
+    
+    NAV_STATE_LAUNCH_INITIALIZE,                // 32
+    NAV_STATE_LAUNCH_WAIT,                      // 33
+    NAV_STATE_LAUNCH_MOTOR_DELAY,               // 34
+    NAV_STATE_LAUNCH_IN_PROGRESS,               // 35
 
     NAV_STATE_COUNT,
 } navigationFSMState_t;
@@ -210,19 +217,20 @@ typedef enum {
     NAV_CTL_POS             = (1 << 1),     // Position controller
     NAV_CTL_YAW             = (1 << 2),
     NAV_CTL_EMERG           = (1 << 3),
+    NAV_CTL_LAUNCH          = (1 << 4),
 
     /* Navigation requirements for flight modes and controllers */
-    NAV_REQUIRE_ANGLE       = (1 << 4),
-    NAV_REQUIRE_ANGLE_FW    = (1 << 5),
-    NAV_REQUIRE_MAGHOLD     = (1 << 6),
-    NAV_REQUIRE_THRTILT     = (1 << 7),
+    NAV_REQUIRE_ANGLE       = (1 << 5),
+    NAV_REQUIRE_ANGLE_FW    = (1 << 6),
+    NAV_REQUIRE_MAGHOLD     = (1 << 7),
+    NAV_REQUIRE_THRTILT     = (1 << 8),
 
     /* Navigation autonomous modes */
-    NAV_AUTO_RTH            = (1 << 8),
-    NAV_AUTO_WP             = (1 << 9),
+    NAV_AUTO_RTH            = (1 << 9),
+    NAV_AUTO_WP             = (1 << 10),
 
     /* Adjustments for navigation modes from RC input */
-    NAV_RC_ALT              = (1 << 10),
+    NAV_RC_ALT              = (1 << 11),
     NAV_RC_POS              = (1 << 12),
     NAV_RC_YAW              = (1 << 13),
 } navigationFSMStateFlags_t;
@@ -355,5 +363,12 @@ bool adjustFixedWingPositionFromRCInput(void);
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
 
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
+
+/* Fixed-wing launch controller */
+void resetFixedWingLaunchMode(const uint32_t currentTime);
+bool isFixedWingLaunchDetected(void);
+void resetFixedWingLaunchController(const uint32_t currentTime);
+bool isFixedWingLaunchFinishedOrAborted(void);
+void applyFixedWingLaunchController(const uint32_t currentTime);
 
 #endif

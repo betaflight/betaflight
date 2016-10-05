@@ -129,6 +129,12 @@ typedef struct navConfig_s {
     uint8_t  fw_pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
     uint8_t  fw_roll_to_pitch;              // Roll to pitch compensation (in %)
     uint16_t fw_loiter_radius;              // Loiter radius when executing PH on a fixed wing
+    
+    uint16_t fw_launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
+    uint16_t fw_launch_time_thresh;         // Time threshold for launch detection (ms)
+    uint16_t fw_launch_throttle;            // Launch throttle
+    uint16_t fw_launch_motor_timer;         // Time to wait before setting launch_throttle (ms)
+    uint8_t fw_launch_climb_angle;          // Target climb angle for launch (deg)
 } navConfig_t;
 
 typedef struct gpsOrigin_s {

@@ -485,7 +485,10 @@ void resetFixedWingHeadingController(void)
 
 void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
 {
-    if (navStateFlags & NAV_CTL_EMERG) {
+    if (navStateFlags & NAV_CTL_LAUNCH) {
+        applyFixedWingLaunchController(currentTime);
+    }
+    else if (navStateFlags & NAV_CTL_EMERG) {
         applyFixedWingEmergencyLandingController();
     }
     else {
