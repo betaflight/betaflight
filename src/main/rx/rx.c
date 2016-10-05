@@ -55,6 +55,7 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
+#include "rx/crsf.h"
 #include "rx/rx_spi.h"
 
 
@@ -177,6 +178,9 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     case SERIALRX_JETIEXBUS:
         enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
         break;
+    case SERIALRX_CRSF:
+        enabled = crsfInit(rxConfig, rxRuntimeConfig);
+        break;
     }
     return enabled;
 }
@@ -276,6 +280,8 @@ static uint8_t serialRxFrameStatus(const rxConfig_t *rxConfig)
         return ibusFrameStatus();
     case SERIALRX_JETIEXBUS:
         return jetiExBusFrameStatus();
+    case SERIALRX_CRSF:
+        return crsfFrameStatus();
     }
     return RX_FRAME_PENDING;
 }
