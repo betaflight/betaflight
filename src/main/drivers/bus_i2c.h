@@ -51,6 +51,7 @@ typedef struct i2cDevice_s {
 typedef struct i2cState_s {
     volatile bool initialised;
     volatile bool error;
+    volatile bool busError;
     volatile bool busy;
     volatile uint8_t addr;
     volatile uint8_t reg;
