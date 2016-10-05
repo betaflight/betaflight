@@ -59,5 +59,6 @@ typedef enum {
     DEBUG_VELOCITY,
     DEBUG_DTERM_FILTER,
     DEBUG_ANGLERATE,
+    DEBUG_CRSF,
     DEBUG_COUNT
 } debugType_e;
