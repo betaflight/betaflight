@@ -31,7 +31,7 @@
 #include "rx/rx.h"
 #include "drivers/system.h"
 #include "io/beeper.h"
-#include "io/escservo.h"
+#include "io/motors.h"
 #include "fc/rc_controls.h"
 
 #include "fc/runtime_config.h"

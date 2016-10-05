@@ -41,7 +41,7 @@
 #include "rx/rx.h"
 
 #include "io/gimbal.h"
-#include "io/escservo.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -63,9 +63,10 @@
 extern mixerMode_e currentMixerMode;
 extern const mixer_t mixers[];
 extern mixerConfig_t *mixerConfig;
-extern rxConfig_t *rxConfig;
 
-servoConfig_t *servoConfig;
+static rxConfig_t *rxConfig;
+
+servoMixerConfig_t *servoMixerConfig;
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
@@ -134,11 +135,12 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servosUseConfigs(servoConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse)
+void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, rxConfig_t *rxConfigToUse)
 {
-    servoConfig = servoConfigToUse;
+    servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
     gimbalConfig = gimbalConfigToUse;
+    rxConfig = rxConfigToUse;
 }
 
 int16_t getFlaperonDirection(uint8_t servoPin) {
@@ -299,7 +301,7 @@ void writeServos(void)
     /*
      * in case of tricopters, there might me a need to zero servo output when unarmed
      */
-    if ((currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI) && !ARMING_FLAG(ARMED) && !servoConfig->tri_unarmed_servo) {
+    if ((currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI) && !ARMING_FLAG(ARMED) && !servoMixerConfig->tri_unarmed_servo) {
         zeroServoValue = true;
     }
 
@@ -446,11 +448,11 @@ void filterServos(void)
 {
     int servoIdx;
 
-    if (servoConfig->servo_lowpass_enable) {
+    if (servoMixerConfig->servo_lowpass_enable) {
         // Initialize servo lowpass filter (servos are calculated at looptime rate)
         if (!servoFilterIsSet) {
             for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                biquadFilterInitLPF(&servoFitlerState[servoIdx], servoConfig->servo_lowpass_freq, gyro.targetLooptime);
+                biquadFilterInitLPF(&servoFitlerState[servoIdx], servoMixerConfig->servo_lowpass_freq, gyro.targetLooptime);
             }
 
             servoFilterIsSet = true;

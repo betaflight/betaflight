@@ -439,7 +439,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS)) {
         uint16_t correctedThrottleValue = constrain(posControl.navConfig->fw_cruise_throttle + throttleCorrection, posControl.navConfig->fw_min_throttle, posControl.navConfig->fw_max_throttle);
-        rcCommand[THROTTLE] = constrain(correctedThrottleValue, posControl.escAndServoConfig->minthrottle, posControl.escAndServoConfig->maxthrottle);
+        rcCommand[THROTTLE] = constrain(correctedThrottleValue, posControl.motorConfig->minthrottle, posControl.motorConfig->maxthrottle);
     }
 }
 

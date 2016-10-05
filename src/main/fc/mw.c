@@ -60,7 +60,8 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -566,7 +567,7 @@ void taskMainPidLoop(void)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-            && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoConfig.tri_unarmed_servo)
+            && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
 #endif
             && masterConfig.mixerMode != MIXER_AIRPLANE
             && masterConfig.mixerMode != MIXER_FLYING_WING
@@ -588,10 +589,10 @@ void taskMainPidLoop(void)
         }
 
         if (thrTiltCompStrength) {
-            rcCommand[THROTTLE] = constrain(masterConfig.escAndServoConfig.minthrottle
-                                            + (rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
-                                            masterConfig.escAndServoConfig.minthrottle,
-                                            masterConfig.escAndServoConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(masterConfig.motorConfig.minthrottle
+                                            + (rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
+                                            masterConfig.motorConfig.minthrottle,
+                                            masterConfig.motorConfig.maxthrottle);
         }
     }
 

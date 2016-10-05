@@ -72,7 +72,8 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 
 #include "io/gimbal.h"
@@ -269,13 +270,13 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+    pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
+    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
-    pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.motorPwmRate = masterConfig.motorConfig.motorPwmRate;
+    pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
     if (pwm_params.motorPwmRate > 500)
@@ -495,7 +496,7 @@ void init(void)
         &currentProfile->rcControlsConfig,
         &masterConfig.rxConfig,
         &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig
+        &masterConfig.motorConfig
     );
 #endif
 

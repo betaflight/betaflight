@@ -101,17 +101,16 @@ typedef struct flight3DConfig_s {
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
-
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern bool motorLimitReached;
 
-struct escAndServoConfig_s;
+struct motorConfig_s;
 struct rxConfig_s;
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
-        struct escAndServoConfig_s *escAndServoConfigToUse,
+        struct motorConfig_s *motorConfigToUse,
         mixerConfig_t *mixerConfigToUse,
         struct rxConfig_s *rxConfigToUse);
 

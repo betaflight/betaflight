@@ -17,10 +17,8 @@
 
 #pragma once
 
-struct controlRateConfig_s;
-struct motorConfig_s;
-void generateThrottleCurve(struct controlRateConfig_s *controlRateConfig, struct motorConfig_s *motorConfig);
-
-int16_t rcLookup(int32_t stickDeflection, uint8_t expo);
-int16_t rcLookupThrottle(int32_t tmp);
-int16_t rcLookupThrottleMid(void);
+typedef struct servoConfig_s {
+    // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
+    uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
+    uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
+} servoConfig_t;

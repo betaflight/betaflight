@@ -77,11 +77,11 @@ typedef enum {
 #define FLAPERON_THROW_MIN 100
 #define FLAPERON_THROW_MAX 400
 
-typedef struct servoConfig_s {
+typedef struct servoMixerConfig_s {
     uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
     int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
-} servoConfig_t;
+} servoMixerConfig_t;
 
 typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
@@ -127,6 +127,6 @@ void filterServos(void);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servosUseConfigs(servoConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse);
+void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
 void servosInit(servoMixer_t *customServoMixers);
 
