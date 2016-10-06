@@ -39,7 +39,7 @@ typedef enum {
     NAV_RTH_MODE    = (1 << 4), // old GPS_HOME
     NAV_POSHOLD_MODE= (1 << 5), // old GPS_HOLD
     HEADFREE_MODE   = (1 << 6),
-    LAUNCH_MODE     = (1 << 7),
+    NAV_LAUNCH_MODE = (1 << 7),
     PASSTHRU_MODE   = (1 << 8),
     FAILSAFE_MODE   = (1 << 10),
     UNUSED_MODE     = (1 << 11), // old G-Tune

@@ -62,13 +62,18 @@ typedef struct FixedWingLaunchState_s {
     /* Launch progress */
     uint32_t launchStartedTime;
     bool launchFinished;
+    bool motorControlAllowed;
 } FixedWingLaunchState_t;
 
 static FixedWingLaunchState_t   launchState;
 
+#define COS_MAX_LAUNCH_ANGLE    0.70710678f         // cos(45), just to be safe
 static void updateFixedWingLaunchDetector(const uint32_t currentTime)
 {
-    if (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw_launch_accel_thresh) {
+    const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw_launch_accel_thresh);
+    const bool isAircraftAlmostLevel = (calculateCosTiltAngle() >= COS_MAX_LAUNCH_ANGLE);
+
+    if (isForwardAccelerationHigh && isAircraftAlmostLevel) {
         launchState.launchDetectionTimeAccum += (currentTime - launchState.launchDetectorPreviosUpdate);
         launchState.launchDetectorPreviosUpdate = currentTime;
         if (launchState.launchDetectionTimeAccum >= MS2US((uint32_t)posControl.navConfig->fw_launch_time_thresh)) {
@@ -81,13 +86,14 @@ static void updateFixedWingLaunchDetector(const uint32_t currentTime)
     }
 }
 
-void resetFixedWingLaunchMode(const uint32_t currentTime)
+void resetFixedWingLaunchController(const uint32_t currentTime)
 {
     launchState.launchDetectorPreviosUpdate = currentTime;
     launchState.launchDetectionTimeAccum = 0;
     launchState.launchStartedTime = 0;
     launchState.launchDetected = false;
     launchState.launchFinished = false;
+    launchState.motorControlAllowed = false;
 }
 
 bool isFixedWingLaunchDetected(void)
@@ -95,9 +101,10 @@ bool isFixedWingLaunchDetected(void)
     return launchState.launchDetected;
 }
 
-void resetFixedWingLaunchController(const uint32_t currentTime)
+void enableFixedWingLaunchController(const uint32_t currentTime)
 {
     launchState.launchStartedTime = currentTime;
+    launchState.motorControlAllowed = true;
 }
 
 bool isFixedWingLaunchFinishedOrAborted(void)
@@ -109,7 +116,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
 {
     // Called at PID rate
 
-    if (isFixedWingLaunchDetected()) {
+    if (launchState.launchDetected) {
         // If launch detected we are in launch procedure - control airplane
         const float timeElapsedSinceLaunchMs = US2MS(currentTime - launchState.launchStartedTime);
 
@@ -119,20 +126,15 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
         }
 
         // Control throttle
-        if (timeElapsedSinceLaunchMs < posControl.navConfig->fw_launch_motor_timer) {
+        if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_motor_timer && launchState.motorControlAllowed) {
+            rcCommand[THROTTLE] = posControl.navConfig->fw_launch_throttle;
+        }
+        else {
             // Until motors are started don't use PID I-term
             pidResetErrorAccumulators();
 
             // Throttle control logic - if motor stop is enabled - keep motors stopped
-            if (feature(FEATURE_MOTOR_STOP)) {
-                rcCommand[THROTTLE] = posControl.escAndServoConfig->mincommand;
-            }
-            else {
-                rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
-            }        
-        }
-        else {
-            rcCommand[THROTTLE] = posControl.navConfig->fw_launch_throttle;
+            rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
         }
     }
     else {
@@ -143,12 +145,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
         pidResetErrorAccumulators();
 
         // Throttle control logic
-        if (feature(FEATURE_MOTOR_STOP)) {
-            rcCommand[THROTTLE] = posControl.escAndServoConfig->mincommand;
-        }
-        else {
-            rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
-        }
+        rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
     }
 
     // Lock out controls

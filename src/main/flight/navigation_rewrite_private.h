@@ -365,9 +365,9 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing launch controller */
-void resetFixedWingLaunchMode(const uint32_t currentTime);
-bool isFixedWingLaunchDetected(void);
 void resetFixedWingLaunchController(const uint32_t currentTime);
+bool isFixedWingLaunchDetected(void);
+void enableFixedWingLaunchController(const uint32_t currentTime);
 bool isFixedWingLaunchFinishedOrAborted(void);
 void applyFixedWingLaunchController(const uint32_t currentTime);
 

@@ -638,7 +638,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE,
         .timeoutMs = 0,
         .stateFlags = NAV_REQUIRE_ANGLE,
-        .mapToFlightModes = LAUNCH_MODE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
         .mwState = MW_NAV_STATE_NONE,
         .mwError = MW_NAV_ERROR_NONE,
         .onEvent = {
@@ -652,10 +652,11 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_WAIT,
         .timeoutMs = 10,
         .stateFlags = NAV_CTL_LAUNCH | NAV_REQUIRE_ANGLE,
-        .mapToFlightModes = LAUNCH_MODE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
         .mwState = MW_NAV_STATE_NONE,
         .mwError = MW_NAV_ERROR_NONE,
         .onEvent = {
+            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_LAUNCH_WAIT,    // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_LAUNCH_IN_PROGRESS,
             [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
@@ -666,10 +667,11 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_IN_PROGRESS,
         .timeoutMs = 10,
         .stateFlags = NAV_CTL_LAUNCH | NAV_REQUIRE_ANGLE,
-        .mapToFlightModes = LAUNCH_MODE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
         .mwState = MW_NAV_STATE_NONE,
         .mwError = MW_NAV_ERROR_NONE,
         .onEvent = {
+            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_LAUNCH_IN_PROGRESS,    // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
@@ -1278,7 +1280,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navig
     const uint32_t currentTime = micros();
     UNUSED(previousState);
 
-    resetFixedWingLaunchMode(currentTime);
+    resetFixedWingLaunchController(currentTime);
 
     return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_WAIT
 }
@@ -1289,7 +1291,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationF
     UNUSED(previousState);
 
     if (isFixedWingLaunchDetected()) {
-        resetFixedWingLaunchController(currentTime);
+        enableFixedWingLaunchController(currentTime);
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_MOTOR_DELAY
     }
 
@@ -2232,7 +2234,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
 void swithNavigationFlightModes(void)
 {
     flightModeFlags_e enabledNavFlightModes = navGetMappedFlightModes(posControl.navState);
-    flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE) & (~enabledNavFlightModes);
+    flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE | NAV_LAUNCH_MODE) & (~enabledNavFlightModes);
     DISABLE_FLIGHT_MODE(disabledFlightModes);
     ENABLE_FLIGHT_MODE(enabledNavFlightModes);
 }
@@ -2264,15 +2266,20 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         // LAUNCH mode has priority over any other NAV mode
         if (STATE(FIXED_WING)) {
             if (IS_RC_MODE_ACTIVE(BOXNAVLAUNCH)) {     // FIXME: Only available for fixed wing aircrafts now
-                if (FLIGHT_MODE(LAUNCH_MODE) || canActivateLaunchMode) {
+                if (canActivateLaunchMode) {
                     canActivateLaunchMode = false;
                     return NAV_FSM_EVENT_SWITCH_TO_LAUNCH;
+                }
+                else if FLIGHT_MODE(NAV_LAUNCH_MODE) {
+                    // Make sure we don't bail out to IDLE
+                    return NAV_FSM_EVENT_NONE;
                 }
             }
             else {
                 // If we were in LAUNCH mode - force switch to IDLE
-                if (FLIGHT_MODE(LAUNCH_MODE))
+                if (FLIGHT_MODE(NAV_LAUNCH_MODE)) {
                     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
+                }
             }
         }
 
