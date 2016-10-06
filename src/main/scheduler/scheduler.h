@@ -85,6 +85,9 @@ typedef enum {
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif
+#ifdef VTX_CONTROL
+    TASK_VTX_CONTROL,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

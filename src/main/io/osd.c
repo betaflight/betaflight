@@ -108,9 +108,48 @@
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
 
-#ifdef USE_RTC6705
+// All these should be encapsulated into io/vtx.h or something.
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+// Needed for smartaudio, for (band,chan) to frequency table.
+// Should separated.
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #endif
+
+#if defined(VTX_SMARTAUDIO)
+#include "drivers/vtx_smartaudio.h"
+#endif
+
+// Not used yet
+typedef enum {
+    RTC6705_SPI,
+    RTC6705_SOFTSPI,
+    SMARTAUDIO,
+    SMARTAUDIO_I2C,
+} vtxDeviceType_e;
+
+vtxDeviceType_e vtxDeviceType;
+
+void vtxUpdateChannel(uint16_t freq)
+{
+#ifdef USE_RTC6705
+    rtc6705_soft_spi_set_channel(freq);
+#endif
+#ifdef VTX_SMARTAUDIO
+    smartAudioSetFreq(freq);
+#endif
+}
+
+void vtxUpdatePower(uint8_t power)
+{
+#ifdef USE_RTC6705
+    rtc6705_soft_spi_set_rf_power(power);
+#endif
+#ifdef VTX_SMARTAUDIO
+    // Currently, only 0 (25mW) or 1 (200mW) is supported by the osd menu.
+    // Note rtc6705_soft_spi_set_rf_power() takes 0 (normal/200mW) or 1 (powerdown/25mW)
+    smartAudioSetPowerByIndex(power ? 0 : 1);
+#endif
+}
 
 #include "common/printf.h"
 
@@ -150,7 +189,7 @@ enum {
     MENU_VALUE_INCREASE,
 };
 
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
 
 static const char *vtx_bands[] = {
     "BOSCAM A",
@@ -207,7 +246,7 @@ void update_vtx_power(int value_change_direction, uint8_t col) {
     } else {
         masterConfig.vtx_power = 1;
     }
-    rtc6705_soft_spi_set_rf_power(masterConfig.vtx_power);
+    vtxUpdatePower(masterConfig.vtx_power);
 }
 
 void print_vtx_power(uint16_t pos, uint8_t col) {
@@ -418,7 +457,7 @@ osd_page_t menu_pages[] = {
             },
         }
     },
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     {
         .title       = "VTX SETTINGS",
         .cols_number = 1,
@@ -539,10 +578,10 @@ void show_menu(void) {
                     break;
                 case 1:
                     in_menu = false;
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
                     if (masterConfig.vtx_channel != current_vtx_channel) {
                         masterConfig.vtx_channel = current_vtx_channel;
-                        rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+                        vtxUpdateChannel(vtx_freq[current_vtx_channel]);
                     }
 #endif
                     writeEEPROM();

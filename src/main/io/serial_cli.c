@@ -909,7 +909,7 @@ const clivalue_t valueTable[] = {
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_power,   .config.minmax = { 0,  1 } },
 #endif

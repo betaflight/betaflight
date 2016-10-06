@@ -181,4 +181,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef VTX_CONTROL
+    [TASK_VTX_CONTROL] = {
+        .taskName = "VTX",
+        .taskFunc = taskVtxControl,
+        .desiredPeriod = 1000000 / 5,         // 5 Hz, 200ms: TX 12B=25ms@4800 , SmartAudio response in 60ms, RX 12B=25ms@4800
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
 };

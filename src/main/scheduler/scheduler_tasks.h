@@ -42,4 +42,6 @@ void taskUpdateOsd(void);
 void taskBstReadWrite(void);
 void taskBstMasterProcess(void);
 #endif
-
+#ifdef VTX_CONTROL
+void taskVtxControl(void);
+#endif
