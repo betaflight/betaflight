@@ -37,3 +37,4 @@ void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataF
 void osdElementRender_callsign(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_motors(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_vtxChannel(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_vtxBand(const element_t *element, elementDataProviderFn dataFn);

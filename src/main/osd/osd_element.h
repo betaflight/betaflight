@@ -47,6 +47,7 @@ enum osdElementIds_e {
 
     // vtx
     OSD_ELEMENT_VTX_CHANNEL = 16,
+    OSD_ELEMENT_VTX_BAND = 17,
 
 };
 

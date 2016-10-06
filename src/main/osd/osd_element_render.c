@@ -169,7 +169,16 @@ void osdElementRender_vtxChannel(const element_t *element, elementDataProviderFn
 {
     uint8_t vtxChannel = (uint8_t) dataFn();
 
-
     tfp_sprintf(elementAsciiBuffer, "%d", vtxChannel + 1);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}
+
+
+static const char vtxBandCodes[] = "ABCDR";
+
+void osdElementRender_vtxBand(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint8_t vtxBand = (uint8_t) dataFn();
+
+    osdSetCharacterAtPosition(element->x, element->y, vtxBandCodes[vtxBand]);
 }

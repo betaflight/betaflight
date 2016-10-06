@@ -160,6 +160,11 @@ intptr_t osdElementData_vtxChannel(void)
     return (intptr_t) vtxState.channel;
 }
 
+intptr_t osdElementData_vtxBand(void)
+{
+    return (intptr_t) vtxState.band;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_DURATION, osdElementRender_duration, osdElementData_onDuration},
     {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
@@ -176,6 +181,7 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_CALLSIGN, osdElementRender_callsign, osdElementData_callsign},
     {OSD_ELEMENT_MOTORS, osdElementRender_motors, osdElementData_motors},
     {OSD_ELEMENT_VTX_CHANNEL, osdElementRender_vtxChannel, osdElementData_vtxChannel},
+    {OSD_ELEMENT_VTX_BAND, osdElementRender_vtxBand, osdElementData_vtxBand},
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)

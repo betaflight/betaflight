@@ -512,6 +512,25 @@ TEST_F(OsdScreenTest, TestOsdElement_VTX_CHANNEL)
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
 }
 
+TEST_F(OsdScreenTest, TestOsdElement_VTX_BAND)
+{
+    // given
+    vtxState.band = 4;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VTX_BAND
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "R";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
 
 // STUBS
 extern "C" {
