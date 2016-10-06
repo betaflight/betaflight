@@ -164,3 +164,12 @@ void osdElementRender_motors(const element_t *element, elementDataProviderFn dat
         osdHardwareDisplayMotor(quadMotorCoordinateOffsets[i].x + element->x, quadMotorCoordinateOffsets[i].y + element->y, percent);
     }
 }
+
+void osdElementRender_vtxChannel(const element_t *element, elementDataProviderFn dataFn)
+{
+    uint8_t vtxChannel = (uint8_t) dataFn();
+
+
+    tfp_sprintf(elementAsciiBuffer, "%d", vtxChannel + 1);
+    osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}

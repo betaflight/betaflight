@@ -85,6 +85,7 @@ const uint16_t osdSupportedElementIds[] = {
     OSD_ELEMENT_RSSI_FC,
     OSD_ELEMENT_CALLSIGN,
     OSD_ELEMENT_MOTORS,
+    OSD_ELEMENT_VTX_CHANNEL,
 };
 
 const uint8_t osdSupportedElementIdsCount = ARRAYLEN(osdSupportedElementIds);
@@ -104,6 +105,7 @@ static const element_t osdDefaultElements[] = {
     { 22, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
     {  8, -1, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
     { 13, -5, EF_ENABLED, OSD_ELEMENT_MOTORS },
+    {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_CHANNEL },
 };
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {

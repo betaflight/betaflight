@@ -45,6 +45,9 @@ enum osdElementIds_e {
     // motors
     OSD_ELEMENT_MOTORS = 15,
 
+    // vtx
+    OSD_ELEMENT_VTX_CHANNEL = 16,
+
 };
 
 // 16 bits.

@@ -40,6 +40,7 @@
 #include "sensors/battery.h" // only required for data providers
 
 
+#include "io/vtx.h"
 #include "osd/osd_element.h"
 #include "osd/fonts/font.h"
 
@@ -154,6 +155,11 @@ intptr_t osdElementData_motors(void)
     return (intptr_t) fcMotors;
 }
 
+intptr_t osdElementData_vtxChannel(void)
+{
+    return (intptr_t) vtxState.channel;
+}
+
 elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ON_DURATION, osdElementRender_duration, osdElementData_onDuration},
     {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
@@ -169,6 +175,7 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_RSSI_FC, osdElementRender_rssi, osdElementData_rssiFC},
     {OSD_ELEMENT_CALLSIGN, osdElementRender_callsign, osdElementData_callsign},
     {OSD_ELEMENT_MOTORS, osdElementRender_motors, osdElementData_motors},
+    {OSD_ELEMENT_VTX_CHANNEL, osdElementRender_vtxChannel, osdElementData_vtxChannel},
 };
 
 static elementHandlerConfig_t *osdFindElementHandler(uint8_t id)
