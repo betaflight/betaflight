@@ -100,8 +100,10 @@ typedef struct master_s {
     uint8_t gyro_sync_denom;                // Gyro sample divider
     uint8_t gyro_soft_type;                 // Gyro Filter Type
     uint8_t gyro_soft_lpf_hz;               // Biquad gyro lpf hz
-    uint16_t gyro_soft_notch_hz;            // Biquad gyro notch hz
-    uint16_t gyro_soft_notch_cutoff;        // Biquad gyro notch low cutoff
+    uint16_t gyro_soft_notch_hz_1;          // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_cutoff_1;      // Biquad gyro notch low cutoff
+    uint16_t gyro_soft_notch_hz_2;          // Biquad gyro notch hz
+    uint16_t gyro_soft_notch_cutoff_2;      // Biquad gyro notch low cutoff
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 

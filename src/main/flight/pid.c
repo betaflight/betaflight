@@ -47,11 +47,8 @@
 
 #include "fc/runtime_config.h"
 
-
 uint32_t targetPidLooptime;
-
 bool pidStabilisationEnabled;
-
 uint8_t PIDweight[3];
 
 int16_t axisPID[3];

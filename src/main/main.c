@@ -269,6 +269,7 @@ void init(void)
     pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
 #endif
 #ifdef STM32F303xC
+    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
     pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
 #endif
 #if defined(USE_UART2) && defined(STM32F40_41xxx)
@@ -402,7 +403,7 @@ void init(void)
     }
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SPRACINGF3MINI) || defined(OMNIBUS) || defined(X_RACERSPI)
 #if defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
@@ -680,7 +681,7 @@ void main_init(void)
 
     /* Setup scheduler */
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime + LOOPTIME_SUSPEND_TIME); // Add a littlebit of extra time to reduce busy wait
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
     if (sensors(SENSOR_ACC)) {

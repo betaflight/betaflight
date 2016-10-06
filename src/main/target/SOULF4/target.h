@@ -17,19 +17,19 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "OBF4"
+#define TARGET_BOARD_IDENTIFIER "SOUL"
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING "OmnibusF4"
+#define USBD_PRODUCT_STRING     "DemonSoulF4"
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0                    PB5
-//#define LED1                    PB4
+#define LED1                    PB4
 
-#define BEEPER                  PB4
+#define BEEPER                  PB6
 #define BEEPER_INVERTED
 
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
@@ -50,42 +50,21 @@
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
+#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 
-#define MAG
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN       CW90_DEG
 
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN CW180_DEG_FLIP
-
-#define BARO
-#define USE_BARO_MS5611
-
-#define OSD
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI3
-#define MAX7456_SPI_CS_PIN      PA15
-
-#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
-#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
-#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
-
-//#define PITOT
-//#define USE_PITOT_MS4525
-//#define MS4525_BUS I2C_DEVICE_EXT
-
-#define M25P16_CS_PIN           SPI3_NSS_PIN
+#define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PC5
+#define VBUS_SENSING_PIN        PC5
 
 #define USE_UART1
-#define UART1_RX_PIN            PA10
-#define UART1_TX_PIN            PA9
+#define UART1_RX_PIN PA10
+#define UART1_TX_PIN PA9
 #define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
@@ -112,35 +91,34 @@
 #define I2C_DEVICE (I2CDEV_1)
 
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-//#define RSSI_ADC_PIN            PA0
 
-#define LED_STRIP
-// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
-#define WS2811_PIN                      PA1
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream4
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define SENSORS_SET (SENSOR_ACC)
 
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL)
+#define LED_STRIP
+#define WS2811_PIN                      PA0
+#define WS2811_TIMER                    TIM5
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream2
+#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_TIMER_CHANNEL            TIM_Channel_1
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define TARGET_IO_PORTA 0xffff
-#define TARGET_IO_PORTB 0xffff
-#define TARGET_IO_PORTC 0xffff
-#define TARGET_IO_PORTD 0xffff
+#define TARGET_IO_PORTA         0xffff
+#define TARGET_IO_PORTB         0xffff
+#define TARGET_IO_PORTC         0xffff
+#define TARGET_IO_PORTD         0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS  ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

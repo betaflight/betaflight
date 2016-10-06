@@ -119,7 +119,6 @@ typedef struct {
 } cfTask_t;
 
 extern cfTask_t cfTasks[TASK_COUNT];
-extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
 
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
