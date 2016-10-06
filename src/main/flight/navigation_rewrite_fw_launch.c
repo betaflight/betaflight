@@ -134,7 +134,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
             pidResetErrorAccumulators();
 
             // Throttle control logic - if motor stop is enabled - keep motors stopped
-            rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
+            rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;
         }
     }
     else {
@@ -145,7 +145,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
         pidResetErrorAccumulators();
 
         // Throttle control logic
-        rcCommand[THROTTLE] = posControl.escAndServoConfig->minthrottle;
+        rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;
     }
 
     // Lock out controls
