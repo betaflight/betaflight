@@ -125,12 +125,15 @@ void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const fl
     filter->bufLength = bufLength;
     filter->coeffs = coeffs;
     filter->coeffsLength = coeffsLength;
+    filter->movingSum = 0.0f;
+    filter->index = 0;
+    filter->count = 0;
     memset(filter->buf, 0, sizeof(float) * filter->bufLength);
 }
 
 /*
  * FIR filter initialisation
- * If FIR filter is just used for averaging, coeffs can be set to NULL
+ * If the FIR filter is just to be used for averaging, then coeffs can be set to NULL
  */
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
 {
@@ -139,42 +142,60 @@ void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const flo
 
 void firFilterUpdate(firFilter_t *filter, float input)
 {
-    memmove(&filter->buf[1], &filter->buf[0], (filter->bufLength-1) * sizeof(input));
-    filter->buf[0] = input;
+    filter->movingSum += input; // sum of the last <count> items, to allow quick moving average computation
+    filter->movingSum -=  filter->buf[filter->index]; // subtract the value that "drops off" the end of the moving sum
+    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
+    if (filter->index >= filter->bufLength) {
+        filter->index = 0;
+    }
+    if (filter->count < filter->bufLength) {
+        ++filter->count;
+    }
 }
 
 float firFilterApply(const firFilter_t *filter)
 {
     float ret = 0.0f;
+    int index = filter->index;
     for (int ii = 0; ii < filter->coeffsLength; ++ii) {
-        ret += filter->coeffs[ii] * filter->buf[ii];
+        --index;
+        if (index < 0) {
+            index = filter->bufLength - 1;
+        }
+        ret += filter->coeffs[ii] * filter->buf[index];
     }
     return ret;
 }
 
+/*
+ * Returns average of the last <count> items.
+ */
 float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
 {
     float ret = 0.0f;
-    for (int ii = 0; ii < count; ++ii) {
-        ret += filter->buf[ii];
+    int index = filter->index;
+    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
+        --index;
+        if (index < 0) {
+            index = filter->bufLength - 1;
+        }
+        ret += filter->buf[index];
     }
     return ret / count;
 }
 
-float firFilterCalcAverage(const firFilter_t *filter)
+float firFilterCalcMovingAverage(const firFilter_t *filter)
 {
-    return firFilterCalcPartialAverage(filter, filter->coeffsLength);
+    return filter->movingSum / filter->count;
 }
 
 float firFilterLastInput(const firFilter_t *filter)
 {
-    return filter->buf[0];
-}
-
-float firFilterGet(const firFilter_t *filter, int index)
-{
+    // filter->index points to next empty item in buffer
+    const int index = filter->index == 0 ? filter->bufLength - 1 : filter->index - 1;
     return filter->buf[index];
 }
+
 
 /*
  *  int16_t based FIR filter
