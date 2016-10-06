@@ -24,11 +24,6 @@
 #define SPRACINGF3NEO_REV 5
 #endif
 
-// For Rev E SPI1 RX/TX DMA was needed so LED STRIP on PA8/PA15 were swapped.
-// This frees moved LED strip from DMA1 to DMA2 and frees up the channels on DMA1 to be used for SPI1
-// This also means PWM5/6 are now mutually exclusive with the LED strip feature since LED and PWM5/6 use TIM8
-// TIM1 is free on Rev E.
-
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_9
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -238,22 +233,6 @@
 
 #define LED_STRIP
 
-#ifdef SPRACINGF3NEO_REV_E
-#define LED_STRIP_TIMER TIM8
-#define WS2811_GPIO                     GPIOA
-#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define WS2811_GPIO_AF                  GPIO_AF_2
-#define WS2811_PIN                      GPIO_Pin_15
-#define WS2811_PIN_SOURCE               GPIO_PinSource15
-#define WS2811_TIMER                    TIM8
-#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM8
-#define WS2811_DMA_CHANNEL              DMA2_Channel3
-#define WS2811_IRQ                      DMA2_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA2_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA2Channel3Descriptor
-
-#else
-
 #define LED_STRIP_TIMER TIM1
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
@@ -266,7 +245,6 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel2Descriptor
-#endif
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOB
