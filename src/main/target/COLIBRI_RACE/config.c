@@ -129,4 +129,5 @@ void targetConfiguration(master_t *config) {
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_FAILSAFE);
     featureSet(FEATURE_AIRMODE);
+    featureSet(FEATURE_LED_STRIP);
 }
