@@ -24,7 +24,7 @@
 #include "light_led.h"
 #include "sound_beeper.h"
 #include "nvic.h"
-#include "common/atomic.h"
+#include "build/atomic.h"
 
 #include "system.h"
 
