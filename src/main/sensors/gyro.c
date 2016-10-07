@@ -193,7 +193,7 @@ void gyroUpdate(void)
 
             if (gyroSoftLpfType == FILTER_BIQUAD)
                 gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]);
-            else if (gyroSoftLpfType == FILTER_BIQUAD)
+            else if (gyroSoftLpfType == FILTER_PT1)
                 gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], (float) gyroADC[axis], gyroSoftLpfHz, gyroDt);
             else
                 gyroADCf[axis] = denoisingFilterUpdate((float) gyroADC[axis], 3, gyroFilterDenoise[axis]);
