@@ -85,7 +85,7 @@ uint32_t microsISR(void)
 
         if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
             // Update pending.
-            // Remember it for multiple calls within the same rollover period
+            // Record it for multiple calls within the same rollover period
             // (Will be cleared when serviced).
             // Note that multiple rollovers are not considered.
 
