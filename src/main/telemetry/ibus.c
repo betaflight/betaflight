@@ -52,7 +52,7 @@
 #include "fc/cleanflight_fc.h"
 
 
-#include "telemetry/telemetry.h"
+#include "telemetry/telemetry.h"    
 #include "telemetry/ibus.h"
 
 
@@ -192,17 +192,17 @@ typedef enum {
 } ibusCommand_e;
 
 typedef enum {
-    IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE = 0x00,
     IBUS_SENSOR_TYPE_TEMPERATURE      = 0x01,
     IBUS_SENSOR_TYPE_RPM              = 0x02,
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE = 0x03
 } ibusSensorType_e;
 
+/* Address lookup relative to the sensor base address which is the lowest address seen by the FC 
+   The actual lowest value is likely to change when sensors are daisy chained */
 static const uint8_t sensorAddressTypeLookup[] = {
-    // IBUS_SENSOR_TYPE_INTERNAL_VOLTAGE,  // Address 0, not usable since it is reserved for internal voltage
-    IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,  // Address 1, VBAT
-    IBUS_SENSOR_TYPE_TEMPERATURE,       // Address 2, Gyro Temp
-    IBUS_SENSOR_TYPE_RPM                // Address 3, Throttle command
+    IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,
+    IBUS_SENSOR_TYPE_TEMPERATURE,
+    IBUS_SENSOR_TYPE_RPM
 };
 
 static serialPort_t *ibusSerialPort = NULL;

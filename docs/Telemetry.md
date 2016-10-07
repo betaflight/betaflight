@@ -267,7 +267,7 @@ It runs at a fixed baud rate of 115200.
     \_______/
 ```
 
-It should be possible to daisy chain multiple sensors with ibus. This is implemented but not tested because i don't have one of the sensors to test with.
+It should be possible to daisy chain multiple sensors with ibus. This is implemented but not tested because i don't have one of the sensors to test with, the FC shall always be the last sensor in the chain.
 
 ### Configuration
 
