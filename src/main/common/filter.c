@@ -237,3 +237,15 @@ int16_t firFilterInt16Get(const firFilter_t *filter, int index)
     return filter->buf[index];
 }
 
+/* prototype function for denoising of signal by dynamic moving average. Mainly for test purposes */
+float denoisingFilterUpdate(float input, uint8_t count, float filter[MAX_DENOISE_WINDOW_SIZE]) {
+    int index;
+    float averageSum = 0.0f;
+
+    for (index = count-1; index > 0; index--) filter[index] = filter[index-1];
+    filter[0] = input;
+    for (count = 0; count < count; index++) averageSum += filter[index];
+
+    return averageSum / count;
+}
+

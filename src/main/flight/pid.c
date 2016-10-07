@@ -103,9 +103,10 @@ biquadFilter_t dtermFilterLpf[3];
 biquadFilter_t dtermFilterNotch[3];
 bool dtermNotchInitialised;
 bool dtermBiquadLpfInitialised;
+float dtermFilterDenoise[XYZ_AXIS_COUNT][MAX_DENOISE_WINDOW_SIZE];
+bool dtermNotchInitialised, dtermLpfInitialised;
 
-void initFilters(const pidProfile_t *pidProfile)
-{
+void initFilters(const pidProfile_t *pidProfile) {
     int axis;
 
     if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
@@ -115,9 +116,9 @@ void initFilters(const pidProfile_t *pidProfile)
     }
 
     if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
-        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
+        if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
-            dtermBiquadLpfInitialised = true;
+            dtermLpfInitialised = true;
         }
     }
 }
