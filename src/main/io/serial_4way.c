@@ -19,8 +19,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
 
 #include "platform.h"
 
@@ -38,7 +36,6 @@
 #include "flight/mixer.h"
 
 #include "io/beeper.h"
-#include "io/serial_msp.h"
 #include "io/serial_4way.h"
 
 #ifdef USE_SERIAL_4WAY_BLHELI_BOOTLOADER

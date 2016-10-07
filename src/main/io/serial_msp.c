@@ -100,6 +100,11 @@ static void setCurrentPort(mspPort_t *port)
     mspSerialPort = currentPort->port;
 }
 
+/*
+ * Process MSP commands from serial ports configured as MSP ports.
+ *
+ * Called periodically by the scheduler.
+ */
 void mspSerialProcess(void)
 {
     uint8_t portIndex;
