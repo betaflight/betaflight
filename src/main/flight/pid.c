@@ -108,7 +108,7 @@ static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 static biquadFilter_t dtermFilterLpf[3];
 static biquadFilter_t dtermFilterNotch[3];
-static float dtermFilterDenoise[XYZ_AXIS_COUNT][MAX_DENOISE_WINDOW_SIZE];
+static denoisingState_t dtermDenoisingState[3];
 static bool dtermNotchInitialised, dtermLpfInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
@@ -123,6 +123,13 @@ void initFilters(const pidProfile_t *pidProfile) {
     if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
         if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+            dtermLpfInitialised = true;
+        }
+    }
+
+    if (pidProfile->dterm_filter_type == FILTER_DENOISE) {
+        if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
+            for (axis = 0; axis < 3; axis++) initDenoisingFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
             dtermLpfInitialised = true;
         }
     }
@@ -277,7 +284,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = denoisingFilterUpdate(delta, 3, dtermFilterDenoise[axis]);
+                    delta = denoisingFilterUpdate(&dtermDenoisingState[axis], delta);
             }
 
             DTerm = Kd[axis] * delta * tpaFactor;
@@ -417,7 +424,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = denoisingFilterUpdate(delta, 3, dtermFilterDenoise[axis]);
+                    delta = denoisingFilterUpdate(&dtermDenoisingState[axis], delta);
 
                 delta = lrintf(deltaf);
             }

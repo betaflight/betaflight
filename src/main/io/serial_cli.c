@@ -515,7 +515,7 @@ static const char * const lookupTableRcInterpolation[] = {
 };
 
 static const char * const lookupTableLowpassType[] = {
-    "NORMAL", "HIGH"
+    "NORMAL", "HIGH", "DENOISE"
 };
 
 static const char * const lookupTableFailsafe[] = {
