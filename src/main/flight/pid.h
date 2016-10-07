@@ -22,6 +22,7 @@
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define YAW_JUMP_PREVENTION_LIMIT_LOW 80
 #define YAW_JUMP_PREVENTION_LIMIT_HIGH 400
+#define PIDSUM_LIMIT 700
 
 #define DYNAMIC_PTERM_STICK_THRESHOLD 400
 
@@ -83,6 +84,7 @@ typedef struct pidProfile_s {
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
+    uint16_t pidSumLimit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
