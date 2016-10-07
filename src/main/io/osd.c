@@ -141,7 +141,7 @@ bool inMenu = false;
 
 typedef void (* OSDMenuFuncPtr)(void *data);
 
-void osdUpdate(uint8_t guiKey);
+void osdUpdate(uint32_t currentTime);
 char osdGetAltitudeSymbol();
 int32_t osdGetAltitude(int32_t alt);
 void osdOpenMenu(void);
