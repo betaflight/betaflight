@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define DELTA_MAX_SAMPLES 12
+#define MAX_DENOISE_WINDOW_SIZE 40
 
 typedef struct pt1Filter_s {
     float state;
@@ -32,6 +32,7 @@ typedef struct biquadFilter_s {
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
+    FILTER_DENOISE
 } filterType_e;
 
 typedef enum {
@@ -48,6 +49,5 @@ void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT);
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]);
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]);
+float denoisingFilterUpdate(float input, uint8_t count, float filter[MAX_DENOISE_WINDOW_SIZE]);
 

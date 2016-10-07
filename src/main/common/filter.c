@@ -115,25 +115,15 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    int32_t averageSum = 0;
-
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
-
-    return averageSum / averageCount;
-}
-
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]) {
-    int count;
+/* prototype function for denoising of signal by dynamic moving average. Mainly for test purposes */
+float denoisingFilterUpdate(float input, uint8_t count, float filter[MAX_DENOISE_WINDOW_SIZE]) {
+    int index;
     float averageSum = 0.0f;
 
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
+    for (index = count-1; index > 0; index--) filter[index] = filter[index-1];
+    filter[0] = input;
+    for (count = 0; count < count; index++) averageSum += filter[index];
 
-    return averageSum / averageCount;
+    return averageSum / count;
 }
 

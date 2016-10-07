@@ -48,6 +48,7 @@ static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT], gyroFilterNotch_2[XYZ_AXIS_COUNT];
 static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
+static float gyroFilterDenoise[XYZ_AXIS_COUNT][MAX_DENOISE_WINDOW_SIZE];
 static uint8_t gyroSoftLpfType;
 static uint16_t gyroSoftNotchHz_1, gyroSoftNotchHz_2;
 static float gyroSoftNotchQ_1, gyroSoftNotchQ_2;
@@ -76,12 +77,17 @@ void gyroInit(void)
 {
     if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&gyroFilterNotch_1[axis], gyroSoftNotchHz_1, gyro.targetLooptime, gyroSoftNotchQ_1, FILTER_NOTCH);
-            biquadFilterInit(&gyroFilterNotch_2[axis], gyroSoftNotchHz_2, gyro.targetLooptime, gyroSoftNotchQ_2, FILTER_NOTCH);
             if (gyroSoftLpfType == FILTER_BIQUAD)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
             else
                 gyroDt = (float) gyro.targetLooptime * 0.000001f;
+        }
+    }
+
+    if ((gyroSoftNotchHz_1 || gyroSoftNotchHz_2) && gyro.targetLooptime) {
+        for (int axis = 0; axis < 3; axis++) {
+            biquadFilterInit(&gyroFilterNotch_1[axis], gyroSoftNotchHz_1, gyro.targetLooptime, gyroSoftNotchQ_1, FILTER_NOTCH);
+            biquadFilterInit(&gyroFilterNotch_2[axis], gyroSoftNotchHz_2, gyro.targetLooptime, gyroSoftNotchQ_2, FILTER_NOTCH);
         }
     }
 }
@@ -186,8 +192,10 @@ void gyroUpdate(void)
 
             if (gyroSoftLpfType == FILTER_BIQUAD)
                 gyroADCf[axis] = biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]);
-            else
+            else if (gyroSoftLpfType == FILTER_BIQUAD)
                 gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], (float) gyroADC[axis], gyroSoftLpfHz, gyroDt);
+            else
+                gyroADCf[axis] = denoisingFilterUpdate((float) gyroADC[axis], 3, gyroFilterDenoise[axis]);
 
             if (debugMode == DEBUG_NOTCH)
                 debug[axis] = lrintf(gyroADCf[axis]);

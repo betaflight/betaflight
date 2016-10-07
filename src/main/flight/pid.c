@@ -108,7 +108,8 @@ static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 static biquadFilter_t dtermFilterLpf[3];
 static biquadFilter_t dtermFilterNotch[3];
-static bool dtermNotchInitialised, dtermBiquadLpfInitialised;
+static float dtermFilterDenoise[XYZ_AXIS_COUNT][MAX_DENOISE_WINDOW_SIZE];
+static bool dtermNotchInitialised, dtermLpfInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
     int axis;
@@ -120,9 +121,9 @@ void initFilters(const pidProfile_t *pidProfile) {
     }
 
     if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
-        if (pidProfile->dterm_lpf_hz && !dtermBiquadLpfInitialised) {
+        if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
-            dtermBiquadLpfInitialised = true;
+            dtermLpfInitialised = true;
         }
     }
 }
@@ -271,11 +272,12 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
             if (dtermNotchInitialised) delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
 
             if (pidProfile->dterm_lpf_hz) {
-                if (dtermBiquadLpfInitialised) {
+                if (pidProfile->dterm_filter_type == FILTER_BIQUAD)
                     delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
-                } else {
+                else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
-                }
+                else
+                    delta = denoisingFilterUpdate(delta, 3, dtermFilterDenoise[axis]);
             }
 
             DTerm = Kd[axis] * delta * tpaFactor;
@@ -410,11 +412,13 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
             // Filter delta
             if (pidProfile->dterm_lpf_hz) {
                 float deltaf = delta;  // single conversion
-                if (dtermBiquadLpfInitialised) {
+                if (pidProfile->dterm_filter_type == FILTER_BIQUAD)
                     delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
-                } else {
+                else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
-                }
+                else
+                    delta = denoisingFilterUpdate(delta, 3, dtermFilterDenoise[axis]);
+
                 delta = lrintf(deltaf);
             }
 
