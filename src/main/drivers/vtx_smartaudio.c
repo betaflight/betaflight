@@ -26,9 +26,7 @@ serialPort_t *debugSerialPort = NULL;
 #define dprintf(x)
 #endif
 
-#ifdef SMARTAUDIO_DEBUG_MONITOR
 #include "build/debug.h"
-#endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
 
@@ -559,8 +557,6 @@ void smartAudioSetMode(int mode)
 
 void smartAudioInit(void)
 {
-    portOptions_t portOptions;
-
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
 
@@ -572,10 +568,14 @@ void smartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    portOptions = SERIAL_BIDIR|SERIAL_BIDIR_PP;
+    // Get an UART port assigned to SmartAudio.
 
-    // XXX Fixed at UART2 fow the first cut
-    smartAudioSerialPort = openSerialPort(SERIAL_PORT_USART2, FUNCTION_NONE, NULL, 4800, MODE_RXTX, portOptions);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
+
+    if (!portConfig)
+        return;
+
+    smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
 
     if (!smartAudioSerialPort) {
         return;
