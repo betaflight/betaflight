@@ -42,4 +42,6 @@ void taskUpdateOsd(uint32_t currentTime);
 void taskBstReadWrite(uint32_t currentTime);
 void taskBstMasterProcess(uint32_t currentTime);
 #endif
-
+#ifdef VTX_CONTROL
+void taskVtxControl(void);
+#endif

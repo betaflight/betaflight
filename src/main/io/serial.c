@@ -261,6 +261,8 @@ bool doesConfigurationUsePort(serialPortIdentifier_e identifier)
     return candidate != NULL && candidate->functionMask;
 }
 
+#include "debug.h"
+
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,

@@ -132,9 +132,9 @@ uint8_t armState;
 uint8_t featureBlackbox = 0;
 uint8_t featureLedstrip = 0;
 
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
 uint8_t featureVtx = 0, vtxBand, vtxChannel;
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
 
 // We are in menu flag
 bool inMenu = false;
@@ -230,9 +230,9 @@ OSD_Entry menuBlackbox[];
 #ifdef LED_STRIP
 OSD_Entry menuLedstrip[];
 #endif // LED_STRIP
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
 OSD_Entry menu_vtx[];
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
 OSD_Entry menuImu[];
 OSD_Entry menuPid[];
 OSD_Entry menuRc[];
@@ -258,9 +258,9 @@ OSD_Entry menuFeatures[] =
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, osdChangeScreen, &menuLedstrip[0]},
 #endif // LED_STRIP
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     {"VTX", OME_Submenu, osdChangeScreen, &menu_vtx[0]},
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
@@ -339,7 +339,7 @@ OSD_Entry menuLedstrip[] =
 };
 #endif // LED_STRIP
 
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
 static const char * const vtxBandNames[] = {
     "BOSCAM A",
     "BOSCAM B",
@@ -366,13 +366,13 @@ OSD_Entry menu_vtx[] =
 #endif // VTX
     {"BAND", OME_TAB, NULL, &entryVtxBand},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel},
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
-#endif // USE_RTC6705
+#endif // USE_RTC6705 || VTX_SMARTAUDIO
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
 
 OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
@@ -1365,21 +1365,21 @@ void osdExitMenu(void *ptr)
             featureSet(FEATURE_LED_STRIP);
         else
             featureClear(FEATURE_LED_STRIP);
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
         if (featureVtx)
             featureSet(FEATURE_VTX);
         else
             featureClear(FEATURE_VTX);
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
 
 #ifdef VTX
         masterConfig.vtxBand = vtxBand;
         masterConfig.vtx_channel = vtxChannel - 1;
 #endif // VTX
 
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
         masterConfig.vtx_channel = vtxBand * 8 + vtxChannel - 1;
-#endif // USE_RTC6705
+#endif // USE_RTC6705 || VTX_SMARTAUDIO
 
         saveConfigAndNotify();
     }
@@ -1398,17 +1398,17 @@ void osdOpenMenu(void)
     if (feature(FEATURE_BLACKBOX))
         featureBlackbox = 1;
 
-#if defined(VTX) || defined(USE_RTC6705)
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     if (feature(FEATURE_VTX))
         featureVtx = 1;
-#endif // VTX || USE_RTC6705
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
 
 #ifdef VTX
     vtxBand = masterConfig.vtxBand;
     vtxChannel = masterConfig.vtx_channel + 1;
 #endif // VTX
 
-#ifdef USE_RTC6705
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     vtxBand = masterConfig.vtx_channel / 8;
     vtxChannel = masterConfig.vtx_channel % 8 + 1;
 #endif // USE_RTC6705

@@ -103,6 +103,11 @@
 //#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
 //#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
+// VTX monitor task
+#define VTX_CONTROL
+// VTX device type
+#define VTX_SMARTAUDIO
+
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 
@@ -176,7 +181,7 @@
 #define BUTTON_B_PORT           GPIOB
 #define BUTTON_B_PIN            Pin_0
 
-#define AVOID_UART3_FOR_PWM_PPM
+//#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 
 #define SPEKTRUM_BIND
 // USART3,
