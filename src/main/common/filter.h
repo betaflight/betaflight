@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MAX_DENOISE_WINDOW_SIZE 40
+#define MAX_DENOISE_WINDOW_SIZE 120
 
 typedef struct pt1Filter_s {
     float state;
@@ -30,7 +30,10 @@ typedef struct biquadFilter_s {
 } biquadFilter_t;
 
 typedef struct dennoisingState_s {
+    int filledCount;
     int targetCount;
+    int index;
+    float movingSum;
     float state[MAX_DENOISE_WINDOW_SIZE];
 } denoisingState_t;
 
