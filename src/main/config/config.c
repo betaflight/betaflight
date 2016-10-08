@@ -232,6 +232,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw_launch_time_thresh = 40;              // 40ms
     navConfig->fw_launch_throttle = 1700;
     navConfig->fw_launch_motor_timer = 500;             // ms
+    navConfig->fw_launch_timeout = 5000;                // ms, timeout for launch procedure
     navConfig->fw_launch_climb_angle = 10;              // 10 deg
 }
 

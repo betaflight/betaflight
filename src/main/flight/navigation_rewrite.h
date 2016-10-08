@@ -134,6 +134,7 @@ typedef struct navConfig_s {
     uint16_t fw_launch_time_thresh;         // Time threshold for launch detection (ms)
     uint16_t fw_launch_throttle;            // Launch throttle
     uint16_t fw_launch_motor_timer;         // Time to wait before setting launch_throttle (ms)
+    uint16_t fw_launch_timeout;             // Launch timeout to disable launch mode and swith to normal flight (ms)
     uint8_t fw_launch_climb_angle;          // Target climb angle for launch (deg)
 } navConfig_t;
 

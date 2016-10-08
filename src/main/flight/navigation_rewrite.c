@@ -2369,6 +2369,8 @@ int8_t naivationGetHeadingControlState(void)
 
 bool naivationBlockArming(void)
 {
+    const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD);
+    const bool navLaunchComboModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP));
     bool shouldBlockArming = false;
 
     if (!posControl.navConfig->flags.extra_arming_safety)
@@ -2380,7 +2382,7 @@ bool naivationBlockArming(void)
     }
 
     // Don't allow arming if any of NAV modes is active
-    if ((!ARMING_FLAG(ARMED)) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD))) {
+    if (!ARMING_FLAG(ARMED) && navBoxModesEnabled && !navLaunchComboModesEnabled) {
         shouldBlockArming = true;
     }
 

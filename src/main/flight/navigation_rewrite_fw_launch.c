@@ -42,6 +42,7 @@
 #include "sensors/compass.h"
 
 #include "io/gps.h"
+#include "io/beeper.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -125,16 +126,24 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
             launchState.launchFinished = true;
         }
 
-        // Control throttle
-        if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_motor_timer && launchState.motorControlAllowed) {
-            rcCommand[THROTTLE] = posControl.navConfig->fw_launch_throttle;
-        }
-        else {
-            // Until motors are started don't use PID I-term
-            pidResetErrorAccumulators();
+        // Motor control enabled
+        if (launchState.motorControlAllowed) {
+            // Abort launch after a pre-set time
+            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_timeout) {
+                launchState.launchFinished = true;
+            }
 
-            // Throttle control logic - if motor stop is enabled - keep motors stopped
-            rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;
+            // Control throttle
+            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_motor_timer) {
+                rcCommand[THROTTLE] = posControl.navConfig->fw_launch_throttle;
+            }
+            else {
+                // Until motors are started don't use PID I-term
+                pidResetErrorAccumulators();
+
+                // Throttle control logic - if motor stop is enabled - keep motors stopped
+                rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;
+            }
         }
     }
     else {
@@ -146,6 +155,11 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
 
         // Throttle control logic
         rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;
+    }
+
+    // Control beeper
+    if (!launchState.launchFinished) {
+        beeper(BEEPER_LAUNCH_MODE_ENABLED);
     }
 
     // Lock out controls
