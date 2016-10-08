@@ -97,17 +97,16 @@ float getdT(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-pt1Filter_t deltaFilter[3];
-pt1Filter_t yawFilter;
-biquadFilter_t dtermFilterLpf[3];
-biquadFilter_t dtermFilterNotch[3];
-bool dtermNotchInitialised;
-bool dtermBiquadLpfInitialised;
-denoisingState_t dtermDenoisingState[3];
-bool dtermNotchInitialised, dtermLpfInitialised;
+static pt1Filter_t deltaFilter[3];
+static pt1Filter_t yawFilter;
+static biquadFilter_t dtermFilterLpf[3];
+static biquadFilter_t dtermFilterNotch[3];
+static denoisingState_t dtermDenoisingState[3];
+static bool dtermNotchInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
     int axis;
+    static uint8_t lowpassFilterType;
 
     if (pidProfile->dterm_notch_hz && !dtermNotchInitialised) {
         float notchQ = filterGetNotchQ(pidProfile->dterm_notch_hz, pidProfile->dterm_notch_cutoff);
@@ -115,18 +114,15 @@ void initFilters(const pidProfile_t *pidProfile) {
         dtermNotchInitialised = true;
     }
 
-    if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
-        if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
+    if ((pidProfile->dterm_filter_type != lowpassFilterType) && pidProfile->dterm_lpf_hz) {
+        if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
-            dtermLpfInitialised = true;
         }
-    }
 
-    if (pidProfile->dterm_filter_type == FILTER_DENOISE) {
-        if (pidProfile->dterm_lpf_hz && !dtermLpfInitialised) {
+        if (pidProfile->dterm_filter_type == FILTER_DENOISE) {
             for (axis = 0; axis < 3; axis++) initDenoisingFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
-            dtermLpfInitialised = true;
         }
+        lowpassFilterType = pidProfile->dterm_filter_type;
     }
 }
 

@@ -243,13 +243,15 @@ void initDenoisingFilter(denoisingState_t *filter, uint8_t gyroSoftLpfHz, uint16
 
 /* prototype function for denoising of signal by dynamic moving average. Mainly for test purposes */
 float denoisingFilterUpdate(denoisingState_t *filter, float input) {
-    int index;
-    float averageSum = 0.0f;
+    filter->state[filter->index] = input;
+    filter->movingSum += filter->state[filter->index++];
+    if (filter->index == filter->targetCount)
+        filter->index = 0;
+    filter->movingSum -= filter->state[filter->index];
 
-    for (index = filter->targetCount-1; index > 0; index--) filter->state[index] = filter->state[index-1];
-    filter->state[0] = input;
-    for (int count = 0; count < filter->targetCount; index++) averageSum += filter->state[index];
-
-    return averageSum / filter->targetCount;
+    if (filter->targetCount >= filter->filledCount)
+        return filter->movingSum / filter->targetCount;
+    else
+        return filter->movingSum / ++filter->filledCount + 1;
 }
 
