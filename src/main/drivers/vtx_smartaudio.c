@@ -1,28 +1,18 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <ctype.h>
 
 #include "platform.h"
 
 #ifdef VTX_SMARTAUDIO
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
-#include "io/serial.h"
-#include "config/runtime_config.h"
-
 #include "drivers/vtx_smartaudio.h"
+#include "io/serial.h"
+#include "fc/runtime_config.h"
+#include "config/config_master.h"
 
-//#include "build/debug.h"
-#include "debug.h"
 
 //#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
@@ -34,6 +24,10 @@ serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x;
 #else
 #define dprintf(x)
+#endif
+
+#ifdef SMARTAUDIO_DEBUG_MONITOR
+#include "build/debug.h"
 #endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
@@ -114,6 +108,13 @@ static int8_t sa_opmode = -1;
 static uint16_t sa_freq = 0;
 static uint16_t sa_pitfreq = 0;
 static bool sa_pitfreqpending = false;
+
+// A measure for osd.c that resets on exit:
+// masterConfig.{vtx_channel,vtx_power} can not be set at boot time,
+// but after a communication with the smartaudio device is established.
+// We remember here if channel and power is in sync with masterConfig.
+
+static bool sa_configSynced = false;
 
 static void smartAudioPrintSettings(void)
 {
@@ -219,7 +220,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         sa_outstanding = SA_CMD_NONE;
     } else {
         saerr_oooresp++;
-        dprintf(("processResponse: outstanding %d got %d\r\n", outstanding, resp));
+        dprintf(("processResponse: outstanding %d got %d\r\n", sa_outstanding, resp));
     }
 
     switch(resp) {
@@ -560,12 +561,13 @@ void smartAudioInit(void)
 {
     portOptions_t portOptions;
 
-#ifdef SMARTPORT_DPRINF
+#ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
 
     debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
-    if (!debugSerialPort)
+    if (!debugSerialPort) {
         return;
+    }
     setPrintfSerialPort(debugSerialPort);
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
@@ -626,7 +628,7 @@ void smartAudioPitMode(void)
 }
 #endif
 
-void smartAudioProcess()
+void smartAudioProcess(uint32_t now)
 {
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
 
@@ -645,14 +647,19 @@ void smartAudioProcess()
 
     saAutobaud();
 
-    uint32_t now = millis();
-
     // If we haven't talked to the device, keep trying.
 
     if (sa_vers == 0) {
         smartAudioGetSettings();
         saSendQueue();
         return;
+    } else if (!sa_configSynced) {
+        // XXX Should take care of pit mode on boot case.
+        // Note that vtx_power = 1 means LOW POWER (25mW).
+        smartAudioSetPowerByIndex(masterConfig.vtx_power ? 0 : 1);
+        smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
+        saSendQueue();
+        sa_configSynced = true;
     }
 
     // 

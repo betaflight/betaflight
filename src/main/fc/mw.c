@@ -1068,10 +1068,10 @@ void taskUpdateOsd(uint32_t currentTime)
 
 #ifdef VTX_CONTROL
 // Everything that listens to VTX devices
-void taskVtxControl(void)
+void taskVtxControl(uint32_t currentTime)
 {
 #ifdef VTX_SMARTAUDIO
-    smartAudioProcess();
+    smartAudioProcess(currentTime);
 #endif
 }
 #endif

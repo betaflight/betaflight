@@ -43,5 +43,5 @@ void taskBstReadWrite(uint32_t currentTime);
 void taskBstMasterProcess(uint32_t currentTime);
 #endif
 #ifdef VTX_CONTROL
-void taskVtxControl(void);
+void taskVtxControl(uint32_t currentTime);
 #endif

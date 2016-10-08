@@ -8,7 +8,7 @@ typedef struct vtxPowerTable_s {
 } vtxPowerTable_t;
 
 void smartAudioInit(void);
-void smartAudioProcess(void);
+void smartAudioProcess(uint32_t);
 void smartAudioSetPowerByIndex(uint8_t);
 void smartAudioSetFreq(uint16_t);
 void smartAudioSetBandChan(int, int);
