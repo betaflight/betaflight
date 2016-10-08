@@ -97,12 +97,14 @@ float getdT(void)
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static pt1Filter_t deltaFilter[3];
-static pt1Filter_t yawFilter;
-static biquadFilter_t dtermFilterLpf[3];
-static biquadFilter_t dtermFilterNotch[3];
-static denoisingState_t dtermDenoisingState[3];
-static bool dtermNotchInitialised;
+pt1Filter_t deltaFilter[3];
+pt1Filter_t yawFilter;
+biquadFilter_t dtermFilterLpf[3];
+biquadFilter_t dtermFilterNotch[3];
+bool dtermNotchInitialised;
+bool dtermBiquadLpfInitialised;
+denoisingState_t dtermDenoisingState[3];
+bool dtermNotchInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
     int axis;

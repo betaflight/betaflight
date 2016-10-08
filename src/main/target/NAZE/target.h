@@ -30,8 +30,8 @@
 #define BEEPER_INVERTED
 #endif
 
-#define BARO_XCLR_PIN           PC13
-#define BARO_EOC_PIN            PC14
+//#define BARO_XCLR_PIN           PC13
+//#define BARO_EOC_PIN            PC14
 
 #define INVERTER                PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART          USART2
@@ -114,16 +114,16 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       5
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       3
 
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+//#define SOFTSERIAL_1_TIMER TIM3
+//#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
+//#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+//#define SOFTSERIAL_2_TIMER TIM3
+//#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
+//#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
 // USART3 only on NAZE32_SP - Flex Port
 #define UART3_RX_PIN            PB11
@@ -142,11 +142,11 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+//#define LED_STRIP
+//#define WS2811_TIMER                    TIM3
+//#define WS2811_PIN                      PA6
+//#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+//#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef GPS
 
