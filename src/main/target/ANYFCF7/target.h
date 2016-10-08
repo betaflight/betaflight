@@ -45,7 +45,7 @@
 #define MPU_INT_EXTI PC4
 #define USE_EXTI
 
-//#define MAG
+#define MAG
 //#define USE_MAG_HMC5883
 //#define HMC5883_BUS I2C_DEVICE_EXT
 //#define MAG_HMC5883_ALIGN CW270_DEG_FLIP

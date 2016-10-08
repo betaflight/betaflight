@@ -85,9 +85,11 @@ static void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX)
         uartPort->Handle.Init.Mode |= UART_MODE_TX;
 
+    SET_BIT(uartPort->USARTx->CR3, USART_CR3_OVRDIS);
+
+
     usartConfigurePinInversion(uartPort);
 
-    HAL_UART_IRQHandler(&uartPort->Handle);
     if(uartPort->port.options & SERIAL_BIDIR)
     {
         status = HAL_HalfDuplex_Init(&uartPort->Handle);
@@ -95,6 +97,86 @@ static void uartReconfigure(uartPort_t *uartPort)
     else
     {
         status = HAL_UART_Init(&uartPort->Handle);
+    }
+
+    // Receive DMA or IRQ
+    if (uartPort->port.mode & MODE_RX)
+    {
+        if (uartPort->rxDMAStream)
+        {
+            uartPort->rxDMAHandle.Instance = uartPort->rxDMAStream;
+            uartPort->rxDMAHandle.Init.Channel = uartPort->rxDMAChannel;
+            uartPort->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
+            uartPort->rxDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
+            uartPort->rxDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
+            uartPort->rxDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+            uartPort->rxDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+            uartPort->rxDMAHandle.Init.Mode = DMA_CIRCULAR;
+            uartPort->rxDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+            uartPort->rxDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+            uartPort->rxDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
+            uartPort->rxDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+            uartPort->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
+
+
+            HAL_DMA_DeInit(&uartPort->rxDMAHandle);
+            HAL_DMA_Init(&uartPort->rxDMAHandle);
+            /* Associate the initialized DMA handle to the UART handle */
+            __HAL_LINKDMA(&uartPort->Handle, hdmarx, uartPort->rxDMAHandle);
+
+            HAL_UART_Receive_DMA(&uartPort->Handle, (uint8_t*)uartPort->port.rxBuffer, uartPort->port.rxBufferSize);
+
+            uartPort->rxDMAPos = __HAL_DMA_GET_COUNTER(&uartPort->rxDMAHandle);
+
+        }
+        else
+        {
+            //__HAL_UART_ENABLE_IT(&s->Handle, UART_IT_RXNE);
+            /* Enable the UART Parity Error Interrupt */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_PEIE);
+
+            /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+            SET_BIT(uartPort->USARTx->CR3, USART_CR3_EIE);
+
+            /* Enable the UART Data Register not empty Interrupt */
+            SET_BIT(uartPort->USARTx->CR1, USART_CR1_RXNEIE);
+            //HAL_UART_Receive_IT(&s->Handle, (uint8_t*)s->port.rxBuffer, 1);
+        }
+    }
+
+    // Transmit DMA or IRQ
+    if (uartPort->port.mode & MODE_TX) {
+
+        if (uartPort->txDMAStream) {
+            uartPort->txDMAHandle.Instance = uartPort->txDMAStream;
+            uartPort->txDMAHandle.Init.Channel = uartPort->txDMAChannel;
+            uartPort->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
+            uartPort->txDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
+            uartPort->txDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
+            uartPort->txDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+            uartPort->txDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+            uartPort->txDMAHandle.Init.Mode = DMA_NORMAL;
+            uartPort->txDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+            uartPort->txDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+            uartPort->txDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
+            uartPort->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+            uartPort->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
+
+
+            HAL_DMA_DeInit(&uartPort->txDMAHandle);
+            HAL_StatusTypeDef status = HAL_DMA_Init(&uartPort->txDMAHandle);
+            if(status != HAL_OK)
+            {
+                while(1);
+            }
+            /* Associate the initialized DMA handle to the UART handle */
+            __HAL_LINKDMA(&uartPort->Handle, hdmatx, uartPort->txDMAHandle);
+
+//            __HAL_DMA_ENABLE_IT(s->txDMAHandle, DMA_IT_TC|DMA_IT_FE|DMA_IT_TE|DMA_IT_DME);
+            __HAL_DMA_SET_COUNTER(&uartPort->txDMAHandle, 0);
+        } else {
+            __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
+        }
     }
     return;
 }
@@ -151,79 +233,6 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
     uartReconfigure(s);
 
-    // Receive DMA or IRQ
-    if (mode & MODE_RX) 
-    {
-        if (s->rxDMAStream) 
-        {
-            s->rxDMAHandle.Instance = s->rxDMAStream;
-            s->rxDMAHandle.Init.Channel = s->rxDMAChannel;
-            s->rxDMAHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
-            s->rxDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
-            s->rxDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
-            s->rxDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-            s->rxDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-            s->rxDMAHandle.Init.Mode = DMA_CIRCULAR;
-            s->rxDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-            s->rxDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
-            s->rxDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-            s->rxDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
-            s->rxDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
-            
-            
-            HAL_DMA_DeInit(&s->rxDMAHandle);
-            HAL_DMA_Init(&s->rxDMAHandle);
-            /* Associate the initialized DMA handle to the UART handle */
-            __HAL_LINKDMA(&s->Handle, hdmarx, s->rxDMAHandle);
-            
-            HAL_UART_Receive_DMA(&s->Handle, (uint8_t*)s->port.rxBuffer, s->port.rxBufferSize);
-
-            s->rxDMAPos = __HAL_DMA_GET_COUNTER(&s->rxDMAHandle);
-
-        } 
-        else 
-        {
-//            __HAL_UART_CLEAR_IT(&cfg.uartport->Handle, UART_FLAG_RXNE);
-//            __HAL_UART_ENABLE_IT(&cfg.uartport->Handle, UART_IT_RXNE);
-            HAL_UART_Receive_IT(&s->Handle, (uint8_t*)s->port.rxBuffer, s->port.rxBufferSize);
-        }
-    }
-
-    // Transmit DMA or IRQ
-    if (mode & MODE_TX) {
-
-        if (s->txDMAStream) {
-            s->txDMAHandle.Instance = s->txDMAStream;
-            s->txDMAHandle.Init.Channel = s->txDMAChannel;
-            s->txDMAHandle.Init.Direction = DMA_MEMORY_TO_PERIPH;
-            s->txDMAHandle.Init.PeriphInc = DMA_PINC_DISABLE;
-            s->txDMAHandle.Init.MemInc = DMA_MINC_ENABLE;
-            s->txDMAHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-            s->txDMAHandle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-            s->txDMAHandle.Init.Mode = DMA_NORMAL;
-            s->txDMAHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-            s->txDMAHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
-            s->txDMAHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-            s->txDMAHandle.Init.MemBurst = DMA_MBURST_SINGLE;
-            s->txDMAHandle.Init.Priority = DMA_PRIORITY_MEDIUM;
-            
-            
-            HAL_DMA_DeInit(&s->txDMAHandle);
-            HAL_StatusTypeDef status = HAL_DMA_Init(&s->txDMAHandle);
-            if(status != HAL_OK)
-            {
-                while(1);
-            }
-            /* Associate the initialized DMA handle to the UART handle */
-            __HAL_LINKDMA(&s->Handle, hdmatx, s->txDMAHandle);
-            
-//            __HAL_DMA_ENABLE_IT(s->txDMAHandle, DMA_IT_TC|DMA_IT_FE|DMA_IT_TE|DMA_IT_DME);
-            __HAL_DMA_SET_COUNTER(&s->txDMAHandle, 0);
-        } else {
-            __HAL_UART_ENABLE_IT(&s->Handle, UART_IT_TXE);
-        }
-    }
-
     return (serialPort_t *)s;
 }
 
@@ -243,23 +252,21 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
 
 void uartStartTxDMA(uartPort_t *s)
 {
-    HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
-    if((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
-        return;
-
     uint16_t size = 0;
-//    HAL_UART_DMAStop(&s->Handle);
+    uint32_t fromwhere=0;
+    //HAL_UART_DMAStop(&s->Handle);
    
     if (s->port.txBufferHead > s->port.txBufferTail) {
         size = s->port.txBufferHead - s->port.txBufferTail;
-        HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[s->port.txBufferTail], size);
+        fromwhere = s->port.txBufferTail;
         s->port.txBufferTail = s->port.txBufferHead;
     } else {
         size = s->port.txBufferSize - s->port.txBufferTail;
-        HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[s->port.txBufferTail], size);
+        fromwhere = s->port.txBufferTail;
         s->port.txBufferTail = 0;
     }
     s->txDMAEmpty = false;
+    HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
 }
 
 uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
