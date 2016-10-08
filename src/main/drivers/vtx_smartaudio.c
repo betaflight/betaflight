@@ -1,17 +1,9 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <math.h>
 
 #include "platform.h"
 
 #ifdef VTX_SMARTAUDIO
-
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/maths.h"
-
-#include "scheduler/scheduler.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -24,42 +16,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/light_led.h"
-
-#include "rx/rx.h"
-#include "rx/msp.h"
-
-#include "io/beeper.h"
-#include "io/escservo.h"
-//#include "fc/rc_controls.h"
-#include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
-#include "io/ledstrip.h"
-#include "io/osd.h"
-
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/gyro.h"
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
-#include "flight/navigation.h"
-#include "flight/altitudehold.h"
-
-#include "telemetry/telemetry.h"
-#include "telemetry/smartport.h"
-
-//#include "fc/runtime_config.h"
-
-#include "config/config.h"
-#include "config/config_profile.h"
-//#include "config/feature.h"
 #include "config/runtime_config.h"
 
 #include "drivers/vtx_smartaudio.h"
@@ -72,15 +29,11 @@
 
 #ifdef SMARTAUDIO_DPRINTF
 #include "common/printf.h"
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
 serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x;
 #else
 #define dprintf(x)
-#endif
-
-#if 0
-extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
 #endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
@@ -118,6 +71,7 @@ enum {
 #define SA_FREQ_SETPIT                      (1 << 15)
 
 // Error counters, may be good for post production debugging.
+static uint16_t saerr_badpre = 0;
 static uint16_t saerr_badlen = 0;
 static uint16_t saerr_crc = 0;
 static uint16_t saerr_oooresp = 0;
@@ -331,7 +285,7 @@ static void saReceiveFramer(uint8_t c)
         if (c == 0xAA) {
             state = S_WAITPRE2;
         } else {
-            state = S_WAITPRE1; // Bogus
+            state = S_WAITPRE1; // Don't need this
         }
         break;
 
@@ -339,6 +293,7 @@ static void saReceiveFramer(uint8_t c)
         if (c == 0x55) {
             state = S_WAITRESP;
         } else {
+            saerr_badpre++;
             state = S_WAITPRE1;
         }
         break;
@@ -608,7 +563,7 @@ void smartAudioInit(void)
 #ifdef SMARTPORT_DPRINF
     // Setup debugSerialPort
 
-    debugSerialPort = openSerialPort(SERIAL_PORT_USART3, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
+    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
     if (!debugSerialPort)
         return;
     setPrintfSerialPort(debugSerialPort);
@@ -671,51 +626,15 @@ void smartAudioPitMode(void)
 }
 #endif
 
-
-#define SCHED_PERIOD_DISARMED  (200*1000) // 200msec
-#define SCHED_PERIOD_ARMED (1000*1000) // 1sec, really want to make it none.
-
 void smartAudioProcess()
 {
-    static bool previousArmedState = false;
-
-    if (smartAudioSerialPort == NULL) {
-        return;
-    }
-
-    // Try reducing scheduling frequency (overkill?),
-    // and conserve as much cycles as we can.
-
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
-    bool armedStateChanged = armedState != previousArmedState;
-    previousArmedState = armedState;
 
-    if (armedStateChanged) {
-        if (armedState) {
-            // Reduce scheduling frequency
-
-            rescheduleTask(TASK_VTX_CONTROL, SCHED_PERIOD_ARMED);
-        } else {
-            // Restore scheduling frequency
-
-            rescheduleTask(TASK_VTX_CONTROL, SCHED_PERIOD_DISARMED);
-
-            // Cleanup possible garbage; last command-response cycle
-            // may have been terminated by arming.
-
-            while (serialRxBytesWaiting(smartAudioSerialPort) > 0) {
-                (void)serialRead(smartAudioSerialPort);
-            }
-        }
-    }
-
-    if (armedState) {
-        dprintf(("smartAudioProcess: silence\r\n"));
-        // We keep silence while armed.
+    if (armedState)
         return;
-    }
 
-    // Disarmed, full processing
+    if (smartAudioSerialPort == NULL)
+        return;
 
     while (serialRxBytesWaiting(smartAudioSerialPort) > 0) {
         uint8_t c = serialRead(smartAudioSerialPort);
