@@ -29,6 +29,11 @@ typedef struct biquadFilter_s {
     float d1, d2;
 } biquadFilter_t;
 
+typedef struct dennoisingState_s {
+    int targetCount;
+    float state[MAX_DENOISE_WINDOW_SIZE];
+} denoisingState_t;
+
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
@@ -81,5 +86,6 @@ float firFilterInt16CalcPartialAverage(const firFilterInt16_t *filter, uint8_t c
 float firFilterInt16CalcAverage(const firFilterInt16_t *filter);
 int16_t firFilterInt16LastInput(const firFilterInt16_t *filter);
 int16_t firFilterInt16Get(const firFilter_t *filter, int index);
-float denoisingFilterUpdate(float input, uint8_t count, float filter[MAX_DENOISE_WINDOW_SIZE]);
+void initDenoisingFilter(denoisingState_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime);
+float denoisingFilterUpdate(denoisingState_t *filter, float input);
 

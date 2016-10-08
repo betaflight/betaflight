@@ -57,7 +57,7 @@ extern int32_t errorGyroI[3];
 extern pt1Filter_t deltaFilter[3];
 extern pt1Filter_t yawFilter;
 extern biquadFilter_t dtermFilterLpf[3];
-extern float dtermFilterDenoise[XYZ_AXIS_COUNT][MAX_DENOISE_WINDOW_SIZE];
+extern denoisingState_t dtermDenoisingState[3];
 
 void initFilters(const pidProfile_t *pidProfile);
 float getdT(void);
@@ -183,7 +183,7 @@ void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclination, c
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = denoisingFilterUpdate(delta, 3, dtermFilterDenoise[axis]);
+                    delta = denoisingFilterUpdate(&dtermDenoisingState[axis], delta);
 
                 delta = lrintf(deltaf);
             }
