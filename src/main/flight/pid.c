@@ -66,12 +66,16 @@ pt1Filter_t yawFilter;
 
 void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
+#ifdef USE_PID_MWREWRITE
 void pidMultiWiiRewrite(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
+#endif
+#ifdef USE_PID_MW23
 void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig);
+#endif
 
-pidControllerFuncPtr pid_controller = pidMultiWiiRewrite;
+pidControllerFuncPtr pid_controller = pidLuxFloat;
 
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
 
@@ -126,15 +130,15 @@ void pidSetController(pidControllerType_e type)
 {
     switch (type) {
         default:
-        case PID_CONTROLLER_MWREWRITE:
-            pid_controller = pidMultiWiiRewrite;
-            break;
-#ifndef SKIP_PID_LUXFLOAT
         case PID_CONTROLLER_LUX_FLOAT:
             pid_controller = pidLuxFloat;
             break;
+#ifdef USE_PID_MWREWRITE
+        case PID_CONTROLLER_MWREWRITE:
+            pid_controller = pidMultiWiiRewrite;
+            break;
 #endif
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
         case PID_CONTROLLER_MW23:
             pid_controller = pidMultiWii23;
             break;

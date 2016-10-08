@@ -21,7 +21,9 @@
 #include <math.h>
 
 #include <platform.h>
+
 #include "build/debug.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -222,7 +224,7 @@ static void updateRcCommands(void)
             // YAW TPA disabled.
             PIDweight[axis] = 100;
         }
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
         // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
         dynP8[axis] = (uint16_t)pidProfile()->P8[axis] * prop1 / 100;
         dynI8[axis] = (uint16_t)pidProfile()->I8[axis] * prop1 / 100;
@@ -459,7 +461,7 @@ void processRx(void)
                 DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
             pidResetITermAngle();
 #endif
             pidResetITerm();
@@ -532,7 +534,7 @@ void processRx(void)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
             pidResetITermAngle();
 #endif
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
@@ -546,7 +548,7 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
             pidResetITermAngle();
 #endif
             ENABLE_FLIGHT_MODE(HORIZON_MODE);

@@ -358,6 +358,10 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
+#ifndef GPS
+    // this local variable should be optimized out when GPS is not used.
+    float magneticDeclination = 0.0f;
+#endif
     /* Compute pitch/roll angles */
     attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
