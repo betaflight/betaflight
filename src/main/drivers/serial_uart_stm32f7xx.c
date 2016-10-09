@@ -309,7 +309,6 @@ void uartIrqHandler(uartPort_t *s)
             s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;
         }
-        //__HAL_UART_CLEAR_IT(huart, UART_IT_RXNE);
         CLEAR_BIT(huart->Instance->CR1, (USART_CR1_PEIE));
 
         /* Disable the UART Error Interrupt: (Frame error, noise error, overrun error) */
@@ -345,19 +344,16 @@ void uartIrqHandler(uartPort_t *s)
     /* UART in mode Transmitter ------------------------------------------------*/
     if((__HAL_UART_GET_IT(huart, UART_IT_TXE) != RESET))
     {
-      //UART_Transmit_IT(huart);
+        HAL_UART_IRQHandler(huart);
     }
 
     /* UART in mode Transmitter (transmission end) -----------------------------*/
     if((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET))
     {
-        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
+        HAL_UART_IRQHandler(huart);
+        handleUsartTxDma(s);
     }
 
-    /*if(s->txDMAStream && (s->Handle.TxXferCount == 0) && (s->Handle.TxXferSize != 0))
-    {
-        handleUsartTxDma(s);
-    }*/
 }
 
 static void handleUsartTxDma(uartPort_t *s)
@@ -367,7 +363,6 @@ static void handleUsartTxDma(uartPort_t *s)
     else
     {
         s->txDMAEmpty = true;
-        s->Handle.gState = HAL_UART_STATE_READY;
     }
 }
 
@@ -375,7 +370,6 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
     HAL_DMA_IRQHandler(&s->txDMAHandle);
-    handleUsartTxDma(s);
 }
 
 uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)

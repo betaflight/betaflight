@@ -85,8 +85,6 @@ static void uartReconfigure(uartPort_t *uartPort)
     if (uartPort->port.mode & MODE_TX)
         uartPort->Handle.Init.Mode |= UART_MODE_TX;
 
-    SET_BIT(uartPort->USARTx->CR3, USART_CR3_OVRDIS);
-
 
     usartConfigurePinInversion(uartPort);
 
@@ -131,7 +129,6 @@ static void uartReconfigure(uartPort_t *uartPort)
         }
         else
         {
-            //__HAL_UART_ENABLE_IT(&s->Handle, UART_IT_RXNE);
             /* Enable the UART Parity Error Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_PEIE);
 
@@ -140,7 +137,6 @@ static void uartReconfigure(uartPort_t *uartPort)
 
             /* Enable the UART Data Register not empty Interrupt */
             SET_BIT(uartPort->USARTx->CR1, USART_CR1_RXNEIE);
-            //HAL_UART_Receive_IT(&s->Handle, (uint8_t*)s->port.rxBuffer, 1);
         }
     }
 
@@ -172,7 +168,6 @@ static void uartReconfigure(uartPort_t *uartPort)
             /* Associate the initialized DMA handle to the UART handle */
             __HAL_LINKDMA(&uartPort->Handle, hdmatx, uartPort->txDMAHandle);
 
-//            __HAL_DMA_ENABLE_IT(s->txDMAHandle, DMA_IT_TC|DMA_IT_FE|DMA_IT_TE|DMA_IT_DME);
             __HAL_DMA_SET_COUNTER(&uartPort->txDMAHandle, 0);
         } else {
             __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
@@ -254,7 +249,9 @@ void uartStartTxDMA(uartPort_t *s)
 {
     uint16_t size = 0;
     uint32_t fromwhere=0;
-    //HAL_UART_DMAStop(&s->Handle);
+    HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
+    if((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
+        return;
    
     if (s->port.txBufferHead > s->port.txBufferTail) {
         size = s->port.txBufferHead - s->port.txBufferTail;
