@@ -137,5 +137,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);

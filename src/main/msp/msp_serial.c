@@ -165,7 +165,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
     return mspPostProcessFn;
 }
 
-void mspSerialProcess(mspArmedState_e armedState)
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
@@ -178,8 +178,8 @@ void mspSerialProcess(mspArmedState_e armedState)
             const uint8_t c = serialRead(mspPort->port);
             const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
-            if (!consumed && armedState != MSP_ARMED) {
-                evaluateOtherData(mspPort->port, c);
+            if (!consumed && evaluateNonMspData == MSP_EVALUATE_NON_MSP_DATA) {
+                serialEvaluateNonMspData(mspPort->port, c);
             }
 
             if (mspPort->c_state == MSP_COMMAND_RECEIVED) {

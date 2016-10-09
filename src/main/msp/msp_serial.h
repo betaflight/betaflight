@@ -33,9 +33,9 @@ typedef enum {
 } mspState_e;
 
 typedef enum {
-    MSP_NOT_ARMED,
-    MSP_ARMED
-} mspArmedState_e;
+    MSP_EVALUATE_NON_MSP_DATA,
+    MSP_SKIP_NON_MSP_DATA
+} mspEvaluateNonMspData_e;
 
 #define MSP_PORT_INBUF_SIZE 64
 #define MSP_PORT_OUTBUF_SIZE 256
@@ -53,6 +53,6 @@ typedef struct mspPort_s {
 
 
 void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
-void mspSerialProcess(mspArmedState_e armedState);
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData);
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
