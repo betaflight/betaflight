@@ -178,7 +178,7 @@ void mspSerialProcess(mspArmedState_e armedState)
             const uint8_t c = serialRead(mspPort->port);
             const bool consumed = mspSerialProcessReceivedData(mspPort, c);
 
-            if (!consumed && armedState == MSP_ARMED) {
+            if (!consumed && armedState != MSP_ARMED) {
                 evaluateOtherData(mspPort->port, c);
             }
 
