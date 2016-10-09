@@ -524,7 +524,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 #endif
             ; // fallthough
         case BARO_BMP280:
-#ifdef USE_BARO_BMP280
+#if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
             if (bmp280Detect(&baro)) {
                 baroHardware = BARO_BMP280;
                 break;
