@@ -164,6 +164,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { "BLACKBOX",  BOXBLACKBOX,  26 },
     { "FAILSAFE",  BOXFAILSAFE,  27 },
     { "AIR MODE",  BOXAIRMODE,   28 },
+    { "VTX",       BOXVTX,       29 },
 };
 
 // mask of enabled IDs, calculated on start based on enabled features. boxId_e is used as bit index.
@@ -368,6 +369,10 @@ static void initActiveBoxIds(void)
     ena |= 1 << BOXGTUNE;
 #endif
 
+#ifdef VTX
+    ena |= 1 << BOXVTX;
+#endif
+
     // check that all enabled IDs are in boxes array (check is skipped when using findBoxBy<id>() functions
     for(boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
         if((ena & (1 << boxId))
@@ -403,7 +408,7 @@ uint32_t packFlightModeFlags(void)
 #define BM(x) (1 << (x))
     const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) ;
+        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) | BM(BOXVTX);
     for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
         if((rcModeCopyMask & BM(i)) == 0)
             continue;
@@ -414,6 +419,7 @@ uint32_t packFlightModeFlags(void)
     // copy ARM state
     if(ARMING_FLAG(ARMED))
         boxEnabledMask |= 1 << BOXARM;
+
 
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted

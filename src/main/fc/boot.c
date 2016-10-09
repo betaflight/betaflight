@@ -135,6 +135,7 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
+bool isUsingVTXSwitch(void);
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 

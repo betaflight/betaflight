@@ -626,6 +626,9 @@ void processRx(void)
     }
 #endif
 
+#ifdef VTX
+    updateVTXState();
+#endif
 }
 
 void filterRc(void){

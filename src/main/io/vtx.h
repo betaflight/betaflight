@@ -34,6 +34,12 @@ typedef struct vtxState_s {
 
 extern vtxState_t vtxState;
 
+// VTX Control
+void initVTXState(void);
+bool isUsingVTXSwitch(void);
+void updateVTXState(void);
+
+
 // VTX API
 
 // common methods

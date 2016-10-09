@@ -24,6 +24,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/rc_controls.h"
 #include "common/utils.h"
 
 #include "drivers/system.h"
@@ -143,6 +144,11 @@ void handleVTXControlButton(void)
 #endif
 }
 
+bool isUsingVTXSwitch(void)
+{
+    return rcModeIsActivationConditionPresent(modeActivationProfile()->modeActivationConditions, BOXVTX);
+}
+
 void vtxSaveState(void)
 {
     vtxConfig()->channel = vtxState.channel;
@@ -158,8 +164,40 @@ void vtxInit(void)
     vtxState.band = vtxConfig()->band;
     vtxState.rfPower = vtxConfig()->rfPower;
 
-    if (vtxConfig()->enabledOnBoot) {
-        vtxEnable();
+    if (!isUsingVTXSwitch()) {
+        if (vtxConfig()->enabledOnBoot) {
+            vtxEnable();
+        }
     }
 }
 
+static bool vtxModeActivationConditionPresent = false;
+
+void initVTXState(void)
+{
+    vtxModeActivationConditionPresent = isUsingVTXSwitch();
+}
+
+void updateVTXState(void)
+{
+    static bool vtxEnabled = false;
+    if (!vtxModeActivationConditionPresent) {
+        return;
+    }
+
+    if (rcModeIsActive(BOXVTX)) {
+        if (!vtxEnabled) {
+            if (!vtxState.enabled) {
+                vtxEnable();
+            }
+            vtxEnabled  = true;
+        }
+    } else {
+        if (vtxEnabled) {
+            if (vtxState.enabled) {
+                vtxDisable();
+            }
+            vtxEnabled  = false;
+        }
+    }
+}

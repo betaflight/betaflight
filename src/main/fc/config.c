@@ -78,6 +78,8 @@
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
 
+void initVTXState(void);
+
 
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
@@ -178,6 +180,10 @@ static void activateConfig(void)
 
 #ifdef GPS
     recalculateMagneticDeclination();
+#endif
+
+#ifdef VTX
+    initVTXState();
 #endif
 
     static imuRuntimeConfig_t imuRuntimeConfig;
