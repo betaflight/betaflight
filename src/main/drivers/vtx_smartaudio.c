@@ -13,8 +13,9 @@
 #include "fc/runtime_config.h"
 #include "config/config_master.h"
 
+#define SMARTAUDIO_EXTENDED_API
 
-//#define SMARTAUDIO_DPRINTF
+#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
@@ -437,6 +438,7 @@ vtxPowerTable_t saPowerTableV1[] = {
 };
 
 vtxPowerTable_t saPowerTableV2[] = {
+    { "OFF",   0,  -2 },
     { "PIT",   0,  -1 },
     { " 25",  25,   0 },
     { "200", 200,   1 },
@@ -513,7 +515,7 @@ void smartAudioSetPowerByIndex(uint8_t index)
         return;
     }
 
-    if (index > 4)
+    if (index > 5)
         return;
 
     if (sa_vers == 1) {
@@ -523,21 +525,26 @@ void smartAudioSetPowerByIndex(uint8_t index)
         buf[5] = CRC8(buf, 5);
         saQueueCmd(buf, 6);
     } else {
-        index++; // XXX Skip pit mode for v3.0.0 BFOSD API
+        int pwrval = saPowerTableV2[index].value;
 
-        if (index > 0) {
+        dprintf(("smartAudioSetPowerByIndex: pwrval %d\n", pwrval));
+
+        if (pwrval >= 0) {
             if (sa_opmode & SA_MODE_GET_PITMODE) {
                 // Currently in pit mode; have to deactivate and set power.
-                // XXX Have to implement chained request...
             } else {
                 dprintf(("smartAudioSetPowerByIndex: V2 value %d\r\n", 
                     saPowerTableV2[index].value));
                 buf[4] = saPowerTableV2[index].value;
                 buf[5] = CRC8(buf, 5);
                 saQueueCmd(buf, 6);
+                smartAudioSetMode(0x00); // Reset power off
             }
-        } else {
-            // Pit mode requested.
+        } else if (pwrval == -1) {
+            // Pit mode
+            // Not implemented yet.
+        } else if (pwrval == -2) {
+            // Power off
             // Not implemented yet.
         }
     }
@@ -548,7 +555,7 @@ void smartAudioSetMode(int mode)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
 
-    buf[4] = mode & 0x0f;
+    buf[4] = mode & 0x1f;
     buf[5] = CRC8(buf, 5);
 
     saQueueCmd(buf, 6);
@@ -655,8 +662,7 @@ void smartAudioProcess(uint32_t now)
         return;
     } else if (!sa_configSynced) {
         // XXX Should take care of pit mode on boot case.
-        // Note that vtx_power = 1 means LOW POWER (25mW).
-        smartAudioSetPowerByIndex(masterConfig.vtx_power ? 0 : 1);
+        smartAudioSetPowerByIndex(masterConfig.vtx_power);
         smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
         saSendQueue();
         sa_configSynced = true;

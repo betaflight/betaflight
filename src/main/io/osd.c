@@ -356,6 +356,19 @@ OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
 OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 #endif // VTX
 
+#ifdef VTX_SMARTAUDIO
+static const char * const vtxSmartAudioPower[] = {
+    "OFF",
+    "PIT",
+    "25",
+    "200",
+    "500",
+    "800",
+};
+
+OSD_TAB_t entrySmartAudioPower = { &masterConfig.vtx_power, 5, &vtxSmartAudioPower[0] };
+#endif
+
 OSD_Entry menu_vtx[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL},
@@ -366,9 +379,12 @@ OSD_Entry menu_vtx[] =
 #endif // VTX
     {"BAND", OME_TAB, NULL, &entryVtxBand},
     {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel},
-#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+#ifdef USE_RTC6705
     {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
-#endif // USE_RTC6705 || VTX_SMARTAUDIO
+#endif // USE_RTC6705
+#ifdef VTX_SMARTAUDIO
+    {"POWER", OME_TAB, NULL, &entrySmartAudioPower},
+#endif
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
