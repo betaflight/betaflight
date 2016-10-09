@@ -57,6 +57,7 @@
 #include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/intpwm.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -258,6 +259,10 @@ void init(void)
             pwm_params.sonarIOConfig.echoTag = sonarHardware->echoTag;
         }
     }
+#endif
+
+#ifdef USE_INTPWM
+    intpwmInit();
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
@@ -734,6 +739,9 @@ void main_init(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef USE_INTPWM
+    setTaskEnabled(TASK_INTPWM, true);
 #endif
 }
 

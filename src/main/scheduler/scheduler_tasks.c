@@ -181,4 +181,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef USE_INTPWM
+    [TASK_INTPWM] = {
+        .taskName = "INTPWM",
+        .taskFunc = taskIntpwm,
+        .desiredPeriod = 1000000 / 10,         // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
 };

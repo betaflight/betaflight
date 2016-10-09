@@ -42,4 +42,6 @@ void taskUpdateOsd(uint32_t currentTime);
 void taskBstReadWrite(uint32_t currentTime);
 void taskBstMasterProcess(uint32_t currentTime);
 #endif
-
+#ifdef USE_INTPWM
+void taskIntpwm(void);
+#endif

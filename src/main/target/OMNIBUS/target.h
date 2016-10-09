@@ -29,7 +29,8 @@
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
+#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready (mag disabled)
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 3 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
@@ -141,6 +142,19 @@
 //#define RSSI_ADC_PIN                PB1
 //#define ADC_INSTANCE                ADC3
 
+// Experimental stand alone PWM support RSSI input
+#define RSSI_PWM
+
+// RSSI_PWM uses interrupt based PWM input
+#define USE_INTPWM       // Interrupt based measurements
+//#define INTPWM_PIN           PB2 // Requires 1K inline to be bypassed.
+//#define INTPWM_PIN           PB4 // Shared with PPM
+#define INTPWM_PIN           PB6 // Shared with PWM8 & I2C
+// Values for FrSky PWM RSSI
+#define INTPWM_INPUT_MIN     20
+#define INTPWM_INPUT_MAX   1024
+#define INTPWM_OUTPUT_MIN     0
+#define INTPWM_OUTPUT_MAX  1023
 
 #define LED_STRIP
 #define WS2811_PIN                      PA8

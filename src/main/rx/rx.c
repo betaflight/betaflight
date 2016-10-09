@@ -33,6 +33,12 @@
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
+#include "drivers/intpwm.h"
+#include "io/serial.h"
+#include "io/rc_controls.h"
+
+#include "flight/failsafe.h"
+
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
