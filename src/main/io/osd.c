@@ -59,6 +59,10 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #endif
 
+#ifdef VTX_SMARTAUDIO
+#include "drivers/vtx_smartaudio.h"
+#endif
+
 #include "common/printf.h"
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -107,26 +111,6 @@ statistic_t stats;
 
 uint8_t osdRows;
 
-//type of elements
-typedef enum
-{
-    OME_Label,
-    OME_Back,
-    OME_OSD_Exit,
-    OME_Submenu,
-    OME_Bool,
-    OME_INT8,
-    OME_UINT8,
-    OME_UINT16,
-    OME_INT16,
-    OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
-    //wlasciwosci elementow
-    OME_VISIBLE,
-    OME_POS,
-    OME_TAB,
-    OME_END,
-} OSD_MenuElement;
-
 //local variable to detect arm/disarm and show statistic etc
 uint8_t armState;
 uint8_t featureBlackbox = 0;
@@ -138,8 +122,6 @@ uint8_t featureVtx = 0, vtxBand, vtxChannel;
 
 // We are in menu flag
 bool inMenu = false;
-
-typedef void (* OSDMenuFuncPtr)(void *data);
 
 void osdUpdate(uint32_t currentTime);
 char osdGetAltitudeSymbol();
@@ -154,61 +136,7 @@ void osdChangeScreen(void * ptr);
 void osdDrawElements(void);
 void osdDrawSingleElement(uint8_t item);
 
-typedef struct
-{
-    char *text;
-    OSD_MenuElement type;
-    OSDMenuFuncPtr func;
-    void *data;
-} OSD_Entry;
-
-typedef struct
-{
-    uint8_t *val;
-    uint8_t min;
-    uint8_t max;
-    uint8_t step;
-} OSD_UINT8_t;
-
-typedef struct
-{
-    int8_t *val;
-    int8_t min;
-    int8_t max;
-    int8_t step;
-} OSD_INT8_t;
-
-typedef struct
-{
-    int16_t *val;
-    int16_t min;
-    int16_t max;
-    int16_t step;
-} OSD_INT16_t;
-
-typedef struct
-{
-    uint16_t *val;
-    uint16_t min;
-    uint16_t max;
-    uint16_t step;
-} OSD_UINT16_t;
-
-typedef struct
-{
-    uint8_t *val;
-    uint8_t min;
-    uint8_t max;
-    uint8_t step;
-    uint16_t multipler;
-} OSD_FLOAT_t;
-
-typedef struct
-{
-    uint8_t *val;
-    uint8_t max;
-    const char * const *names;
-} OSD_TAB_t;
+#include "io/osd_menutypes.h"
 
 OSD_Entry *menuStack[10]; //tab to save menu stack
 uint8_t menuStackHistory[10]; //current position in menu stack
@@ -356,23 +284,14 @@ OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
 OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 #endif // VTX
 
-#ifdef VTX_SMARTAUDIO
-static const char * const vtxSmartAudioPower[] = {
-    "OFF",
-    "PIT",
-    "25",
-    "200",
-    "500",
-    "800",
-};
-
-OSD_TAB_t entrySmartAudioPower = { &masterConfig.vtx_power, 5, &vtxSmartAudioPower[0] };
-#endif
-
 OSD_Entry menu_vtx[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL},
     {"ENABLED", OME_Bool, NULL, &featureVtx},
+#ifdef VTX_SMARTAUDIO
+    {"TYPE           S.AUDIO", OME_Label, NULL, NULL},
+    {"STATUS", OME_TAB, OME_READONLY, &smartAudioOsdStatusTable},
+#endif
 #ifdef VTX
     {"VTX MODE", OME_UINT8, NULL, &entryVtxMode},
     {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz},
@@ -383,7 +302,7 @@ OSD_Entry menu_vtx[] =
     {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
 #endif // USE_RTC6705
 #ifdef VTX_SMARTAUDIO
-    {"POWER", OME_TAB, NULL, &entrySmartAudioPower},
+    {"POWER", OME_TAB, NULL, &smartAudioOsdPowerTable},
 #endif
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
@@ -791,7 +710,7 @@ uint8_t osdHandleKey(uint8_t key)
             res = BUTTON_PAUSE;
             break;
         case OME_Bool:
-            if (p->data) {
+            if (p->data && (p->func != OME_READONLY)) {
                 uint8_t *val = p->data;
                 if (key == KEY_RIGHT)
                     *val = 1;
@@ -827,7 +746,7 @@ uint8_t osdHandleKey(uint8_t key)
             }
             break;
         case OME_TAB:
-            if (p->type == OME_TAB) {
+            if (p->func != OME_READONLY) {
                 OSD_TAB_t *ptr = p->data;
 
                 if (key == KEY_RIGHT) {

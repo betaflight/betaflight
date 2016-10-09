@@ -8,10 +8,11 @@
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/vtx_smartaudio.h"
 #include "io/serial.h"
 #include "fc/runtime_config.h"
 #include "config/config_master.h"
+#include "io/osd_menutypes.h"
+#include "drivers/vtx_smartaudio.h"
 
 #define SMARTAUDIO_EXTENDED_API
 
@@ -112,8 +113,6 @@ static bool sa_pitfreqpending = false;
 // masterConfig.{vtx_channel,vtx_power} can not be set at boot time,
 // but after a communication with the smartaudio device is established.
 // We remember here if channel and power is in sync with masterConfig.
-
-static bool sa_configSynced = false;
 
 static void smartAudioPrintSettings(void)
 {
@@ -504,6 +503,8 @@ void smartAudioSetBandChan(int band, int chan)
     saQueueCmd(buf, 6);
 }
 
+void smartAudioSetMode(int); // Forward
+
 void smartAudioSetPowerByIndex(uint8_t index)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
@@ -527,7 +528,7 @@ void smartAudioSetPowerByIndex(uint8_t index)
     } else {
         int pwrval = saPowerTableV2[index].value;
 
-        dprintf(("smartAudioSetPowerByIndex: pwrval %d\n", pwrval));
+        dprintf(("smartAudioSetPowerByIndex: pwrval %d\r\n", pwrval));
 
         if (pwrval >= 0) {
             if (sa_opmode & SA_MODE_GET_PITMODE) {
@@ -635,8 +636,11 @@ void smartAudioPitMode(void)
 }
 #endif
 
+void saOsdUpdate(void); // Forward
+
 void smartAudioProcess(uint32_t now)
 {
+    static bool configSynced = false;
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
 
     if (armedState)
@@ -654,21 +658,26 @@ void smartAudioProcess(uint32_t now)
 
     saAutobaud();
 
-    // If we haven't talked to the device, keep trying.
 
     if (sa_vers == 0) {
+        // If we haven't talked to the device, keep trying.
         smartAudioGetSettings();
         saSendQueue();
         return;
-    } else if (!sa_configSynced) {
+    }
+
+    if (!configSynced) {
         // XXX Should take care of pit mode on boot case.
         smartAudioSetPowerByIndex(masterConfig.vtx_power);
         smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
         saSendQueue();
-        sa_configSynced = true;
-    }
+        configSynced = true;
 
-    // 
+#ifdef OSD
+        // Update OSD menu table
+        saOsdUpdate();
+#endif
+    }
 
     if ((sa_outstanding != SA_CMD_NONE)
             && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
@@ -709,4 +718,55 @@ const uint16_t vtx_freq[] =
     5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
 };
 
+#endif
+
+// Interface to BFOSD
+
+#ifdef OSD
+static char * saOsdPowerTableNA[] = {
+    "N.A."
+};
+#define SAOSD_POWERTABNA_SIZE (sizeof(saOsdPowerTableNA)/sizeof(char *))
+
+static char * saOsdPowerTableV1[] = {
+    " 25",
+    "200",
+    "500",
+    "800",
+};
+#define SAOSD_POWERTABV1_SIZE (sizeof(saOsdPowerTableV1)/sizeof(char *))
+
+static char * saOsdPowerTableV2[] = {
+    "OFF",
+    "PIT",
+    " 25",
+    "200",
+    "500",
+    "800",
+};
+#define SAOSD_POWERTABV2_SIZE (sizeof(saOsdPowerTableV2)/sizeof(char *))
+
+static uint8_t saOsdPowerDummy = SAOSD_POWERTABNA_SIZE;
+
+static char * saOsdStatusTable[] = {
+    "OFFLINE",
+    "ONLINE ",
+};
+
+static uint8_t saOsdStatus = 0;
+
+// Exported
+bool osdSmartAudioActive = false;
+
+OSD_dynaTAB_t smartAudioOsdStatusTable = { &saOsdStatus, 0, &saOsdStatusTable[0] };
+OSD_dynaTAB_t smartAudioOsdPowerTable = { &saOsdPowerDummy, 1, &saOsdPowerTableNA[0] };
+
+void saOsdUpdate(void)
+{
+    saOsdStatus = 1;
+
+    smartAudioOsdPowerTable.val = &masterConfig.vtx_power;
+    smartAudioOsdPowerTable.max = (sa_vers == 1) ? SAOSD_POWERTABV1_SIZE : SAOSD_POWERTABV2_SIZE;
+    smartAudioOsdPowerTable.names = (sa_vers == 1) ? saOsdPowerTableV1 : saOsdPowerTableV2;
+}
 #endif
