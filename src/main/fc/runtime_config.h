@@ -60,10 +60,10 @@ typedef enum {
     GPS_FIX             = (1 << 1),
     CALIBRATE_MAG       = (1 << 2),
     SMALL_ANGLE         = (1 << 3),
-    FIXED_WING          = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
+    FIXED_WING          = (1 << 4),                     // set when in flying_wing or airplane mode. currently used by althold selection code
     ANTI_WINDUP         = (1 << 5),
-    //PID_ATTENUATE       = (1 << 6),
-    FLAPERON_AVAILABLE  = (1 << 7)
+    FLAPERON_AVAILABLE  = (1 << 6),
+    NAV_MOTOR_STOP      = (1 << 7),                     // navigation requests MOTOR_STOP regardless of throttle stick, will only activate if MOTOR_STOP feature is available
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))

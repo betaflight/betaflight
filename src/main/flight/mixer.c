@@ -504,7 +504,7 @@ void mixTable(void)
 
             // Motor stop handling
             if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D)) {
-                if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+                if (((rcData[THROTTLE]) < rxConfig->mincheck) || STATE(NAV_MOTOR_STOP)) {
                     motor[i] = motorConfig->mincommand;
                 }
             }
