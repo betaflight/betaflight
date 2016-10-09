@@ -493,8 +493,8 @@ OSD_Entry menuRateExpo[] =
     {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw},
     {"THR. PID ATT.", OME_FLOAT, NULL, &extryTpaEntry},
     {"TPA BREAKPOINT", OME_UINT16, NULL, &entryTpaBreak},
-    {"PTERM SRATE RATIO", OME_FLOAT, NULL, &entryPSetpoint},
     {"D SETPOINT", OME_FLOAT, NULL, &entryDSetpoint},
+    {"D SETPOINT TRANSITION", OME_FLOAT, NULL, &entryPSetpoint},
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
