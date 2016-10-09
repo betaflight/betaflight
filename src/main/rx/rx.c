@@ -35,7 +35,6 @@
 #include "drivers/adc.h"
 #include "drivers/intpwm.h"
 #include "io/serial.h"
-#include "io/rc_controls.h"
 
 #include "flight/failsafe.h"
 
