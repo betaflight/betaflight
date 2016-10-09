@@ -247,8 +247,14 @@ void taskUpdateAttitude(uint32_t currentTime)
 void taskHandleSerial(uint32_t currentTime)
 {
     UNUSED(currentTime);
-
-    handleSerial();
+#ifdef USE_CLI
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
+#endif
+    mspSerialProcess();
 }
 
 void taskUpdateBeeper(uint32_t currentTime)
@@ -424,7 +430,7 @@ void taskUpdateOsd(uint32_t currentTime)
 void fcTasksInit(void)
 {
     schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime + LOOPTIME_SUSPEND_TIME); // Add a littlebit of extra time to reduce busy wait
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 
     if (sensors(SENSOR_ACC)) {
