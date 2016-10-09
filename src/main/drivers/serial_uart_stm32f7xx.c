@@ -71,10 +71,10 @@ typedef struct uartDevice_s {
 static uartDevice_t uart1 = 
 { 
     .DMAChannel = DMA_CHANNEL_4,
-    .txDMAStream = DMA2_Stream7,
 #ifdef USE_UART1_RX_DMA
     .rxDMAStream = DMA2_Stream5,
 #endif
+    .txDMAStream = DMA2_Stream7,
     .dev = USART1, 
     .rx = IO_TAG(UART1_RX_PIN), 
     .tx = IO_TAG(UART1_TX_PIN), 
@@ -140,7 +140,7 @@ static uartDevice_t uart3 =
 static uartDevice_t uart4 = 
 { 
     .DMAChannel = DMA_CHANNEL_4,
-#ifdef USE_UART1_RX_DMA
+#ifdef USE_UART4_RX_DMA
     .rxDMAStream = DMA1_Stream2,
 #endif
     .txDMAStream = DMA1_Stream4,
@@ -163,10 +163,10 @@ static uartDevice_t uart4 =
 static uartDevice_t uart5 = 
 { 
     .DMAChannel = DMA_CHANNEL_4,
-#ifdef USE_UART1_RX_DMA
+#ifdef USE_UART5_RX_DMA
     .rxDMAStream = DMA1_Stream0,
 #endif
-    .txDMAStream = DMA2_Stream7,
+    .txDMAStream = DMA1_Stream7,
     .dev = UART5, 
     .rx = IO_TAG(UART5_RX_PIN), 
     .tx = IO_TAG(UART5_TX_PIN), 
@@ -175,7 +175,7 @@ static uartDevice_t uart5 =
     .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(UART5),
-    .txIrq = DMA2_ST7_HANDLER,
+    .txIrq = DMA1_ST7_HANDLER,
     .rxIrq = UART5_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART5
@@ -407,7 +407,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
+        IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
     }
     else {
         if (mode & MODE_TX) {
