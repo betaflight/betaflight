@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/sensor.h"
+
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif

@@ -17,11 +17,17 @@
 
 #pragma once
 
-extern int16_t throttleAngleCorrection;
+#include "common/axis.h"
+#include "common/maths.h"
+
+#include "sensors/acceleration.h"
+
+// Exported symbols
 extern uint32_t accTimeSum;
 extern int accSumCount;
 extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
+
 
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
 #define DECIDEGREES_TO_DEGREES(angle) (angle / 10)

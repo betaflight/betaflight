@@ -17,49 +17,38 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 
-#include "common/color.h"
-#include "common/axis.h"
+#include "config/config_profile.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
-#include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
+#include "io/ledstrip.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "sensors/sensors.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
 
 
 // System-wide
