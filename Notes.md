@@ -10,7 +10,7 @@ acc x increases (blue)
 acc z decreases (red)
 mag x decreases (blue)
 
-lift left of boar (i.e. roll right)
+lift left of board (i.e. roll right)
 gyro x increases (blue)
 acc y increases (green)
 mag y decreases (green)
