@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/serial.h"
+
 typedef enum {
     PORTSHARING_UNUSED = 0,
     PORTSHARING_NOT_SHARED,
