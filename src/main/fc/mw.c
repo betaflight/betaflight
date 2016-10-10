@@ -668,7 +668,7 @@ void taskHandleSerial(void)
         return;
     }
 #endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_ARMED : MSP_NOT_ARMED);
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
 }
 
 void taskUpdateBeeper(void)
