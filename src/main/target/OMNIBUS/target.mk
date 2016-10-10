@@ -14,4 +14,4 @@ TARGET_SRC = \
             io/transponder_ir.c \
             drivers/max7456.c \
             io/osd.c \
-            drivers/vtx_smartaudio.c
+            io/vtx_smartaudio.c

@@ -41,7 +41,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
-#include "drivers/vtx_smartaudio.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -68,6 +67,7 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/vtx_smartaudio.h"
 
 #include "io/vtx.h"
 
@@ -1070,6 +1070,9 @@ void taskUpdateOsd(uint32_t currentTime)
 // Everything that listens to VTX devices
 void taskVtxControl(uint32_t currentTime)
 {
+    if (ARMING_FLAG(ARMED))
+        return;
+
 #ifdef VTX_SMARTAUDIO
     smartAudioProcess(currentTime);
 #endif

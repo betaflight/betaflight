@@ -57,7 +57,6 @@
 #include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
-#include "drivers/vtx_smartaudio.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -82,6 +81,7 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/vtx_smartaudio.h"
 
 #include "scheduler/scheduler.h"
 
@@ -620,7 +620,10 @@ void init(void)
 #endif
 
 #ifdef VTX_SMARTAUDIO
-    smartAudioInit();
+    if (smartAudioInit()) {
+        smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
+        smartAudioSetPowerByIndex(masterConfig.vtx_power);
+    }
 #endif
 
     // start all timers

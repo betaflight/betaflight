@@ -8,21 +8,19 @@
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/vtx_smartaudio.h"
 #include "io/serial.h"
-#include "fc/runtime_config.h"
-#include "config/config_master.h"
+#include "io/vtx_smartaudio.h"
 
 #define SMARTAUDIO_EXTENDED_API
 
-#define SMARTAUDIO_DPRINTF
+//#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
 #include "common/printf.h"
 #define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
 serialPort_t *debugSerialPort = NULL;
-#define dprintf(x) if (debugSerialPort) printf x;
+#define dprintf(x) if (debugSerialPort) printf x
 #else
 #define dprintf(x)
 #endif
@@ -504,6 +502,18 @@ void smartAudioSetBandChan(int band, int chan)
     saQueueCmd(buf, 6);
 }
 
+#ifdef SMARTAUDIO_EXTENDED_API
+void smartAudioSetMode(int mode)
+{
+    static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
+
+    buf[4] = mode & 0x1f;
+    buf[5] = CRC8(buf, 5);
+
+    saQueueCmd(buf, 6);
+}
+#endif
+
 void smartAudioSetPowerByIndex(uint8_t index)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_POWER), 1 };
@@ -550,19 +560,7 @@ void smartAudioSetPowerByIndex(uint8_t index)
     }
 }
 
-#ifdef SMARTAUDIO_EXTENDED_API
-void smartAudioSetMode(int mode)
-{
-    static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
-
-    buf[4] = mode & 0x1f;
-    buf[5] = CRC8(buf, 5);
-
-    saQueueCmd(buf, 6);
-}
-#endif
-
-void smartAudioInit(void)
+bool smartAudioInit()
 {
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
@@ -575,18 +573,16 @@ void smartAudioInit(void)
     dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
-    // Get an UART port assigned to SmartAudio.
-
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
-
-    if (!portConfig)
-        return;
-
-    smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
+    if (portConfig) {
+        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
+    }
 
     if (!smartAudioSerialPort) {
-        return;
+        return false;
     }
+
+    return true;
 }
 
 #ifdef SMARTAUDIO_EXTENDED_API
@@ -637,11 +633,6 @@ void smartAudioPitMode(void)
 
 void smartAudioProcess(uint32_t now)
 {
-    bool armedState = ARMING_FLAG(ARMED) ? true : false;
-
-    if (armedState)
-        return;
-
     if (smartAudioSerialPort == NULL)
         return;
 
@@ -661,11 +652,13 @@ void smartAudioProcess(uint32_t now)
         saSendQueue();
         return;
     } else if (!sa_configSynced) {
+#if 0
         // XXX Should take care of pit mode on boot case.
         smartAudioSetPowerByIndex(masterConfig.vtx_power);
         smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
         saSendQueue();
         sa_configSynced = true;
+#endif
     }
 
     // 
