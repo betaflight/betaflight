@@ -423,10 +423,11 @@ static void serializeDataflashReadReply(uint32_t address, uint16_t size, bool us
 
         serialize32(address);
     } else {
-        headSerialReply(sizeof(uint32_t) + sizeof(uint16_t) + bytesRead);
+        headSerialReply(sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint8_t) + bytesRead);
 
         serialize32(address);
         serialize16(bytesRead);
+        serialize8(0); // placeholder for compression format
     }
 
     int i;
