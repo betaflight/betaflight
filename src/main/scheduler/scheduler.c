@@ -27,7 +27,6 @@
 #include "build/debug.h"
 
 #include "scheduler/scheduler.h"
-#include "scheduler/scheduler_tasks.h"
 
 #include "common/maths.h"
 

@@ -43,3 +43,8 @@ void taskBstReadWrite(uint32_t currentTime);
 void taskBstMasterProcess(uint32_t currentTime);
 #endif
 
+#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+
+
+void fcTasksInit(void);
+

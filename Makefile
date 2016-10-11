@@ -397,6 +397,7 @@ COMMON_SRC = \
             $(TARGET_DIR_SRC) \
             main.c \
             fc/mw.c \
+            fc/fc_tasks.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -463,7 +464,6 @@ COMMON_SRC = \
             rx/sumh.c \
             rx/xbus.c \
             scheduler/scheduler.c \
-            scheduler/scheduler_tasks.c \
             sensors/acceleration.c \
             sensors/battery.c \
             sensors/boardalignment.c \
