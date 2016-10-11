@@ -17,7 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
+#include "common/maths.h"
 
 #include "platform.h"
 
@@ -130,6 +130,7 @@ static pwmOutputPort_t *pwmOutConfig(const timerHardware_t *timerHardware, uint8
 
 static void pwmWriteBrushed(uint8_t index, uint16_t value)
 {
+    value = constrain(value, 1000, 2000);
     *motors[index]->ccr = (value - 1000) * motors[index]->period / 1000;
 }
 
