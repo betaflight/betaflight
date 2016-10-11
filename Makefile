@@ -414,6 +414,7 @@ COMMON_SRC = \
             fc/msp_fc.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            fc/fc_tasks.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -439,7 +440,6 @@ COMMON_SRC = \
             rx/sumh.c \
             rx/xbus.c \
             scheduler/scheduler.c \
-            scheduler/scheduler_tasks.c \
             sensors/acceleration.c \
             sensors/battery.c \
             sensors/boardalignment.c \
