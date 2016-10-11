@@ -59,18 +59,18 @@ NWJS_SDK_DIR := $(TOOLS_DIR)/nwjs-sdk-v0.17.6
 
 # source: http://nwjs.io/downloads/
 ifdef LINUX
+  NWJS  := $(NWJS_SDK_DIR)/nw
   nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-linux-ia32.tar.gz
-  nwjs_sdk_install: NWJS  := $(NWJS_SDK_DIR)/nw
 endif
 
 ifdef MACOSX
+  NWJS  := $(NWJS_SDK_DIR)/nwjs.app/Contents/MacOS/nwjs
   nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-osx-x64.zip
-  nwjs_sdk_install: NWJS  := $(NWJS_SDK_DIR)/nwjs.app/Contents/MacOS/nwjs
 endif
 
 ifdef WINDOWS
+  NWJS  := $(NWJS_SDK_DIR)/nw.exe
   nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-win-ia32.zip
-  nwjs_sdk_install: NWJS  := $(NWJS_SDK_DIR)/nw.exe
 endif
 
 nwjs_sdk_install: NWJS_SDK_FILE := $(notdir $(NWJS_SDK_URL))
