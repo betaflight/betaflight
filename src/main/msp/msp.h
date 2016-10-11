@@ -17,7 +17,9 @@
 
 #pragma once
 
+struct mspPort_s;
+typedef void (*mspPostProcessFuncPtr)(struct mspPort_s *); // msp post process function, used for gracefully handling reboots, etc.
 
 void mspInit(void);
-bool mspProcessReceivedData(uint8_t c);
-void mspProcessReceivedCommand(void);
+bool mspProcessReceivedData(struct mspPort_s *mspPort, uint8_t c);
+mspPostProcessFuncPtr mspProcessReceivedCommand(struct mspPort_s *mspPort);
