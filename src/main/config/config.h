@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #if FLASH_SIZE <= 128
 #define MAX_PROFILE_COUNT 2
 #else

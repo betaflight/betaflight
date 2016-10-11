@@ -17,6 +17,49 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "common/axis.h"
+#include "common/color.h"
+#include "common/maths.h"
+
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/serial.h"
+
+#include "fc/rc_controls.h"
+
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
+#include "io/serial.h"
+#include "io/servos.h"
+
+#include "rx/rx.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
+
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+
+#include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
 // System-wide
 typedef struct master_s {
     uint8_t version;
