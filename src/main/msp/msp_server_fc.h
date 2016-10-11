@@ -17,15 +17,6 @@
 
 #pragma once
 
-// return positive for ACK, negative on error, zero for no reply
-typedef enum {
-    MSP_RESULT_ACK = 1,
-    MSP_RESULT_ERROR = -1,
-    MSP_RESULT_NO_REPLY = 0
-} mspResult_e;
+#include "msp/msp.h"
 
-
-struct serialPort_s;
-typedef void (*mspPostProcessFnPtr)(struct serialPort_s *port); // msp post process function, used for gracefully handling reboots, etc.
-struct mspPort_s;
-typedef mspResult_e (*mspProcessCommandFnPtr)(struct mspPort_s *mspPort, mspPostProcessFnPtr *mspPostProcessFn);
+mspProcessCommandFnPtr mspFcInit(void);

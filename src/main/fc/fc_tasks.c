@@ -96,7 +96,7 @@ static void taskHandleSerial(uint32_t currentTime)
         return;
     }
 #endif
-    mspSerialProcess();
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
 }
 
 #ifdef BEEPER
