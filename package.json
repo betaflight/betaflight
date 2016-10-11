@@ -1,10 +1,13 @@
 {
   "name": "🐝 BetaFlight",
   "main": "main.html",
+  "version": "1.8.1",
   "window": {
     "title": "🐝 BetaFlight",
     "icon": "images/bf_icon_128.png",
-    "width": 800,
-    "height": 500
-  }
+    "width": 1024,
+    "height": 800
+  },
+  "snapshot": "",
+  "default_locale": "en"
 }
