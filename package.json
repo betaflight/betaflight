@@ -1,4 +1,10 @@
 {
   "name": "🐝 BetaFlight",
-  "main": "main.html"
+  "main": "main.html",
+  "window": {
+    "title": "🐝 BetaFlight",
+    "icon": "images/bf_icon_128.png",
+    "width": 800,
+    "height": 500
+  }
 }
