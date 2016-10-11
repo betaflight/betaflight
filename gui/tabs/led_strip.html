@@ -1,0 +1,194 @@
+<div class="tab-led-strip toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabLedStrip"></div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+        </div>
+        <div class="note spacebottom">
+            <div class="note_spacer">
+                <p i18n="ledStripHelp"></p>
+            </div>
+        </div>
+        <div class="mainGrid"></div>
+        <div class="gridSections">
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+        </div>
+        <div class="colorDefineSliders">
+            <div class="">Color setup</div>
+            <div class="colorDefineSliderContainer">
+                <Label class="colorDefineSliderLabel">H</Label>
+                <input class="sliderHSV" type="range" min="0" max="359" value="0">
+                <Label class="colorDefineSliderValue Hvalue">0</Label>
+            </div>
+            <div class="colorDefineSliderContainer">
+                <Label class="colorDefineSliderLabel">S</Label>
+                <input class="sliderHSV" type="range" min="0" max="255" value="0">
+                <Label class="colorDefineSliderValue Svalue">0</Label>
+            </div>
+            <div class="colorDefineSliderContainer">
+                <Label class="colorDefineSliderLabel">V</Label>
+                <input class="sliderHSV" type="range" min="0" max="255" value="0">
+                <Label class="colorDefineSliderValue Vvalue">0</Label>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="wires-remaining">
+                <div></div>
+                Remaining
+            </div>
+            <button class="funcClear">Clear selected</button>
+            <button class="funcClearAll">Clear ALL</button>
+
+            <div class="section">LED Functions</div>
+            
+            
+            <div class="select">
+                <span class="color_section">Function</span>
+                <select class="functionSelect">
+                    <option value="">None</option>
+                    <option value="function-c" class="">Color</option>
+                    <option value="function-f" class="">Modes &amp; Orientation</option>
+                    <option value="function-a" class="">Arm State</option>
+                    <option value="function-l" class="extra_functions20">Battery</option>
+                    <option value="function-s" class="extra_functions20">RSSI</option>
+                    <option value="function-g" class="extra_functions20">GPS</option>
+                    <option value="function-r" class="">Ring</option>
+                </select>
+            </div>
+            
+
+            <div class="modifiers">
+                <span class="color_section">Color modifier</span>
+                <div class="checkbox">
+                    <input type="checkbox" name="ThrottleHue" class="toggle function-t" />
+                    <label> <span>Throttle</span></label>
+                </div>
+                <div class="checkbox extra_functions20">
+                    <input type="checkbox" name="LarsonScanner" class="toggle function-o" />
+                    <label> <span>Larson scanner</span></label>
+                </div>
+            </div>
+            
+            <div class="blinkers extra_functions20">
+                <span class="color_section">Blink</span>
+                <div class="checkbox blinkOverlay">
+                    <input type="checkbox" name="blink" class="toggle function-b" />
+                    <label> <span>Blink always</span></label>
+                </div>
+                <div class="checkbox landingBlinkOverlay">
+                    <input type="checkbox" name="landingBlink" class="toggle function-n" />
+                    <label> <span>Blink on landing</span></label>
+                </div>
+            </div>
+                        
+            <div class="overlays">
+                <span class="color_section">Overlay</span>
+                <div class="checkbox warningOverlay">
+                    <input type="checkbox" name="Warnings" class="toggle function-w" />
+                    <label> <span>Warnings</span></label>
+                </div>
+                <div class="checkbox indicatorOverlay">
+                    <input type="checkbox" name="Indicator" class="toggle function-i" />
+                    <label> <span>Indicator</span></label>
+                </div>
+            </div>
+            
+            <div class="mode_colors">
+                <div class="section">Mode colors</div>
+                
+                <select class="modeSelect">
+                    <option value="0">Orientation</option>
+                    <option value="1">Headfree</option>
+                    <option value="2">Horizon</option>
+                    <option value="3">Angle</option>
+                    <option value="4">Mag</option>
+                    <option value="5">Baro</option>
+                </select>
+
+                <button class="mode_color-0-0 dir-n">N</button>
+                <button class="mode_color-0-1 dir-e">E</button>
+                <button class="mode_color-0-2 dir-s">S</button>
+                <button class="mode_color-0-3 dir-w">W</button>
+                <button class="mode_color-0-4 dir-u">U</button>
+                <button class="mode_color-0-5 dir-d">D</button>
+            </div>
+            
+            <div class="section">LED Orientation and Color</div>
+            <div class="directions">
+                <button class="dir-n">N</button>
+                <button class="dir-e">E</button>
+                <button class="dir-s">S</button>
+                <button class="dir-w">W</button>
+                <button class="dir-u">U</button>
+                <button class="dir-d">D</button>
+            </div>
+            
+            <div class="colors">
+                <button class="color-0" title="black">0</button>
+                <button class="color-1" title="white">1</button>
+                <button class="color-2" title="red">2</button>
+                <button class="color-3" title="orange">3</button>
+                <button class="color-4" title="yellow">4</button>
+                <button class="color-5" title="lime green">5</button>
+                <button class="color-6" title="green">6</button>
+                <button class="color-7" title="mint green">7</button>
+                <button class="color-8" title="cyan">8</button>
+                <button class="color-9" title="light blue">9</button>
+                <button class="color-10" title="blue">10</button>
+                <button class="color-11" title="dark violet">11</button>
+                <button class="color-12" title="magenta">12</button>
+                <button class="color-13" title="deep pink">13</button>
+                <button class="color-14" title="black">14</button>
+                <button class="color-15" title="black">15</button>
+            </div>
+
+            <div class="special_colors mode_colors">
+                <div class="section">Special colors</div>
+                <button class="mode_color-6-0" title="green">Disarmed</button>
+                <button class="mode_color-6-1" title="blue">Armed</button>
+                <button class="mode_color-6-2" title="white">Animation</button>
+                <!-- button class="mode_color-6-3" title="black">Background</button -->
+                <button class="mode_color-6-4" title="black">Blink background</button>
+                <button class="mode_color-6-5" title="red">GPS: no sats</button>
+                <button class="mode_color-6-6" title="orange">GPS: no lock</button>
+                <button class="mode_color-6-7" title="green">GPS: locked</button>
+            </div>
+            
+            <div class="section">LED Strip Wiring</div>
+            <div class="wiringMode">
+                <button class="funcWire w100">Wire Ordering Mode</button>
+            </div>
+            <div class="wiringControls">
+                <button class="funcWireClearSelect w50">Clear selected</button>
+                <button class="funcWireClear w50">Clear ALL Wiring</button>
+            </div>
+            <p>LEDs without wire ordering number will not be saved.</p>
+        </div>
+        
+        <div class="colorControls">
+
+        </div>
+        
+        <div class="clear-both"></div>
+    </div>
+    <div class="content_toolbar">
+        <div class="btn save_btn">
+            <a class="save" href="#" i18n="ledStripButtonSave"></a>
+        </div>
+    </div>
+</div>

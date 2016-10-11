@@ -1,0 +1,46 @@
+
+/* Wrapper */
+
+.jBox-ModalBorder {
+	border-radius: 8px;
+	background: rgba(0, 0, 0, .4);
+	padding: 8px;
+	box-shadow: 0 0 6px rgba(0, 0, 0, .2);
+}
+
+/* Container */
+
+.jBox-ModalBorder .jBox-container {
+	border-radius: 5px;
+	box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Close button */
+
+.jBox-ModalBorder.jBox-closeButton-box {
+	border-top-right-radius: 0;
+}
+
+.jBox-ModalBorder.jBox-closeButton-box:before {
+	display: none;
+}
+
+.jBox-ModalBorder.jBox-hasTitle.jBox-closeButton-box .jBox-closeButton,
+.jBox-ModalBorder.jBox-closeButton-box .jBox-closeButton {
+	background: rgba(0, 0, 0, .4);
+	border-radius: 0 50% 50% 0;
+	right: -32px;
+	top: -8px;
+}
+
+.jBox-ModalBorder.jBox-closeButton-box .jBox-closeButton path {
+	fill: #d2d4d6;
+}
+
+.jBox-ModalBorder.jBox-closeButton-box .jBox-closeButton:hover path {
+	fill: #fff;
+}
+
+.jBox-ModalBorder.jBox-closeButton-box .jBox-closeButton:active path {
+	fill: #b2b4b6;
+}

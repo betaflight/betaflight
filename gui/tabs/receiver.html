@@ -1,0 +1,146 @@
+<div class="tab-receiver toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabReceiver"></div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+        </div>
+        <div class="note" style="margin-bottom: 20px;">
+            <div class="note_spacer">
+                <p i18n="receiverHelp"></p>
+            </div>
+        </div>
+        <div class="bars">
+        </div>
+        <div class="fc_column half" style="margin-left: 20px;">
+            <div class="rssi_channel_wrapper">
+                <div class="head" i18n="receiverRssiChannel"></div>
+                <select name="rssi_channel">
+                    <!-- list generated here -->
+                </select>
+            </div>
+            <div class="rcmap_wrapper">
+                <div class="head">
+                    <span i18n="receiverChannelMap" i18n_title="receiverChannelMapTitle"></span>
+                </div>
+                <div class="hybrid_element">
+                    <input type="text" name="rcmap" spellcheck="false" />
+                    <select class="hybrid_helper"
+                        name="rcmap_helper">
+                        <option value="AETR1234">Default</option>
+                        <option value="AETR1234">Futaba / Hitec</option>
+                        <option value="TAER1234">JR / Spektrum / Graupner</option>
+                    </select>
+                </div>
+            </div>
+            <div class="gui_box tunings grey" style="float: right;">
+                <table class="deadband" width="100%">
+                    <tr>
+                        <th i18n="receiverDeadband"></th>
+                        <th i18n="receiverYawDeadband"></th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="cf_tip" i18n_title="receiverHelpDeadband">
+                                <input type="number" name="deadband" step="1" min="0" max="32" />
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cf_tip" i18n_title="receiverHelpYawDeadband">
+                                <input type="number" name="yaw_deadband" step="1" min="0" max="100" />
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="gui_box grey tunings topspacer rcInterpolation">
+                <table class="rcInterpolation" width="100%">
+                    <tr>
+                        <th colspan=2 i18n="receiverRcInterpolation"></th>
+                    </tr>
+                     <tr class="rcInterpolation">
+                        <td>
+                            <select name="rcInterpolation-select">
+                                <option value="0" i18n="receiverRcInterpolationOff"/>
+                                <option value="1" i18n="receiverRcInterpolationDefault"/>
+                                <option value="2" i18n="receiverRcInterpolationAuto"/>
+                                <option value="3" i18n="receiverRcInterpolationManual"/>
+                            </select>
+                        </td>
+                        <td>
+                            <div>
+                                <label>
+                                    <span i18n="receiverRcInterpolation"></span>
+                                </label>
+                                <div class="helpicon cf_tip" i18n_title="receiverRcInterpolationHelp"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="rcInterpolationInterval">
+                        <td><input type="number" class="nonProfile" name="rcInterpolationInterval-number" step="1" min="1" max="50"/></td>
+                        <td>
+                            <div>
+                                <label>
+                                    <span i18n="receiverRcInterpolationInterval"></span>
+                                </label>
+                                <div class="helpicon cf_tip" i18n_title="receiverRcInterpolationIntervalHelp"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="gui_box grey tunings topspacer">
+                <table class="pid_titlebar" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th i18n="receiverModelPreview"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="model_preview_cell">
+                                <div class="model_preview">
+                                    <canvas id="canvas"></canvas>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="clear-both"></div>
+        <div class="gui_box grey" style="padding-top: 10px; padding-bottom: 10px; margin-top: 20px;">
+            <div class="spacer">
+                <select name="rx_refresh_rate" i18n_title="receiverRefreshRateTitle">
+                    <option value="10">10 ms</option>
+                    <option value="20">20 ms</option>
+                    <option value="30">30 ms</option>
+                    <option value="40">40 ms</option>
+                    <option value="50" selected="selected">50 ms</option>
+                    <option value="100">100 ms</option>
+                    <option value="250">250 ms</option>
+                    <option value="500">500 ms</option>
+                    <option value="1000">1000 ms</option>
+                </select>
+                <div class="clear-both"></div>
+                <svg id="RX_plot">
+                    <g class="grid x" transform="translate(40, 180)"></g>
+                    <g class="grid y" transform="translate(40, 10)"></g>
+                    <g class="data" transform="translate(41, 1)"></g>
+                    <g class="axis x" transform="translate(40, 180)"></g>
+                    <g class="axis y" transform="translate(40, 10)"></g>
+                </svg>
+            </div>
+        </div>
+    </div>
+    <div class="content_toolbar">
+        <div class="btn update_btn">
+            <a class="update" href="#" i18n="receiverButtonSave"></a>
+        </div>
+        <div class="btn refresh_btn">
+            <a class="refresh" href="#" i18n="receiverButtonRefresh"></a>
+        </div>
+        <div class="btn sticks_btn">
+            <a class="sticks" href="#" i18n="receiverButtonSticks"></a>
+        </div>
+    </div>
+</div>

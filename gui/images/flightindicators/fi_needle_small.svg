@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="400.667px" height="400.666px" viewBox="0 0 400.667 400.666" enable-background="new 0 0 400.667 400.666"
+	 xml:space="preserve">
+<filter  filterUnits="objectBoundingBox" id="AI_Shadow_1">
+	<feGaussianBlur  stdDeviation="5" result="blur" in="SourceAlpha"></feGaussianBlur>
+	<feOffset  dy="0" dx="0" result="offsetBlurredAlpha" in="blur"></feOffset>
+	<feMerge>
+		<feMergeNode  in="offsetBlurredAlpha"></feMergeNode>
+		<feMergeNode  in="SourceGraphic"></feMergeNode>
+	</feMerge>
+</filter>
+<g filter="url(#AI_Shadow_1)">
+	<polygon fill="#FFFFFF" points="211.838,160.802 200.343,132.368 200.338,132.386 200.333,132.368 188.838,160.802 200.333,207 
+		200.338,206.977 200.343,207 	"/>
+	<polygon fill="none" stroke="#B2B2B2" stroke-width="0.5" stroke-miterlimit="10" points="211.838,160.802 200.343,132.368 
+		200.338,132.386 200.333,132.368 188.838,160.802 200.333,207 200.338,206.977 200.343,207 	"/>
+</g>
+<g filter="url(#AI_Shadow_1)">
+	<path fill="#232323" d="M200.331,196.091c0,0-9.492,18.192-9.331,24.818c0.062,2.56,1.828,4.228,9.331,4.228
+		s9.114-1.709,9.146-4.228c0.083-6.507-8.809-24.493-8.809-24.493"/>
+	<path fill="none" stroke="#353535" stroke-width="0.5" stroke-miterlimit="10" d="M200.331,196.091c0,0-9.492,18.192-9.331,24.818
+		c0.062,2.56,1.828,4.228,9.331,4.228s9.114-1.709,9.146-4.228c0.083-6.507-8.809-24.493-8.809-24.493"/>
+</g>
+</svg>

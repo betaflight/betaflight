@@ -1,0 +1,68 @@
+.tab-logging .properties {
+    margin-top: 10px;
+}
+
+.tab-logging .properties dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
+    font-weight: bold;
+}
+
+.tab-logging .properties dt input {
+    vertical-align: middle;
+}
+
+.tab-logging .properties dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+    color: silver;
+}
+
+.tab-logging .speed {
+    margin-top: 5px;
+    width: 80px;
+    border: 1px solid silver;
+}
+
+.tab-logging .info {
+    margin-top: 10px;
+}
+
+.tab-logging .info dt {
+    float: left;
+    width: 120px;
+    height: 20px;
+    line-height: 20px;
+    font-weight: bold;
+}
+
+.tab-logging .info dd {
+    display: block;
+    margin-left: 130px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.tab-logging .fixed_band {
+    width: 100%;
+    bottom: 0px;
+}
+
+.tab-logging .save_btn .back {
+    display: none;
+}
+
+.tab-logging .back_btn {
+    display: none;
+}
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-logging table thead tr:first-child {
+        font-size: 12px;
+        height: 22px;
+    }
+}

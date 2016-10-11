@@ -1,0 +1,171 @@
+<div class="tab-gps">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabGPS">GPS</div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+        </div>
+
+
+        <div class="cf_column fourth">
+            <div class="spacer_right">
+                <div class="gui_box grey">
+                    <div class="gui_box_titlebar">
+                        <div class="spacer_box_title" i18n="gpsHead"></div>
+                    </div>
+                    <div class="spacer_box GPS_info">
+                        <table class="cf_table">
+                            <tr>
+                                <td style="width: 85px" i18n="gps3dFix"></td>
+                                <td class="fix" i18n="gpsFixFalse"></td>
+                            </tr>
+                            <tr>
+                                <td i18n="gpsAltitude"></td>
+                                <td class="alt">0 m</td>
+                            </tr>
+                            <tr>
+                                <td i18n="gpsLat"></td>
+                                <td class="lat"><a href="#" target="_blank">0.0000 deg</a></td>
+                            </tr>
+                            <tr>
+                                <td i18n="gpsLon"></td>
+                                <td class="lon"><a href="#" target="_blank">0.0000 deg</a></td>
+                            </tr>
+                            <tr>
+                                <td i18n="gpsSpeed"></td>
+                                <td class="speed">0 cm/s</td>
+                            </tr>
+                            <tr>
+                                <td i18n="gpsSats"></td>
+                                <td class="sats">0</td>
+                            </tr>
+                            <tr class="noboarder">
+                                <td i18n="gpsDistToHome"></td>
+                                <td class="distToHome"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="cf_column fourth">
+            <div class="spacer_right">
+                <div class="gui_box grey" style="margin-bottom: -5px;">
+                    <div class="gui_box_titlebar">
+                        <div class="spacer_box_title" i18n="gpsSignalStrHead"></div>
+                    </div>
+                    <div class="spacer_box GPS_signal_strength">
+                        <table class="cf_table">
+                            <tr class="titles">
+                                <td style="width: 20%;">Sat ID</td>
+                                <td style="width: 15%;">Qty</td>
+                                <td style="width: 65%;" i18n="gpsSignalStr">Signal Strength</td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                            <tr class="noboarder">
+                                <td>0</td>
+                                <td>0</td>
+                                <td><progress value="0" max="99"></progress></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="cf_column half">
+            <div class="gui_box grey gps_map">
+                <div class="gui_box_titlebar" style="margin-bottom: 0px;">
+                        <div class="spacer_box_title" i18n="gpsMapHead"></div>
+                </div>
+                <div id="connect" i18n="gpsMapMessage1">
+                    <div class="default_btn" style="width:50px; margin-left:auto; margin-right:auto; float:none;"><a id="check">retry</a></div>
+                </div>
+                <div id="waiting" >
+                    <div class="info" i18n="gpsMapMessage2"></span>
+                </div>
+            </div>
+                <div id="loadmap">
+                    <iframe src="tabs/map.html" id="map"></iframe>
+                    <div class="controls">
+                          <a href="#" id="zoom_in">+</a>
+                          <a href="#" id="zoom_out">–</a>
+                    </div>
+                </div>
+        </div>
+
+    </div>
+</div>
+</div>

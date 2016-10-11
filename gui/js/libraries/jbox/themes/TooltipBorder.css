@@ -1,0 +1,33 @@
+
+/* Container */
+
+.jBox-TooltipBorder .jBox-container {
+	border-radius: 5px;
+	border: 2px solid #52a2cb;
+}
+
+/* Pointer */
+
+.jBox-TooltipBorder .jBox-pointer:after {
+	border: 2px solid #52a2cb;
+}
+
+.jBox-TooltipBorder .jBox-pointer-top,
+.jBox-TooltipBorder .jBox-pointer-bottom {
+	width: 34px;
+	height: 12px;
+}
+
+.jBox-TooltipBorder .jBox-pointer-left,
+.jBox-TooltipBorder .jBox-pointer-right {
+	width: 12px;
+	height: 34px;
+}
+
+/* Close button */
+
+.jBox-TooltipBorder.jBox-closeButton-box:before {
+	width: 28px;
+	height: 28px;
+	background: #52a2cb;
+}

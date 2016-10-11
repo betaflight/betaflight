@@ -1,0 +1,52 @@
+/*
+* jQuery Flight Indicators plugin
+* By Sébastien Matton (seb_matton@hotmail.com)
+* Published under GPLv3 License.
+*
+* https://github.com/sebmatton/jQuery-Flight-Indicators
+*/
+
+/* Global block of an indicator*/
+div.instrument {
+  width: 250px;
+  height: 250px;
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* The box containing any element of an indicator */
+div.instrument .box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Default transformations */
+
+div.instrument.attitude div.roll {
+  transform: rotate(0deg);
+}
+div.instrument.attitude div.roll div.pitch {
+  top: 0%;
+}
+div.instrument.heading div.yaw {
+  transform: rotate(0deg);
+}
+div.instrument.vario div.vario {
+  transform: rotate(0deg);
+}
+div.instrument.speed div.airspeed {
+  transform: rotate(90deg);
+}
+div.instrument.altimeter div.pressure {
+  transform: rotate(40deg);
+}
+div.instrument.altimeter div.needle {
+  transform: rotate(90deg);
+}
+div.instrument.altimeter div.needleSmall {
+  transform: rotate(90deg);
+}

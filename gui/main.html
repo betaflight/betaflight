@@ -1,0 +1,284 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="author" content="cTn"/>
+    <link type="text/css" rel="stylesheet" href="./main.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.min.css"/>
+    <link type="text/css" rel="stylesheet" href="./js/libraries/jquery.nouislider.pips.min.css"/>
+    <link type="text/css" rel="stylesheet" href="./js/libraries/flightindicators.css"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/landing.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/setup.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/help.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/ports.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/configuration.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/pid_tuning.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/receiver.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/servos.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/gps.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/motors.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/led_strip.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/sensors.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/cli.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/logging.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/onboard_logging.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/firmware_flasher.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/adjustments.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/auxiliary.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/failsafe.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/osd.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./tabs/transponder.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./css/opensans_webfontkit/fonts.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./css/dropdown-lists/css/style_lists.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="./js/libraries/switchery/switchery.css" media="all"/>
+    <link rel="stylesheet" type="text/css" href="./js/libraries/jbox/jBox.css"/>
+    <script type="text/javascript" src="./js/libraries/q.js"></script>
+    <script type="text/javascript" src="./js/libraries/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/jquery-ui-1.11.4.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/d3.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/jquery.nouislider.all.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/three/three.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/three/Projector.js"></script>
+    <script type="text/javascript" src="./js/libraries/three/CanvasRenderer.js"></script>
+    <script type="text/javascript" src="./js/libraries/jquery.flightindicators.js"></script>
+    <script type="text/javascript" src="./js/libraries/semver.js"></script>
+    <script type="text/javascript" src="./js/libraries/jbox/jBox.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/switchery/switchery.js"></script>
+    <script type="text/javascript" src="./js/libraries/bluebird.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/jquery.ba-throttle-debounce.min.js"></script>
+    <script type="text/javascript" src="./js/libraries/inflection.min.js"></script>
+    <script type="text/javascript" src="./js/injected_methods.js"></script>
+    <script type="text/javascript" src="./js/port_handler.js"></script>
+    <script type="text/javascript" src="./js/port_usage.js"></script>
+    <script type="text/javascript" src="./js/serial.js"></script>
+    <script type="text/javascript" src="./js/gui.js"></script>
+    <script type="text/javascript" src="./js/model.js"></script>
+    <script type="text/javascript" src="./js/serial_backend.js"></script>
+    <script type="text/javascript" src="./js/data_storage.js"></script>
+    <script type="text/javascript" src="./js/fc.js"></script>
+    <script type="text/javascript" src="./js/msp/MSPCodes.js"></script>
+    <script type="text/javascript" src="./js/msp.js"></script>
+    <script type="text/javascript" src="./js/msp/MSPHelper.js"></script>
+    <script type="text/javascript" src="./js/backup_restore.js"></script>
+    <script type="text/javascript" src="./js/protocols/stm32.js"></script>
+    <script type="text/javascript" src="./js/protocols/stm32usbdfu.js"></script>
+    <script type="text/javascript" src="./js/localization.js"></script>
+    <script type="text/javascript" src="./js/boards.js"></script>
+    <script type="text/javascript" src="./js/RateCurve.js"></script>
+    <script type="text/javascript" src="./js/Features.js"></script>
+    <script type="text/javascript" src="./main.js"></script>
+    <script type="text/javascript" src="./tabs/landing.js"></script>
+    <script type="text/javascript" src="./tabs/setup.js"></script>
+    <script type="text/javascript" src="./tabs/help.js"></script>
+    <script type="text/javascript" src="./tabs/ports.js"></script>
+    <script type="text/javascript" src="./tabs/configuration.js"></script>
+    <script type="text/javascript" src="./tabs/pid_tuning.js"></script>
+    <script type="text/javascript" src="./tabs/receiver.js"></script>
+    <script type="text/javascript" src="./tabs/auxiliary.js"></script>
+    <script type="text/javascript" src="./tabs/adjustments.js"></script>
+    <script type="text/javascript" src="./tabs/servos.js"></script>
+    <script type="text/javascript" src="./tabs/gps.js"></script>
+    <script type="text/javascript" src="./tabs/motors.js"></script>
+    <script type="text/javascript" src="./tabs/led_strip.js"></script>
+    <script type="text/javascript" src="./tabs/sensors.js"></script>
+    <script type="text/javascript" src="./tabs/cli.js"></script>
+    <script type="text/javascript" src="./tabs/logging.js"></script>
+    <script type="text/javascript" src="./tabs/onboard_logging.js"></script>
+    <script type="text/javascript" src="./tabs/firmware_flasher.js"></script>
+    <script type="text/javascript" src="./tabs/failsafe.js"></script>
+    <script type="text/javascript" src="./tabs/osd.js"></script>
+    <script type="text/javascript" src="./tabs/transponder.js"></script>
+    <title></title>
+</head>
+<body>
+<div id="main-wrapper">
+    <div class="headerbar">
+        <div id="logo">
+            <div class="logo_text">
+                CONFIGURATOR
+                <div class="version"></div>
+            </div>
+        </div>
+        <a id="options" href="#" i18n_title="options_title"></a>
+        <div id="port-picker">
+            <div class="connect_controls" id="connectbutton">
+                <div class="connect_b">
+                    <a class="connect" href="#"></a>
+                </div>
+                <a class="connect_state" i18n="connect"></a>
+            </div>
+            <div id="portsinput">
+                <div class="dropdown dropdown-dark">
+                    <select class="dropdown-select" id="port" title="Port">
+                        <option value="manual">Manual</option>
+                        <!-- port list gets generated here -->
+                    </select>
+                </div>
+                <div class="dropdown dropdown-dark">
+                    <select class="dropdown-select" id="baud" title="Baud Rate">
+                        <option value="1000000">1000000</option>
+                        <option value="500000">500000</option>
+                        <option value="250000">250000</option>
+                        <option value="115200" selected="selected">115200</option>
+                        <option value="57600">57600</option>
+                        <option value="38400">38400</option>
+                        <option value="28800">28800</option>
+                        <option value="19200">19200</option>
+                        <option value="14400">14400</option>
+                        <option value="9600">9600</option>
+                        <option value="4800">4800</option>
+                        <option value="2400">2400</option>
+                        <option value="1200">1200</option>
+                    </select>
+                </div>
+                <div id="port-override-option">
+                    <label for="port-override">Port: <input id="port-override" type="text"
+                                                            value="/dev/rfcomm0"/></label>
+                </div>
+                <div>
+                    <label><input class="auto_connect togglesmall" type="checkbox"/><span
+                            class="auto_connect" i18n="autoConnect"></span></label>
+                </div>
+            </div>
+        </div>
+        <div class="header-wrapper">
+            <div id="dataflash_wrapper_global">
+                <div class="noflash_global" align="center">No dataflash <br>chip found</div>
+                <ul class="dataflash-contents_global">
+                    <li class="dataflash-free_global">
+                        <div class="legend">Dataflash: free space</div>
+                    </li>
+                </ul>
+                <div id="expertMode" align="center">
+                    <label>
+                        <input name="expertModeCheckbox" class="togglesmall" type="checkbox"/>
+                        <span i18n="expertMode"></span>
+                    </label>
+                </div>
+            </div>
+              <div id="sensor-status" class="sensor_state mode-connected">
+                <ul>
+                    <li class="gyro" title="Gyroscope">
+                        <div class="gyroicon">Gyro</div>
+                    </li>
+                    <li class="accel" title="Accelerometer">
+                        <div class="accicon">Accel</div>
+                    </li>
+                    <li class="mag" title="Magnetometer">
+                        <div class="magicon">Mag</div>
+                    </li>
+                    <li class="baro" title="Barometer">
+                        <div class="baroicon">Baro</div>
+                    </li>
+                    <li class="gps" title="GPS">
+                        <div class="gpsicon">GPS</div>
+                    </li>
+                    <li class="sonar" title="Sonar / Range finder">
+                        <div class="sonaricon">Sonar</div>
+                    </li>
+                </ul>
+            </div>
+            <div id="quad-status_wrapper">
+                <div class="battery-icon">
+                    <div class="quad-status-contents">
+                        <div class="battery-status"></div>
+                    </div>
+                </div>
+                <div class="battery-legend">Battery voltage</div>
+                <div class="bottomStatusIcons">
+                    <div class="armedicon cf_tip" i18n_title="mainHelpArmed"></div>
+                    <div class="failsafeicon cf_tip" i18n_title="mainHelpFailsafe"></div>
+                    <div class="linkicon cf_tip" i18n_title="mainHelpLink"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="clear-both"></div>
+    <div id="log">
+        <div class="logswitch">
+            <a href="#" id="showlog">Show Log</a>
+        </div>
+        <div id="scrollicon"></div>
+        <div class="wrapper"></div>
+    </div>
+    <div class="tab_container">
+        <div id="tabs">
+            <ul class="mode-disconnected">
+                <li class="tab_landing"><a href="#" i18n="tabLanding" class="tabicon ic_welcome" title="Welcome"></a>
+                </li>
+                <li class="tab_help"><a href="#" i18n="tabHelp" class="tabicon ic_help"
+                                        title="Documentation &amp; Support"></a></li>
+                <li class="tab_firmware_flasher"><a href="#" i18n="tabFirmwareFlasher" class="tabicon ic_flasher"
+                                                    title="Firmware Flasher"></a></li>
+            </ul>
+            <ul class="mode-connected">
+                <li class="tab_setup"><a href="#" i18n="tabSetup" class="tabicon ic_setup" title="Setup"></a></li>
+                <li class="tab_ports"><a href="#" i18n="tabPorts" class="tabicon ic_ports" title="Ports"></a></li>
+                <li class="tab_configuration"><a href="#" i18n="tabConfiguration" class="tabicon ic_config"
+                                                 title="Configuration"></a></li>
+                <li class="tab_failsafe"><a href="#" i18n="tabFailsafe" class="tabicon ic_failsafe"
+                                            title="Failsafe"></a></li>
+                <li class="tab_pid_tuning"><a href="#" i18n="tabPidTuning" class="tabicon ic_pid"
+                                              title="PID Tuning"></a></li>
+                <li class="tab_receiver"><a href="#" i18n="tabReceiver" class="tabicon ic_rx" title="Receiver"></a></li>
+                <li class="tab_auxiliary"><a href="#" i18n="tabAuxiliary" class="tabicon ic_modes" title="Modes"></a>
+                </li>
+                <li class="tab_adjustments"><a href="#" i18n="tabAdjustments" class="tabicon ic_adjust"
+                                               title="Adjustments"></a></li>
+                <li class="tab_servos"><a href="#" i18n="tabServos" class="tabicon ic_servo" title="Servos"></a></li>
+                <li class="tab_gps"><a href="#" i18n="tabGPS" class="tabicon ic_gps" title="GPS"></a></li>
+                <li class="tab_motors"><a href="#" i18n="tabMotorTesting" class="tabicon ic_motor" title="Motors"></a>
+                </li>
+                <li class="tab_osd"><a href="#" i18n="tabOsd" class="tabicon ic_osd" title="Osd"></a></li>
+                <li class="tab_transponder"><a href="#" i18n="tabTransponder" class="tabicon ic_transponder"
+                                               title="Transponder"></a></li>
+                <li class="tab_led_strip"><a href="#" i18n="tabLedStrip" class="tabicon ic_led" title="LED Strip"></a>
+                </li>
+                <li class="tab_sensors"><a href="#" i18n="tabRawSensorData" class="tabicon ic_sensors"
+                                           title="Sensors"></a></li>
+                <li class="tab_logging"><a href="#" i18n="tabLogging" class="tabicon ic_log"
+                                           title="Tethered Logging"></a></li>
+                <li class="tab_onboard_logging"><a href="#" i18n="tabOnboardLogging" class="tabicon ic_data"
+                                                   title="Onboard Logging"></a></li>
+            </ul>
+            <ul class="mode-connected-cli">
+                <li class="tab_cli"><a href="#" i18n="tabCLI" class="tabicon ic_cli" title="CLI"></a></li>
+                <!-- spare icons
+                <li class=""><a href="#"class="tabicon ic_mission">Mission (spare icon)</a></li>
+                <li class=""><a href="#"class="tabicon ic_advanced">Advanced (spare icon)</a></li>
+                <li class=""><a href="#"class="tabicon ic_wizzard">Wizzard (spare icon)</a></li>
+                -->
+            </ul>
+        </div>
+        <div class="clear-both"></div>
+    </div>
+    <div id="content"></div>
+    <div id="status-bar">
+        <div>
+            <span i18n="statusbar_port_utilization"></span> <span class="port_usage_down">D: 0%</span> <span
+                class="port_usage_up">U: 0%</span>
+        </div>
+        <div>
+            <span i18n="statusbar_packet_error"></span> <span class="packet-error">0</span>
+        </div>
+        <div>
+            <span i18n="statusbar_i2c_error"></span> <span class="i2c-error">0</span>
+        </div>
+        <div>
+            <span i18n="statusbar_cycle_time"></span> <span class="cycle-time">0</span>
+        </div>
+        <div>
+            <span class="cpu-load"> </span>
+        </div>
+        <div class="version">
+            <!-- configuration version generated here -->
+        </div>
+    </div>
+    <div id="cache">
+        <div class="data-loading">
+            <p>Waiting for data ...</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

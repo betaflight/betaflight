@@ -1,0 +1,36 @@
+.tab-help .twothird {
+    width: calc(67% - 15px);
+    margin-right: 15px;
+}
+
+.tab-help .gui_box {
+    min-height: 500px;
+    margin-bottom: 0px;
+}
+
+.tab-help ul {
+    margin-bottom:15px;
+}
+
+.tab-help li {
+    border-top: 1px dotted silver;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-image: url(../images/arrow.svg);
+    background-repeat: no-repeat;
+    background-position: 0px 8px;
+    background-size: 12px;
+}
+
+.tab-help li span {
+    margin-left: 17px;
+    display:block;
+}
+
+.tab-help li span a {
+    color: #ffbb00;
+}
+
+.tab-help .subline {
+    margin-bottom: 5px;
+}

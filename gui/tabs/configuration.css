@@ -1,0 +1,532 @@
+.tab-configuration table {
+    margin-bottom: 10px;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration table, .tab-configuration table th, .tab-configuration table td {
+    padding: 0px;
+    padding-left: 0px;
+    text-align: left;
+}
+
+.tab-configuration table th {
+    padding-left: 3px;
+    padding: 3px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-configuration table td {
+    padding-left: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-configuration table tr td:first-child {
+    text-align: left;
+    width: 55px;
+}
+
+.tab-configuration table td {
+    padding: 5px 3px;
+}
+
+.tab-configuration table thead tr:first-child {
+    background-color: #ececec;
+}
+
+.tab-configuration {
+    position: relative;
+}
+
+.tab-configuration .groupTitle {
+    padding: 0 0 5px 0;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    border-bottom: 1px solid #dddddd;
+}
+
+.tab-configuration .leftWrapper {
+    float: left;
+    width: calc(50% - 20px);
+}
+
+.tab-configuration .rightWrapper {
+    float: left;
+    width: calc(50% - 0px);
+    margin: 0 0 10px 20px;
+}
+
+.tab-configuration .mixerList {
+    width: 100%;
+    height: 20px;
+    margin-top: 5px;
+    font-weight: bold;
+    border: 1px solid silver;
+}
+
+.tab-configuration dl.features dt {
+    float: left;
+    width: 10px;
+    height: 18px;
+    line-height: 18px;
+}
+
+.tab-configuration dl.features dt input {
+    margin-top: 2px;
+}
+
+.tab-configuration dl.features dd {
+    margin: 0 0 0 20px;
+    height: 18px;
+    line-height: 18px;
+}
+
+.tab-configuration .number input {
+    width: 55px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.tab-configuration .number .disabled {
+    width: 48px;
+    padding: 0px 5px;
+    background-color: #ececec;
+}
+
+.tab-configuration .number span {
+    margin-left: 0px;
+}
+
+.tab-configuration .gps .line {
+    clear: left;
+}
+
+.tab-configuration .gps select {
+    float: left;
+    width: 100px;
+    height: 20px;
+    margin: 0 10px 5px 0;
+    border: 1px solid silver;
+}
+
+.tab-configuration .gps span {
+    line-height: 20px;
+}
+
+.tab-configuration .serialRX {
+    width: 100%;
+    height: 68px;
+    border: 1px solid silver;
+    margin-bottom: 5px;
+}
+
+.tab-configuration .current .checkbox {
+    margin-top: 0px;
+    float: left;
+}
+
+.tab-configuration .current .checkbox div {
+    float: left;
+    width: 66px;
+}
+
+.tab-configuration .current .checkbox div input {
+    margin: 0px;
+    float: left;
+}
+
+.tab-configuration .disarm .checkbox {
+    margin-top: 2px;
+    margin-right: 5px;
+}
+
+.tab-configuration .disarm .checkboxPwm {
+    margin-top: 2px;
+    margin-right: 5px;
+}
+
+.tab-configuration .disarm .checkbox div {
+    margin-bottom: 0px;
+    margin-top: 0px;
+}
+
+.tab-configuration .disarm .checkbox div input {
+    margin: 0px;
+    float: left;
+}
+
+.tab-configuration .disarm .checkbox span {
+    margin-left: 0px;
+}
+
+.tab-configuration .freelabel {
+    margin-left: 10px;
+    position: relative;
+}
+
+.tab-configuration input {
+    float: left;
+}
+
+.tab-configuration span {
+    margin: 0px;
+}
+
+.tab-configuration .disarm .checkbox {
+    float: left;
+    padding-left: 0px;
+    margin-top: -5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+}
+
+.tab-configuration .spacer_box {
+    padding-bottom: 10px;
+    float: left;
+    width: calc(100% - 20px);
+}
+
+.tab-configuration .disarm {
+    margin-bottom: 5px;
+    float: left;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+}
+
+.disarmdelay {
+    margin-top: 5px;
+    float: left;
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-configuration .number,
+.tab-configuration .select
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration .selectProtocol
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration .pidProcessDenom
+ {
+    margin-bottom: 5px;
+    clear: left;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+.tab-configuration .number:last-child,
+.tab-configuration .select:last-child {
+    border-bottom: none;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.tab-configuration .gui_box_titlebar {
+    margin-bottom: 0px;
+}
+
+.tab-configuration .numberspacer {
+    float: left;
+    width: 65px;
+    height: 21px;
+}
+
+.tab-configuration thead {
+    display: none;
+}
+
+.tab-configuration .gui_box {
+    margin-bottom: 10px;
+    float: left;
+}
+
+.tab-configuration .rssi td {
+    border-bottom: none;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.tab-configuration .rssi .gui_box, .tab-configuration .system .gui_box {
+    float: left;
+}
+
+.tab-configuration .mixer .gui_box, .tab-configuration .motorstop .gui_box {
+    min-height: 290px;
+    float: left;
+}
+
+.tab-configuration .board .gui_box, .tab-configuration .acc .gui_box {
+    min-height: 137px;
+    float: left;
+}
+
+.tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
+    min-height: 263px;
+    float: left;
+    margin-bottom: 10px;
+}
+
+.tab-configuration .current .gui_box {
+    float: left;
+}
+
+.tab-configuration .rxprovider {
+    min-height: 184px;
+}
+
+.tab-configuration .current td:nth-child(2) {
+    width: 30px;
+}
+
+.tab-configuration .voltage td:nth-child(2) {
+    width: 30px;
+}
+
+.tab-configuration .rssi td:nth-child(2) {
+    width: 30px;
+}
+
+.tab-configuration .rxFailsafe td:nth-child(2) {
+    width: 30px;
+}
+
+.tab-configuration .gps td:nth-child(2) {
+    width: 38px;
+}
+
+.tab-configuration .other tr:last-child td {
+    border-bottom: 0px;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.tab-configuration .mixerPreview {
+    max-width: 230px;
+    background-color: #eeeeee;
+    text-align: center;
+    float: left;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.tab-configuration .mixerPreview img {
+    width: 90%;
+    height: 90%;
+    padding: 5%;
+}
+
+.tab-configuration .rxMode tr:last-child td {
+    border-bottom: 0px;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.tab-configuration .gui_box {
+    font-style: bold;
+    font-family: 'open_sanssemibold', Arial;
+}
+
+.tab-configuration .gui_box span {
+    font-style: normal;
+    font-family: 'open_sansregular', Arial;
+    line-height: 19px;
+    color: #4F4F4F;
+    font-size: 11px;
+}
+
+.tab-configuration .alignicon {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin-left: -5px;
+    margin-right: 3px;
+}
+
+.tab-configuration .pitch {
+    background-image: url(../images/icons/cf_icon_pitch.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .yaw {
+    background-image: url(../images/icons/cf_icon_yaw.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .roll {
+    background-image: url(../images/icons/cf_icon_roll.svg);
+    background-repeat: no-repeat;
+    background-size: 20px;
+    background-position: center;
+}
+
+.tab-configuration .board select {
+    /*float: left;*/
+    width: 45%;
+    height: 20px;
+    margin: 0 0px 2px 0;
+    border: 1px solid silver;
+    border-radius:3px;
+}
+
+
+#mixercontent .mixerheadline {
+    font-size: 13px;
+    width: 100%;
+    padding-bottom: 0px;
+    float: left;
+    margin-bottom: 7px;
+    font-family: 'open_sanssemibold', Arial;
+}
+
+#mixercontent select {
+    float: left;
+    width: 100%;
+    height: 20px;
+    margin: 0 0px 2px 0;
+    border: 1px solid silver;
+    border-radius:3px;
+    margin-bottom: 20px;
+    margin-top:3px;
+
+}
+
+#mixercontent input {
+    width: 50px;
+    padding-left: 3px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: 1px solid silver;
+    border-radius: 3px;
+    margin-right: 11px;
+    font-size: 12px;
+    font-weight: normal;
+
+}
+
+#mixercontent .mixerletter {
+    width: 23px;
+    height: 23px;
+    background-color: #d0d0d0;
+    line-height: 23px;
+    text-align: center;
+    border-radius: 100px;
+    margin-right: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    float: left;
+}
+
+#mixercontent .number {
+    margin-bottom: 5px;
+    clear: left;
+    padding-top: 5px;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    float: left;
+}
+
+#mixercontent .number:last-child {
+    padding-top: 0px;
+    margin-bottom: 0px;
+}
+
+#mixercontent .mixercanvas {
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #e4e4e4;
+    height: 340px;
+    margin-top: 3px;
+}
+
+.tab-configuration .sensoralignment {
+    width: 50%; 
+    float: left;
+}
+
+.tab-configuration .board_align_content {
+    width: 50%;
+    float: left;
+}
+
+.tab-configuration .sensoralignment span {
+    width: 55%;
+    float: left;
+}
+
+.tab-configuration .escprotocol {
+    border: 1px solid silver;
+    margin-right: 5px;
+}
+
+.tab-configuration .gyroSyncDenom, .tab-configuration .pidProcessDenom {
+    border: 1px solid silver;
+    margin-right: 5px;
+    width:90px;
+}
+
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .tab-configuration .gui_box span {
+        line-height: 17px;
+    }
+    .tab-configuration .leftWrapper {
+        width: calc(50% - 15px);
+    }
+    .tab-configuration .rightWrapper {
+        float: left;
+        width: calc(50% - 0px);
+        margin: 0 0 10px 15px;
+    }
+    .tab-configuration .rssi .gui_box, .tab-configuration .system .gui_box {
+        min-height: 145px;
+        float: left;
+    }
+    .tab-configuration .mixer .gui_box, .tab-configuration .motorstop .gui_box {
+        min-height: 296px;
+        float: left;
+    }
+    .tab-configuration .rxprovider {
+        min-height: 190px;
+    }
+    .tab-configuration .board .gui_box, .tab-configuration .acc .gui_box {
+        min-height: 137px;
+        float: left;
+    }
+    .tab-configuration .gps .gui_box, .tab-configuration .other .gui_box {
+        min-height: 259px;
+        float: left;
+    }
+    .tab-configuration .current .gui_box {
+        float: left;
+    }
+}
