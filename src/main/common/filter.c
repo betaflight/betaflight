@@ -142,6 +142,17 @@ void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const flo
 
 void firFilterUpdate(firFilter_t *filter, float input)
 {
+    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
+    if (filter->index >= filter->bufLength) {
+        filter->index = 0;
+    }
+}
+
+/*
+ * Update FIR filter maintaining a moving sum for quick moving average computation
+ */
+void firFilterUpdateAverage(firFilter_t *filter, float input)
+{
     filter->movingSum += input; // sum of the last <count> items, to allow quick moving average computation
     filter->movingSum -=  filter->buf[filter->index]; // subtract the value that "drops off" the end of the moving sum
     filter->buf[filter->index++] = input; // index is at the first empty buffer positon
