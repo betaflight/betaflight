@@ -407,6 +407,7 @@ COMMON_SRC = \
             config/config.c \
             config/config_eeprom.c \
             config/feature.c \
+            config/parameter_group.c \
             fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \
