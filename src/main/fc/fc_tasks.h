@@ -37,3 +37,5 @@ void taskSystem(void);
 void taskSyncPwmDriver(void);
 #endif
 void taskStackCheck(void);
+
+void fcTasksInit(void);

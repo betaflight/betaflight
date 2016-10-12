@@ -64,6 +64,7 @@
 #include "drivers/exti.h"
 #include "drivers/io_pca9685.h"
 
+#include "fc/fc_tasks.h"
 #include "fc/msp_fc.h"
 
 #include "rx/rx.h"
@@ -598,6 +599,8 @@ void init(void)
     latchActiveFeatures();
     motorControlEnable = true;
 
+    fcTasksInit();
+
     addBootlogEvent2(BOOT_EVENT_SYSTEM_READY, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_READY;
 }
@@ -619,52 +622,6 @@ void processLoopback(void) {
 int main(void)
 {
     init();
-
-    /* Setup scheduler */
-    schedulerInit();
-
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
-
-    setTaskEnabled(TASK_SERIAL, true);
-#ifdef BEEPER
-    setTaskEnabled(TASK_BEEPER, true);
-#endif
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
-    setTaskEnabled(TASK_RX, true);
-#ifdef GPS
-    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
-#endif
-#ifdef MAG
-    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#if (defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)) && defined(USE_MAG_AK8963)
-    // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
-#endif
-#endif
-#ifdef BARO
-    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
-#endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
-#endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
-#endif
-#ifdef TELEMETRY
-    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-#endif
-#ifdef LED_STRIP
-    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
-#endif
-#ifdef STACK_CHECK
-    setTaskEnabled(TASK_STACK_CHECK, true);
-#endif
-
-#ifdef USE_PMW_SERVO_DRIVER
-    setTaskEnabled(TASK_PWMDRIVER, feature(FEATURE_PWM_SERVO_DRIVER));
-#endif
-
     while (true) {
         scheduler();
         processLoopback();

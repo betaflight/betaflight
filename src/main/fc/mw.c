@@ -18,16 +18,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
 #include "blackbox/blackbox.h"
 
 #include "build/debug.h"
-
-#include "scheduler/scheduler.h"
-#include "scheduler/scheduler_tasks.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -37,20 +33,15 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/light_led.h"
 
-#include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/rangefinder.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
@@ -66,7 +57,6 @@
 #include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
-#include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
 #include "io/statusindicator.h"
@@ -77,13 +67,14 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "scheduler/scheduler.h"
+
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/hil.h"
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
@@ -91,9 +82,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "io/pwmdriver_i2c.h"
-#include "drivers/io_pca9685.h"
 
 // June 2013     V2.2-dev
 
@@ -103,10 +91,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -659,46 +643,6 @@ void taskMainPidLoopChecker(void) {
     taskMainPidLoop();
 }
 
-void taskHandleSerial(void)
-{
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
-}
-
-void taskUpdateBeeper(void)
-{
-    beeperUpdate();          //call periodic beeper handler
-}
-
-void taskUpdateBattery(void)
-{
-    static uint32_t vbatLastServiced = 0;
-    static uint32_t ibatLastServiced = 0;
-
-    if (feature(FEATURE_VBAT)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            uint32_t vbatTimeDelta = currentTime - vbatLastServiced;
-            vbatLastServiced = currentTime;
-            updateBattery(vbatTimeDelta);
-        }
-    }
-
-    if (feature(FEATURE_CURRENT_METER)) {
-        int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-        }
-    }
-}
-
 bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
@@ -713,90 +657,3 @@ void taskUpdateRxMain(void)
     isRXDataNew = true;
 }
 
-#ifdef GPS
-void taskProcessGPS(void)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsThread();
-    }
-
-    if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
-    }
-}
-#endif
-
-#ifdef MAG
-void taskUpdateCompass(void)
-{
-    if (sensors(SENSOR_MAG)) {
-        updateCompass(&masterConfig.magZero);
-    }
-}
-#endif
-
-#ifdef BARO
-void taskUpdateBaro(void)
-{
-    if (sensors(SENSOR_BARO)) {
-        const uint32_t newDeadline = baroUpdate();
-        if (newDeadline != 0) {
-            rescheduleTask(TASK_SELF, newDeadline);
-        }
-    }
-
-    //updatePositionEstimator_BaroTopic(currentTime);
-}
-#endif
-
-#ifdef SONAR
-void taskUpdateSonar(void)
-{
-    if (sensors(SENSOR_SONAR)) {
-        rangefinderUpdate();
-    }
-
-    //updatePositionEstimator_SonarTopic(currentTime);
-}
-#endif
-
-#ifdef DISPLAY
-void taskUpdateDisplay(void)
-{
-    if (feature(FEATURE_DISPLAY)) {
-        updateDisplay();
-    }
-}
-#endif
-
-#ifdef TELEMETRY
-void taskTelemetry(void)
-{
-    telemetryCheckState();
-
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    }
-}
-#endif
-
-#ifdef LED_STRIP
-void taskLedStrip(void)
-{
-    if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip();
-    }
-}
-#endif
-
-#ifdef USE_PMW_SERVO_DRIVER
-void taskSyncPwmDriver(void) {
-
-    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
-        pwmDriverSync();
-    }
-}
-#endif
