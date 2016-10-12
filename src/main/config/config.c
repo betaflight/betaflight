@@ -253,6 +253,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;
     pidProfile->itermThrottleGain = 0;
+    pidProfile->levelSensitivity = 2.0f;
 
 #ifdef GTUNE
     pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.

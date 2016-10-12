@@ -17,7 +17,6 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 #define USE_HARDWARE_REVISION_DETECTION
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -25,9 +24,17 @@
 #define LED0                    PB3
 #define LED1                    PB4
 
-#define BEEPER                  PA12
-#ifdef AFROMINI
+#define BEEPER                  PA1
+
+#if defined(AFROMINI)
 #define BEEPER_INVERTED
+#define TARGET_BOARD_IDENTIFIER "AFMN"
+#elif defined(BEEBRAIN)
+#define BRUSHED_MOTORS
+#define TARGET_BOARD_IDENTIFIER "BEBR"
+#define TARGET_CONFIG
+#else
+#define TARGET_BOARD_IDENTIFIER "AFNA"
 #endif
 
 #define BARO_XCLR_PIN           PC13
