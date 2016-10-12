@@ -79,7 +79,7 @@
 #define USE_FLASHTOOLS
 #define USE_FLASH_M25P16
 
-#define SONAR
+// #define SONAR
 #define SONAR_TRIGGER_PIN       PB0 // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN          PB1 // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_TRIGGER_PIN_PWM   PB8 // PWM5 (PB8) - 5v tolerant
@@ -128,4 +128,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS     (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
-

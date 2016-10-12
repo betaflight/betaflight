@@ -64,7 +64,7 @@
 #define USE_MAG_AK8975
 #define MAG_AK8975_ALIGN        CW180_DEG_FLIP
 
-#define SONAR
+// #define SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
 #define SONAR_TRIGGER_PIN_PWM   PB8
@@ -113,4 +113,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4))
-
