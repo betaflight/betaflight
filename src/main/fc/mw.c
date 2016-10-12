@@ -67,6 +67,7 @@
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
+#include "flight/altitudehold.h"
 
 #include "fc/runtime_config.h"
 #include "config/config.h"
