@@ -177,7 +177,7 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr callback, uint32_t baud, portOptions_t options)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portOptions_t options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
@@ -199,7 +199,7 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->port.baudRate = baud;
     softSerial->port.mode = MODE_RXTX;
     softSerial->port.options = options;
-    softSerial->port.callback = callback;
+    softSerial->port.rxCallback = rxCallback;
 
     resetBuffers(softSerial);
 
@@ -315,8 +315,8 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
 
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
 
-    if (softSerial->port.callback) {
-        softSerial->port.callback(rxByte);
+    if (softSerial->port.rxCallback) {
+        softSerial->port.rxCallback(rxByte);
     } else {
         softSerial->port.rxBuffer[softSerial->port.rxBufferHead] = rxByte;
         softSerial->port.rxBufferHead = (softSerial->port.rxBufferHead + 1) % softSerial->port.rxBufferSize;
@@ -455,7 +455,7 @@ void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
 {
     softSerial_t *softSerial = (softSerial_t *)s;
-    openSoftSerial(softSerial->softSerialPortIndex, s->callback, baudRate, softSerial->port.options);
+    openSoftSerial(softSerial->softSerialPortIndex, s->rxCallback, baudRate, softSerial->port.options);
 }
 
 void softSerialSetMode(serialPort_t *instance, portMode_t mode)
