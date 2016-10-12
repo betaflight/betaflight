@@ -90,7 +90,6 @@ typedef struct servoMixer_s {
     uint8_t speed;                          // reduces the speed of the rule, 0=unlimited speed
     int8_t min;                             // lower bound of rule range [0;100]% of servo max-min
     int8_t max;                             // lower bound of rule range [0;100]% of servo max-min
-    uint8_t box;                            // active rule if box is enabled, range [0;3], 0=no box, 1=BOXSERVO1, 2=BOXSERVO2, 3=BOXSERVO3
 } servoMixer_t;
 
 #define MAX_SERVO_RULES (2 * MAX_SUPPORTED_SERVOS)
@@ -129,4 +128,3 @@ void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
 void servosInit(servoMixer_t *customServoMixers);
-

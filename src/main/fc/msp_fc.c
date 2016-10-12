@@ -119,21 +119,15 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { BOXHEADFREE, "HEADFREE;", 6 },
     { BOXHEADADJ, "HEADADJ;", 7 },
     { BOXCAMSTAB, "CAMSTAB;", 8 },
-    { BOXCAMTRIG, "CAMTRIG;", 9 },
     { BOXNAVRTH, "NAV RTH;", 10 },         // old GPS HOME
     { BOXNAVPOSHOLD, "NAV POSHOLD;", 11 },     // old GPS HOLD
     { BOXPASSTHRU, "PASSTHRU;", 12 },
     { BOXBEEPERON, "BEEPER;", 13 },
-    { BOXLEDMAX, "LEDMAX;", 14 },
     { BOXLEDLOW, "LEDLOW;", 15 },
     { BOXLLIGHTS, "LLIGHTS;", 16 },
-    { BOXGOV, "GOVERNOR;", 18 },
     { BOXOSD, "OSD SW;", 19 },
     { BOXTELEMETRY, "TELEMETRY;", 20 },
     //{ BOXGTUNE, "GTUNE;", 21 },
-    { BOXSERVO1, "SERVO1;", 23 },
-    { BOXSERVO2, "SERVO2;", 24 },
-    { BOXSERVO3, "SERVO3;", 25 },
     { BOXBLACKBOX, "BLACKBOX;", 26 },
     { BOXFAILSAFE, "FAILSAFE;", 27 },
     { BOXNAVWP, "NAV WP;", 28 },
@@ -318,14 +312,6 @@ static void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
 #endif
 
-#ifdef USE_SERVOS
-    if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
-        activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
-    }
-#endif
-
 #ifdef BLACKBOX
     if (feature(FEATURE_BLACKBOX)){
         activeBoxIds[activeBoxIdCount++] = BOXBLACKBOX;
@@ -350,13 +336,10 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)) << BOXHEADFREE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHEADADJ)) << BOXHEADADJ |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMSTAB)) << BOXCAMSTAB |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXCAMTRIG)) << BOXCAMTRIG |
         IS_ENABLED(FLIGHT_MODE(PASSTHRU_MODE)) << BOXPASSTHRU |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXBEEPERON)) << BOXBEEPERON |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDMAX)) << BOXLEDMAX |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLEDLOW)) << BOXLEDLOW |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXLLIGHTS)) << BOXLLIGHTS |
-        IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGOV)) << BOXGOV |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXOSD)) << BOXOSD |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXTELEMETRY)) << BOXTELEMETRY |
         IS_ENABLED(ARMING_FLAG(ARMED)) << BOXARM |
@@ -608,7 +591,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
             sbufWriteU8(dst, masterConfig.customServoMixer[i].speed);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].min);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].max);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].box);
+            sbufWriteU8(dst, 0);
         }
         break;
 #endif
@@ -1282,7 +1265,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             masterConfig.customServoMixer[i].speed = sbufReadU8(src);
             masterConfig.customServoMixer[i].min = sbufReadU8(src);
             masterConfig.customServoMixer[i].max = sbufReadU8(src);
-            masterConfig.customServoMixer[i].box = sbufReadU8(src);
+            sbufReadU8(src); //Read 1 byte for `box` and ignore it
             loadCustomServoMixer();
         }
 #endif
@@ -1599,4 +1582,3 @@ mspProcessCommandFnPtr mspFcInit(void)
     initActiveBoxIds();
     return mspFcProcessCommand;
 }
-
