@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <platform.h>
+#include "build/build_config.h"
 
 #include "system.h"
 #include "bus_i2c.h"
@@ -54,7 +55,7 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static void l3g4200dInit(uint8_t lpf);
+static void l3g4200dInit(gyro_t *gyro, uint8_t lpf);
 static bool l3g4200dRead(int16_t *gyroADC);
 
 bool l3g4200dDetect(gyro_t *gyro)
@@ -76,8 +77,9 @@ bool l3g4200dDetect(gyro_t *gyro)
     return true;
 }
 
-static void l3g4200dInit(uint8_t lpf)
+static void l3g4200dInit(gyro_t *gyro, uint8_t lpf)
 {
+    UNUSED(gyro);
     bool ack;
 
     uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;

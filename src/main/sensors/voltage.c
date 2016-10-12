@@ -133,7 +133,7 @@ void voltageMeterUpdate(void)
         uint8_t channel = voltageMeterAdcChannelMap[i];
         vbatSample = state->vbatLatestADC = adcGetChannel(channel);
 
-        vbatSample = applyBiQuadFilter(vbatSample, &state->vbatFilterState);
+        vbatSample = biquadFilterApply(&state->vbatFilterState, vbatSample);
 
         // always calculate the latest voltage, see getLatestVoltage() which does the calculation on demand.
         state->vbat = voltageAdcToVoltage(vbatSample, config);
@@ -147,6 +147,6 @@ void voltageMeterInit(void)
 
         voltageMeterState_t *state = &voltageMeterStates[i];
 
-        BiQuadNewLpf(VBATT_LPF_FREQ, &state->vbatFilterState, 50000);
+        biquadFilterInitLPF(&state->vbatFilterState, VBATT_LPF_FREQ, 50000);
     }
 }

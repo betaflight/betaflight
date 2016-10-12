@@ -54,6 +54,7 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
+#include "sensors/gyro.h"
 
 #include "telemetry/telemetry.h"
 
@@ -105,11 +106,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
 #endif
 
-#if defined(COLIBRI_RACE)
-    // alternative defaults settings for COLIBRI RACE targets
-    imuConfig()->looptime = 1000;
-#endif
-
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHT
 #ifdef ALIENFLIGHTF3
@@ -124,7 +120,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorAndServoConfig()->minthrottle = 1000;
     motorAndServoConfig()->maxthrottle = 2000;
     motorAndServoConfig()->motor_pwm_rate = 32000;
-    imuConfig()->looptime = 2000;
     pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
@@ -164,6 +159,7 @@ static void activateConfig(void)
 
     useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
+    pidInitFilters(pidProfile());
     pidSetController(pidProfile()->pidController);
 
 #ifdef GPS
@@ -224,14 +220,9 @@ static void validateAndFixConfig(void)
         mixerConfig()->pid_at_min_throttle = 0;
     }
 
-
-#ifdef STM32F10X
-    // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (imuConfig()->gyroSync && imuConfig()->gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        imuConfig()->gyroSyncDenominator = 2;
+    if (gyroConfig()->gyro_soft_notch_hz < gyroConfig()->gyro_soft_notch_cutoff_hz) {
+        gyroConfig()->gyro_soft_notch_hz = 0;
     }
-#endif
-
 
 #if defined(LED_STRIP)
 #if (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))

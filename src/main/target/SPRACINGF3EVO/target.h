@@ -40,6 +40,7 @@
 #define GYRO
 //#define USE_FAKE_GYRO
 #define USE_GYRO_SPI_MPU6500
+#define DEFAULT_GYRO_SYNC 0
 
 #define ACC
 //#define USE_FAKE_ACC

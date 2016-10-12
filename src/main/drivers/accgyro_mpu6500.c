@@ -24,6 +24,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "system.h"
 #include "exti.h"
@@ -34,6 +35,8 @@
 #include "accgyro.h"
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
+
+extern uint8_t mpuIntDenominator;
 
 static bool mpu6500ReadTemp(int16_t *tempData)
 {
@@ -73,7 +76,6 @@ bool mpu6500GyroDetect(gyro_t *gyro)
     gyro->init = mpu6500GyroInit;
     gyro->read = mpuGyroRead;
     gyro->temperature = mpu6500ReadTemp;
-    gyro->isDataReady = mpuIsDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -88,8 +90,26 @@ void mpu6500AccInit(acc_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-void mpu6500GyroInit(uint8_t lpf)
+void mpu6500GyroInit(gyro_t* gyro, uint8_t lpf)
 {
+    uint16_t intFrequencyHz;
+    switch(lpf) {
+        case 0:
+            intFrequencyHz = 8000;
+        break;
+        default:
+            intFrequencyHz = 1000;
+        break;
+    }
+
+    mpuIntDenominator = intFrequencyHz / gyro->sampleFrequencyHz;
+
+    // handle cases where the refresh period was set higher than the LPF allows
+    if (mpuIntDenominator == 0) {
+        mpuIntDenominator = 1;
+        gyro->sampleFrequencyHz = intFrequencyHz;
+    }
+
     mpuIntExtiInit();
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
@@ -99,10 +119,15 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
     delay(100);
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    delay(15);
     mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    delay(15);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    delay(15);
     mpuConfiguration.write(MPU_RA_CONFIG, lpf);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    delay(15);
+    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, 0);
+    delay(100);
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG
@@ -110,6 +135,9 @@ void mpu6500GyroInit(uint8_t lpf)
 #else
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 #endif
+
+    delay(15);
+
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif

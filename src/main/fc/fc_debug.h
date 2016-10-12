@@ -15,13 +15,20 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum {
+    // NOTE: only add new ones to the end of this list (before DEBUG_MODE_COUNT), otherwise a PG version bump is required.
+    DEBUG_NONE,
+    DEBUG_CYCLETIME,
+    DEBUG_NOTCH,
+    DEBUG_GYRO,
+    DEBUG_PIDLOOP,
+    DEBUG_GYRO_SYNC,
 
-typedef bool (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read prototype
+    DEBUG_MODE_COUNT
+} debugMode_e;
 
-struct acc_s;
-struct gyro_s;
-typedef void (*sensorAccInitFuncPtr)(struct acc_s *acc);                    // sensor init prototype
-typedef void (*sensorGyroInitFuncPtr)(struct gyro_s* gyro, uint8_t lpf);    // gyro sensor init prototype
+typedef struct debugConfig_s {
+    uint8_t debug_mode;
+} debugConfig_t;
 
+PG_DECLARE(debugConfig_t, debugConfig);

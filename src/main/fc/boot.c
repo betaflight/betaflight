@@ -32,6 +32,7 @@
 #include "common/printf.h"
 #include "common/streambuf.h"
 #include "common/filter.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -70,6 +71,7 @@
 
 #include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
+#include "fc/fc_debug.h"
 
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -281,6 +283,8 @@ void init(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
+    debugMode = debugConfig()->debug_mode;
 
 #ifdef USE_EXTI
     EXTIInit();
@@ -542,9 +546,13 @@ void init(void)
     }
 #endif
 
-    gyroSetSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+#ifdef NAZE
+    if (hardwareRevision < NAZE32_REV5) {
+        imuConfig()->gyro_sync = 0;
+    }
+#endif
 
-    if (!sensorsAutodetect()) {
+    if (!sensorsAutodetect(imuConfig()->gyro_sample_hz)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -553,14 +561,22 @@ void init(void)
 
     flashLedsAndBeep();
 
+    mspInit();
+    mspSerialInit();
+
+    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
+    imuConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
+
+    uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    pidSetTargetLooptime(pidPeriodUs * imuConfig()->pid_process_denom);
+    pidInitFilters(pidProfile());
+
 #ifdef USE_SERVOS
-    mixerInitialiseServoFiltering(targetLooptime);
+    mixerInitialiseServoFiltering(targetPidLooptime);
 #endif
 
     imuInit();
 
-    mspInit();
-    mspSerialInit();
 
 #ifdef USE_CLI
     cliInit();
@@ -723,9 +739,19 @@ void configureScheduler(void)
 {
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
-    setTaskEnabled(TASK_GYROPID, true);
-    rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+
+    uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    rescheduleTask(TASK_GYRO, gyroPeriodUs);
+    setTaskEnabled(TASK_GYRO, true);
+
+    rescheduleTask(TASK_PID, gyroPeriodUs);
+    setTaskEnabled(TASK_PID, true);
+
+    if (sensors(SENSOR_ACC)) {
+        setTaskEnabled(TASK_ACCEL, true);
+    }
+
+    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);

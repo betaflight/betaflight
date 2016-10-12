@@ -428,6 +428,7 @@ void resumeRxSignal(void) {}
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *) {}
 void resetAdjustmentStates(void) {}
 void pidSetController(pidControllerType_e) {}
+void pidInitFilters(const pidProfile_t *) {}
 void parseRcChannels(const char *, rxConfig_t *) {}
 #ifdef USE_SERVOS
 void mixerUseConfigs(servoParam_t *) {}

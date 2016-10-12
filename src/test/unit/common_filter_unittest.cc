@@ -29,114 +29,72 @@ extern "C" {
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
 
-TEST(FilterUnittest, TestFilterApplyAverage)
+
+TEST(NotchFilterTest, Initialise)
 {
-#define VALUE_COUNT 4
-    int32_t valueState[VALUE_COUNT];
-    for (int ii = 0; ii < VALUE_COUNT; ++ii) {
-        valueState[ii] = 0;
-    }
-    int average = filterApplyAverage(8, VALUE_COUNT, valueState);
-    EXPECT_EQ(2, average); // 8/4
-    EXPECT_EQ(8, valueState[0]);
-    EXPECT_EQ(0, valueState[1]);
+    // given
+    biquadFilter_t filter;
 
-    average = filterApplyAverage(16, VALUE_COUNT, valueState);
-    EXPECT_EQ(6, average); // (8+16)/4
-    EXPECT_EQ(16, valueState[0]);
-    EXPECT_EQ(8, valueState[1]);
+    // when
+    biquadFilterInitNotch(&filter, 1000, 100, 70);
 
+    // then
+    EXPECT_FLOAT_EQ( 0.82364058f, filter.b0);
+    EXPECT_FLOAT_EQ(-1.3326783f,  filter.b1);
+    EXPECT_FLOAT_EQ( 0.82364058f, filter.b2);
+    EXPECT_FLOAT_EQ(-1.3326783f,  filter.a1);
+    EXPECT_FLOAT_EQ( 0.64728117f, filter.a2);
 
-    average = filterApplyAverage(4, VALUE_COUNT, valueState);
-    EXPECT_EQ(7, average); // (8+16+4)/4
-    EXPECT_EQ(4, valueState[0]);
-    EXPECT_EQ(16, valueState[1]);
-    EXPECT_EQ(8, valueState[2]);
-
-    average = filterApplyAverage(-12, VALUE_COUNT, valueState);
-    EXPECT_EQ(4, average); // (8+16+4-12)/4
-    EXPECT_EQ(-12, valueState[0]);
-    EXPECT_EQ(4, valueState[1]);
-    EXPECT_EQ(16, valueState[2]);
-    EXPECT_EQ(8, valueState[3]);
-
-    average = filterApplyAverage(48, VALUE_COUNT, valueState);
-    EXPECT_EQ(14, average); // (16+4-12+48)/4
-    EXPECT_EQ(48, valueState[0]);
-    EXPECT_EQ(-12, valueState[1]);
-    EXPECT_EQ(4, valueState[2]);
-    EXPECT_EQ(16, valueState[3]);
-
-    average = filterApplyAverage(4, VALUE_COUNT, valueState);
-    EXPECT_EQ(11, average); // (4-12+48+4)/4
-    EXPECT_EQ(4, valueState[0]);
-    EXPECT_EQ(48, valueState[1]);
-    EXPECT_EQ(-12, valueState[2]);
-    EXPECT_EQ(4, valueState[3]);
+    // and
+    EXPECT_FLOAT_EQ( 0.0f, filter.d1);
+    EXPECT_FLOAT_EQ( 0.0f, filter.d2);
 }
 
-TEST(FilterUnittest, TestFilterApplyAverage2)
+
+TEST(NotchFilterTest, ApplyZero)
 {
-#define VALUE_COUNT 4
-    int32_t valueState[3][VALUE_COUNT];
-    for (int ii = 0; ii < VALUE_COUNT; ++ii) {
-        valueState[0][ii] = 0;
-    }
-    int average = filterApplyAverage(8, VALUE_COUNT, valueState[0]);
-    EXPECT_EQ(2, average); // 8/4
-    EXPECT_EQ(8, valueState[0][0]);
-    EXPECT_EQ(0, valueState[0][1]);
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 1000, 100, 70);
 
-    average = filterApplyAverage(16, VALUE_COUNT, valueState[0]);
-    EXPECT_EQ(6, average); // (8+16)/4
-    EXPECT_EQ(16, valueState[0][0]);
-    EXPECT_EQ(8, valueState[0][1]);
+    // when
+    float result = biquadFilterApply(&filter, 0);
 
+    // then
+    EXPECT_FLOAT_EQ(0.0f, result);
 }
 
-TEST(FilterUnittest, TestFilterApplyAveragef)
+
+TEST(NotchFilterTest, ApplySweepWithNoFiltering)
 {
-#define VALUE_COUNT 4
-    float valueState[VALUE_COUNT];
-    for (int ii = 0; ii < VALUE_COUNT; ++ii) {
-        valueState[ii] = 0;
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 1000, 100, 100);
+
+    float result;
+
+    // when
+    for (int i = 0; i <= 100; i++) {
+        result = biquadFilterApply(&filter, i);
     }
-    int average = filterApplyAveragef(8, VALUE_COUNT, valueState);
-    EXPECT_EQ(2, average); // 8/4
-    EXPECT_EQ(8, valueState[0]);
-    EXPECT_EQ(0, valueState[1]);
 
-    average = filterApplyAveragef(16, VALUE_COUNT, valueState);
-    EXPECT_EQ(6, average); // (8+16)/4
-    EXPECT_EQ(16, valueState[0]);
-    EXPECT_EQ(8, valueState[1]);
-
-
-    average = filterApplyAveragef(4, VALUE_COUNT, valueState);
-    EXPECT_EQ(7, average); // (8+16+4)/4
-    EXPECT_EQ(4, valueState[0]);
-    EXPECT_EQ(16, valueState[1]);
-    EXPECT_EQ(8, valueState[2]);
-
-    average = filterApplyAveragef(-12, VALUE_COUNT, valueState);
-    EXPECT_EQ(4, average); // (8+16+4-12)/4
-    EXPECT_EQ(-12, valueState[0]);
-    EXPECT_EQ(4, valueState[1]);
-    EXPECT_EQ(16, valueState[2]);
-    EXPECT_EQ(8, valueState[3]);
-
-    average = filterApplyAveragef(48, VALUE_COUNT, valueState);
-    EXPECT_EQ(14, average); // (16+4-12+48)/4
-    EXPECT_EQ(48, valueState[0]);
-    EXPECT_EQ(-12, valueState[1]);
-    EXPECT_EQ(4, valueState[2]);
-    EXPECT_EQ(16, valueState[3]);
-
-    average = filterApplyAveragef(4, VALUE_COUNT, valueState);
-    EXPECT_EQ(11, average); // (4-12+48+4)/4
-    EXPECT_EQ(4, valueState[0]);
-    EXPECT_EQ(48, valueState[1]);
-    EXPECT_EQ(-12, valueState[2]);
-    EXPECT_EQ(4, valueState[3]);
+    // then
+    EXPECT_FLOAT_EQ(100.0f, result);
 }
 
+TEST(NotchFilterTest, ApplySweepWithDefaults)
+{
+    // given
+    biquadFilter_t filter;
+    biquadFilterInitNotch(&filter, 1000, 260, 160);
+
+    float result;
+
+    // when
+    for (int i = 0; i <= 100; i++) {
+        result = biquadFilterApply(&filter, i);
+    }
+
+    // then
+    EXPECT_FLOAT_EQ(99.525948f, result);
+}

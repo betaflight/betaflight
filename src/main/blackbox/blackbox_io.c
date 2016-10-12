@@ -49,6 +49,8 @@
 
 #ifdef BLACKBOX
 
+extern uint32_t targetPidLooptime; // FIXME dependency on pid.h
+
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
 // How many bytes can we transmit per loop iteration when writing headers?
@@ -586,7 +588,7 @@ bool blackboxDeviceOpen(void)
                  *                              = floor((looptime_ns * 3) / 500.0)
                  *                              = (looptime_ns * 3) / 500
                  */
-                blackboxMaxHeaderBytesPerIteration = constrain((targetLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+                blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
 
                 return blackboxPort != NULL;
             }

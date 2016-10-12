@@ -96,6 +96,10 @@
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_MWREWRITE
 #define SKIP_PID_MW23
+
+// FIXME temporary solution to at least get the build to pass
+#undef USE_CLI
+
 #endif
 
 

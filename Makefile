@@ -266,6 +266,7 @@ FC_COMMON_SRC = \
 		   config/feature.c \
 		   config/profile.c \
 		   fc/boot.c \
+		   fc/fc_debug.c \
 		   fc/cleanflight_fc.c \
 		   fc/fc_tasks.c \
 		   fc/rate_profile.c \

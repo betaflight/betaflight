@@ -47,7 +47,8 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static void mpu3050Init(uint8_t lpf);
+static void mpu3050Init(gyro_t *gyro, uint8_t lpf);
+
 static bool mpu3050ReadTemp(int16_t *tempData);
 
 bool mpu3050Detect(gyro_t *gyro)
@@ -58,7 +59,6 @@ bool mpu3050Detect(gyro_t *gyro)
     gyro->init = mpu3050Init;
     gyro->read = mpuGyroRead;
     gyro->temperature = mpu3050ReadTemp;
-    gyro->isDataReady = mpuIsDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
@@ -66,8 +66,9 @@ bool mpu3050Detect(gyro_t *gyro)
     return true;
 }
 
-static void mpu3050Init(uint8_t lpf)
+static void mpu3050Init(gyro_t *gyro, uint8_t lpf)
 {
+    UNUSED(gyro);
     bool ack;
 
     delay(25); // datasheet page 13 says 20ms. other stuff could have been running meanwhile. but we'll be safe

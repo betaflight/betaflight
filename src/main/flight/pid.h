@@ -62,11 +62,16 @@ typedef struct pidProfile_s {
     uint8_t  D8[PID_ITEM_COUNT];
     uint8_t  pidController;
     uint16_t yaw_p_limit;                   // set P term limit (fixed value was 300)
-    uint16_t dterm_lpf;                     // dterm filtering
-    uint16_t yaw_lpf;                       // additional yaw filter when yaw axis too noisy
+    uint16_t dterm_lpf_hz;                  // Delta Filter in hz
+    uint16_t yaw_lpf_hz;                    // additional yaw filter when yaw axis too noisy
     uint8_t  deltaMethod;
+
     uint8_t horizon_tilt_effect;            // inclination factor for Horizon mode
     uint8_t horizon_tilt_mode;              // SAFE or EXPERT
+
+    uint8_t dterm_filter_type;              // Filter selection for dterm
+    uint16_t dterm_notch_hz;                // Biquad dterm notch hz
+    uint16_t dterm_notch_cutoff;            // Biquad dterm notch low cutoff
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
@@ -79,11 +84,15 @@ typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const struc
 
 extern int16_t axisPID[FD_INDEX_COUNT];
 extern int32_t axisPID_P[FD_INDEX_COUNT], axisPID_I[FD_INDEX_COUNT], axisPID_D[FD_INDEX_COUNT];
+extern uint32_t targetPidLooptime;
 
 float pidScaleITermToRcInput(int axis);
 void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
+float getdT(void);
+void pidInitFilters(const pidProfile_t *pidProfile);
 void pidSetController(pidControllerType_e type);
+void pidSetTargetLooptime(uint32_t pidLooptime);
 void pidResetITermAngle(void);
 void pidResetITerm(void);
 

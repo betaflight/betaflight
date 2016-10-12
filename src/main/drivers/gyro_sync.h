@@ -15,10 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define INTERRUPT_WAIT_TIME 10
+extern uint32_t gyroIntSignalledAt;
+extern int32_t gyroIntSignalDelta;
 
-extern uint32_t targetLooptime;
-
-bool gyroSyncCheckUpdate(void);
-uint8_t gyroMPU6xxxCalculateDivider(void);
-void gyroSetSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);
+void gyroSyncIntHandler(void);
+bool gyroSyncIsDataReady(void);

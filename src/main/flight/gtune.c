@@ -54,7 +54,7 @@
 
 #include "gtune.h"
 
-extern uint16_t cycleTime;
+extern uint16_t pidDeltaUs;
 extern uint8_t motorCount;
 
 /*
@@ -121,7 +121,7 @@ static bool floatPID;
 
 void updateDelayCycles(void)
 {
-    delay_cycles = -(((int32_t)gtuneConfig()->gtune_settle_time * 1000) / cycleTime);
+    delay_cycles = -(((int32_t)gtuneConfig()->gtune_settle_time * 1000) / pidDeltaUs);
 }
 
 void init_Gtune(void)

@@ -75,7 +75,7 @@ int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 STATIC_UNIT_TESTED uint8_t servoCount;
 static servoParam_t *servoConf;
-static biquad_t servoFilterState[MAX_SUPPORTED_SERVOS];
+static biquadFilter_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
 
@@ -187,7 +187,7 @@ void mixerInitialiseServoFiltering(uint32_t targetLooptime)
 {
     if (mixerConfig()->servo_lowpass_enable) {
         for (int servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            BiQuadNewLpf(mixerConfig()->servo_lowpass_freq, &servoFilterState[servoIdx], targetLooptime);
+            biquadFilterInitLPF(&servoFilterState[servoIdx],  mixerConfig()->servo_lowpass_freq, targetLooptime);
         }
     }
 }
@@ -552,7 +552,7 @@ void filterServos(void)
 
     if (mixerConfig()->servo_lowpass_enable) {
         for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            servo[servoIdx] = lrintf(applyBiQuadFilter((float) servo[servoIdx], &servoFilterState[servoIdx]));
+            servo[servoIdx] = lrintf(biquadFilterApply(&servoFilterState[servoIdx], (float) servo[servoIdx]));
 
             // Sanity check
             servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);

@@ -19,6 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -29,6 +32,9 @@
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+
 #define GYRO
 #define USE_GYRO_MPU6050
 

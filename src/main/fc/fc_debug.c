@@ -15,13 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-typedef bool (*sensorInitFuncPtr)(void);                    // sensor init prototype
-typedef bool (*sensorReadFuncPtr)(int16_t *data);           // sensor read prototype
+#include <platform.h>
 
-struct acc_s;
-struct gyro_s;
-typedef void (*sensorAccInitFuncPtr)(struct acc_s *acc);                    // sensor init prototype
-typedef void (*sensorGyroInitFuncPtr)(struct gyro_s* gyro, uint8_t lpf);    // gyro sensor init prototype
+#include "build/build_config.h"
+#include "build/debug.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "fc/fc_debug.h"
+
+PG_REGISTER(debugConfig_t, debugConfig, PG_DEBUG_CONFIG, 0);

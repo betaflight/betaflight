@@ -49,6 +49,8 @@
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
+#define DEFAULT_GYRO_SAMPLE_HZ      2000
+#define DEFAULT_PID_PROCESS_DENOM   1
 
 #define GYRO_MPU6000_ALIGN CW270_DEG
 
@@ -136,7 +138,7 @@
 #define SONAR_TRIGGER_IO            PB5
 #define SONAR_ECHO_IO               PB1
 
-#define GPS
+//#define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

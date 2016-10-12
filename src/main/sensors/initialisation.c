@@ -25,6 +25,7 @@
 #include "config/parameter_group.h"
 
 #include "common/axis.h"
+#include "common/time.h"
 
 #include "drivers/gpio.h"
 #include "drivers/system.h"
@@ -126,7 +127,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &cc3dMPUIntExtiConfig;
 #endif
 
-#if defined(MOTOLAB) || defined(RCEXPLORERF3)
+#if defined(MOTOLAB) || defined(RCEXPLORERF3) || defined(SPARKY)
     static const extiConfig_t MotolabF3MPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
             .gpioPort = GPIOA,
@@ -685,7 +686,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 #endif
 }
 
-bool sensorsAutodetect(void)
+bool sensorsAutodetect(uint16_t gyro_sample_hz)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -701,8 +702,12 @@ bool sensorsAutodetect(void)
     if (!detectGyro()) {
         return false;
     }
+
+    gyro.sampleFrequencyHz = gyro_sample_hz;
+
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.init(gyroConfig()->gyro_lpf);
+    gyro.init(&gyro, gyroConfig()->gyro_lpf);
+    gyroInit();
 
     if (detectAcc(sensorSelectionConfig()->acc_hardware)) {
         acc.acc_1G = 256; // set default

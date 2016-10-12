@@ -419,7 +419,6 @@ TEST_F(MspTest, TestMspCommands)
         MSP_ARMING_CONFIG,              // 61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
         MSP_DATAFLASH_SUMMARY,          // 70 //out message - get description of dataflash chip
 //!! not tested       MSP_DATAFLASH_READ,             // 71 //out message - get content of dataflash chip
-        MSP_LOOP_TIME,                  // 73 //out message         Returns FC cycle time i.e looptime parameter
         MSP_FAILSAFE_CONFIG,            // 75 //out message         Returns FC Fail-Safe settings
         MSP_RXFAIL_CONFIG,              // 77 //out message         Returns RXFAIL settings
         MSP_SDCARD_SUMMARY,             // 79 //out message         Get the state of the SD card
@@ -545,8 +544,9 @@ void stopMotors(void) {}
 void loadCustomServoMixer(void) {}
 // from msp.c
 void rxMspFrameReceive(uint16_t *, int ) {}
-// from mw.c
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+// from cleanflight_fc.c
+uint16_t pidDeltaUs = 0;
+uint16_t gyroDeltaUs = 0;
 int16_t magHold;
 // from navigation.c
 int32_t GPS_home[2];
