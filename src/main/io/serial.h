@@ -126,7 +126,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
-    serialReceiveCallbackPtr callback,
+    serialReceiveCallbackPtr rxCallback,
     uint32_t baudrate,
     portMode_t mode,
     portOptions_t options
