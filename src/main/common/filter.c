@@ -156,12 +156,12 @@ void firFilterUpdate(firFilter_t *filter, float input)
 float firFilterApply(const firFilter_t *filter)
 {
     float ret = 0.0f;
-    int index = filter->index;
-    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
-        --index;
-        if (index < 0) {
-            index = filter->bufLength - 1;
-        }
+    int ii = 0;
+    int index;
+    for (index = filter->index - 1; index >= 0; ++ii, --index) {
+        ret += filter->coeffs[ii] * filter->buf[index];
+    }
+    for (index = filter->bufLength - 1; ii < filter->coeffsLength; ++ii, --index) {
         ret += filter->coeffs[ii] * filter->buf[index];
     }
     return ret;
