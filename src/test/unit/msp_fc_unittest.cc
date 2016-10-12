@@ -544,8 +544,9 @@ void stopMotors(void) {}
 void loadCustomServoMixer(void) {}
 // from msp.c
 void rxMspFrameReceive(uint16_t *, int ) {}
-// from mw.c
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+// from cleanflight_fc.c
+uint16_t pidDeltaUs = 0;
+uint16_t gyroDeltaUs = 0;
 int16_t magHold;
 // from navigation.c
 int32_t GPS_home[2];

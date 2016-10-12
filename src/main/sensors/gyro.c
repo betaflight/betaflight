@@ -26,6 +26,7 @@
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -79,11 +80,12 @@ void gyroInit(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {  // Initialisation needs to happen once sampling rate is known
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInitNotch(&gyroFilterNotch[axis], gyro.refreshPeriod, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
+            uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+            biquadFilterInitNotch(&gyroFilterNotch[axis], gyroPeriodUs, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
             if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD) {
-                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz,  gyro.refreshPeriod);
+                biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz,  gyroPeriodUs);
             } else {
-                float gyroDt = (float)  gyro.refreshPeriod * 0.000001f;
+                float gyroDt = (float)  gyroPeriodUs * 0.000001f;
                 pt1FilterInit(&gyroFilterPt1[axis], gyroConfig()->gyro_soft_lpf_hz, gyroDt);
             }
         }

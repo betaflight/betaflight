@@ -561,10 +561,11 @@ void init(void)
 
     flashLedsAndBeep();
 
-    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the best sample frequency possible for the desired LPF
-    imuConfig()->gyro_sample_hz = HZ_FROM_PERIOD(gyro.refreshPeriod);
+    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
+    imuConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
 
-    pidSetTargetLooptime(gyro.refreshPeriod * imuConfig()->pid_process_denom);
+    uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    pidSetTargetLooptime(pidPeriodUs * imuConfig()->pid_process_denom);
     pidInitFilters(pidProfile());
 
 #ifdef USE_SERVOS
@@ -738,10 +739,11 @@ void configureScheduler(void)
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
 
-    rescheduleTask(TASK_GYRO, gyro.refreshPeriod);
+    uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    rescheduleTask(TASK_GYRO, gyroPeriodUs);
     setTaskEnabled(TASK_GYRO, true);
 
-    rescheduleTask(TASK_PID, gyro.refreshPeriod);
+    rescheduleTask(TASK_PID, gyroPeriodUs);
     setTaskEnabled(TASK_PID, true);
 
     if (sensors(SENSOR_ACC)) {

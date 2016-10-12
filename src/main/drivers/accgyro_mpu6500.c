@@ -92,8 +92,24 @@ void mpu6500AccInit(acc_t *acc)
 
 void mpu6500GyroInit(gyro_t* gyro, uint8_t lpf)
 {
-    // interrupt is triggered when internal gyro registers are updated at 8KHz, regardless of the desired sample frequency.
-    mpuIntDenominator = gyro->refreshPeriod / PERIOD_HZ(8000);
+    uint16_t intFrequencyHz;
+    switch(lpf) {
+        case 0:
+            intFrequencyHz = 8000;
+        break;
+        default:
+            intFrequencyHz = 1000;
+        break;
+    }
+
+    mpuIntDenominator = intFrequencyHz / gyro->sampleFrequencyHz;
+
+    // handle cases where the refresh period was set higher than the LPF allows
+    if (mpuIntDenominator == 0) {
+        mpuIntDenominator = 1;
+        gyro->sampleFrequencyHz = intFrequencyHz;
+    }
+
     mpuIntExtiInit();
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);

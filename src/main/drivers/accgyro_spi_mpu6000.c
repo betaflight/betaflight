@@ -123,22 +123,22 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
 
 void mpu6000SpiGyroInit(gyro_t *gyro, uint8_t lpf)
 {
-    uint16_t intPeriod;
+    uint16_t intFrequencyHz;
     switch(lpf) {
         case 0:
-            intPeriod = PERIOD_HZ(8000);
+            intFrequencyHz = 8000;
         break;
         default:
-            intPeriod = PERIOD_HZ(1000);
+            intFrequencyHz = 1000;
         break;
     }
 
-    mpuIntDenominator = gyro->refreshPeriod / intPeriod;
+    mpuIntDenominator = intFrequencyHz / gyro->sampleFrequencyHz;
 
     // handle cases where the refresh period was set lower than the LPF allows
     if (mpuIntDenominator == 0) {
         mpuIntDenominator = 1;
-        gyro->refreshPeriod = intPeriod;
+        gyro->sampleFrequencyHz = intFrequencyHz;
     }
     mpuIntExtiInit();
 

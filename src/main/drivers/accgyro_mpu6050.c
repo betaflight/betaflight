@@ -100,23 +100,24 @@ static void mpu6050GyroInit(gyro_t *gyro, uint8_t lpf)
 {
     bool ack;
 
-    uint16_t intPeriod;
+    uint16_t intFrequencyHz;
     switch(lpf) {
         case 0:
-            intPeriod = PERIOD_HZ(8000);
+            intFrequencyHz = 8000;
         break;
         default:
-            intPeriod = PERIOD_HZ(1000);
+            intFrequencyHz = 1000;
         break;
     }
 
-    mpuIntDenominator = gyro->refreshPeriod / intPeriod;
+    mpuIntDenominator = intFrequencyHz / gyro->sampleFrequencyHz;
 
-    // handle cases where the refresh period was set lower than the LPF allows
+    // handle cases where the refresh period was set higher than the LPF allows
     if (mpuIntDenominator == 0) {
         mpuIntDenominator = 1;
-        gyro->refreshPeriod = intPeriod;
+        gyro->sampleFrequencyHz = intFrequencyHz;
     }
+
     mpuIntExtiInit();
 
     ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1

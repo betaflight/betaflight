@@ -31,7 +31,7 @@ typedef struct gyro_s {
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     float scale;                                            // scalefactor
-    uint16_t refreshPeriod;
+    uint16_t sampleFrequencyHz;
 } gyro_t;
 
 typedef struct acc_s {

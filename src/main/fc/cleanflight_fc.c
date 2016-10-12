@@ -31,6 +31,7 @@
 #include "common/utils.h"
 #include "common/filter.h"
 #include "common/streambuf.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 
@@ -109,7 +110,8 @@ enum {
 #define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+uint16_t pidDeltaUs = 0;
+uint16_t gyroDeltaUs = 0;
 
 int16_t magHold;
 int16_t headFreeModeHold;
@@ -783,11 +785,6 @@ bool shouldProcessGyro(void)
 {
     if (imuConfig()->gyro_sync) {
         bool sync = gyroSyncIsDataReady();
-        if (debugMode == DEBUG_GYRO_SYNC) {
-            if (sync) {
-                debug[0]++;
-            }
-        }
         return sync;
     }
 
@@ -803,70 +800,67 @@ bool taskGyroCheck(uint32_t currentDeltaTime)
     return shouldProcessGyro();
 }
 
-bool gyroReady = false;
+uint8_t gyroReadyCounter = 0;
 
 void taskGyro(void)
 {
-    uint32_t startTime = micros();
-
     gyroUpdate();
-    gyroUpdateAt += gyro.refreshPeriod;
-    gyroReady = true;
+    gyroUpdateAt += US_FROM_HZ(gyro.sampleFrequencyHz);
+    gyroReadyCounter++;
 
-    if (debugMode == DEBUG_GYRO_UPDATE) {
-        debug[0] = micros() - startTime;
-    }
-
-    cycleTime = getTaskDeltaTime(TASK_SELF);
+    gyroDeltaUs = getTaskDeltaTime(TASK_SELF);
 
     if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = cycleTime;
+        debug[0] = gyroDeltaUs;
         debug[1] = averageSystemLoadPercent;
+    }
+
+    if (debugMode == DEBUG_GYRO_SYNC) {
+        debug[0] = gyroDeltaUs;
+        debug[1]++;
     }
 }
 
-bool taskPidCheck(uint32_t currentDeltaTime) {
+bool taskPidCheck(uint32_t currentDeltaTime)
+{
+    if (gyroReadyCounter == 0) {
+        return false;
+    }
 
     bool shouldRunPid = false;
     if (imuConfig()->gyro_sync) {
-        shouldRunPid = gyroReady;
-    } else {
-        shouldRunPid = gyroReady && currentDeltaTime >= targetPidLooptime;
+        shouldRunPid = gyroReadyCounter >= imuConfig()->pid_process_denom;
     }
+    shouldRunPid |= currentDeltaTime >= targetPidLooptime;
 
     if (!shouldRunPid) {
         return false;
     }
-
-    static uint8_t pidCounter = 0;
-
-    pidCounter++;
-
-    if (pidCounter != imuConfig()->pid_process_denom) {
-        return false;
-    }
-
-    pidCounter = 0;
 
     return true;
 }
 
 void taskPid(void)
 {
-    gyroReady = false;
+    gyroReadyCounter = 0;
 
     static uint32_t previousPidUpdateTime;
-    const uint32_t currentDeltaTime = currentTime - previousPidUpdateTime;
+    pidDeltaUs = currentTime - previousPidUpdateTime;
     previousPidUpdateTime = currentTime;
 
     if (debugMode == DEBUG_PIDLOOP) {
-        debug[0] = currentDeltaTime;
+        debug[0] = pidDeltaUs;
     }
 
     subTaskPidController();
 
     subTaskMotorUpdate();
     subTaskMainSubprocesses();
+
+    if (debugMode == DEBUG_GYRO_SYNC) {
+        debug[2] = pidDeltaUs;
+        debug[3]++;
+    }
 }
 
 void taskUpdateAccelerometer(void)

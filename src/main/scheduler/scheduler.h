@@ -83,6 +83,4 @@ uint32_t getTaskDeltaTime(const int taskId);
 void schedulerInit(void);
 void scheduler(void);
 
-#define LOAD_PERCENTAGE_ONE 100
-
-#define isSystemOverloaded() (averageSystemLoadPercent >= LOAD_PERCENTAGE_ONE)
+#define isSystemOverloaded() (averageSystemLoadPercent > 100)

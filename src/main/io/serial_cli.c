@@ -117,7 +117,8 @@ uint8_t cliMode = 0;
 
 #ifdef USE_CLI
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint16_t pidDeltaUs; // FIXME dependency on mw.c
+extern uint16_t gyroDeltaUs; // FIXME dependency on mw.c
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
 
@@ -430,7 +431,6 @@ static const char * const lookupTableDebug[DEBUG_MODE_COUNT] = {
     "GYRO",
     "PIDLOOP",
     "GYROSYNC",
-    "GYROUPDATE",
 };
 
 typedef struct lookupTableEntry_s {
@@ -2527,12 +2527,13 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d%%\r\n",
+    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
         millis() / 1000,
         vbat,
         batteryCellCount,
         getBatteryStateString(),
-        constrain(averageSystemLoadPercent, 0, 100)
+        averageSystemLoadPercent / 100,
+        averageSystemLoadPercent % 100
     );
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
@@ -2569,7 +2570,7 @@ static void cliStatus(char *cmdline)
     uint16_t i2cErrorCounter = 0;
 #endif
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, registry size: %d\r\n", cycleTime, i2cErrorCounter, PG_REGISTRY_SIZE);
+    cliPrintf("PIDd: %d, GYROd: %d, I2C Errors: %d, registry size: %d\r\n", pidDeltaUs, gyroDeltaUs, i2cErrorCounter, PG_REGISTRY_SIZE);
 }
 
 #ifndef SKIP_TASK_STATISTICS

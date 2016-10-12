@@ -113,7 +113,8 @@
 #include "io/serial_4way.h"
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint16_t gyroDeltaUs; // FIXME dependency on mw.c
+extern uint16_t pidDeltaUs; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
@@ -536,7 +537,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_STATUS:
-            sbufWriteU16(dst, cycleTime);
+            sbufWriteU16(dst, pidDeltaUs);
 #ifdef USE_I2C
             sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -545,7 +546,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
             sbufWriteU32(dst, packFlightModeFlags());
             sbufWriteU8(dst, getCurrentProfile());
-            sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+            sbufWriteU16(dst, gyroDeltaUs);
+            sbufWriteU16(dst, averageSystemLoadPercent);
             break;
 
         case MSP_RAW_IMU: {
