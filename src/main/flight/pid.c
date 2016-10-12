@@ -104,7 +104,6 @@ biquadFilter_t dtermFilterNotch[3];
 bool dtermNotchInitialised;
 bool dtermBiquadLpfInitialised;
 denoisingState_t dtermDenoisingState[3];
-bool dtermNotchInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
     int axis;

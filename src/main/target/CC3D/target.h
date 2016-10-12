@@ -72,8 +72,13 @@
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
+
+#ifdef CC3D_OPBL
+#define SERIAL_PORT_COUNT       3
+#else
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       4
+#endif
 
 #ifdef USE_UART1_RX_DMA
 #undef USE_UART1_RX_DMA
@@ -116,9 +121,7 @@
 #define SKIP_PID_FLOAT
 #undef BARO
 #undef SONAR
-#undef USE_SOFTSERIAL1
 #undef LED_STRIP
-#define SKIP_PID_FLOAT
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
