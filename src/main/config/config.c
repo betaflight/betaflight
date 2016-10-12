@@ -207,10 +207,10 @@ static void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->P8[ROLL] = 45;
     pidProfile->I8[ROLL] = 40;
-    pidProfile->D8[ROLL] = 16;
+    pidProfile->D8[ROLL] = 20;
     pidProfile->P8[PITCH] = 60;
     pidProfile->I8[PITCH] = 65;
-    pidProfile->D8[PITCH] = 19;
+    pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 70;
     pidProfile->I8[YAW] = 45;
     pidProfile->D8[YAW] = 20;
