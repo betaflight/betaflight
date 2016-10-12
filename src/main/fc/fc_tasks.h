@@ -17,34 +17,13 @@
 
 #pragma once
 
+#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+
 void taskSystem(uint32_t currentTime);
 void taskMainPidLoopCheck(uint32_t currentTime);
-void taskUpdateAccelerometer(uint32_t currentTime);
-void taskUpdateAttitude(uint32_t currentTime);
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime);
-void taskUpdateRxMain(uint32_t currentTime);
-void taskHandleSerial(uint32_t currentTime);
-void taskUpdateBattery(uint32_t currentTime);
-void taskUpdateBeeper(uint32_t currentTime);
-void taskProcessGPS(uint32_t currentTime);
-void taskUpdateCompass(uint32_t currentTime);
-void taskUpdateBaro(uint32_t currentTime);
-void taskUpdateSonar(uint32_t currentTime);
-void taskCalculateAltitude(uint32_t currentTime);
-void taskUpdateDisplay(uint32_t currentTime);
-void taskTelemetry(uint32_t currentTime);
-void taskLedStrip(uint32_t currentTime);
-void taskTransponder(uint32_t currentTime);
-#ifdef OSD
-void taskUpdateOsd(uint32_t currentTime);
-#endif
 #ifdef USE_BST
 void taskBstReadWrite(uint32_t currentTime);
 void taskBstMasterProcess(uint32_t currentTime);
 #endif
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
-
-
 void fcTasksInit(void);
-

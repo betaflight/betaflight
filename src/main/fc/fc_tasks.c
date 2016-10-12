@@ -74,6 +74,263 @@
 #define IBATINTERVAL (6 * 3500)
 
 
+static void taskUpdateAccelerometer(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+
+    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+}
+
+static void taskUpdateAttitude(uint32_t currentTime)
+{
+    imuUpdateAttitude(currentTime);
+}
+
+static void taskHandleSerial(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+#ifdef USE_CLI
+    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
+    if (cliMode) {
+        cliProcess();
+        return;
+    }
+#endif
+    mspSerialProcess();
+}
+
+static void taskUpdateBeeper(uint32_t currentTime)
+{
+    beeperUpdate(currentTime);          //call periodic beeper handler
+}
+
+static void taskUpdateBattery(uint32_t currentTime)
+{
+#ifdef USE_ADC
+    static uint32_t vbatLastServiced = 0;
+    if (feature(FEATURE_VBAT)) {
+        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
+            vbatLastServiced = currentTime;
+            updateBattery();
+        }
+    }
+#endif
+
+    static uint32_t ibatLastServiced = 0;
+    if (feature(FEATURE_CURRENT_METER)) {
+        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
+
+        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
+            ibatLastServiced = currentTime;
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        }
+    }
+}
+
+static bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
+{
+    UNUSED(currentDeltaTime);
+    return rxUpdate(currentTime);
+}
+
+static void taskUpdateRxMain(uint32_t currentTime)
+{
+    processRx(currentTime);
+    isRXDataNew = true;
+
+#if !defined(BARO) && !defined(SONAR)
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
+#endif
+    updateLEDs();
+
+#ifdef BARO
+    if (sensors(SENSOR_BARO)) {
+        updateAltHoldState();
+    }
+#endif
+
+#ifdef SONAR
+    if (sensors(SENSOR_SONAR)) {
+        updateSonarAltHoldState();
+    }
+#endif
+}
+
+#ifdef GPS
+static void taskProcessGPS(uint32_t currentTime)
+{
+    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
+    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+    // change this based on available hardware
+    if (feature(FEATURE_GPS)) {
+        gpsThread();
+    }
+
+    if (sensors(SENSOR_GPS)) {
+        updateGpsIndicator(currentTime);
+    }
+}
+#endif
+
+#ifdef MAG
+static void taskUpdateCompass(uint32_t currentTime)
+{
+    if (sensors(SENSOR_MAG)) {
+        updateCompass(currentTime, &masterConfig.magZero);
+    }
+}
+#endif
+
+#ifdef BARO
+static void taskUpdateBaro(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+
+    if (sensors(SENSOR_BARO)) {
+        const uint32_t newDeadline = baroUpdate();
+        if (newDeadline != 0) {
+            rescheduleTask(TASK_SELF, newDeadline);
+        }
+    }
+}
+#endif
+
+#ifdef SONAR
+static void taskUpdateSonar(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+
+    if (sensors(SENSOR_SONAR)) {
+        sonarUpdate();
+    }
+}
+#endif
+
+#if defined(BARO) || defined(SONAR)
+static void taskCalculateAltitude(uint32_t currentTime)
+{
+    if (false
+#if defined(BARO)
+        || (sensors(SENSOR_BARO) && isBaroReady())
+#endif
+#if defined(SONAR)
+        || sensors(SENSOR_SONAR)
+#endif
+        ) {
+        calculateEstimatedAltitude(currentTime);
+    }}
+#endif
+
+#ifdef DISPLAY
+static void taskUpdateDisplay(uint32_t currentTime)
+{
+    if (feature(FEATURE_DISPLAY)) {
+        updateDisplay(currentTime);
+    }
+}
+#endif
+
+#ifdef TELEMETRY
+static void taskTelemetry(uint32_t currentTime)
+{
+    telemetryCheckState();
+
+    if (!cliMode && feature(FEATURE_TELEMETRY)) {
+        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    }
+}
+#endif
+
+#ifdef LED_STRIP
+static void taskLedStrip(uint32_t currentTime)
+{
+    if (feature(FEATURE_LED_STRIP)) {
+        updateLedStrip(currentTime);
+    }
+}
+#endif
+
+#ifdef TRANSPONDER
+static void taskTransponder(uint32_t currentTime)
+{
+    if (feature(FEATURE_TRANSPONDER)) {
+        updateTransponder(currentTime);
+    }
+}
+#endif
+
+#ifdef OSD
+static void taskUpdateOsd(uint32_t currentTime)
+{
+    if (feature(FEATURE_OSD)) {
+        updateOsd(currentTime);
+    }
+}
+#endif
+
+void fcTasksInit(void)
+{
+    schedulerInit();
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
+    setTaskEnabled(TASK_GYROPID, true);
+
+    if (sensors(SENSOR_ACC)) {
+        setTaskEnabled(TASK_ACCEL, true);
+        rescheduleTask(TASK_ACCEL, accSamplingInterval);
+    }
+
+    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
+    setTaskEnabled(TASK_SERIAL, true);
+    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+    setTaskEnabled(TASK_RX, true);
+
+#ifdef BEEPER
+    setTaskEnabled(TASK_BEEPER, true);
+#endif
+#ifdef GPS
+    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
+#endif
+#ifdef MAG
+    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
+#if defined(USE_SPI) && defined(USE_MAG_AK8963)
+    // fixme temporary solution for AK6983 via slave I2C on MPU9250
+    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+#endif
+#endif
+#ifdef BARO
+    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
+#endif
+#ifdef SONAR
+    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
+#endif
+#if defined(BARO) || defined(SONAR)
+    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
+#endif
+#ifdef DISPLAY
+    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#endif
+#ifdef TELEMETRY
+    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
+    // Reschedule telemetry to 500hz for Jeti Exbus
+    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+        rescheduleTask(TASK_TELEMETRY, 2000);
+    }
+#endif
+#ifdef LED_STRIP
+    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+#endif
+#ifdef TRANSPONDER
+    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
+#endif
+#ifdef USE_BST
+    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+}
+
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
@@ -233,261 +490,4 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #endif
 };
 
-
-void taskUpdateAccelerometer(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
-}
-
-void taskUpdateAttitude(uint32_t currentTime)
-{
-    imuUpdateAttitude(currentTime);
-}
-
-void taskHandleSerial(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-    mspSerialProcess();
-}
-
-void taskUpdateBeeper(uint32_t currentTime)
-{
-    beeperUpdate(currentTime);          //call periodic beeper handler
-}
-
-void taskUpdateBattery(uint32_t currentTime)
-{
-#ifdef USE_ADC
-    static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTime;
-            updateBattery();
-        }
-    }
-#endif
-
-    static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER)) {
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-        }
-    }
-}
-
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
-{
-    UNUSED(currentDeltaTime);
-    return rxUpdate(currentTime);
-}
-
-void taskUpdateRxMain(uint32_t currentTime)
-{
-    processRx(currentTime);
-    isRXDataNew = true;
-
-#if !defined(BARO) && !defined(SONAR)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-#endif
-    updateLEDs();
-
-#ifdef BARO
-    if (sensors(SENSOR_BARO)) {
-        updateAltHoldState();
-    }
-#endif
-
-#ifdef SONAR
-    if (sensors(SENSOR_SONAR)) {
-        updateSonarAltHoldState();
-    }
-#endif
-}
-
-#ifdef GPS
-void taskProcessGPS(uint32_t currentTime)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsThread();
-    }
-
-    if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
-    }
-}
-#endif
-
-#ifdef MAG
-void taskUpdateCompass(uint32_t currentTime)
-{
-    if (sensors(SENSOR_MAG)) {
-        updateCompass(currentTime, &masterConfig.magZero);
-    }
-}
-#endif
-
-#ifdef BARO
-void taskUpdateBaro(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_BARO)) {
-        const uint32_t newDeadline = baroUpdate();
-        if (newDeadline != 0) {
-            rescheduleTask(TASK_SELF, newDeadline);
-        }
-    }
-}
-#endif
-
-#ifdef SONAR
-void taskUpdateSonar(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_SONAR)) {
-        sonarUpdate();
-    }
-}
-#endif
-
-#if defined(BARO) || defined(SONAR)
-void taskCalculateAltitude(uint32_t currentTime)
-{
-    if (false
-#if defined(BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(SONAR)
-        || sensors(SENSOR_SONAR)
-#endif
-        ) {
-        calculateEstimatedAltitude(currentTime);
-    }}
-#endif
-
-#ifdef DISPLAY
-void taskUpdateDisplay(uint32_t currentTime)
-{
-    if (feature(FEATURE_DISPLAY)) {
-        updateDisplay(currentTime);
-    }
-}
-#endif
-
-#ifdef TELEMETRY
-void taskTelemetry(uint32_t currentTime)
-{
-    telemetryCheckState();
-
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    }
-}
-#endif
-
-#ifdef LED_STRIP
-void taskLedStrip(uint32_t currentTime)
-{
-    if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip(currentTime);
-    }
-}
-#endif
-
-#ifdef TRANSPONDER
-void taskTransponder(uint32_t currentTime)
-{
-    if (feature(FEATURE_TRANSPONDER)) {
-        updateTransponder(currentTime);
-    }
-}
-#endif
-
-#ifdef OSD
-void taskUpdateOsd(uint32_t currentTime)
-{
-    if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
-    }
-}
-#endif
-
-void fcTasksInit(void)
-{
-    schedulerInit();
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
-
-    if (sensors(SENSOR_ACC)) {
-        setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, accSamplingInterval);
-    }
-
-    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
-    setTaskEnabled(TASK_SERIAL, true);
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
-    setTaskEnabled(TASK_RX, true);
-
-#ifdef BEEPER
-    setTaskEnabled(TASK_BEEPER, true);
-#endif
-#ifdef GPS
-    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
-#endif
-#ifdef MAG
-    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#if defined(USE_SPI) && defined(USE_MAG_AK8963)
-    // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
-#endif
-#endif
-#ifdef BARO
-    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
-#endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
-#endif
-#if defined(BARO) || defined(SONAR)
-    setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
-#endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
-#endif
-#ifdef TELEMETRY
-    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-    // Reschedule telemetry to 500hz for Jeti Exbus
-    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
-        rescheduleTask(TASK_TELEMETRY, 2000);
-    }
-#endif
-#ifdef LED_STRIP
-    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
-#endif
-#ifdef TRANSPONDER
-    setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
-#endif
-#ifdef OSD
-    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
-#endif
-#ifdef USE_BST
-    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
-#endif
-}
 
