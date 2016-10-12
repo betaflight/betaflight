@@ -81,7 +81,7 @@
 
 #define SDCARD_DETECT_PIN               PD2
 #define SDCARD_SPI_INSTANCE             SPI3
-#define SDCARD_SPI_CS_PIN               PB3
+#define SDCARD_SPI_CS_PIN               PA15
 
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
