@@ -108,7 +108,7 @@ static pt1Filter_t deltaFilter[3];
 static pt1Filter_t yawFilter;
 static biquadFilter_t dtermFilterLpf[3];
 static biquadFilter_t dtermFilterNotch[3];
-static denoisingState_t dtermDenoisingState[3];
+static firFilterState_t dtermDenoisingState[3];
 static bool dtermNotchInitialised;
 
 void initFilters(const pidProfile_t *pidProfile) {
@@ -126,8 +126,8 @@ void initFilters(const pidProfile_t *pidProfile) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
 
-        if (pidProfile->dterm_filter_type == FILTER_DENOISE) {
-            for (axis = 0; axis < 3; axis++) initDenoisingFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+        if (pidProfile->dterm_filter_type == FILTER_FIR) {
+            for (axis = 0; axis < 3; axis++) initFirFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
         lowpassFilterType = pidProfile->dterm_filter_type;
     }
@@ -282,7 +282,7 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = denoisingFilterUpdate(&dtermDenoisingState[axis], delta);
+                    delta = firFilterUpdate(&dtermDenoisingState[axis], delta);
             }
 
             DTerm = Kd[axis] * delta * tpaFactor;
@@ -422,7 +422,7 @@ static void pidLegacy(const pidProfile_t *pidProfile, uint16_t max_angle_inclina
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = denoisingFilterUpdate(&dtermDenoisingState[axis], delta);
+                    delta = firFilterUpdate(&dtermDenoisingState[axis], delta);
 
                 delta = lrintf(deltaf);
             }

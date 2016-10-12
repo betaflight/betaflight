@@ -90,11 +90,11 @@ void targetConfiguration(master_t *config)
 
     for (int profileId = 0; profileId < 2; profileId++) {
         config->profile[profileId].pidProfile.P8[ROLL] = 55;
-        config->profile[profileId].pidProfile.I8[ROLL] = 40;
-        config->profile[profileId].pidProfile.D8[ROLL] = 20;
-        config->profile[profileId].pidProfile.P8[PITCH] = 55;
-        config->profile[profileId].pidProfile.I8[PITCH] = 40;
-        config->profile[profileId].pidProfile.D8[PITCH] = 20;
+        config->profile[profileId].pidProfile.I8[ROLL] = 50;
+        config->profile[profileId].pidProfile.D8[ROLL] = 25;
+        config->profile[profileId].pidProfile.P8[PITCH] = 65;
+        config->profile[profileId].pidProfile.I8[PITCH] = 60;
+        config->profile[profileId].pidProfile.D8[PITCH] = 28;
         config->profile[profileId].pidProfile.P8[YAW] = 180;
         config->profile[profileId].pidProfile.I8[YAW] = 45;
         config->profile[profileId].pidProfile.P8[PIDLEVEL] = 50;
@@ -102,11 +102,11 @@ void targetConfiguration(master_t *config)
         config->profile[profileId].pidProfile.levelSensitivity = 1.0f;
 
         for (int rateProfileId = 0; rateProfileId < MAX_RATEPROFILES; rateProfileId++) {
-            config->profile[profileId].controlRateProfile[rateProfileId].rcRate8 = 120;
-            config->profile[profileId].controlRateProfile[rateProfileId].rcYawRate8 = 120;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[ROLL] = 99;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[PITCH] = 99;
-            config->profile[profileId].controlRateProfile[rateProfileId].rates[YAW] = 99;
+            config->profile[profileId].controlRateProfile[rateProfileId].rcRate8 = 110;
+            config->profile[profileId].controlRateProfile[rateProfileId].rcYawRate8 = 110;
+            config->profile[profileId].controlRateProfile[rateProfileId].rates[ROLL] = 80;
+            config->profile[profileId].controlRateProfile[rateProfileId].rates[PITCH] = 80;
+            config->profile[profileId].controlRateProfile[rateProfileId].rates[YAW] = 80;
 
             config->profile[profileId].pidProfile.setpointRelaxRatio = 100;
         }

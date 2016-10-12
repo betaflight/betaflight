@@ -115,12 +115,12 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-void initDenoisingFilter(denoisingState_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime) {
+void initFirFilter(firFilterState_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime) {
     filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_DENOISE_WINDOW_SIZE);
 }
 
 /* prototype function for denoising of signal by dynamic moving average. Mainly for test purposes */
-float denoisingFilterUpdate(denoisingState_t *filter, float input) {
+float firFilterUpdate(firFilterState_t *filter, float input) {
     filter->state[filter->index] = input;
     filter->movingSum += filter->state[filter->index++];
     if (filter->index == filter->targetCount)
