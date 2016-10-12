@@ -103,7 +103,7 @@ biquadFilter_t dtermFilterLpf[3];
 biquadFilter_t dtermFilterNotch[3];
 bool dtermNotchInitialised;
 bool dtermBiquadLpfInitialised;
-denoisingState_t dtermDenoisingState[3];
+firFilterState_t dtermDenoisingState[3];
 
 void initFilters(const pidProfile_t *pidProfile) {
     int axis;
@@ -120,8 +120,8 @@ void initFilters(const pidProfile_t *pidProfile) {
             for (axis = 0; axis < 3; axis++) biquadFilterInitLPF(&dtermFilterLpf[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
 
-        if (pidProfile->dterm_filter_type == FILTER_DENOISE) {
-            for (axis = 0; axis < 3; axis++) initDenoisingFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+        if (pidProfile->dterm_filter_type == FILTER_FIR) {
+            for (axis = 0; axis < 3; axis++) initFirFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
         lowpassFilterType = pidProfile->dterm_filter_type;
     }
