@@ -27,6 +27,8 @@ extern "C" {
 #include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
 #include "sensors/barometer.h"
+#include "scheduler/scheduler.h"
+#include "fc/fc_tasks.h"
 }
 
 #include "unittest_macros.h"
@@ -64,6 +66,14 @@ static serialPortConfig_t *findSerialPortConfig_stub_retval;
 static portSharing_e determinePortSharing_stub_retval;
 static bool openSerial_called = false;
 static bool telemetryDetermineEnabledState_stub_retval;
+
+
+void rescheduleTask(const int taskId, uint32_t newPeriodMicros)
+{
+    EXPECT_EQ(taskId, TASK_TELEMETRY);
+    EXPECT_EQ(newPeriodMicros, 500);
+}
+
 
 portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function)
 {

@@ -55,6 +55,8 @@
 #include "telemetry/telemetry.h"    
 #include "telemetry/ibus.h"
 
+#include "scheduler/scheduler.h"
+#include "fc/fc_tasks.h"
 
 /*
  * iBus Telemetry is a half-duplex serial protocol. It shares 1 line for
@@ -169,6 +171,8 @@ PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
                   .report_cell_voltage = false,
                  );
 
+#define IBUS_TASK_PERIOD_US (500)
+
 #define IBUS_UART_MODE     (MODE_RXTX)
 #define IBUS_BAUDRATE      (115200)
 #define IBUS_CYCLE_TIME_MS (8)
@@ -180,7 +184,7 @@ PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
 #define IBUS_MAX_RX_LEN    (4)
 #define IBUS_RX_BUF_LEN    (IBUS_MAX_RX_LEN)
 
-#define IBUS_TEMPERATURE_OFFSET  400
+#define IBUS_TEMPERATURE_OFFSET  (400)
 
 
 typedef uint8_t ibusAddress_t;
@@ -385,6 +389,7 @@ bool checkIbusTelemetryState(void)
     }
 
     if (newTelemetryEnabledValue) {
+        rescheduleTask(TASK_TELEMETRY, IBUS_TASK_PERIOD_US);
         configureIbusTelemetryPort();
     } else {
         freeIbusTelemetryPort();
