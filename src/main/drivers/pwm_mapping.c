@@ -229,6 +229,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(YUPIF4)
+            // remap PWM 6+7 as servos
+            if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM3)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
 #if defined(X_RACERSPI)
             // skip UART2 ports when necessary
             if (init->useUART2) {
@@ -284,6 +290,12 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
 
 #if defined(SINGULARITY)
             // remap PWM6+7 as servos
+            if (timerIndex == PWM6 || timerIndex == PWM7)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(YUPIF4)
+            // remap PWM 6+7 as servos
             if (timerIndex == PWM6 || timerIndex == PWM7)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
