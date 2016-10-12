@@ -36,6 +36,7 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
+#include "flight/altitudehold.h"
 
 #include "io/beeper.h"
 #include "io/display.h"
@@ -43,6 +44,7 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
+#include "io/serial_msp.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 
