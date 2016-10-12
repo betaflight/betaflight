@@ -561,6 +561,9 @@ void init(void)
 
     flashLedsAndBeep();
 
+    mspInit();
+    mspSerialInit();
+
     // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
     imuConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
 
@@ -574,8 +577,6 @@ void init(void)
 
     imuInit();
 
-    mspInit();
-    mspSerialInit();
 
 #ifdef USE_CLI
     cliInit();
