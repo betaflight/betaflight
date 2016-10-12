@@ -24,7 +24,7 @@
 #define LED0                    PB3
 #define LED1                    PB4
 
-#define BEEPER                  PA1
+#define BEEPER                  PA12
 
 #if defined(AFROMINI)
 #define BEEPER_INVERTED
