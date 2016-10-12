@@ -11,6 +11,7 @@ targets=("PUBLISHMETA=True" \
     "TARGET=OMNIBUS" \
     "TARGET=NAZE" \
     "TARGET=AFROMINI" \
+    "TARGET=BEEBRAIN" \
     "TARGET=RMDO" \
     "TARGET=SPARKY" \
     "TARGET=MOTOLAB" \
