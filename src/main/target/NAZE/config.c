@@ -83,10 +83,10 @@ void targetConfiguration(master_t *config)
     config->gyro_soft_lpf_hz = 100;
     config->gyro_soft_notch_hz_1 = 0;
 
-    for (int channel = 0; channel < NON_AUX_CHANNEL_COUNT; channel++) {
+    /*for (int channel = 0; channel < NON_AUX_CHANNEL_COUNT; channel++) {
         config->rxConfig.channelRanges[channel].min = 1180;
         config->rxConfig.channelRanges[channel].max = 1860;
-    }
+    }*/
 
     for (int profileId = 0; profileId < 2; profileId++) {
         config->profile[profileId].pidProfile.P8[ROLL] = 55;
