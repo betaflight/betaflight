@@ -118,7 +118,8 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_LT(serialWriteStub.pos, sizeof(serialWriteStub.buffer));
     serialWriteStub.buffer[serialWriteStub.pos++] = ch;
-    //printf("w: 0x%02x\n", ch);
+    serialReadStub.buffer[serialReadStub.end++] = ch; //characters echoes back on the shared wire
+    //printf("w: %02d 0x%02x\n", serialWriteStub.pos, ch);
 }
 
 
@@ -127,8 +128,11 @@ uint8_t serialRxBytesWaiting(serialPort_t *instance)
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_GE(serialReadStub.end, serialReadStub.pos);
     int ret = serialReadStub.end - serialReadStub.pos;
-    if (ret >= 0) return ret;
-    return 0;
+    if (ret < 0) {
+        ret = 0;
+    }
+    //printf("serialRxBytesWaiting: %d\n", ret);
+    return ret;
 }
 
 
@@ -226,7 +230,9 @@ protected:
         serialReadStub.end += rxCnt;
 
         //when polling ibus
-        handleIbusTelemetry();
+        for (int i = 0; i<10; i++) {
+            handleIbusTelemetry();
+        }
 
         EXPECT_EQ(expectedTxCnt, serialWriteStub.pos);
         EXPECT_EQ(0, memcmp(serialWriteStub.buffer, expectedTx, expectedTxCnt));

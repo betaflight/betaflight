@@ -208,6 +208,10 @@ static const uint8_t sensorAddressTypeLookup[] = {
 static serialPort_t *ibusSerialPort = NULL;
 static serialPortConfig_t *ibusSerialPortConfig;
 
+/* The sent bytes will be echoed back since Tx and Rx are wired together, this counter
+ * will keep track of how many rx chars that shall be discarded */
+static uint8_t outboundBytesToIgnoreOnRxCount = 0;
+
 static bool ibusTelemetryEnabled = false;
 static portSharing_e ibusPortSharing;
 
@@ -243,6 +247,7 @@ static void transmitIbusPacket(uint8_t *ibusPacket, size_t payloadLength)
     }
     serialWrite(ibusSerialPort, checksum & 0xFF);
     serialWrite(ibusSerialPort, checksum >> 8);
+    outboundBytesToIgnoreOnRxCount += payloadLength + IBUS_CHECKSUM_SIZE;
 }
 
 static void sendIbusDiscoverSensorReply(ibusAddress_t address)
@@ -357,6 +362,12 @@ void handleIbusTelemetry(void)
 
     while (serialRxBytesWaiting(ibusSerialPort) > 0) {
         uint8_t c = serialRead(ibusSerialPort);
+
+        if (outboundBytesToIgnoreOnRxCount) {
+            outboundBytesToIgnoreOnRxCount--;
+            return;
+        }
+
         pushOntoTail(ibusReceiveBuffer, IBUS_RX_BUF_LEN, c);
 
         if (isChecksumOk(ibusReceiveBuffer)) {
@@ -400,6 +411,7 @@ void configureIbusTelemetryPort(void)
     }
 
     ibusTelemetryEnabled = true;
+    outboundBytesToIgnoreOnRxCount = 0;
 }
 
 void freeIbusTelemetryPort(void)
