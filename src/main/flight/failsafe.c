@@ -34,7 +34,6 @@
 #include "rx/rx.h"
 
 #include "io/beeper.h"
-#include "io/motor_and_servo.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"

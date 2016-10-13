@@ -41,7 +41,8 @@ typedef enum {
     CR_CLASSICATION_SYSTEM   = 0,
     CR_CLASSICATION_PROFILE1 = 1,
     CR_CLASSICATION_PROFILE2 = 2,
-    CR_CLASSICATION_PROFILE3 = 3
+    CR_CLASSICATION_PROFILE3 = 3,
+    CR_CLASSICATION_PROFILE_LAST = CR_CLASSICATION_PROFILE3,
 } configRecordFlags_e;
 
 #define CR_CLASSIFICATION_MASK (0x3)
@@ -99,35 +100,8 @@ static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
     return chk;
 }
 
-uint8_t pgMatcherForConfigRecord(const pgRegistry_t *candidate, const void *criteria)
-{
-    const configRecord_t *record = (const configRecord_t *)criteria;
-
-    return (pgN(candidate) == record->pgn && pgVersion(candidate) == record->version);
-}
-
-// Load a PG into RAM, upgrading and downgrading as needed.
-static bool loadPG(const configRecord_t *record)
-{
-    const pgRegistry_t *reg = pgMatcher(pgMatcherForConfigRecord, record);
-
-    if (reg == NULL) {
-        return false;
-    }
-
-    uint8_t profileIndex = 0;
-
-    if (!pgIsSystem(reg)) {
-        profileIndex = (record->flags & CR_CLASSIFICATION_MASK) - 1;
-    }
-
-    pgLoad(reg, record->pg, record->size, profileIndex);
-    return true;
-}
-
-// Scan the EEPROM config.  Optionally also load into memory.  Returns
-// true if the config is valid.
-bool scanEEPROM(bool andLoad) // FIXME boolean argument.
+// Scan the EEPROM config. Returns true if the config is valid.
+bool scanEEPROM(void)
 {
     uint8_t chk = 0;
     const uint8_t *p = &__config_start;
@@ -154,9 +128,6 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
 
         chk = updateChecksum(chk, p, record->size);
 
-        if (andLoad) {
-            loadPG(record);
-        }
         p += record->size;
     }
 
@@ -167,9 +138,59 @@ bool scanEEPROM(bool andLoad) // FIXME boolean argument.
     return chk == *p;
 }
 
+// find config record for reg + classification (profile info) in EEPROM
+// return NULL when record is not found
+// this function assumes that EEPROM content is valid
+const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFlags_e classification)
+{
+    const uint8_t *p = &__config_start;
+    p += sizeof(configHeader_t);             // skip header
+    while (true) {
+        const configRecord_t *record = (const configRecord_t *)p;
+        if (record->size == 0
+            || p + record->size >= &__config_end
+            || record->size < sizeof(*record))
+            break;
+        if (pgN(reg) == record->pgn
+            && (record->flags & CR_CLASSIFICATION_MASK) == classification)
+            return record;
+        p += record->size;
+    }
+    // record not found
+    return NULL;
+}
+
+// Initialize all PG records from EEPROM.
+// This functions processes all PGs sequentially, scanning EEPROM for each one. This is suboptimal,
+//   but each PG is loaded/initialized exactly once and in defined order.
+bool loadEEPROM(void)
+{
+    PG_FOREACH(reg) {
+        configRecordFlags_e cls_start, cls_end;
+        if (pgIsSystem(reg)) {
+            cls_start = CR_CLASSICATION_SYSTEM;
+            cls_end = CR_CLASSICATION_SYSTEM;
+        } else {
+            cls_start = CR_CLASSICATION_PROFILE1;
+            cls_end = CR_CLASSICATION_PROFILE_LAST;
+        }
+        for (configRecordFlags_e cls = cls_start; cls <= cls_end; cls++) {
+            int profileIndex = cls - cls_start;
+            const configRecord_t *rec = findEEPROM(reg, cls);
+            if (rec) {
+                // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
+                pgLoad(reg, profileIndex, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
+            } else {
+                pgReset(reg, profileIndex);
+            }
+        }
+    }
+    return true;
+}
+
 bool isEEPROMContentValid(void)
 {
-    return scanEEPROM(false);
+    return scanEEPROM();
 }
 
 static bool writeSettingsToEEPROM(void)

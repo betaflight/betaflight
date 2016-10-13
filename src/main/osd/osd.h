@@ -15,11 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+extern const uint16_t osdSupportedElementIds[];
+extern const uint8_t osdSupportedElementIdsCount;
+
 typedef struct osdFontConfig_s {
     uint16_t fontVersion;
 } osdFontConfig_t;
 
 PG_DECLARE(osdFontConfig_t, osdFontConfig);
+
+#define MAX_OSD_ELEMENT_COUNT 32
+
+typedef struct osdElementConfig_s {
+    element_t elements[MAX_OSD_ELEMENT_COUNT];
+} osdElementConfig_t;
+
+PG_DECLARE(osdElementConfig_t, osdElementConfig);
 
 typedef struct osdVideoConfig_s {
     uint8_t videoMode;
@@ -28,10 +39,12 @@ typedef struct osdVideoConfig_s {
 
 PG_DECLARE(osdVideoConfig_t, osdVideoConfig);
 
-extern const uint8_t *asciiToFontMapping;
+typedef struct osdState_s {
+    videoMode_e videoMode;
+    bool cameraConnected;
+} osdState_t;
 
-extern textScreen_t osdTextScreen;
-extern char textScreenBuffer[];
+extern osdState_t osdState;
 
 //
 // OSD API
@@ -40,21 +53,17 @@ extern char textScreenBuffer[];
 void osdInit(void);
 void osdApplyConfiguration(void);
 void osdUpdate(void);
-void osdSetTextScreen(textScreen_t *textScreen);
-void osdClearScreen(void);
-void osdResetCursor(void);
-void osdSetCursor(uint8_t x, uint8_t y);
-void osdPrint(char *message);
-void osdPrintAt(uint8_t x, uint8_t y, char *message);
-void osdSetRawCharacterAtPosition(uint8_t x, uint8_t y, char c);
 
 //
 // To be implemented by hardware specific OSD code using hardware drivers.
 //
 void osdHardwareInit(void);
-void osdHardwareApplyConfiguration(void);
+void osdHardwareApplyConfiguration(videoMode_e videoMode);
 void osdHardwareUpdate(void);
 void osdHardwareCheck(void);
 void osdHardwareDrawLogo(void);
-bool osdIsCameraConnected(void);
 void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent);
+
+bool osdIsCameraConnected(void);
+
+void osdSetFontCharacter(uint8_t address, sbuf_t *src);

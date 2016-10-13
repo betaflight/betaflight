@@ -109,6 +109,8 @@ TEST(SonarUnittest, TestAltitude)
 
 // STUBS
 extern "C" {
-void sensorsSet(uint32_t mask) {UNUSED(mask);}
+    void sensorsSet(uint32_t mask) { UNUSED(mask); }
+    uint32_t micros(void) { return 0; }
+    uint16_t digitalIn(GPIO_TypeDef *p, uint16_t i) { UNUSED(p); UNUSED(i); return 0; }
 }
 

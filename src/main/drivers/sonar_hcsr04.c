@@ -23,7 +23,10 @@
 
 #include "system.h"
 #include "gpio.h"
-#include "nvic.h"
+
+#include "drivers/exti.h"
+#include "drivers/io.h"
+#include "drivers/nvic.h"
 
 #include "sonar_hcsr04.h"
 
@@ -41,11 +44,15 @@ STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
 static sonarHardware_t const *sonarHardware;
 
-#if !defined(UNIT_TEST)
-static void ECHO_EXTI_IRQHandler(void)
+extiCallbackRec_t hcsr04_extiCallbackRec;
+static IO_t echoIO;
+//static IO_t triggerIO;
+
+void hcsr04_extiHandler(extiCallbackRec_t* cb)
 {
     static uint32_t timing_start;
     uint32_t timing_stop;
+    UNUSED(cb);
 
     if (digitalIn(sonarHardware->echo_gpio, sonarHardware->echo_pin) != 0) {
         timing_start = micros();
@@ -55,25 +62,7 @@ static void ECHO_EXTI_IRQHandler(void)
             measurement = timing_stop - timing_start;
         }
     }
-
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
 }
-
-void EXTI0_IRQHandler(void)
-{
-    ECHO_EXTI_IRQHandler();
-}
-
-void EXTI1_IRQHandler(void)
-{
-    ECHO_EXTI_IRQHandler();
-}
-
-void EXTI9_5_IRQHandler(void)
-{
-    ECHO_EXTI_IRQHandler();
-}
-#endif
 
 void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sonarRange)
 {
@@ -84,18 +73,9 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
 
 #if !defined(UNIT_TEST)
     gpio_config_t gpio;
-    EXTI_InitTypeDef EXTIInit;
-
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
 
 #ifdef STM32F303xC
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
 
     // trigger pin
@@ -109,34 +89,15 @@ void hcsr04_init(const sonarHardware_t *initialSonarHardware, sonarRange_t *sona
     gpio.mode = Mode_IN_FLOATING;
     gpioInit(sonarHardware->echo_gpio, &gpio);
 
-#ifdef STM32F10X
-    // setup external interrupt on echo pin
-    gpioExtiLineConfig(GPIO_PortSourceGPIOB, sonarHardware->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(EXTI_PortSourceGPIOB, sonarHardware->exti_pin_source);
-#endif
-
-    EXTI_ClearITPendingBit(sonarHardware->exti_line);
-
-    EXTIInit.EXTI_Line = sonarHardware->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = sonarHardware->exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_SONAR_ECHO);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_SONAR_ECHO);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    echoIO = IOGetByTag(sonarHardware->echoIO);
+    EXTIHandlerInit(&hcsr04_extiCallbackRec, hcsr04_extiHandler);
+    EXTIConfig(echoIO, &hcsr04_extiCallbackRec, NVIC_PRIO_SONAR_EXTI, EXTI_Trigger_Rising_Falling); // TODO - priority!
+    EXTIEnable(echoIO, true);
 
     lastMeasurementAt = millis() - 60; // force 1st measurement in hcsr04_get_distance()
 #else
-    lastMeasurementAt = 0; // to avoid "unused" compiler warning
+    UNUSED(lastMeasurementAt); // to avoid "unused" compiler warning
+    UNUSED(echoIO);
 #endif
 }
 

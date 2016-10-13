@@ -20,7 +20,7 @@
 
 void initMAVLinkTelemetry(void);
 void handleMAVLinkTelemetry(void);
-void checkMAVLinkTelemetryState(void);
+bool checkMAVLinkTelemetryState(void);
 
 void freeMAVLinkTelemetryPort(void);
 void configureMAVLinkTelemetryPort(void);

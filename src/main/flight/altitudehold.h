@@ -15,8 +15,6 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "io/motor_and_servo.h"
-
 #include "fc/rc_controls.h"
 
 #include "flight/pid.h"

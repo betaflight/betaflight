@@ -35,7 +35,21 @@ auxillary receiver channels and other events such as failsafe detection.
 | 27      | 26     | FAILSAFE   | Enter failsafe stage 2 manually                                      |
 | 28      | 27     | AIRMODE    | Alternative mixer and additional PID logic for more stable copter    |
 
+## Auto-leveled flight
+
+The default flight mode does not stabilize the multicopter around the roll and the pitch axes. That is, the multicopter does not level on its own if you center the pitch and roll sticks on the radio. Rather, they work just like the yaw axis: the rate of rotation of each axis is controlled directly by the related stick on the radio, and by leaving them centered the flight controller will just try to keep the multicopter in whatever orientation it's in. This default mode is called "Rate" mode, also sometime called "Acro" (from "acrobatic") or "Manual" mode, and is active whenever no auto-leveled mode is enabled.
+
+If your flight controller is equipped with a 3 axis accelerometer (very likely), then you can enable one of the two available auto leveled flight modes.
+
 ## Mode details
+
+### Angle
+
+In this auto-leveled mode the roll and pitch channels control the angle between the relevant axis and the vertical, achieving leveled flight just by leaving the sticks centered.
+
+### Horizon
+
+This hybrid mode works exactly like the previous ANGLE mode with centered roll and pitch sticks (thus enabling auto-leveled flight), then gradually behaves more and more like the default RATE mode as the sticks are moved away from the center position.
 
 ### Headfree
 

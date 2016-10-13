@@ -24,60 +24,98 @@
 #include "build/build_config.h"
 
 #include "drivers/dma.h"
+#include "drivers/nvic.h"
+
+#define DEFINE_DMA_CHANNEL(d, c, f, i, r) \
+    {.dma = d, .channel = c, .handler = NULL, .flagsShift = f, .irqn = i, .rcc = r}
+
+#define DEFINE_DMA_IRQ_HANDLER(d, c, h) \
+    void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
+        DMA_IRQHandler(h);\
+    } \
+    struct dummy
+
 
 /*
- * DMA handlers for DMA resources that are shared between different features depending on run-time configuration.
+ * DMA descriptors.
  */
-static dmaHandlers_t dmaHandlers;
+dmaChannel_t dmaChannels[] = {
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel1,  0, DMA1_Channel1_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel2,  4, DMA1_Channel2_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel3,  8, DMA1_Channel3_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel4, 12, DMA1_Channel4_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel5, 16, DMA1_Channel5_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel6, 20, DMA1_Channel6_IRQn, RCC_AHBPeriph_DMA1),
+    DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel7, 24, DMA1_Channel7_IRQn, RCC_AHBPeriph_DMA1),
+#if defined(STM32F3) || defined(STM32F10X_CL)
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel1,  0, DMA2_Channel1_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel2,  4, DMA2_Channel2_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel3,  8, DMA2_Channel3_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel4, 12, DMA2_Channel4_IRQn, RCC_AHBPeriph_DMA2),
+    DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel5, 16, DMA2_Channel5_IRQn, RCC_AHBPeriph_DMA2),
+#endif
+};
 
-void dmaNoOpHandler(DMA_Channel_TypeDef *channel)
+void DMA_IRQHandler(dmaChannel_t* channel)
 {
-    UNUSED(channel);
+    dmaCallbackHandler_t* handler = channel->handler;
+    while (handler) {
+        handler->fn(channel, handler);
+        handler = handler->next;
+    }
 }
 
-void DMA1_Channel2_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel2IRQHandler(DMA1_Channel2);
-}
 
-void DMA1_Channel3_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel3IRQHandler(DMA1_Channel3);
-}
+/*
+ * DMA IRQ Handlers
+ */
+DEFINE_DMA_IRQ_HANDLER(1, 1, DMA1Channel1Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 2, DMA1Channel2Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 3, DMA1Channel3Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 4, DMA1Channel4Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1Channel5Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1Channel6Descriptor);
+DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1Channel7Descriptor);
 
-void DMA1_Channel6_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel6IRQHandler(DMA1_Channel6);
-}
+#if defined(STM32F3) || defined(STM32F10X_CL)
+DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2Channel1Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2Channel2Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2Channel3Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 4, DMA2Channel4Descriptor);
+DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2Channel5Descriptor);
+#endif
 
-void DMA1_Channel7_IRQHandler(void)
-{
-    dmaHandlers.dma1Channel7IRQHandler(DMA1_Channel7);
-}
 
 void dmaInit(void)
 {
-    memset(&dmaHandlers, 0, sizeof(dmaHandlers));
-    dmaHandlers.dma1Channel2IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel3IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel6IRQHandler = dmaNoOpHandler;
-    dmaHandlers.dma1Channel7IRQHandler = dmaNoOpHandler;
+    // TODO: Do we need this?
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback)
+void dmaHandlerInit(dmaCallbackHandler_t* handlerRec, dmaCallbackHandlerFunc* handler)
 {
-    switch (identifier) {
-        case DMA1_CH2_HANDLER:
-            dmaHandlers.dma1Channel2IRQHandler = callback;
-            break;
-        case DMA1_CH3_HANDLER:
-            dmaHandlers.dma1Channel3IRQHandler = callback;
-            break;
-        case DMA1_CH6_HANDLER:
-            dmaHandlers.dma1Channel6IRQHandler = callback;
-            break;
-        case DMA1_CH7_HANDLER:
-            dmaHandlers.dma1Channel7IRQHandler = callback;
-            break;
+    handlerRec->fn = handler;
+    handlerRec->next = NULL;
+}
+
+// This function initialize DMA interrupt and adds user defined handler to this interrupt
+// Note: Interrupt priority will be set only once. Call this function for highest priority handler first
+void dmaSetHandler(dmaChannel_t* channel, dmaCallbackHandler_t* handler, uint8_t priority)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    if (!channel->handler) {
+        channel->handler = handler;
+
+        RCC_AHBPeriphClockCmd(channel->rcc, ENABLE);
+
+        NVIC_InitStructure.NVIC_IRQChannel = channel->irqn;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(priority);
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(priority);
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
+    } else {
+        handler->next = channel->handler;
+        channel->handler = handler;
     }
 }
+

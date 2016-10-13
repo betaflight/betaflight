@@ -47,7 +47,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/serial.h"
 
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "sensors/sensors.h"
@@ -283,14 +282,19 @@ void configureLtmTelemetryPort(void)
     ltmEnabled = true;
 }
 
-void checkLtmTelemetryState(void)
+bool checkLtmTelemetryState(void)
 {
     bool newTelemetryEnabledValue = telemetryDetermineEnabledState(ltmPortSharing);
-    if (newTelemetryEnabledValue == ltmEnabled)
-        return;
+
+    if (newTelemetryEnabledValue == ltmEnabled) {
+        return false;
+    }
+
     if (newTelemetryEnabledValue)
         configureLtmTelemetryPort();
     else
         freeLtmTelemetryPort();
+
+    return true;
 }
 #endif

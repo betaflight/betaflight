@@ -78,16 +78,31 @@ static bool isAccelUpdatedAtLeastOnce = false;
 static imuRuntimeConfig_t *imuRuntimeConfig;
 static accDeadband_t *accDeadband;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 1);
 PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig, PG_THROTTLE_CORRECTION_CONFIG, 0);
 
+#if !defined(DEFAULT_GYRO_SAMPLE_HZ) && !defined(DEFAULT_PID_PROCESS_DENOM)
+
+#ifdef STM32F10X
+#define DEFAULT_PID_PROCESS_DENOM   1
+#define DEFAULT_GYRO_SAMPLE_HZ      1000
+#else
+#define DEFAULT_PID_PROCESS_DENOM   2
+#define DEFAULT_GYRO_SAMPLE_HZ      4000
+#endif
+#endif
+
+#if !defined(DEFAULT_GYRO_SYNC)
+#define DEFAULT_GYRO_SYNC           1
+#endif
+
 PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+    .pid_process_denom = DEFAULT_PID_PROCESS_DENOM,
     .dcm_kp = 2500,                // 1.0 * 10000
-    .looptime = 2000,
-    .gyroSync = 1,
-    .gyroSyncDenominator = 1,
     .small_angle = 25,
     .max_angle_inclination = 500,    // 50 degrees
+    .gyro_sync = DEFAULT_GYRO_SYNC,
+    .gyro_sample_hz = DEFAULT_GYRO_SAMPLE_HZ,
 );
 
 PG_RESET_TEMPLATE(throttleCorrectionConfig_t, throttleCorrectionConfig,
@@ -358,6 +373,10 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
 STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
 {
+#ifndef GPS
+    // this local variable should be optimized out when GPS is not used.
+    float magneticDeclination = 0.0f;
+#endif
     /* Compute pitch/roll angles */
     attitude.values.roll = lrintf(atan2_approx(rMat[2][1], rMat[2][2]) * (1800.0f / M_PIf));
     attitude.values.pitch = lrintf(((0.5f * M_PIf) - acos_approx(-rMat[2][0])) * (1800.0f / M_PIf));
@@ -464,10 +483,8 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateGyroAndAttitude(void)
+void imuUpdateAttitude(void)
 {
-    gyroUpdate();
-
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {

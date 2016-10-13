@@ -30,13 +30,14 @@ typedef enum {
 typedef struct telemetryConfig_s {
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
     uint8_t telemetry_inversion;            // also shared with smartport inversion
+    uint8_t telemetry_send_cells;          // Enable/Disable Battery Cell responses.
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
 void telemetryInit(void);
 
-void telemetryCheckState(void);
+uint8_t telemetryCheckState(void);
 void telemetryProcess(uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);

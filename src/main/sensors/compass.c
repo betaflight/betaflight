@@ -30,7 +30,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 
@@ -54,23 +53,30 @@ PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
 
 mag_t mag;                   // mag access functions
 
+#ifdef GPS
 float magneticDeclination = 0.0f;
+#endif
 
 extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADCRaw[XYZ_AXIS_COUNT];
 int32_t magADC[XYZ_AXIS_COUNT];
 sensor_align_e magAlign = 0;
+
 #ifdef MAG
+
 static uint8_t magInit = 0;
 
-void compassInit(void)
+bool compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    mag.init();
+    const bool ret = mag.init();
     LED1_OFF;
-    magInit = 1;
+    if (ret) {
+        magInit = 1;
+    }
+    return ret;
 }
 
 void updateCompass(flightDynamicsTrims_t *magZero)
@@ -78,15 +84,18 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     static uint32_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
-    uint32_t axis;
 
-    mag.read(magADCRaw);
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    if (!mag.read(magADCRaw)) {
+        return;
+    }
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    }
     alignSensors(magADC, magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;
-        for (axis = 0; axis < 3; axis++) {
+        for (int axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = magADC[axis];
             magZeroTempMax.raw[axis] = magADC[axis];
@@ -103,7 +112,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
     if (tCal != 0) {
         if ((currentTime - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 if (magADC[axis] < magZeroTempMin.raw[axis])
                     magZeroTempMin.raw[axis] = magADC[axis];
                 if (magADC[axis] > magZeroTempMax.raw[axis])
@@ -111,7 +120,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
             }
         } else {
             tCal = 0;
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
             }
 
@@ -121,6 +130,7 @@ void updateCompass(flightDynamicsTrims_t *magZero)
 }
 #endif
 
+#ifdef GPS
 void recalculateMagneticDeclination(void)
 {
     int16_t deg, min;
@@ -136,3 +146,4 @@ void recalculateMagneticDeclination(void)
     }
 
 }
+#endif

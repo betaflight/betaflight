@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 #include <limits.h>
+#include <algorithm>
 
 extern "C" {
     #include <platform.h>
@@ -29,6 +30,7 @@ extern "C" {
     #include "rx/rx.h"
     #include "fc/rc_controls.h"
     #include "common/maths.h"
+    #include "common/utils.h"
 
     uint32_t rcModeActivationMask;
 
@@ -109,7 +111,7 @@ TEST(RxTest, TestInvalidFlightChannels)
 
     // and
     uint16_t channelPulses[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-    memset(&channelPulses, 1500, sizeof(channelPulses));
+    std::fill( channelPulses, ARRAYEND(channelPulses), 1500 );
 
     // and
     rxInit(modeActivationConditions);

@@ -30,11 +30,14 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 #include "config/feature.h"
 #include "config/profile.h"
+
+#include "common/pilot.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
@@ -63,9 +66,8 @@
 
 #include "scheduler/scheduler.h"
 
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
@@ -77,6 +79,8 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
+#include "sensors/amperage.h"
+#include "sensors/voltage.h"
 #include "sensors/battery.h"
 #include "sensors/sonar.h"
 #include "sensors/acceleration.h"
@@ -101,13 +105,15 @@
 #include "hardware_revision.h"
 #endif
 
+#include "msp/msp_server.h"
 #include "fc/msp_server_fc.h"
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "io/serial_4way.h"
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern uint16_t gyroDeltaUs; // FIXME dependency on mw.c
+extern uint16_t pidDeltaUs; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetPidProfile(pidProfile_t *pidProfile);
 
@@ -512,6 +518,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 #else
             sbufWriteU16(dst, 0); // No hardware revision available.
 #endif
+            sbufWriteU8(dst, 0);  // 0 == FC, 1 == OSD, 2 == FC with OSD
             break;
 
         case MSP_BUILD_INFO:
@@ -528,9 +535,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, CAP_DYNBALANCE); // "capability"
             break;
 
-        case MSP_STATUS_EX:
         case MSP_STATUS:
-            sbufWriteU16(dst, cycleTime);
+            sbufWriteU16(dst, pidDeltaUs);
 #ifdef USE_I2C
             sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -539,9 +545,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
             sbufWriteU32(dst, packFlightModeFlags());
             sbufWriteU8(dst, getCurrentProfile());
-            if(cmd->cmd == MSP_STATUS_EX) {
-                sbufWriteU16(dst, averageSystemLoadPercent);
-            }
+            sbufWriteU16(dst, gyroDeltaUs);
+            sbufWriteU16(dst, averageSystemLoadPercent);
             break;
 
         case MSP_RAW_IMU: {
@@ -623,23 +628,24 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 #endif
             break;
 
-        case MSP_ANALOG:
+        case MSP_ANALOG: {
+            amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
+
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
-            sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             sbufWriteU16(dst, rssi);
-            if(batteryConfig()->multiwiiCurrentMeterOutput) {
-                sbufWriteU16(dst, (uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
-            } else
-                sbufWriteU16(dst, (int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+
+            if (mspServerConfig()->multiwiiCurrentMeterOutput) {
+                sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+            } else {
+                sbufWriteU16(dst, (int16_t)constrain(amperageMeter->amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
+            }
             break;
+        }
 
         case MSP_ARMING_CONFIG:
             sbufWriteU8(dst, armingConfig()->auto_disarm_delay);
             sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
-            break;
-
-        case MSP_LOOP_TIME:
-            sbufWriteU16(dst, imuConfig()->looptime);
             break;
 
         case MSP_RC_TUNING:
@@ -705,9 +711,9 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_MISC:
             sbufWriteU16(dst, rxConfig()->midrc);
 
-            sbufWriteU16(dst, motorAndServoConfig()->minthrottle);
-            sbufWriteU16(dst, motorAndServoConfig()->maxthrottle);
-            sbufWriteU16(dst, motorAndServoConfig()->mincommand);
+            sbufWriteU16(dst, motorConfig()->minthrottle);
+            sbufWriteU16(dst, motorConfig()->maxthrottle);
+            sbufWriteU16(dst, motorConfig()->mincommand);
 
             sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
 
@@ -720,16 +726,11 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, 0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             sbufWriteU8(dst, 0); // gps_ubx_sbas
 #endif
-            sbufWriteU8(dst, batteryConfig()->multiwiiCurrentMeterOutput);
+            sbufWriteU8(dst, mspServerConfig()->multiwiiCurrentMeterOutput);
             sbufWriteU8(dst, rxConfig()->rssi_channel);
             sbufWriteU8(dst, 0);
 
-            sbufWriteU16(dst, compassConfig()->mag_declination / 10);
-
-            sbufWriteU8(dst, batteryConfig()->vbatscale);
-            sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
-            sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
-            sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+            sbufWriteU16(dst, compassConfig()->mag_declination);
             break;
 
         case MSP_MOTOR_PINS:
@@ -817,17 +818,26 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_VOLTAGE_METER_CONFIG:
-            sbufWriteU8(dst, batteryConfig()->vbatscale);
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatscale);
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatresdivval);
+                sbufWriteU8(dst, voltageMeterConfig(i)->vbatresdivmultiplier);
+            }
+            break;
+
+        case MSP_AMPERAGE_METER_CONFIG:
+            for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
+                sbufWriteU16(dst, amperageMeterConfig(i)->scale);
+                sbufWriteU16(dst, amperageMeterConfig(i)->offset);
+            }
+            break;
+
+        case MSP_BATTERY_CONFIG:
             sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
             sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
             sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
-            break;
-
-        case MSP_CURRENT_METER_CONFIG:
-            sbufWriteU16(dst, batteryConfig()->currentMeterScale);
-            sbufWriteU16(dst, batteryConfig()->currentMeterOffset);
-            sbufWriteU8(dst, batteryConfig()->currentMeterType);
             sbufWriteU16(dst, batteryConfig()->batteryCapacity);
+            sbufWriteU8(dst, batteryConfig()->amperageMeterSource);
             break;
 
         case MSP_MIXER:
@@ -879,9 +889,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, boardAlignment()->rollDegrees);
             sbufWriteU16(dst, boardAlignment()->pitchDegrees);
             sbufWriteU16(dst, boardAlignment()->yawDegrees);
-
-            sbufWriteU16(dst, batteryConfig()->currentMeterScale);
-            sbufWriteU16(dst, batteryConfig()->currentMeterOffset);
             break;
 
         case MSP_CF_SERIAL_CONFIG:
@@ -910,11 +917,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_LED_STRIP_CONFIG:
             for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
                 ledConfig_t *ledConfig = ledConfigs(i);
-                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_DIRECTION_MASK) >> LED_DIRECTION_BIT_OFFSET);
-                sbufWriteU16(dst, (ledConfig->flags & LED_FLAG_FUNCTION_MASK) >> LED_FUNCTION_BIT_OFFSET);
-                sbufWriteU8(dst, ledGetX(ledConfig));
-                sbufWriteU8(dst, ledGetY(ledConfig));
-                sbufWriteU8(dst, ledConfig->color);
+                sbufWriteU32(dst, *ledConfig);
             }
             break;
 
@@ -929,7 +932,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
                 sbufWriteU8(dst, LED_MODE_COUNT);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, specialColors(0)->color[j]);
+                sbufWriteU8(dst, specialColors_System.color[j]);
             }
             break;
 #endif
@@ -964,6 +967,31 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_SDCARD_SUMMARY:
             serializeSDCardSummaryReply(reply);
+            break;
+
+        case MSP_BATTERY_STATES: {
+            amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
+
+            sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
+            sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+            sbufWriteU16(dst, (uint16_t)constrain(amperageMeter->mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
+            break;
+        }
+
+        case MSP_CURRENT_METERS:
+            for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
+                amperageMeter_t *meter = getAmperageMeter(i);
+                // write out amperage, once for each current meter.
+                sbufWriteU16(dst, (uint16_t)constrain(meter->amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
+                sbufWriteU32(dst, meter->mAhDrawn);
+            }
+            break;
+        case MSP_VOLTAGE_METERS:
+            // write out voltage, once for each meter.
+            for (int i = 0; i < MAX_VOLTAGE_METERS; i++) {
+                uint16_t voltage = getVoltageMeter(i)->vbat;
+                sbufWriteU8(dst, (uint8_t)constrain(voltage, 0, 255));
+            }
             break;
 
         case MSP_TRANSPONDER_CONFIG:
@@ -1043,10 +1071,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             armingConfig()->disarm_kill_switch = sbufReadU8(src);
             break;
 
-        case MSP_SET_LOOP_TIME:
-            imuConfig()->looptime = sbufReadU16(src);
-            break;
-
         case MSP_SET_PID_CONTROLLER:
             pidProfile()->pidController = sbufReadU8(src);
             pidSetController(pidProfile()->pidController);
@@ -1119,9 +1143,9 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             if (midrc > 1400 && midrc < 1600)
                 rxConfig()->midrc = midrc;
 
-            motorAndServoConfig()->minthrottle = sbufReadU16(src);
-            motorAndServoConfig()->maxthrottle = sbufReadU16(src);
-            motorAndServoConfig()->mincommand = sbufReadU16(src);
+            motorConfig()->minthrottle = sbufReadU16(src);
+            motorConfig()->maxthrottle = sbufReadU16(src);
+            motorConfig()->mincommand = sbufReadU16(src);
 
             failsafeConfig()->failsafe_throttle = sbufReadU16(src);
 
@@ -1134,16 +1158,11 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufReadU8(src); // gps_baudrate
             sbufReadU8(src); // gps_ubx_sbas
 #endif
-            batteryConfig()->multiwiiCurrentMeterOutput = sbufReadU8(src);
+            mspServerConfig()->multiwiiCurrentMeterOutput = sbufReadU8(src);
             rxConfig()->rssi_channel = sbufReadU8(src);
             sbufReadU8(src);
 
-            compassConfig()->mag_declination = sbufReadU16(src) * 10;
-
-            batteryConfig()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
-            batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
-            batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
-            batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+            compassConfig()->mag_declination = sbufReadU16(src);
             break;
         }
 
@@ -1320,19 +1339,39 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             boardAlignment()->yawDegrees = sbufReadU16(src);
             break;
 
-        case MSP_SET_VOLTAGE_METER_CONFIG:
-            batteryConfig()->vbatscale = sbufReadU8(src);               // actual vbatscale as intended
+        case MSP_SET_VOLTAGE_METER_CONFIG: {
+            int index = sbufReadU8(src);
+
+            if (index >= MAX_VOLTAGE_METERS) {
+                return -1;
+            }
+
+            voltageMeterConfig(index)->vbatscale = sbufReadU8(src);
+            voltageMeterConfig(index)->vbatresdivval = sbufReadU8(src);
+            voltageMeterConfig(index)->vbatresdivmultiplier = sbufReadU8(src);
+            break;
+        }
+
+        case MSP_SET_AMPERAGE_METER_CONFIG: {
+            int index = sbufReadU8(src);
+
+            if (index >= MAX_AMPERAGE_METERS) {
+                return -1;
+            }
+
+            amperageMeterConfig(index)->scale = sbufReadU16(src);
+            amperageMeterConfig(index)->offset = sbufReadU16(src);
+            break;
+        }
+
+        case MSP_SET_BATTERY_CONFIG:
             batteryConfig()->vbatmincellvoltage = sbufReadU8(src);      // vbatlevel_warn1 in MWC2.3 GUI
             batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);      // vbatlevel_warn2 in MWC2.3 GUI
             batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+            batteryConfig()->batteryCapacity = sbufReadU16(src);
+            batteryConfig()->amperageMeterSource = sbufReadU8(src);
             break;
 
-        case MSP_SET_CURRENT_METER_CONFIG:
-            batteryConfig()->currentMeterScale = sbufReadU16(src);
-            batteryConfig()->currentMeterOffset = sbufReadU16(src);
-            batteryConfig()->currentMeterType = sbufReadU8(src);
-            batteryConfig()->batteryCapacity = sbufReadU16(src);
-            break;
 
 #ifndef USE_QUAD_MIXER_ONLY
         case MSP_SET_MIXER:
@@ -1396,8 +1435,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             boardAlignment()->pitchDegrees = sbufReadU16(src); // board_align_pitch
             boardAlignment()->yawDegrees = sbufReadU16(src);   // board_align_yaw
 
-            batteryConfig()->currentMeterScale = sbufReadU16(src);
-            batteryConfig()->currentMeterOffset = sbufReadU16(src);
             break;
 
         case MSP_SET_CF_SERIAL_CONFIG: {
@@ -1445,27 +1482,13 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
 
         case MSP_SET_LED_STRIP_CONFIG: {
             int i = sbufReadU8(src);
-            if (len != (1 + 7) || i >= LED_MAX_STRIP_LENGTH)
+            if (len != (1 + 4) || i >= LED_MAX_STRIP_LENGTH)
                 return -1;
 
             ledConfig_t *ledConfig = ledConfigs(i);
-            uint16_t mask;
-            uint16_t flags;
-            // currently we're storing directions and functions in a uint16 (flags)
-            // the msp uses 2 x uint16_t to cater for future expansion
-            mask = sbufReadU16(src);
-            flags = (mask << LED_DIRECTION_BIT_OFFSET) & LED_FLAG_DIRECTION_MASK;
-            mask = sbufReadU16(src);
-            flags |= (mask << LED_FUNCTION_BIT_OFFSET) & LED_FLAG_FUNCTION_MASK;
-            ledConfig->flags = flags;
+            *ledConfig = sbufReadU32(src);
 
-            int x = sbufReadU8(src);
-            int y = sbufReadU8(src);
-            ledSetXY(ledConfig, x, y);
-
-            ledConfig->color = sbufReadU8(src);
-
-            reevalulateLedConfig();
+            reevaluateLedConfig();
         }
         break;
 

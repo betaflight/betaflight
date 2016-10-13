@@ -18,7 +18,12 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "MOTO" // MotoLab
+
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define USE_CLI
+#define USE_EXTI
 
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_5 // Blue LEDs - PB5
@@ -36,7 +41,6 @@
 #define USABLE_TIMER_CHANNEL_COUNT 9
 
 // MPU6050 interrupts
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -72,6 +76,7 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
 #define UART1_GPIO          GPIOB
@@ -136,17 +141,18 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_5
-#define VBAT_ADC_CHANNEL            ADC_Channel_2
+#define ADC0_GPIO                   GPIOA
+#define ADC0_GPIO_PIN               GPIO_Pin_5
+#define ADC0_CHANNEL                ADC_Channel_2
 
-//#define CURRENT_METER_ADC_GPIO      GPIOA
-//#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_5
-//#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_2
+#define ADC1_GPIO                   GPIOB
+#define ADC1_GPIO_PIN               GPIO_Pin_2
+#define ADC1_CHANNEL                ADC_Channel_12
 
-#define RSSI_ADC_GPIO               GPIOB
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_12
+#define ADC_CHANNEL_COUNT 2
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_RSSI        ADC_CHANNEL1
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
@@ -162,7 +168,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 
 #define SPEKTRUM_BIND
 // UART2, PB4
@@ -171,3 +177,13 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define S1W_TX_GPIO         GPIOB
+#define S1W_TX_PIN          GPIO_Pin_6
+#define S1W_RX_GPIO         GPIOB
+#define S1W_RX_PIN          GPIO_Pin_7
+
+// IO - stm32f303cc in 48pin package
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1))

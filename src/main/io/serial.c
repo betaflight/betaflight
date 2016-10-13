@@ -30,6 +30,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "drivers/dma.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"
 

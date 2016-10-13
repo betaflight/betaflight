@@ -48,7 +48,7 @@ extern "C" {
     #include "flight/mixer.h"
     #include "flight/servos.h"
 
-    #include "io/motor_and_servo.h"
+    #include "io/motors.h"
     #include "io/gimbal.h"
     #include "fc/rc_controls.h"
 
@@ -61,7 +61,7 @@ extern "C" {
     void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 
     PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 
     PG_REGISTER_PROFILE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
@@ -208,7 +208,7 @@ protected:
 
         memset(mixerConfig(), 0, sizeof(*mixerConfig()));
         memset(rxConfig(), 0, sizeof(*rxConfig()));
-        memset(motorAndServoConfig(), 0, sizeof(*motorAndServoConfig()));
+        memset(motorConfig(), 0, sizeof(*motorConfig()));
         memset(servoProfile(), 0, sizeof(*servoProfile()));
 
         memset(rcData, 0, sizeof(rcData));
@@ -217,8 +217,8 @@ protected:
         memset(customMotorMixer_arr(), 0, sizeof(*customMotorMixer_arr()));
     }
 
-    virtual void withDefaultmotorAndServoConfiguration(void) {
-        motorAndServoConfig()->mincommand = TEST_MIN_COMMAND;
+    virtual void withDefaultMotorConfiguration(void) {
+        motorConfig()->mincommand = TEST_MIN_COMMAND;
     }
 
     virtual void withDefaultRxConfig(void) {
@@ -240,7 +240,6 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 
     mixerConfig()->tri_unarmed_servo = 1;
 
-    withDefaultmotorAndServoConfiguration();
     withDefaultRxConfig();
 
     servoConf[5].min = DEFAULT_SERVO_MIN;
@@ -281,7 +280,7 @@ TEST_F(BasicMixerIntegrationTest, TestTricopterServo)
 TEST_F(BasicMixerIntegrationTest, TestQuadMotors)
 {
     // given
-    withDefaultmotorAndServoConfiguration();
+    withDefaultMotorConfiguration();
 
     configureMixer(MIXER_QUADX);
 
@@ -338,7 +337,7 @@ protected:
             servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
         }
 
-        withDefaultmotorAndServoConfiguration();
+        withDefaultMotorConfiguration();
         withDefaultRxConfig();
 
         configureMixer(MIXER_QUADX);
@@ -443,8 +442,9 @@ uint32_t targetLooptime;
 
 void delay(uint32_t) {}
 
-float applyBiQuadFilter(float sample, biquad_t *state) {UNUSED(state);return sample;}
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate) {UNUSED(filterCutFreq);UNUSED(newState);UNUSED(refreshRate);}
+float biquadFilterApply(biquadFilter_t *state, float sample) {UNUSED(state);return sample;}
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate) {UNUSED(filterFreq);UNUSED(filter);UNUSED(refreshRate);}
+
 
 
 bool feature(uint32_t mask) {

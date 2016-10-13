@@ -105,28 +105,13 @@ You cannot use USART3 and I2C at the same time.
 
 # Flashing
 
-There are two primary ways to get Cleanflight onto a CC3D board.
-
-* Single binary image mode - best mode if you don't want to use OpenPilot.
-* OpenPilot Bootloader compatible image mode - best mode if you want to switch between OpenPilot and Cleanflight.
+Since CleanFlight version 1.11.0 "single binary image mode" is the only way to get CleanFlight on CC3D. Prior the version 1.11.0 there was a possibility to use "OpenPilot Bootloader compatible image mode", which allows you to easily switch between OpenPilot and CleanFlight, please refer to documentation from releases prior to 1.11.0 for more details.
 
 ## Single binary image mode.
 
 The entire flash ram on the target processor is flashed with a single image.
 
 The image can be flashed by using a USB to UART adapter connected to the main port when the CC3D is put into the STM32 bootloader mode, achieved by powering on the CC3D with the SBL/3.3v pads bridged.  
-
-## OpenPilot Bootloader compatible image mode.
-
-The initial section of flash ram on the target process is flashed with a bootloader which can then run the code in the
-remaining area of flash ram.
-
-The OpenPilot bootloader code also allows the remaining section of flash to be reconfigured and re-flashed by the
-OpenPilot Ground Station (GCS) via USB without requiring a USB to uart adapter.
-
-The following features are not available:
- * Display
- * Sonar
 
 # Restoring OpenPilot bootloader
 

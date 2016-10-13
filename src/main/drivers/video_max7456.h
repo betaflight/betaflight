@@ -19,6 +19,8 @@
 #define MAX7456_SPI_CLOCK_DIVIDER SPI_9MHZ_CLOCK_DIVIDER // rated for 10mhz but using 9mhz due to available prescalers.
 #endif
 
+#define MAX7456_CHARACTER_BUFFER_SIZE 54
+
 #define MAX7456_COLUMN_COUNT 30
 
 #define MAX7456_PAL_ROW_COUNT 16
@@ -34,6 +36,9 @@ typedef struct max7456State_s {
 
     volatile bool vSyncDetected;
     volatile bool hSyncDetected;
+    videoMode_e configuredVideoMode;
+    videoMode_e detectedVideoMode;
+    bool useSync;
 } max7456State_t;
 
 extern max7456State_t max7456State;
@@ -47,6 +52,7 @@ void max7456_extiConfigure(
 );
 void max7456_resetFont(void);
 void max7456_updateLOSState(void);
+void max7456_updateStatus(void);
 
 //
 // These methods talk to the hardware directly, ignoring the OSD screen buffer.
@@ -69,9 +75,11 @@ void max7456_setCharacterAtCursor(uint8_t c);
 
 void max7456_fillScreen(void);
 
+void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap);
+
 //
 // Text Screen API
 //
 
 textScreen_t *max7456_getTextScreen(void);
-void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer);
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer);

@@ -62,6 +62,9 @@ extern float lastITermf[3], ITermLimitf[3];
 extern pt1Filter_t deltaFilter[3];
 extern pt1Filter_t yawFilter;
 
+extern biquadFilter_t dtermFilterNotch[3];
+extern biquadFilter_t dtermFilterLpf[3];
+
 extern uint8_t motorCount;
 
 #ifdef BLACKBOX
@@ -86,8 +89,8 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     float PTerm = luxPTermScale * rateError * pidProfile->P8[axis] * PIDweight[axis] / 100;
     // Constrain YAW by yaw_p_limit value if not servo driven, in that case servolimits apply
     if (axis == YAW) {
-        if (pidProfile->yaw_lpf) {
-            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf, dT);
+        if (pidProfile->yaw_lpf_hz) {
+            PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
         }
         if (pidProfile->yaw_p_limit && motorCount >= 4) {
             PTerm = constrainf(PTerm, -pidProfile->yaw_p_limit, pidProfile->yaw_p_limit);
@@ -95,7 +98,7 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
     }
 
     // -----calculate I component
-    float ITerm = lastITermf[axis] + luxITermScale * rateError * dT * pidProfile->I8[axis];
+    float ITerm = lastITermf[axis] + luxITermScale * rateError * getdT() * pidProfile->I8[axis];
     // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
     // I coefficient (I8) moved before integration to make limiting independent from PID settings
     ITerm = constrainf(ITerm, -PID_MAX_I, PID_MAX_I);
@@ -115,15 +118,31 @@ STATIC_UNIT_TESTED int16_t pidLuxFloatCore(int axis, const pidProfile_t *pidProf
         // optimisation for when D8 is zero, often used by YAW axis
         DTerm = 0;
     } else {
-        // delta calculated from measurement
-        float delta = -(gyroRate - lastRateForDelta[axis]);
-        lastRateForDelta[axis] = gyroRate;
-        // Divide delta by dT to get differential (ie dr/dt)
-        delta *= (1.0f / dT);
-        if (pidProfile->dterm_lpf) {
-            // DTerm delta low pass filter
-            delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf, dT);
+        float delta;
+        if (pidProfile->deltaMethod == PID_DELTA_FROM_MEASUREMENT) {
+            delta = -(gyroRate - lastRateForDelta[axis]);
+            lastRateForDelta[axis] = gyroRate;
+        } else {
+            delta = rateError - lastRateForDelta[axis];
+            lastRateForDelta[axis] = rateError;
         }
+        // Divide delta by targetLooptime to get differential (ie dr/dt)
+        delta /= getdT();
+
+        // Filter delta
+        if (pidProfile->dterm_notch_hz) {
+            delta = biquadFilterApply(&dtermFilterNotch[axis], delta);
+        }
+
+        if (pidProfile->dterm_lpf_hz) {
+            if (pidProfile->dterm_filter_type == FILTER_BIQUAD) {
+                delta = biquadFilterApply(&dtermFilterLpf[axis], delta);
+            } else {
+                // DTerm delta low pass filter
+                delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
+            }
+        }
+
         DTerm = luxDTermScale * delta * pidProfile->D8[axis] * PIDweight[axis] / 100;
         DTerm = constrainf(DTerm, -PID_MAX_D, PID_MAX_D);
     }
@@ -143,18 +162,9 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 {
     float horizonLevelStrength = 0.0f;
     if (FLIGHT_MODE(HORIZON_MODE)) {
-        // Figure out the most deflected stick position
-        const int32_t stickPosAil = ABS(getRcStickDeflection(ROLL, rxConfig->midrc));
-        const int32_t stickPosEle = ABS(getRcStickDeflection(PITCH, rxConfig->midrc));
-        const int32_t mostDeflectedPos =  MAX(stickPosAil, stickPosEle);
-
-        // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = (float)(500 - mostDeflectedPos) / 500;  // 1 at centre stick, 0 = max stick deflection
-        if(pidProfile->D8[PIDLEVEL] == 0){
-            horizonLevelStrength = 0;
-        } else {
-            horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * (100 / pidProfile->D8[PIDLEVEL])) + 1, 0, 1);
-        }
+        // (convert 0-100 range to 0.0-1.0 range)
+        horizonLevelStrength = (float)calcHorizonLevelStrength(rxConfig->midrc, pidProfile->horizon_tilt_effect,
+                pidProfile->horizon_tilt_mode, pidProfile->D8[PIDLEVEL]) / 100.0f;
     }
 
     // ----------PID controller----------
@@ -192,7 +202,7 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
         }
 
         // --------low-level gyro-based PID. ----------
-        const float gyroRate = luxGyroScale * gyroADC[axis] * gyro.scale;
+        const float gyroRate = luxGyroScale * gyroADCf[axis] * gyro.scale;
         axisPID[axis] = pidLuxFloatCore(axis, pidProfile, gyroRate, angleRate);
         //axisPID[axis] = constrain(axisPID[axis], -PID_LUX_FLOAT_MAX_PID, PID_LUX_FLOAT_MAX_PID);
 #ifdef GTUNE

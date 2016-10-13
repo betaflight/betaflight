@@ -20,6 +20,7 @@
 
 #include <platform.h>
 #include "build/version.h"
+#include "build/build_config.h"
 
 #ifdef BLACKBOX
 
@@ -27,20 +28,22 @@
 #include "common/axis.h"
 #include "common/encoding.h"
 #include "common/utils.h"
+#include "common/filter.h"
 
 #include "config/parameter_group_ids.h"
 #include "config/parameter_group.h"
+
 #include "config/feature.h"
 #include "config/config_reset.h"
 #include "config/profile.h"
 
+#include "drivers/adc.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/compass.h"
 #include "drivers/accgyro.h"
 
 #include "fc/rate_profile.h"
-#include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -49,12 +52,13 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
+#include "sensors/amperage.h"
+#include "sensors/voltage.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
-
 #include "io/gps.h"
-
+#include "io/motors.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -189,8 +193,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
     /* Throttle is always in the range [minthrottle..maxthrottle]: */
     {"rcCommand",   3, UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
-    {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT),   .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
-    {"amperageLatest",-1, UNSIGNED, .Ipredict = PREDICT(0),        .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC},
+    {"vbatLatest",    -1, UNSIGNED, .Ipredict = PREDICT(VBATREF),  .Iencode = ENCODING(NEG_14BIT), .Ppredict = PREDICT(PREVIOUS),    .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_VBAT},
+    {"amperageLatest",-1, SIGNED, .Ipredict = PREDICT(0),          .Iencode = ENCODING(SIGNED_VB), .Ppredict = PREDICT(PREVIOUS),    .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_AMPERAGE},
 
 #ifdef MAG
     {"magADC",      0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -286,7 +290,7 @@ typedef struct blackboxMainState_s {
     int16_t servo[MAX_SUPPORTED_SERVOS];
 
     uint16_t vbatLatest;
-    uint16_t amperageLatest;
+    int32_t amperageLatest;
 
 #ifdef BARO
     int32_t BaroAlt;
@@ -421,8 +425,8 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
-        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
+        case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE:
+            return feature(FEATURE_AMPERAGE_METER);
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -523,7 +527,7 @@ static void writeIntraframe(void)
      * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
      * Throttle lies in range [minthrottle..maxthrottle]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorAndServoConfig()->minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorConfig()->minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -535,9 +539,8 @@ static void writeIntraframe(void)
         blackboxWriteUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
     }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
-        // 12bit value directly from ADC
-        blackboxWriteUnsignedVB(blackboxCurrent->amperageLatest);
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
+        blackboxWriteSignedVB(blackboxCurrent->amperageLatest);
     }
 
 #ifdef MAG
@@ -566,7 +569,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->accSmooth, XYZ_AXIS_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorAndServoConfig()->minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
@@ -659,7 +662,7 @@ static void writeInterframe(void)
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
     }
 
-    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC)) {
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_AMPERAGE)) {
         deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->amperageLatest - blackboxLast->amperageLatest;
     }
 
@@ -834,7 +837,8 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
-        vbatReference = vbatLatestADC;
+
+        vbatReference = getLatestVoltageForADCChannel(ADC_BATTERY);
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -960,8 +964,10 @@ static void loadMainState(void)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = vbatLatestADC;
-    blackboxCurrent->amperageLatest = amperageLatestADC;
+    blackboxCurrent->vbatLatest = getLatestVoltageForADCChannel(ADC_BATTERY);
+
+    amperageMeter_t *state = getAmperageMeter(batteryConfig()->amperageMeterSource);
+    blackboxCurrent->amperageLatest = state->amperage;
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1133,10 +1139,10 @@ static bool blackboxWriteSysinfo()
             blackboxPrintfHeaderLine("rcRate:%d", controlRateProfiles(getCurrentProfile())->rcRate8);
         break;
         case 6:
-            blackboxPrintfHeaderLine("minthrottle:%d", motorAndServoConfig()->minthrottle);
+            blackboxPrintfHeaderLine("minthrottle:%d", motorConfig()->minthrottle);
         break;
         case 7:
-            blackboxPrintfHeaderLine("maxthrottle:%d", motorAndServoConfig()->maxthrottle);
+            blackboxPrintfHeaderLine("maxthrottle:%d", motorConfig()->maxthrottle);
         break;
         case 8:
             blackboxPrintfHeaderLine("gyro.scale:0x%x", castFloatBytesToInt(gyro.scale));
@@ -1146,22 +1152,32 @@ static bool blackboxWriteSysinfo()
         break;
         case 10:
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale:%u", batteryConfig()->vbatscale);
+                voltageMeterConfig_t *config = getVoltageMeterConfig(ADC_BATTERY);
+                blackboxPrintfHeaderLine("vbatscale:%u", config->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
         break;
         case 11:
-            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u", batteryConfig()->vbatmincellvoltage,
-                batteryConfig()->vbatwarningcellvoltage, batteryConfig()->vbatmaxcellvoltage);
+            blackboxPrintfHeaderLine("vbatcellvoltage:%u,%u,%u",
+                batteryConfig()->vbatmincellvoltage,
+                batteryConfig()->vbatwarningcellvoltage,
+                batteryConfig()->vbatmaxcellvoltage
+            );
         break;
         case 12:
             blackboxPrintfHeaderLine("vbatref:%u", vbatReference);
         break;
         case 13:
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
-            if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d", batteryConfig()->currentMeterOffset, batteryConfig()->currentMeterScale);
+            if (feature(FEATURE_AMPERAGE_METER)) {
+                uint8_t amperageMeterSource = batteryConfig()->amperageMeterSource;
+                amperageMeterConfig_t *config = amperageMeterConfig(amperageMeterSource);
+
+                blackboxPrintfHeaderLine("amperageMeter:%d,%d",
+                    config->offset,
+                    config->scale
+                );
             }
         break;
         default:

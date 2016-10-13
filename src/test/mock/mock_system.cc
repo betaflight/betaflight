@@ -31,4 +31,4 @@ void failureMode(uint8_t mode)
     EXPECT_TRUE(false);
 }
 
-uint16_t cycleTime;
+uint16_t pidDeltaUs;

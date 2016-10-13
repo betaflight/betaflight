@@ -24,7 +24,7 @@
 
 #include "build/build_config.h"
 
-#ifndef SKIP_PID_MW23
+#ifdef USE_PID_MW23
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -57,7 +57,6 @@ static int32_t ITermAngle[2];
 
 uint8_t dynP8[3], dynI8[3], dynD8[3];
 
-extern float dT;
 extern uint8_t motorCount;
 
 #ifdef BLACKBOX
@@ -78,6 +77,8 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, const rxConfig_t *rxConfig)
 {
     UNUSED(rxConfig);
+
+    pidInitFilters(pidProfile);
 
     int axis, prop = 0;
     int32_t rc, error, errorAngle, delta, gyroError;
@@ -145,10 +146,10 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         // Delta from measurement
         delta = -(gyroError - lastErrorForDelta[axis]);
         lastErrorForDelta[axis] = gyroError;
-        if (pidProfile->dterm_lpf) {
+        if (pidProfile->dterm_lpf_hz) {
             // Dterm delta low pass
             DTerm = delta;
-            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf, dT)) * 3;  // Keep same scaling as unfiltered DTerm
+            DTerm = lrintf(pt1FilterApply4(&deltaFilter[axis], (float)DTerm, pidProfile->dterm_lpf_hz, getdT())) * 3;  // Keep same scaling as unfiltered DTerm
         } else {
             // When dterm filter disabled apply moving average to reduce noise
             DTerm  = delta1[axis] + delta2[axis] + delta;
@@ -208,4 +209,3 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 }
 
 #endif
-

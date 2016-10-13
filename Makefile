@@ -38,13 +38,13 @@ FORKNAME			 = cleanflight
 
 64K_TARGETS  = CJMCU
 128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE OLIMEXINO RMDO SPRACINGF1OSD
-256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC IRCFUSIONF3 LUX_RACE MOTOLAB PORT103R SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
+256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC IRCFUSIONF3 LUX_RACE MOTOLAB PORT103R RCEXPLORERF3 SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
 
-F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
+F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB RCEXPLORERF3 RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
 
 VALID_TARGETS = $(64K_TARGETS) $(128K_TARGETS) $(256K_TARGETS)
 
-VCP_TARGETS = CC3D ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB SPARKY SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF1OSD SPRACINGF3OSD
+VCP_TARGETS = CC3D ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB RCEXPLORERF3 SPARKY SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF1OSD SPRACINGF3OSD
 OSD_TARGETS = SPRACINGF1OSD SPRACINGF3OSD
 
 # Configure default flash sizes for the targets
@@ -149,7 +149,7 @@ INCLUDE_DIRS := $(INCLUDE_DIRS) \
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
-TARGET_FLAGS = -D$(TARGET) -pedantic
+TARGET_FLAGS = -D$(TARGET)
 DEVICE_FLAGS = -DSTM32F10X_HD -DSTM32F10X
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
@@ -194,7 +194,7 @@ endif
 LD_SCRIPT	 = $(LINKER_DIR)/stm32_flash_f103_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS	 = -mthumb -mcpu=cortex-m3
-TARGET_FLAGS = -D$(TARGET) -pedantic
+TARGET_FLAGS = -D$(TARGET)
 DEVICE_FLAGS = -DSTM32F10X_MD -DSTM32F10X
 
 endif #TARGETS
@@ -246,6 +246,8 @@ SYSTEM_SRC = \
 		   common/printf.c \
 		   common/streambuf.c \
 		   common/typeconversion.c \
+		   common/crc.c \
+		   common/pilot.c \
 		   drivers/buf_writer.c \
 		   drivers/dma.c \
 		   drivers/serial.c \
@@ -255,14 +257,16 @@ SYSTEM_SRC = \
 		   io/statusindicator.c \
 		   msp/msp.c \
 		   msp/msp_serial.c \
+		   msp/msp_server.c \
 		   $(TARGET_SRC) \
 		   $(CMSIS_SRC) \
 		   $(DEVICE_STDPERIPH_SRC)
- 
+
 FC_COMMON_SRC = \
 		   config/feature.c \
 		   config/profile.c \
 		   fc/boot.c \
+		   fc/fc_debug.c \
 		   fc/cleanflight_fc.c \
 		   fc/fc_tasks.c \
 		   fc/rate_profile.c \
@@ -283,11 +287,15 @@ FC_COMMON_SRC = \
 		   flight/mixer.c \
 		   flight/servos.c \
 		   drivers/bus_i2c_soft.c \
+		   drivers/exti.c \
+		   drivers/io.c \
+		   drivers/rcc.c \
 		   drivers/sound_beeper.c \
 		   drivers/gyro_sync.c \
 		   io/beeper.c \
 		   io/gimbal.c \
-		   io/motor_and_servo.c \
+		   io/servos.c \
+		   io/motors.c \
 		   io/serial_4way.c \
 		   io/serial_4way_avrootloader.c \
 		   io/serial_4way_stk500v2.c \
@@ -302,25 +310,34 @@ FC_COMMON_SRC = \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+		   rx/srxl.c \
 		   sensors/sensors.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
+		   sensors/voltage.c \
+		   sensors/amperage.c \
 		   sensors/boardalignment.c \
 		   sensors/compass.c \
 		   sensors/gyro.c \
 		   sensors/initialisation.c
 
 OSD_COMMON_SRC = \
+		   config/feature.c \
 		   osd/boot.c \
 		   osd/cleanflight_osd.c \
 		   osd/fc_state.c \
 		   osd/config.c \
 		   osd/osd.c \
+		   osd/osd_screen.c \
+		   osd/osd_element.c \
+		   osd/osd_element_render.c \
 		   osd/osd_serial.c \
 		   osd/msp_server_osd.c \
 		   osd/msp_client_osd.c \
 		   osd/osd_tasks.c \
 		   sensors/battery.c \
+		   sensors/voltage.c \
+		   sensors/amperage.c \
 		   io/beeper.c
 
 HIGHEND_SRC = \
@@ -351,7 +368,7 @@ VCP_SRC = \
 		   vcp/usb_prop.c \
 		   vcp/usb_pwr.c \
 		   drivers/serial_usb_vcp.c \
-		   drivers/usb_io.c 
+		   drivers/usb_io.c
 
 STM32F10x_COMMON_SRC = \
 		   drivers/adc.c \
@@ -584,7 +601,7 @@ COLIBRI_RACE_SRC = \
 		   $(FC_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
-		   
+
 LUX_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
@@ -631,6 +648,26 @@ ALIENFLIGHTF3_SRC = \
 		   $(FC_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
+		  
+RCEXPLORERF3_SRC = \
+		   $(STM32F30x_COMMON_SRC) \
+		   $(STM32F30x_FC_COMMON_SRC) \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_spi_mpu6000.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/compass_ak8975.c \
+		   drivers/display_ug2864hsweg01.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/flash_m25p16.c \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
+		   drivers/sonar_hcsr04.c \
+		   io/flashfs.c \
+		   $(HIGHEND_SRC) \
+		   $(FC_COMMON_SRC) \
+		   $(SYSTEM_SRC) \
+		   $(VCP_SRC)
 
 RMDO_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
@@ -638,6 +675,7 @@ RMDO_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
 		   drivers/barometer_bmp280.c \
+		   drivers/compass_hmc5883l.c \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/flash_m25p16.c \
 		   drivers/light_ws2811strip.c \
@@ -679,6 +717,7 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/display_ug2864hsweg01.h \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
+		   drivers/serial_softserial.c \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
@@ -737,7 +776,7 @@ SPRACINGF3MINI_SRC	 = \
 		   $(FC_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
-		   
+
 IRCFUSIONF3_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
@@ -756,6 +795,9 @@ SPRACINGF1OSD_SRC = \
 		   drivers/bus_spi.c \
 		   drivers/video_max7456.c \
 		   drivers/flash_m25p16.c \
+		   drivers/io.c \
+		   drivers/exti.c \
+		   drivers/rcc.c \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
@@ -767,7 +809,13 @@ SPRACINGF3OSD_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/video_max7456.c \
 		   drivers/flash_m25p16.c \
+		   drivers/io.c \
+		   drivers/exti.c \
+		   drivers/rcc.c \
+		   drivers/transponder_ir.c \
+		   drivers/transponder_ir_stm32f30x.c \
 		   io/flashfs.c \
+		   io/transponder_ir.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
 		   $(OSD_COMMON_SRC) \
@@ -781,10 +829,17 @@ VPATH		:= $(VPATH):$(STDPERIPH_DIR)/src
 # Things that might need changing to use different tools
 #
 
+# Find out if ccache is installed on the system
+CCACHE := ccache
+RESULT = $(shell (which $(CCACHE) > /dev/null 2>&1; echo $$?) )
+ifneq ($(RESULT),0)
+CCACHE :=
+endif
+
 # Tool names
-CC		 = arm-none-eabi-gcc
-OBJCOPY		 = arm-none-eabi-objcopy
-SIZE		 = arm-none-eabi-size
+CC          := $(CCACHE) arm-none-eabi-gcc
+OBJCOPY     := arm-none-eabi-objcopy
+SIZE        := arm-none-eabi-size
 
 #
 # Tool options.
@@ -811,7 +866,7 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   $(addprefix -I,$(INCLUDE_DIRS)) \
 		   $(DEBUG_FLAGS) \
 		   -std=gnu99 \
-		   -Wall -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion -Wundef \
+		   -Wall -Wpedantic -Wextra -Wunsafe-loop-optimizations -Wdouble-promotion -Wundef \
 		   -ffunction-sections \
 		   -fdata-sections \
 		   $(DEVICE_FLAGS) \

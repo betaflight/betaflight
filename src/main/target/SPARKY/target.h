@@ -19,6 +19,9 @@
 
 #define TARGET_BOARD_IDENTIFIER "SPKY" // SParKY
 
+#define DEFAULT_PID_PROCESS_DENOM 1
+#define DEFAULT_GYRO_SAMPLE_HZ 2000
+
 #define LED0_GPIO   GPIOB
 #define LED0_PIN    Pin_4  // Blue (Rev 1 & 2) - PB4
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOB
@@ -29,6 +32,9 @@
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
 // MPU 9150 INT connected to PA15, pulled up to VCC by 10K Resistor, contains MPU6050 and AK8975 in single component.
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+
 #define GYRO
 #define USE_GYRO_MPU6050
 
@@ -58,6 +64,7 @@
 #define USE_UART3 // Servo out - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT 4
 
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_6 // PB6
 #define UART1_RX_PIN        GPIO_Pin_7 // PB7
 #define UART1_GPIO          GPIOB
@@ -97,17 +104,26 @@
 
 #define USE_ADC
 
+#define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
+
 #define ADC_INSTANCE                ADC2
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
 
-#define VBAT_ADC_GPIO               GPIOA
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
-#define VBAT_ADC_CHANNEL            ADC_Channel_1
+#define ADC0_GPIO                   GPIOA
+#define ADC0_GPIO_PIN               GPIO_Pin_4
+#define ADC0_CHANNEL                ADC_Channel_1
 
-#define CURRENT_METER_ADC_GPIO      GPIOA
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_7
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_4
+#define ADC1_GPIO                   GPIOA
+#define ADC1_GPIO_PIN               GPIO_Pin_7
+#define ADC1_CHANNEL                ADC_Channel_4
+
+#define ADC_CHANNEL_COUNT 2
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_AMPERAGE     ADC_CHANNEL1
+
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
@@ -119,15 +135,15 @@
 #define TELEMETRY
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
 #define SONAR
 #define SONAR_TRIGGER_PIN           Pin_2   // PWM6 (PA2) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_TRIGGER_GPIO          GPIOA
 #define SONAR_ECHO_PIN              Pin_1   // PWM7 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_GPIO             GPIOB
-#define SONAR_EXTI_LINE             EXTI_Line1
-#define SONAR_EXTI_PIN_SOURCE       EXTI_PinSource1
-#define SONAR_EXTI_IRQN             EXTI1_IRQn
+#define SONAR_TRIGGER_IO            PA2
+#define SONAR_ECHO_IO               PA1
 
 #define LED_STRIP
 #if 1
@@ -144,7 +160,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 
 #endif
 
@@ -163,7 +179,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel7
 #define WS2811_IRQ                      DMA1_Channel7_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC7
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH7_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel7Descriptor
 
 
 #endif
@@ -174,3 +190,7 @@
 // UART2, PA3
 #define BIND_PORT GPIOA
 #define BIND_PIN Pin_3
+
+// available IO pins (from schematics)
+#define TARGET_IO_PORTA (BIT(1)|BIT(2)|BIT(3)|BIT(4)|BIT(6)|BIT(7)|BIT(8)|BIT(9)|BIT(10)|BIT(11)|BIT(12)|BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTB (BIT(0)|BIT(1)|BIT(10)|BIT(11)|BIT(14)|BIT(15)|BIT(3)|BIT(4)|BIT(5)|BIT(6)|BIT(7)|BIT(8)|BIT(9))

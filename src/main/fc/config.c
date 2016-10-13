@@ -25,6 +25,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/filter.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -39,6 +40,7 @@
 #include "drivers/compass.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/adc.h"
 
 #include "fc/rate_profile.h"
 #include "fc/rc_controls.h"
@@ -48,9 +50,11 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 
+#include "sensors/voltage.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
+#include "sensors/gyro.h"
 
 #include "telemetry/telemetry.h"
 
@@ -64,7 +68,7 @@
 
 // FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
 
 
 #ifndef DEFAULT_RX_FEATURE
@@ -92,31 +96,30 @@ STATIC_UNIT_TESTED void resetConf(void)
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
-    // only enable the VBAT feature by default if the board has a voltage divider otherwise
-    // the user may see incorrect readings and unexpected issues with pin mappings may occur.
+    // only enable the feature by default if the board has supporting hardware
     featureSet(FEATURE_VBAT);
 #endif
 
-#if defined(COLIBRI_RACE)
-    // alternative defaults settings for COLIBRI RACE targets
-    imuConfig()->looptime = 1000;
+#ifdef BOARD_HAS_AMPERAGE_METER
+    // only enable the feature by default if the board has supporting hardware
+    featureSet(FEATURE_AMPERAGE_METER);
+    batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
 #endif
 
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHT
 #ifdef ALIENFLIGHTF3
     serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    batteryConfig()->vbatscale = 20;
+    getVoltageMeterConfig(ADC_BATTERY)->vbatscale = 20;
     sensorSelectionConfig()->mag_hardware = MAG_NONE;            // disabled by default
 # else
     serialConfig()->portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
 # endif
     rxConfig()->serialrx_provider = SERIALRX_SPEKTRUM2048;
     rxConfig()->spektrum_sat_bind = 5;
-    motorAndServoConfig()->minthrottle = 1000;
-    motorAndServoConfig()->maxthrottle = 2000;
-    motorAndServoConfig()->motor_pwm_rate = 32000;
-    imuConfig()->looptime = 2000;
+    motorConfig()->minthrottle = 1000;
+    motorConfig()->maxthrottle = 2000;
+    motorConfig()->motor_pwm_rate = 32000;
     pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
@@ -156,6 +159,7 @@ static void activateConfig(void)
 
     useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
+    pidInitFilters(pidProfile());
     pidSetController(pidProfile()->pidController);
 
 #ifdef GPS
@@ -169,7 +173,9 @@ static void activateConfig(void)
     mixerUseConfigs(servoProfile()->servoConf);
 #endif
 
+#ifdef GPS
     recalculateMagneticDeclination();
+#endif
 
     static imuRuntimeConfig_t imuRuntimeConfig;
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
@@ -214,14 +220,9 @@ static void validateAndFixConfig(void)
         mixerConfig()->pid_at_min_throttle = 0;
     }
 
-
-#ifdef STM32F10X
-    // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (imuConfig()->gyroSync && imuConfig()->gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        imuConfig()->gyroSyncDenominator = 2;
+    if (gyroConfig()->gyro_soft_notch_hz < gyroConfig()->gyro_soft_notch_cutoff_hz) {
+        gyroConfig()->gyro_soft_notch_hz = 0;
     }
-#endif
-
 
 #if defined(LED_STRIP)
 #if (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
@@ -290,7 +291,7 @@ void readEEPROM(void)
     suspendRxSignal();
 
     // Sanity check, read flash
-    if (!scanEEPROM(true)) {
+    if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 

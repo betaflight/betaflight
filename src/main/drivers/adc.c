@@ -37,19 +37,27 @@ volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 uint16_t adcGetChannel(uint8_t channel)
 {
 #ifdef DEBUG_ADC_CHANNELS
+#if ADC_CHANNEL_COUNT > 0
     if (adcConfig[0].enabled) {
         debug[0] = adcValues[adcConfig[0].dmaIndex];
     }
+#endif
+#if ADC_CHANNEL_COUNT > 1
     if (adcConfig[1].enabled) {
         debug[1] = adcValues[adcConfig[1].dmaIndex];
     }
+#endif
+#if ADC_CHANNEL_COUNT > 2
     if (adcConfig[2].enabled) {
         debug[2] = adcValues[adcConfig[2].dmaIndex];
     }
+#endif
+#if ADC_CHANNEL_COUNT > 3
     if (adcConfig[3].enabled) {
         debug[3] = adcValues[adcConfig[3].dmaIndex];
     }
 #endif
+#endif // DEBUG_ADC_CHANNELS
     return adcValues[adcConfig[channel].dmaIndex];
 }
 

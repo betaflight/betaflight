@@ -1,6 +1,16 @@
 # Building in windows
 
 
+## Bash On Windows 10
+
+A new feature in Windows 10 allows any developer to quickly and easily run an entire linux subsystem in windows and access it via a bash terminal. This gives developers full use of the entire linux OS and all of the great existing linux tools and programs. When Bash for Windows is up and running it feels like you sshed into a full linux box, except the linux distro is actually running alongside windows locally.
+
+If you use Bash on Windows you can easily build cleanflight exactly as you would for Ubuntu. (the linux distro running on Windows is Ubuntu Trusty)
+
+Setup for Bash on Windows is very easy and takes less than 5 minutes. [For instructions follow the official guide here.](https://msdn.microsoft.com/commandline/wsl/install_guide)
+
+Once you have Bash On Windows running you can follow the "Building in Ubuntu" instructions for building cleanfight.
+
 ##Setup Cygwin
 
 download the Setup*.exe from https://www.cygwin.com/
@@ -38,14 +48,14 @@ Continue with the Installation and accept all autodetected dependencies.
 
 ----------
 
-versions do matter, 4.8-2014-q2 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/+download - preferrebly as a ZIP-File. 
+versions do matter, 5.4 is known to work well. Download this version from https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update/+download/gcc-arm-none-eabi-5_4-2016q2-20160622-win32.zip 
 
 
-Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm-none-eabi-4_8-2014q2```. 
+Extract the contents of this archive to any folder of your choice, for instance ```C:\dev\gcc-arm```. 
 
 ![GNU ARM Toolchain Setup](assets/008.toolchain.png)
 
-add the "bin" subdirectory to the PATH Windows environment variable: ```%PATH%;C:\dev\gcc-arm-none-eabi-4_8-2014q2\bin```
+add the "bin" subdirectory to the PATH Windows environment variable: ```%PATH%;C:\dev\gcc-arm\bin```
 
 ![GNU ARM Toolchain Setup](assets/009.toolchain_path.png)
 
@@ -94,6 +104,9 @@ Navigate to the local cleanflight repository and use the following steps to pull
 cd /cygdrive/c/dev/cleanflight
 git reset --hard
 git pull
-make clean TARGET=NAZE
+make clean TARGET=NAZE -j16 -l
 make
 ```
+
+You may want to remove -j16 -l if your having a hard time narrowing down errors.  It does multithreaded make, however it makes it harder to know which warning or error comes from which file.
+

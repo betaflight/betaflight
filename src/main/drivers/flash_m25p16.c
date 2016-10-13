@@ -23,6 +23,10 @@
 
 #ifdef USE_FLASH_M25P16
 
+#ifdef CUSTOM_FLASHCHIP
+#include "config/parameter_group.h"
+#endif
+
 #include "drivers/flash_m25p16.h"
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
@@ -170,6 +174,13 @@ static bool m25p16_readIdentification()
             geometry.pagesPerSector = 256;
         break;
         default:
+#ifdef CUSTOM_FLASHCHIP
+            if (chipID == flashchipConfig()->flashchip_id) {
+                geometry.sectors = flashchipConfig()->flashchip_nsect;
+                geometry.pagesPerSector = flashchipConfig()->flashchip_pps;
+                break;
+            }
+#endif
             // Unsupported chip or not an SPI NOR flash
             geometry.sectors = 0;
             geometry.pagesPerSector = 0;
@@ -178,6 +189,14 @@ static bool m25p16_readIdentification()
             geometry.totalSize = 0;
             return false;
     }
+#ifdef CUSTOM_FLASHCHIP
+    // Write back hard coded params. Eventually go away?
+    if (flashchipConfig()->flashchip_id == 0) {
+        flashchipConfig()->flashchip_id = chipID;
+        flashchipConfig()->flashchip_nsect = geometry.sectors;
+        flashchipConfig()->flashchip_pps = geometry.pagesPerSector;
+    }
+#endif
 
     geometry.sectorSize = geometry.pagesPerSector * geometry.pageSize;
     geometry.totalSize = geometry.sectorSize * geometry.sectors;

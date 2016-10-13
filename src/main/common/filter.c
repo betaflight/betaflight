@@ -17,21 +17,22 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
 
-#include "common/axis.h"
 #include "common/filter.h"
 #include "common/maths.h"
 
 #define M_LN2_FLOAT 0.69314718055994530942f
+#define M_PI_FLOAT  3.14159265358979323846f
 
-#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
+#define BIQUAD_BANDWIDTH 1.9f           // bandwidth in octaves
+#define BIQUAD_Q (1.0f / sqrtf(2.0f))   // 2nd order Butterworth Q
 
 // PT1 Low Pass filter
+
 void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 {
-    filter->RC = 1.0f / ( 2.0f * M_PIf * f_cut );
+    filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
     filter->dT = dT;
 }
 
@@ -45,8 +46,7 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 {
     // Pre calculate and store RC
     if (!filter->RC) {
-        filter->RC = 1.0f / ( 2.0f * M_PIf * f_cut );
-        filter->dT = dT;
+        pt1FilterInit(filter, f_cut, dT);
     }
 
     filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
@@ -54,82 +54,80 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     return filter->state;
 }
 
-/* sets up a biquad Filter */
-void BiQuadNewLpf(float filterCutFreq, biquad_t *newState, uint32_t refreshRate)
+static void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t sampleDeltaUs, float Q, biquadFilterType_e filterType)
 {
-    float sampleRate;
+    // setup variables
+    const float sampleHz = 1 / ((float)sampleDeltaUs * 0.000001f);
+    const float omega = 2 * M_PI_FLOAT * filterFreq / sampleHz;
+    const float sn = sinf(omega);
+    const float cs = cosf(omega);
+    const float alpha = sn / (2 * Q);
 
-    sampleRate = 1 / ((float)refreshRate * 0.000001f);
+    float b0, b1, b2, a0, a1, a2;
 
-    float omega, sn, cs, alpha;
-    float a0, a1, a2, b0, b1, b2;
+    switch (filterType) {
+        default:
+        case FILTER_LPF:
+            b0 = (1 - cs) / 2;
+            b1 = 1 - cs;
+            b2 = (1 - cs) / 2;
+            a0 = 1 + alpha;
+            a1 = -2 * cs;
+            a2 = 1 - alpha;
+            break;
+        case FILTER_NOTCH:
+            b0 =  1;
+            b1 = -2 * cs;
+            b2 =  1;
+            a0 =  1 + alpha;
+            a1 = -2 * cs;
+            a2 =  1 - alpha;
+            break;
+    }
 
-    /* setup variables */
-    omega = 2 * M_PIf * filterCutFreq / sampleRate;
-    sn = sinf(omega);
-    cs = cosf(omega);
-    alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+    // precompute the coefficients
+    filter->b0 = b0 / a0;
+    filter->b1 = b1 / a0;
+    filter->b2 = b2 / a0;
+    filter->a1 = a1 / a0;
+    filter->a2 = a2 / a0;
 
-    b0 = (1 - cs) /2;
-    b1 = 1 - cs;
-    b2 = (1 - cs) /2;
-    a0 = 1 + alpha;
-    a1 = -2 * cs;
-    a2 = 1 - alpha;
-
-    /* precompute the coefficients */
-    newState->b0 = b0 /a0;
-    newState->b1 = b1 /a0;
-    newState->b2 = b2 /a0;
-    newState->a1 = a1 /a0;
-    newState->a2 = a2 /a0;
-
-    /* zero initial samples */
-    newState->x1 = newState->x2 = 0;
-    newState->y1 = newState->y2 = 0;
+    // zero initial samples
+    filter->d1 = filter->d2 = 0;
 }
 
-/* Computes a biquad_t filter on a sample */
-float applyBiQuadFilter(float sample, biquad_t *state)
+static float biquadFilterCalculateNotchQ(uint16_t filterHz, uint16_t cutoffHz) {
+    float octaves = log2f((float) filterHz  / (float) cutoffHz) * 2;
+    float x = powf(2, octaves);
+    return sqrtf(x) / (x - 1);
+}
+
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t sampleDeltaUs, uint16_t filterHz, uint16_t cutoffHz)
 {
-    float result;
+    float Q = biquadFilterCalculateNotchQ(filterHz, cutoffHz);
+    biquadFilterInit(filter, filterHz, sampleDeltaUs, Q, FILTER_NOTCH);
+}
 
-    /* compute result */
-    result = state->b0 * sample + state->b1 * state->x1 + state->b2 * state->x2 -
-        state->a1 * state->y1 - state->a2 * state->y2;
+/* sets up a biquad Filter */
+void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t sampleDeltaUs)
+{
+    biquadFilterInit(filter, filterFreq, sampleDeltaUs, BIQUAD_Q, FILTER_LPF);
+}
 
-    /* shift x1 to x2, sample to x1 */
-    state->x2 = state->x1;
-    state->x1 = sample;
+/* Computes a biquadFilter_t filter on a sample */
+float biquadFilterApply(biquadFilter_t *filter, float input)
+{
+    const float result = filter->b0 * input + filter->d1;
 
-    /* shift y1 to y2, result to y1 */
-    state->y2 = state->y1;
-    state->y1 = result;
+    filter->d1 = filter->b1 * input - filter->a1 * result + filter->d2;
+    filter->d2 = filter->b2 * input - filter->a2 * result;
+
+#ifdef DEBUG_BIQUAD_INFINITY
+    if (!isfinite(filter->d1) || !isfinite(filter->d2) ) {
+        failureMode(FAILURE_DEVELOPER);
+    }
+#endif
 
     return result;
-}
-
-int32_t filterApplyAverage(int32_t input, uint8_t count, int32_t averageState[])
-{
-    int32_t sum = 0;
-    for (int ii = count - 1; ii > 0; --ii) {
-        averageState[ii] = averageState[ii-1];
-        sum += averageState[ii];
-    }
-    averageState[0] = input;
-    sum += input;
-    return sum / count;
-}
-
-float filterApplyAveragef(float input, uint8_t count, float averageState[])
-{
-    float sum = 0;
-    for (int ii = count - 1; ii > 0; --ii) {
-        averageState[ii] = averageState[ii-1];
-        sum += averageState[ii];
-    }
-    averageState[0] = input;
-    sum += input;
-    return sum / count;
 }
 

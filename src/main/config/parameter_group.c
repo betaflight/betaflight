@@ -32,16 +32,6 @@ const pgRegistry_t* pgFind(pgn_t pgn)
     return NULL;
 }
 
-const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria)
-{
-    PG_FOREACH(candidate) {
-        if (matcher(candidate, criteria)) {
-            return candidate;
-        }
-    }
-    return NULL;
-}
-
 static uint8_t *pgOffset(const pgRegistry_t* reg, uint8_t profileIndex)
 {
     const uint16_t regSize = pgSize(reg);
@@ -58,7 +48,7 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     const uint16_t regSize = pgSize(reg);
 
     memset(base, 0, regSize);
-    if(reg->reset.ptr >= (void*)__pg_resetdata_start && reg->reset.ptr < (void*)__pg_resetdata_end) {
+    if (reg->reset.ptr >= (void*)__pg_resetdata_start && reg->reset.ptr < (void*)__pg_resetdata_end) {
         // pointer points to resetdata section, to it is data template
         memcpy(base, reg->reset.ptr, regSize);
     } else if (reg->reset.fn) {
@@ -67,21 +57,28 @@ static void pgResetInstance(const pgRegistry_t *reg, uint8_t *base)
     }
 }
 
+void pgReset(const pgRegistry_t* reg, int profileIndex)
+{
+    pgResetInstance(reg, pgOffset(reg, profileIndex));
+}
+
 void pgResetCurrent(const pgRegistry_t *reg)
 {
-    if(pgIsSystem(reg)) {
+    if (pgIsSystem(reg)) {
         pgResetInstance(reg, reg->address);
     } else {
         pgResetInstance(reg, *reg->ptr);
     }
 }
 
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex)
+void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int size, int version)
 {
-    pgResetInstance(reg,pgOffset(reg, profileIndex));
-
-    const int take = MIN(size, pgSize(reg));
-    memcpy(pgOffset(reg, profileIndex), from, take);
+    pgResetInstance(reg, pgOffset(reg, profileIndex));
+    // restore only matching version, keep defaults otherwise
+    if (version == pgVersion(reg)) {
+        const int take = MIN(size, pgSize(reg));
+        memcpy(pgOffset(reg, profileIndex), from, take);
+    }
 }
 
 int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex)
@@ -92,25 +89,25 @@ int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex)
 }
 
 
-void pgResetAll(uint8_t profileCount)
+void pgResetAll(int profileCount)
 {
     PG_FOREACH(reg) {
         if (pgIsSystem(reg)) {
-            pgResetInstance(reg, reg->address);
+            pgReset(reg, 0);
         } else {
             // reset one instance for each profile
-            for (uint8_t profileIndex = 0; profileIndex < profileCount; profileIndex++) {
-                pgResetInstance(reg, pgOffset(reg, profileIndex));
+            for (int profileIndex = 0; profileIndex < profileCount; profileIndex++) {
+                pgReset(reg, profileIndex);
             }
         }
     }
 }
 
-void pgActivateProfile(uint8_t profileIndexToActivate)
+void pgActivateProfile(int profileIndex)
 {
     PG_FOREACH(reg) {
         if (!pgIsSystem(reg)) {
-            uint8_t *ptr = pgOffset(reg, profileIndexToActivate);
+            uint8_t *ptr = pgOffset(reg, profileIndex);
             *(reg->ptr) = ptr;
         }
     }

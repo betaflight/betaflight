@@ -15,6 +15,7 @@ supports the following:
 * AUX operated on/off switch.
 * GPS state.
 * RSSI level.
+* Battery level.
 
 Support for more than 32 LEDs is possible, it just requires additional development.
 
@@ -109,28 +110,36 @@ For instance, an LED that faces South-east at a 45 degree downwards angle could 
 
 Note: It is perfectly possible to configure an LED to have all directions `NESWUD` but probably doesn't make sense.
 
-`mmm` specifies the modes that should be applied an LED.  Modes are:
+`mmm` specifies the modes that should be applied an LED.
 
-* `W` - `W`warnings.
-* `F` - `F`light mode & Orientation
-* `I` - `I`ndicator.
-* `A` - `A`rmed state.
-* `T` - `T`hrust state.
-* `R` - `R`ing thrust state.
+Each LED has one base function:
+
 * `C` - `C`olor.
+* `F` - `F`light mode & Orientation
+* `A` - `A`rmed state.
+* `R` - `R`ing thrust state.
 * `G` - `G`PS state.
 * `S` - R`S`SSI level.
+* `L` - Battery `L`evel.
+
+And each LED has overlays:
+
+* `W` - `W`warnings.
+* `I` - `I`ndicator.
+* `T` - `T`hrust state.
 * `B` - `B`link (flash twice) mode.
+* `O` - Lars`O`n Scanner (Cylon Effect).
+* `N` - Blink on la`N`ding (throttle < 50%).
 
 `cc` specifies the color number (0 based index).
 
 Example:
 
 ```
-led 0 0,15:SD:IAW:0
-led 1 15,0:ND:IAW:0
-led 2 0,0:ND:IAW:0
-led 3 0,15:SD:IAW:0
+led 0 0,15:SD:AWI:0
+led 1 15,0:ND:AWI:0
+led 2 0,0:ND:AWI:0
+led 3 0,15:SD:AWI:0
 led 4 7,7::C:1
 led 5 8,8::C:2
 led 6 8,9::B:1
@@ -169,13 +178,49 @@ The LEDs will blink as many times as the satellite count, then pause and start a
 
 #### RSSI level
 
-This mode fades the LED current LED color to the previous/next color in the HSB color space depending on RSSI level.  When the
-RSSI level is at the mean value the color is unaffected, thus it can be mixed with orientation colors to indicate orientation and RSSI at
-the same time.  RSSI should normally be combined with Color or Mode/Orientation.
+This mode binds the LED color to RSSI level.
+
+| Color      |   RSSI   |
+| ---------- | ---------|
+| Green      |   100%   |
+| Lime green |    80%   |
+| Yellow     |    60%   |
+| Orange     |    40%   |
+| Red        |    20%   |
+| Deep pink  |     0%   |
+    
+When RSSI is below 50% is reached, LEDs will blink slowly, and they will blink fast when under 20%.
+
+
+#### Battery level
+
+This mode binds the LED color to remaining battery capacity.
+
+| Color      | Capacity |
+| ---------- | ---------|
+| Green      |   100%   |
+| Lime green |    80%   |
+| Yellow     |    60%   |
+| Orange     |    40%   |
+| Red        |    20%   |
+| Deep pink  |     0%   |
+    
+When Warning or Critial voltage is reached, LEDs will blink slowly or fast.
+Note: this mode requires a current sensor. If you don't have the actual device you can set up a virtual current sensor (see [Battery](Battery.md)).
 
 #### Blink
 
-This mode blinks the current LED, alternatively from black to the selected color.
+This mode blinks the current LED, alternatively from black to the current active color.
+
+#### Blink on landing
+
+This mode blinks the current LED, alternatively from black to the current active color, when throttle is below 50% and the craft is armed.
+
+#### Larson Scanner (Cylon Effect)
+
+The Larson Scanner replicates the scanning "eye" effect seen on the mechanical Cylons and on Kitt from Knight Rider.
+
+This overlay merely varies the brightness of each LED's current color.
 
 #### Flight Mode & Orientation
 

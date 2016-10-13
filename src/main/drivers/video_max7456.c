@@ -23,7 +23,10 @@
 
 #include "build/debug.h"
 
+#include "drivers/dma.h"
+#include "drivers/io.h"
 #include "drivers/exti.h"
+#include "drivers/nvic.h"
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 #include "drivers/video_max7456.h"
@@ -31,7 +34,6 @@
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
-
 #include "common/utils.h"
 
 #include "osd/fonts/font_max7456_12x18.h"
@@ -122,6 +124,11 @@
 
 #define BWBRIGHTNESS(black, white) ((black << 2) | white)
 
+#ifdef MAX7456_DMA_CHANNEL_TX
+dmaCallbackHandler_t dmaTxHandler;
+volatile uint8_t dma_transaction_in_progress = 0;
+#endif
+
 uint8_t max7456_videoModeMask;
 
 #define DISABLE_MAX7456       GPIO_SetBits(MAX7456_CS_GPIO,   MAX7456_CS_PIN)
@@ -129,9 +136,13 @@ uint8_t max7456_videoModeMask;
 
 textScreen_t max7456Screen;
 max7456State_t max7456State;
-static const extiConfig_t *max7456LOSExtiConfig;
-static const extiConfig_t *max7456VSYNCExtiConfig;
-static const extiConfig_t *max7456HSYNCExtiConfig;
+
+static extiCallbackRec_t losExtiCallbackRec;
+static IO_t losIO;
+static extiCallbackRec_t vsyncExtiCallbackRec;
+static IO_t vsyncIO;
+static extiCallbackRec_t hsyncExtiCallbackRec;
+static IO_t hsyncIO;
 
 #if 0
 // for factory max7456 font
@@ -155,122 +166,43 @@ static const uint8_t max7456_defaultFont_fontToASCIIMapping[] = {
 };
 #endif
 
-
-static bool max7456ExtiHandler(const extiConfig_t *extiConfig)
-{
-    if (EXTI_GetITStatus(extiConfig->exti_line) == RESET) {
-        return false;
-    }
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    return true;
-}
-
-
 void max7456_updateLOSState(void)
 {
     // "LOS goes high when the VIN sync pulse is lost for 32 consecutive lines. LOS goes low when 32 consecutive valid sync pulses are received."
-    uint8_t status = GPIO_ReadInputDataBit(max7456LOSExtiConfig->gpioPort, max7456LOSExtiConfig->gpioPin);
-
+    bool status = IORead(losIO);
     max7456State.los = status != 0;
 
     //debug[0] = max7456State.los;
 }
 
-void LOS_EXTI_Handler(void)
+void LOS_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456LOSExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.losCounter++;
-
     max7456_updateLOSState();
 }
 
-void VSYNC_EXTI_Handler(void)
+void VSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456VSYNCExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.vSyncDetected = true;
-
     max7456State.frameCounter++;
     //debug[1] = max7456State.frameCounter;
 }
 
-void HSYNC_EXTI_Handler(void)
+void HSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
+    UNUSED(cb);
     static uint32_t callCount = 0;
-    bool set = max7456ExtiHandler(max7456HSYNCExtiConfig);
     callCount++;
-    if (!set) {
-        return;
-    }
-
     max7456State.hSyncDetected = true;
 }
 
-
 typedef void (*handlerFuncPtr)(void);
-
-void max7456_extiInit(const extiConfig_t *extiConfig, handlerFuncPtr handlerFn, EXTITrigger_TypeDef trigger)
-{
-    gpio_config_t gpio;
-
-#ifdef STM32F303
-    if (extiConfig->gpioAHBPeripherals) {
-        RCC_AHBPeriphClockCmd(extiConfig->gpioAHBPeripherals, ENABLE);
-    }
-#endif
-#ifdef STM32F10X
-    if (extiConfig->gpioAPB2Peripherals) {
-        RCC_APB2PeriphClockCmd(extiConfig->gpioAPB2Peripherals, ENABLE);
-    }
-#endif
-
-    gpio.pin = extiConfig->gpioPin;
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_IN_FLOATING;
-    gpioInit(extiConfig->gpioPort, &gpio);
-
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#ifdef STM32F303xC
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-#ifdef STM32F10X
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(extiConfig->exti_port_source, extiConfig->exti_pin_source);
-#endif
-
-    registerExtiCallbackHandler(extiConfig->exti_irqn, handlerFn);
-
-    EXTI_ClearITPendingBit(extiConfig->exti_line);
-
-    EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = extiConfig->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = trigger;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-}
 
 void max7456_extiConfigure(
     const extiConfig_t *losExtiConfig,
@@ -278,13 +210,23 @@ void max7456_extiConfigure(
     const extiConfig_t *hSyncExtiConfig
 )
 {
-    max7456LOSExtiConfig = losExtiConfig;
-    max7456VSYNCExtiConfig = vSyncExtiConfig;
-    max7456HSYNCExtiConfig = hSyncExtiConfig;
+    losIO = IOGetByTag(losExtiConfig->io);
+    IOConfigGPIO(losIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&losExtiCallbackRec, LOS_EXTI_Handler);
+    EXTIConfig(losIO, &losExtiCallbackRec, NVIC_PRIO_OSD_LOS_EXTI, EXTI_Trigger_Rising_Falling);
+    EXTIEnable(losIO, true);
 
-    max7456_extiInit(max7456LOSExtiConfig, LOS_EXTI_Handler, EXTI_Trigger_Rising_Falling);
-    max7456_extiInit(max7456VSYNCExtiConfig, VSYNC_EXTI_Handler, EXTI_Trigger_Falling);
-    max7456_extiInit(max7456HSYNCExtiConfig, HSYNC_EXTI_Handler, EXTI_Trigger_Falling);
+    vsyncIO = IOGetByTag(vSyncExtiConfig->io);
+    IOConfigGPIO(vsyncIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&vsyncExtiCallbackRec, VSYNC_EXTI_Handler);
+    EXTIConfig(vsyncIO, &vsyncExtiCallbackRec, NVIC_PRIO_OSD_VSYNC_EXTI, EXTI_Trigger_Falling);
+    EXTIEnable(vsyncIO, true);
+
+    hsyncIO = IOGetByTag(hSyncExtiConfig->io);
+    IOConfigGPIO(hsyncIO, IOCFG_IN_FLOATING);
+    EXTIHandlerInit(&hsyncExtiCallbackRec, HSYNC_EXTI_Handler);
+    EXTIConfig(hsyncIO, &hsyncExtiCallbackRec, NVIC_PRIO_OSD_HSYNC_EXTI, EXTI_Trigger_Falling);
+    EXTIEnable(hsyncIO, true);
 }
 
 textScreen_t *max7456_getTextScreen(void)
@@ -292,8 +234,127 @@ textScreen_t *max7456_getTextScreen(void)
     return &max7456Screen;
 }
 
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+static void max7456_writeDMA(void* tx_buffer, void* rx_buffer, uint16_t buffer_size)
+{
+    DMA_InitTypeDef DMA_InitStructure;
+#ifdef MAX7456_DMA_CHANNEL_RX
+    static uint16_t dummy[] = {0xffff};
+#else
+    UNUSED(rx_buffer);
+#endif
+    while (dma_transaction_in_progress); // Wait for prev DMA transaction
+
+    // Enable SPI TX/RX request
+    ENABLE_MAX7456;
+
+    DMA_DeInit(MAX7456_DMA_CHANNEL_TX);
+#ifdef MAX7456_DMA_CHANNEL_RX
+    DMA_DeInit(MAX7456_DMA_CHANNEL_RX);
+#endif
+
+    // Common to both channels
+    DMA_StructInit(&DMA_InitStructure);
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&(MAX7456_SPI_INSTANCE->DR));
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_BufferSize = buffer_size;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Priority = DMA_Priority_Low;
+
+#ifdef MAX7456_DMA_CHANNEL_RX
+    // Rx Channel
+    DMA_InitStructure.DMA_MemoryBaseAddr = rx_buffer ? (uint32_t)rx_buffer : (uint32_t)(dummy);
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+    DMA_InitStructure.DMA_MemoryInc = rx_buffer ? DMA_MemoryInc_Enable : DMA_MemoryInc_Disable;
+
+    DMA_Init(MAX7456_DMA_CHANNEL_RX, &DMA_InitStructure);
+    DMA_Cmd(MAX7456_DMA_CHANNEL_RX, ENABLE);
+#endif
+    // Tx channel
+
+    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)tx_buffer; //max7456_screen;
+    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+
+    DMA_Init(MAX7456_DMA_CHANNEL_TX, &DMA_InitStructure);
+    DMA_Cmd(MAX7456_DMA_CHANNEL_TX, ENABLE);
+
+#ifdef MAX7456_DMA_CHANNEL_RX
+    DMA_ITConfig(MAX7456_DMA_CHANNEL_RX, DMA_IT_TC, ENABLE);
+#else
+    DMA_ITConfig(MAX7456_DMA_CHANNEL_TX, DMA_IT_TC, ENABLE);
+#endif
+
+    dma_transaction_in_progress = 1;
+
+    SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
+#ifdef MAX7456_DMA_CHANNEL_RX
+            SPI_I2S_DMAReq_Rx |
+#endif
+            SPI_I2S_DMAReq_Tx, ENABLE);
+}
+
+void max7456_dma_irq_handler(dmaChannel_t* descriptor, dmaCallbackHandler_t* callbackHandler)
+{
+    UNUSED(callbackHandler);
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+#ifdef MAX7456_DMA_CHANNEL_RX
+        DMA_Cmd(MAX7456_DMA_CHANNEL_RX, DISABLE);
+#endif
+        uint32_t counter1 = 0;
+        uint32_t counter2 = 0;
+
+        // Make sure spi transfer is complete (empty transmit buffer and not busy)
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_TXE) == RESET) {counter1++;};
+        while (SPI_I2S_GetFlagStatus (MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_BSY) == SET) {counter2++;};
+
+        // Empty the RX buffer. RX DMA takes care of it if enabled.
+        // Note: This can only be be done after transmission is complete.
+        while (SPI_I2S_GetFlagStatus(MAX7456_SPI_INSTANCE, SPI_I2S_FLAG_RXNE) == SET) {
+            MAX7456_SPI_INSTANCE->DR;
+        }
+
+        DMA_Cmd(MAX7456_DMA_CHANNEL_TX, DISABLE);
+
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+
+        SPI_I2S_DMACmd(MAX7456_SPI_INSTANCE,
+#ifdef MAX7456_DMA_CHANNEL_RX
+                SPI_I2S_DMAReq_Rx |
+#endif
+                SPI_I2S_DMAReq_Tx, DISABLE);
+
+        DISABLE_MAX7456;
+        dma_transaction_in_progress = 0;
+    }
+
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_HTIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
+    }
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF)) {
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    }
+}
+#endif
+
+static void max7456_waitForDMAToComplete(void)
+{
+#ifdef MAX7456_DMA_CHANNEL_TX
+    static uint32_t waiting = 0;
+    while (dma_transaction_in_progress) {
+        waiting++;
+    };
+#endif
+}
+
 static void max7456_write(uint8_t address, uint8_t data)
 {
+    max7456_waitForDMAToComplete();
+
     ENABLE_MAX7456;
 
     spiTransferByte(MAX7456_SPI_INSTANCE, address);
@@ -305,6 +366,8 @@ static void max7456_write(uint8_t address, uint8_t data)
 static uint8_t max7456_read(uint8_t address)
 {
     uint8_t result;
+
+    max7456_waitForDMAToComplete();
 
     ENABLE_MAX7456;
 
@@ -320,17 +383,42 @@ static void max7456_setVideoMode(videoMode_e videoMode)
 {
     switch(videoMode)
     {
+        case VIDEO_AUTO:
+            // assume NTSC rather than leaving using an unknown state
+
+            // the reason for the NTSC default is that there are probably more NTSC capable screens than PAL in the world.
+            // Also most PAL screens can also display NTSC but not vice-versa.  PAL = more lines, less FPS.  NTSC = fewer lines, more FPS.
+
         case VIDEO_NTSC:
             max7456_videoModeMask = MAX7456_MODE_MASK_NTSC;
             max7456Screen.height = MAX7456_NTSC_ROW_COUNT;
+            max7456State.configuredVideoMode = VIDEO_NTSC;
             break;
          case VIDEO_PAL:
             max7456_videoModeMask = MAX7456_MODE_MASK_PAL;
             max7456Screen.height = MAX7456_PAL_ROW_COUNT;
+            max7456State.configuredVideoMode = VIDEO_PAL;
             break;
     }
 
     max7456Screen.width = MAX7456_COLUMN_COUNT;
+}
+
+static videoMode_e max7456_statusToVideoMode(uint8_t status)
+{
+    if (status & MAX7456_STAT_BIT_PAL_DETECTED) {
+        return VIDEO_PAL;
+    }
+    if (status & MAX7456_STAT_BIT_NTSC_DETECTED) {
+        return VIDEO_NTSC;
+    }
+    return VIDEO_AUTO;
+}
+
+static videoMode_e max7456_detectVideoMode(void)
+{
+    uint8_t status = max7456_read(MAX7456_REG_STAT_READ);
+    return max7456_statusToVideoMode(status);
 }
 
 bool max7456_isOSDEnabled(void)
@@ -383,17 +471,24 @@ void max7456_disableOSD(void)
     max7456_write(MAX7456_REG_VM0, max7456_videoModeMask); // MAX7456_VM0_BIT_OSD_ENABLE unset.
 }
 
-void max7456_init(videoMode_e videoMode)
+void max7456_init(videoMode_e desiredVideoMode)
 {
     spiSetDivisor(MAX7456_SPI_INSTANCE, MAX7456_SPI_CLOCK_DIVIDER);
 
-    max7456_setVideoMode(videoMode);
-
     max7456_softReset();
+
+    delay(100); // allow time to detect video signal
+
+    videoMode_e detectedVideoMode = max7456_detectVideoMode();
+    videoMode_e videoMode = detectedVideoMode;
+    if (desiredVideoMode != VIDEO_AUTO) {
+        videoMode = desiredVideoMode;
+    }
+    max7456_setVideoMode(videoMode);
 
     max7456_write(MAX7456_REG_OSDM, 0x00);
 
-    // set black/white level fo each row
+    // set black/white level for each row
     uint8_t row;
     for(row = 0; row < max7456Screen.height; row++) {
 		max7456_write(MAX7456_REG_RB0 + row, BWBRIGHTNESS(BLACKBRIGHTNESS, WHITEBRIGHTNESS));
@@ -407,10 +502,19 @@ void max7456_init(videoMode_e videoMode)
     uint8_t blackLevelValue = blackLevelResult &= ~(1<<4);
 
     max7456_write(MAX7456_REG_OSDBL, blackLevelValue);
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+    static bool dmaInitDone = false;
+    if (!dmaInitDone) {
+        dmaHandlerInit(&dmaTxHandler, max7456_dma_irq_handler);
+        dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, &dmaTxHandler, NVIC_PRIO_MAX7456_DMA);
+        dmaInitDone = true;
+    }
+#endif
+
 }
 
-#define MAX7456_CHARACTER_BUFFER_SIZE 54
-static void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
+void max7456_setFontCharacter(uint8_t characterIndex, const uint8_t *characterBitmap)
 {
     // cannot update font NVM with OSD enabled.
     max7456_disableOSD();
@@ -462,6 +566,16 @@ uint8_t max7456_readStatus(void)
     return result;
 }
 
+void max7456_updateStatus(void)
+{
+    uint8_t status = max7456_readStatus();
+    if (status & MAX7456_STAT_BIT_LOS_OF_SYNC) {
+        max7456State.los = true;
+    }
+
+    max7456State.detectedVideoMode = max7456_statusToVideoMode(status);
+}
+
 //#define DEBUG_MAX7456_DM_UPDATE
 
 #ifdef DEBUG_MAX7456_DM_UPDATE
@@ -472,18 +586,64 @@ uint8_t max7456_readStatus(void)
 #define MAX7456_TIME_SECTION_BEGIN(index) do {} while(0)
 #endif
 
-void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
+void max7456_waitForVSync(void)
+{
+    uint32_t start = millis();
+    while (max7456State.useSync && !max7456State.vSyncDetected) {
+        // Wait for VSYNC pulse and ISR to update the state.
+
+        delay(1);
+        uint32_t now = millis();
+        if (cmp32(now, start) > 17) {  // 1000/60fps = 16.666
+            break;
+        }
+    }
+}
+
+#ifdef MAX7456_DMA_CHANNEL_TX
+
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
+{
+    MAX7456_TIME_SECTION_BEGIN(1);
+
+    uint32_t totalScreenCharacters = textScreen->height * textScreen->width;
+
+    static uint16_t max7456_screen[MAX7456_PAL_CHARACTER_COUNT + 3 + 2];
+
+    uint32_t offset = 0;
+
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMAH) | (0 << 8);
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMAL) | (0 << 8);
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMM) | ((MAX7456_DMM_BIT_AUTO_INCREMENT) << 8);
+
+    for(uint32_t characterOffset = 0; characterOffset < totalScreenCharacters; characterOffset++) {
+        max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMDI | (screenBuffer[characterOffset] << 8));
+    }
+
+    // terminate auto-increment
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMDI) | (0xFF << 8);
+
+    // disable auto increment, enabled above.
+    max7456_screen[offset++] = (uint16_t)(MAX7456_REG_DMM) | (0x00 << 8);
+
+    max7456_writeDMA(&max7456_screen, NULL, offset * 2);
+
+    MAX7456_TIME_SECTION_END(1);
+}
+
+#else
+void max7456_writeScreen(textScreen_t *textScreen, TEXT_SCREEN_CHAR *screenBuffer)
 {
     ENABLE_MAX7456;
-
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
-    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_DMM_BIT_8BIT_ENABLE | MAX7456_DMM_BIT_AUTO_INCREMENT);
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAH); // set start address high
     spiTransferByte(MAX7456_SPI_INSTANCE, 0);
 
     spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMAL); // set start address low
     spiTransferByte(MAX7456_SPI_INSTANCE, 0);
+
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_REG_DMM);
+    spiTransferByte(MAX7456_SPI_INSTANCE, MAX7456_DMM_BIT_8BIT_ENABLE | MAX7456_DMM_BIT_AUTO_INCREMENT);
 
     //
     // It takes about 4600us to transfer the contents of the screen buffer via SPI to the MAX7456
@@ -493,7 +653,7 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
 
     for (int y = 0; y < textScreen->height; y++) {
         unsigned int rowOffset = (y * textScreen->width);
-        char *buffer = &screenBuffer[rowOffset];
+        TEXT_SCREEN_CHAR *buffer = &screenBuffer[rowOffset];
 
         if (y == 8) {
             MAX7456_TIME_SECTION_END(1);
@@ -501,9 +661,7 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
             max7456State.vSyncDetected = false;
         }
 
-        while (!max7456State.vSyncDetected) {
-            // Wait for VSYNC pulse and ISR to update the state.
-        }
+        max7456_waitForVSync();
 
         if (y == 0) {
             MAX7456_TIME_SECTION_BEGIN(1);
@@ -527,12 +685,8 @@ void max7456_writeScreen(textScreen_t *textScreen, char *screenBuffer)
     MAX7456_TIME_SECTION_END(2);
 
     DISABLE_MAX7456;
-
-
 }
-
-// show the entire font in the middle of the screen.
-
+#endif
 
 void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
 {
@@ -560,6 +714,9 @@ void max7456_setCharacterAtPosition(uint8_t x, uint8_t y, uint8_t c)
     DISABLE_MAX7456;
 }
 
+/**
+ * show the entire font in the middle of the screen.
+ */
 void max7456_showFont(void)
 {
     int c = 0, y = 2;

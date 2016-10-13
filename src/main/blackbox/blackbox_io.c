@@ -33,8 +33,6 @@
 #include "drivers/gyro_sync.h"
 #include "common/streambuf.h"
 
-
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "io/serial.h"
@@ -50,6 +48,8 @@
 #include "blackbox_io.h"
 
 #ifdef BLACKBOX
+
+extern uint32_t targetPidLooptime; // FIXME dependency on pid.h
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
@@ -588,7 +588,7 @@ bool blackboxDeviceOpen(void)
                  *                              = floor((looptime_ns * 3) / 500.0)
                  *                              = (looptime_ns * 3) / 500
                  */
-                blackboxMaxHeaderBytesPerIteration = constrain((targetLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
+                blackboxMaxHeaderBytesPerIteration = constrain((targetPidLooptime * 3) / 500, 1, BLACKBOX_TARGET_HEADER_BUDGET_PER_ITERATION);
 
                 return blackboxPort != NULL;
             }

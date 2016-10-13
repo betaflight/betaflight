@@ -38,6 +38,7 @@
 #define SPI2_CS_GPIO      GPIOB
 #define SPI2_CS_PIN       GPIO_Pin_12
 
+#define CUSTOM_FLASHCHIP
 #define M25P16_CS_GPIO        SPI1_CS_GPIO
 #define M25P16_CS_PIN         SPI1_CS_PIN
 #define M25P16_SPI_INSTANCE   SPI1
@@ -49,6 +50,21 @@
 #define MAX7456_NRST_GPIO_PERIPHERAL    RCC_APB2Periph_GPIOB
 #define MAX7456_NRST_GPIO               GPIOB
 #define MAX7456_NRST_PIN                Pin_2
+
+#define MAX7456_LOS_GPIO_PERIPHERAL     RCC_APB2Periph_GPIOC
+#define MAX7456_LOS_GPIO                GPIOC
+#define MAX7456_LOS_PIN                 Pin_13
+#define MAX7456_LOS_IO                  PC13
+
+#define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_APB2Periph_GPIOC
+#define MAX7456_VSYNC_GPIO              GPIOC
+#define MAX7456_VSYNC_PIN               Pin_14
+#define MAX7456_VSYNC_IO                PC14
+
+#define MAX7456_HSYNC_GPIO_PERIPHERAL   RCC_APB2Periph_GPIOC
+#define MAX7456_HSYNC_GPIO              GPIOC
+#define MAX7456_HSYNC_PIN               Pin_15
+#define MAX7456_HSYNC_IO                PC15
 
 #define EXTI_CALLBACK_HANDLER_COUNT 3 // LOS, HSYNC, VSYNC
 
@@ -68,25 +84,48 @@
 
 #define USE_MSP_CLIENT
 
+#define USE_EXTI
 #define USE_ADC
-//#define DEBUG_ADC_CHANNELS
+
+#define ADC_INSTANCE                ADC1
+#define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
 
 // 12v
-#define ADC1_GPIO               GPIOA
-#define ADC1_GPIO_PIN           GPIO_Pin_0
-#define ADC1_CHANNEL            ADC_Channel_0
+#define ADC0_GPIO               GPIOA
+#define ADC0_GPIO_PIN           GPIO_Pin_0
+#define ADC0_CHANNEL            ADC_Channel_0
 
 // 5v
+#define ADC1_GPIO               GPIOA
+#define ADC1_GPIO_PIN           GPIO_Pin_1
+#define ADC1_CHANNEL            ADC_Channel_1
+
+// vbat
 #define ADC2_GPIO               GPIOA
-#define ADC2_GPIO_PIN           GPIO_Pin_1
-#define ADC2_CHANNEL            ADC_Channel_1
+#define ADC2_GPIO_PIN           GPIO_Pin_2
+#define ADC2_CHANNEL            ADC_Channel_2
 
-//vbat
+// amperage
 #define ADC3_GPIO               GPIOA
-#define ADC3_GPIO_PIN           GPIO_Pin_2
-#define ADC3_CHANNEL            ADC_Channel_2
+#define ADC3_GPIO_PIN           GPIO_Pin_3
+#define ADC3_CHANNEL            ADC_Channel_3
 
-// current
-#define ADC4_GPIO               GPIOA
-#define ADC4_GPIO_PIN           GPIO_Pin_3
-#define ADC4_CHANNEL            ADC_Channel_3
+// adc channel mapping
+#define ADC_CHANNEL_COUNT 4
+
+#define ADC_POWER_12V ADC_CHANNEL0
+#define ADC_POWER_5V ADC_CHANNEL1
+#define ADC_BATTERY ADC_CHANNEL2
+#define ADC_AMPERAGE ADC_CHANNEL3
+
+#define MAX_VOLTAGE_METERS 3
+
+#define BOARD_HAS_AMPERAGE_METER
+
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
+

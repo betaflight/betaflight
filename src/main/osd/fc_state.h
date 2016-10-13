@@ -60,6 +60,9 @@ typedef struct fcStatus_s {
     uint16_t rssi;                   // rssi in 0.1% steps, 505 = 50.5%
     uint16_t amperage;               // amperage in 0.01A steps, 12575 = 125.75A
     uint16_t mAhDrawn;               // milliampere hours, 1300mAh
+
+    // calculated
+    uint32_t armedDuration;
 } fcStatus_t;
 
 extern fcStatus_t fcStatus;

@@ -11,7 +11,7 @@
 void initSmartPortTelemetry(void);
 
 void handleSmartPortTelemetry(void);
-void checkSmartPortTelemetryState(void);
+bool checkSmartPortTelemetryState(void);
 
 void configureSmartPortTelemetryPort(void);
 void freeSmartPortTelemetryPort(void);

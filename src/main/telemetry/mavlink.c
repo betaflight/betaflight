@@ -45,7 +45,6 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_rx.h"
 
-#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -60,6 +59,7 @@
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
+#include "../sensors/amperage.h"
 #include "sensors/battery.h"
 
 #include "rx/rx.h"
@@ -176,18 +176,20 @@ void configureMAVLinkTelemetryPort(void)
     mavlinkTelemetryEnabled = true;
 }
 
-void checkMAVLinkTelemetryState(void)
+bool checkMAVLinkTelemetryState(void)
 {
     bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
 
     if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
-        return;
+        return false;
     }
 
     if (newTelemetryEnabledValue)
         configureMAVLinkTelemetryPort();
     else
         freeMAVLinkTelemetryPort();
+
+    return true;
 }
 
 void mavlinkSendSystemStatus(void)
@@ -209,6 +211,8 @@ void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_MAG))  onboardControlAndSensors |=  4100;
     if (sensors(SENSOR_BARO)) onboardControlAndSensors |=  8200;
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
+
+    amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
     
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
         // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present. 
@@ -225,10 +229,10 @@ void mavlinkSendSystemStatus(void)
         0,
         // voltage_battery Battery voltage, in millivolts (1 = 1 millivolt)
         feature(FEATURE_VBAT) ? vbat * 100 : 0,
-        // current_battery Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
-        feature(FEATURE_VBAT) ? amperage : -1,
+        // current_battery Battery amperage, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current
+        feature(FEATURE_AMPERAGE_METER) ? amperageMeter->amperage : -1,
         // battery_remaining Remaining battery energy: (0%: 0, 100%: 100), -1: autopilot estimate the remaining battery
-        feature(FEATURE_VBAT) ? calculateBatteryPercentage() : 100,
+        feature(FEATURE_VBAT) ? batteryVoltagePercentage() : 100,
         // drop_rate_comm Communication drops in percent, (0%: 0, 100%: 10'000), (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)
         0,
         // errors_comm Communication errors (UART, I2C, SPI, CAN), dropped packets on all links (packets that were corrupted on reception on the MAV)

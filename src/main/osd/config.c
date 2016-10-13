@@ -31,51 +31,29 @@
 #include "config/config_eeprom.h"
 #include "config/feature.h"
 #include "config/profile.h"
-#include "config/config_reset.h"
-#include "config/config_system.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
+#include "osd/config.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
-#include "fc/rate_profile.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_adjustments.h"
-#include "fc/config.h"
-
-#include "io/beeper.h"
 #include "io/serial.h"
 
-#include "sensors/sensors.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
+#include "sensors/amperage.h"
 
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/pid.h"
-#include "flight/navigation.h"
-
-
-// FIXME remove the includes below when target specific configuration is moved out of this file
 #include "sensors/battery.h"
-#include "io/motor_and_servo.h"
-
-
-#ifndef DEFAULT_RX_FEATURE
-#define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
-#endif
-
 
 // Default settings
 STATIC_UNIT_TESTED void resetConf(void)
 {
     pgResetAll(MAX_PROFILE_COUNT);
+
+#ifdef BOARD_HAS_AMPERAGE_METER
+    batteryConfig()->amperageMeterSource = AMPERAGE_METER_ADC;
+#endif
+#ifdef DEFAULT_FEATURES
+    featureSet(DEFAULT_FEATURES);
+#endif
 }
 
 static void activateConfig(void)
@@ -96,7 +74,7 @@ static void validateAndFixConfig(void)
 void readEEPROM(void)
 {
     // Sanity check, read flash
-    if (!scanEEPROM(true)) {
+    if (!loadEEPROM()) {
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
@@ -109,18 +87,18 @@ void writeEEPROM(void)
     writeConfigToEEPROM();
 }
 
+void resetEEPROM(void)
+{
+    resetConf();
+    writeEEPROM();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
     resetEEPROM();
-}
-
-void resetEEPROM(void)
-{
-    resetConf();
-    writeEEPROM();
 }
 
 // FIXME stub out the profile code, unused in the OSD but the msp.c parameter group code still references getCurrentProfile

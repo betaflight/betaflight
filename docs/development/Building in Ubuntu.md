@@ -18,7 +18,7 @@ For your release, you should first remove any older pacakges (from Debian or Ubu
 Terry's PPA, and update:
 ```
 sudo apt-get remove binutils-arm-none-eabi gcc-arm-none-eabi
-sudo add-apt-repository ppa:terry.guo/gcc-arm-embedded
+sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
 sudo apt-get update
 ```
 

@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(void);
+bool sensorsAutodetect(uint16_t gyro_sample_hz);

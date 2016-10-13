@@ -59,8 +59,6 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -93,6 +91,7 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#define USE_UART1_TX_DMA
 #define UART1_TX_PIN        GPIO_Pin_4
 #define UART1_RX_PIN        GPIO_Pin_5
 #define UART1_GPIO          GPIOC
@@ -129,27 +128,34 @@
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
 #define USE_ADC
+#define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC1
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 
-#define BOARD_HAS_VOLTAGE_DIVIDER
-#define VBAT_ADC_GPIO               GPIOC
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_6
+#define ADC0_GPIO                   GPIOC
+#define ADC0_GPIO_PIN               GPIO_Pin_0
+#define ADC0_CHANNEL                ADC_Channel_6
 
-#define CURRENT_METER_ADC_GPIO      GPIOC
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_1
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_7
+#define ADC1_GPIO                   GPIOC
+#define ADC1_GPIO_PIN               GPIO_Pin_1
+#define ADC1_CHANNEL                ADC_Channel_7
 
-#define RSSI_ADC_GPIO               GPIOC
-#define RSSI_ADC_GPIO_PIN           GPIO_Pin_2
-#define RSSI_ADC_CHANNEL            ADC_Channel_8
+#define ADC2_GPIO                   GPIOC
+#define ADC2_GPIO_PIN               GPIO_Pin_2
+#define ADC2_CHANNEL                ADC_Channel_8
 
-#define EXTERNAL1_ADC_GPIO          GPIOC
-#define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_3
-#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_9
+#define ADC3_GPIO                   GPIOC
+#define ADC3_GPIO_PIN               GPIO_Pin_3
+#define ADC3_CHANNEL                ADC_Channel_9
+
+#define ADC_CHANNEL_COUNT 4
+
+#define ADC_BATTERY     ADC_CHANNEL0
+#define ADC_AMPERAGE     ADC_CHANNEL1
+#define ADC_RSSI        ADC_CHANNEL2
+#define ADC_EXTERNAL    ADC_CHANNEL3
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM16
@@ -164,7 +170,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1Channel3Descriptor
 
 
 // MPU6500 interrupt
@@ -184,4 +190,11 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI
+#define USE_EXTI
 
+// IO - assuming 303 in 64pin package, TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC 0xffff
+#define TARGET_IO_PORTD (BIT(2))
+#define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))

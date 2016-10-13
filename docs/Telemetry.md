@@ -48,8 +48,6 @@ Tmp1 : baro temp if available, gyro otherwise.
 
 RPM : if armed : throttle value, battery capacity otherwise. (Blade number needs to be set to 12 in Taranis).
 
-Cels : average cell value, vbat divided by cell number.
-
 VFAS : actual vbat value (see VFAS precision section bellow).
 
 Curr : actual current comsuption, in amp.
@@ -67,6 +65,23 @@ GSpd : current speed, calculated by GPS.
 GAlt : GPS altitude, sea level is zero.
 
 Tmp2 : number of sats. Every second, a number > 100 is sent to represent GPS signal quality.
+
+Cels : average cell value, vbat divided by cell number.
+
+> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
+> ```
+> set telemetry_send_cells = OFF
+> ```
+> 
+> Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ.
+>
+> To view individual cells or more importantly to get lowest cell (all cells are the sum of vbat, so each cell is the same in this case):
+> See [OpenTX 2.1 & FrSky FLVSS Individual Cell Voltages](http://openrcforums.com/forum/viewtopic.php?t=7266).
+> Add a new sensor, to display the lowest cell voltage set it up like this:
+> - Type: Calculated
+> - Formula: Cell
+> - Cell Sensor: Cels _(pack total voltage, sum of all cells)_
+> - Cell Index: Lowest
 
 ### Precision setting for VFAS
 
@@ -156,6 +171,8 @@ More information about the implementation can be found here: https://github.com/
 
 The following sensors are transmitted :
 
+A4 : average cell value. Warning : unlike FLVSS sensors, you do not get actual lowest value of a cell, but an average : (total lipo voltage) / (number of cells)
+
 Alt : barometer based altitude, init level is zero.
 
 Vspd : vertical speed, unit is cm/s.
@@ -185,6 +202,23 @@ GAlt : GPS altitude, sea level is zero.
 GSpd : current speed, calculated by GPS.
 
 GPS : GPS coordinates.
+
+Cels : average cell value, vbat divided by cell number.
+
+> Cleanflight will send Cels (FLVSS Individual Cell Voltages Telemetry), disable the setting to use actual FLVSS sensor with: 
+> ```
+> set telemetry_send_cells = OFF
+> ```
+> 
+> Note: cell voltage values are an assumed reputation of the cell voltage based on the packs voltage. Actual cell voltage may differ. It is recommeded that you chain the flight controllers telemetry with a real Frsky FLVSS s.port sensor.
+>
+> To view individual cells or more importantly to get lowest cell (all cells are the sum of vbat, so each cell is the same in this case):
+> See [OpenTX 2.1 & FrSky FLVSS Individual Cell Voltages](http://openrcforums.com/forum/viewtopic.php?t=7266).
+> Add a new sensor, to display the lowest cell voltage set it up like this:
+> - Type: Calculated
+> - Formula: Cell
+> - Cell Sensor: Cels _(pack total voltage, sum of all cells)_
+> - Cell Index: Lowest
 
 ### Integrate Cleanflight telemetry with FrSky Smartport sensors
 

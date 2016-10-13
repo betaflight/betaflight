@@ -17,12 +17,21 @@
 
 #pragma once
 
+#define GYRO_LPF_256HZ      0
+#define GYRO_LPF_188HZ      1
+#define GYRO_LPF_98HZ       2
+#define GYRO_LPF_42HZ       3
+#define GYRO_LPF_20HZ       4
+#define GYRO_LPF_10HZ       5
+#define GYRO_LPF_5HZ        6
+#define GYRO_LPF_NONE       7
+
 typedef struct gyro_s {
     sensorGyroInitFuncPtr init;                             // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
-    sensorIsDataReadyFuncPtr isDataReady;                   // check if sensor has new readings
     float scale;                                            // scalefactor
+    uint16_t sampleFrequencyHz;
 } gyro_t;
 
 typedef struct acc_s {

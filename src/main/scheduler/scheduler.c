@@ -34,6 +34,7 @@
 
 static cfTask_t *currentTask = NULL;
 
+//#define USE_REALTIME_GUARD_INTERVAL
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
 #define REALTIME_GUARD_INTERVAL_MARGIN  25
@@ -120,14 +121,17 @@ STATIC_INLINE_UNIT_TESTED cfTask_t *queueNext(void)
 
 void taskSystem(void)
 {
-    /* Calculate system load */
+    // Calculate system load
     if (totalWaitingTasksSamples > 0) {
         averageSystemLoadPercent = 100 * totalWaitingTasks / totalWaitingTasksSamples;
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
 
-    /* Calculate guard interval */
+    realtimeGuardInterval = 0;
+
+#ifdef USE_REALTIME_GUARD_INTERVAL
+    // Calculate guard interval
     uint32_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
@@ -138,6 +142,7 @@ void taskSystem(void)
     realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX) + REALTIME_GUARD_INTERVAL_MARGIN;
 #if defined SCHEDULER_DEBUG
     debug[2] = realtimeGuardInterval;
+#endif
 #endif
 }
 

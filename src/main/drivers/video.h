@@ -18,6 +18,7 @@
 #pragma once
 
 typedef enum {
-    VIDEO_NTSC = 0,
-    VIDEO_PAL = 1
+    VIDEO_AUTO = 0,
+    VIDEO_NTSC = 1,
+    VIDEO_PAL = 2
 } videoMode_e;

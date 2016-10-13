@@ -95,8 +95,8 @@ rgbColor24bpp_t hsvToRgb24(const hsvColor_t *c) {
 void ws2811LedStripHardwareInit(void) {}
 void ws2811LedStripDMAEnable(void) {}
 
-void dmaSetHandler(dmaHandlerIdentifier_e, dmaCallbackHandlerFuncPtr ) {}
-
+void dmaSetHandler(dmaChannel_t*, dmaCallbackHandler_t*, uint8_t ) {}
+void dmaHandlerInit(dmaCallbackHandler_t* handlerRec, dmaCallbackHandlerFunc* handler) {(void)handlerRec; (void)handler;}
 uint8_t DMA_GetFlagStatus(uint32_t) { return 0; }
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState ) {}
 void DMA_ClearFlag(uint32_t) {}

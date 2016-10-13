@@ -50,6 +50,8 @@
 
 #define SERIAL_PORT_COUNT 2
 
+#define USE_UART1_TX_DMA
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
@@ -57,10 +59,24 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
+#define USE_ADC
+
+#define ADC_INSTANCE                ADC1
+#define ADC_ABP2_PERIPHERAL         RCC_APB2Periph_ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+
+#define ADC0_GPIO                   GPIOA
+#define ADC0_GPIO_PIN               GPIO_Pin_4
+#define ADC0_CHANNEL                ADC_Channel_4
+
+#define ADC_CHANNEL_COUNT 1
+
+#define ADC_BATTERY     ADC_CHANNEL1
+
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 
 #define SERIAL_RX
-//#define USE_SERVOS
 #define USE_CLI
 
 #define SPEKTRUM_BIND
@@ -74,11 +90,20 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define GTUNE
 #else
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
+#define SKIP_PID_MWREWRITE
+#define SKIP_PID_MW23
+
+// FIXME temporary solution to at least get the build to pass
+#undef USE_CLI
+
 #endif
 
-//#undef USE_CLI
-//#define GTUNE
-//#define BLACKBOX
+
+// IO - assuming all IOs on 48pin package TODO
+#define TARGET_IO_PORTA 0xffff
+#define TARGET_IO_PORTB 0xffff
+#define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))

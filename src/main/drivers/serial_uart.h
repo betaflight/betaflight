@@ -49,6 +49,9 @@ typedef struct {
     uint32_t txDMAPeripheralBaseAddr;
     uint32_t rxDMAPeripheralBaseAddr;
 
+    dmaCallbackHandler_t    dmaTxHandler;
+    dmaCallbackHandler_t    dmaRxHandler;
+
     USART_TypeDef *USARTx;
 } uartPort_t;
 

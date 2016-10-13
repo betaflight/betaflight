@@ -24,13 +24,15 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+#include "build/atomic.h"
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "build/atomic.h"
 #include "common/maths.h"
 #include "common/printf.h"
 #include "common/streambuf.h"
+#include "common/filter.h"
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -61,17 +63,21 @@
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/exti.h"
+#include "drivers/io.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
 #include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
+#include "fc/fc_debug.h"
 
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/motor_and_servo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
@@ -88,6 +94,8 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
+#include "sensors/voltage.h"
+#include "sensors/amperage.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/initialisation.h"
@@ -124,7 +132,7 @@ void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
 void navigationInit(pidProfile_t *pidProfile);
-const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType);
+const sonarHardware_t *sonarGetHardwareConfiguration(amperageMeter_e amperageMeter);
 void sonarInit(const sonarHardware_t *sonarHardware);
 
 #ifdef STM32F303xC
@@ -143,6 +151,14 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .i2c_highspeed = 1,
 );
 
+#ifdef CUSTOM_FLASHCHIP
+PG_REGISTER(flashchipConfig_t, flashchipConfig, PG_DRIVER_FLASHCHIP_CONFIG, 0);
+PG_RESET_TEMPLATE(flashchipConfig_t, flashchipConfig,
+    .flashchip_id = 0,
+    .flashchip_nsect = 0,
+    .flashchip_pps = 0,
+);
+#endif
 
 typedef enum {
     SYSTEM_STATE_INITIALISING        = 0,
@@ -265,6 +281,16 @@ void init(void)
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+    debugMode = debugConfig()->debug_mode;
+
+#ifdef USE_EXTI
+    EXTIInit();
+#endif
+
 #ifdef ALIENFLIGHTF3
     if (hardwareRevision == AFF3_REV_1) {
         ledInit(false);
@@ -339,14 +365,14 @@ void init(void)
 
 #ifdef SONAR
     const sonarHardware_t *sonarHardware = NULL;
-
+    sonarGPIOConfig_t sonarGPIOConfig;
     if (feature(FEATURE_SONAR)) {
-        sonarHardware = sonarGetHardwareConfiguration(batteryConfig()->currentMeterType);
-        sonarGPIOConfig_t sonarGPIOConfig = {
-            .gpio = SONAR_GPIO,
-            .triggerPin = sonarHardware->echo_pin,
-            .echoPin = sonarHardware->trigger_pin,
-        };
+        bool usingCurrentMeterIOPins = (feature(FEATURE_AMPERAGE_METER) && batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC);
+        sonarHardware = sonarGetHardwareConfiguration(usingCurrentMeterIOPins);
+        sonarGPIOConfig.triggerGPIO = sonarHardware->trigger_gpio;
+        sonarGPIOConfig.triggerPin = sonarHardware->trigger_pin;
+        sonarGPIOConfig.echoGPIO = sonarHardware->echo_gpio;
+        sonarGPIOConfig.echoPin = sonarHardware->echo_pin;
         pwm_params.sonarGPIOConfig = &sonarGPIOConfig;
     }
 #endif
@@ -373,8 +399,8 @@ void init(void)
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.useCurrentMeterADC = (
-        feature(FEATURE_CURRENT_METER)
-        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC
+        feature(FEATURE_AMPERAGE_METER)
+        && batteryConfig()->amperageMeterSource == AMPERAGE_METER_ADC
     );
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
@@ -386,13 +412,13 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = motorAndServoConfig()->servoCenterPulse;
-    pwm_params.servoPwmRate = motorAndServoConfig()->servo_pwm_rate;
+    pwm_params.servoCenterPulse = servoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = servoConfig()->servo_pwm_rate;
 #endif
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = motorAndServoConfig()->motor_pwm_rate;
-    pwm_params.idlePulse = motorAndServoConfig()->mincommand;
+    pwm_params.motorPwmRate = motorConfig()->motor_pwm_rate;
+    pwm_params.idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = motor3DConfig()->neutral3d;
     if (pwm_params.motorPwmRate > 500)
@@ -480,16 +506,34 @@ void init(void)
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
 
-    adc_params.channelMask =
-            (feature(FEATURE_VBAT) << ADC_CHANNEL1_BIT)
-            | (feature(FEATURE_RSSI_ADC) << ADC_CHANNEL2_BIT)
-            | (feature(FEATURE_CURRENT_METER) << ADC_CHANNEL3_BIT);
+    adc_params.channelMask = 0;
+
+#ifdef ADC_BATTERY
+    adc_params.channelMask = (feature(FEATURE_VBAT) ? ADC_CHANNEL_MASK(ADC_BATTERY) : 0);
+#endif
+#ifdef ADC_RSSI
+    adc_params.channelMask |= (feature(FEATURE_RSSI_ADC) ? ADC_CHANNEL_MASK(ADC_RSSI) : 0);
+#endif
+#ifdef ADC_AMPERAGE
+    adc_params.channelMask |=  (feature(FEATURE_AMPERAGE_METER) ? ADC_CHANNEL_MASK(ADC_AMPERAGE) : 0);
+#endif
+
+#ifdef ADC_POWER_12V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_12V);
+#endif
+#ifdef ADC_POWER_5V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_5V);
+#endif
+#ifdef ADC_POWER_3V
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_3V);
+#endif
+
 #ifdef OLIMEXINO
-    adc_params.channelMask |= (1 << ADC_CHANNEL4_BIT);
+    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL);
 #endif
 #ifdef NAZE
     // optional ADC5 input on rev.5 hardware
-    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? (1 << ADC_CHANNEL4_BIT) : 0;
+    adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? ADC_CHANNEL_MASK(ADC_EXTERNAL) : 0;
 #endif
 
     adcInit(&adc_params);
@@ -503,9 +547,13 @@ void init(void)
     }
 #endif
 
-    gyroSetSampleRate(imuConfig()->looptime, gyroConfig()->gyro_lpf, imuConfig()->gyroSync, imuConfig()->gyroSyncDenominator);   // Set gyro sampling rate divider before initialization
+#ifdef NAZE
+    if (hardwareRevision < NAZE32_REV5) {
+        imuConfig()->gyro_sync = 0;
+    }
+#endif
 
-    if (!sensorsAutodetect()) {
+    if (!sensorsAutodetect(imuConfig()->gyro_sample_hz)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -514,19 +562,22 @@ void init(void)
 
     flashLedsAndBeep();
 
-#ifdef USE_SERVOS
-    mixerInitialiseServoFiltering(targetLooptime);
-#endif
+    mspInit();
+    mspSerialInit();
 
-#ifdef MAG
-    if (sensors(SENSOR_MAG))
-        compassInit();
+    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
+    imuConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
+
+    uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    pidSetTargetLooptime(pidPeriodUs * imuConfig()->pid_process_denom);
+    pidInitFilters(pidProfile());
+
+#ifdef USE_SERVOS
+    mixerInitialiseServoFiltering(targetPidLooptime);
 #endif
 
     imuInit();
 
-    mspInit();
-    mspSerialInit();
 
 #ifdef USE_CLI
     cliInit();
@@ -637,10 +688,17 @@ void init(void)
     serialPrint(loopbackPort, "LOOPBACK\r\n");
 #endif
 
-    // Now that everything has powered up the voltage and cell count be determined.
 
-    if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
+    if (feature(FEATURE_VBAT)) {
+        // Now that everything has powered up the voltage and cell count be determined.
+
+        voltageMeterInit();
         batteryInit();
+    }
+
+    if (feature(FEATURE_AMPERAGE_METER)) {
+        amperageMeterInit();
+    }
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
@@ -682,14 +740,24 @@ void configureScheduler(void)
 {
     schedulerInit();
     setTaskEnabled(TASK_SYSTEM, true);
-    setTaskEnabled(TASK_GYROPID, true);
-    rescheduleTask(TASK_GYROPID, imuConfig()->gyroSync ? targetLooptime - INTERRUPT_WAIT_TIME : targetLooptime);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+
+    uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    rescheduleTask(TASK_GYRO, gyroPeriodUs);
+    setTaskEnabled(TASK_GYRO, true);
+
+    rescheduleTask(TASK_PID, gyroPeriodUs);
+    setTaskEnabled(TASK_PID, true);
+
+    if (sensors(SENSOR_ACC)) {
+        setTaskEnabled(TASK_ACCEL, true);
+    }
+
+    setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
 #endif
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
+    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_AMPERAGE_METER));
     setTaskEnabled(TASK_RX, true);
 #ifdef GPS
     setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));

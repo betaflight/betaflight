@@ -32,6 +32,7 @@ extern "C" {
     #include "common/maths.h"
     #include "common/streambuf.h"
     #include "common/utils.h"
+    #include "common/filter.h"
 
     #include "config/parameter_group.h"
     #include "config/config_eeprom.h"
@@ -53,12 +54,13 @@ extern "C" {
     #include "io/gps.h"
     #include "io/gimbal.h"
     #include "io/ledstrip.h"
-    #include "io/motor_and_servo.h"
+    #include "io/motors.h"
     #include "io/transponder_ir.h"
     #include "io/serial.h"
 
     #include "msp/msp_protocol.h"
     #include "msp/msp.h"
+    #include "msp/msp_server.h"
     #include "msp/msp_serial.h"
 
     #include "telemetry/telemetry.h"
@@ -66,6 +68,8 @@ extern "C" {
 
     #include "sensors/sensors.h"
     #include "sensors/boardalignment.h"
+    #include "sensors/voltage.h"
+    #include "sensors/amperage.h"
     #include "sensors/battery.h"
     #include "sensors/acceleration.h"
     #include "sensors/barometer.h"
@@ -81,7 +85,6 @@ extern "C" {
     #include "config/parameter_group_ids.h"
     #include "fc/runtime_config.h"
     #include "config/profile.h"
-
 }
 
 #include "unittest_macros.h"
@@ -89,9 +92,13 @@ extern "C" {
 
 
 extern "C" {
-    PG_REGISTER(motorAndServoConfig_t, motorAndServoConfig, PG_MOTOR_AND_SERVO_CONFIG, 0);
+    PG_REGISTER(mspServerConfig_t, mspServerConfig, PG_MSP_SERVER_CONFIG, 0);
+    PG_REGISTER(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
     PG_REGISTER(sensorAlignmentConfig_t, sensorAlignmentConfig, PG_SENSOR_ALIGNMENT_CONFIG, 0);
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+    PG_REGISTER_ARR(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
+    PG_REGISTER_ARR(amperageMeterConfig_t, MAX_AMPERAGE_METERS, amperageMeterConfig, PG_AMPERAGE_METER_CONFIG, 0);
+
     PG_REGISTER(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
     PG_REGISTER(transponderConfig_t, transponderConfig, PG_TRANSPONDER_CONFIG, 0);
     PG_REGISTER(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
@@ -106,7 +113,7 @@ extern "C" {
     PG_REGISTER_ARR(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);
     PG_REGISTER_ARR(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, PG_COLOR_CONFIG, 0);
     PG_REGISTER_ARR(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
-    PG_REGISTER_ARR(specialColorIndexes_t, 1, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
+    PG_REGISTER(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
     PG_REGISTER(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
@@ -397,7 +404,7 @@ TEST_F(MspTest, TestMspCommands)
         MSP_MODE_RANGES,                // 34    //out message         Returns all mode ranges
         MSP_FEATURE,                    // 36
         MSP_BOARD_ALIGNMENT,            // 38
-        MSP_CURRENT_METER_CONFIG,       // 40
+        MSP_AMPERAGE_METER_CONFIG,       // 40
         MSP_MIXER,                      // 42
         MSP_RX_CONFIG,                  // 44
         MSP_LED_COLORS,                 // 46
@@ -412,7 +419,6 @@ TEST_F(MspTest, TestMspCommands)
         MSP_ARMING_CONFIG,              // 61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
         MSP_DATAFLASH_SUMMARY,          // 70 //out message - get description of dataflash chip
 //!! not tested       MSP_DATAFLASH_READ,             // 71 //out message - get content of dataflash chip
-        MSP_LOOP_TIME,                  // 73 //out message         Returns FC cycle time i.e looptime parameter
         MSP_FAILSAFE_CONFIG,            // 75 //out message         Returns FC Fail-Safe settings
         MSP_RXFAIL_CONFIG,              // 77 //out message         Returns RXFAIL settings
         MSP_SDCARD_SUMMARY,             // 79 //out message         Get the state of the SD card
@@ -457,7 +463,6 @@ TEST_F(MspTest, TestMspCommands)
 //!! not implemented in serial_msp.c       MSP_DEBUGMSG,            // 253    //out message         debug string buffer
         MSP_DEBUG,               // 254    //out message         debug1,debug2,debug3,debug4
         // Additional commands that are not compatible with MultiWii
-        MSP_STATUS_EX,           // 150    //out message         cycletime, errors_count, CPU load, sensor present etc
         MSP_UID,                 // 160    //out message         Unique device ID
         MSP_GPSSVINFO,           // 164    //out message         get Signal Strength (only U-Blox)
         MSP_ACC_TRIM,            // 240    //out message         get acc angle trim values
@@ -476,6 +481,8 @@ TEST_F(MspTest, TestMspCommands)
 
 // STUBS
 extern "C" {
+amperageMeter_t amperageMeter;
+voltageMeterState_t voltageMeter;
 //
 mspPostProcessFuncPtr mspPostProcessFn = NULL;
 // from acceleration.c
@@ -527,7 +534,7 @@ int32_t gyroADC[XYZ_AXIS_COUNT];
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 int16_t accSmooth[XYZ_AXIS_COUNT];
 // from ledstrip.c
-void reevalulateLedConfig(void) {}
+void reevaluateLedConfig(void) {}
 bool setModeColor(ledModeIndex_e , int , int ) { return true; }
 // from mixer.c
 int16_t motor[MAX_SUPPORTED_MOTORS];
@@ -537,8 +544,9 @@ void stopMotors(void) {}
 void loadCustomServoMixer(void) {}
 // from msp.c
 void rxMspFrameReceive(uint16_t *, int ) {}
-// from mw.c
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+// from cleanflight_fc.c
+uint16_t pidDeltaUs = 0;
+uint16_t gyroDeltaUs = 0;
 int16_t magHold;
 // from navigation.c
 int32_t GPS_home[2];
@@ -581,5 +589,9 @@ void serialSetMode(serialPort_t *, portMode_t) {}
 void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }
 bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
+
+amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
+batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }
+voltageMeterState_t *getVoltageMeter(uint8_t ) { return &voltageMeter; }
 }
 

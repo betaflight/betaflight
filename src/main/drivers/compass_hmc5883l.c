@@ -22,6 +22,9 @@
 #include <math.h>
 
 #include <platform.h>
+
+#ifdef USE_MAG_HMC5883
+
 #include "build/debug.h"
 
 #include "common/axis.h"
@@ -34,11 +37,10 @@
 #include "gpio.h"
 #include "bus_i2c.h"
 #include "light_led.h"
+#include "exti.h"
 
 #include "sensor.h"
 #include "compass.h"
-
-#include "sensors/sensors.h"
 
 #include "compass_hmc5883l.h"
 
@@ -122,14 +124,14 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 static const hmc5883Config_t *hmc5883Config = NULL;
 
-void MAG_DATA_READY_EXTI_Handler(void)
+#ifdef USE_MAG_DATA_READY_SIGNAL
+
+static IO_t intIO;
+static extiCallbackRec_t hmc5883_extiCallbackRec;
+
+void hmc5883_extiHandler(extiCallbackRec_t* cb)
 {
-    if (EXTI_GetITStatus(hmc5883Config->exti_line) == RESET) {
-        return;
-    }
-
-    EXTI_ClearITPendingBit(hmc5883Config->exti_line);
-
+    UNUSED(cb);
 #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
     // Measure the delta between calls to the interrupt handler
     // currently should be around 65/66 milli seconds / 15hz output rate
@@ -145,32 +147,16 @@ void MAG_DATA_READY_EXTI_Handler(void)
     lastCalledAt = now;
 #endif
 }
+#endif
 
 static void hmc5883lConfigureDataReadyInterruptHandling(void)
 {
 #ifdef USE_MAG_DATA_READY_SIGNAL
 
-    if (!(hmc5883Config->exti_port_source && hmc5883Config->exti_pin_source)) {
+    if (!(hmc5883Config->intIO)) {
         return;
     }
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
-
-#ifdef STM32F303xC
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-#ifdef STM32F10X
-    gpioExtiLineConfig(hmc5883Config->exti_port_source, hmc5883Config->exti_pin_source);
-#endif
-
-#ifdef STM32F303xC
-    gpioExtiLineConfig(hmc5883Config->exti_port_source, hmc5883Config->exti_pin_source);
-#endif
-
+    intIO = IOGetByTag(hmc5883Config->intIO);
 #ifdef ENSURE_MAG_DATA_READY_IS_HIGH
     uint8_t status = GPIO_ReadInputDataBit(hmc5883Config->gpioPort, hmc5883Config->gpioPin);
     if (!status) {
@@ -178,24 +164,9 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
     }
 #endif
 
-    registerExtiCallbackHandler(hmc5883Config->exti_irqn, MAG_DATA_READY_EXTI_Handler);
-
-    EXTI_ClearITPendingBit(hmc5883Config->exti_line);
-
-    EXTI_InitTypeDef EXTIInit;
-    EXTIInit.EXTI_Line = hmc5883Config->exti_line;
-    EXTIInit.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTIInit.EXTI_Trigger = EXTI_Trigger_Falling;
-    EXTIInit.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTIInit);
-
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    NVIC_InitStructure.NVIC_IRQChannel = hmc5883Config->exti_irqn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(NVIC_PRIO_MAG_DATA_READY);
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(NVIC_PRIO_MAG_DATA_READY);
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+    EXTIHandlerInit(&hmc5883_extiCallbackRec, hmc5883_extiHandler);
+    EXTIConfig(intIO, &hmc5883_extiCallbackRec, NVIC_PRIO_MAG_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(intIO, true);
 #endif
 }
 
@@ -216,10 +187,10 @@ bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
     return true;
 }
 
-void hmc5883lInit(void)
+#define INIT_MAX_FAILURES 5
+bool hmc5883lInit(void)
 {
-    int16_t magADC[3];
-    int i;
+    int16_t magADC[3] = { 0, 0, 0 };
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
     bool bret = true;           // Error indicator
 
@@ -250,47 +221,68 @@ void hmc5883lInit(void)
     delay(100);
     hmc5883lRead(magADC);
 
-    for (i = 0; i < 10; i++) {  // Collect 10 samples
+    int validSamples = 0;
+    int failedSamples = 0;
+    while (validSamples < 10 && failedSamples < INIT_MAX_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
-        hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
-
-        // Since the measurements are noisy, they should be averaged rather than taking the max.
-        xyz_total[X] += magADC[X];
-        xyz_total[Y] += magADC[Y];
-        xyz_total[Z] += magADC[Z];
-
-        // Detect saturation.
-        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+        if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.
+            ++validSamples;
+            // Since the measurements are noisy, they should be averaged rather than taking the max.
+            xyz_total[X] += magADC[X];
+            xyz_total[Y] += magADC[Y];
+            xyz_total[Z] += magADC[Z];
+            // Detect saturation.
+            if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+                bret = false;
+                break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+            }
+        } else {
+            ++failedSamples;
         }
         LED1_TOGGLE;
+    }
+    if (failedSamples >= INIT_MAX_FAILURES) {
+        bret = false;
     }
 
     // Apply the negative bias. (Same gain)
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
-    for (i = 0; i < 10; i++) {
+    validSamples = 0;
+    failedSamples = 0;
+    while (validSamples < 10 && failedSamples < INIT_MAX_FAILURES) { // Collect 10 samples
         i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
         delay(50);
-        hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
-
-        // Since the measurements are noisy, they should be averaged.
-        xyz_total[X] -= magADC[X];
-        xyz_total[Y] -= magADC[Y];
-        xyz_total[Z] -= magADC[Z];
-
-        // Detect saturation.
-        if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+        if (hmc5883lRead(magADC)) { // Get the raw values in case the scales have already been changed.
+            ++validSamples;
+            // Since the measurements are noisy, they should be averaged.
+            xyz_total[X] -= magADC[X];
+            xyz_total[Y] -= magADC[Y];
+            xyz_total[Z] -= magADC[Z];
+            // Detect saturation.
+            if (-4096 >= MIN(magADC[X], MIN(magADC[Y], magADC[Z]))) {
+                bret = false;
+                break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
+            }
+        } else {
+            ++failedSamples;
         }
         LED1_TOGGLE;
     }
+    if (failedSamples >= INIT_MAX_FAILURES) {
+        bret = false;
+    }
 
-    magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
-    magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
-    magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
+    if (bret) {
+        magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
+        magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
+        magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
+    } else {
+        // Something went wrong so get a best guess
+        magGain[X] = 1.0f;
+        magGain[Y] = 1.0f;
+        magGain[Z] = 1.0f;
+    }
 
     // leave test mode
     i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
@@ -298,13 +290,8 @@ void hmc5883lInit(void)
     i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
     delay(100);
 
-    if (!bret) {                // Something went wrong so get a best guess
-        magGain[X] = 1.0f;
-        magGain[Y] = 1.0f;
-        magGain[Z] = 1.0f;
-    }
-
     hmc5883lConfigureDataReadyInterruptHandling();
+    return bret;
 }
 
 bool hmc5883lRead(int16_t *magData)
@@ -323,3 +310,4 @@ bool hmc5883lRead(int16_t *magData)
 
     return true;
 }
+#endif

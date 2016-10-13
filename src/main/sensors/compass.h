@@ -36,15 +36,17 @@ typedef struct compassConfig_s {
 PG_DECLARE_PROFILE(compassConfig_t, compassConfig);
 
 
-#ifdef MAG
-void compassInit(void);
-void updateCompass(flightDynamicsTrims_t *magZero);
-#endif
+bool compassInit(void);
+union flightDynamicsTrims_u;
+void updateCompass(union flightDynamicsTrims_u *magZero);
 
-void recalculateMagneticDeclination(void);
 
 extern int32_t magADC[XYZ_AXIS_COUNT];
 
 extern sensor_align_e magAlign;
 extern mag_t mag;
+
+#ifdef GPS
+void recalculateMagneticDeclination(void);
 extern float magneticDeclination;
+#endif

@@ -32,6 +32,7 @@ These receivers are reported working:
 * FlySky/Turnigy FS-iA6B receiver for FS-i6 and FS-i10 transmitters
 
 
+
 ## Serial Receivers
 
 ### Spektrum
@@ -41,7 +42,7 @@ These receivers are reported working:
 These receivers are reported working:
 
 Lemon Rx DSMX Compatible PPM 8-Channel Receiver + Lemon DSMX Compatible Satellite with Failsafe
-http://www.lemon-rx.com/shop/index.php?route=product/product&product_id=118
+http://www.lemon-rx.com/index.php?route=product/product&product_id=118
 
 
 ### S.BUS
@@ -74,18 +75,39 @@ OpenTX 2.09, which is shipped on some Taranis X9D Plus transmitters, has a bug -
 The bug prevents use of all 16 channels.  Upgrade to the latest OpenTX version to allow correct reception of all 16 channels,
 without the fix you are limited to 8 channels regardless of the CH1-16/D16 settings.
 
+### SRXL (formerly XBUS) 
 
+(Serial Receiver Link Protocol)
+SRXL is an open data transfer protocol which allows to transport control data from a rc receiver to another device like a flybarless system 
+by only using one single line. This protocol has been established by SRXL.org based on the idea to create a freely available and unified protocol 
+that manufacturers can easily implement to their receivers and devices that process receiver data. The protocol does not describe an exact definition of 
+how the data must be processed. It only describes a framework in which receiver data can be packed. Each manufacturer can have his own ID, which must be 
+attached to the beginning of each data set, so that the device using this data can correctly identify and process the payload of the dataset.
 
-### XBUS
+Supported receivers:
 
-The firmware currently supports the MODE B version of the XBus protocol.
+#### Multiplex:
+All receivers with SRXL (also FLEXX receivers)
+
+####Gaupner / SJ HOTT:
+All receiver with SUMD support
+
+#### Spektrum:
+AR7700 / AR9020 receiver 
+
+#### JR:
+JR X-BUS
 Make sure to set your TX to use "MODE B" for XBUS in the TX menus!
 See here for info on JR's XBUS protocol: http://www.jrpropo.com/english/propo/XBus/
-
 These receivers are reported working:
 
 XG14 14ch DMSS System w/RG731BX XBus Receiver
 http://www.jramericas.com/233794/JRP00631/
+
+#### Jeti:
+Receivers with UDI output
+
+### XBUS MODE B RJ01
 
 There exist a remote receiver made for small BNF-models like the Align T-Rex 150 helicopter. The code also supports using the Align DMSS RJ01 receiver directly with the cleanflight software.
 To use this receiver you must power it with 3V from the hardware, and then connect the serial line as other serial RX receivers.
