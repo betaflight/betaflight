@@ -783,7 +783,7 @@ uint32_t gyroIntPeriod = 0;
 
 bool shouldProcessGyro(void)
 {
-    if (imuConfig()->gyro_sync) {
+    if (gyroConfig()->gyro_sync) {
         bool sync = gyroSyncIsDataReady();
         return sync;
     }
@@ -828,8 +828,8 @@ bool taskPidCheck(uint32_t currentDeltaTime)
     }
 
     bool shouldRunPid = false;
-    if (imuConfig()->gyro_sync) {
-        shouldRunPid = gyroReadyCounter >= imuConfig()->pid_process_denom;
+    if (gyroConfig()->gyro_sync) {
+        shouldRunPid = gyroReadyCounter >= gyroConfig()->pid_process_denom;
     }
     shouldRunPid |= currentDeltaTime >= targetPidLooptime;
 
