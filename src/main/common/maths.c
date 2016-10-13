@@ -339,10 +339,23 @@ fix12_t  qConstruct(int16_t num, int16_t den) {
 
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
 {
-    crc ^= a << 8;
+    crc ^= (uint16_t)a << 8;
     for (int ii = 0; ii < 8; ++ii) {
         if (crc & 0x8000) {
             crc = (crc << 1) ^ 0x1021;
+        } else {
+            crc = crc << 1;
+        }
+    }
+    return crc;
+}
+
+uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a)
+{
+    crc ^= a;
+    for (int ii = 0; ii < 8; ++ii) {
+        if (crc & 0x80) {
+            crc = (crc << 1) ^ 0xD5;
         } else {
             crc = crc << 1;
         }
