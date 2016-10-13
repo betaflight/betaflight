@@ -22,7 +22,6 @@
 
 #include "io.h"
 #include "timer.h"
-#include "pwm_mapping.h"
 #include "pwm_output.h"
 #include "nvic.h"
 #include "dma.h"
@@ -40,7 +39,7 @@
 
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-static motorDmaOutput_t dmaMotors[MAX_PWM_MOTORS];
+static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 uint8_t getTimerIndex(TIM_TypeDef *timer)
 {
