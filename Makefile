@@ -478,6 +478,9 @@ HIGHEND_SRC = \
             blackbox/blackbox_io.c \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
+            drivers/light_ws2811strip.c \
+            drivers/serial_softserial.c \
+            drivers/sonar_hcsr04.c \
             flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
@@ -520,7 +523,7 @@ STM32F10x_COMMON_SRC = \
             drivers/dma.c \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
-            drivers/serial_softserial.c \
+            drivers/light_ws2811strip_stm32f10x.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -542,15 +545,14 @@ STM32F4xx_COMMON_SRC = \
             target/system_stm32f4xx.c \
             drivers/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
-            drivers/adc_stm32f4xx.c \
             drivers/bus_i2c_stm32f10x.c \
+            drivers/dma_stm32f4xx.c \
             drivers/gpio_stm32f4xx.c \
             drivers/inverter.c \
-            drivers/serial_softserial.c \
+            drivers/light_ws2811strip_stm32f4xx.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
-            drivers/timer_stm32f4xx.c \
-            drivers/dma_stm32f4xx.c
+            drivers/timer_stm32f4xx.c
 
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
