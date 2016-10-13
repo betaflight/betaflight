@@ -74,7 +74,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
-#include "mavlink/common/mavlink.h"
+#include "common/mavlink.h"
 
 #include "fc/cleanflight_fc.h"
 
@@ -82,7 +82,7 @@
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "mavlink/common/mavlink.h"
+#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX

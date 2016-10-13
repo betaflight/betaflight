@@ -228,7 +228,9 @@ endif
 
 
 
-INCLUDE_DIRS := $(INCLUDE_DIRS) \
+INCLUDE_DIRS := \
+		    $(INCLUDE_DIRS) \
+		    $(ROOT)/lib/main/mavlink \
 		    $(TARGET_DIR)
 
 VPATH		:= $(VPATH):$(TARGET_DIR)
