@@ -4,7 +4,6 @@ FEATURES    = VCP ONBOARDFLASH
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
             drivers/accgyro_mpu6050.c \
-            drivers/serial_softserial.c \
             drivers/vtx_rtc6705.c \
             io/vtx.c
 

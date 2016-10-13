@@ -479,6 +479,7 @@ HIGHEND_SRC = \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
+            drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
             flight/gtune.c \
             flight/navigation.c \
@@ -523,7 +524,6 @@ STM32F10x_COMMON_SRC = \
             drivers/gpio_stm32f10x.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stm32f10x.c \
-            drivers/serial_softserial.c \
             drivers/serial_uart_stm32f10x.c \
             drivers/system_stm32f10x.c \
             drivers/timer_stm32f10x.c
@@ -550,7 +550,6 @@ STM32F4xx_COMMON_SRC = \
             drivers/gpio_stm32f4xx.c \
             drivers/inverter.c \
             drivers/light_ws2811strip_stm32f4xx.c \
-            drivers/serial_softserial.c \
             drivers/serial_uart_stm32f4xx.c \
             drivers/system_stm32f4xx.c \
             drivers/timer_stm32f4xx.c

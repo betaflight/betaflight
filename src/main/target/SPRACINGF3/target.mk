@@ -8,6 +8,5 @@ TARGET_SRC = \
             drivers/barometer_bmp085.c \
             drivers/barometer_bmp280.c \
             drivers/compass_ak8975.c \
-            drivers/compass_hmc5883l.c \
-            drivers/serial_softserial.c
+            drivers/compass_hmc5883l.c
 

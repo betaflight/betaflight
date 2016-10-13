@@ -7,6 +7,5 @@ TARGET_SRC = \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
             drivers/display_ug2864hsweg01.h \
-            drivers/flash_m25p16.c \
-            drivers/serial_softserial.c
+            drivers/flash_m25p16.c
 

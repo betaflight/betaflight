@@ -5,6 +5,5 @@ TARGET_FLAGS = -DSPRACINGF3
 TARGET_SRC = \
             drivers/accgyro_mpu.c \
             drivers/accgyro_mpu6050.c \
-            drivers/barometer_bmp280.c \
-            drivers/serial_softserial.c
+            drivers/barometer_bmp280.c
 

@@ -8,6 +8,5 @@ TARGET_SRC = \
             drivers/accgyro_spi_mpu6000.c \
             drivers/accgyro_mpu6500.c \
             drivers/accgyro_spi_mpu6500.c \
-            drivers/accgyro_spi_icm20689.c \
-            drivers/serial_softserial.c
+            drivers/accgyro_spi_icm20689.c
 
