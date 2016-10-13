@@ -86,8 +86,9 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
 }
 
-void l3gd20GyroInit(uint8_t lpf)
+static void l3gd20GyroInit(gyro_t *gyro, uint8_t lpf)
 {
+    UNUSED(gyro);
     UNUSED(lpf); // FIXME use it!
 
     l3gd20SpiInit(L3GD20_SPI);
