@@ -59,6 +59,10 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #endif
 
+#ifdef VTX_SMARTAUDIO
+#include "io/vtx_smartaudio.h"
+#endif
+
 #include "common/printf.h"
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -339,7 +343,7 @@ OSD_Entry menuLedstrip[] =
 };
 #endif // LED_STRIP
 
-#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+#if defined(VTX) || defined(USE_RTC6705)
 static const char * const vtxBandNames[] = {
     "BOSCAM A",
     "BOSCAM B",
@@ -356,19 +360,6 @@ OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
 OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 #endif // VTX
 
-#ifdef VTX_SMARTAUDIO
-static const char * const vtxSmartAudioPower[] = {
-    "OFF",
-    "PIT",
-    "25",
-    "200",
-    "500",
-    "800",
-};
-
-OSD_TAB_t entrySmartAudioPower = { &masterConfig.vtx_power, 5, &vtxSmartAudioPower[0] };
-#endif
-
 OSD_Entry menu_vtx[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL},
@@ -382,13 +373,60 @@ OSD_Entry menu_vtx[] =
 #ifdef USE_RTC6705
     {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power},
 #endif // USE_RTC6705
-#ifdef VTX_SMARTAUDIO
-    {"POWER", OME_TAB, NULL, &entrySmartAudioPower},
-#endif
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
-#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+#endif // VTX || USE_RTC6705
+
+#ifdef VTX_SMARTAUDIO
+static const char * const smartAudioBandNames[] = {
+    "--------",
+    "BOSCAM A",
+    "BOSCAM B",
+    "BOSCAM E",
+    "FATSHARK",
+    "RACEBAND",
+};
+OSD_TAB_t entrySmartAudioBand = { &smartAudioBand, 5, &smartAudioBandNames[0], NULL };
+
+static const char * const smartAudioChanNames[] = {
+    "-", "1", "2", "3", "4", "5", "6", "7", "8",
+};
+
+OSD_TAB_t entrySmartAudioChan = { &smartAudioChan, 8, &smartAudioChanNames[0], NULL };
+
+static const char * const smartAudioPowerNames[] = {
+    "---",
+    " 25",
+    "200",
+    "500",
+    "800",
+};
+
+OSD_TAB_t entrySmartAudioPower = { &smartAudioPower, 4, &smartAudioPowerNames[0]};
+
+static const char * const smartAudioModeNames[] = {
+    // Sync with SA_RFMODE_*
+    "------",
+    "ACTIVE",
+    "PIT-OR",
+    "PIT-IR",
+};
+
+OSD_TAB_t entrySmartAudioMode = { &smartAudioMode, 3, &smartAudioModeNames[0]};
+
+OSD_Entry menu_vtx[] =
+{
+    { "--- VTX ---", OME_Label, NULL, NULL },
+    { smartAudioStatusString, OME_Label, NULL, NULL },
+    { "RFMODE", OME_TAB, smartAudioSetModeByGvar, &entrySmartAudioMode },
+    { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand },
+    { "CHAN", OME_TAB, smartAudioConfigureChanByGvar, &entrySmartAudioChan },
+    { "POWER", OME_TAB, smartAudioConfigurePowerByGvar, &entrySmartAudioPower },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+#endif // SMARTAUDIO
 
 OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};

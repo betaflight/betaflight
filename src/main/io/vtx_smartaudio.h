@@ -1,14 +1,22 @@
 
 // For generic API use, but here for now
 
-typedef struct vtxPowerTable_s {
-    char    *name;
-    int16_t power;
-    int16_t value;
-} vtxPowerTable_t;
-
 bool smartAudioInit();
 void smartAudioProcess(uint32_t);
-void smartAudioSetPowerByIndex(uint8_t);
-void smartAudioSetFreq(uint16_t);
-void smartAudioSetBandChan(int, int);
+
+#ifdef OSD
+
+// API for BFOSD3.0
+
+char smartAudioStatusString[31];
+
+uint8_t smartAudioBand;
+uint8_t smartAudioChan;
+uint8_t smartAudioPower;
+uint8_t smartAudioMode;
+
+void smartAudioConfigureBandByGvar(void *);
+void smartAudioConfigureChanByGvar(void *);
+void smartAudioConfigurePowerByGvar(void *);
+void smartAudioSetModeByGvar(void *);
+#endif

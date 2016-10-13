@@ -620,10 +620,7 @@ void init(void)
 #endif
 
 #ifdef VTX_SMARTAUDIO
-    if (smartAudioInit()) {
-        smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
-        smartAudioSetPowerByIndex(masterConfig.vtx_power);
-    }
+    smartAudioInit();
 #endif
 
     // start all timers

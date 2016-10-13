@@ -6,18 +6,20 @@
 
 #ifdef VTX_SMARTAUDIO
 
+#include "common/printf.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 
+#include "build/build_config.h"
+
 #define SMARTAUDIO_EXTENDED_API
 
-//#define SMARTAUDIO_DPRINTF
+#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
-#include "common/printf.h"
 #define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
 serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
@@ -26,6 +28,10 @@ serialPort_t *debugSerialPort = NULL;
 #endif
 
 #include "build/debug.h"
+
+#ifdef OSD
+static void smartAudioUpdateStatusString(void); // Forward
+#endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
 
@@ -96,7 +102,38 @@ static uint8_t CRC8(uint8_t *data, int8_t len)
     return crc;
 }
 
-// Last received device states
+// The band/chan to frequency table
+// XXX Should really be consolidated among different vtx drivers
+static const uint16_t saFreqTable[5][8] =
+{
+    { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boacam A
+    { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
+    { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
+    { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
+    { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
+};
+
+typedef struct saPowerTable_s {
+    int rfpower;
+    int16_t valueV1;
+    int16_t valueV2;
+} saPowerTable_t;
+
+static saPowerTable_t saPowerTable[] = {
+    {  25,   7,   0 },
+    { 200,  16,   1 },
+    { 500,  25,   2 },
+    { 800,  40,   3 },
+};
+
+// Driver defined modes
+#define SA_RFMODE_NODEF         0
+#define SA_RFMODE_ACTIVE        1
+#define SA_RFMODE_PIT_INRANGE   2
+#define SA_RFMODE_PIT_OUTRANGE  3
+#define SA_RFMODE_OFF           4 // Should not be used with osd
+
+// Last received device ('hard') states
 
 static int8_t sa_vers = 0; // Will be set to 1 or 2
 static int8_t sa_chan = -1;
@@ -105,13 +142,6 @@ static int8_t sa_opmode = -1;
 static uint16_t sa_freq = 0;
 static uint16_t sa_pitfreq = 0;
 static bool sa_pitfreqpending = false;
-
-// A measure for osd.c that resets on exit:
-// masterConfig.{vtx_channel,vtx_power} can not be set at boot time,
-// but after a communication with the smartaudio device is established.
-// We remember here if channel and power is in sync with masterConfig.
-
-static bool sa_configSynced = false;
 
 static void smartAudioPrintSettings(void)
 {
@@ -147,6 +177,17 @@ static void smartAudioPrintSettings(void)
     osa_opmode = sa_opmode;
     osa_freq = sa_freq;
 #endif
+}
+
+static int saDacToPowerIndex(int dac)
+{
+    int idx;
+
+    for (idx = 0 ; idx < 4 ; idx++) {
+        if (saPowerTable[idx].valueV1 <= dac)
+            return(idx);
+    }
+    return(3);
 }
 
 // Autobauding
@@ -233,6 +274,18 @@ static void saProcessResponse(uint8_t *buf, int len)
         sa_freq = (buf[5] << 8)|buf[6];
 
         smartAudioPrintSettings();
+
+        smartAudioUpdateStatusString();
+
+        // Export current settings for BFOSD 3.0.0
+
+        smartAudioBand = (sa_chan / 8) + 1;
+        smartAudioChan = (sa_chan % 8) + 1;
+        if (sa_vers == 2) {
+            smartAudioPower = sa_power + 1; // XXX Take care V1
+        } else {
+            smartAudioPower = saDacToPowerIndex(sa_power) + 1;
+        }
 
 #ifdef SMARTAUDIO_DEBUG_MONITOR
         debug[0] = sa_vers * 100 + sa_opmode;
@@ -344,16 +397,38 @@ static void saSendFrame(uint8_t *buf, int len)
 {
     int i;
 
-    serialWrite(smartAudioSerialPort, 0x00);
+    serialWrite(smartAudioSerialPort, 0x00); // Generate 1st start bit
 
     for (i = 0 ; i < len ; i++)
         serialWrite(smartAudioSerialPort, buf[i]);
 
-    serialWrite(smartAudioSerialPort, 0x00);
+    serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
 
     sa_lastTransmission = millis();
     sa_pktsent++;
 }
+
+
+/*
+ * Retransmission and command queuing
+ *
+ *   The transport level support includes retransmission on response timeout
+ * and command queueing.
+ *
+ * Resend buffer:
+ *   The smartaudio returns response for valid command frames in no less
+ * than 60msec, which we can't wait. So there's a need for a resend buffer.
+ *
+ * Command queueing:
+ *   The driver autonomously sends GetSettings command for auto-bauding,
+ * asynchronous to user initiated commands; commands issued while another
+ * command is outstanding must be queued for later processing.
+ *   The queueing also handles the case in which multiple commands are
+ * required to implement a user level command, e.g., "Change RF power
+ * from PIT to 200mW" which requires (1) SetPower and (2) SetMode.
+ */
+
+// Retransmission
 
 static void saResendCmd(void)
 {
@@ -373,14 +448,14 @@ static void saSendCmd(uint8_t *buf, int len)
     saSendFrame(sa_osbuf, sa_oslen);
 }
 
-// Command transmission queue and management
+// Command queue management
 
 typedef struct saCmdQueue_s {
     uint8_t *buf;
     int len;
 } saCmdQueue_t;
 
-#define SA_QSIZE 4     // 2 should be enough
+#define SA_QSIZE 4     // 1 heartbeat (GetSettings) + 2 commands + 1 slack
 static saCmdQueue_t sa_queue[SA_QSIZE];
 static uint8_t sa_qhead = 0;
 static uint8_t sa_qtail = 0;
@@ -427,24 +502,6 @@ static void saSendQueue(void)
 
 // Individual commands
 
-vtxPowerTable_t saPowerTableV1[] = {
-    { " 25",  25,   7 },
-    { "200", 200,  16 },
-    { "500", 500,  25 },
-    { "800", 800,  40 },
-    { NULL }
-};
-
-vtxPowerTable_t saPowerTableV2[] = {
-    { "OFF",   0,  -2 },
-    { "PIT",   0,  -1 },
-    { " 25",  25,   0 },
-    { "200", 200,   1 },
-    { "500", 500,   2 },
-    { "800", 800,   3 },
-    { NULL }
-};
-
 void smartAudioGetSettings(void)
 {
     static uint8_t bufGetSettings[5] = {0xAA, 0x55, 0x03, 0x00, 0x9F};
@@ -481,9 +538,24 @@ void smartAudioSetFreqGetPit(void)
     sa_pitfreqpending = true;
 }
 
-uint16_t smartAudioGetFreq(void)
+bool smartAudioGetFreq(uint16_t *pFreq)
 {
-    return sa_freq;
+    if (sa_vers == 0)
+        return false;
+
+    *pFreq = sa_freq;
+    return true;
+}
+
+bool smartAudioGetBandChan(uint8_t *pBand, uint8_t *pChan)
+{
+    if (sa_vers == 0)
+        return false;
+
+    *pBand = sa_chan / 8;
+    *pChan = sa_chan % 8;
+
+    return true;
 }
 
 uint16_t smartAudioGetPitFreq(void)
@@ -492,7 +564,7 @@ uint16_t smartAudioGetPitFreq(void)
 }
 #endif
 
-void smartAudioSetBandChan(int band, int chan)
+void smartAudioSetBandChan(uint8_t band, uint8_t chan)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_CHAN), 1 };
 
@@ -502,8 +574,7 @@ void smartAudioSetBandChan(int band, int chan)
     saQueueCmd(buf, 6);
 }
 
-#ifdef SMARTAUDIO_EXTENDED_API
-void smartAudioSetMode(int mode)
+static void saSetMode(int mode)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
 
@@ -512,7 +583,6 @@ void smartAudioSetMode(int mode)
 
     saQueueCmd(buf, 6);
 }
-#endif
 
 void smartAudioSetPowerByIndex(uint8_t index)
 {
@@ -520,45 +590,31 @@ void smartAudioSetPowerByIndex(uint8_t index)
 
     dprintf(("smartAudioSetPowerByIndex: index %d\r\n", index));
 
-    if (sa_vers != 1 && sa_vers != 2) {
+    if (sa_vers == 0) {
         // Unknown or yet unknown version.
         return;
     }
 
-    if (index > 5)
+    if (index > 3)
         return;
 
-    if (sa_vers == 1) {
-        dprintf(("smartAudioSetPowerByIndex: V1 value %d\r\n", 
-            saPowerTableV1[index].value));
-        buf[4] = saPowerTableV1[index].value;
-        buf[5] = CRC8(buf, 5);
-        saQueueCmd(buf, 6);
-    } else {
-        int pwrval = saPowerTableV2[index].value;
-
-        dprintf(("smartAudioSetPowerByIndex: pwrval %d\n", pwrval));
-
-        if (pwrval >= 0) {
-            if (sa_opmode & SA_MODE_GET_PITMODE) {
-                // Currently in pit mode; have to deactivate and set power.
-            } else {
-                dprintf(("smartAudioSetPowerByIndex: V2 value %d\r\n", 
-                    saPowerTableV2[index].value));
-                buf[4] = saPowerTableV2[index].value;
-                buf[5] = CRC8(buf, 5);
-                saQueueCmd(buf, 6);
-                smartAudioSetMode(0x00); // Reset power off
-            }
-        } else if (pwrval == -1) {
-            // Pit mode
-            // Not implemented yet.
-        } else if (pwrval == -2) {
-            // Power off
-            // Not implemented yet.
-        }
-    }
+    buf[4] = (sa_vers == 1) ? saPowerTable[index].valueV1 : saPowerTable[index].valueV2;
+    buf[5] = CRC8(buf, 5);
+    saQueueCmd(buf, 6);
 }
+
+#if 0
+dup?
+void smartAudioConfigurePowerByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (smartAudioPower == 0)
+        return;
+
+    smartAudioSetPowerByIndex(smartAudioPower - 1);
+}
+#endif
 
 bool smartAudioInit()
 {
@@ -566,11 +622,10 @@ bool smartAudioInit()
     // Setup debugSerialPort
 
     debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
-    if (!debugSerialPort) {
-        return;
+    if (debugSerialPort) {
+        setPrintfSerialPort(debugSerialPort);
+        dprintf(("smartAudioInit: OK\r\n"));
     }
-    setPrintfSerialPort(debugSerialPort);
-    dprintf(("smartAudioInit: OK\r\n"));
 #endif
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
@@ -585,48 +640,15 @@ bool smartAudioInit()
     return true;
 }
 
-#ifdef SMARTAUDIO_EXTENDED_API
-bool smartAudioIsReady(void)
-{
-    return (sa_vers != 0);
-}
-
-int smartAudioGetPowerTable(int *pTableSize, vtxPowerTable_t **pTable)
-{
-    switch (sa_vers) {
-    case 0:
-        return -1;
-
-    case 1:
-        if (pTableSize)
-            *pTableSize = 4;
-
-        if (pTable)
-            *pTable = saPowerTableV1;
-
-        break;
-
-    case 2:
-        if (pTableSize)
-            *pTableSize = 5;
-
-        if (pTable)
-            *pTable = saPowerTableV2;
-    }
-
-    return 0;
-}
-#endif
-
 #ifdef SMARTAUDIO_PITMODE_DEBUG
 void smartAudioPitMode(void)
 {
     static int turn = 0;
 
     if ((turn++ % 2) == 0) {
-        smartAudioSetMode(SA_MODE_SET_UNLOCK|SA_MODE_SET_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
+        saSetMode(SA_MODE_SET_UNLOCK|SA_MODE_SET_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
     } else {
-        smartAudioSetMode(SA_MODE_SET_UNLOCK|SA_MODE_CLR_PITMODE);
+        saSetMode(SA_MODE_SET_UNLOCK|SA_MODE_CLR_PITMODE);
     }
 }
 #endif
@@ -641,27 +663,15 @@ void smartAudioProcess(uint32_t now)
         saReceiveFramer((uint16_t)c);
     }
 
-    // Evaluate baudrate after each frame reception
-
+    // Re-evaluate baudrate after each frame reception
     saAutobaud();
 
-    // If we haven't talked to the device, keep trying.
-
     if (sa_vers == 0) {
+        // If we haven't talked to the device, keep trying.
         smartAudioGetSettings();
         saSendQueue();
         return;
-    } else if (!sa_configSynced) {
-#if 0
-        // XXX Should take care of pit mode on boot case.
-        smartAudioSetPowerByIndex(masterConfig.vtx_power);
-        smartAudioSetBandChan(masterConfig.vtx_channel / 8, masterConfig.vtx_channel % 8);
-        saSendQueue();
-        sa_configSynced = true;
-#endif
     }
-
-    // 
 
     if ((sa_outstanding != SA_CMD_NONE)
             && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
@@ -687,19 +697,109 @@ void smartAudioProcess(uint32_t now)
     }
 }
 
-// Things to make it work for the first cut on v3.0.0
+// API for BFOSD3.0
 
-// This doesn't belong here, really.
-uint16_t current_vtx_channel;
+char smartAudioStatusString[31] = "- - ---- --- ----";
 
-// A table that's repeated over and over in every vtx code.
-const uint16_t vtx_freq[] =
+uint8_t smartAudioBand = 0;
+uint8_t smartAudioChan = 0;
+uint8_t smartAudioPower = 0;
+
+static void smartAudioUpdateStatusString(void)
 {
-    5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725, // Boacam A
-    5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866, // Boscam B
-    5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945, // Boscam E
-    5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880, // FatShark
-    5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917, // RaceBand
-};
+    if (sa_vers == 0)
+        return;
 
-#endif
+    tfp_sprintf(smartAudioStatusString, "%c %d %4d %3d %3s",
+        "ABEFR"[sa_chan / 8],
+        (sa_chan % 8) + 1,
+        saFreqTable[sa_chan / 8][sa_chan % 8],
+        (sa_vers == 2) ?  saPowerTable[sa_power].rfpower : saPowerTable[saDacToPowerIndex(sa_power)].rfpower,
+        "---");
+}
+
+void smartAudioConfigureBandByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (sa_vers == 0) {
+        // Bounce back
+        smartAudioBand = 0;
+        return;
+    }
+
+    if (smartAudioBand == 0) {
+        // Bounce back
+        smartAudioBand = 1;
+        return;
+    }
+
+    smartAudioSetBandChan(smartAudioBand - 1, smartAudioChan - 1);
+}
+
+void smartAudioConfigureChanByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (sa_vers == 0) {
+        // Bounce back
+        smartAudioChan = 0;
+        return;
+    }
+
+    if (smartAudioChan == 0) {
+        // Bounce back
+        smartAudioChan = 1;
+        return;
+    }
+
+    smartAudioSetBandChan(smartAudioBand - 1, smartAudioChan - 1);
+}
+
+void smartAudioConfigurePowerByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (sa_vers == 0) {
+        // Bounce back
+        smartAudioPower = 0;
+        return;
+    }
+
+    if (smartAudioPower == 0) {
+        // Bounce back
+        smartAudioPower = 1;
+        return;
+    }
+
+    smartAudioSetPowerByIndex(smartAudioPower - 1);
+}
+
+void smartAudioSetModeByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (sa_vers != 2) {
+        // Bounce back
+        smartAudioMode = SA_RFMODE_NODEF;
+        return;
+    }
+
+    if (smartAudioMode == 0) {
+        ++smartAudioMode;
+        return;
+    }
+
+    switch (smartAudioMode) {
+    case SA_RFMODE_ACTIVE:
+        saSetMode(SA_MODE_CLR_PITMODE);
+        break;
+
+    case SA_RFMODE_PIT_OUTRANGE:
+        break;
+
+    case SA_RFMODE_PIT_INRANGE:
+        break;
+    }
+}
+#endif // VTX_SMARTAUDIO
