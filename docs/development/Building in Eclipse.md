@@ -1,53 +1,131 @@
-# Short Version
-Install the latest Eclipse Standard/SDK and install the **C/C++ developments Tools** plugins
-![plugin eclipse](http://i.imgur.com/IdJ8ki1.png)
+# Building in Eclipse
 
-Import the project using the wizard **Existing Code as Makefile Project**
-![](http://i.imgur.com/XsVCwe2.png)
+How to build, test & debug Cleanflight in Eclipse on Linux, Windows & MacOS.
 
-Adjust your build option if necessary
-![](https://camo.githubusercontent.com/64a1d32400d6be64dd4b5d237df1e7f1b817f61b/687474703a2f2f692e696d6775722e636f6d2f6641306d30784d2e706e67)
+## Checklist
 
-Make sure you have a valid ARM toolchain in the path
-![](http://i.imgur.com/dAbscJo.png)
+Use this checklist to make sure you didn't miss a step. Versions mandated below are current and correct as of January 2016.
 
-# Long version
-* First you need an ARM toolchain. Good choices are **GCC ARM Embedded** (https://launchpad.net/gcc-arm-embedded) or **Yagarto** (http://www.yagarto.de).
-* Now download Eclipse and unpack it somewhere. At the time of writing Eclipse 4.2 was the latest stable version.
-* To work with ARM projects in Eclipse you need a few plugins:
-	+ **Eclipse C Development Tools** (CDT) (available via *Help > Install new Software*).
-	+ **Zylin Embedded CDT Plugin** (http://opensource.zylin.com/embeddedcdt.html).
-	 + name: Zylin-embedded CDT
-	 + location: http://opensource.zylin.com/zylincdt
-	+ **GNU ARM Eclipse** (http://sourceforge.net/projects/gnuarmeclipse/).
-	 + name: GNU ARM Eclipse Plug-ins
-	 + location: http://gnuarmeclipse.sourceforge.net/updates
-	+ If you want to hook up an SWD debugger you also need the **GDB Hardware Debugging** plugin (Also available via *Install new Software*).
-* Now clone the project to your harddrive.
-* Create a new C project in Eclipse and choose ARM Cross Target Application and your ARM toolchain.
-* Import the Git project into the C project in Eclipse via *File > Import > General > File System*.
-* Activate Git via *Project > Team > Share Project*.
-* Switch to the master branch in Eclipse (*Project > Team > Switch To > master*).
-* The next thing you need to do is adjust the project configuration. There is a Makefile included that works but you might want to use GNU ARM Eclipse's automatic Makefile generation. Open the Project configuration (Project > Properties) and go to *C/C++ Build > Settings*
-	* Under *Target Processor* choose "cortex-m3"
-	* Under *ARM Yagarto [Windows/Mac OS] Linker > General* (or whatever toolchain you chose)
-		+ Browse to the Script file *stm32_flash.ld*
-		+ Uncheck "Do not use standard start files"
-		+ Check "Remove unused sections"
-	* Under *ARM Yagarto [Windows/Mac OS] Linker > Libraries*
-		+ Add "m" for the math library
-	* Under *ARM Yagarto [Windows/Mac OS] Compiler > Preprocessor* add the following 2 items to "Defined Symbols":
-		+ STM32F10X_MD
-		+ USE_STDPERIPH_DRIVER
-	* Under *ARM Yagarto [Windows/Mac OS] Compiler > Directories* add the following 3 items
-		+ ${workspace_loc:/${ProjName}/lib/CMSIS/CM3/CoreSupport}
-		+ ${workspace_loc:/${ProjName}/lib/CMSIS/CM3/DeviceSupport/ST/STM32F10x}
-		+ ${workspace_loc:/${ProjName}/lib/STM32F10x_StdPeriph_Driver/inc}
-	* Under *ARM Yagarto [Windows/Mac OS] Compiler > Miscellaneous* add the following item to "Other flags":
-		+ -fomit-frame-pointer
-* The code in the support directory is for uploading firmware to the board and is meant for your host machine. Hence, it must not be included in the build process. Just right-click on it to open its properties and choose "Exclude from build" under *C/C++ Build > Settings*
-* The last thing you need to do is adding your toolchain to the PATH environment variable.
-	+ Go to *Project > Properties > C/C++ Build > Environment*, add a variable named "PATH" and fill in the full path of your toolchain's binaries.
-	+ Make sure "Append variables to native environment" is selected.		   
-* Try to build the project via *Project > Build Project*.
-* **Note**: If you're getting "...could not be resolved" errors for data types like int32_t etc. try to disable and re-enable the Indexer under *Project > Properties > C/C++ General > Indexer*.
+- [ ] [Download and Install](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) the latest (currently 1.8) 64bit Oracle JDK [read more](#install-the-jdk)
+- [ ] [Download and Install](https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/lunasr2) Eclipse Luna (4.4) 64bit CDT edition, **NB:** not Mars or Neon [read more](#install-eclipse)
+- [ ] [Download and Install](https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q3-update) the GCC ARM Embedded toolchain 4.9-2015-q3-update [read more](#install-arm-toolchain)
+ - [ ] *Windows platform only:* [Download and Install](https://github.com/gnuarmeclipse/windows-build-tools/releases) the latest GNU ARM Eclipse Windows Build Tools
+ - [ ] *Windows platform only:* Download and Install either [Cygwin](http://cygwin.com/install.html) or [MinGW MSYS](http://sourceforge.net/projects/mingw/files/latest/download)
+- [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/openocd/releases) the latest GNU ARM Eclipse OpenOCD [read more](#install-openocd)
+ - [ ] *Linux platform only:* [Configure UDEV](http://gnuarmeclipse.github.io/openocd/install/#udev) to recognise USB JTAG probes
+ - [ ] *Windows platform only:* [Download and Install](http://www.st.com/web/en/catalog/tools/FM147/SC1887/PF260219) the ST-Link / ST-LinkV2 drivers. These drivers do work on Windows 10 even if not yet mentioned by ST.
+- [ ] Optionally [Download and Install](https://github.com/gnuarmeclipse/qemu/releases) the latest GNU ARM Eclipse QEMU [read more](#install-qemu)
+- [ ] Add a new update site to Eclipse named "GNU ARM Eclipse Plugins" with the URL "http://gnuarmeclipse.sourceforge.net/updates" and install all the features offered
+- [ ] Configure [the recommended workspace settings](http://gnuarmeclipse.github.io/eclipse/workspace/preferences/)
+- [ ] Checkout the cleanflight source code [read more](#checkout-cleanflight)
+ - [ ] *Windows platform only:* Add the msys or cygwin bin directory to the project path
+- [ ] Build the code by going to *Project menu -> Build All* [read more](#build)
+- [ ] Run the tests by creating and running a make target named "test"
+- [ ] Configure debugging [read more](#configure-debugging)
+
+## Extended Notes
+
+### Install the JDK
+
+The [minimum JDK version](http://gnuarmeclipse.github.io/plugins/install/#java) supported by GNU Arm Eclipse is 1.7 but the current latest, 1.8, is recommended instead. While Oracle JDK is the recommended version, [they do also support](http://gnuarmeclipse.github.io/plugins/install/#java) the OpenJDK.
+
+### Install Eclipse
+
+Eclipse Luna v4.4 is the preferred version for GNU Arm Tools currently. The minimum Eclipse version is Kepler 4.3. The maximum is Mars 4.5 although it is not tested by GNU Arm Eclipse and some things are [known to be broken](http://gnuarmeclipse.github.io/plugins/install/#eclipse--cdt). Eclipse Neon is currently not released.
+
+CDT v8.6.0, as shipped in the Eclipse Luna CDT download, is recommended. The minimum CDT version is 8.3.
+
+The 64bit Eclipse is preferred but a 32bit Eclipse can be used; ensure you run it on a 32bit JDK.
+
+### Install ARM Toolchain
+
+The minimum version is 4.8-2014-q2. The maximum, and currently recommended version, is 4_9-2015q3.
+
+GNU ARM Tools recommends that you don't add the toolchain to your path environment variable. This means you can install multiple versions of the toolchain without conflict. If you'll install only one version, it can make life easier when working outside Eclipse to add it to your path.
+
+Retain the default installation directories so that the GNU ARM Plugins can locate the toolchain.
+
+### Install OpenOCD
+
+You should install OpenOCD If you will be debugging on real hardware, such as the STM32F3DISCOVERY dev board. It is not required to simply build Cleanflight or run the tests.
+
+### Install QEMU
+
+No tests currently run on the QEMU emulator therefore this install is entirely optional. It is useful to test your installation, since you can compile and run a blinky demo.
+
+### Checkout Cleanflight
+
+If you'll be submitting changes to cleanflight, [fork the repository](https://help.github.com/articles/fork-a-repo/) on GitHub and checkout your copy.
+
+In Eclipse go to *File -> Import* choose *Git -> Projects from Git*
+
+![projects from git](assets/building-in-eclipse/checkout-cleanflight-001.PNG)
+
+Choose *Clone URI*
+
+![clone uri](assets/building-in-eclipse/checkout-cleanflight-002.PNG)
+
+Enter the URI https://github.com/cleanflight/cleanflight or if you've forked the repo, enter your URI instead. With a fork, you will need to specify your authentication details
+
+![enter uri](assets/building-in-eclipse/checkout-cleanflight-003.PNG)
+
+On the branch selection dialog, de-select all branches and select only *master*
+
+![choose branches to clone](assets/building-in-eclipse/checkout-cleanflight-004.PNG)
+
+Select the default destination directory
+
+![destination](assets/building-in-eclipse/checkout-cleanflight-005.PNG)
+
+When the download completes, choose *Use the New Project wizard* and click Finish
+
+![finish](assets/building-in-eclipse/checkout-cleanflight-006.PNG)
+
+Choose *C/C++ -> Makefile Project with Existing Code*
+
+![makefile project](assets/building-in-eclipse/checkout-cleanflight-007.PNG)
+
+Enter cleanflight as the project name and browse to your home directory -> git -> cleanflight for the existing code location. Ensure the C (cleanflight) and C++ (tests) languages are checked. Choose the Cross ARM GCC toolchain for the Indexer Settings. Click finish.
+
+![finish checkout](assets/building-in-eclipse/checkout-cleanflight-008.PNG)
+
+Set your build and debug targets by going to project properties -> C/C++ Build and choose the Behaviour tab. Replace "all" in the build box with "TARGET=xxx DEBUG=GDB" where xxx is your platform such as NAZE
+
+![build](assets/building-in-eclipse/checkout-cleanflight-012.PNG)
+
+On Windows only, add msys or cygwin bin directory to the project's path by right clicking the project and choosing properties
+
+![properties](assets/building-in-eclipse/checkout-cleanflight-009.PNG)
+
+Edit the path variable in *C/C++ Build -> Environment*
+
+![edit path](assets/building-in-eclipse/checkout-cleanflight-010.PNG)
+
+Append the full path to the relevant bin dir
+
+![append bin dir](assets/building-in-eclipse/checkout-cleanflight-011.PNG)
+
+### Build
+
+Choose project -> build all
+
+![build all](assets/building-in-eclipse/checkout-cleanflight-013.PNG)
+
+### Configure Debugging
+
+Choose debug -> debug configurations
+
+![debug configurations](assets/building-in-eclipse/checkout-cleanflight-014.PNG)
+
+Create a new OpenOCD configuration for the obj\main\cleanflight_XXX.elf application (this file is generated by the build step above)
+
+![debug configurations](assets/building-in-eclipse/checkout-cleanflight-015.PNG)
+
+Add the appropriate openocd board configuration parameter for your dev platform
+
+![openocd target](assets/building-in-eclipse/checkout-cleanflight-016.PNG)
+
+Add the target to your debug menu favourites
+
+![debug favs](assets/building-in-eclipse/checkout-cleanflight-017.PNG)
+
