@@ -58,6 +58,54 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 };
 
+/* 
+    need a mapping from dma and timers to pins, and the values should all be set here to the dmaMotors array.
+    this mapping could be used for both these motors and for led strip.
+    
+    only certain pins have OC output (already used in normal PWM et al) but then 
+    there are only certain DMA streams/channels available for certain timers and channels.
+     *** (this may highlight some hardware limitations on some targets) ***
+
+    DMA1
+    
+    Channel Stream0     Stream1     Stream2     Stream3     Stream4     Stream5     Stream6     Stream7
+    0       
+    1
+    2       TIM4_CH1                            TIM4_CH2                                        TIM4_CH3
+    3                   TIM2_CH3                                        TIM2_CH1    TIM2_CH1    TIM2_CH4
+                                                                                    TIM2_CH4
+    4
+    5                               TIM3_CH4                TIM3_CH1    TIM3_CH2                TIM3_CH3
+    6       TIM5_CH3    TIM5_CH4    TIM5_CH1    TIM5_CH4    TIM5_CH2
+    7  
+    
+    DMA2
+    
+    Channel Stream0     Stream1     Stream2     Stream3     Stream4     Stream5     Stream6     Stream7
+    0                               TIM8_CH1                                        TIM1_CH1
+                                    TIM8_CH2                                        TIM1_CH2
+                                    TIM8_CH3                                        TIM1_CH3
+    1
+    2
+    3
+    4
+    5
+    6       TIM1_CH1    TIM1_CH2    TIM1_CH1                TIM1_CH4                TIM1_CH3
+    7                   TIM8_CH1    TIM8_CH2    TIM8_CH3                                        TIM8_CH4
+*/
+
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+#if defined (STM32F40_41xxx)
+    if (tim == TIM8) return 1; 
+#endif
+    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
+        return 1;
+    } else {
+        return 2;
+    }   
+}
+
 void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t TIM_OCMode)
 {
     uint32_t tmp = 0;

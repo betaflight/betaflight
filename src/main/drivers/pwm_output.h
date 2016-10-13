@@ -26,10 +26,12 @@ typedef enum {
     PWM_TYPE_ONESHOT125,
     PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
-    PWM_TYPE_BRUSHED
+    PWM_TYPE_BRUSHED,
+    PWM_TYPE_DSHOT600,
+    PWM_TYPE_DSHOT150
 } motorPwmProtocolTypes_e;
 
-#define PWM_TIMER_MHZ 1
+#define PWM_TIMER_MHZ         1
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
@@ -43,8 +45,28 @@ typedef enum {
 #define PWM_BRUSHED_TIMER_MHZ 24
 #endif
 
+#define MOTOR_DMA_BUFFER_SIZE 18 /* resolution + frame reset (2us) */
+
+typedef struct {
+    TIM_TypeDef *timer;
+    uint16_t timerDmaSources;
+} motorDmaTimer_t;
+
+typedef struct {
+    ioTag_t ioTag;
+    const timerHardware_t *timerHardware;
+    uint16_t value;
+    uint16_t timerDmaSource;
+#if defined(STM32F4)
+    uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
+#else
+    uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
+#endif
+} motorDmaOutput_t;
+
 struct timerHardware_s;
 typedef void(*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
+typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointer used after motors are written
 
 typedef struct {
     volatile timCCR_t *ccr;
@@ -60,13 +82,20 @@ void servoInit(const servoConfig_t *servoConfig);
 
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
+#ifdef USE_DSHOT
+void pwmWriteDigital(uint8_t index, uint16_t value);
+void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType);
+void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
+#endif
+
 void pwmWriteMotor(uint8_t index, uint16_t value);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
+void pwmCompleteMotorUpdate(uint8_t motorCount);
 
 void pwmWriteServo(uint8_t index, uint16_t value);
 
-pwmOutputPort_t *pwmGetMotors();
+pwmOutputPort_t *pwmGetMotors(void);
+bool pwmIsSynced(void);
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
 

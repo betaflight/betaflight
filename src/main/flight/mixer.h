@@ -20,6 +20,8 @@
 #define MAX_SUPPORTED_MOTORS 12
 #define MAX_SUPPORTED_SERVOS 8
 
+#define QUAD_MOTOR_COUNT 4
+
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
 {
@@ -213,7 +215,7 @@ int servoDirection(int servoIndex, int fromChannel);
 #endif
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 
-void mixerUsePWMOutputConfiguration(bool use_unsyncedPwm);
+void mixerConfigureOutput(void);
 
 void mixerResetDisarmedMotors(void);
 void mixTable(void *pidProfilePtr);
