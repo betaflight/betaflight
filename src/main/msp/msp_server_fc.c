@@ -611,7 +611,6 @@ static uint32_t packFlightModeFlags(void)
 static bool processOutCommand(uint8_t cmdMSP)
 {
     uint32_t i;
-    const unsigned int dataSize = currentPort->dataSize;
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -1158,11 +1157,11 @@ static bool processOutCommand(uint8_t cmdMSP)
             uint32_t readAddress = read32();
             uint16_t readLength;
             bool useLegacyFormat;
-            if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+            if (currentPort->dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
                 readLength = read16();
                 useLegacyFormat = false;
             } else {
-                readLength = 128; 
+                readLength = 128;
                 useLegacyFormat = true;
             }
 
@@ -1969,4 +1968,3 @@ bool mspProcessReceivedData(mspPort_t *mspPort, uint8_t c)
     }
     return true;
 }
-
