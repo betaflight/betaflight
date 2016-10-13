@@ -99,10 +99,12 @@ static void taskHandleSerial(uint32_t currentTime)
     mspSerialProcess();
 }
 
+#ifdef BEEPER
 static void taskUpdateBeeper(uint32_t currentTime)
 {
     beeperUpdate(currentTime);          //call periodic beeper handler
 }
+#endif
 
 static void taskUpdateBattery(uint32_t currentTime)
 {
@@ -489,5 +491,3 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 };
-
-
