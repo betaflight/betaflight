@@ -1023,11 +1023,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_ADVANCED_CONFIG:
-        sbufWriteU8(dst, masterConfig.gyroSync);
         sbufWriteU8(dst, masterConfig.gyroSyncDenominator);
+        sbufWriteU8(dst, 1);    // BF: masterConfig.pid_process_denom
+        sbufWriteU8(dst, 1);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         sbufWriteU8(dst, masterConfig.motorConfig.motorPwmProtocol);
         sbufWriteU16(dst, masterConfig.motorConfig.motorPwmRate);
         sbufWriteU16(dst, masterConfig.servoConfig.servoPwmRate);
+        sbufWriteU8(dst, masterConfig.gyroSync);
         break;
 
     case MSP_REBOOT:
@@ -1307,11 +1309,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        masterConfig.gyroSync = sbufReadU8(src);
         masterConfig.gyroSyncDenominator = sbufReadU8(src);
+        sbufReadU8(src);    // BF: masterConfig.pid_process_denom
+        sbufReadU8(src);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         masterConfig.motorConfig.motorPwmProtocol = sbufReadU8(src);
         masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
         masterConfig.servoConfig.servoPwmRate = sbufReadU16(src);
+        masterConfig.gyroSync = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:
