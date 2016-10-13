@@ -48,7 +48,10 @@ typedef enum {
     BAUD_115200,
     BAUD_230400,
     BAUD_250000,
+    BAUD_400000,
+    BAUD_460800,
     BAUD_500000,
+    BAUD_921600,
     BAUD_1000000,
 } baudRate_e;
 
