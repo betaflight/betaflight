@@ -53,41 +53,6 @@
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
-static void ibusDataReceive(uint16_t c);
-static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    UNUSED(rxConfig);
-
-    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
-
-    rxRuntimeConfig->rcReadRawFunc = ibusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = ibusFrameStatus;
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = ibusPort;
-    }
-#endif
-
-    return ibusPort != NULL;
-}
-
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
 
 // Receive ISR callback
@@ -148,5 +113,37 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 {
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
+}
+
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
+
+    rxRuntimeConfig->rcReadRawFunc = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = ibusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = ibusPort;
+    }
+#endif
+
+    return ibusPort != NULL;
 }
 #endif
