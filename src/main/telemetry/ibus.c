@@ -369,7 +369,7 @@ void handleIbusTelemetry(void)
 
         if (outboundBytesToIgnoreOnRxCount) {
             outboundBytesToIgnoreOnRxCount--;
-            return;
+            continue;
         }
 
         pushOntoTail(ibusReceiveBuffer, IBUS_RX_BUF_LEN, c);
