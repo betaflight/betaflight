@@ -1015,10 +1015,19 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         sbufWriteU8(dst, currentProfile->rcControlsConfig.alt_hold_deadband);
         sbufWriteU16(dst, masterConfig.flight3DConfig.deadband3d_throttle);
         break;
+
     case MSP_SENSOR_ALIGNMENT:
         sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.gyro_align);
         sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.acc_align);
         sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.mag_align);
+        break;
+
+    case MSP_ADVANCED_CONFIG:
+        sbufWriteU8(dst, masterConfig.gyroSync);
+        sbufWriteU8(dst, masterConfig.gyroSyncDenominator);
+        sbufWriteU8(dst, masterConfig.motorConfig.motorPwmProtocol);
+        sbufWriteU16(dst, masterConfig.motorConfig.motorPwmRate);
+        sbufWriteU16(dst, masterConfig.servoConfig.servoPwmRate);
         break;
 
     case MSP_REBOOT:
@@ -1295,6 +1304,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.sensorAlignmentConfig.gyro_align = sbufReadU8(src);
         masterConfig.sensorAlignmentConfig.acc_align = sbufReadU8(src);
         masterConfig.sensorAlignmentConfig.mag_align = sbufReadU8(src);
+        break;
+
+    case MSP_SET_ADVANCED_CONFIG:
+        masterConfig.gyroSync = sbufReadU8(src);
+        masterConfig.gyroSyncDenominator = sbufReadU8(src);
+        masterConfig.motorConfig.motorPwmProtocol = sbufReadU8(src);
+        masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
+        masterConfig.servoConfig.servoPwmRate = sbufReadU16(src);
         break;
 
     case MSP_RESET_CONF:
