@@ -92,6 +92,7 @@ void I2C2_EV_IRQHandler(void)
 static volatile uint16_t i2cErrorCount = 0;
 
 static volatile bool error = false;
+static volatile bool busError = false;
 static volatile bool busy;
 
 static volatile uint8_t addr;
@@ -105,8 +106,12 @@ static volatile uint8_t* read_p;
 static bool i2cHandleHardwareFailure(void)
 {
     i2cErrorCount++;
+
     // reinit peripheral + clock out garbage
-    i2cInit(I2Cx_index);
+    if (busError) {
+        i2cInit(I2Cx_index);
+    }
+
     return false;
 }
 
@@ -123,6 +128,7 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
     bytes = len_;
     busy = 1;
     error = false;
+    busError = false;
 
     if (!I2Cx)
         return false;
@@ -140,11 +146,11 @@ bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 
     timeout = I2C_DEFAULT_TIMEOUT;
     while (busy && --timeout > 0) { ; }
-    if (error || timeout == 0) {
+    if (timeout == 0) {
         return i2cHandleHardwareFailure();
     }
 
-    return true;
+    return !error;
 }
 
 bool i2cWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
@@ -165,6 +171,7 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
     bytes = len;
     busy = 1;
     error = false;
+    busError = false;
 
     if (!I2Cx)
         return false;
@@ -181,10 +188,10 @@ bool i2cRead(uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 
     timeout = I2C_DEFAULT_TIMEOUT;
     while (busy && --timeout > 0) { ; }
-    if (error || timeout == 0)
+    if (timeout == 0)
         return i2cHandleHardwareFailure();
 
-    return true;
+    return !error;
 }
 
 static void i2c_er_handler(void)
@@ -194,6 +201,10 @@ static void i2c_er_handler(void)
 
     if (SR1Register & 0x0F00) {                                         // an error
         error = true;
+
+        // Only re-initialise bus if bus error indicated, don't reset bus when ARLO or AF
+        if (SR1Register & I2C_SR1_BERR)
+            busError = true;
     }
 
     // If AF, BERR or ARLO, abandon the current job and commence new if there are jobs
@@ -394,26 +405,29 @@ static void i2cUnstick(void)
     cfg.mode = Mode_Out_OD;
     gpioInit(gpio, &cfg);
 
-    for (i = 0; i < 8; i++) {
+    // Analog Devices AN-686
+    // We need 9 clock pulses + STOP condition
+    for (i = 0; i < 9; i++) {
         // Wait for any clock stretching to finish
         while (!digitalIn(gpio, scl))
-            delayMicroseconds(10);
+            delayMicroseconds(5);
 
         // Pull low
         digitalLo(gpio, scl); // Set bus low
-        delayMicroseconds(10);
+        delayMicroseconds(5);
         // Release high again
         digitalHi(gpio, scl); // Set bus high
-        delayMicroseconds(10);
+        delayMicroseconds(5);
     }
 
     // Generate a start then stop condition
     // SCL  PB10
     // SDA  PB11
-    digitalLo(gpio, sda); // Set bus data low
-    delayMicroseconds(10);
     digitalLo(gpio, scl); // Set bus scl low
     delayMicroseconds(10);
+    digitalLo(gpio, sda); // Set bus data low
+    delayMicroseconds(10);
+
     digitalHi(gpio, scl); // Set bus scl high
     delayMicroseconds(10);
     digitalHi(gpio, sda); // Set bus sda high
