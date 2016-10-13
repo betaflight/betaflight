@@ -17,6 +17,7 @@
 
 #pragma once
 
+#define TARGET_CONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -32,7 +33,6 @@
 #elif defined(BEEBRAIN)
 #define BRUSHED_MOTORS
 #define TARGET_BOARD_IDENTIFIER "BEBR"
-#define TARGET_CONFIG
 #else
 #define TARGET_BOARD_IDENTIFIER "AFNA"
 #endif

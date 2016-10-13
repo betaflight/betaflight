@@ -392,7 +392,8 @@ int beeperTableEntryCount(void)
 /*
  * Returns true if the beeper is on, false otherwise
  */
-bool isBeeperOn(void) {
+bool isBeeperOn(void) 
+{
     return beeperIsOn;
 }
 

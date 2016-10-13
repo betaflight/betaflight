@@ -85,11 +85,12 @@ typedef struct timerHardware_s {
 #endif
 } timerHardware_t;
 
-enum {
-    TIMER_OUTPUT_ENABLED = 0x01,
-    TIMER_OUTPUT_INVERTED = 0x02,
-    TIMER_OUTPUT_N_CHANNEL= 0x04
-};
+typedef enum {
+    TIMER_INPUT_ENABLED    = 0x00,
+    TIMER_OUTPUT_ENABLED   = 0x01,
+    TIMER_OUTPUT_INVERTED  = 0x02,
+    TIMER_OUTPUT_N_CHANNEL = 0x04
+} timerFlag_e;
 
 #ifdef STM32F1
 #if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
@@ -104,7 +105,6 @@ enum {
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
-
 
 extern const timerHardware_t timerHardware[];
 extern const timerDef_t timerDefinitions[];
@@ -159,3 +159,5 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 #if defined(STM32F3) || defined(STM32F4)
 uint8_t timerGPIOAF(TIM_TypeDef *tim);
 #endif
+
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);

@@ -32,10 +32,12 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#ifdef BEEBRAIN
-// alternative defaults settings for Beebrain target
+#include "hardware_revision.h"
+
 void targetConfiguration(master_t *config)
 {
+#ifdef BEEBRAIN
+    // alternative defaults settings for Beebrain target
     config->motorConfig.motorPwmRate = 4000;
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
@@ -74,5 +76,12 @@ void targetConfiguration(master_t *config)
             config->profile[profileId].pidProfile.setpointRelaxRatio = 100;
         }
     }
-}
 #endif
+        
+    if (hardwareRevision >= NAZE32_REV5) {
+        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
+        config->beeperConfig.isOD = false;
+        config->beeperConfig.isInverted = true;
+    }
+}
+
