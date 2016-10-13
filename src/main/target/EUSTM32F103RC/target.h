@@ -38,7 +38,7 @@
 
 #define GYRO
 #define USE_FAKE_GYRO
-#define USE_GYRO_L3G4200D
+//#define USE_GYRO_L3G4200D
 //#define USE_GYRO_L3GD20
 //#define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
