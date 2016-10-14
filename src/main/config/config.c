@@ -803,6 +803,10 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
+    if((masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) && (masterConfig.motorConfig.mincommand < 1000)){
+        masterConfig.motorConfig.mincommand = 1000;
+    }
+
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
         featureSet(DEFAULT_RX_FEATURE);
     }
