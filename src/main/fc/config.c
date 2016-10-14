@@ -72,6 +72,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -407,12 +408,16 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
     mixerConfig->yaw_motor_direction = 1;
-#ifdef USE_SERVOS
-    mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400;
-    mixerConfig->servo_lowpass_enable = 0;
-#endif
 }
+
+#ifdef USE_SERVOS
+void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
+{
+    servoMixerConfig->tri_unarmed_servo = 1;
+    servoMixerConfig->servo_lowpass_freq = 400;
+    servoMixerConfig->servo_lowpass_enable = 0;
+}
+#endif
 
 uint8_t getCurrentProfile(void)
 {
@@ -573,13 +578,13 @@ void createDefaultConfig(master_t *config)
     config->auto_disarm_delay = 5;
     config->small_angle = 25;
 
-    resetMixerConfig(&config->mixerConfig);
-
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
+    resetMixerConfig(&config->mixerConfig);
     resetMotorConfig(&config->motorConfig);
 #ifdef USE_SERVOS
+    resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
@@ -774,7 +779,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
 #endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;

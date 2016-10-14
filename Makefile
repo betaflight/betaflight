@@ -508,6 +508,7 @@ COMMON_SRC = \
             flight/imu.c \
             flight/mixer.c \
             flight/pid.c \
+            flight/servos.c \
             io/beeper.c \
             io/serial.c \
             io/serial_4way.c \
