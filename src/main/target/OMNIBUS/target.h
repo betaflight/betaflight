@@ -185,7 +185,6 @@
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       60
 
 #define BUTTONS
 #define BUTTON_A_PORT           GPIOB // Non-existent (PB1 used for RSSI/MAXCS)
