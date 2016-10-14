@@ -53,15 +53,13 @@
 #define IBUS_BAUDRATE 115200
 
 static uint8_t ibusModel;
-static uint8_t ibusSyncByte;
+static uint8_t ibusSyncByte = 0;
 static uint8_t ibusFrameSize;
 static uint8_t ibusChannelOffset;
 static uint16_t ibusChecksum;
 
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
-
-    ibusSyncByte = 0;
 
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
 
