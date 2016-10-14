@@ -98,13 +98,13 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
 void gyroInit(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {  // Initialisation needs to happen once sampling rate is known
+        const uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
         for (int axis = 0; axis < 3; axis++) {
-            uint16_t gyroPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
             biquadFilterInitNotch(&gyroFilterNotch[axis], gyroPeriodUs, gyroConfig()->gyro_soft_notch_hz, gyroConfig()->gyro_soft_notch_cutoff_hz);
             if (gyroConfig()->gyro_soft_type == FILTER_BIQUAD) {
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig()->gyro_soft_lpf_hz,  gyroPeriodUs);
             } else {
-                float gyroDt = (float)  gyroPeriodUs * 0.000001f;
+                const float gyroDt = (float)gyroPeriodUs * 0.000001f;
                 pt1FilterInit(&gyroFilterPt1[axis], gyroConfig()->gyro_soft_lpf_hz, gyroDt);
             }
         }
