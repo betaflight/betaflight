@@ -228,7 +228,7 @@ void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, ui
             pwmWritePtr = pwmWriteMultiShot;
             break;
 
-        case PWM_TYPE_CONVENTIONAL:
+        case PWM_TYPE_STANDARD:
         default:
             timerMhzCounter = PWM_TIMER_MHZ;
             pwmWritePtr = pwmWriteStandard;

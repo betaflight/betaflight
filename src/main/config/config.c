@@ -255,7 +255,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
 #else
     motorConfig->minthrottle = 1150;
-    motorConfig->motorPwmProtocol = PWM_TYPE_CONVENTIONAL;
+    motorConfig->motorPwmProtocol = PWM_TYPE_STANDARD;
     motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
     motorConfig->maxthrottle = 1850;
@@ -797,7 +797,7 @@ void validateAndFixConfig(void)
         // There is a timer clash between PWM RX pins and motor output pins - this forces us to have same timer tick rate for these timers
         // which is only possible when using brushless motors w/o oneshot (timer tick rate is PWM_TIMER_MHZ)
         // On CC3D OneShot is incompatible with PWM RX
-        masterConfig.motorConfig.motorPwmProtocol = PWM_TYPE_CONVENTIONAL;
+        masterConfig.motorConfig.motorPwmProtocol = PWM_TYPE_STANDARD;
         masterConfig.motorConfig.motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
 #endif
@@ -930,7 +930,7 @@ void validateAndFixConfig(void)
 
     /* Limitations of different protocols */
     switch (masterConfig.motorConfig.motorPwmProtocol) {
-    case PWM_TYPE_CONVENTIONAL: // Limited to 490 Hz
+    case PWM_TYPE_STANDARD: // Limited to 490 Hz
         masterConfig.motorConfig.motorPwmRate = MIN(masterConfig.motorConfig.motorPwmRate, 490);
         break;
 
