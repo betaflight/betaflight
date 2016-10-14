@@ -590,7 +590,7 @@ void serialSetMode(serialPort_t *, portMode_t) {}
 
 void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }
-bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
+bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
 
 amperageMeter_t *getAmperageMeter(amperageMeter_e index) { UNUSED(index); return &amperageMeter; }
 batteryState_e getBatteryState(void) { return BATTERY_NOT_PRESENT; }

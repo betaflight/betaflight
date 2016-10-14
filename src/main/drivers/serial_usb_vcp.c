@@ -55,13 +55,13 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+static bool isUsbVcpTransmitBufferEmpty(const serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-static uint8_t usbVcpAvailable(serialPort_t *instance)
+static uint8_t usbVcpAvailable(const serialPort_t *instance)
 {
     UNUSED(instance);
 
