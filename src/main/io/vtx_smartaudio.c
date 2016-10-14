@@ -68,14 +68,14 @@ enum {
 #define SA_FREQ_SETPIT                      (1 << 15)
 
 // Error counters, may be good for post production debugging.
-static uint16_t saerr_badpre = 0;
-static uint16_t saerr_badlen = 0;
-static uint16_t saerr_crc = 0;
-static uint16_t saerr_oooresp = 0;
+uint16_t saerr_badpre = 0;
+uint16_t saerr_badlen = 0;
+uint16_t saerr_crc = 0;
+uint16_t saerr_oooresp = 0;
 
 // Receive frame reassembly buffer
-#define SMARTAUDIO_MAXLEN 32
-static uint8_t sa_rbuf[SMARTAUDIO_MAXLEN];
+#define SA_MAX_RCVLEN 11
+static uint8_t sa_rbuf[SA_MAX_RCVLEN+4]; // XXX delete 4 byte guard
 
 // CRC8 computations
 
@@ -140,24 +140,19 @@ static int8_t sa_chan = -1;
 static int8_t sa_power = -1;
 static int8_t sa_opmode = -1;
 static uint16_t sa_freq = 0;
+
+static int8_t sa_overs = 0;
+static int8_t sa_ochan;
+static int8_t sa_opower;
+static int8_t sa_oopmode;
+static uint16_t sa_ofreq;
+
 static uint16_t sa_pitfreq = 0;
-static bool sa_pitfreqpending = false;
 
 static void smartAudioPrintSettings(void)
 {
 #ifdef SMARTAUDIO_DPRINTF
-    static int osa_vers;
-    static int osa_chan;
-    static int osa_power;
-    static int osa_opmode;
-    static uint32_t osa_freq;
 
-    if ((osa_vers == sa_vers)
-            && (osa_chan == sa_chan)
-            && (osa_power == sa_power)
-            && (osa_opmode == sa_opmode)
-            && (osa_freq == sa_freq))
-        return;
 
     dprintf(("Settings:\r\n"));
     dprintf(("  version: %d\r\n", sa_vers));
@@ -171,11 +166,6 @@ static void smartAudioPrintSettings(void)
     dprintf(("    power: %d\r\n", sa_power));
     dprintf(("\r\n"));
 
-    osa_vers = sa_vers;
-    osa_chan = sa_chan;
-    osa_power = sa_power;
-    osa_opmode = sa_opmode;
-    osa_freq = sa_freq;
 #endif
 }
 
@@ -194,7 +184,7 @@ static int saDacToPowerIndex(int dac)
 
 #define SMARTBAUD_MIN 4800
 #define SMARTBAUD_MAX 4950
-static int smartbaud = SMARTBAUD_MIN;
+uint16_t smartAudioSmartbaud = SMARTBAUD_MIN;
 static int adjdir = 1; // -1=going down, 1=going up
 static int baudstep = 50;
 
@@ -211,8 +201,10 @@ static void saAutobaud(void)
         // Not enough samples collected
         return;
 
+#if 0
     dprintf(("autobaud: %d rcvd %d/%d (%d)\r\n",
-        smartbaud, sa_pktrcvd, sa_pktsent, ((sa_pktrcvd * 100) / sa_pktsent)));
+        smartAudioSmartbaud, sa_pktrcvd, sa_pktsent, ((sa_pktrcvd * 100) / sa_pktsent)));
+#endif
 
     if (((sa_pktrcvd * 100) / sa_pktsent) >= 70) {
         // This is okay
@@ -223,19 +215,19 @@ static void saAutobaud(void)
 
     dprintf(("autobaud: adjusting\r\n"));
 
-    if ((adjdir == 1) && (smartbaud == SMARTBAUD_MAX)) {
+    if ((adjdir == 1) && (smartAudioSmartbaud == SMARTBAUD_MAX)) {
        adjdir = -1;
        dprintf(("autobaud: now going down\r\n"));
-    } else if ((adjdir == -1 && smartbaud == SMARTBAUD_MIN)) {
+    } else if ((adjdir == -1 && smartAudioSmartbaud == SMARTBAUD_MIN)) {
        adjdir = 1;
        dprintf(("autobaud: now going up\r\n"));
     }
 
-    smartbaud += baudstep * adjdir;
+    smartAudioSmartbaud += baudstep * adjdir;
 
-    dprintf(("autobaud: %d\r\n", smartbaud));
+    dprintf(("autobaud: %d\r\n", smartAudioSmartbaud));
 
-    smartAudioSerialPort->vTable->serialSetBaudRate(smartAudioSerialPort, smartbaud);
+    smartAudioSerialPort->vTable->serialSetBaudRate(smartAudioSerialPort, smartAudioSmartbaud);
 
     sa_pktsent = 0;
     sa_pktrcvd = 0;
@@ -273,14 +265,23 @@ static void saProcessResponse(uint8_t *buf, int len)
         sa_opmode = buf[4];
         sa_freq = (buf[5] << 8)|buf[6];
 
-        smartAudioPrintSettings();
+        if ((sa_overs == sa_vers)
+                && (sa_ochan == sa_chan)
+                && (sa_opower == sa_power)
+                && (sa_oopmode == sa_opmode)
+                && (sa_ofreq == sa_freq))
+            break;
 
-        smartAudioUpdateStatusString();
+        // Debug
+        smartAudioPrintSettings();
 
         // Export current settings for BFOSD 3.0.0
 
         smartAudioBand = (sa_chan / 8) + 1;
         smartAudioChan = (sa_chan % 8) + 1;
+        smartAudioFreq = saFreqTable[sa_chan / 8][sa_chan % 8];
+        smartAudioUpdateStatusString();
+
         if (sa_vers == 2) {
             smartAudioPower = sa_power + 1; // XXX Take care V1
         } else {
@@ -293,6 +294,11 @@ static void saProcessResponse(uint8_t *buf, int len)
         debug[2] = sa_freq;
         debug[3] = sa_power;
 #endif
+        sa_overs = sa_vers;
+        sa_ochan = sa_chan;
+        sa_opower = sa_power;
+        sa_oopmode = sa_opmode;
+        sa_ofreq = sa_freq;
 
         break;
 
@@ -306,8 +312,17 @@ static void saProcessResponse(uint8_t *buf, int len)
         if (len < 5)
             break;
 
-        if (sa_pitfreqpending)
-            sa_pitfreq = ((buf[2] << 8)|buf[3]) & ~SA_FREQ_GETPIT;
+        uint16_t freq = (buf[2] << 8)|buf[3];
+
+        if (freq & SA_FREQ_GETPIT) {
+            sa_pitfreq = freq & ~SA_FREQ_GETPIT;
+            dprintf(("saProcessResponse: GETPIT freq %d\r\n", sa_pitfreq));
+            smartAudioUpdateStatusString();
+        } else if (freq & SA_FREQ_SETPIT) {
+            dprintf(("saProcessResponse: SETPIT freq %d\r\n", freq));
+        } else {
+            dprintf(("saProcessResponse: GETFREQ freq %d\r\n", freq));
+        }
         break;
 
     case SA_CMD_SET_MODE: // Set Mode
@@ -358,7 +373,7 @@ static void saReceiveFramer(uint8_t c)
         sa_rbuf[1] = c;
         len = c;
 
-        if (len > SMARTAUDIO_MAXLEN - 2) {
+        if (len > SA_MAX_RCVLEN - 2) {
             saerr_badlen++;
             state = S_WAITPRE1;
         } else if (len == 0) {
@@ -378,7 +393,7 @@ static void saReceiveFramer(uint8_t c)
 
     case S_WAITCRC:
         if (CRC8(sa_rbuf, 2 + len) == c) {
-            // Response
+            // Got a response
             saProcessResponse(sa_rbuf, len + 2);
             sa_pktrcvd++;
         } else if (sa_rbuf[0] & 1) {
@@ -424,8 +439,7 @@ static void saSendFrame(uint8_t *buf, int len)
  * asynchronous to user initiated commands; commands issued while another
  * command is outstanding must be queued for later processing.
  *   The queueing also handles the case in which multiple commands are
- * required to implement a user level command, e.g., "Change RF power
- * from PIT to 200mW" which requires (1) SetPower and (2) SetMode.
+ * required to implement a user level command.
  */
 
 // Retransmission
@@ -502,13 +516,14 @@ static void saSendQueue(void)
 
 // Individual commands
 
-void smartAudioGetSettings(void)
+static void saGetSettings(void)
 {
-    static uint8_t bufGetSettings[5] = {0xAA, 0x55, 0x03, 0x00, 0x9F};
+    static uint8_t bufGetSettings[5] = {0xAA, 0x55, SACMD(SA_CMD_GET_SETTINGS), 0x00, 0x9F};
+
     saQueueCmd(bufGetSettings, 5);
 }
 
-void smartAudioSetFreq(uint16_t freq)
+static void saSetFreq(uint16_t freq)
 {
     static uint8_t buf[7] = { 0xAA, 0x55, SACMD(SA_CMD_SET_FREQ), 2 };
 
@@ -519,48 +534,17 @@ void smartAudioSetFreq(uint16_t freq)
     buf[6] = CRC8(buf, 6);
 
     saQueueCmd(buf, 7);
-
-    sa_freq = 0; // Will be read by a following heartbeat
 }
 
 #ifdef SMARTAUDIO_EXTENDED_API
-void smartAudioSetFreqSetPit(uint16_t freq)
+static void saSetPitFreq(uint16_t freq)
 {
-    smartAudioSetFreq(freq | SA_FREQ_SETPIT);
-
-    sa_pitfreq = 0; // Will be read by a following heartbeat
+    saSetFreq(freq | SA_FREQ_SETPIT);
 }
 
-void smartAudioSetFreqGetPit(void)
+static void saGetPitFreq(void)
 {
-    smartAudioSetFreq(SA_FREQ_GETPIT);
-
-    sa_pitfreqpending = true;
-}
-
-bool smartAudioGetFreq(uint16_t *pFreq)
-{
-    if (sa_vers == 0)
-        return false;
-
-    *pFreq = sa_freq;
-    return true;
-}
-
-bool smartAudioGetBandChan(uint8_t *pBand, uint8_t *pChan)
-{
-    if (sa_vers == 0)
-        return false;
-
-    *pBand = sa_chan / 8;
-    *pChan = sa_chan % 8;
-
-    return true;
-}
-
-uint16_t smartAudioGetPitFreq(void)
-{
-    return sa_pitfreq;
+    saSetFreq(SA_FREQ_GETPIT);
 }
 #endif
 
@@ -603,19 +587,6 @@ void smartAudioSetPowerByIndex(uint8_t index)
     saQueueCmd(buf, 6);
 }
 
-#if 0
-dup?
-void smartAudioConfigurePowerByGvar(void *opaque)
-{
-    UNUSED(opaque);
-
-    if (smartAudioPower == 0)
-        return;
-
-    smartAudioSetPowerByIndex(smartAudioPower - 1);
-}
-#endif
-
 bool smartAudioInit()
 {
 #ifdef SMARTAUDIO_DPRINTF
@@ -655,6 +626,8 @@ void smartAudioPitMode(void)
 
 void smartAudioProcess(uint32_t now)
 {
+    static bool initialSent = false;
+
     if (smartAudioSerialPort == NULL)
         return;
 
@@ -666,10 +639,11 @@ void smartAudioProcess(uint32_t now)
     // Re-evaluate baudrate after each frame reception
     saAutobaud();
 
-    if (sa_vers == 0) {
-        // If we haven't talked to the device, keep trying.
-        smartAudioGetSettings();
+    if (!initialSent) {
+        saGetSettings();
+        saGetPitFreq();
         saSendQueue();
+        initialSent = true;
         return;
     }
 
@@ -686,36 +660,42 @@ void smartAudioProcess(uint32_t now)
 #ifdef SMARTAUDIO_PITMODE_DEBUG
         static int turn = 0;
         if ((turn++ % 2) == 0) {
-            smartAudioGetSettings();
+            saGetSettings();
         } else {
             smartAudioPitMode();
         }
 #else
-        smartAudioGetSettings();
+        saGetSettings();
 #endif
         saSendQueue();
     }
 }
 
+#ifdef OSD
 // API for BFOSD3.0
 
-char smartAudioStatusString[31] = "- - ---- --- ----";
+char smartAudioStatusString[31] = "- - ---- --- ---- -";
 
 uint8_t smartAudioBand = 0;
 uint8_t smartAudioChan = 0;
 uint8_t smartAudioPower = 0;
+uint16_t smartAudioFreq = 0;
 
 static void smartAudioUpdateStatusString(void)
 {
     if (sa_vers == 0)
         return;
 
-    tfp_sprintf(smartAudioStatusString, "%c %d %4d %3d %3s",
+    tfp_sprintf(smartAudioStatusString, "%c %d %4d %3d ",
         "ABEFR"[sa_chan / 8],
         (sa_chan % 8) + 1,
         saFreqTable[sa_chan / 8][sa_chan % 8],
-        (sa_vers == 2) ?  saPowerTable[sa_power].rfpower : saPowerTable[saDacToPowerIndex(sa_power)].rfpower,
-        "---");
+        (sa_vers == 2) ?  saPowerTable[sa_power].rfpower : saPowerTable[saDacToPowerIndex(sa_power)].rfpower);
+
+    if (sa_vers == 2)
+        tfp_sprintf(&smartAudioStatusString[13], "%4d", sa_pitfreq);
+    else
+        tfp_sprintf(&smartAudioStatusString[13], "%4s", "----");
 }
 
 void smartAudioConfigureBandByGvar(void *opaque)
@@ -723,13 +703,13 @@ void smartAudioConfigureBandByGvar(void *opaque)
     UNUSED(opaque);
 
     if (sa_vers == 0) {
-        // Bounce back
+        // Bounce back; not online yet
         smartAudioBand = 0;
         return;
     }
 
     if (smartAudioBand == 0) {
-        // Bounce back
+        // Bouce back, no going back to undef state
         smartAudioBand = 1;
         return;
     }
@@ -742,13 +722,13 @@ void smartAudioConfigureChanByGvar(void *opaque)
     UNUSED(opaque);
 
     if (sa_vers == 0) {
-        // Bounce back
+        // Bounce back; not online yet
         smartAudioChan = 0;
         return;
     }
 
     if (smartAudioChan == 0) {
-        // Bounce back
+        // Bounce back; no going back to undef state
         smartAudioChan = 1;
         return;
     }
@@ -761,13 +741,13 @@ void smartAudioConfigurePowerByGvar(void *opaque)
     UNUSED(opaque);
 
     if (sa_vers == 0) {
-        // Bounce back
+        // Bounce back; not online yet
         smartAudioPower = 0;
         return;
     }
 
     if (smartAudioPower == 0) {
-        // Bounce back
+        // Bouce back; no going back to undef state
         smartAudioPower = 1;
         return;
     }
@@ -780,12 +760,13 @@ void smartAudioSetModeByGvar(void *opaque)
     UNUSED(opaque);
 
     if (sa_vers != 2) {
-        // Bounce back
+        // Bounce back; not online yet or can't handle mode (V1)
         smartAudioMode = SA_RFMODE_NODEF;
         return;
     }
 
     if (smartAudioMode == 0) {
+        // Bouce back; no going back to undef state
         ++smartAudioMode;
         return;
     }
@@ -802,4 +783,5 @@ void smartAudioSetModeByGvar(void *opaque)
         break;
     }
 }
+#endif // OSD
 #endif // VTX_SMARTAUDIO

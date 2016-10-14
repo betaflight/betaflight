@@ -415,6 +415,25 @@ static const char * const smartAudioModeNames[] = {
 
 OSD_TAB_t entrySmartAudioMode = { &smartAudioMode, 3, &smartAudioModeNames[0]};
 
+OSD_UINT16_t entrySmartAudioFreq = { &smartAudioFreq, 5600, 5900, 0 };
+
+OSD_UINT16_t entrySmartAudioBaudrate = { &smartAudioSmartbaud, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatBadpre = { &saerr_badpre, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatBadlen = { &saerr_badlen, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatCrcerr = { &saerr_crcerr, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatOooerr = { &saerr_oooresp, 0, 0, 0 };
+
+OSD_Entry menu_vtxstat[] = {
+    { "--- VTX STATS ---", OME_Label, NULL, NULL },
+    { "BAUDRATE", OME_UINT16, NULL, &entrySmartAudioBaudrate },
+    { "BADPRE", OME_UINT16, NULL, &entrySmartAudioStatBadpre },
+    { "BADLEN", OME_UINT16, NULL, &entrySmartAudioStatBadlen },
+    { "CRCERR", OME_UINT16, NULL, &entrySmartAudioStatCrcerr },
+    { "OOOERR", OME_UINT16, NULL, &entrySmartAudioStatOooerr },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+
 OSD_Entry menu_vtx[] =
 {
     { "--- VTX ---", OME_Label, NULL, NULL },
@@ -422,11 +441,13 @@ OSD_Entry menu_vtx[] =
     { "RFMODE", OME_TAB, smartAudioSetModeByGvar, &entrySmartAudioMode },
     { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand },
     { "CHAN", OME_TAB, smartAudioConfigureChanByGvar, &entrySmartAudioChan },
+    { "FREQ", OME_UINT16, NULL, &entrySmartAudioFreq },
     { "POWER", OME_TAB, smartAudioConfigurePowerByGvar, &entrySmartAudioPower },
+    { "STAT", OME_Submenu, osdChangeScreen, &menu_vtxstat[0]},
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL }
 };
-#endif // SMARTAUDIO
+#endif // VTX_SMARTAUDIO
 
 OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
