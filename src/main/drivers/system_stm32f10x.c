@@ -28,7 +28,7 @@
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 
 // from system_stm32f10x.c
-void SetSysClock(bool overclock);
+void SetSysClock(void);
 
 void systemReset(void)
 {
@@ -70,7 +70,7 @@ void systemInit(void)
 {
     checkForBootLoaderRequest();
 
-    SetSysClock(false);
+    SetSysClock();
 
 #ifdef CC3D
     /* Accounts for OP Bootloader, set the Vector Table base address as specified in .ld file */
