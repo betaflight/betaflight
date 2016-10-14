@@ -32,9 +32,7 @@
 #include "pwm_rx.h"
 #include "pwm_mapping.h"
 
-void pwmBrushedMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmBrushlessMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse);
-void pwmOneshotMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex);
+void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, uint16_t motorPwmRate, uint16_t idlePulse, motorPwmProtocolTypes_e proto);
 void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 /*
@@ -331,12 +329,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         if (type == MAP_TO_PPM_INPUT) {
 #ifndef SKIP_RX_PWM_PPM
 #ifdef CC3D_PPM1
-            if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
             }
 #endif
 #if defined(SPARKY) || defined(ALIENFLIGHTF3)
-            if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM2);
             }
 #endif
@@ -363,7 +361,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             }
 
 #if defined(CC3D) && !defined(CC3D_PPM1)
-            if (init->useOneshot || isMotorBrushed(init->motorPwmRate)) {
+            if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 // Skip it if it would cause PPM capture timer to be reconfigured or manually overflowed
                 if (timerHardwarePtr->tim == TIM2) {
                     addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, i, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
@@ -371,19 +369,13 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 }
             }
 #endif
-            if (init->useOneshot) {
 
-                pwmOneshotMotorConfig(timerHardwarePtr, pwmIOConfiguration.motorCount);
-                pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_ONESHOT|PWM_PF_OUTPUT_PROTOCOL_PWM;
-
-            } else if (isMotorBrushed(init->motorPwmRate)) {
-
-                pwmBrushedMotorConfig(timerHardwarePtr, pwmIOConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
+            pwmMotorConfig(timerHardwarePtr, pwmIOConfiguration.motorCount, init->motorPwmRate, init->idlePulse, init->pwmProtocolType);
+            if (init->useFastPwm) {
+                pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_FASTPWM | PWM_PF_OUTPUT_PROTOCOL_PWM;
+            } else if (init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_MOTOR | PWM_PF_MOTOR_MODE_BRUSHED | PWM_PF_OUTPUT_PROTOCOL_PWM;
-
             } else {
-
-                pwmBrushlessMotorConfig(timerHardwarePtr, pwmIOConfiguration.motorCount, init->motorPwmRate, init->idlePulse);
                 pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_MOTOR | PWM_PF_OUTPUT_PROTOCOL_PWM ;
             }
 
