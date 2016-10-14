@@ -83,7 +83,7 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return buf[0];
 }
 
-static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
+static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 {
     UNUSED(instance);
 
@@ -92,9 +92,9 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
         return;
     }
 
-    uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
+    const uint32_t start = millis();
+    for (const uint8_t *p = data; count > 0; ) {
+        const uint32_t txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
 
@@ -106,7 +106,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
 
 static bool usbVcpFlush(vcpPort_t *port)
 {
-    uint8_t count = port->txAt;
+    const uint8_t count = port->txAt;
     port->txAt = 0;
 
     if (count == 0) {
@@ -117,7 +117,7 @@ static bool usbVcpFlush(vcpPort_t *port)
     }
     
     uint32_t txed;
-    uint32_t start = millis();
+    const uint32_t start = millis();
 
     do {
         txed = CDC_Send_DATA(port->txBuf, count);
