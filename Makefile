@@ -342,6 +342,7 @@ OSD_SYSTEM_SRC = \
 		   osd/msp_server_osd.c \
 		   osd/msp_client_osd.c \
 		   osd/osd_tasks.c \
+		   osd/osd_debug.c \
 		   sensors/battery.c \
 		   sensors/voltage.c \
 		   sensors/amperage.c \

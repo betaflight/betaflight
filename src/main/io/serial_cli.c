@@ -452,6 +452,10 @@ static const char * const lookupTableDebug[DEBUG_MODE_COUNT] = {
     "GYRO",
     "PIDLOOP",
     "GYROSYNC",
+#ifdef OSD
+    "OSD",
+    "OSD_WATCHDOG",
+#endif
 };
 
 typedef struct lookupTableEntry_s {

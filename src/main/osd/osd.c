@@ -57,6 +57,12 @@
 #include "osd/osd_element.h"
 #include "osd/osd.h"
 
+#ifdef FC
+#include "fc/fc_debug.h"
+#else
+#include "osd/osd_debug.h"
+#endif
+
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 PG_REGISTER_WITH_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig, PG_OSD_VIDEO_CONFIG, 0);
 
@@ -85,9 +91,11 @@ const uint16_t osdSupportedElementIds[] = {
     OSD_ELEMENT_RSSI_FC,
     OSD_ELEMENT_CALLSIGN,
     OSD_ELEMENT_MOTORS,
+#if defined(FC) && defined(VTX)
     OSD_ELEMENT_VTX_CHANNEL,
     OSD_ELEMENT_VTX_BAND,
     OSD_ELEMENT_VTX_RFPOWER,
+#endif
 };
 
 const uint8_t osdSupportedElementIdsCount = ARRAYLEN(osdSupportedElementIds);
@@ -181,7 +189,7 @@ bool osdIsCameraConnected(void)
 
 void osdUpdate(void)
 {
-    TIME_SECTION_BEGIN(0);
+    const uint32_t startTime = micros();
 
     uint32_t now = micros();
 
@@ -273,9 +281,11 @@ void osdUpdate(void)
         }
     }
 
-    //TIME_SECTION_END(0);
+    if (debugMode == DEBUG_OSD) {debug[0] = micros() - startTime;}
 
     osdHardwareUpdate();
+
+    if (debugMode == DEBUG_OSD) {debug[1] = micros() - startTime;}
 
 }
 

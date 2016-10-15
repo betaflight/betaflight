@@ -18,15 +18,8 @@
 typedef enum {
     // NOTE: only add new ones to the end of this list (before DEBUG_MODE_COUNT), otherwise a PG version bump is required.
     DEBUG_NONE,
-    DEBUG_CYCLETIME,
-    DEBUG_NOTCH,
-    DEBUG_GYRO,
-    DEBUG_PIDLOOP,
-    DEBUG_GYRO_SYNC,
-#ifdef OSD
     DEBUG_OSD,
     DEBUG_OSD_WATCHDOG,
-#endif
 
     DEBUG_MODE_COUNT
 } debugMode_e;

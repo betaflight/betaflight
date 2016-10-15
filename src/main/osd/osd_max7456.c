@@ -58,6 +58,12 @@
 
 #include "osd/osd.h"
 
+#ifdef FC
+#include "fc/fc_debug.h"
+#else
+#include "osd/osd_debug.h"
+#endif
+
 
 TEXT_SCREEN_CHAR textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
@@ -168,8 +174,16 @@ void osdHardwareUpdate(void)
 
 void osdHardwareCheck(void)
 {
+    const uint32_t startTime = micros();
+
+    if (max7456_isBusy()) {
+        if (debugMode == DEBUG_OSD_WATCHDOG) {debug[1]++;}
+        return;
+    }
+
     videoMode_e desiredVideoMode = osdVideoConfig()->videoMode;
     if (!max7456_isOSDEnabled()) {
+        if (debugMode == DEBUG_OSD_WATCHDOG) {debug[2]++;}
         max7456_init(desiredVideoMode);
     }
 
@@ -186,6 +200,7 @@ void osdHardwareCheck(void)
     if (!max7456State.los && max7456State.detectedVideoMode != VIDEO_AUTO) {
         // there is a valid video mode
         if (desiredVideoMode == VIDEO_AUTO && !correctVideoMode) {
+            if (debugMode == DEBUG_OSD_WATCHDOG) {debug[3]++;}
             osdHardwareApplyConfiguration(max7456State.detectedVideoMode);
         };
     }
@@ -199,6 +214,7 @@ void osdHardwareCheck(void)
         max7456_init(desiredVideoMode);
     }
 #endif
+    if (debugMode == DEBUG_OSD_WATCHDOG) {debug[0] = micros() - startTime;}
 }
 
 static const uint8_t logoElement[] = {

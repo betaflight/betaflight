@@ -234,6 +234,15 @@ textScreen_t *max7456_getTextScreen(void)
     return &max7456Screen;
 }
 
+bool max7456_isBusy(void)
+{
+#if defined(MAX7456_DMA_CHANNEL_TX) || defined(MAX7456_DMA_CHANNEL_RX)
+    return dma_transaction_in_progress;
+#else
+    return false;
+#endif
+
+}
 
 #ifdef MAX7456_DMA_CHANNEL_TX
 static void max7456_writeDMA(void* tx_buffer, void* rx_buffer, uint16_t buffer_size)

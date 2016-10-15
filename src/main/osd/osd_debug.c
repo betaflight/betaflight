@@ -15,24 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef enum {
-    // NOTE: only add new ones to the end of this list (before DEBUG_MODE_COUNT), otherwise a PG version bump is required.
-    DEBUG_NONE,
-    DEBUG_CYCLETIME,
-    DEBUG_NOTCH,
-    DEBUG_GYRO,
-    DEBUG_PIDLOOP,
-    DEBUG_GYRO_SYNC,
-#ifdef OSD
-    DEBUG_OSD,
-    DEBUG_OSD_WATCHDOG,
-#endif
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-    DEBUG_MODE_COUNT
-} debugMode_e;
+#include <platform.h>
 
-typedef struct debugConfig_s {
-    uint8_t debug_mode;
-} debugConfig_t;
+#include "build/build_config.h"
+#include "build/debug.h"
 
-PG_DECLARE(debugConfig_t, debugConfig);
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "fc/fc_debug.h"
+
+PG_REGISTER(debugConfig_t, debugConfig, PG_DEBUG_CONFIG, 0);

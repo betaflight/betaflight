@@ -62,6 +62,7 @@ void max7456_updateStatus(void);
 // These methods talk to the hardware directly, ignoring the OSD screen buffer.
 // TODO Delete unused methods.
 //
+bool max7456_isBusy(void);
 
 uint8_t max7456_readStatus(void);
 bool max7456_isOSDEnabled(void);

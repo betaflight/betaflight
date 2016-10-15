@@ -24,6 +24,8 @@
 #define MAG
 #define BARO
 #define GPS
+#define VTX
+#define FC
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
