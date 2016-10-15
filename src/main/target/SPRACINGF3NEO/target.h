@@ -190,7 +190,7 @@
 
 
 #define USE_ADC
-#define DEBUG_ADC_CHANNELS
+//#define DEBUG_ADC_CHANNELS
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC1
