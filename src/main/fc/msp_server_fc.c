@@ -540,15 +540,21 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
             break;
 
-        case MSP_BOARD_INFO:
+        case MSP_BOARD_INFO: {
             sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
             sbufWriteU16(dst, hardwareRevision);
 #else
             sbufWriteU16(dst, 0); // No hardware revision available.
 #endif
-            sbufWriteU8(dst, 0);  // 0 == FC, 1 == OSD, 2 == FC with OSD
+#ifdef OSD
+            uint8_t board = 2;
+#else
+            uint8_t board = 0;
+#endif
+            sbufWriteU8(dst, board);  // 0 == FC, 1 == OSD, 2 == FC with OSD
             break;
+        }
 
         case MSP_BUILD_INFO:
             sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
