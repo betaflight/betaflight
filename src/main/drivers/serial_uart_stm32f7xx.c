@@ -303,8 +303,8 @@ void uartIrqHandler(uartPort_t *s)
     {
         uint8_t rbyte = (uint8_t)(huart->Instance->RDR & (uint8_t)0xff);
 
-        if (s->port.callback) {
-            s->port.callback(rbyte);
+        if (s->port.rxCallback) {
+            s->port.rxCallback(rbyte);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead] = rbyte;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;

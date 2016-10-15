@@ -221,7 +221,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
     // callback works for IRQ-based RX ONLY
-    s->port.callback = callback;
+    s->port.rxCallback = callback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;
