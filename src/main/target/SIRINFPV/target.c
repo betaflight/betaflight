@@ -24,15 +24,15 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
-    { TIM4,  IO_TAG(PB6), TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM1 - PB6
-    { TIM4,  IO_TAG(PB7), TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM2 - PB6
-    { TIM4,  IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM3 - PB8
-    { TIM4,  IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM4 - PB9
+    { TIM4,  IO_TAG(PB6), TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, }, // PWM1 - PB6
+    { TIM4,  IO_TAG(PB7), TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, }, // PWM2 - PB6
+    { TIM4,  IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM3 - PB8
+    { TIM4,  IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM4 - PB9
 
-    { TIM3,  IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM5 - PB0  - *TIM3_CH3
-    { TIM3,  IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM6 - PB1  - *TIM3_CH4
+    { TIM3,  IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,               1, IOCFG_AF_PP, }, // PWM5 - PB0  - *TIM3_CH3
+    { TIM3,  IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,               1, IOCFG_AF_PP, }, // PWM6 - PB1  - *TIM3_CH4
 
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,              0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)y
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,              0, IOCFG_AF_PP, }, // RC_CH3 - PB11 - *TIM2_CH4, USART3_RX (AF7)y
 };
 
 

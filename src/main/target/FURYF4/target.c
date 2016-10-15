@@ -23,13 +23,12 @@
 #include "drivers/timer.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM8, IO_TAG(PC9), TIM_Channel_4, TIM8_CC_IRQn,       0, IOCFG_AF_PP, GPIO_AF_TIM8 },          // PPM_IN
+    { TIM8, IO_TAG(PC9), TIM_Channel_4, TIM8_CC_IRQn,       0, IOCFG_AF_PP }, // PPM_IN
+    { TIM9, IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, IOCFG_AF_PP }, // S1_OUT
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,          1, IOCFG_AF_PP }, // S2_OUT
+    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,          1, IOCFG_AF_PP }, // S3_OUT
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,          1, IOCFG_AF_PP }, // S4_OUT
 
-    { TIM9, IO_TAG(PA3), TIM_Channel_2, TIM1_BRK_TIM9_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM9 },          // S1_OUT
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3 },          // S2_OUT
-    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM3 },          // S3_OUT
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,          1, IOCFG_AF_PP, GPIO_AF_TIM2 },          // S4_OUT
-
-//  { TIM5, GPIOA, Pin_0, TIM_Channel_1, TIM5_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource0, GPIO_AF_TIM5 },    // LED Strip
+//  { TIM5, GPIOA, Pin_0, TIM_Channel_1, TIM5_IRQn, 1, GPIO_Mode_AF, GPIO_PinSource0,  },    // LED Strip
 };
 
