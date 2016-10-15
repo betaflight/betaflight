@@ -42,13 +42,12 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     if(Handle == NULL) return;
     
     TIM_OC_InitTypeDef  TIM_OCInitStructure;
-
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM2;
-    TIM_OCInitStructure.OCNIdleState = TIM_OCIDLESTATE_RESET;
     TIM_OCInitStructure.Pulse = value;
-    TIM_OCInitStructure.OCPolarity = TIM_OCPOLARITY_LOW;
-    TIM_OCInitStructure.OCNPolarity = TIM_OCPOLARITY_HIGH;
+    TIM_OCInitStructure.OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPOLARITY_HIGH : TIM_OCPOLARITY_LOW;
+    TIM_OCInitStructure.OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPOLARITY_LOW : TIM_OCNPOLARITY_HIGH;
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     
     HAL_TIM_PWM_ConfigChannel(Handle, &TIM_OCInitStructure, channel);
