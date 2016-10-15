@@ -73,10 +73,10 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     motor->dmaBuffer[11] = MOTOR_BIT_0; /* telemetry is always false for the moment */
         
     /* check sum */
-    motor->dmaBuffer[12] = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[13] = (value & 0x200) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[14] = (value & 0x100) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[15] = (value & 0x80)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    motor->dmaBuffer[12] = (value & 0x400) ^ (value & 0x40) ^ (value & 0x4) ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    motor->dmaBuffer[13] = (value & 0x200) ^ (value & 0x20) ^ (value & 0x2) ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    motor->dmaBuffer[14] = (value & 0x100) ^ (value & 0x10) ^ (value & 0x1) ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    motor->dmaBuffer[15] = (value & 0x80)  ^ (value & 0x8)  ^ (0x0)         ? MOTOR_BIT_1 : MOTOR_BIT_0;
 
     DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
     DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
