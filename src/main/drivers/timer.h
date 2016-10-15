@@ -80,9 +80,6 @@ typedef struct timerHardware_s {
     uint8_t irq;
     uint8_t output;
     ioConfig_t ioMode;
-#if defined(STM32F3) || defined(STM32F4)
-    uint8_t alternateFunction;
-#endif
 } timerHardware_t;
 
 typedef enum {
