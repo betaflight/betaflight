@@ -50,9 +50,9 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-//#define MAG
-//#define USE_MAG_AK8975
-//#define USE_MAG_HMC5883 // External
+#define MAG
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883 // External
 //
 //#define MAG_AK8975_ALIGN CW90_DEG_FLIP
 
