@@ -44,9 +44,10 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/serial_msp.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 

@@ -63,11 +63,12 @@
 #include "bus_bst.h"
 #endif
 
+#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "msp/msp_server_fc.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -83,7 +84,6 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
