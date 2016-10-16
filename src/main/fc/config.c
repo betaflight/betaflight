@@ -1059,12 +1059,39 @@ void validateAndFixGyroConfig(void)
     }
 }
 
+void readEEPROM(void)
+{
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//!!    pgActivateProfile(getCurrentProfile());
+
+//!!    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 

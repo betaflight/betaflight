@@ -17,9 +17,15 @@
 
 #pragma once
 
-#define EEPROM_CONF_VERSION 147
+#include "config/parameter_group.h"
 
-bool isEEPROMContentValid(void);
-bool loadEEPROM(void);
-void writeConfigToEEPROM(void);
-void activateProfile(uint8_t profileIndexToActivate);
+#define MAX_PROFILE_COUNT 3 // do not use more than 3 due to some legacy code (e.g. profile selection, msp) and more recent code (config storage)
+
+typedef struct profileSelection_s {
+    uint8_t current_profile_index;
+} profileSelection_t;
+
+PG_DECLARE(profileSelection_t, profileSelection);
+
+uint8_t getCurrentProfile(void);
+void setProfile(uint8_t profileIndex);

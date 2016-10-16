@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "build/build_config.h"
+
 typedef uint16_t pgn_t;
 
 // parameter group registry flags
