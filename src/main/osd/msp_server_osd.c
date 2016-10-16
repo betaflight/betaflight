@@ -196,7 +196,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, 0);
             break;
 
-        case MSP_BATTERY_STATES: {
+        case MSP_BATTERY_STATE: {
             amperageMeter_t *amperageMeter = getAmperageMeter(batteryConfig()->amperageMeterSource);
 
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
@@ -205,7 +205,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
 
-        case MSP_CURRENT_METERS:
+        case MSP_AMPERAGE_METERS:
             for (int i = 0; i < MAX_AMPERAGE_METERS; i++) {
                 amperageMeter_t *meter = getAmperageMeter(i);
                 // write out amperage, once for each current meter.

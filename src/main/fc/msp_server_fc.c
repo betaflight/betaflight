@@ -969,7 +969,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             serializeSDCardSummaryReply(reply);
             break;
 
-        case MSP_BATTERY_STATES: {
+        case MSP_BATTERY_STATE: {
             sbufWriteU8(dst, (uint8_t)getBatteryState() == BATTERY_NOT_PRESENT ? 0 : 1); // battery connected - 0 not connected, 1 connected
             sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
 
