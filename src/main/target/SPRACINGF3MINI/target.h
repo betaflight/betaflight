@@ -28,6 +28,9 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
+#define USE_EXTI
+#define MPU_INT_EXTI            PC13
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
