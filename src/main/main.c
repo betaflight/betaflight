@@ -385,7 +385,7 @@ void init(void)
 #endif
 
 
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment(boardAlignment());
 
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
