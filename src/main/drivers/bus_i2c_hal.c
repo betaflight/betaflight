@@ -34,7 +34,11 @@
 
 static void i2cUnstick(IO_t scl, IO_t sda);
 
+#if defined(USE_I2C_PULLUP)
+#define IOCFG_I2C IO_CONFIG(GPIO_MODE_AF_OD, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#else
 #define IOCFG_I2C IOCFG_AF_OD
+#endif
 
 #ifndef I2C1_SCL
 #define I2C1_SCL PB6
@@ -229,10 +233,10 @@ void i2cInit(I2CDevice device)
     /// TODO: HAL check if I2C timing is correct
     i2cHandle[device].Handle.Init.Timing          = 0x00B01B59;
     //i2cHandle[device].Handle.Init.Timing          = 0x00D00E28; /* (Rise time = 120ns, Fall time = 25ns) */
-    i2cHandle[device].Handle.Init.OwnAddress1     = 0xFF;
+    i2cHandle[device].Handle.Init.OwnAddress1     = 0x0;
     i2cHandle[device].Handle.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
     i2cHandle[device].Handle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    i2cHandle[device].Handle.Init.OwnAddress2     = 0xFF;
+    i2cHandle[device].Handle.Init.OwnAddress2     = 0x0;
     i2cHandle[device].Handle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
     i2cHandle[device].Handle.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
     
