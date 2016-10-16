@@ -105,6 +105,14 @@ $(OBJECT_DIR)/common/maths.o : \
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
 
+$(OBJECT_DIR)/drivers/io.o : \
+	$(USER_DIR)/drivers/io.c \
+	$(USER_DIR)/drivers/io.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/io.c -o $@
+
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/sensors/battery.c -o $@
@@ -484,6 +492,7 @@ $(OBJECT_DIR)/baro_bmp085_unittest.o : \
 
 $(OBJECT_DIR)/baro_bmp085_unittest : \
 	$(OBJECT_DIR)/drivers/barometer_bmp085.o \
+	$(OBJECT_DIR)/drivers/io.o \
 	$(OBJECT_DIR)/baro_bmp085_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

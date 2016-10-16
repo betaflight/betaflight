@@ -39,7 +39,7 @@ extern "C" {
 
 #define DEG2RAD 0.01745329251
 
-static void rotateVector(int16_t mat[3][3], int16_t vec[3], int16_t *out)
+static void rotateVector(int32_t mat[3][3], int32_t vec[3], int32_t *out)
 {
     int16_t tmp[3];
 
@@ -56,7 +56,7 @@ static void rotateVector(int16_t mat[3][3], int16_t vec[3], int16_t *out)
 
 }
 
-//static void initXAxisRotation(int16_t mat[][3], int16_t angle)
+//static void initXAxisRotation(int32_t mat[][3], int16_t angle)
 //{
 //    mat[0][0] =  1;
 //    mat[0][1] =  0;
@@ -69,7 +69,7 @@ static void rotateVector(int16_t mat[3][3], int16_t vec[3], int16_t *out)
 //    mat[2][2] =  cos(angle*DEG2RAD);
 //}
 
-static void initYAxisRotation(int16_t mat[][3], int16_t angle)
+static void initYAxisRotation(int32_t mat[][3], int16_t angle)
 {
     mat[0][0] =  cos(angle*DEG2RAD);
     mat[0][1] =  0;
@@ -82,7 +82,7 @@ static void initYAxisRotation(int16_t mat[][3], int16_t angle)
     mat[2][2] =  cos(angle*DEG2RAD);
 }
 
-static void initZAxisRotation(int16_t mat[][3], int16_t angle)
+static void initZAxisRotation(int32_t mat[][3], int16_t angle)
 {
     mat[0][0] =  cos(angle*DEG2RAD);
     mat[0][1] = -sin(angle*DEG2RAD);
@@ -97,16 +97,16 @@ static void initZAxisRotation(int16_t mat[][3], int16_t angle)
 
 static void testCW(sensor_align_e rotation, int16_t angle)
 {
-    int16_t src[XYZ_AXIS_COUNT];
-    int16_t dest[XYZ_AXIS_COUNT];
-    int16_t test[XYZ_AXIS_COUNT];
+    int32_t src[XYZ_AXIS_COUNT];
+    int32_t dest[XYZ_AXIS_COUNT];
+    int32_t test[XYZ_AXIS_COUNT];
 
     // unit vector along x-axis
     src[X] = 1;
     src[Y] = 0;
     src[Z] = 0;
     
-    int16_t matrix[3][3];
+    int32_t matrix[3][3];
     initZAxisRotation(matrix, angle);
     rotateVector(matrix, src, test);
 
@@ -155,16 +155,16 @@ static void testCW(sensor_align_e rotation, int16_t angle)
  */
 static void testCWFlip(sensor_align_e rotation, int16_t angle)
 {
-    int16_t src[XYZ_AXIS_COUNT];
-    int16_t dest[XYZ_AXIS_COUNT];
-    int16_t test[XYZ_AXIS_COUNT];
+    int32_t src[XYZ_AXIS_COUNT];
+    int32_t dest[XYZ_AXIS_COUNT];
+    int32_t test[XYZ_AXIS_COUNT];
 
     // unit vector along x-axis
     src[X] = 1;
     src[Y] = 0;
     src[Z] = 0;
     
-    int16_t matrix[3][3];
+    int32_t matrix[3][3];
     initYAxisRotation(matrix, 180);
     rotateVector(matrix, src, test);
     initZAxisRotation(matrix, angle);
