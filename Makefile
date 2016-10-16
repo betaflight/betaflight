@@ -826,8 +826,9 @@ targets:
 	$(V0) @echo "Base target:   $(BASE_TARGET)"
 
 ## test              : run the cleanflight test suite
-test:
-	$(V0) cd src/test && $(MAKE) test || true
+## junittest         : run the cleanflight test suite, producing Junit XML result files.
+test junittest:
+	$(V0) cd src/test && $(MAKE) $@  || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
