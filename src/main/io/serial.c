@@ -433,7 +433,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 
 void cliEnter(serialPort_t *serialPort);
 
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
 {
 #ifndef USE_CLI
     UNUSED(serialPort);
