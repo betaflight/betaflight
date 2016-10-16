@@ -1004,11 +1004,32 @@ void validateAndFixConfig(void)
 #endif
 }
 
-void readEEPROMAndNotify(void)
+void readEEPROM(void)
 {
-    // re-read written data
-    readEEPROM();
-    beeperConfirmationBeeps(1);
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//!!    pgActivateProfile(getCurrentProfile());
+
+//!!    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
 }
 
 void ensureEEPROMContainsValidData(void)
@@ -1016,7 +1037,6 @@ void ensureEEPROMContainsValidData(void)
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
@@ -1029,7 +1049,8 @@ void resetEEPROM(void)
 void saveConfigAndNotify(void)
 {
     writeEEPROM();
-    readEEPROMAndNotify();
+    readEEPROM();
+    beeperConfirmationBeeps(1);
 }
 
 void changeProfile(uint8_t profileIndex)
