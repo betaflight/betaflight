@@ -17,7 +17,6 @@
 
 #pragma once
 
-
 #include "msp/msp.h"
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
@@ -39,6 +38,11 @@ typedef enum {
 } mspEvaluateNonMspData_e;
 
 #define MSP_PORT_INBUF_SIZE 64
+#ifdef USE_FLASHFS
+#define MSP_PORT_OUTBUF_SIZE (4096 + 16)
+#else
+#define MSP_PORT_OUTBUF_SIZE 256
+#endif
 
 struct serialPort_s;
 typedef struct mspPort_s {
@@ -46,15 +50,11 @@ typedef struct mspPort_s {
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
-    uint8_t indRX;
-    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
-    mspState_e c_state;
     uint8_t cmdMSP;
+    mspState_e c_state;
+    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
 } mspPort_t;
 
-
-struct bufWriter_s;
-extern struct bufWriter_s *writer;
 
 void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData);
