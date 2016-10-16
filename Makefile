@@ -701,7 +701,7 @@ all: $(VALID_TARGETS)
 $(VALID_TARGETS):
 		echo "" && \
 		echo "Building $@" && \
-		$(MAKE) -j binary hex TARGET=$@ && \
+		$(MAKE) -j TARGET=$@ && \
 		echo "Building $@ succeeded."
 
 ## clean             : clean up all temporary / machine-generated files
