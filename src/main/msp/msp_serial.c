@@ -29,9 +29,9 @@
 #include "fc/runtime_config.h"
 
 #include "io/serial.h"
-#include "io/serial_msp.h"
 
 #include "msp/msp.h"
+#include "msp/msp_serial.h"
 
 
 static mspProcessCommandFnPtr mspProcessCommandFn;

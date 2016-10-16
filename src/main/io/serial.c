@@ -42,8 +42,8 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_msp.h"
 
+#include "msp/msp_serial.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"

@@ -22,7 +22,8 @@
 
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/flashfs.h"
-#include "io/serial_msp.h"
+
+#include "msp/msp_serial.h"
 
 #include "config/config.h"
 #include "config/config_profile.h"

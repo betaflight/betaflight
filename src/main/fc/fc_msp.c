@@ -49,6 +49,7 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
+#include "fc/fc_msp.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -65,11 +66,11 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/osd.h"
 #include "io/serial_4way.h"
-#include "io/serial_msp.h"
 #include "io/vtx.h"
 
 #include "msp/msp_protocol.h"
 #include "msp/msp.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -104,7 +105,6 @@
 #include "hardware_revision.h"
 #endif
 
-#include "io/serial_msp.h"
 
 #include "io/serial_4way.h"
 
@@ -1318,7 +1318,7 @@ static bool processOutCommand(uint8_t cmdMSP, mspPostProcessFnPtr *mspPostProces
         // reply with the count of ESC found
         serialize8(esc4wayInit());
         if (mspPostProcessFn) {
-            *mspPostProcessFn = mspRebootFn;
+            *mspPostProcessFn = msp4WayIfFn;
         }
         break;
 #endif
