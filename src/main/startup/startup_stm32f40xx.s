@@ -165,17 +165,13 @@ Infinite_Loop:
 * 0x0000.0000.
 *
 *******************************************************************************/
-  .section  .irqstack,"aw",%progbits
-  irq_stack:
-  .space  1024
-
   .section  .isr_vector,"a",%progbits
   .type  g_pfnVectors, %object
   .size  g_pfnVectors, .-g_pfnVectors
    
    
 g_pfnVectors:
-  .word  irq_stack+1024
+  .word  _estack
   .word  Reset_Handler
   .word  NMI_Handler
   .word  HardFault_Handler
