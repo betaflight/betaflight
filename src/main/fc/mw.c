@@ -779,7 +779,7 @@ void subTaskMainSubprocesses(void)
     #endif
 
     #ifdef TRANSPONDER
-        updateTransponder(startTime);
+        transponderUpdate(startTime);
     #endif
     if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }

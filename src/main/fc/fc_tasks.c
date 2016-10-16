@@ -163,14 +163,10 @@ static void taskUpdateRxMain(uint32_t currentTime)
 static void taskProcessGPS(uint32_t currentTime)
 {
     // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
+    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsUdate() can and will
     // change this based on available hardware
     if (feature(FEATURE_GPS)) {
-        gpsThread();
-    }
-
-    if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
+        gpsUpdate(currentTime);
     }
 }
 #endif
@@ -179,7 +175,7 @@ static void taskProcessGPS(uint32_t currentTime)
 static void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(currentTime, &masterConfig.magZero);
+        compassUpdate(currentTime, &masterConfig.magZero);
     }
 }
 #endif
@@ -228,7 +224,7 @@ static void taskCalculateAltitude(uint32_t currentTime)
 static void taskUpdateDisplay(uint32_t currentTime)
 {
     if (feature(FEATURE_DISPLAY)) {
-        updateDisplay(currentTime);
+        displayUpdate(currentTime);
     }
 }
 #endif
@@ -248,7 +244,7 @@ static void taskTelemetry(uint32_t currentTime)
 static void taskLedStrip(uint32_t currentTime)
 {
     if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip(currentTime);
+        ledStripUpdate(currentTime);
     }
 }
 #endif
@@ -257,7 +253,7 @@ static void taskLedStrip(uint32_t currentTime)
 static void taskTransponder(uint32_t currentTime)
 {
     if (feature(FEATURE_TRANSPONDER)) {
-        updateTransponder(currentTime);
+        transponderUpdate(currentTime);
     }
 }
 #endif

@@ -42,7 +42,7 @@ static uint32_t nextUpdateAt = 0;
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
 
-void updateTransponder(uint32_t currentTime)
+void transponderUpdate(uint32_t currentTime)
 {
     static uint32_t jitterIndex = 0;
 

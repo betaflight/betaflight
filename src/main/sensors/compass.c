@@ -57,7 +57,7 @@ void compassInit(void)
     magInit = 1;
 }
 
-void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
+void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 {
     static uint32_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;

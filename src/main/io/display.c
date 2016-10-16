@@ -582,7 +582,7 @@ void showDebugPage(void)
 }
 #endif
 
-void updateDisplay(uint32_t currentTime)
+void displayUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
@@ -702,7 +702,7 @@ void displayInit(rxConfig_t *rxConfigToUse)
     memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);
 
-    updateDisplay(micros());
+    displayUpdate(micros());
 
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }
