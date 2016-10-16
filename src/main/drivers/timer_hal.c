@@ -806,7 +806,7 @@ void timerInit(void)
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerGPIOAF(timerHardwarePtr->tim));
     }
 #endif
 
