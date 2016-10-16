@@ -21,22 +21,18 @@
 
 #include "platform.h"
 
+#include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "drivers/buf_writer.h"
 #include "drivers/serial.h"
-
-#include "fc/runtime_config.h"
 
 #include "io/serial.h"
 
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 
-
 static mspProcessCommandFnPtr mspProcessCommandFn;
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
-bufWriter_t *writer;
 
 
 static void resetMspPort(mspPort_t *mspPortToReset, serialPort_t *serialPort)
@@ -78,7 +74,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
+static bool mspSerialProcessReceivedData(mspPort_t * mspPort, uint8_t c)
 {
     if (mspPort->c_state == MSP_IDLE) {
         if (c == '$') {
@@ -93,12 +89,10 @@ bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
     } else if (mspPort->c_state == MSP_HEADER_ARROW) {
         if (c > MSP_PORT_INBUF_SIZE) {
             mspPort->c_state = MSP_IDLE;
-
         } else {
             mspPort->dataSize = c;
             mspPort->offset = 0;
             mspPort->checksum = 0;
-            mspPort->indRX = 0;
             mspPort->checksum ^= c;
             mspPort->c_state = MSP_HEADER_SIZE;
         }
@@ -119,12 +113,55 @@ bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
     return true;
 }
 
-static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *mspPort)
+static uint8_t mspSerialChecksumBuf(uint8_t checksum, const uint8_t *data, int len)
 {
-    mspPostProcessFnPtr mspPostProcessFn = NULL;
-    mspProcessCommandFn(mspPort, &mspPostProcessFn);
+    while (len-- > 0) {
+        checksum ^= *data++;
+    }
+    return checksum;
+}
 
-    mspPort->c_state = MSP_IDLE;
+static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
+{
+    serialBeginWrite(msp->port);
+    const int len = sbufBytesRemaining(&packet->buf);
+    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', len, packet->cmd};
+    serialWriteBuf(msp->port, hdr, sizeof(hdr));
+    uint8_t checksum = mspSerialChecksumBuf(0, hdr + 3, 2); // checksum starts from len field
+    if (len > 0) {
+        serialWriteBuf(msp->port, sbufPtr(&packet->buf), len);
+        checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), len);
+    }
+    serialWrite(msp->port, checksum);
+    serialEndWrite(msp->port);
+}
+
+static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
+{
+    static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
+
+    mspPacket_t reply = {
+        .buf = { .ptr = outBuf, .end = ARRAYEND(outBuf), },
+        .cmd = -1,
+        .result = 0,
+    };
+    uint8_t *outBufHead = reply.buf.ptr;
+
+    mspPacket_t command = {
+        .buf = { .ptr = msp->inBuf, .end = msp->inBuf + msp->dataSize, },
+        .cmd = msp->cmdMSP,
+        .result = 0,
+    };
+
+    mspPostProcessFnPtr mspPostProcessFn = NULL;
+    const mspResult_e status = mspProcessCommandFn(&command, &reply, &mspPostProcessFn);
+
+    if (status != MSP_RESULT_NO_REPLY) {
+        sbufSwitchToReader(&reply.buf, outBufHead); // change streambuf direction
+        mspSerialEncode(msp, &reply);
+    }
+
+    msp->c_state = MSP_IDLE;
     return mspPostProcessFn;
 }
 
@@ -140,11 +177,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
         if (!mspPort->port) {
             continue;
         }
-
-        // Big enough to fit a MSP_STATUS in one write.
-        uint8_t buf[sizeof(bufWriter_t) + 20];
-        writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, mspPort->port);
-
         mspPostProcessFnPtr mspPostProcessFn = NULL;
         while (serialRxBytesWaiting(mspPort->port)) {
 
@@ -160,9 +192,6 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
                 break; // process one command at a time so as not to block.
             }
         }
-
-        bufWriterFlush(writer);
-
         if (mspPostProcessFn) {
             waitForSerialPortToFinishTransmitting(mspPort->port);
             mspPostProcessFn(mspPort->port);
@@ -176,3 +205,4 @@ void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFnToUse)
     memset(mspPorts, 0, sizeof(mspPorts));
     mspSerialAllocatePorts();
 }
+
