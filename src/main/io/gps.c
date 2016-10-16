@@ -244,7 +244,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
         mode &= ~MODE_TX;
 #endif
 
-    // no callback - buffer will be consumed in gpsThread()
+    // no callback - buffer will be consumed in gpsUpdate()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
     if (!gpsPort) {
         featureClear(FEATURE_GPS);
@@ -398,7 +398,16 @@ void gpsInitHardware(void)
     }
 }
 
-void gpsThread(void)
+static void updateGpsIndicator(uint32_t currentTime)
+{
+    static uint32_t GPSLEDTime;
+    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
+        GPSLEDTime = currentTime + 150000;
+        LED1_TOGGLE;
+    }
+}
+
+void gpsUpdate(uint32_t currentTime)
 {
     // read out available GPS bytes
     if (gpsPort) {
@@ -423,7 +432,7 @@ void gpsThread(void)
                 gpsData.baudrateIndex++;
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
-            gpsData.lastMessage = millis();
+            gpsData.lastMessage = currentTime / 1000;
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
             DISABLE_STATE(GPS_FIX);
@@ -432,12 +441,15 @@ void gpsThread(void)
 
         case GPS_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
-            if (millis() - gpsData.lastMessage > GPS_TIMEOUT) {
+            if (currentTime / 1000 - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
             }
             break;
+    }
+    if (sensors(SENSOR_GPS)) {
+        updateGpsIndicator(currentTime);
     }
 }
 
@@ -1065,12 +1077,11 @@ static void gpsHandlePassthrough(uint8_t data)
      gpsNewData(data);
  #ifdef DISPLAY
      if (feature(FEATURE_DISPLAY)) {
-         updateDisplay(micros());
+         displayUpdate(micros());
      }
  #endif
 
  }
-
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 {
@@ -1087,14 +1098,5 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 #endif
 
     serialPassthrough(gpsPort, gpsPassthroughPort, &gpsHandlePassthrough, NULL);
-}
-
-void updateGpsIndicator(uint32_t currentTime)
-{
-    static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
-        GPSLEDTime = currentTime + 150000;
-        LED1_TOGGLE;
-    }
 }
 #endif
