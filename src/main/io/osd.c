@@ -436,7 +436,7 @@ OSD_Entry menu_vtxstat[] = {
 
 OSD_Entry menu_vtx[] =
 {
-    { "--- VTX ---", OME_Label, NULL, NULL },
+    { "-- VTX SMARTAUDIO --", OME_Label, NULL, NULL },
     { smartAudioStatusString, OME_Label, NULL, NULL },
     { "RFMODE", OME_TAB, smartAudioSetModeByGvar, &entrySmartAudioMode },
     { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand },
