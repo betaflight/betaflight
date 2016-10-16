@@ -37,7 +37,7 @@ typedef enum {
     MSP_SKIP_NON_MSP_DATA
 } mspEvaluateNonMspData_e;
 
-#define MSP_PORT_INBUF_SIZE 192
+#define  MSP_PORT_INBUF_SIZE 192
 #ifdef USE_FLASHFS
 #ifdef STM32F1
 #define MSP_PORT_DATAFLASH_BUFFER_SIZE 1024

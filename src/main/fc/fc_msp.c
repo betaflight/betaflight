@@ -1813,7 +1813,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
  */
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
 {
-    int ret = MSP_RESULT_ACK;
+     int ret = MSP_RESULT_ACK;
     sbuf_t *dst = &reply->buf;
     sbuf_t *src = &cmd->buf;
     const uint8_t cmdMSP = cmd->cmd;
