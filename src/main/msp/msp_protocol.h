@@ -262,7 +262,7 @@
 #define MSP_SENSOR_ALIGNMENT     126    //out message         orientation of acc,gyro,mag
 #define MSP_LED_STRIP_MODECOLOR  127    //out message         Get LED strip mode_color settings
 #define MSP_VOLTAGE_METERS       128    //out message         Voltage (per meter)
-#define MSP_CURRENT_METERS       129    //out message         Amperage (per meter)
+#define MSP_AMPERAGE_METERS      129    //out message         Amperage (per meter)
 #define MSP_BATTERY_STATES       130    //out message         Connected/Disconnected, Voltage, Current Used (per battery)
 #define MSP_PILOT                131    //out message         callsign, etc
 
