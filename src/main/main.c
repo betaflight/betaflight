@@ -384,7 +384,7 @@ void init(void)
 #endif
 
 
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment(boardAlignment());
 
 #ifdef CMS
     cmsInit();
