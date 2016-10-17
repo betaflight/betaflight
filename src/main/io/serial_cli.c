@@ -101,7 +101,6 @@ uint8_t cliMode = 0;
 #include "config/feature.h"
 #include "config/parameter_group_ids.h"
 
-
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
 void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
@@ -677,16 +676,10 @@ typedef struct {
 
     pgn_t pgn;
     uint16_t offset;
-} __attribute__((packed)) clivalue_pg_t;
-
-typedef struct {
-    const char *name;
-    const uint8_t type; // see cliValueFlag_e
-    void *ptr;
-    const cliValueConfig_t config;
-} clivalue_t;
+} __attribute__((packed)) clivalue_t;
 
 const clivalue_t valueTable[] = {
+/*
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, .config.minmax = { 1200,  1700 } },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -800,7 +793,11 @@ const clivalue_t valueTable[] = {
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT } },
-
+*/
+    { "align_board_roll",           VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDegrees)},
+    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
+    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
+/*
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
     { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
@@ -849,7 +846,14 @@ const clivalue_t valueTable[] = {
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.rxConfig.airModeActivateThreshold, .config.minmax = {1000, 2000 } },
-
+*/
+    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_delay)},
+    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_off_delay)},
+    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle)},
+    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_kill_switch)},
+    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  300 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle_low_delay)},
+    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FAILSAFE } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_procedure)},
+/*
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
@@ -970,32 +974,10 @@ const clivalue_t valueTable[] = {
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
+*/
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
-
-const clivalue_pg_t valueTablePG[] = {
-    { "align_board_roll",           VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDegrees)},
-    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
-    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
-/*
-    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } },
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
-    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
-    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_procedure, .config.lookup = { TABLE_FAILSAFE } },
-*/
-    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_delay)},
-    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_off_delay)},
-    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle)},
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_kill_switch)},
-    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  300 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle_low_delay)},
-    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FAILSAFE } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_procedure)},
-
-};
-
-#define VALUE_COUNT_PG (sizeof(valueTablePG) / sizeof(clivalue_pg_t))
 
 typedef union {
     int32_t int_value;
@@ -1003,6 +985,7 @@ typedef union {
 } int_float_value_t;
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
+static void* cliVarPtr(const clivalue_t *var);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, master_t *defaultConfig);
 static void cliPrintVarRange(const clivalue_t *var);
@@ -2629,7 +2612,7 @@ static void cliMap(char *cmdline)
 
 void *getValuePointer(const clivalue_t *value)
 {
-    void *ptr = value->ptr;
+    void *ptr = cliVarPtr(value);
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
@@ -3286,9 +3269,24 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
+static void* cliVarPtr(const clivalue_t *var)
+{
+    const pgRegistry_t* rec = pgFind(var->pgn);
+
+    switch (var->type & VALUE_SECTION_MASK) {
+        case MASTER_VALUE:
+            return rec->address + var->offset;
+        case PROFILE_RATE_VALUE:
+            return rec->address + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile()) + var->offset;
+        case PROFILE_VALUE:
+            return *rec->ptr + var->offset;
+    }
+    return NULL;
+}
+
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
-    void *ptr = getValuePointer(var);
+    void *ptr = cliVarPtr(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -3325,7 +3323,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
-    void *ptr = var->ptr;
+    void *ptr = cliVarPtr(var);
     if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
