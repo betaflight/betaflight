@@ -59,6 +59,10 @@ void telemetryInit(void)
     initLtmTelemetry(telemetryConfig);
     initJetiExBusTelemetry(telemetryConfig);
 
+#if defined(TELEMETRY_MAVLINK)
+    initMAVLinkTelemetry();
+#endif
+
     telemetryCheckState();
 }
 
@@ -90,7 +94,10 @@ void telemetryCheckState(void)
     checkSmartPortTelemetryState();
     checkLtmTelemetryState();
     checkJetiExBusTelemetryState();
+
+#if defined(TELEMETRY_MAVLINK)
     checkMAVLinkTelemetryState();
+#endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -100,7 +107,10 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleJetiExBusTelemetry();
+
+#if defined(TELEMETRY_MAVLINK)
     handleMAVLinkTelemetry();
+#endif
 }
 
 #endif

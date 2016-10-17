@@ -55,6 +55,7 @@
 
 #if (FLASH_SIZE > 128)
 #define DISPLAY
+#define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP

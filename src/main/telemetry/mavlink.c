@@ -26,7 +26,7 @@
 
 #include "platform.h"
 
-#if defined(TELEMETRY)
+#if defined(TELEMETRY) && defined(TELEMETRY_MAVLINK)
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -456,6 +456,7 @@ void mavlinkSendHUDAndHeartbeat(void)
             break;
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
+        case MIXER_CUSTOM_AIRPLANE:
             mavSystemType = MAV_TYPE_FIXED_WING;
             break;
         case MIXER_HELI_120_CCPM:
