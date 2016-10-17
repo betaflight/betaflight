@@ -260,10 +260,19 @@ static void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inc
 
         //-----calculate D-term (Yaw D not yet supported)
         if (axis != YAW) {
-            if (pidProfile->setpointRelaxRatio < 100)
-                dynC = c[axis] * powerf(rcInput[axis], 2) * relaxFactor[axis] + c[axis] * (1-relaxFactor[axis]);
-            else
+            static float previousSetpoint[3];
+            dynC = c[axis];
+            if (pidProfile->setpointRelaxRatio < 100) {
                 dynC = c[axis];
+                if (setpointRate[axis] > 0) {
+                    if ((setpointRate[axis] - previousSetpoint[axis]) < previousSetpoint[axis])
+                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                } else if (setpointRate[axis] < 0) {
+                    if ((setpointRate[axis] - previousSetpoint[axis]) > previousSetpoint[axis])
+                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                }
+            }
+            previousSetpoint[axis] = setpointRate[axis];
             rD = dynC * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
