@@ -42,20 +42,20 @@
 #define CCMR_Offset                 ((uint16_t)0x0018)
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  GPIO_AF_TIM1  },
-    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2),  GPIO_AF_TIM2  },
-    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3),  GPIO_AF_TIM3  },
-    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4),  GPIO_AF_TIM4  },
-    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5),  GPIO_AF_TIM5  },
-    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  0             },
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  0             },
-    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  GPIO_AF_TIM8  },
-    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  GPIO_AF_TIM9  },
-    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10), GPIO_AF_TIM10 },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11), GPIO_AF_TIM11 },
-    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12), GPIO_AF_TIM12 },
-    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13), GPIO_AF_TIM13 },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14), GPIO_AF_TIM14 },
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5)  },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8)  },
+    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
+    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
+    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
+    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 };
 
 void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t TIM_OCMode)

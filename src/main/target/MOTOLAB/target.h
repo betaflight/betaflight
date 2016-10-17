@@ -112,6 +112,7 @@
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 #endif
 
 #if 0

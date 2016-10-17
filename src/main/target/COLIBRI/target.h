@@ -128,6 +128,7 @@
 #define WS2811_DMA_IT                   DMA_IT_TCIF3
 #define WS2811_DMA_CHANNEL              DMA_Channel_2
 #define WS2811_DMA_IRQ                  DMA1_Stream3_IRQn
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM4
 
 // alternative defaults for Colibri/Gemini target
 #define TARGET_CONFIG

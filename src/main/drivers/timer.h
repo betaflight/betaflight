@@ -68,9 +68,6 @@ typedef struct timerOvrHandlerRec_s {
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
     rccPeriphTag_t rcc;
-#if defined(STM32F3) || defined(STM32F4)
-    uint8_t alternateFunction;
-#endif
 } timerDef_t;
 
 typedef struct timerHardware_s {
@@ -155,9 +152,5 @@ void timerForceOverflow(TIM_TypeDef *tim);
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
-
-#if defined(STM32F3) || defined(STM32F4)
-uint8_t timerGPIOAF(TIM_TypeDef *tim);
-#endif
 
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);

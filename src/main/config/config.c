@@ -308,6 +308,13 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 #ifdef PPM_PIN
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
 #else
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if ((timerHardware[i].output == TIMER_INPUT_ENABLED)) {
+            ppmConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+
     ppmConfig->ioTag = IO_TAG_NONE;
 #endif
 }
@@ -315,7 +322,7 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 void resetPwmConfig(pwmConfig_t *pwmConfig)
 {
     uint8_t inputIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < PWM_INPUT_PORT_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
         if ((timerHardware[i].output == TIMER_INPUT_ENABLED)) {
             pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;

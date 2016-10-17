@@ -17,12 +17,6 @@
 
 #pragma once
 
-void transponderInit(uint8_t* transponderCode);
+#include "msp/msp.h"
 
-void transponderEnable(void);
-void transponderDisable(void);
-void transponderUpdate(uint32_t currentTime);
-void transponderUpdateData(uint8_t* transponderData);
-void transponderTransmitOnce(void);
-void transponderStartRepeating(void);
-void transponderStopRepeating(void);
+mspProcessCommandFnPtr mspFcInit(void);

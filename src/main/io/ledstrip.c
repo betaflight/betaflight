@@ -675,8 +675,8 @@ static void applyLedIndicatorLayer(bool updateNow, uint32_t *timer)
         if (rxIsReceivingSignal()) {
             // calculate update frequency
             int scale = MAX(ABS(rcCommand[ROLL]), ABS(rcCommand[PITCH]));  // 0 - 500
-            scale += (50 - INDICATOR_DEADBAND);  // start increasing frequency right after deadband
-            *timer += LED_STRIP_HZ(5) * 50 / MAX(50, scale);   // 5 - 50Hz update, 2.5 - 25Hz blink
+            scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
+            *timer += LED_STRIP_HZ(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
 
             flash = !flash;
         } else {
@@ -926,7 +926,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void updateLedStrip(uint32_t currentTime)
+void ledStripUpdate(uint32_t currentTime)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;

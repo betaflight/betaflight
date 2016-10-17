@@ -42,8 +42,8 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_msp.h"
 
+#include "msp/msp_serial.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
@@ -84,7 +84,8 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 
 static uint8_t serialPortCount;
 
-const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 500000, 1000000}; // see baudRate_e
+const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
+        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
 
@@ -432,7 +433,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 
 void cliEnter(serialPort_t *serialPort);
 
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
 {
 #ifndef USE_CLI
     UNUSED(serialPort);

@@ -436,17 +436,17 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_legacy.c \
             flight/pid_betaflight.c \
-            io/beeper.c \
+            fc/fc_msp.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            io/beeper.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             io/serial_cli.c \
-            io/serial_msp.c \
             io/statusindicator.c \
-            msp/msp_server_fc.c \
+            msp/msp_serial.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
@@ -826,8 +826,9 @@ targets:
 	$(V0) @echo "Base target:   $(BASE_TARGET)"
 
 ## test              : run the cleanflight test suite
-test:
-	$(V0) cd src/test && $(MAKE) test || true
+## junittest         : run the cleanflight test suite, producing Junit XML result files.
+test junittest:
+	$(V0) cd src/test && $(MAKE) $@  || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

@@ -33,7 +33,6 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
-
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/timer.h"
@@ -45,16 +44,16 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
-
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 
+#include "msp/msp_serial.h"
+
+#include "io/beeper.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -779,7 +778,7 @@ void subTaskMainSubprocesses(void)
     #endif
 
     #ifdef TRANSPONDER
-        updateTransponder(startTime);
+        transponderUpdate(startTime);
     #endif
     if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }

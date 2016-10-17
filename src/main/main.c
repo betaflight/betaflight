@@ -22,6 +22,8 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -61,8 +63,12 @@
 #include "bus_bst.h"
 #endif
 
+#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -73,13 +79,11 @@
 #include "io/gps.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
@@ -97,15 +101,12 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
-
-#include "fc/runtime_config.h"
 
 #include "config/config.h"
 #include "config/config_eeprom.h"
@@ -442,7 +443,7 @@ void init(void)
 
     imuInit();
 
-    mspSerialInit();
+    mspSerialInit(mspFcInit());
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

@@ -49,6 +49,7 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
+#include "fc/fc_msp.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -65,11 +66,11 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/osd.h"
 #include "io/serial_4way.h"
-#include "io/serial_msp.h"
 #include "io/vtx.h"
 
 #include "msp/msp_protocol.h"
 #include "msp/msp.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -104,7 +105,6 @@
 #include "hardware_revision.h"
 #endif
 
-#include "io/serial_msp.h"
 
 #include "io/serial_4way.h"
 
@@ -112,7 +112,6 @@ extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
 // cause reboot after MSP processing complete
-static mspPostProcessFuncPtr mspPostProcessFn = NULL;
 static mspPort_t *currentPort;
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -193,26 +192,26 @@ typedef enum {
 #define DATAFLASH_BUFFER_SIZE 4096
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-void msp4WayIfFn(mspPort_t *mspPort)
+static void msp4WayIfFn(serialPort_t *serialPort)
 {
     // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
     // bootloader mode before try to connect any ESC
     // Start to activate here
-    esc4wayProcess(mspPort->port);
+    esc4wayProcess(serialPort);
     // former used MSP uart is still active
     // proceed as usual with MSP commands
 }
 #endif
 
-static void mspRebootFn(mspPort_t *mspPort)
+static void mspRebootFn(serialPort_t *serialPort)
 {
-    UNUSED(mspPort);
+    UNUSED(serialPort);
 
     stopPwmAllMotors();
     systemReset();
 
     // control should never return here.
-    while(1) ;
+    while (true) ;
 }
 
 static void serialize8(uint8_t a)
@@ -463,7 +462,7 @@ static void serializeDataflashReadReply(uint32_t address, uint16_t size, bool us
 }
 #endif
 
-void mspInit(void)
+void initActiveBoxIds(void)
 {
     // calculate used boxes based on features and fill availableBoxes[] array
     memset(activeBoxIds, 0xFF, sizeof(activeBoxIds));
@@ -608,9 +607,12 @@ static uint32_t packFlightModeFlags(void)
     return junk;
 }
 
-static bool processOutCommand(uint8_t cmdMSP)
+static bool processOutCommand(uint8_t cmdMSP, mspPostProcessFnPtr *mspPostProcessFn)
 {
     uint32_t i;
+#ifdef USE_FLASHFS
+    const unsigned int dataSize = currentPort->dataSize;
+#endif
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -1157,7 +1159,7 @@ static bool processOutCommand(uint8_t cmdMSP)
             uint32_t readAddress = read32();
             uint16_t readLength;
             bool useLegacyFormat;
-            if (currentPort->dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+            if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
                 readLength = read16();
                 useLegacyFormat = false;
             } else {
@@ -1303,7 +1305,9 @@ static bool processOutCommand(uint8_t cmdMSP)
 
     case MSP_REBOOT:
         headSerialReply(0);
-        mspPostProcessFn = mspRebootFn;
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = mspRebootFn;
+        }
         break;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
@@ -1313,7 +1317,9 @@ static bool processOutCommand(uint8_t cmdMSP)
         // switch all motor lines HI
         // reply with the count of ESC found
         serialize8(esc4wayInit());
-        mspPostProcessFn = msp4WayIfFn;
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = msp4WayIfFn;
+        }
         break;
 #endif
 
@@ -1916,55 +1922,25 @@ static bool processInCommand(uint8_t cmdMSP)
     return true;
 }
 
-mspPostProcessFuncPtr mspProcessReceivedCommand(mspPort_t *mspPort)
+mspResult_e mspFcProcessCommand(mspPort_t *mspPort, mspPostProcessFnPtr *mspPostProcessFn)
 {
+    mspResult_e ret = MSP_RESULT_ACK;
     currentPort = mspPort;
     mspPostProcessFn = NULL;
-    if (!(processOutCommand(mspPort->cmdMSP) || processInCommand(mspPort->cmdMSP))) {
+    if (!(processOutCommand(mspPort->cmdMSP, mspPostProcessFn) || processInCommand(mspPort->cmdMSP))) {
         headSerialError(0);
+        ret = MSP_RESULT_ERROR;
     }
     tailSerialReply();
-    mspPort->c_state = IDLE;
-    return mspPostProcessFn;
+    mspPort->c_state = MSP_IDLE;
+    return ret;
 }
 
-bool mspProcessReceivedData(mspPort_t *mspPort, uint8_t c)
+/*
+ * Return a pointer to the process command function
+ */
+mspProcessCommandFnPtr mspFcInit(void)
 {
-    if (mspPort->c_state == IDLE) {
-        if (c == '$') {
-            mspPort->c_state = HEADER_START;
-        } else {
-            return false;
-        }
-    } else if (mspPort->c_state == HEADER_START) {
-        mspPort->c_state = (c == 'M') ? HEADER_M : IDLE;
-    } else if (mspPort->c_state == HEADER_M) {
-        mspPort->c_state = (c == '<') ? HEADER_ARROW : IDLE;
-    } else if (mspPort->c_state == HEADER_ARROW) {
-        if (c > MSP_PORT_INBUF_SIZE) {
-            mspPort->c_state = IDLE;
-
-        } else {
-            mspPort->dataSize = c;
-            mspPort->offset = 0;
-            mspPort->checksum = 0;
-            mspPort->indRX = 0;
-            mspPort->checksum ^= c;
-            mspPort->c_state = HEADER_SIZE;
-        }
-    } else if (mspPort->c_state == HEADER_SIZE) {
-        mspPort->cmdMSP = c;
-        mspPort->checksum ^= c;
-        mspPort->c_state = HEADER_CMD;
-    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset < mspPort->dataSize) {
-        mspPort->checksum ^= c;
-        mspPort->inBuf[mspPort->offset++] = c;
-    } else if (mspPort->c_state == HEADER_CMD && mspPort->offset >= mspPort->dataSize) {
-        if (mspPort->checksum == c) {
-            mspPort->c_state = COMMAND_RECEIVED;
-        } else {
-            mspPort->c_state = IDLE;
-        }
-    }
-    return true;
+    initActiveBoxIds();
+    return mspFcProcessCommand;
 }
