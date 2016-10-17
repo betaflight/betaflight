@@ -37,6 +37,7 @@
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
+
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
@@ -46,8 +47,6 @@
 
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
@@ -56,6 +55,9 @@
 #define ACC
 #define USE_ACC_SPI_ICM20689
 #define ACC_ICM20689_ALIGN       CW180_DEG
+
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -131,8 +133,8 @@
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-#define I2C1_SCL_PIN            PB8
-#define I2C1_SDA_PIN            PB9
+#define I2C1_SCL            PB8
+#define I2C1_SDA            PB9
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
