@@ -140,11 +140,11 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
 #endif
 
-    pidProfile->P8[ROLL] = 45;
+    pidProfile->P8[ROLL] = 43;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 60;
-    pidProfile->I8[PITCH] = 65;
+    pidProfile->P8[PITCH] = 58;
+    pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 70;
     pidProfile->I8[YAW] = 45;
@@ -183,7 +183,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
     // Betaflight PID controller parameters
-    pidProfile->setpointRelaxRatio = 85;
+    pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 220;
     pidProfile->rateAccelLimit = 0;

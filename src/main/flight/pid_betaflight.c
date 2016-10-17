@@ -150,10 +150,10 @@ void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
             // calculate error angle and limit the angle to the max inclination
 #ifdef GPS
                 const float errorAngle = (constrainf(pidProfile->levelSensitivity * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #else
                 const float errorAngle = (constrainf(pidProfile->levelSensitivity * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
+                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
 #endif
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
@@ -192,10 +192,19 @@ void pidBetaflight(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
 
         //-----calculate D-term (Yaw D not yet supported)
         if (axis != YAW) {
-            if (pidProfile->setpointRelaxRatio < 100)
-                dynC = c[axis] * powerf(rcInput[axis], 2) * relaxFactor[axis] + c[axis] * (1-relaxFactor[axis]);
-            else
+            static float previousSetpoint[3];
+            dynC = c[axis];
+            if (pidProfile->setpointRelaxRatio < 100) {
                 dynC = c[axis];
+                if (setpointRate[axis] > 0) {
+                    if ((setpointRate[axis] - previousSetpoint[axis]) < previousSetpoint[axis])
+                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                } else if (setpointRate[axis] < 0) {
+                    if ((setpointRate[axis] - previousSetpoint[axis]) > previousSetpoint[axis])
+                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                }
+            }
+            previousSetpoint[axis] = setpointRate[axis];
             rD = dynC * setpointRate[axis] - PVRate;    // cr - y
             delta = rD - lastRateError[axis];
             lastRateError[axis] = rD;
