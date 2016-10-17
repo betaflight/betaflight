@@ -70,8 +70,6 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
-#include "mavlink/common/mavlink.h"
-
 #include "config/config.h"
 #include "fc/runtime_config.h"
 
@@ -85,7 +83,7 @@
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "mavlink/common/mavlink.h"
+#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
@@ -451,6 +449,7 @@ void mavlinkSendHUDAndHeartbeat(void)
             break;
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
+        case MIXER_CUSTOM_AIRPLANE:
             mavSystemType = MAV_TYPE_FIXED_WING;
             break;
         case MIXER_HELI_120_CCPM:
