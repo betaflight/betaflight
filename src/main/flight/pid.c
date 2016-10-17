@@ -187,7 +187,7 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         // tpa_breakpoint for fixed wing is cruise throttle value (value at which PIDs were tuned)
         if (controlRateConfig->dynThrPID != 0 && controlRateConfig->tpa_breakpoint > motorConfig->minthrottle) {
             if (rcCommand[THROTTLE] > motorConfig->minthrottle) {
-                tpaFactor = 0.5f + ((controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
+                tpaFactor = 0.5f + ((float)(controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
                 tpaFactor = constrainf(tpaFactor, 0.6f, 1.67f);
             }
             else {
