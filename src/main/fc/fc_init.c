@@ -289,6 +289,8 @@ void init(void)
         pwm_params.idlePulse = 0; // brushed motors
     }
 
+    pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
+
 #ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
 #endif
