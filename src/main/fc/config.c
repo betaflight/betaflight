@@ -492,7 +492,7 @@ void createDefaultConfig(master_t *config)
     config->gyro_soft_lpf_hz = 90;
     config->gyro_soft_notch_hz_1 = 400;
     config->gyro_soft_notch_cutoff_1 = 300;
-    config->gyro_soft_notch_hz_2 = 0;
+    config->gyro_soft_notch_hz_2 = 200;
     config->gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_NONE;
