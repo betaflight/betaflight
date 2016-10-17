@@ -26,8 +26,6 @@
 
 #include "platform.h"
 
-#include "build_config.h"
-
 #if defined(TELEMETRY)
 
 #include "common/maths.h"
@@ -43,11 +41,11 @@
 #include "drivers/pwm_rx.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/escservo.h"
+#include "io/motors.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -68,20 +66,18 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
-#include "telemetry/mavlink/common/mavlink.h"
-
 #include "config/config.h"
-#include "config/runtime_config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
-#include "mw.h"
+#include "fc/runtime_config.h"
 
 // mavlink library uses unnames unions that's causes GCC to complain if -Wpedantic is used
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "mavlink/common/mavlink.h"
+#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
