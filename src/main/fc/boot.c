@@ -699,12 +699,6 @@ void init(void)
     // TODO - not implemented yet
     timerStart();
 
-#if defined(SPRACINGF3NEO) && defined(DEBUG_INTERCONNECTS)
-    void configureBoardInterconnects(void);
-
-    configureBoardInterconnects();
-#endif
-
     ENABLE_STATE(SMALL_ANGLE);
     DISABLE_ARMING_FLAG(PREVENT_ARMING);
 
