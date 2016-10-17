@@ -81,16 +81,30 @@ static void icm20689SpiInit(void)
 bool icm20689SpiDetect(void)
 {
     uint8_t tmp;
-
+    uint8_t attemptsRemaining = 20;
+    
     icm20689SpiInit();
+    
+    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
 
-    icm20689ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+    icm20689WriteRegister(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
 
-    if (tmp == ICM20689_WHO_AM_I_CONST) {
-        return true;
-    }
+    do {
+        delay(150);
 
-    return false;
+        icm20689ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
+        if (tmp == ICM20689_WHO_AM_I_CONST) {
+            break;
+        }
+        if (!attemptsRemaining) {
+            return false;
+        }
+    } while (attemptsRemaining--);
+
+    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_FAST);
+
+    return true;
+
 }
 
 bool icm20689SpiAccDetect(acc_t *acc)
