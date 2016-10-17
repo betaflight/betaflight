@@ -137,7 +137,8 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, 0); // sensors
             sbufWriteU32(dst, 0); // flight mode flags
             sbufWriteU8(dst, 0);  // profile index
-            sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+            sbufWriteU16(dst, averageSystemLoadPercent);
+            sbufWriteU16(dst, 0); // gyroDeltaUs
             break;
 
         case MSP_DEBUG:
@@ -167,6 +168,14 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                 sbufWriteU16(dst, amperageMeterConfig(i)->scale);
                 sbufWriteU16(dst, amperageMeterConfig(i)->offset);
             }
+            break;
+
+        case MSP_BATTERY_CONFIG:
+            sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
+            sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
+            sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+            sbufWriteU16(dst, batteryConfig()->batteryCapacity);
+            sbufWriteU8(dst, batteryConfig()->amperageMeterSource);
             break;
 
         case MSP_CF_SERIAL_CONFIG:
