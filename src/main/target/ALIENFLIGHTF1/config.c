@@ -48,6 +48,9 @@ void targetConfiguration(master_t *config)
         config->motorConfig.useUnsyncedPwm = true;
     }
 
+    failsafeConfig()->failsafe_delay = 2;
+    failsafeConfig()->failsafe_off_delay = 0;
+
     config->profile[0].pidProfile.P8[ROLL] = 90;
     config->profile[0].pidProfile.I8[ROLL] = 44;
     config->profile[0].pidProfile.D8[ROLL] = 60;
