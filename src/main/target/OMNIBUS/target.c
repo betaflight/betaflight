@@ -24,22 +24,22 @@
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // PPM Pad
-    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, }, // PPM - PB4
+    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // PPM - PB4
     // PB5 / TIM3 CH2 is connected to USBPresent
 
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM1 - PB8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM2 - PB9
-    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, },  // PWM3 - PA3
-    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, },  // PWM4 - PA2
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM1 - PB8
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM2 - PB9
+    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 },  // PWM3 - PA3
+    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 },  // PWM4 - PA2
 
     // UART3 RX/TX
-    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP, }, // PWM5  - PB10 - TIM2_CH3 / UART3_TX (AF7)
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP, }, // PWM6 - PB11 - TIM2_CH4 / UART3_RX (AF7)
+    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM5  - PB10 - TIM2_CH3 / UART3_TX (AF7)
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM6 - PB11 - TIM2_CH4 / UART3_RX (AF7)
 
     // SDA / SCL
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM7 - PB7
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, },  // PWM8 - PB6
+    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM7 - PB7
+    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 },  // PWM8 - PB6
 
     // LED Strip Pad
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, },  // GPIO_TIMER / LED_STRIP
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6 },  // GPIO_TIMER / LED_STRIP
 };

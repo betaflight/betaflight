@@ -39,6 +39,7 @@
 #define WS2811_DMA_IT                   DMA_IT_TCIF2
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
 #define WS2811_TIMER_CHANNEL            TIM_Channel_1
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 #endif
 
 static IO_t ws2811IO = IO_NONE;
@@ -68,7 +69,7 @@ void ws2811LedStripHardwareInit(void)
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(WS2811_TIMER));
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), WS2811_TIMER_GPIO_AF);
 
     // Stop timer
     TIM_Cmd(WS2811_TIMER, DISABLE);

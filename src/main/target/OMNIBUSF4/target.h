@@ -118,7 +118,6 @@
 
 #define LED_STRIP
 // LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
 #define WS2811_PIN                      PA1
 #define WS2811_TIMER                    TIM5
 #define WS2811_TIMER_CHANNEL            TIM_Channel_2
@@ -128,6 +127,7 @@
 #define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
 #define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
 #define WS2811_DMA_IT                   DMA_IT_TCIF4
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define SENSORS_SET (SENSOR_ACC)
 

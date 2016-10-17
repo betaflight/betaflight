@@ -23,16 +23,16 @@
 #include "drivers/timer.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, }, // PWM1 - PA8
-    { TIM3,  IO_TAG(PC6),  TIM_Channel_1, TIM3_IRQn,               1, IOCFG_AF_PP,    }, // PWM2 - PC6
-    { TIM3,  IO_TAG(PC7),  TIM_Channel_2, TIM3_IRQn,               1, IOCFG_AF_PP,    }, // PWM3 - PC7
-    { TIM3,  IO_TAG(PC8),  TIM_Channel_3, TIM3_IRQn,               1, IOCFG_AF_PP,    }, // PMW4 - PC8
-    { TIM3,  IO_TAG(PC9),  TIM_Channel_4, TIM3_IRQn,               1, IOCFG_AF_PP,    }, // PWM5 - PC9
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP,    }, // PWM6 - PA0
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               1, IOCFG_AF_PP,    }, // PWM7 - PA1
-    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP,    }, // PWM8 - PA2
-    { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP,    }, // PWM9 - PA3
-    { TIM15, IO_TAG(PB14), TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP_PD, }, // PWM10 - PB14
-    { TIM15, IO_TAG(PB15), TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP_PD, }, // PWM11 - PB15
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, GPIO_AF_6 }, // PWM1 - PA8
+    { TIM3,  IO_TAG(PC6),  TIM_Channel_1, TIM3_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2 }, // PWM2 - PC6
+    { TIM3,  IO_TAG(PC7),  TIM_Channel_2, TIM3_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2 }, // PWM3 - PC7
+    { TIM3,  IO_TAG(PC8),  TIM_Channel_3, TIM3_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2 }, // PMW4 - PC8
+    { TIM3,  IO_TAG(PC9),  TIM_Channel_4, TIM3_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2 }, // PWM5 - PC9
+    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_1 }, // PWM6 - PA0
+    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_1 }, // PWM7 - PA1
+    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_1 }, // PWM8 - PA2
+    { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_1 }, // PWM9 - PA3
+    { TIM15, IO_TAG(PB14), TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP_PD, GPIO_AF_1 }, // PWM10 - PB14
+    { TIM15, IO_TAG(PB15), TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP_PD, GPIO_AF_1 }, // PWM11 - PB15
 };
 
