@@ -55,6 +55,14 @@
 #define ACC_MPU6500_ALIGN CW0_DEG
 #define GYRO_MPU6500_ALIGN CW0_DEG
 
+#define BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+
+#define MAG
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883
+
 #define BEEPER
 #define LED0
 #define LED1
