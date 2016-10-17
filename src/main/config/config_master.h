@@ -66,7 +66,6 @@ typedef struct master_s {
     uint32_t enabledFeatures;
 
     // motor/esc/servo related stuff
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     motorConfig_t motorConfig;
     flight3DConfig_t flight3DConfig;
 

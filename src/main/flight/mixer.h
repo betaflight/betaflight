@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #define MAX_SUPPORTED_MOTORS 12
 
 #define QUAD_MOTOR_COUNT 4
@@ -84,6 +86,8 @@ typedef struct motorMixer_s {
     float pitch;
     float yaw;
 } motorMixer_t;
+
+PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
 
 // Custom mixer configuration
 typedef struct mixer_s {
