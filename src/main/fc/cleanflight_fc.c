@@ -785,6 +785,11 @@ bool shouldProcessGyro(void)
 {
     if (gyroConfig()->gyro_sync) {
         bool sync = gyroSyncIsDataReady();
+
+        if (sync && debugMode == DEBUG_GYRO_SYNC) {
+            debug[1]++;
+        }
+
         return sync;
     }
 
@@ -817,7 +822,6 @@ void taskGyro(void)
 
     if (debugMode == DEBUG_GYRO_SYNC) {
         debug[0] = gyroDeltaUs;
-        debug[1]++;
     }
 }
 
