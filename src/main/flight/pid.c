@@ -91,6 +91,7 @@ int16_t magHoldTargetHeading;
 static pt1Filter_t magHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
+static bool shouldUpdatePIDCoeffs = false;
 static float tpaFactor;
 int16_t axisPID[FLIGHT_DYNAMICS_INDEX_COUNT];
 
@@ -160,19 +161,23 @@ FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
 #define FP_PID_LEVEL_P_MULTIPLIER   65.6f
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
+void signalRequiredPIDCoefficientsUpdate(void)
+{
+    shouldUpdatePIDCoeffs = true;
+}
+
 void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const struct motorConfig_s *motorConfig)
 {
     static uint16_t prevThrottle = 0;
-    bool shouldUpdateCoeffs = false;
 
     // Check if throttle changed
     if (rcCommand[THROTTLE] != prevThrottle) {
         prevThrottle = rcCommand[THROTTLE];
-        shouldUpdateCoeffs = true;
+        signalRequiredPIDCoefficientsUpdate();
     }
 
     // If nothing changed - don't waste time recalculating coefficients
-    if (!shouldUpdateCoeffs) {
+    if (!shouldUpdatePIDCoeffs) {
         return;
     }
 
@@ -180,9 +185,14 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
     if (STATE(FIXED_WING)) {
         // tpa_rate is ignored for fixed wings, set to non-zero to enable TPA
         // tpa_breakpoint for fixed wing is cruise throttle value (value at which PIDs were tuned)
-        if (controlRateConfig->dynThrPID != 0 && rcCommand[THROTTLE] > motorConfig->minthrottle && controlRateConfig->tpa_breakpoint > motorConfig->minthrottle) {
-            tpaFactor = 0.5f + ((controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
-            tpaFactor = constrainf(tpaFactor, 0.6f, 1.67f);
+        if (controlRateConfig->dynThrPID != 0 && controlRateConfig->tpa_breakpoint > motorConfig->minthrottle) {
+            if (rcCommand[THROTTLE] > motorConfig->minthrottle) {
+                tpaFactor = 0.5f + ((controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
+                tpaFactor = constrainf(tpaFactor, 0.6f, 1.67f);
+            }
+            else {
+                tpaFactor = 1.67f;
+            }
         }
         else {
             tpaFactor = 1.0f;
@@ -227,6 +237,8 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
             pidState[axis].kT = 0;
         }
     }
+
+    shouldUpdatePIDCoeffs = false;
 }
 
 static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidState)
