@@ -582,6 +582,7 @@ HIGHEND_SRC = \
             io/displayport_msp.c \
             io/displayport_oled.c \
             io/gps.c \
+            io/gimbal.c \
             io/ledstrip.c \
             io/osd.c \
             sensors/sonar.c \

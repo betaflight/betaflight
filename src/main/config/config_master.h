@@ -38,7 +38,6 @@
 #include "flight/navigation.h"
 
 #include "io/serial.h"
-#include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
@@ -77,8 +76,6 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-    // gimbal-related configuration
-    gimbalConfig_t gimbalConfig;
 #endif
 
     // global sensor-related stuff

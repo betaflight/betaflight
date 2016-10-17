@@ -733,7 +733,7 @@ void createDefaultConfig(master_t *config)
     }
 
     // gimbal
-    config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+    gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS
@@ -860,7 +860,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(masterConfig.servoConf);
 #endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;

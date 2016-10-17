@@ -15,19 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "config/parameter_group.h"
+#include "platform.h"
 
-typedef enum {
-    GIMBAL_MODE_NORMAL = 0,
-    GIMBAL_MODE_MIXTILT = 1
-} gimbalMode_e;
+#include "config/parameter_group_ids.h"
+#include "config/profile.h"
 
-#define GIMBAL_MODE_MAX (GIMBAL_MODE_MIXTILT)
+#include "io/gimbal.h"
 
-typedef struct gimbalConfig_s {
-    uint8_t mode;
-} gimbalConfig_t;
+#ifdef USE_SERVOS
 
-PG_DECLARE_PROFILE(gimbalConfig_t, gimbalConfig);
+PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+
+#endif

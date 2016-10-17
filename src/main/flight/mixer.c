@@ -521,7 +521,14 @@ void mixTable(pidProfile_t *pidProfile)
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
         for (i = 0; i < motorCount; i++) {
-            motor[i] = motor_disarmed[i];
+            if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600) {
+                motor[i] = (motor_disarmed[i] < motorOutputMin) ? disarmMotorOutput : motor_disarmed[i]; // Prevent getting into special reserved range
+
+                if (motor_disarmed[i] != disarmMotorOutput)
+                    motor[i] = (motor_disarmed[i] - 1000) * 2; // TODO - Perhaps needs rescaling as it will never reach 2047 during motor tests
+            } else {
+                motor[i] = motor_disarmed[i];
+            }
         }
     }
 }
