@@ -110,6 +110,28 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
+
+$(OBJECT_DIR)/common_filter_unittest.o : \
+	$(TEST_DIR)/common_filter_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/common_filter_unittest.cc -o $@
+
+$(OBJECT_DIR)/common_filter_unittest : \
+	$(OBJECT_DIR)/common_filter_unittest.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 $(OBJECT_DIR)/drivers/io.o : \
 	$(USER_DIR)/drivers/io.c \
