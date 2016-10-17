@@ -61,11 +61,11 @@ static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
     return true;
 }
 
-static uint8_t usbVcpAvailable(serialPort_t *instance)
+static uint32_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
-    return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
+    return receiveLength;
 }
 
 static uint8_t usbVcpRead(serialPort_t *instance)
@@ -74,13 +74,10 @@ static uint8_t usbVcpRead(serialPort_t *instance)
 
     uint8_t buf[1];
 
-    uint32_t rxed = 0;
-
-    while (rxed < 1) {
-        rxed += CDC_Receive_DATA((uint8_t*)buf + rxed, 1 - rxed);
+    while (true) {
+        if (CDC_Receive_DATA(buf, 1))
+            return buf[0];
     }
-
-    return buf[0];
 }
 
 static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
@@ -93,8 +90,10 @@ static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
     }
 
     uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
+    uint8_t *p = data;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
         count -= txed;
         p += txed;
 
@@ -112,18 +111,24 @@ static bool usbVcpFlush(vcpPort_t *port)
     if (count == 0) {
         return true;
     }
+
     if (!usbIsConnected() || !usbIsConfigured()) {
         return false;
     }
-    
-    uint32_t txed;
+
     uint32_t start = millis();
+    uint8_t *p = port->txBuf;
+    uint32_t txed = 0;
+    while (count > 0) {
+        txed = CDC_Send_DATA(p, count);
+        count -= txed;
+        p += txed;
 
-    do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
-
-    return txed == count;
+        if (millis() - start > USB_TIMEOUT) {
+            break;
+        }
+    }
+    return count == 0;
 }
 
 static void usbVcpWrite(serialPort_t *instance, uint8_t c)

@@ -112,7 +112,7 @@ void serialEndWrite(serialPort_t *instance)
     EXPECT_EQ(instance, &serialTestInstance);
 }
 
-uint8_t serialRxBytesWaiting(serialPort_t *instance)
+uint32_t serialRxBytesWaiting(serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_GE(serialReadEnd, serialReadPos);

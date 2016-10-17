@@ -276,7 +276,7 @@ void mspSerialProcess(void)
             continue;
         }
 
-        uint8_t bytesWaiting;
+        uint32_t bytesWaiting;
         while ((bytesWaiting = serialRxBytesWaiting(msp->port))) {
             uint8_t c = serialRead(msp->port);
             bool consumed = mspSerialProcessReceivedByte(msp, c);
