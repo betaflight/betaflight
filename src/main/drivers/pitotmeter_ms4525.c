@@ -38,23 +38,18 @@ static void ms4525_calculate(float *pressure, float *temperature);
 
 static uint16_t ms4525_ut;  // static result of temperature measurement
 static uint16_t ms4525_up;  // static result of pressure measurement
-static uint16_t zeropointvalue;  // measured zeropoint
-static bool zeropoint = false;
-static uint16_t calibrationCount = 0;
-static uint32_t filter_reg = 0; // Barry Dorr filter register
+static uint8_t rxbuf[4];
 
 bool ms4525Detect(pitot_t *pitot)
 {
     bool ack = false;
-    uint8_t sig;
 
     // Read twice to fix:
     // Sending a start-stop condition without any transitions on the SCL line (no clock pulses in between) creates a
     // communication error for the next communication, even if the next start condition is correct and the clock pulse is applied.
     // An additional start condition must be sent, which results in restoration of proper communication.
-
-    ack = i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 1, &sig );
-    ack = i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 1, &sig );
+    ack = i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 4, rxbuf );
+    ack = i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 4, rxbuf );
     if (!ack)
         return false;
 
@@ -68,16 +63,15 @@ bool ms4525Detect(pitot_t *pitot)
 
 static void ms4525_start(void)
 {
-    uint8_t sig;
-    i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 1, &sig );
+    i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 4, rxbuf );
 }
 
 static void ms4525_read(void)
 {
-    uint8_t rxbuf[4];
-    i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 4, rxbuf ); // read ADC
-    ms4525_up = (rxbuf[0] << 8) | (rxbuf[1] << 0);
-    ms4525_ut = ((rxbuf[2] << 8) | (rxbuf[3] << 0))>>5;
+    if(i2cRead( PITOT_I2C_INSTANCE, MS4525_ADDR, 0xFF, 4, rxbuf )) {
+        ms4525_up = (rxbuf[0] << 8) | (rxbuf[1] << 0);
+        ms4525_ut = ((rxbuf[2] << 8) | (rxbuf[3] << 0))>>5;
+    }
 }
 
 
@@ -106,24 +100,7 @@ static void ms4525_calculate(float *pressure, float *temperature)
     dp_raw = 0x3FFF & ms4525_up;
     dT_raw = ms4525_ut;
 
-    if (!zeropoint) {
-       if (calibrationCount <= 0) {
-           calibrationCount++;
-           filter_reg = (dp_raw << 5);
-           return;
-       } else if (calibrationCount <= 100) {
-           calibrationCount++;
-           filter_reg = filter_reg - (filter_reg >> 5) + dp_raw;
-           if (calibrationCount > 100) {
-               zeropointvalue = (uint16_t)(filter_reg >> 5);
-               zeropoint=true;
-               calibrationCount = 0;
-           }
-           return;
-       }
-    }
-
-    float dP = (10 * (int32_t)(dp_raw - zeropointvalue)) * 0.1052120688f;
+    float dP = (10 * (int32_t)(dp_raw)) * 0.1052120688f;
     float T  = (float)(200 * (int32_t)dT_raw - 102350) / 2047 + 273.15f;
 
     if (pressure)

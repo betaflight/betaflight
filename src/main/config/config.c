@@ -245,7 +245,7 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
 
 void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
 {
-    pitotmeterConfig->pitot_sample_count = 21;
+    pitotmeterConfig->use_median_filtering = 1;
     pitotmeterConfig->pitot_noise_lpf = 0.6f;
     pitotmeterConfig->pitot_scale = 1.00f;
 }

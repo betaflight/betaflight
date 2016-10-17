@@ -20,7 +20,7 @@
 #define PITOT_SAMPLE_COUNT_MAX   48
 
 typedef struct pitotmeterConfig_s {
-    uint8_t pitot_sample_count;              // size of pitot filter array
+    uint8_t use_median_filtering;            // Use 3-point median filtering
     float pitot_noise_lpf;                   // additional LPF to reduce pitot noise
     float pitot_scale;                       // scale value
 } pitotmeterConfig_t;
@@ -34,5 +34,4 @@ void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t pitotUpdate(void);
 bool isPitotReady(void);
 int32_t pitotCalculateAirSpeed(void);
-void performPitotCalibrationCycle(void);
 #endif

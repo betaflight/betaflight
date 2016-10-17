@@ -35,8 +35,8 @@ int32_t AirSpeed = 0;
 
 #ifdef PITOT
 
-static float pitotPressureSum = 0;
-static uint16_t calibratingP = 0;      // baro calibration = get new ground pressure value
+static float pitotPressureZero = 0;
+static uint16_t calibratingP = 0;      // pitot calibration = get new zero pressure value
 static float pitotPressure = 0;
 static float pitotTemperature = 0;
 static float CalibratedAirspeed = 0;
@@ -60,36 +60,33 @@ void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 
 static bool pitotReady = false;
 
-#define PRESSURE_SAMPLE_COUNT (pitotmeterConfig->pitot_sample_count - 1)
+#define PRESSURE_SAMPLES_MEDIAN 3
 
-static float recalculatePitotmeterTotal(uint8_t pitotSampleCount, float pressureTotal, float newPressureReading)
+static int32_t applyPitotmeterMedianFilter(int32_t newPressureReading)
 {
-    static float pitotmeterSamples[PITOT_SAMPLE_COUNT_MAX];
-    static int currentSampleIndex = 0;
+    static int32_t barometerFilterSamples[PRESSURE_SAMPLES_MEDIAN];
+    static int currentFilterSampleIndex = 0;
+    static bool medianFilterReady = false;
     int nextSampleIndex;
 
-    // store current pressure in pitotmeterSamples
-    nextSampleIndex = (currentSampleIndex + 1);
-    if (nextSampleIndex == pitotSampleCount) {
+    nextSampleIndex = (currentFilterSampleIndex + 1);
+    if (nextSampleIndex == PRESSURE_SAMPLES_MEDIAN) {
         nextSampleIndex = 0;
-        pitotReady = true;
+        medianFilterReady = true;
     }
-    pitotmeterSamples[currentSampleIndex] = newPressureReading;
 
-    // recalculate pressure total
-    // Note, the pressure total is made up of pitotSampleCount - 1 samples - See PRESSURE_SAMPLE_COUNT
-    pressureTotal += pitotmeterSamples[currentSampleIndex];
-    pressureTotal -= pitotmeterSamples[nextSampleIndex];
+    barometerFilterSamples[currentFilterSampleIndex] = newPressureReading;
+    currentFilterSampleIndex = nextSampleIndex;
 
-    currentSampleIndex = nextSampleIndex;
-
-    return pressureTotal;
+    if (medianFilterReady)
+        return quickMedianFilter3(barometerFilterSamples);
+    else
+        return newPressureReading;
 }
 
 typedef enum {
     PITOTMETER_NEEDS_SAMPLES = 0,
     PITOTMETER_NEEDS_CALCULATION,
-    PITOTMETER_NEEDS_PROCESSING
 } pitotmeterState_e;
 
 
@@ -112,14 +109,11 @@ uint32_t pitotUpdate(void)
         case PITOTMETER_NEEDS_CALCULATION:
             pitot.get();
             pitot.calculate(&pitotPressure, &pitotTemperature);
-            state = PITOTMETER_NEEDS_PROCESSING;
-            return pitot.delay;
-        break;
-
-        case PITOTMETER_NEEDS_PROCESSING:
+            if (pitotmeterConfig->use_median_filtering) {
+                pitotPressure = applyPitotmeterMedianFilter(pitotPressure);
+            }
             state = PITOTMETER_NEEDS_SAMPLES;
-            pitotPressureSum = recalculatePitotmeterTotal(pitotmeterConfig->pitot_sample_count, pitotPressureSum, pitotPressure);
-            return pitot.delay;
+           return pitot.delay;
         break;
     }
 }
@@ -129,21 +123,31 @@ uint32_t pitotUpdate(void)
 #define CASFACTOR   760.8802669f        // sqrt(5) * speed of sound at standard
 #define TASFACTOR   0.05891022589f      // 1/sqrt(T0)
 
+static void performPitotCalibrationCycle(void)
+{
+    pitotPressureZero -= pitotPressureZero / 8;
+    pitotPressureZero += pitotPressure / 8;
+    calibratingP--;
+}
+
 int32_t pitotCalculateAirSpeed(void)
 {
-    float CalibratedAirspeed_tmp;
-    CalibratedAirspeed_tmp = pitotmeterConfig->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressureSum / PRESSURE_SAMPLE_COUNT) / P0 + 1.0f, CCEXPONENT) - 1.0f);
-    //const float CalibratedAirspeed = 1 * CASFACTOR * sqrtf(powf(fabsf(pitotPressure) / P0 + 1.0f, CCEXPONENT) - 1.0f);
+    if (!isPitotCalibrationComplete()) {
+        performPitotCalibrationCycle();
+        AirSpeed = 0;
+    }
+    else {
+        float CalibratedAirspeed_tmp;
+        CalibratedAirspeed_tmp = pitotmeterConfig->pitot_scale * CASFACTOR * sqrtf(powf(fabsf(pitotPressure - pitotPressureZero) / P0 + 1.0f, CCEXPONENT) - 1.0f);
+        CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig->pitot_noise_lpf); // additional LPF to reduce baro noise
+        float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
 
-    CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig->pitot_noise_lpf); // additional LPF to reduce baro noise
-    float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
-
-    AirSpeed = TrueAirspeed*100;
-    //debug[0] = (int16_t)(CalibratedAirspeed*100);
-    //debug[1] = (int16_t)(TrueAirspeed*100);
-    //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
-    debug[3] = AirSpeed;
-
+        AirSpeed = TrueAirspeed*100;
+        //debug[0] = (int16_t)(CalibratedAirspeed*100);
+        //debug[1] = (int16_t)(TrueAirspeed*100);
+        //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
+        //debug[3] = AirSpeed;
+    }
     return AirSpeed;
 }
 

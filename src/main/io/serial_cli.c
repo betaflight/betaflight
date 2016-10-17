@@ -843,7 +843,7 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef PITOT
-    { "pitot_tab_size",             VAR_UINT8  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_sample_count, .config.minmax = { 0, PITOT_SAMPLE_COUNT_MAX }, 0 },
+    { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.pitotmeterConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
     { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_scale, .config.minmax = { 0, 100 }, 0 },
 #endif

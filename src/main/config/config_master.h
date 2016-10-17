@@ -47,6 +47,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
 
