@@ -137,12 +137,21 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-    TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
-    TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Set;
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_High;
-    TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_Low;
+        TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
+    } else {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
+        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Set;
+        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_High;
+        TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;
+    }
     TIM_OCInitStructure.TIM_Pulse = 0;
 
     uint32_t timerChannelAddress = 0;
