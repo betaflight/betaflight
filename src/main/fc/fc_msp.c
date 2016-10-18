@@ -518,10 +518,6 @@ static uint32_t packFlightModeFlags(void)
 static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     uint32_t i;
-#ifdef GPS
-    uint8_t wp_no;
-    int32_t lat = 0, lon = 0;
-#endif
 
     switch (cmdMSP) {
     case MSP_API_VERSION:
@@ -802,23 +798,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, GPS_distanceToHome);
         sbufWriteU16(dst, GPS_directionToHome);
         sbufWriteU8(dst, GPS_update & 1);
-        break;
-    case MSP_WP:
-        wp_no = sbufReadU8(src);    // get the wp number
-        if (wp_no == 0) {
-            lat = GPS_home[LAT];
-            lon = GPS_home[LON];
-        } else if (wp_no == 16) {
-            lat = GPS_hold[LAT];
-            lon = GPS_hold[LON];
-        }
-        sbufWriteU8(dst, wp_no);
-        sbufWriteU32(dst, lat);
-        sbufWriteU32(dst, lon);
-        sbufWriteU32(dst, AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
-        sbufWriteU16(dst, 0);                 // heading  will come here (deg)
-        sbufWriteU16(dst, 0);                 // time to stay (ms) will come here
-        sbufWriteU8(dst, 0);                  // nav flag will come here
         break;
     case MSP_GPSSVINFO:
         sbufWriteU8(dst, GPS_numCh);
@@ -1125,6 +1104,29 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     }
     return true;
 }
+
+#ifdef GPS
+static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
+{
+    uint8_t wp_no;
+    int32_t lat = 0, lon = 0;
+    wp_no = sbufReadU8(src);    // get the wp number
+    if (wp_no == 0) {
+        lat = GPS_home[LAT];
+        lon = GPS_home[LON];
+    } else if (wp_no == 16) {
+        lat = GPS_hold[LAT];
+        lon = GPS_hold[LON];
+    }
+    sbufWriteU8(dst, wp_no);
+    sbufWriteU32(dst, lat);
+    sbufWriteU32(dst, lon);
+    sbufWriteU32(dst, AltHold);           // altitude (cm) will come here -- temporary implementation to test feature with apps
+    sbufWriteU16(dst, 0);                 // heading  will come here (deg)
+    sbufWriteU16(dst, 0);                 // time to stay (ms) will come here
+    sbufWriteU8(dst, 0);                  // nav flag will come here
+}
+#endif
 
 #ifdef USE_FLASHFS
 static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
@@ -1752,6 +1754,11 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef GPS
+    } else if (cmdMSP == MSP_WP) {
+        mspFcWpCommand(dst, src);
+        ret = MSP_RESULT_ACK;
+#endif
 #ifdef USE_FLASHFS
     } else if (cmdMSP == MSP_DATAFLASH_READ) {
         mspFcDataFlashReadCommand(dst, src);
