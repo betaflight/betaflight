@@ -27,7 +27,6 @@
 
 #include "fc/rc_controls.h"
 
-#include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
@@ -48,7 +47,6 @@
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 
@@ -78,7 +76,6 @@ typedef struct master_s {
 
     // global sensor-related stuff
     sensorAlignmentConfig_t sensorAlignmentConfig;
-    boardAlignment_t boardAlignment;
 
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
@@ -141,7 +138,6 @@ typedef struct master_s {
     mixerConfig_t mixerConfig;
     airplaneConfig_t airplaneConfig;
 
-    failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 

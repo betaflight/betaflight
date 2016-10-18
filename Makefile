@@ -408,6 +408,7 @@ COMMON_SRC = \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
+            config/config_streamer.c \
             fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \

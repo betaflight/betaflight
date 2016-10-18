@@ -508,9 +508,9 @@ void createDefaultConfig(master_t *config)
 
     resetSensorAlignment(&config->sensorAlignmentConfig);
 
-    config->boardAlignment.rollDegrees = 0;
-    config->boardAlignment.pitchDegrees = 0;
-    config->boardAlignment.yawDegrees = 0;
+    boardAlignment()->rollDegrees = 0;
+    boardAlignment()->pitchDegrees = 0;
+    boardAlignment()->yawDegrees = 0;
     config->acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->yaw_control_direction = 1;
@@ -626,13 +626,6 @@ void createDefaultConfig(master_t *config)
     config->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     config->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
-    // Failsafe Variables
-    config->failsafeConfig.failsafe_delay = 10;                            // 1sec
-    config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
-    config->failsafeConfig.failsafe_throttle = 1000;                       // default throttle off.
-    config->failsafeConfig.failsafe_kill_switch = 0;                       // default failsafe switch action is identical to rc link loss
-    config->failsafeConfig.failsafe_throttle_low_delay = 100;              // default throttle low delay for "just disarm" on failsafe condition
-    config->failsafeConfig.failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;// default full failsafe procedure is 0: auto-landing
 
 #ifdef USE_SERVOS
     // servos
@@ -768,7 +761,7 @@ void activateConfig(void)
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    useFailsafeConfig();
     setAccelerationTrims(&masterConfig.accZero);
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 

@@ -15,7 +15,9 @@ ENTRY(Reset_Handler)
 /* Specify the memory areas */
 MEMORY
 {
-    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 1M
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 1M - 4K
+    FLASH_CONFIG (r)  : ORIGIN = 0x080FF000, LENGTH = 4K
+
     RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 128K
     CCM (rwx)         : ORIGIN = 0x10000000, LENGTH = 64K
     BACKUP_SRAM (rwx) : ORIGIN = 0x40024000, LENGTH = 4K
