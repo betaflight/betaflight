@@ -687,7 +687,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 #endif
 }
 
-bool sensorsAutodetect(uint16_t gyro_sample_hz)
+bool sensorsAutodetect(void)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -704,11 +704,13 @@ bool sensorsAutodetect(uint16_t gyro_sample_hz)
         return false;
     }
 
-    gyro.sampleFrequencyHz = gyro_sample_hz;
+    gyro.sampleFrequencyHz = gyroConfig()->gyro_sample_hz;
 
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.init(&gyro, gyroConfig()->gyro_lpf);
     gyroInit();
+    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
+    gyroConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
 
     if (detectAcc(sensorSelectionConfig()->acc_hardware)) {
         acc.acc_1G = 256; // set default

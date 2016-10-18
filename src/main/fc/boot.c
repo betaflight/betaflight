@@ -553,7 +553,7 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(gyroConfig()->gyro_sample_hz)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -565,10 +565,7 @@ void init(void)
     mspInit();
     mspSerialInit();
 
-    // the combination of LPF and GYRO_SAMPLE_HZ may be invalid for the gyro, update the configuration to use the sample frequency that was determined for the desired LPF.
-    gyroConfig()->gyro_sample_hz = gyro.sampleFrequencyHz;
-
-    uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
+    const uint16_t pidPeriodUs = US_FROM_HZ(gyro.sampleFrequencyHz);
     pidSetTargetLooptime(pidPeriodUs * gyroConfig()->pid_process_denom);
     pidInitFilters(pidProfile());
 
