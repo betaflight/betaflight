@@ -1197,7 +1197,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     uint32_t i;
     uint16_t tmp;
     uint8_t value;
-     const unsigned int dataSize = sbufBytesRemaining(src);
+    const unsigned int dataSize = sbufBytesRemaining(src);
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
@@ -1832,7 +1832,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
         mspFcDataFlashReadCommand(dst, src);
         ret = MSP_RESULT_ACK;
 #endif
-     } else {
+    } else {
         ret = mspFcProcessInCommand(cmdMSP, src);
     }
     reply->result = ret;

@@ -997,7 +997,7 @@ typedef union {
 } int_float_value_t;
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
-static void* cliVarPtr(const clivalue_t *var);
+static void *cliVarPtr(const clivalue_t *var);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, master_t *defaultConfig);
 static void cliPrintVarRange(const clivalue_t *var);

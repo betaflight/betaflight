@@ -557,7 +557,7 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
-//!!    config->version = EEPROM_CONF_VERSION;
+    config->version = EEPROM_CONF_VERSION;
     config->mixerMode = MIXER_QUADX;
 
     // global settings
@@ -853,7 +853,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(masterConfig.servoConf);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;

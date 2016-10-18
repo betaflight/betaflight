@@ -29,7 +29,6 @@
 
 #include "platform.h"
 
-
 #ifdef OSD
 
 #include "blackbox/blackbox.h"

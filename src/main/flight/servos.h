@@ -121,7 +121,7 @@ void filterServos(void);
 
 void servoMixerInit(servoMixer_t *customServoMixers);
 struct gimbalConfig_s;
-void servoUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse);
+void servoUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 void servoConfigureOutput(void);

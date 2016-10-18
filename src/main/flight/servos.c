@@ -53,7 +53,6 @@ static servoMixerConfig_t *servoMixerConfig;
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int useServo;
 static servoParam_t *servoConf;
@@ -142,11 +141,10 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse)
+void servoUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse)
 {
     servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
-    gimbalConfig = gimbalConfigToUse;
 }
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
@@ -440,7 +438,7 @@ void servoTable(void)
         servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
         if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
-            if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
+            if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
                 servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
                 servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
             } else {

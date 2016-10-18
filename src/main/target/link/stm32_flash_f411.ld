@@ -15,7 +15,7 @@ ENTRY(Reset_Handler)
 /*
 0x08000000 to 0x08080000 512K full flash,
 0x08000000 to 0x0807C000 469K firmware,
- 0x0807C000 to 0x08080000  16K config,
+0x0807C000 to 0x08080000  16K config,
 */
 
 /* Specify the memory areas */
