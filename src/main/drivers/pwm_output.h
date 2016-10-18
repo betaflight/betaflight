@@ -57,7 +57,7 @@ typedef struct {
     const timerHardware_t *timerHardware;
     uint16_t value;
     uint16_t timerDmaSource;
-#if defined(STM32F4)
+#if defined(STM32F3) || defined(STM32F4)
     uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];

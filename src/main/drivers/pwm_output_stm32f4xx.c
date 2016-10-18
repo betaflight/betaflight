@@ -28,6 +28,8 @@
 #include "system.h"
 #include "rcc.h"
 
+#ifdef USE_DSHOT
+
 #define MAX_DMA_TIMERS 8
 
 #define MOTOR_DSHOT600_MHZ    12
@@ -56,7 +58,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    value = (value - 1000) * 2;
+    value = (value <= 1000) ? 0 : ((value - 1000) * 2);
     motor->value = value;
 
     motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
@@ -117,7 +119,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
     
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(timer));
+    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     if (configureTimer) {
         TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;    
@@ -213,4 +215,4 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 
-
+#endif

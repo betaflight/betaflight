@@ -116,6 +116,8 @@
 #define VBAT_ADC_PIN            PC2
 //#define RSSI_ADC_PIN            PA0
 
+#define USE_DSHOT
+
 #define LED_STRIP
 // LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
 #define WS2811_PIN                      PA1

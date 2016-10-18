@@ -28,6 +28,8 @@
 #include "system.h"
 #include "rcc.h"
 
+#ifdef USE_DSHOT
+
 #define MAX_DMA_TIMERS 8
 
 #define MOTOR_DSHOT600_MHZ    24
@@ -56,7 +58,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    value = (value - 1000) * 2;
+    value = (value <= 1000) ? 0 : ((value - 1000) * 2);
     motor->value = value;
 
     motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
@@ -95,7 +97,9 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
         DMA_Cmd(descriptor->channel, DISABLE);
+        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -115,7 +119,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
     
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(timer));
+    IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     if (configureTimer) {
         TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;    
@@ -124,7 +128,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_Cmd(timer, DISABLE);
         
         uint32_t hz = (pwmProtocolType == PWM_TYPE_DSHOT600 ? MOTOR_DSHOT600_MHZ : MOTOR_DSHOT150_MHZ) * 1000000;
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;
+        TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / hz) - 1);
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
         TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -133,9 +137,13 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
+    TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Set;
+    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_High;
+    TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = 0;
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
     uint32_t timerChannelAddress = 0;
     switch (timerHardware->channel) {
@@ -164,15 +172,20 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
             TIM_OC4PreloadConfig(timer, TIM_OCPreload_Enable);
             break;
     }
-    
+    dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
+
+    TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
+
     if (configureTimer) {
-        TIM_CtrlPWMOutputs(timer, ENABLE);
+        TIM_CtrlPWMOutputs(timer, ENABLE);  
         TIM_ARRPreloadConfig(timer, ENABLE); 
-        TIM_Cmd(timer, ENABLE);       
+        TIM_Cmd(timer, ENABLE);    
     }
 
     DMA_Channel_TypeDef *channel = timerHardware->dmaChannel;
-    
+
+    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+        
     DMA_Cmd(channel, DISABLE);
     DMA_DeInit(channel);
     DMA_StructInit(&DMA_InitStructure);
@@ -182,18 +195,15 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_BufferSize = MOTOR_DMA_BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    TIM_DMACmd(timer, motor->timerDmaSource, ENABLE);
+    DMA_Init(channel, &DMA_InitStructure);
 
     DMA_ITConfig(channel, DMA_IT_TC, ENABLE);
-    DMA_Init(channel, &DMA_InitStructure);
-    
-    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 
-
+#endif
