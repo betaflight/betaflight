@@ -32,6 +32,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/amperage.h"
+#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/acceleration.h"
 

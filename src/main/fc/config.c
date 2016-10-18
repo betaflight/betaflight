@@ -50,6 +50,8 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 
+#include "rx/rx.h"
+
 #include "sensors/voltage.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"

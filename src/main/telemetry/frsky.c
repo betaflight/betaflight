@@ -37,12 +37,11 @@
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "fc/fc_serial.h"
 
 #include "sensors/sensors.h"
@@ -55,7 +54,6 @@
 #include "io/serial.h"
 #include "io/gps.h"
 
-//#include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"

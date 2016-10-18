@@ -56,6 +56,7 @@
 #include "scheduler/scheduler.h"
 
 #include "sensors/sensors.h"
+#include "sensors/barometer.h"
 #include "sensors/sonar.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
