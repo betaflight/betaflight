@@ -134,12 +134,6 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-#if defined(SKIP_PID_FLOAT)
-    pidProfile->pidController = PID_CONTROLLER_LEGACY;
-#else
-    pidProfile->pidController = PID_CONTROLLER_BETAFLIGHT;
-#endif
-
     pidProfile->P8[ROLL] = 43;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
@@ -178,7 +172,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
-    pidProfile->deltaMethod = DELTA_FROM_MEASUREMENT;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
 
@@ -761,7 +754,6 @@ void activateConfig(void)
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
-    pidSetController(currentProfile->pidProfile.pidController);
 
 #ifdef GPS
     gpsUseProfile(&masterConfig.gpsProfile);

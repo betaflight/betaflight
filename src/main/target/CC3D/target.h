@@ -118,7 +118,6 @@
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_PID_FLOAT
 #undef BARO
 #undef SONAR
 #undef LED_STRIP
