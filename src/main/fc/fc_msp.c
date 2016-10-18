@@ -848,7 +848,7 @@ static bool processOutCommand(uint8_t cmdMSP, mspPostProcessFnPtr *mspPostProces
         break;
     case MSP_PID_CONTROLLER:
         headSerialReply(1);
-        serialize8(currentProfile->pidProfile.pidController);
+        serialize8(PID_CONTROLLER_BETAFLIGHT); // Needs Cleanup in the future
         break;
     case MSP_MODE_RANGES:
         headSerialReply(4 * MAX_MODE_ACTIVATION_CONDITION_COUNT);
@@ -1286,7 +1286,7 @@ static bool processOutCommand(uint8_t cmdMSP, mspPostProcessFnPtr *mspPostProces
         serialize16(currentProfile->pidProfile.rollPitchItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yawItermIgnoreRate);
         serialize16(currentProfile->pidProfile.yaw_p_limit);
-        serialize8(currentProfile->pidProfile.deltaMethod);
+        serialize8(0); // reserved
         serialize8(currentProfile->pidProfile.vbatPidCompensation);
         serialize8(currentProfile->pidProfile.setpointRelaxRatio);
         serialize8(currentProfile->pidProfile.dtermSetpointWeight);
@@ -1395,10 +1395,6 @@ static bool processInCommand(uint8_t cmdMSP)
         read16();
         break;
     case MSP_SET_PID_CONTROLLER:
-#ifndef SKIP_PID_FLOAT
-        currentProfile->pidProfile.pidController = constrain(read8(), 0, 1);
-        pidSetController(currentProfile->pidProfile.pidController);
-#endif
         break;
     case MSP_SET_PID:
         for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1892,7 +1888,7 @@ static bool processInCommand(uint8_t cmdMSP)
         currentProfile->pidProfile.rollPitchItermIgnoreRate = read16();
         currentProfile->pidProfile.yawItermIgnoreRate = read16();
         currentProfile->pidProfile.yaw_p_limit = read16();
-        currentProfile->pidProfile.deltaMethod = read8();
+        read8(); // reserved
         currentProfile->pidProfile.vbatPidCompensation = read8();
         currentProfile->pidProfile.setpointRelaxRatio = read8();
         currentProfile->pidProfile.dtermSetpointWeight = read8();

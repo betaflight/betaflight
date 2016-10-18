@@ -187,10 +187,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
         debug[axis] = angleRate;
     }
 
-    if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-        setpointRate[axis] = constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
-    else
-        setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
+    setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -697,7 +694,7 @@ void subTaskPidController(void)
 {
     const uint32_t startTime = micros();
     // PID - note this is function pointer set by setPIDController()
-    pid_controller(
+    pidController(
         &currentProfile->pidProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
