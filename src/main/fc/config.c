@@ -760,18 +760,11 @@ void createDefaultConfig(master_t *config)
 
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_FLASH;
+    featureSet(FEATURE_BLACKBOX);
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
-#else
-    config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    featureSet(FEATURE_BLACKBOX);
 #endif
 
-    config->blackbox_rate_num = 1;
-    config->blackbox_rate_denom = 1;
-    config->blackbox_on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART

@@ -204,12 +204,6 @@ typedef struct master_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
 #endif
 
-#ifdef BLACKBOX
-    uint8_t blackbox_rate_num;
-    uint8_t blackbox_rate_denom;
-    uint8_t blackbox_device;
-    uint8_t blackbox_on_motor_test;
-#endif
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
