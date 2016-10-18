@@ -27,11 +27,11 @@
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
-
 #include "drivers/usb_io.h"
 
+#include "fc/config.h"
+
 #include "io/transponder_ir.h"
-#include "config/config.h"
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;

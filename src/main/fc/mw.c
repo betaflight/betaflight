@@ -44,8 +44,10 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
 
 #include "msp/msp_serial.h"
 
@@ -68,8 +70,6 @@
 #include "flight/gtune.h"
 #include "flight/altitudehold.h"
 
-#include "fc/runtime_config.h"
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"

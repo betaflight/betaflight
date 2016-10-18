@@ -30,6 +30,7 @@
 #include "drivers/compass.h"
 #include "drivers/serial.h"
 
+#include "fc/config.h"
 #include "fc/fc_tasks.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
@@ -51,8 +52,6 @@
 
 #include "rx/rx.h"
 
-#include "telemetry/telemetry.h"
-
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -63,7 +62,8 @@
 
 #include "scheduler/scheduler.h"
 
-#include "config/config.h"
+#include "telemetry/telemetry.h"
+
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

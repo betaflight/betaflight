@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "config/config.h"
 #include "common/axis.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "flight/pid.h"
 

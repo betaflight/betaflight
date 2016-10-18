@@ -16,6 +16,7 @@
 #include "common/encoding.h"
 #include "common/printf.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/pid.h"
@@ -25,7 +26,6 @@
 
 #include "msp/msp_serial.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 

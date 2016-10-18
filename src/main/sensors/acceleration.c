@@ -30,13 +30,16 @@
 #include "drivers/accgyro.h"
 #include "drivers/system.h"
 
-#include "sensors/sensors.h"
+#include "fc/config.h"
+
 #include "io/beeper.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
-#include "config/config.h"
+
 #include "config/feature.h"
 
-#include "sensors/acceleration.h"
 
 int32_t accSmooth[XYZ_AXIS_COUNT];
 

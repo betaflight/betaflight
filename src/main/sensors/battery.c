@@ -28,9 +28,9 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "sensors/battery.h"

@@ -43,6 +43,11 @@
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
+
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
@@ -56,8 +61,6 @@
 #include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -75,9 +78,6 @@
 #include "flight/altitudehold.h"
 #include "flight/navigation.h"
 
-#include "fc/runtime_config.h"
-
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

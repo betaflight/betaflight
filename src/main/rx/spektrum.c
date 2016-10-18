@@ -28,14 +28,13 @@
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/system.h"
-
 #include "drivers/light_led.h"
-
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+
 #include "io/serial.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"

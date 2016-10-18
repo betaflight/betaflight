@@ -30,7 +30,8 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "config/config.h"
+#include "fc/config.h"
+
 #include "config/feature.h"
 
 #include "rx/rx.h"

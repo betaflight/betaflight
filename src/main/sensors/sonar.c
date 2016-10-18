@@ -30,9 +30,10 @@
 
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/io.h"
+
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "sensors/sensors.h"

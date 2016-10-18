@@ -28,9 +28,11 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "drivers/system.h"
@@ -48,8 +50,6 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "io/vtx.h"
 
 #include "io/display.h"

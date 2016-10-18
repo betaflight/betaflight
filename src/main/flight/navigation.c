@@ -37,6 +37,10 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
@@ -44,7 +48,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gps.h"
-#include "fc/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -52,10 +55,6 @@
 #include "flight/imu.h"
 
 #include "rx/rx.h"
-
-
-#include "config/config.h"
-#include "fc/runtime_config.h"
 
 
 extern int16_t magHold;

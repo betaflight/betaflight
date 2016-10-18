@@ -27,12 +27,11 @@
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/light_led.h"
 
-#include "sensors/boardalignment.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
-
 #include "sensors/sensors.h"
+#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION

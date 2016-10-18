@@ -27,7 +27,6 @@
 
 #include "build/build_config.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_master.h"
 

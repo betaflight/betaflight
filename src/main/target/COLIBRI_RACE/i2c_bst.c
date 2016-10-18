@@ -33,7 +33,6 @@
 
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -59,10 +58,11 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
+#include "fc/config.h"
 #include "fc/mw.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

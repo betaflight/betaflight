@@ -38,9 +38,9 @@
 #include "io/gps.h"
 #endif
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "io/beeper.h"

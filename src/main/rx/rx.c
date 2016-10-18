@@ -28,7 +28,6 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/serial.h"
@@ -39,6 +38,7 @@
 #include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
