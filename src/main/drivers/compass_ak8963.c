@@ -338,9 +338,9 @@ restart:
         return false;
     }
 
-    magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * magGain[X];
-    magData[Y] = -(int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
-    magData[Z] = -(int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
+    magData[X] = (int16_t)(buf[1] << 8 | buf[0]) * magGain[X];
+    magData[Y] = (int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
+    magData[Z] = (int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
     state = CHECK_STATUS;
