@@ -54,7 +54,7 @@
 //#define USE_MAG_MAG3110 // External
 #define USE_MAG_HMC5883 // External
 
-#define MAG_AK8963_ALIGN CW90_DEG_FLIP
+#define MAG_AK8963_ALIGN CW270_DEG_FLIP
 
 //#define SONAR
 
