@@ -490,7 +490,7 @@ extern "C" {
     }
 
     uint32_t millis(void) { return testMillis; }
-    bool isSerialTransmitBufferEmpty(serialPort_t *) { return true; }
+    bool isSerialTransmitBufferEmpty(const serialPort_t *) { return true; }
     void serialWrite(serialPort_t *, uint8_t ) {};
 
     void osdHardwareDisplayMotor(uint8_t, uint8_t, uint8_t) {}

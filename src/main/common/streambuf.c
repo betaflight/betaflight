@@ -73,19 +73,24 @@ uint32_t sbufReadU32(sbuf_t *src)
     return ret;
 }
 
-void sbufReadData(sbuf_t *src, void *data, int len)
+void sbufReadData(const sbuf_t *src, void *data, int len)
 {
     memcpy(data, src->ptr, len);
 }
 
 // reader - return bytes remaining in buffer
 // writer - return available space
-int sbufBytesRemaining(sbuf_t *buf)
+int sbufBytesRemaining(const sbuf_t *buf)
 {
     return buf->end - buf->ptr;
 }
 
 uint8_t* sbufPtr(sbuf_t *buf)
+{
+    return buf->ptr;
+}
+
+const uint8_t* sbufConstPtr(const sbuf_t *buf)
 {
     return buf->ptr;
 }
