@@ -49,11 +49,10 @@
 #define USE_BARO_BMP280
 #define USE_BARO_SPI_BMP280
 
-//#define MAG
-//#define USE_MAG_AK8975
-//#define USE_MAG_HMC5883 // External
-//
-//#define MAG_AK8975_ALIGN CW90_DEG_FLIP
+#define MAG // External
+#define USE_MAG_AK8963
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1
@@ -78,8 +77,8 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-//#define USE_I2C
-//#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
+#define USE_I2C
+#define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -193,5 +192,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 10 // 6 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
+#define USABLE_TIMER_CHANNEL_COUNT 7 // PPM + 6 Outputs (2 shared with UART3)
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
