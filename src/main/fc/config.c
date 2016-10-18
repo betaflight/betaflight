@@ -286,7 +286,7 @@ static void validateAndFixConfig(void)
     }
 #endif
 
-#if (SPRACINGF3NEO_REV < 5)
+#if defined(SPRACINGF3NEO_REV) && (SPRACINGF3NEO_REV < 5)
     if (featureConfigured(FEATURE_OSD) && featureConfigured(FEATURE_TRANSPONDER)) {
         featureClear(FEATURE_TRANSPONDER);
     }
