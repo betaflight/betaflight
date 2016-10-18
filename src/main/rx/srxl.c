@@ -82,7 +82,7 @@ static void srxlDataReceive(uint16_t c);
 // Use max values for ram areas
 static volatile uint8_t srxlFrame[SRXL_FRAME_SIZE_A2];	//size 35 for 16 channels in SRXL 0xA2
 static uint16_t srxlChannelData[SRXL_CHANNEL_COUNT_MAX];
-static uint16_t srxlReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static uint16_t srxlReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
 bool srxlInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
@@ -188,7 +188,7 @@ uint8_t srxlFrameStatus(void)
     return SERIAL_RX_FRAME_PENDING;
 }
 
-static uint16_t srxlReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t srxlReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     return srxlChannelData[chan];

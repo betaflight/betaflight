@@ -130,7 +130,7 @@ void pgResetFn_failsafeChannelConfigs(rxFailsafeChannelConfig_t *instance)
     }
 }
 
-static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
+static uint16_t nullReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
     UNUSED(rxRuntimeConfig);
     UNUSED(channel);
