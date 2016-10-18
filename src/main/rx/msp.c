@@ -69,6 +69,7 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxConfig);
 
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 20000;
 
     rxRuntimeConfig->rcReadRawFunc = rxMspReadRawRC;
     rxRuntimeConfig->rcFrameStatusFunc = rxMspFrameStatus;
