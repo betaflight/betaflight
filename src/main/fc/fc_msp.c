@@ -1044,7 +1044,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_2
         break;
 
-    case MSP_ADVANCED_TUNING:
+    case MSP_PID_ADVANCED:
         sbufWriteU16(dst, currentProfile->pidProfile.rollPitchItermIgnoreRate);
         sbufWriteU16(dst, currentProfile->pidProfile.yawItermIgnoreRate);
         sbufWriteU16(dst, currentProfile->pidProfile.yaw_p_limit);
@@ -1366,7 +1366,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         //BF: masterConfig.gyro_soft_notch_cutoff_2 = read16();
         break;
 
-    case MSP_SET_ADVANCED_TUNING:
+    case MSP_SET_PID_ADVANCED:
 
         currentProfile->pidProfile.rollPitchItermIgnoreRate = sbufReadU16(src);
         currentProfile->pidProfile.yawItermIgnoreRate = sbufReadU16(src);

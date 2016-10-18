@@ -205,8 +205,8 @@
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93
 
-#define MSP_ADVANCED_TUNING             94
-#define MSP_SET_ADVANCED_TUNING         95
+#define MSP_PID_ADVANCED                94
+#define MSP_SET_PID_ADVANCED         95
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
