@@ -23,3 +23,5 @@ typedef void (*mspPostProcessFuncPtr)(struct mspPort_s *); // msp post process f
 void mspInit(void);
 bool mspProcessReceivedData(struct mspPort_s *mspPort, uint8_t c);
 mspPostProcessFuncPtr mspProcessReceivedCommand(struct mspPort_s *mspPort);
+
+void mspServerPush(mspPort_t *, int, uint8_t *, int);

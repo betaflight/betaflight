@@ -126,6 +126,14 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
+#ifdef USE_DPRINTF
+#include "common/printf.h"
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
+serialPort_t *debugSerialPort = NULL;
+#define dprintf(x) if (debugSerialPort) printf x
+#else
+#define dprintf(x)
+#endif
 
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
@@ -242,6 +250,16 @@ void init(void)
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+#endif
+
+#ifdef USE_DPRINTF
+    // Setup debugSerialPort
+
+    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
+    if (debugSerialPort) {
+        setPrintfSerialPort(debugSerialPort);
+        dprintf(("debugSerialPort: OK\r\n"));
+    }
 #endif
 
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);

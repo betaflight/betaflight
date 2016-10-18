@@ -47,6 +47,7 @@
 #include "io/serial_msp.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+#include "io/cms.h"
 
 #include "rx/rx.h"
 
@@ -331,6 +332,10 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
+#ifdef CMS
+    // XXX Should check FEATURE
+    setTaskEnabled(TASK_CMS, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -488,6 +493,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };

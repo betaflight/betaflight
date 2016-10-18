@@ -52,3 +52,4 @@ void mspSerialInit(void);
 void mspSerialProcess(void);
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
+void mspSerialPush(int, uint8_t *, int);
