@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -158,9 +156,10 @@ PG_DECLARE(armingConfig_t, armingConfig);
 bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
+struct rxConfig_s;
+throttleStatus_e calculateThrottleStatus(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+rollPitchStatus_e calculateRollPitchCenterStatus(struct rxConfig_s *rxConfig);
+void processRcStickPositions(struct rxConfig_s *rxConfig, throttleStatus_e throttleStatus, bool retarded_arm, bool disarm_kill_switch);
 
 bool rcModeIsActive(boxId_e modeId);
 void rcModeUpdateActivated(modeActivationCondition_t *modeActivationConditions);

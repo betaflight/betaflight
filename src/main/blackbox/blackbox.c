@@ -44,6 +44,9 @@
 #include "drivers/accgyro.h"
 
 #include "fc/rate_profile.h"
+#include "fc/rc_controls.h"
+
+#include "rx/rx.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -59,6 +62,7 @@
 #include "io/beeper.h"
 #include "io/gps.h"
 #include "io/motors.h"
+#include "io/servos.h"
 
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -66,6 +70,7 @@
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
+#include "flight/pid.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
