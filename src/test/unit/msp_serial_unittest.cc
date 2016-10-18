@@ -96,7 +96,7 @@ void serialWrite(serialPort_t *instance, uint8_t ch)
     serialWriteBuffer.buf[serialWritePos++] = ch;
 }
 
-void serialWriteBuf(serialPort_t *instance, uint8_t *data, int count)
+void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 {
     while(count--)
         serialWrite(instance, *data++);
@@ -112,7 +112,7 @@ void serialEndWrite(serialPort_t *instance)
     EXPECT_EQ(instance, &serialTestInstance);
 }
 
-uint32_t serialRxBytesWaiting(serialPort_t *instance)
+uint32_t serialRxBytesWaiting(const serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
     EXPECT_GE(serialReadEnd, serialReadPos);
@@ -129,7 +129,7 @@ uint8_t serialRead(serialPort_t *instance)
     return ch;
 }
 
-bool isSerialTransmitBufferEmpty(serialPort_t *instance)
+bool isSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
     EXPECT_EQ(instance, &serialTestInstance);
     return true;
