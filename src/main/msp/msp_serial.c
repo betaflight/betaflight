@@ -74,7 +74,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-static bool mspSerialProcessReceivedData(mspPort_t * mspPort, uint8_t c)
+static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
 {
     if (mspPort->c_state == MSP_IDLE) {
         if (c == '$') {

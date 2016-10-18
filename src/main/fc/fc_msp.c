@@ -515,14 +515,9 @@ static uint32_t packFlightModeFlags(void)
     return junk;
 }
 
-static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
     uint32_t i;
-#ifdef USE_FLASHFS
-    const unsigned int dataSize = sbufBytesRemaining(src);
-#else
-    UNUSED(src);
-#endif
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0;
@@ -991,25 +986,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         serializeDataflashSummaryReply(dst);
         break;
 
-#ifdef USE_FLASHFS
-    case MSP_DATAFLASH_READ:
-        {
-            uint32_t readAddress = sbufReadU32(src);
-            uint16_t readLength;
-            bool useLegacyFormat;
-            if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
-                readLength = sbufReadU16(src);
-                useLegacyFormat = false;
-            } else {
-                readLength = 128;
-                useLegacyFormat = true;
-            }
-
-            serializeDataflashReadReply(dst, readAddress, readLength, useLegacyFormat);
-        }
-        break;
-#endif
-
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
@@ -1149,6 +1125,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
     }
     return true;
 }
+
+#ifdef USE_FLASHFS
+static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
+{
+    const unsigned int dataSize = sbufBytesRemaining(src);
+    const uint32_t readAddress = sbufReadU32(src);
+    uint16_t readLength;
+    bool useLegacyFormat;
+    if (dataSize >= sizeof(uint32_t) + sizeof(uint16_t)) {
+        readLength = sbufReadU16(src);
+        useLegacyFormat = false;
+    } else {
+        readLength = 128;
+        useLegacyFormat = true;
+    }
+
+    serializeDataflashReadReply(dst, readAddress, readLength, useLegacyFormat);
+}
+#endif
 
 static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
@@ -1755,8 +1750,13 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (mspFcProcessOutCommand(cmdMSP, dst, src, mspPostProcessFn)) {
+    if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef USE_FLASHFS
+    } else if (cmdMSP == MSP_DATAFLASH_READ) {
+        mspFcDataFlashReadCommand(dst, src);
+        ret = MSP_RESULT_ACK;
+#endif
     } else {
         ret = mspFcProcessInCommand(cmdMSP, src);
     }
