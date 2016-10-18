@@ -22,6 +22,13 @@
 
 #define QUAD_MOTOR_COUNT 4
 
+// Digital protocol has fixed values
+#define DSHOT_DISARM_COMMAND      0
+#define DSHOT_MIN_THROTTLE       48
+#define DSHOT_MAX_THROTTLE     2047
+#define DSHOT_3D_DEADBAND_LOW   900  // TODO - not agreed yet
+#define DSHOT_3D_DEADBAND_HIGH 1100  // TODO - not agreed yet
+
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
 {

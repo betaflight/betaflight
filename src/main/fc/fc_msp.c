@@ -48,6 +48,7 @@
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/pwm_output.h"
 
 #include "fc/config.h"
 #include "fc/mw.h"
@@ -1866,7 +1867,11 @@ static bool processInCommand(uint8_t cmdMSP)
         masterConfig.gyro_sync_denom = read8();
         masterConfig.pid_process_denom = read8();
         masterConfig.motorConfig.useUnsyncedPwm = read8();
-        masterConfig.motorConfig.motorPwmProtocol = read8();
+#ifdef USE_DSHOT
+        masterConfig.motorConfig.motorPwmProtocol = constrain(read8(), 0, PWM_TYPE_MAX - 1);
+#else
+        masterConfig.motorConfig.motorPwmProtocol = constrain(read8(), 0, PWM_TYPE_BRUSHED);
+#endif
         masterConfig.motorConfig.motorPwmRate = read16();
         break;
     case MSP_SET_FILTER_CONFIG :

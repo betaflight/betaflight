@@ -259,6 +259,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
+    motorConfig->digitalIdleOffset = 0;
 
     uint8_t motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {

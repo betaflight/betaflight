@@ -54,7 +54,7 @@ uint32_t targetPidLooptime;
 bool pidStabilisationEnabled;
 uint8_t PIDweight[3];
 
-int16_t axisPID[3];
+float axisPIDf[3];
 
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
@@ -290,17 +290,17 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
             DTerm = Kd[axis] * delta * tpaFactor;
 
             // -----calculate total PID output
-            axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+            axisPIDf[axis] = PTerm + ITerm + DTerm;
         } else {
             if (pidProfile->yaw_lpf_hz) PTerm = pt1FilterApply4(&yawFilter, PTerm, pidProfile->yaw_lpf_hz, getdT());
 
-            axisPID[axis] = lrintf(PTerm + ITerm);
+            axisPIDf[axis] = PTerm + ITerm;
 
             DTerm = 0.0f; // needed for blackbox
         }
 
         // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) axisPID[axis] = 0;
+        if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

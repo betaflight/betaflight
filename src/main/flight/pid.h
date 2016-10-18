@@ -20,9 +20,10 @@
 #include <stdbool.h>
 
 #define PID_CONTROLLER_BETAFLIGHT 1
+#define PID_MIXER_SCALING 1000.0f
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
-#define PIDSUM_LIMIT 700
+#define PIDSUM_LIMIT 0.5f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
 #define PTERM_SCALE 0.032029f
@@ -67,7 +68,7 @@ typedef struct pidProfile_s {
     uint16_t rollPitchItermIgnoreRate;      // Experimental threshold for resetting iterm for pitch and roll on certain rates
     uint16_t yawItermIgnoreRate;            // Experimental threshold for resetting iterm for yaw on certain rates
     uint16_t yaw_p_limit;
-    uint16_t pidSumLimit;
+    float pidSumLimit;
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
@@ -98,7 +99,7 @@ typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, uint16_t ma
 void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
         const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);
 
-extern int16_t axisPID[3];
+extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 bool airmodeWasActivated;
 extern uint32_t targetPidLooptime;
