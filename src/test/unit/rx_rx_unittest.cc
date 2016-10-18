@@ -188,9 +188,8 @@ extern "C" {
 
     void resetPPMDataReceivedState(void) {}
 
-    bool rxMspFrameComplete(void) { return false; }
+    uint8_t rxMspFrameStatus(void) { return RX_FRAME_PENDING; }
 
-    void rxMspInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
-
-    void rxPwmInit(rxRuntimeConfig_t *, rcReadRawDataPtr *) {}
+    void rxPwmInit(const rxConfig_t*, rxRuntimeConfig_t*) {}
+    void rxMspInit(const rxConfig_t*, rxRuntimeConfig_t*) {}
 }

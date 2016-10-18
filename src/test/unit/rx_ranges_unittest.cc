@@ -112,53 +112,15 @@ void failsafeOnRxResume(void) {}
 uint32_t micros(void) { return 0; }
 uint32_t millis(void) { return 0; }
 
-void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-}
-
-bool sbusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-    return true;
-}
-
-bool spektrumInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-    return true;
-}
-
-bool sumdInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-    return true;
-}
-
-bool sumhInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-    return true;
-}
-
-bool rxMspInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxRuntimeConfig);
-    UNUSED(callback);
-    return true;
-}
+void rxPwmInit(const rxConfig_t*, rxRuntimeConfig_t*) {}
+void rxMspInit(const rxConfig_t*, rxRuntimeConfig_t*) {}
+bool sbusInit(const rxConfig_t*, rxRuntimeConfig_t*) {return true;}
+bool spektrumInit(const rxConfig_t*, rxRuntimeConfig_t*) {return true;}
+bool sumdInit(const rxConfig_t*, rxRuntimeConfig_t*) {return true;}
+bool sumhInit(const rxConfig_t*, rxRuntimeConfig_t*) {return true;}
+uint8_t rxMspFrameStatus(void) { return RX_FRAME_PENDING; }
 
 bool feature(uint32_t) {
-    return false;
-}
-
-bool rxMspFrameComplete(void)
-{
     return false;
 }
 
