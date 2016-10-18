@@ -83,21 +83,24 @@ static void srxlDataReceive(uint16_t c);
 static volatile uint8_t srxlFrame[SRXL_FRAME_SIZE_A2];	//size 35 for 16 channels in SRXL 0xA2
 static uint16_t srxlChannelData[SRXL_CHANNEL_COUNT_MAX];
 static uint16_t srxlReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+uint8_t srxlFrameStatus(void);
 
-bool srxlInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool srxlInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    uint32_t baudRate;
+    UNUSED(rxConfig);
+
     rxRuntimeConfig->channelCount = SRXL_CHANNEL_COUNT_MAX;
     srxlFrameReceived = false;
     srxlDataIncoming = false;
     srxlFramePosition = 0;
-    baudRate = SRXL_BAUDRATE;
+    const uint32_t baudRate = SRXL_BAUDRATE;
     srxlFrameLength = SRXL_FRAME_SIZE_A2;		//default for 12 channel
     srxlChannelCount = SRXL_CHANNEL_COUNT_MAX;
 
-    if (callback) {
-        *callback = srxlReadRawRC;
-    }
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFn = srxlReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = srxlFrameStatus;
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
@@ -163,7 +166,7 @@ uint8_t srxlFrameStatus(void)
     uint16_t crc_calc = 0;
 
     if (!srxlFrameReceived) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     srxlFrameReceived = false;
@@ -183,9 +186,9 @@ uint8_t srxlFrameStatus(void)
             // Convert to internal format
             srxlChannelData[i] = SRXL_CONVERT_TO_USEC(value);
         }
-        return SERIAL_RX_FRAME_COMPLETE;
+        return RX_FRAME_COMPLETE;
     }
-    return SERIAL_RX_FRAME_PENDING;
+    return RX_FRAME_PENDING;
 }
 
 static uint16_t srxlReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)

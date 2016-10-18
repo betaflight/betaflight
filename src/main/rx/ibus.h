@@ -18,4 +18,4 @@
 #pragma once
 
 uint8_t ibusFrameStatus(void);
-bool ibusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool ibusInit(const rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig);

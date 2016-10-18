@@ -627,7 +627,7 @@ void filterRc(void){
     uint16_t rxRefreshRate;
 
     // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
+    rxRefreshRate = rxGetRefreshRate();
 
     if (isRXDataNew) {
 
