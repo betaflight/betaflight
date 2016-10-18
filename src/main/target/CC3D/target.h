@@ -24,6 +24,7 @@
 
 #define BEEPER                  PA15
 #define BEEPER_OPT              PA2
+#define BUZZERM6
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PA3

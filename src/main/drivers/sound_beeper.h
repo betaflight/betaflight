@@ -29,6 +29,14 @@
 #define BEEP_ON     do {} while(0)
 #endif
 
+#ifdef BUZZERM6
+typedef enum {
+    OFF = 0,
+    ON,
+    INVERTED
+} buzzerP6mode_t;
+#endif
+
 typedef struct beeperConfig_s {
     ioTag_t ioTag;
     unsigned isInverted : 1;

@@ -60,7 +60,7 @@ typedef struct drv_pwm_config_s {
     uint16_t servoPwmRate;
     uint16_t servoCenterPulse;
 #endif
-#ifdef CC3D
+#ifdef BUZZERM6
     bool useBuzzerP6;
 #endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
@@ -130,7 +130,7 @@ extern const uint16_t multiPWM[];
 extern const uint16_t airPPM[];
 extern const uint16_t airPWM[];
 
-#ifdef CC3D
+#ifdef BUZZERM6
 extern const uint16_t multiPPM_BP6[];
 extern const uint16_t multiPWM_BP6[];
 extern const uint16_t airPPM_BP6[];

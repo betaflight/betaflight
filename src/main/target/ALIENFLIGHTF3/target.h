@@ -34,6 +34,8 @@
 #define LED1_A                  PB9
 
 #define BEEPER                  PA5
+#define BEEPER_OPT              PA2
+#define BUZZERM6
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 
