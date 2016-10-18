@@ -21,17 +21,20 @@
 #include "drivers/io.h"
 
 #include "drivers/timer.h"
+#include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // PPM IN
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2 }, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
 
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM4 - S1
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM5 - S2
-    { TIM17, IO_TAG(PB5),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_10}, // PWM6 - S3
-    { TIM16, IO_TAG(PB4),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM7 - S4
+    { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1, NULL, 0 }, // PPM IN
+    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2, NULL, 0 }, // SS1 - PB0  - *TIM3_CH3, TIM1_CH2N, TIM8_CH2N
+    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2, NULL, 0 }, // SS1 - PB1  - *TIM3_CH4, TIM1_CH3N, TIM8_CH3N
 
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6 }, // GPIO TIMER - LED_STRIP
+    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  DMA1_Channel4, DMA1_CH4_HANDLER }, // PWM4 - S1
+    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2,  DMA1_Channel1, DMA1_CH1_HANDLER }, // PWM5 - S2
+    { TIM17, IO_TAG(PB5),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_10, DMA1_Channel7, DMA1_CH7_HANDLER }, // PWM6 - S3
+    { TIM16, IO_TAG(PB4),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1,  DMA1_Channel3, DMA1_CH3_HANDLER }, // PWM7 - S4
+
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6, NULL, 0 }, // GPIO TIMER - LED_STRIP
+
 };
 
