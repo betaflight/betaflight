@@ -331,7 +331,6 @@ const mixerRules_t servoMixers[] = {
 static servoMixer_t *customServoMixers;
 #endif
 
-
 static motorMixer_t *customMixers;
 
 void mixerUseConfigs(
@@ -404,14 +403,12 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 
 void loadCustomServoMixer(void)
 {
-    uint8_t i;
-
     // reset settings
     servoRuleCount = 0;
     memset(currentServoMixer, 0, sizeof(currentServoMixer));
 
     // load custom mixer into currentServoMixer
-    for (i = 0; i < MAX_SERVO_RULES; i++) {
+    for (uint8_t i = 0; i < MAX_SERVO_RULES; i++) {
         // check if done
         if (customServoMixers[i].rate == 0)
             break;
@@ -421,13 +418,13 @@ void loadCustomServoMixer(void)
     }
 }
 
-void mixerUsePWMOutputConfiguration(bool use_unsyncedPwm)
+void mixerConfigureOutput(void)
 {
     int i;
 
     motorCount = 0;
 
-    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
+    syncMotorOutputWithPidLoop = pwmIsSynced();
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
@@ -518,18 +515,14 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
             customMixers[i] = mixers[index].motor[i];
     }
 }
-
 #else
-
-void mixerUsePWMOutputConfiguration(bool use_unsyncedPwm)
+void mixerConfigureOutput(void)
 {
+    syncMotorOutputWithPidLoop = pwmIsSynced();
     
-    syncMotorOutputWithPidLoop = !use_unsyncedPwm;
-    
-    motorCount = 4;
+    motorCount = QUAD_MOTOR_COUNT;
 
-    uint8_t i;
-    for (i = 0; i < motorCount; i++) {
+    for (uint8_t i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
 
@@ -631,23 +624,22 @@ void writeServos(void)
 
 void writeMotors(void)
 {
-    uint8_t i;
-
-    for (i = 0; i < motorCount; i++)
+	for (uint8_t i = 0; i < motorCount; i++) {
         pwmWriteMotor(i, motor[i]);
+	}
 
     if (syncMotorOutputWithPidLoop) {
-        pwmCompleteOneshotMotorUpdate(motorCount);
+        pwmCompleteMotorUpdate(motorCount);
     }
 }
 
 void writeAllMotors(int16_t mc)
 {
-    uint8_t i;
-
     // Sends commands to all motors
-    for (i = 0; i < motorCount; i++)
+    for (uint8_t i = 0; i < motorCount; i++) {
         motor[i] = mc;
+    }
+
     writeMotors();
 }
 
@@ -658,7 +650,7 @@ void stopMotors(void)
     delay(50); // give the timers and ESCs a chance to react.
 }
 
-void stopPwmAllMotors()
+void stopPwmAllMotors(void)
 {
     pwmShutdownPulsesForAllMotors(motorCount);
     delayMicroseconds(1500);

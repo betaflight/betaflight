@@ -259,8 +259,9 @@ void init(void)
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
+
 #ifdef USE_QUAD_MIXER_ONLY
-    motorInit(&masterConfig.motorConfig, idlePulse, 4);
+    motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
 #else
     motorInit(&masterConfig.motorConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
 #endif
@@ -281,10 +282,7 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    bool usingUnsyncedOutput = (masterConfig.motorConfig.useUnsyncedPwm 
-        || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED 
-        || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_STANDARD); 
-    mixerUsePWMOutputConfiguration(usingUnsyncedOutput);
+    mixerConfigureOutput();
     
     systemState |= SYSTEM_STATE_MOTORS_READY;
 

@@ -26,6 +26,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
+#define USE_DSHOT
+
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
 //#define LED1                    PB4

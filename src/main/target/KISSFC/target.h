@@ -23,6 +23,8 @@
 
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED | SERIAL_BIDIR)
 
+#define USE_DSHOT
+
 #define LED0                    PB1
 
 #define BEEPER                  PB13

@@ -29,6 +29,11 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM17, .rcc = RCC_APB2(TIM17) },
 };
 
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return 1;
+}
 
 /**
   * @brief  Selects the TIM Output Compare Mode.

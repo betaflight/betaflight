@@ -516,7 +516,10 @@ static const char * const lookupTableSuperExpoYaw[] = {
 };
 
 static const char * const lookupTablePwmProtocol[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED"
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED", 
+#ifdef USE_DSHOT 
+    "DSHOT600", "DSHOT150"
+#endif
 };
 
 static const char * const lookupTableRcInterpolation[] = {

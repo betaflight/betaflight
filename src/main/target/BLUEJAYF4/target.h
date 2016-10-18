@@ -140,6 +140,7 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
+#define USE_DSHOT
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.
 #define WS2811_PIN                      PB1
