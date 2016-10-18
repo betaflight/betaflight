@@ -520,6 +520,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
     uint32_t i;
 #ifdef USE_FLASHFS
     const unsigned int dataSize = sbufBytesRemaining(src);
+#else
+    UNUSED(src);
 #endif
 #ifdef GPS
     uint8_t wp_no;
