@@ -49,10 +49,10 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 
-#include "config/config.h"
-#include "config/feature.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
+#include "config/feature.h"
 
 #define LOG_ERROR        '?'
 #define LOG_IGNORED      '!'

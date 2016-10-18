@@ -396,19 +396,15 @@ COMMON_SRC = \
             build/version.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            fc/mw.c \
-            fc/fc_tasks.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
             common/printf.c \
             common/streambuf.c \
             common/typeconversion.c \
-            config/config.c \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
-            fc/runtime_config.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -429,6 +425,13 @@ COMMON_SRC = \
             drivers/sound_beeper.c \
             drivers/system.c \
             drivers/timer.c \
+            fc/config.c \
+            fc/fc_tasks.c \
+            fc/fc_msp.c \
+            fc/mw.c \
+            fc/rc_controls.c \
+            fc/rc_curves.c \
+            fc/runtime_config.c \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -436,9 +439,6 @@ COMMON_SRC = \
             flight/pid.c \
             flight/pid_legacy.c \
             flight/pid_betaflight.c \
-            fc/fc_msp.c \
-            fc/rc_controls.c \
-            fc/rc_curves.c \
             io/beeper.c \
             io/serial.c \
             io/serial_4way.c \

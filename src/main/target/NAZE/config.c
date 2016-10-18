@@ -28,7 +28,6 @@
 
 #include "rx/rx.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 

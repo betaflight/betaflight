@@ -49,8 +49,9 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
-#include "fc/fc_msp.h"
+#include "fc/config.h"
 #include "fc/mw.h"
+#include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -95,7 +96,6 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

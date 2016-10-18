@@ -41,7 +41,6 @@
 #include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -52,9 +51,10 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 uint8_t motorCount;
