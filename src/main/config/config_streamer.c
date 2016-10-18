@@ -28,15 +28,12 @@
 #  define FLASH_PAGE_SIZE                 (0x400)
 # elif defined(STM32F10X_HD)
 #  define FLASH_PAGE_SIZE                 (0x800)
-<<<<<<< 5f03cdcdb9f4724480a48877425d8e841408c772
 # elif defined(STM32F40_41xxx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
 # elif defined (STM32F411xE)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
 # elif defined(STM32F745xx)
 #  define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
-=======
->>>>>>> Initial commit
 # elif defined(UNIT_TEST)
 #  define FLASH_PAGE_SIZE                 (0x400)
 # else
