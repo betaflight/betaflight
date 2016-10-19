@@ -713,7 +713,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWriteNames(pidnames);
             break;
         case BST_PID_CONTROLLER:
-            bstWrite8(currentProfile->pidProfile.pidController);
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
