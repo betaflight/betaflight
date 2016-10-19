@@ -135,4 +135,5 @@ static inline float constrainf(float amt, float low, float high)
         return amt;
 }
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
+uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);
 
