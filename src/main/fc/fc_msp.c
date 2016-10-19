@@ -71,8 +71,9 @@
 #include "io/serial_4way.h"
 #include "io/vtx.h"
 
-#include "msp/msp_protocol.h"
 #include "msp/msp.h"
+#include "msp/msp_protocol.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -339,30 +340,33 @@ static void serializeDataflashSummaryReply(sbuf_t *dst)
 }
 
 #ifdef USE_FLASHFS
-static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint16_t size, bool useLegacyFormat)
+static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uint16_t size, bool useLegacyFormat)
 {
-    const int bytesRemaning = sbufBytesRemaining(dst);
-    if (size > bytesRemaning - 16) {
-        size = bytesRemaning - 16;
+    BUILD_BUG_ON(MSP_PORT_DATAFLASH_INFO_SIZE < 16);
+
+    uint16_t readLen = size;
+    const int bytesRemainingInBuf = sbufBytesRemaining(dst) - MSP_PORT_DATAFLASH_INFO_SIZE;
+    if (readLen > bytesRemainingInBuf) {
+        readLen = bytesRemainingInBuf;
     }
-    // bytesRead will be lower than that requested if we reach end of volume
-    if (size > flashfsGetSize() - address) {
-        // Truncate the request
-        size = flashfsGetSize() - address;
+    // size will be lower than that requested if we reach end of volume
+    if (readLen > flashfsGetSize() - address) {
+        // truncate the request
+        readLen = flashfsGetSize() - address;
     }
-    if (useLegacyFormat) {
-        sbufWriteU32(dst, address);
-    } else {
-        sbufWriteU32(dst, address);
-        sbufWriteU16(dst, size);
+    sbufWriteU32(dst, address);
+    if (!useLegacyFormat) {
+        // new format supports variable read lengths
+        sbufWriteU16(dst, readLen);
         sbufWriteU8(dst, 0); // placeholder for compression format
     }
 
-    // bytesRead will equal size
-    const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), size);
+    // bytesRead will equal readLen
+    const int bytesRead = flashfsReadAbs(address, sbufPtr(dst), readLen);
     sbufAdvance(dst, bytesRead);
 
     if (useLegacyFormat) {
+        // pad the buffer with zeros
         for (int i = bytesRead; i < size; i++) {
             sbufWriteU8(dst, 0);
         }
