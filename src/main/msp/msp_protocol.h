@@ -191,10 +191,9 @@
 #define MSP_TRANSPONDER_CONFIG          82 //out message         Get transponder settings
 #define MSP_SET_TRANSPONDER_CONFIG      83 //in message          Set transponder settings
 
-// DEPRECATED (single responsibility principle violation in betaflight)
-#define MSP_OSD_CONFIG                  84 //out message         Get osd settings - betaflight
-// DEPRECATED (single responsibility principle violation in betaflight)
-#define MSP_SET_OSD_CONFIG              85 //in message          Set osd settings - betaflight
+// DEPRECATED (single responsibility principle violation in betaflight) - for reference only.
+//#define MSP_OSD_CONFIG                  84 //out message         Get osd settings - betaflight
+//#define MSP_SET_OSD_CONFIG              85 //in message          Set osd settings - betaflight
 
 #define MSP_OSD_CHAR_READ               86 //out message         Read a font character.
 #define MSP_OSD_CHAR_WRITE              87 //in message          Write a font character.
@@ -203,20 +202,18 @@
 #define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
 
 // Betaflight Additional Commands
-#define MSP_PID_ADVANCED_CONFIG         90
-#define MSP_SET_PID_ADVANCED_CONFIG     91
+// DEPRECATED - for reference only, 'ADVANCED' is like 'MISC' or 'UTIL' it's a garbage bin for random stuff. A bad idea.
+//#define MSP_ADVANCED_CONFIG             90
+//#define MSP_SET_ADVANCED_CONFIG         91
 
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93
 
-#define MSP_ADVANCED_TUNING             94
-#define MSP_SET_ADVANCED_TUNING         95
+#define MSP_PID_ADVANCED                94
+#define MSP_SET_PID_ADVANCED            95
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
-
-#define MSP_SPECIAL_PARAMETERS          98 // Temporary betaflight parameters before cleanup and keep CF compatibility
-#define MSP_SET_SPECIAL_PARAMETERS      99 // Temporary betaflight parameters before cleanup and keep CF compatibility
 
 //
 // OSD specific
