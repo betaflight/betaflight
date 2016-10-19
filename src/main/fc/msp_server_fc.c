@@ -573,8 +573,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                 sbufWriteU16(dst, servoProfile()->servoConf[i].max);
                 sbufWriteU16(dst, servoProfile()->servoConf[i].middle);
                 sbufWriteU8(dst, servoProfile()->servoConf[i].rate);
-                sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMin);
-                sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMax);
                 sbufWriteU8(dst, servoProfile()->servoConf[i].forwardFromChannel);
                 sbufWriteU32(dst, servoProfile()->servoConf[i].reversedSources);
             }
@@ -1175,8 +1173,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             servoProfile()->servoConf[i].max = sbufReadU16(src);
             servoProfile()->servoConf[i].middle = sbufReadU16(src);
             servoProfile()->servoConf[i].rate = sbufReadU8(src);
-            servoProfile()->servoConf[i].angleAtMin = sbufReadU8(src);
-            servoProfile()->servoConf[i].angleAtMax = sbufReadU8(src);
             servoProfile()->servoConf[i].forwardFromChannel = sbufReadU8(src);
             servoProfile()->servoConf[i].reversedSources = sbufReadU32(src);
 #endif

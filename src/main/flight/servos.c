@@ -79,7 +79,7 @@ static biquadFilter_t servoFilterState[MAX_SUPPORTED_SERVOS];
 
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixer, PG_SERVO_MIXER, 0);
 
-PG_REGISTER_PROFILE_WITH_RESET_FN(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 0);
+PG_REGISTER_PROFILE_WITH_RESET_FN(servoProfile_t, servoProfile, PG_SERVO_PROFILE, 1);
 
 void pgResetFn_servoProfile(servoProfile_t *instance)
 {
@@ -89,8 +89,6 @@ void pgResetFn_servoProfile(servoProfile_t *instance)
             .max = DEFAULT_SERVO_MAX,
             .middle = DEFAULT_SERVO_MIDDLE,
             .rate = 100,
-            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
-            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
             .forwardFromChannel = CHANNEL_FORWARDING_DISABLED,
         );
     }
