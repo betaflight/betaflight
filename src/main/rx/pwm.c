@@ -32,8 +32,6 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "config/parameter_group.h"
-
 #include "fc/config.h"
 
 #include "rx/rx.h"
@@ -51,17 +49,19 @@ static uint16_t ppmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_
     return ppmRead(channel);
 }
 
-void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfigPtr, rcReadRawDataPtr *callback)
+void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    UNUSED(rxRuntimeConfigPtr);
-    // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->rxRefreshRate = 20000;
+
+    // configure PWM/CPPM read function and max number of channels
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        rxRuntimeConfigPtr->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
-        *callback = pwmReadRawRC;
-    }
-    if (feature(FEATURE_RX_PPM)) {
-        rxRuntimeConfigPtr->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
-        *callback = ppmReadRawRC;
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
+        rxRuntimeConfig->rcReadRawFn = pwmReadRawRC;
+    } else if (feature(FEATURE_RX_PPM)) {
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
+        rxRuntimeConfig->rcReadRawFn = ppmReadRawRC;
     }
 }
 

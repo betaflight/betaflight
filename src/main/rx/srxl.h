@@ -19,6 +19,6 @@
 
 #include "rx/rx.h"
 
-bool srxlInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool srxlInit(const rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
 uint8_t srxlFrameStatus(void);
 

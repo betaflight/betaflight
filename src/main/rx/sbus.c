@@ -78,23 +78,27 @@ static uint16_t sbusStateFlags = 0;
 static bool sbusFrameDone = false;
 static void sbusDataReceive(uint16_t c);
 static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+uint8_t sbusFrameStatus(void);
 
 static uint32_t sbusChannelData[SBUS_MAX_CHANNEL];
 
-bool sbusInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     int b;
     for (b = 0; b < SBUS_MAX_CHANNEL; b++)
-        sbusChannelData[b] = (16 * rxConfig()->midrc) / 10 - 1408;
-    if (callback)
-        *callback = sbusReadRawRC;
+        sbusChannelData[b] = (16 * rxConfig->midrc) / 10 - 1408;
+
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFn = sbusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
 
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
-    portOptions_t options = (rxConfig()->sbus_inversion) ? (SBUS_PORT_OPTIONS | SERIAL_INVERTED) : SBUS_PORT_OPTIONS;
+    portOptions_t options = (rxConfig->sbus_inversion) ? (SBUS_PORT_OPTIONS | SERIAL_INVERTED) : SBUS_PORT_OPTIONS;
     serialPort_t *sBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sbusDataReceive, SBUS_BAUDRATE, MODE_RX, options);
 
     return sBusPort != NULL;
@@ -179,7 +183,7 @@ static void sbusDataReceive(uint16_t c)
 uint8_t sbusFrameStatus(void)
 {
     if (!sbusFrameDone) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
     sbusFrameDone = false;
 
@@ -230,13 +234,13 @@ uint8_t sbusFrameStatus(void)
         debug[0] = sbusStateFlags;
 #endif
         // RX *should* still be sending valid channel data, so use it.
-        return SERIAL_RX_FRAME_COMPLETE | SERIAL_RX_FRAME_FAILSAFE;
+        return RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
     }
 
 #ifdef DEBUG_SBUS_PACKETS
     debug[0] = sbusStateFlags;
 #endif
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)

@@ -18,4 +18,4 @@
 #pragma once
 
 uint8_t sumdFrameStatus(void);
-bool sumdInit(rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback);
+bool sumdInit(const rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
