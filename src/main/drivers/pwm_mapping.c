@@ -890,6 +890,20 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
 #endif
+
+#if defined(SPRACINGF3EVO)
+            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
+
+#if defined(SPRACINGF3MINI)
+            if (((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
+                || ((timerIndex == PWM8 || timerIndex == PWM9 || timerIndex == PWM10 || timerIndex == PWM11) && timerHardwarePtr->tim == TIM2)) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
+
         }
 
 #endif // USE_SERVOS
