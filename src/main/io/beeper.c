@@ -23,6 +23,8 @@
 
 #include "build/build_config.h"
 
+#include "common/utils.h"
+
 #include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
@@ -392,7 +394,7 @@ int beeperTableEntryCount(void)
 /*
  * Returns true if the beeper is on, false otherwise
  */
-bool isBeeperOn(void) 
+bool isBeeperOn(void)
 {
     return beeperIsOn;
 }

@@ -31,6 +31,8 @@
 
 #include "build/build_config.h"
 
+#include "common/utils.h"
+
 #include "drivers/system.h"
 
 #include "drivers/serial.h"

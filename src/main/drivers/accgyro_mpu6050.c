@@ -26,6 +26,8 @@
 
 #include "common/maths.h"
 
+#include "common/utils.h"
+
 #include "nvic.h"
 
 #include "system.h"

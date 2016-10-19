@@ -29,6 +29,7 @@
 #include "scheduler/scheduler.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 
