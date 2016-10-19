@@ -816,52 +816,45 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #ifdef USE_SERVOS
         if (init->useServos && !init->airplane) {
 #if defined(NAZE)
-            // remap PWM9+10 as servos
             if ((timerIndex == PWM9 || timerIndex == PWM10) && timerHardwarePtr->tim == TIM1)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(COLIBRI_RACE) || defined(LUX_RACE)
-            // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(CC3D)
-            // remap 10 as servo
             if (timerIndex == PWM10 && timerHardwarePtr->tim == TIM1)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(SPARKY)
-            // remap PWM1+2 as servos
             if ((timerIndex == PWM1 || timerIndex == PWM2) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(SPRACINGF3)
-            // remap PWM15+16 as servos
             if ((timerIndex == PWM15 || timerIndex == PWM16) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(SPRACINGF3MINI)
-            // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
 #if defined(RCEXPLORERF3)
-            if (timerIndex == PWM2)
-            {
+            if (timerIndex == PWM2) {
                 type = MAP_TO_SERVO_OUTPUT;
             }
 #endif
 
 #if defined(SPRACINGF3EVO)
-            // remap PWM6+7 as servos
-            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3)
+            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
                 type = MAP_TO_SERVO_OUTPUT;
+            }
 #endif
 
 #if defined(NAZE32PRO) || (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
