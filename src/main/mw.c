@@ -525,7 +525,7 @@ void updateMagHold(void)
 void processRx(void)
 {
     static bool armedBeeperOn = false;
-    static bool airmodeIsActivated;
+    static bool hasTakenOff = false;
 
     calculateRxChannelsAndUpdateFailsafe(currentTime);
 
@@ -548,15 +548,14 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
-        if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
-    } else {
-        airmodeIsActivated = false;
-    }
+    if (ARMING_FLAG(ARMED) && rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold)
+        hasTakenOff = true; // Prevent Iterm from being reset
+    else if(!ARMING_FLAG(ARMED))
+        hasTakenOff = false; // Prevent Iterm from being reset
 
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
-    if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
+    if (throttleStatus == THROTTLE_LOW && !(isAirmodeActive() && hasTakenOff)) {
         pidResetErrorGyroState();
         if (currentProfile->pidProfile.pidAtMinThrottle)
             pidStabilisationState(PID_STABILISATION_ON);
