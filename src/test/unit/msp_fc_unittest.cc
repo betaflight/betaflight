@@ -430,8 +430,6 @@ TEST_F(MspTest, TestMspCommands)
         MSP_SET_LED_STRIP_MODECOLOR,    // 86 //out message         Set LED strip mode_color settings
         // Baseflight MSP commands (if enabled they exist in Cleanflight)
         MSP_RX_MAP,                     // 64 //out message get channel map (also returns number of channels total)
-        // DEPRECATED - DO NOT USE "MSP_BF_CONFIG" and MSP_SET_BF_CONFIG.  In Cleanflight, isolated commands already exist and should be used instead.
-        MSP_BF_CONFIG,                  // 66 //out message baseflight-specific settings that aren't covered elsewhere
         // DEPRECATED - Use MSP_BUILD_INFO instead
         MSP_BF_BUILD_INFO,              // 69 //out message build date as well as some space for future expansion
         // Multwii original MSP commands
