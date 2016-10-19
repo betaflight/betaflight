@@ -894,6 +894,13 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
+#if defined(SPRACINGF3NEO)
+            if (((timerIndex == PWM7 || timerIndex == PWM8) && timerHardwarePtr->tim == TIM8)
+                || ((timerIndex == PWM9 || timerIndex == PWM10) && timerHardwarePtr->tim == TIM2)) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
+
 #if defined(RCEXPLORERF3)
             if (timerIndex == PWM2) {
                 type = MAP_TO_SERVO_OUTPUT;
@@ -953,6 +960,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             }
 #endif
 
+#if defined(SPRACINGF3NEO)
+            if (((timerIndex == PWM7 || timerIndex == PWM8) && timerHardwarePtr->tim == TIM8)
+                || ((timerIndex == PWM9 || timerIndex == PWM10) && timerHardwarePtr->tim == TIM2)) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
         }
 
 #endif // USE_SERVOS
