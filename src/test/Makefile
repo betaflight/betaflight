@@ -517,6 +517,20 @@ $(OBJECT_DIR)/ws2811_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/nvic_unittest.o : \
+	$(TEST_DIR)/nvic_unittest.cc \
+	$(USER_DIR)/drivers/nvic.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/nvic_unittest.cc -o $@
+
+$(OBJECT_DIR)/nvic_unittest : \
+	$(OBJECT_DIR)/nvic_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 $(OBJECT_DIR)/io/serial.o : \
 	$(USER_DIR)/io/serial.c \
 	$(USER_DIR)/io/serial.h \
