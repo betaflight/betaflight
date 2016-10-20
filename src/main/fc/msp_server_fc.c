@@ -1324,7 +1324,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_SET_BOARD_ALIGNMENT:
-#ifdef SKIP_BOARD_ALIGNMENT
+#ifndef SKIP_BOARD_ALIGNMENT
             boardAlignment()->rollDegrees = sbufReadU16(src);
             boardAlignment()->pitchDegrees = sbufReadU16(src);
             boardAlignment()->yawDegrees = sbufReadU16(src);
