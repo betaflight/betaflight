@@ -150,6 +150,7 @@
 #define WS2811_DMA_IT                   DMA_IT_TCIF4
 #define WS2811_DMA_CHANNEL              DMA_CHANNEL_6
 #define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_TIMER_GPIO_AF            GPIO_AF2_TIM5
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
