@@ -209,6 +209,7 @@
 #define GTUNE
 #define BLACKBOX
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

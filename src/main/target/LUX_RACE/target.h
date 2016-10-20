@@ -161,6 +161,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

@@ -114,6 +114,7 @@
 #define SERIAL_RX
 #define USE_SERVOS
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define USE_CLI
 #define USE_EXTI
 

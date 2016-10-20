@@ -46,6 +46,7 @@
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
 #include "telemetry/mavlink.h"
+#include "telemetry/ibus.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
 
@@ -69,6 +70,9 @@ void telemetryInit(void)
     initSmartPortTelemetry();
     initLtmTelemetry();
     initMAVLinkTelemetry();
+#ifdef TELEMETRY_IBUS
+    initIbusTelemetry();
+#endif
     telemetryCheckState();
 }
 
@@ -95,7 +99,9 @@ uint8_t telemetryCheckState(void)
     telemetryStateChangeMask |= (checkSmartPortTelemetryState() << 2);
     telemetryStateChangeMask |= (checkLtmTelemetryState() << 3);
     telemetryStateChangeMask |= (checkMAVLinkTelemetryState() << 4);
-
+#ifdef TELEMETRY_IBUS
+    telemetryStateChangeMask |= (checkIbusTelemetryState() << 5);
+#endif
     return telemetryStateChangeMask;
 }
 
@@ -106,6 +112,9 @@ void telemetryProcess(uint16_t deadband3d_throttle)
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleMAVLinkTelemetry();
+#ifdef TELEMETRY_IBUS
+    handleIbusTelemetry();
+#endif
 }
 
 #endif

@@ -1044,6 +1044,30 @@ $(OBJECT_DIR)/osd_screen_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
+$(OBJECT_DIR)/telemetry/ibus.o : \
+	$(USER_DIR)/telemetry/ibus.c \
+	$(USER_DIR)/telemetry/ibus.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/ibus.c -o $@
+
+$(OBJECT_DIR)/telemetry_ibus_unittest.o : \
+	$(TEST_DIR)/telemetry_ibus_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_ibus_unittest.cc -o $@
+
+$(OBJECT_DIR)/telemetry_ibus_unittest : \
+	$(OBJECT_DIR)/telemetry/ibus.o \
+	$(OBJECT_DIR)/telemetry_ibus_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 

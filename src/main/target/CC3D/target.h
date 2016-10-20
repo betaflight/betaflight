@@ -141,8 +141,8 @@
 //#define GPS
 #define BLACKBOX
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
 #define TELEMETRY
+//#define TELEMETRY_IBUS
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

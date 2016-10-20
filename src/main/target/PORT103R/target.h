@@ -186,6 +186,7 @@
 #define GTUNE
 #define SERIAL_RX
 #define TELEMETRY
+#define TELEMETRY_IBUS
 #define USE_SERVOS
 #define USE_CLI
 #define USE_EXTI

@@ -29,7 +29,7 @@ These receivers are reported working:
 * [FrSky D8R-XP 8ch telemetry receiver, or CPPM and RSSI enabled receiver](http://www.frsky-rc.com/product/pro.php?pro_id=21)
 * [FrSky X4R and FrSky X4RSB](http://www.frsky-rc.com/download/view.php?sort=&down=158&file=X4R-X4RSB) when flashed with CPPM firmware and bound with jumper between signal pins 2 and 3
 * All FrSky S.Bus enabled devices when connected with [S.Bus CPPM converter cable](http://www.frsky-rc.com/product/pro.php?pro_id=112). Without jumper this converter cable uses 21ms frame size (Channels 1-8). When jumper is in place, it uses 28ms frame and channels 1-12 are available
-* FlySky/Turnigy FS-iA6B receiver for FS-i6 and FS-i10 transmitters
+* FlySky/Turnigy FS-iA4B, FS-iA6B, FS-iA10 receivers all provide 8channels if the tx is sending them. (FS-i6 and FS-i10 transmitters). Use setting rx-setup/ppm to enable.
 
 
 
@@ -136,17 +136,19 @@ SUMH is a legacy Graupner protocol.  Graupner have issued a firmware updates for
 
 10 channels via serial currently supported.
 
-IBUS is the FlySky digital serial protocol and is available with the FS-IA6B and
+IBUS is the FlySky digital serial protocol and is available with the FS-IA4B, FS-IA6B and
 FS-IA10 receivers. The Turnigy TGY-IA6B and TGY-IA10 are the same
 devices with a different label, therefore they also work.
 
 If you are using a 6ch tx such as the FS-I6 or TGY-I6 then you must flash a 10ch
 firmware on the tx to make use of these extra channels.
 
-These receivers are reported working:
+These receivers are reported working (all gives 10 channels serial):
 
-FlySky/Turnigy FS-iA6B 6-Channel Receiver
-http://www.flysky-cn.com/products_detail/&productId=51.html
+- FlySky/Turnigy FS-iA4B 4-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=46.html)
+- FlySky/Turnigy FS-iA6B 6-Channel Receiver (http://www.flysky-cn.com/products_detail/&productId=51.html)
+- FlySky/Turnigy FS-iA10 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=53.html)
+- FlySky/Turnigy FS-iA10B 10-Channel Receiver (http://www.flysky-cn.com/products_detail/productId=52.html)
 
 ## MultiWii serial protocol (MSP)
 
