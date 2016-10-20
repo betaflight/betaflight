@@ -79,6 +79,6 @@ struct rxConfig_s;
 void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
-fix12_t calculateVbatPidCompensation(void);
+float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
 uint8_t calculateBatteryCapacityRemainingPercentage(void);
