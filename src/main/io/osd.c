@@ -98,9 +98,14 @@ void osdResetAlarms(void);
 // specific functions; max7456XXX(), canvasXXX(), oledXXX(), ...
 //
 
+<<<<<<< HEAD
 #include "fc/fc_msp.h"
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
+=======
+#include "io/serial_msp.h"
+#include "msp/msp_protocol.h"
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 
 void canvasBegin(void)
 {
@@ -147,12 +152,15 @@ void canvasWrite(int col, int row, char *string)
 
     mspSerialPush(MSP_CANVAS, (uint8_t *)buf, len + 4);
 }
+<<<<<<< HEAD
 
 // Called once at startup to initialize push function in msp
 void canvasInit(void)
 {
     mspSerialPushInit(mspFcPushInit());
 }
+=======
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 #endif
 
 // Force draw all elements if true
@@ -233,6 +241,7 @@ void cmsScreenResync(void)
 #endif
 }
 
+<<<<<<< HEAD
 void cmsScreenInit(void)
 {
 #ifdef CANVAS
@@ -240,6 +249,8 @@ void cmsScreenInit(void)
 #endif
 }
 
+=======
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 //
 // Lots of things not separated yet.
 //
@@ -290,12 +301,21 @@ statistic_t stats;
 #define LEFT_MENU_COLUMN  1
 #define RIGHT_MENU_COLUMN 23
 #define MAX_MENU_ITEMS    (cmsGetRowsCount() - 2)
+<<<<<<< HEAD
 
 //
 // Menu element types
 // XXX Upon separation, all OME would be renamed to CME_ or similar.
 //
 
+=======
+
+//
+// Menu element types
+// XXX Upon separation, all OME would be renamed to CME_ or similar.
+//
+
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 typedef void (* OSDMenuFuncPtr)(void *data);
 
 //type of elements
@@ -1134,6 +1154,7 @@ void cmsDrawMenu(void)
 }
 
 void cmsChangeScreen(void *ptr)
+<<<<<<< HEAD
 {
     uint8_t i;
     if (ptr) {
@@ -1296,6 +1317,170 @@ void cmsProcess(uint32_t currentTime)
     uint8_t key = 0;
     static uint32_t lastCmsHeartBeat = 0;
 
+=======
+{
+    uint8_t i;
+    if (ptr) {
+        cmsScreenClear();
+        // hack - save profile to temp
+        if (ptr == &menuPid[0]) {
+            for (i = 0; i < 3; i++) {
+                tempPid[i][0] = curr_profile.pidProfile.P8[i];
+                tempPid[i][1] = curr_profile.pidProfile.I8[i];
+                tempPid[i][2] = curr_profile.pidProfile.D8[i];
+            }
+            tempPid[3][0] = curr_profile.pidProfile.P8[PIDLEVEL];
+            tempPid[3][1] = curr_profile.pidProfile.I8[PIDLEVEL];
+            tempPid[3][2] = curr_profile.pidProfile.D8[PIDLEVEL];
+        }
+
+        if (ptr == &menuRateExpo[0])
+            memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+
+        menuStack[menuStackIdx] = currentMenu;
+        menuStackHistory[menuStackIdx] = currentMenuPos;
+        menuStackIdx++;
+
+        currentMenu = (OSD_Entry *)ptr;
+        currentMenuPos = 0;
+        lastMenuPos = -1; // XXX this?
+        cmsUpdateMaxRows();
+    }
+}
+
+void cmsMenuBack(void)
+{
+    uint8_t i;
+
+    // becasue pids and rates meybe stored in profiles we need some thicks to manipulate it
+    // hack to save pid profile
+    if (currentMenu == &menuPid[0]) {
+        for (i = 0; i < 3; i++) {
+            curr_profile.pidProfile.P8[i] = tempPid[i][0];
+            curr_profile.pidProfile.I8[i] = tempPid[i][1];
+            curr_profile.pidProfile.D8[i] = tempPid[i][2];
+        }
+
+        curr_profile.pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+        curr_profile.pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+        curr_profile.pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+    }
+
+    // hack - save rate config for current profile
+    if (currentMenu == &menuRateExpo[0])
+        memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+
+    if (menuStackIdx) {
+        cmsScreenClear();
+        menuStackIdx--;
+        nextPage = NULL;
+        currentMenu = menuStack[menuStackIdx];
+        currentMenuPos = menuStackHistory[menuStackIdx];
+        lastMenuPos = -1;
+
+        cmsUpdateMaxRows();
+    }
+    else {
+        cmsOpenMenu();
+    }
+}
+
+void cmsOpenMenu(void)
+{
+    if (cmsInMenu)
+        return;
+
+    if (feature(FEATURE_LED_STRIP))
+        featureLedstrip = 1;
+
+    if (feature(FEATURE_BLACKBOX))
+        featureBlackbox = 1;
+
+#if defined(VTX) || defined(USE_RTC6705)
+    if (feature(FEATURE_VTX))
+        featureVtx = 1;
+#endif // VTX || USE_RTC6705
+
+#ifdef VTX
+    vtxBand = masterConfig.vtxBand;
+    vtxChannel = masterConfig.vtx_channel + 1;
+#endif // VTX
+
+#ifdef USE_RTC6705
+    vtxBand = masterConfig.vtx_channel / 8;
+    vtxChannel = masterConfig.vtx_channel % 8 + 1;
+#endif // USE_RTC6705
+
+    cmsRows = cmsGetRowsCount();
+    cmsInMenu = true;
+#ifdef OSD
+// XXX Do we need this here?
+    refreshTimeout = 0;
+#endif
+    cmsScreenBegin();
+    cmsScreenClear();
+    currentMenu = &menuMain[0];
+    cmsChangeScreen(currentMenu);
+#ifdef LED_STRIP
+    getLedColor();
+#endif // LED_STRIP
+}
+
+void cmsExitMenu(void *ptr)
+{
+    cmsScreenClear();
+
+    cmsScreenWrite(5, 3, "RESTARTING IMU...");
+    cmsScreenResync(); // Was max7456RefreshAll(); why at this timing?
+
+    stopMotors();
+    stopPwmAllMotors();
+    delay(200);
+
+    if (ptr) {
+        // save local variables to configuration
+        if (featureBlackbox)
+            featureSet(FEATURE_BLACKBOX);
+        else
+            featureClear(FEATURE_BLACKBOX);
+
+        if (featureLedstrip)
+            featureSet(FEATURE_LED_STRIP);
+        else
+            featureClear(FEATURE_LED_STRIP);
+#if defined(VTX) || defined(USE_RTC6705)
+        if (featureVtx)
+            featureSet(FEATURE_VTX);
+        else
+            featureClear(FEATURE_VTX);
+#endif // VTX || USE_RTC6705
+
+#ifdef VTX
+        masterConfig.vtxBand = vtxBand;
+        masterConfig.vtx_channel = vtxChannel - 1;
+#endif // VTX
+
+#ifdef USE_RTC6705
+        masterConfig.vtx_channel = vtxBand * 8 + vtxChannel - 1;
+#endif // USE_RTC6705
+
+        saveConfigAndNotify();
+    }
+
+    cmsInMenu = false;
+
+    cmsScreenEnd();
+
+    systemReset();
+}
+
+void cmsProcess(uint32_t currentTime)
+{
+    static uint8_t rcDelay = BUTTON_TIME;
+    uint8_t key = 0;
+    static uint32_t lastCmsHeartBeat = 0;
+
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 //debug[1]++;
 
     // detect enter to menu
@@ -1362,11 +1547,14 @@ void cmsHandler(uint32_t currentTime)
 
 }
 
+<<<<<<< HEAD
 void cmsInit(void)
 {
     cmsScreenInit();
 }
 
+=======
+>>>>>>> origin/bfdev-osd-cms-separation-poc
 // Does this belong here?
 
 #ifdef USE_FLASHFS

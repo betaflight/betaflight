@@ -129,6 +129,34 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *mspPort)
     return mspPostProcessFn;
 }
 
+#ifdef USE_DPRINTF
+#include "common/printf.h"
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
+extern serialPort_t *debugSerialPort;
+#define dprintf(x) if (debugSerialPort) printf x
+#else
+#define dprintf(x)
+#endif
+
+void mspSerialPush(int cmd, uint8_t *data, int buflen)
+{
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // Big enough for a OSD line
+        uint8_t buf[sizeof(bufWriter_t) + 30];
+
+        writer = bufWriterInit(buf, sizeof(buf), (bufWrite_t)serialWriteBufShim, mspPort->port);
+
+        mspServerPush(mspPort, cmd, data, buflen);
+
+        bufWriterFlush(writer);
+    }
+}
+
 /*
  * Process MSP commands from serial ports configured as MSP ports.
  *
