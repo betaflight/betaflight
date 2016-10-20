@@ -103,14 +103,14 @@
 #define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-//#define BARO
-//#define USE_BARO_MS5611
-//#define USE_BARO_BMP085
-//#define USE_BARO_BMP280
+#define BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+#define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MAG_HMC5883
-//#define MAG_HMC5883_ALIGN       CW180_DEG
+#define MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN       CW180_DEG
 
 //#define SONAR
 //#define SONAR_TRIGGER_PIN       PB0
@@ -151,11 +151,11 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-//#define LED_STRIP
-//#define WS2811_TIMER                    TIM3
-//#define WS2811_PIN                      PA6
-//#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-//#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define LED_STRIP
+#define WS2811_TIMER                    TIM3
+#define WS2811_PIN                      PA6
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef GPS
 
