@@ -66,7 +66,7 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
