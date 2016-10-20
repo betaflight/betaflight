@@ -23,10 +23,8 @@
 #include <stdlib.h>
 
 #include <platform.h>
-#include "build/build_config.h"
 
 #include "common/utils.h"
-
 
 #ifdef USE_RX_V202
 

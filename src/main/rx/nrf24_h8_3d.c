@@ -26,8 +26,6 @@
 
 #ifdef USE_RX_H8_3D
 
-#include "build/build_config.h"
-
 #include "common/utils.h"
 
 #include "drivers/rx_nrf24l01.h"

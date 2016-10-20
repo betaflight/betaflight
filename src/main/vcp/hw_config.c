@@ -39,8 +39,6 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 
-#include "build/build_config.h"
-
 #include "common/utils.h"
 
 
