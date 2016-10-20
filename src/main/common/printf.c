@@ -38,6 +38,8 @@
 
 #include "build/build_config.h"
 
+#include "common/utils.h"
+
 #include "drivers/serial.h"
 #include "io/serial.h"
 

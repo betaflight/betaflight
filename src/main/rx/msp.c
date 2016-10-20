@@ -22,7 +22,7 @@
 
 #ifndef SKIP_RX_MSP
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"

@@ -22,11 +22,11 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "system.h"
 #include "bus_i2c.h"
