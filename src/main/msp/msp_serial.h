@@ -60,10 +60,5 @@ void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
 void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData);
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
-<<<<<<< HEAD:src/main/msp/msp_serial.h
-
 void mspSerialPushInit(mspPushCommandFnPtr mspPushCommandFn);
 void mspSerialPush(uint8_t, uint8_t *, int);
-=======
-void mspSerialPush(int, uint8_t *, int);
->>>>>>> origin/bfdev-osd-cms-separation-poc:src/main/io/serial_msp.h
