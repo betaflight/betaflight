@@ -29,3 +29,4 @@ struct serialPort_s;
 typedef void (*mspPostProcessFnPtr)(struct serialPort_s *port); // msp post process function, used for gracefully handling reboots, etc.
 struct mspPort_s;
 typedef mspResult_e (*mspProcessCommandFnPtr)(struct mspPort_s *mspPort, mspPostProcessFnPtr *mspPostProcessFn);
+typedef void (*mspPushCommandFnPtr)(struct mspPort_s *, uint8_t, uint8_t *, int);

@@ -88,6 +88,7 @@
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/cms.h"
 
 #include "scheduler/scheduler.h"
 
@@ -422,6 +423,10 @@ void init(void)
     if (feature(FEATURE_OSD)) {
         osdInit();
     }
+#endif
+
+#ifdef CMS
+    cmsInit();
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,

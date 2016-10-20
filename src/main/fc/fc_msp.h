@@ -20,3 +20,4 @@
 #include "msp/msp.h"
 
 mspProcessCommandFnPtr mspFcInit(void);
+mspPushCommandFnPtr mspFcPushInit(void);

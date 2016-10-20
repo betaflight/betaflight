@@ -98,8 +98,9 @@ void osdResetAlarms(void);
 // specific functions; max7456XXX(), canvasXXX(), oledXXX(), ...
 //
 
-#include "io/serial_msp.h"
+#include "fc/fc_msp.h"
 #include "msp/msp_protocol.h"
+#include "msp/msp_serial.h"
 
 void canvasBegin(void)
 {
@@ -145,6 +146,12 @@ void canvasWrite(int col, int row, char *string)
     memcpy((char *)&buf[4], string, len);
 
     mspSerialPush(MSP_CANVAS, (uint8_t *)buf, len + 4);
+}
+
+// Called once at startup to initialize push function in msp
+void canvasInit(void)
+{
+    mspSerialPushInit(mspFcPushInit());
 }
 #endif
 
@@ -223,6 +230,13 @@ void cmsScreenResync(void)
 {
 #ifdef OSD
     max7456RefreshAll();
+#endif
+}
+
+void cmsScreenInit(void)
+{
+#ifdef CANVAS
+    canvasInit();
 #endif
 }
 
@@ -1346,6 +1360,11 @@ void cmsHandler(uint32_t currentTime)
     if (cmsInMenu)
         DISABLE_ARMING_FLAG(OK_TO_ARM);
 
+}
+
+void cmsInit(void)
+{
+    cmsScreenInit();
 }
 
 // Does this belong here?

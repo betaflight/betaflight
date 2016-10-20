@@ -102,15 +102,6 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#ifdef USE_DPRINTF
-#include "common/printf.h"
-#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
-extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
-#else
-#define dprintf(x)
-#endif
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -1946,16 +1937,7 @@ mspResult_e mspFcProcessCommand(mspPort_t *mspPort, mspPostProcessFnPtr *mspPost
     return ret;
 }
 
-/*
- * Return a pointer to the process command function
- */
-mspProcessCommandFnPtr mspFcInit(void)
-{
-    initActiveBoxIds();
-    return mspFcProcessCommand;
-}
-
-void mspServerPush(mspPort_t *mspPort, int cmd, uint8_t *data, int len)
+void mspServerPush(mspPort_t *mspPort, uint8_t cmd, uint8_t *data, int len)
 {
     currentPort = mspPort;
     mspPort->cmdMSP = cmd;
@@ -1967,4 +1949,18 @@ void mspServerPush(mspPort_t *mspPort, int cmd, uint8_t *data, int len)
     }
 
     tailSerialReply();
+}
+
+/*
+ * Return a pointer to the process command function
+ */
+mspProcessCommandFnPtr mspFcInit(void)
+{
+    initActiveBoxIds();
+    return mspFcProcessCommand;
+}
+
+mspPushCommandFnPtr mspFcPushInit(void)
+{
+    return mspServerPush;
 }
