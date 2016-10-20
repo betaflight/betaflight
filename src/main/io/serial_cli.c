@@ -157,7 +157,9 @@ static void cliServoMix(char *cmdline);
 
 static void cliSet(char *cmdline);
 static void cliGet(char *cmdline);
+#ifndef SKIP_CLI_STATUS
 static void cliStatus(char *cmdline);
+#endif
 #ifndef SKIP_TASK_STATISTICS
 static void cliTasks(char *cmdline);
 #endif
@@ -168,7 +170,9 @@ static void cliRxRange(char *cmdline);
 static void cliGpsPassthrough(char *cmdline);
 #endif
 
+#ifndef SKIP_CLI_COMMAND_HELP
 static void cliHelp(char *cmdline);
+#endif
 static void cliMap(char *cmdline);
 
 #ifdef LED_STRIP
@@ -227,7 +231,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#ifndef CJMCU
+#ifndef SKIP_CLI_STATUS
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -296,7 +300,9 @@ const clicmd_t cmdTable[] = {
 #ifdef GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
+#ifndef SKIP_CLI_COMMAND_HELP
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
+#endif
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
 #endif
@@ -337,7 +343,9 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_SDCARD
     CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
+#ifndef SKIP_CLI_STATUS
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
+#endif
 #ifndef SKIP_TASK_STATISTICS
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
@@ -2065,6 +2073,7 @@ static void cliGpsPassthrough(char *cmdline)
 }
 #endif
 
+#ifndef SKIP_CLI_COMMAND_HELP
 static void cliHelp(char *cmdline)
 {
     uint32_t i = 0;
@@ -2073,17 +2082,16 @@ static void cliHelp(char *cmdline)
 
     for (i = 0; i < CMD_COUNT; i++) {
         cliPrint(cmdTable[i].name);
-#ifndef SKIP_CLI_COMMAND_HELP
         if (cmdTable[i].description) {
             cliPrintf(" - %s", cmdTable[i].description);
         }
         if (cmdTable[i].args) {
             cliPrintf("\r\n\t%s", cmdTable[i].args);
         }
-#endif
         cliPrint("\r\n");
     }
 }
+#endif
 
 static void cliMap(char *cmdline)
 {
@@ -2527,6 +2535,7 @@ static void cliGet(char *cmdline)
     cliPrint("Invalid name\r\n");
 }
 
+#ifndef SKIP_CLI_STATUS
 static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
@@ -2542,7 +2551,6 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
-#ifndef CJMCU
     uint8_t i;
     uint32_t mask;
     uint32_t detectedSensorsMask = sensorsMask();
@@ -2565,7 +2573,6 @@ static void cliStatus(char *cmdline)
             }
         }
     }
-#endif
     cliPrint("\r\n");
 
 #ifdef USE_I2C
@@ -2576,6 +2583,7 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("PIDd: %d, GYROd: %d, I2C Errors: %d, registry size: %d\r\n", pidDeltaUs, gyroDeltaUs, i2cErrorCounter, PG_REGISTRY_SIZE);
 }
+#endif
 
 #ifndef SKIP_TASK_STATISTICS
 static void cliTasks(char *cmdline)
@@ -2624,6 +2632,7 @@ void cliProcess(void)
     
     while (serialRxBytesWaiting(cliPort)) {
         uint8_t c = serialRead(cliPort);
+#ifndef SKIP_CLI_FRILLS
         if (c == '\t' || c == '?') {
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
@@ -2667,7 +2676,9 @@ void cliProcess(void)
             // clear screen
             cliPrint("\033[2J\033[1;1H");
             cliPrompt();
-        } else if (bufferIndex && (c == '\n' || c == '\r')) {
+        } else
+#endif
+        if (bufferIndex && (c == '\n' || c == '\r')) {
             // enter pressed
             cliPrint("\r\n");
 

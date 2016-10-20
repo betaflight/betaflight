@@ -93,6 +93,8 @@
 #define GTUNE
 #else
 #define SKIP_TASK_STATISTICS
+#define SKIP_CLI_FRILLS
+#define SKIP_CLI_STATUS
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_MWREWRITE
 #define SKIP_PID_MW23
