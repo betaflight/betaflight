@@ -186,8 +186,6 @@ typedef enum {
 
 #define RATEPROFILE_MASK (1 << 7)
 
-#define JUMBO_FRAME_SIZE_LIMIT 255
-
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 static void msp4WayIfFn(serialPort_t *serialPort)
 {

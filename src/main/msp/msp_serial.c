@@ -121,13 +121,22 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, const uint8_t *data, int l
     return checksum;
 }
 
+#define JUMBO_FRAME_SIZE_LIMIT 255
+
 static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
 {
     serialBeginWrite(msp->port);
     const int len = sbufBytesRemaining(&packet->buf);
-    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', len, packet->cmd};
+    const int mspLen = len < JUMBO_FRAME_SIZE_LIMIT ? len : JUMBO_FRAME_SIZE_LIMIT;
+    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', mspLen, packet->cmd};
     serialWriteBuf(msp->port, hdr, sizeof(hdr));
     uint8_t checksum = mspSerialChecksumBuf(0, hdr + 3, 2); // checksum starts from len field
+    if (len >= JUMBO_FRAME_SIZE_LIMIT) {
+        serialWrite(msp->port, len & 0xff);
+        checksum ^= len & 0xff;
+        serialWrite(msp->port, (len >> 8) & 0xff);
+        checksum ^= (len >> 8) & 0xff;
+    }
     if (len > 0) {
         serialWriteBuf(msp->port, sbufPtr(&packet->buf), len);
         checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), len);
