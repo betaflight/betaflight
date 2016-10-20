@@ -104,9 +104,9 @@ void osdResetAlarms(void);
 
 void canvasBegin(void)
 {
-    uint8_t subcmd = 0;
+    uint8_t subcmd[] = { 0 };
 
-    mspSerialPush(MSP_CANVAS, &subcmd, 1);
+    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasHeartBeat(void)
@@ -116,16 +116,16 @@ void canvasHeartBeat(void)
 
 void canvasEnd(void)
 {
-    uint8_t subcmd = 1;
+    uint8_t subcmd[] = { 1 };
 
-    mspSerialPush(MSP_CANVAS, &subcmd, 1);
+    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasClear(void)
 {
-    uint8_t subcmd = 2;
+    uint8_t subcmd[] = { 2 };
 
-    mspSerialPush(MSP_CANVAS, &subcmd, 1);
+    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasWrite(int col, int row, char *string)
@@ -1019,7 +1019,7 @@ void cmsDrawMenu(void)
             cmsScreenWrite(LEFT_MENU_COLUMN + 2, i + top, p->text);
 
         switch (p->type) {
-            case OME_POS:
+            case OME_POS:; // Semi-colon required to add an empty statement
 #ifdef OSD
                 uint32_t address = (uint32_t)p->data;
                 uint16_t *val;
