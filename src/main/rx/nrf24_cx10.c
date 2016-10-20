@@ -23,10 +23,10 @@
 #include <string.h>
 
 #include <platform.h>
-#include "build/build_config.h"
-
 
 #ifdef USE_RX_CX10
+
+#include "build/build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/rx_xn297.h"
