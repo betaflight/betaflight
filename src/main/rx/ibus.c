@@ -48,6 +48,7 @@
 #define IBUS_BAUDRATE 115200
 
 static bool ibusFrameDone = false;
+static uint8_t ibusFramePosition = 0;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
 static void ibusDataReceive(uint16_t c);
@@ -81,7 +82,6 @@ static void ibusDataReceive(uint16_t c)
 {
     uint32_t ibusTime;
     static uint32_t ibusTimeLast;
-    static uint8_t ibusFramePosition;
 
     ibusTime = micros();
 
@@ -126,7 +126,8 @@ uint8_t ibusFrameStatus(void)
         }
         frameStatus = RX_FRAME_COMPLETE;
     }
-
+    ibusFramePosition = 0;
+    
     return frameStatus;
 }
 
