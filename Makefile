@@ -386,6 +386,9 @@ else
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/lib/main/MAVLink
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
 
 VPATH           := $(VPATH):$(TARGET_DIR)
@@ -491,7 +494,8 @@ HIGHEND_SRC = \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
-            telemetry/ltm.c
+            telemetry/ltm.c \
+            telemetry/mavlink.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
