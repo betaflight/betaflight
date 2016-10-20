@@ -810,9 +810,15 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_BOARD_ALIGNMENT:
-        	sbufWriteU16(dst, boardAlignment()->rollDegrees);
-        	sbufWriteU16(dst, boardAlignment()->pitchDegrees);
-        	sbufWriteU16(dst, boardAlignment()->yawDegrees);
+#ifdef SKIP_BOARD_ALIGNMENT
+            sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 0);
+            sbufWriteU16(dst, 9);
+#else
+            sbufWriteU16(dst, boardAlignment()->rollDegrees);
+            sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+            sbufWriteU16(dst, boardAlignment()->yawDegrees);
+#endif
             break;
 
         case MSP_VOLTAGE_METER_CONFIG:
@@ -1318,9 +1324,15 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 
         case MSP_SET_BOARD_ALIGNMENT:
+#ifdef SKIP_BOARD_ALIGNMENT
             boardAlignment()->rollDegrees = sbufReadU16(src);
             boardAlignment()->pitchDegrees = sbufReadU16(src);
             boardAlignment()->yawDegrees = sbufReadU16(src);
+#else
+            sbufReadU16(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+#endif
             break;
 
         case MSP_SET_VOLTAGE_METER_CONFIG: {

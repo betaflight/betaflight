@@ -30,6 +30,11 @@
 
 #include "boardalignment.h"
 
+#ifdef SKIP_BOARD_ALIGNMENT
+void initBoardAlignment(void)
+{
+}
+#else
 PG_REGISTER(boardAlignment_t, boardAlignment, PG_BOARD_ALIGNMENT, 0);
 
 static bool standardBoardAlignment = true;     // board orientation correction
@@ -66,6 +71,7 @@ static void alignBoard(int32_t *vec)
     vec[Y] = lrintf(boardRotation[0][Y] * x + boardRotation[1][Y] * y + boardRotation[2][Y] * z);
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
+#endif
 
 void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation)
 {
@@ -116,6 +122,8 @@ void alignSensors(int32_t *src, int32_t *dest, uint8_t rotation)
             break;
     }
 
+#ifndef SKIP_BOARD_ALIGNMENT
     if (!standardBoardAlignment)
         alignBoard(dest);
+#endif
 }

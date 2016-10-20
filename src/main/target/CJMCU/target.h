@@ -98,6 +98,7 @@
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_PID_MWREWRITE
 #define SKIP_PID_MW23
+#define SKIP_BOARD_ALIGNMENT // CJMCU only has one alignment.
 
 // FIXME temporary solution to at least get the build to pass
 #undef USE_CLI
