@@ -21,9 +21,6 @@
 #define CONFIG_START_FLASH_ADDRESS 0x08080000 //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING "KakuteF4"
-#ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
-#endif
 
 #define LED0                    PB5
 #define LED1                    PB4
@@ -56,15 +53,12 @@
 #define GYRO_MPU9250_ALIGN      CW270_DEG
 
 #define MAG
-//#define USE_MAG_HMC5883
 #define USE_MAG_AK8963
 
-//#define MAG_HMC5883_ALIGN       CW180_DEG
 #define MAG_AK8963_ALIGN        CW270_DEG
 
 #define BARO
 #define USE_BARO_MS5611
-//#define USE_BARO_BMP280
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -108,14 +102,13 @@
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)
-//#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define VBAT_ADC_PIN           PC3
-#define VBAT_ADC_CHANNEL       ADC_Channel_13
+#define VBAT_ADC_PIN                PC3
+#define VBAT_ADC_CHANNEL            ADC_Channel_13
 
-#define CURRENT_METER_ADC_PIN  PC2
+#define CURRENT_METER_ADC_PIN       PC2
 #define CURRENT_METER_ADC_CHANNEL   ADC_Channel_12
 
 #define RSSI_ADC_PIN                PC1
