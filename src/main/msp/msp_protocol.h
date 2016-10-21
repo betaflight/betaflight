@@ -241,7 +241,8 @@
 #define MSP_PID                  112    //out message         P I D coeff (9 are used currently)
 #define MSP_BOX                  113    //out message         BOX setup (number is dependant of your setup)
 #define MSP_MISC                 114    //out message         powermeter trig
-#define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
+// DEPRECATED
+//#define MSP_MOTOR_PINS           115    //out message         which pins are in use for motors & servos, for GUI
 #define MSP_BOXNAMES             116    //out message         the aux switch names
 #define MSP_PIDNAMES             117    //out message         the PID names
 #define MSP_WP                   118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold

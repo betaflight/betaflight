@@ -449,7 +449,6 @@ TEST_F(MspTest, TestMspCommands)
         MSP_PID,                 // 112    //out message         P I D coeff (9 are used currently)
 //!! not implemented in serial_msp.c      MSP_BOX,                 // 113    //out message         BOX setup (number is dependant of your setup)
         MSP_MISC,                // 114    //out message         powermeter trig
-        MSP_MOTOR_PINS,          // 115    //out message         which pins are in use for motors & servos, for GUI
         MSP_BOXNAMES,            // 116    //out message         the aux switch names
         MSP_PIDNAMES,            // 117    //out message         the PID names
         MSP_WP,                  // 118    //out message         get a WP, WP# is in the payload, returns (WP#, lat, lon, alt, flags) WP#0-home, WP#16-poshold

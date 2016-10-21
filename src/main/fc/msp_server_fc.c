@@ -731,12 +731,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU16(dst, compassConfig()->mag_declination);
             break;
 
-        case MSP_MOTOR_PINS:
-            // FIXME This is hardcoded and should not be.
-            for (int i = 0; i < 8; i++)
-                sbufWriteU8(dst, i + 1);
-            break;
-
 #ifdef GPS
         case MSP_RAW_GPS:
             sbufWriteU8(dst, STATE(GPS_FIX));
