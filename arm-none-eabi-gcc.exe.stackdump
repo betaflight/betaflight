@@ -1,7 +1,0 @@
-Exception: STATUS_ACCESS_VIOLATION at eip=610C8439
-eax=00000000 ebx=00000001 ecx=00000000 edx=000001AC esi=00000000 edi=18BFCCB0
-ebp=18BFCAEC esp=18BFCAC4 program=\\?\C:\Program Files (x86)\GNU Tools ARM Embedded\5.2 2015q4\bin\arm-none-eabi-gcc.exe, pid 5860, thread unknown (0x1578)
-cs=0023 ds=002B es=002B fs=0053 gs=002B ss=002B
-Stack trace:
-Frame     Function  Args
-18BFCAEC  610C8439  (00000000, 00000000
