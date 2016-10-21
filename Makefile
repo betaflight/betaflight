@@ -345,7 +345,7 @@ VPATH           := $(VPATH):$(CMSIS_DIR)/CM7/Include:$(CMSIS_DIR)/CM7/Device/ST/
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM7/Include/*.c \
                   $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
-                   $(STDPERIPH_DIR)/inc \
+                   $(STDPERIPH_DIR)/Inc \
                    $(USBCORE_DIR)/Inc \
                    $(USBCDC_DIR)/Inc \
                    $(CMSIS_DIR)/CM7/Include \
