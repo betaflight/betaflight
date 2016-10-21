@@ -37,6 +37,7 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
+#include "io/cms_types.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/vtx.h"

@@ -43,11 +43,12 @@
 #include "io/display.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/cms_types.h"
+#include "io/cms.h"
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
-#include "io/cms.h"
 
 #include "msp/msp_serial.h"
 

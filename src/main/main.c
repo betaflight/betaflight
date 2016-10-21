@@ -86,9 +86,10 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+#include "io/cms_types.h"
+#include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
-#include "io/cms.h"
 
 #include "scheduler/scheduler.h"
 

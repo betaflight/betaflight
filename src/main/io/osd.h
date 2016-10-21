@@ -68,3 +68,7 @@ typedef struct {
 void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile_t *osdProfile);
+screenFnVTable_t *osdCmsInit(void);
+
+#define VISIBLE_FLAG 0x0800
+#define VISIBLE(x)    (x & VISIBLE_FLAG)

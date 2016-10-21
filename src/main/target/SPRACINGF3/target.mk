@@ -9,5 +9,6 @@ TARGET_SRC = \
             drivers/barometer_bmp280.c \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
-            io/osd.c
+            io/cms.c \
+            io/canvas.c
 

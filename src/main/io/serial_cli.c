@@ -70,6 +70,7 @@ uint8_t cliMode = 0;
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+#include "io/cms_types.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 
