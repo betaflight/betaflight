@@ -1691,7 +1691,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         masterConfig.motorConfig.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
-        masterConfig.motorConfig.motorPwmProtocol = sbufReadU8(src);
         masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
         break;
     case MSP_SET_FILTER_CONFIG :
