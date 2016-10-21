@@ -1,7 +1,6 @@
 
 #pragma once
 
-#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
 
 // can't use 0
 #define NVIC_PRIO_MAX                      NVIC_BUILD_PRIORITY(0, 1)
@@ -30,6 +29,12 @@
 #define NVIC_PRIO_SERIALUART6_TXDMA        NVIC_BUILD_PRIORITY(1, 0)
 #define NVIC_PRIO_SERIALUART6_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART6              NVIC_BUILD_PRIORITY(1, 2)
+#define NVIC_PRIO_SERIALUART7_TXDMA        NVIC_BUILD_PRIORITY(1, 0)
+#define NVIC_PRIO_SERIALUART7_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_SERIALUART7              NVIC_BUILD_PRIORITY(1, 2)
+#define NVIC_PRIO_SERIALUART8_TXDMA        NVIC_BUILD_PRIORITY(1, 0)
+#define NVIC_PRIO_SERIALUART8_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_SERIALUART8              NVIC_BUILD_PRIORITY(1, 2)
 #define NVIC_PRIO_I2C_ER                   NVIC_BUILD_PRIORITY(0, 0)
 #define NVIC_PRIO_I2C_EV                   NVIC_BUILD_PRIORITY(0, 0)
 #define NVIC_PRIO_USB                      NVIC_BUILD_PRIORITY(2, 0)
@@ -40,7 +45,16 @@
 #define NVIC_PRIO_CALLBACK                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_MAX7456_DMA              NVIC_BUILD_PRIORITY(3, 0)
 
+#ifdef USE_HAL_DRIVER
 // utility macros to join/split priority
+#define NVIC_PRIORITY_GROUPING NVIC_PRIORITYGROUP_2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING))))>>4)
+#else
+// utility macros to join/split priority
+#define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#endif

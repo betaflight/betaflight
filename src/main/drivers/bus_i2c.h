@@ -33,7 +33,8 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
-    I2CDEV_MAX = I2CDEV_3,
+    I2CDEV_4,
+    I2CDEV_MAX = I2CDEV_4,
 } I2CDevice;
 
 typedef struct i2cDevice_s {
@@ -45,6 +46,9 @@ typedef struct i2cDevice_s {
 #if !defined(STM32F303xC)
     uint8_t ev_irq;
     uint8_t er_irq;
+#endif
+#if defined(STM32F7)
+    uint8_t af;
 #endif
 } i2cDevice_t;
 

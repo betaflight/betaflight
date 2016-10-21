@@ -30,6 +30,11 @@ typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
 typedef uint32_t timSR_t;
 typedef uint32_t timCNT_t;
+#elif defined(STM32F7)
+typedef uint32_t timCCR_t;
+typedef uint32_t timCCER_t;
+typedef uint32_t timSR_t;
+typedef uint32_t timCNT_t;
 #elif defined(STM32F3)
 typedef uint32_t timCCR_t;
 typedef uint32_t timCCER_t;
@@ -77,11 +82,11 @@ typedef struct timerHardware_s {
     uint8_t irq;
     uint8_t output;
     ioConfig_t ioMode;
-#if defined(STM32F3) || defined(STM32F4)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
 #if defined(USE_DSHOT) 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *dmaStream; 
     uint32_t dmaChannel;
 #elif defined(STM32F3)
@@ -109,6 +114,8 @@ typedef enum {
 #elif defined(STM32F3)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
 #elif defined(STM32F4)
+#define HARDWARE_TIMER_DEFINITION_COUNT 14
+#elif defined(STM32F7)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14
 #endif
 
@@ -165,3 +172,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);
+
+#if defined(USE_HAL_DRIVER)
+TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+#endif
