@@ -342,6 +342,7 @@ DEVICE_STDPERIPH_SRC := $(STDPERIPH_SRC) \
 
 #CMSIS
 VPATH           := $(VPATH):$(CMSIS_DIR)/CM7/Include:$(CMSIS_DIR)/CM7/Device/ST/STM32F7xx
+VPATH           := $(VPATH):$(STDPERIPH_DIR)/Src
 CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM7/Include/*.c \
                   $(CMSIS_DIR)/CM7/Device/ST/STM32F7xx/*.c))
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
