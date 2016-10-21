@@ -640,6 +640,7 @@ STM32F7xx_COMMON_SRC = \
             drivers/gpio_stm32f7xx.c \
             drivers/inverter.c \
             drivers/bus_spi_hal.c \
+            drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
             drivers/pwm_output_hal.c \

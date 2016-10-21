@@ -62,8 +62,20 @@ void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
 }
 
-void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
+void ws2811LedStripHardwareInit(void)
 {
+    TimHandle.Instance = WS2811_TIMER;
+
+    TimHandle.Init.Prescaler = 1;
+    TimHandle.Init.Period = 135; // 800kHz
+    TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    if(HAL_TIM_PWM_Init(&TimHandle) != HAL_OK)
+    {
+        /* Initialization Error */
+        return;
+    }
+
     static DMA_HandleTypeDef  hdma_tim;
 
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
@@ -112,27 +124,12 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
     }
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(htim, hdma[timDMASource], hdma_tim);
+    __HAL_LINKDMA(&TimHandle, hdma[timDMASource], hdma_tim);
 
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, timDMASource);
 
     /* Initialize TIMx DMA handle */
-    if(HAL_DMA_Init(htim->hdma[timDMASource]) != HAL_OK)
-    {
-        /* Initialization Error */
-        return;
-    }
-}
-
-void ws2811LedStripHardwareInit(void)
-{
-    TimHandle.Instance = WS2811_TIMER;
-
-    TimHandle.Init.Prescaler = 1;
-    TimHandle.Init.Period = 135; // 800kHz
-    TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-    if(HAL_TIM_PWM_Init(&TimHandle) != HAL_OK)
+    if(HAL_DMA_Init(TimHandle.hdma[timDMASource]) != HAL_OK)
     {
         /* Initialization Error */
         return;
