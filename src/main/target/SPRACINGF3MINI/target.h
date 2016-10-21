@@ -54,7 +54,7 @@
 #define USE_MPU9250_MAG // Enables bypass configuration
 #define USE_MAG_AK8963
 #define USE_MAG_HMC5883 // External
-#define MAG_AK8963_ALIGN        CW90_DEG_FLIP
+#define MAG_AK8963_ALIGN        CW270_DEG_FLIP
 
 #define SONAR
 #define SONAR_ECHO_PIN          PB1
