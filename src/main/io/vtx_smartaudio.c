@@ -12,6 +12,15 @@
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+#include "config/config.h"
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
 #include "build/build_config.h"
 
 #define SMARTAUDIO_EXTENDED_API
@@ -127,11 +136,14 @@ static saPowerTable_t saPowerTable[] = {
 };
 
 // Driver defined modes
-#define SA_RFMODE_NODEF         0
-#define SA_RFMODE_ACTIVE        1
-#define SA_RFMODE_PIT_INRANGE   2
-#define SA_RFMODE_PIT_OUTRANGE  3
-#define SA_RFMODE_OFF           4 // Should not be used with osd
+
+#define SA_OPMODEL_FREE         0 // Power up transmitting
+#define SA_OPMODEL_PIT          1 // Power up in pit mode
+
+#define SA_TXMODE_NODEF         0
+#define SA_TXMODE_PIT_OUTRANGE  1
+#define SA_TXMODE_PIT_INRANGE   2
+#define SA_TXMODE_ACTIVE        3
 
 // Last received device ('hard') states
 
@@ -280,6 +292,15 @@ static void saProcessResponse(uint8_t *buf, int len)
         smartAudioBand = (sa_chan / 8) + 1;
         smartAudioChan = (sa_chan % 8) + 1;
         smartAudioFreq = saFreqTable[sa_chan / 8][sa_chan % 8];
+
+        if ((sa_opmode & SA_MODE_GET_PITMODE) == 0) {
+            smartAudioTxMode = SA_TXMODE_ACTIVE;
+        } else if (sa_opmode & SA_MODE_GET_IN_RANGE_PITMODE) {
+            smartAudioTxMode = SA_TXMODE_PIT_INRANGE;
+        } else {
+            smartAudioTxMode = SA_TXMODE_PIT_OUTRANGE;
+        }
+
         smartAudioUpdateStatusString();
 
         if (sa_vers == 2) {
@@ -608,11 +629,41 @@ bool smartAudioInit()
         return false;
     }
 
+    smartAudioOpModel = masterConfig.vtx_smartaudio_opmodel;
+
     return true;
 }
 
-#ifdef SMARTAUDIO_PITMODE_DEBUG
-void smartAudioPitMode(void)
+void smartAudioConfigurePitFModeByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    if (smartAudioPitFMode == 0) {
+        saSetMode(SA_MODE_SET_IN_RANGE_PITMODE);
+    } else {
+        saSetMode(SA_MODE_SET_OUT_RANGE_PITMODE);
+    }
+}
+
+void smartAudioConfigureOpModelByGvar(void *opaque)
+{
+    UNUSED(opaque);
+
+    masterConfig.vtx_smartaudio_opmodel = smartAudioOpModel;
+
+    if (smartAudioOpModel == SA_OPMODEL_FREE) {
+        // VTX should power up transmitting.
+        // Turn off In-Range and Out-Range bits
+        saSetMode(0);
+    } else {
+        // VTX should power up in pit mode.
+        // Setup In-Range or Out-Range bits
+        smartAudioConfigurePitFModeByGvar(opaque);
+    }
+}
+
+#if 0
+void 
 {
     static int turn = 0;
 
@@ -755,32 +806,36 @@ void smartAudioConfigurePowerByGvar(void *opaque)
     smartAudioSetPowerByIndex(smartAudioPower - 1);
 }
 
-void smartAudioSetModeByGvar(void *opaque)
+void smartAudioSetTxModeByGvar(void *opaque)
 {
     UNUSED(opaque);
 
     if (sa_vers != 2) {
         // Bounce back; not online yet or can't handle mode (V1)
-        smartAudioMode = SA_RFMODE_NODEF;
+        smartAudioTxMode = SA_TXMODE_NODEF;
         return;
     }
 
-    if (smartAudioMode == 0) {
+    if (smartAudioTxMode == 0) {
         // Bouce back; no going back to undef state
-        ++smartAudioMode;
+        ++smartAudioTxMode;
         return;
     }
 
-    switch (smartAudioMode) {
-    case SA_RFMODE_ACTIVE:
-        saSetMode(SA_MODE_CLR_PITMODE);
-        break;
-
-    case SA_RFMODE_PIT_OUTRANGE:
-        break;
-
-    case SA_RFMODE_PIT_INRANGE:
-        break;
+    if (smartAudioTxMode == SA_TXMODE_ACTIVE) {
+        if (smartAudioOpModel == SA_OPMODEL_FREE) {
+            saSetMode(SA_MODE_CLR_PITMODE);
+        } else {
+            if (smartAudioPitFMode == 0)
+                saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
+            else
+                saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_OUT_RANGE_PITMODE);
+        }
+    } else {
+        if ((sa_opmode & SA_MODE_GET_PITMODE) == 0) {
+          // Can't go back to pit mode
+          smartAudioTxMode = SA_TXMODE_ACTIVE;
+        }
     }
 }
 #endif // OSD

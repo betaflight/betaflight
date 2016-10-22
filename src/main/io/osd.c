@@ -405,26 +405,58 @@ static const char * const smartAudioPowerNames[] = {
 
 OSD_TAB_t entrySmartAudioPower = { &smartAudioPower, 4, &smartAudioPowerNames[0]};
 
-static const char * const smartAudioModeNames[] = {
-    // Sync with SA_RFMODE_*
+static const char * const smartAudioTxModeNames[] = {
     "------",
-    "ACTIVE",
     "PIT-OR",
     "PIT-IR",
+    "ACTIVE",
 };
 
-OSD_TAB_t entrySmartAudioMode = { &smartAudioMode, 3, &smartAudioModeNames[0]};
+OSD_TAB_t entrySmartAudioTxMode = { &smartAudioTxMode, 3, &smartAudioTxModeNames[0]};
 
 OSD_UINT16_t entrySmartAudioFreq = { &smartAudioFreq, 5600, 5900, 0 };
 
+static const char * const smartAudioOpModelNames[] = {
+    "FREE",
+    "PIT",
+};
+
+OSD_TAB_t entrySmartAudioOpModel = { &smartAudioOpModel, 1, &smartAudioOpModelNames[0] };
+
+static const char * const smartAudioPitFModeNames[] = {
+    "IN-RANGE",
+    "OUT-RANGE",
+};
+
+OSD_TAB_t entrySmartAudioPitFMode = { &smartAudioPitFMode, 1, &smartAudioPitFModeNames[0] };
+
+OSD_UINT16_t entrySmartAudioORFreq = { &smartAudioORFreq, 5600, 5900, 1 };
+
+OSD_Entry menu_smartAudioConfig[] = {
+    { "--- SMARTAUDIO CONFIG ---", OME_Label, NULL, NULL },
+    { "OP MODEL", OME_TAB, smartAudioConfigureOpModelByGvar, &entrySmartAudioOpModel },
+    { "PIT FREQ", OME_TAB, smartAudioConfigurePitFModeByGvar, &entrySmartAudioPitFMode },
+    { "OR FREQ", OME_UINT16, NULL, &entrySmartAudioORFreq }, // OME_Poll_UINT16
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+
+static const char * const smartAudioStatusNames[] = {
+    "OFFLINE",
+    "ONLINE V1",
+    "ONLINE V2",
+};
+
+OSD_TAB_t entrySmartAudioOnline = { &smartAudioStatus, 2, &smartAudioStatusNames[0] };
 OSD_UINT16_t entrySmartAudioBaudrate = { &smartAudioSmartbaud, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatBadpre = { &saerr_badpre, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatBadlen = { &saerr_badlen, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatCrcerr = { &saerr_crcerr, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatOooerr = { &saerr_oooresp, 0, 0, 0 };
 
-OSD_Entry menu_vtxstat[] = {
-    { "--- VTX STATS ---", OME_Label, NULL, NULL },
+OSD_Entry menu_smartAudioStats[] = {
+    { "--- SMARTAUDIO STATS ---", OME_Label, NULL, NULL },
+    { "STATUS", OME_TAB, NULL, &entrySmartAudioOnline },
     { "BAUDRATE", OME_UINT16, NULL, &entrySmartAudioBaudrate },
     { "BADPRE", OME_UINT16, NULL, &entrySmartAudioStatBadpre },
     { "BADLEN", OME_UINT16, NULL, &entrySmartAudioStatBadlen },
@@ -438,12 +470,13 @@ OSD_Entry menu_vtx[] =
 {
     { "-- VTX SMARTAUDIO --", OME_Label, NULL, NULL },
     { smartAudioStatusString, OME_Label, NULL, NULL },
-    { "RFMODE", OME_TAB, smartAudioSetModeByGvar, &entrySmartAudioMode },
+    { "TXMODE", OME_TAB, smartAudioSetTxModeByGvar, &entrySmartAudioTxMode },
     { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand },
     { "CHAN", OME_TAB, smartAudioConfigureChanByGvar, &entrySmartAudioChan },
     { "FREQ", OME_UINT16, NULL, &entrySmartAudioFreq },
     { "POWER", OME_TAB, smartAudioConfigurePowerByGvar, &entrySmartAudioPower },
-    { "STAT", OME_Submenu, osdChangeScreen, &menu_vtxstat[0]},
+    { "CONFIG", OME_Submenu, osdChangeScreen, &menu_smartAudioConfig[0] },
+    { "STAT", OME_Submenu, osdChangeScreen, &menu_smartAudioStats[0] },
     { "BACK", OME_Back, NULL, NULL },
     { NULL, OME_END, NULL, NULL }
 };
