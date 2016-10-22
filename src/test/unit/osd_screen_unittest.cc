@@ -192,7 +192,7 @@ uint32_t testMillis;
 TEST_F(OsdScreenTest, TestOsdElement_OnDuration)
 {
     // given
-    testMillis = ((12 * 1000) * 60) + (34 * 1000);
+    testMillis = ((123 * 1000) * 60) + (45 * 1000);
     element_t element = {
         0, 0, true, OSD_ELEMENT_ON_DURATION
     };
@@ -201,7 +201,7 @@ TEST_F(OsdScreenTest, TestOsdElement_OnDuration)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "12:34";
+    char expectedAscii[] = "123:45";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
@@ -210,7 +210,7 @@ TEST_F(OsdScreenTest, TestOsdElement_OnDuration)
 TEST_F(OsdScreenTest, TestOsdElement_ArmedDuration)
 {
     // given
-    fcStatus.armedDuration = ((43 * 1000) * 60) + (21 * 1000);
+    fcStatus.armedDuration = ((123 * 1000) * 60) + (45 * 1000);
     element_t element = {
         0, 0, true, OSD_ELEMENT_ARMED_DURATION
     };
@@ -219,7 +219,7 @@ TEST_F(OsdScreenTest, TestOsdElement_ArmedDuration)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "43:21";
+    char expectedAscii[] = "123:45";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
@@ -418,10 +418,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Indicator_Baro_On)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "B";
-    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
-
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_BARO);
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_Indicator_Baro_Off)
@@ -453,10 +450,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_On)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "M";
-    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
-
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_MAG);
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_Off)

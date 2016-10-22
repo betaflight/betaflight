@@ -48,7 +48,7 @@ void osdElementRender_duration(const element_t *element, elementDataProviderFn d
     uint8_t minutes = totalSeconds / 60;
     uint8_t seconds = totalSeconds % 60;
 
-    sprintf(elementAsciiBuffer, "%02d:%02d", minutes, seconds);
+    sprintf(elementAsciiBuffer, "%3d:%02d", minutes, seconds);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
 }
 
@@ -65,7 +65,7 @@ void osdElementRender_amperage(const element_t *element, elementDataProviderFn d
 {
     int32_t amperage = (int32_t) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "%2d.%02dA", amperage / 100, amperage % 100);
+    tfp_sprintf(elementAsciiBuffer, "%2d.%02d", amperage / 100, amperage % 100);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
     osdSetRawCharacterAtPosition(element->x + 5, element->y, FONT_CHARACTER_AMP);
 }
@@ -89,11 +89,11 @@ void osdElementRender_voltageBattery(const element_t *element, elementDataProvid
 
 void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn)
 {
-   bool on = (bool) dataFn();
-   if (!on)
-       return;
+    bool on = (bool) dataFn();
+    if (!on)
+        return;
 
-    osdSetCharacterAtPosition(element->x, element->y, 'M');
+    osdSetRawCharacterAtPosition(element->x, element->y, FONT_CHARACTER_MAG);
 }
 
 void osdElementRender_indicatorBaro(const element_t *element, elementDataProviderFn dataFn)
@@ -102,7 +102,7 @@ void osdElementRender_indicatorBaro(const element_t *element, elementDataProvide
    if (!on)
        return;
 
-    osdSetCharacterAtPosition(element->x, element->y, 'B');
+    osdSetRawCharacterAtPosition(element->x, element->y, FONT_CHARACTER_BARO);
 }
 
 void osdElementRender_flightMode(const element_t *element, elementDataProviderFn dataFn)
