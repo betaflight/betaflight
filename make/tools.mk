@@ -18,6 +18,7 @@ ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_4-2016q2
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
 GCC_REQUIRED_VERSION := 5.4.1
 
+## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
 
 # source: https://launchpad.net/gcc-arm-embedded/5.0/
@@ -48,6 +49,7 @@ else
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
 
+## arm_sdk_clean     : Uninstall Arm SDK
 .PHONY: arm_sdk_clean
 arm_sdk_clean:
 	$(V1) [ ! -d "$(ARM_SDK_DIR)" ] || $(RM) -r $(ARM_SDK_DIR)
