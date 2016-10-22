@@ -33,6 +33,7 @@
 #include "osd/osd_element.h"
 #include "osd/osd_element_render.h"
 #include "osd/osd_screen.h"
+#include "osd/fonts/font.h"
 
 // from osd hardware implementation
 void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent);
@@ -55,24 +56,35 @@ void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn d
 {
     int32_t mAhDrawn = (int32_t) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "mAh: %5d", mAhDrawn);
+    tfp_sprintf(elementAsciiBuffer, "%5d", mAhDrawn);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
+    osdSetRawCharacterAtPosition(element->x + 5, element->y, FONT_CHARACTER_MAH);
 }
 
 void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn)
 {
     int32_t amperage = (int32_t) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "AMP:%2d.%02dA", amperage / 100, amperage % 100);
+    tfp_sprintf(elementAsciiBuffer, "%2d.%02dA", amperage / 100, amperage % 100);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
+    osdSetRawCharacterAtPosition(element->x + 5, element->y, FONT_CHARACTER_AMP);
 }
 
 void osdElementRender_voltage(const element_t *element, elementDataProviderFn dataFn)
 {
     voltageAndName_t *voltageAndName= (voltageAndName_t *) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "%s:%3d.%dV", voltageAndName->name, voltageAndName->voltage / 10, voltageAndName->voltage % 10);
+    tfp_sprintf(elementAsciiBuffer, "%s:%2d.%dV", voltageAndName->name, voltageAndName->voltage / 10, voltageAndName->voltage % 10);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
+}
+
+void osdElementRender_voltageBattery(const element_t *element, elementDataProviderFn dataFn)
+{
+    voltageAndName_t *voltageAndName= (voltageAndName_t *) dataFn();
+
+    tfp_sprintf(elementAsciiBuffer, "%2d.%dV", voltageAndName->voltage / 10, voltageAndName->voltage % 10);
+    osdPrintAt(element->x +1, element->y, elementAsciiBuffer);
+    osdSetRawCharacterAtPosition(element->x, element->y, voltageAndName->symbol);
 }
 
 void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn)
@@ -113,8 +125,9 @@ void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataF
 {
     uint16_t rssi = (uint16_t) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "RSSI:%3d%%", rssi / 10);
+    tfp_sprintf(elementAsciiBuffer, "%3d", rssi / 10);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
+    osdSetRawCharacterAtPosition(element->x + 3, element->y, FONT_CHARACTER_RSSI);
 }
 
 void osdElementRender_callsign(const element_t *element, elementDataProviderFn dataFn)

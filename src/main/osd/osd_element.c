@@ -41,8 +41,9 @@
 
 
 #include "osd/osd_element.h"
+#include "osd/fonts/font.h"
 
-#include "../sensors/amperage.h" // only required for data providers
+#include "sensors/amperage.h" // only required for data providers
 #include "osd/osd_element_render.h"
 
 intptr_t osdElementData_onDuration(void)
@@ -72,6 +73,7 @@ intptr_t osdElementData_voltage5V(void)
 
     voltageAndName = (voltageAndName_t){
         .name = "5V",
+        .symbol = FONT_CHARACTER_5V,
         .voltage = getVoltageForADCChannel(ADC_POWER_5V)
     };
     return (intptr_t) &voltageAndName;
@@ -81,6 +83,7 @@ intptr_t osdElementData_voltage12V(void)
 {
     voltageAndName = (voltageAndName_t){
         .name = "12V",
+        .symbol = FONT_CHARACTER_12V,
         .voltage = getVoltageForADCChannel(ADC_POWER_12V)
     };
     return (intptr_t) &voltageAndName;
@@ -90,6 +93,7 @@ intptr_t osdElementData_voltageBattery(void)
 {
     voltageAndName = (voltageAndName_t){
         .name = "BAT",
+        .symbol = FONT_CHARACTER_BATTERY,
         .voltage = vbat
     };
     return (intptr_t) &voltageAndName;
@@ -100,6 +104,7 @@ intptr_t osdElementData_voltageBatteryFC(void)
 {
     voltageAndName = (voltageAndName_t){
         .name = "FC",
+        .symbol = FONT_CHARACTER_BATTERY,
         .voltage = fcStatus.vbat
     };
     return (intptr_t) &voltageAndName;
@@ -154,10 +159,10 @@ elementHandlerConfig_t elementHandlers[] = {
     {OSD_ELEMENT_ARMED_DURATION, osdElementRender_duration, osdElementData_armedDuration},
     {OSD_ELEMENT_MAH_DRAWN, osdElementRender_mahDrawn, osdElementData_mAhDrawn},
     {OSD_ELEMENT_AMPERAGE, osdElementRender_amperage, osdElementData_amperage},
-    {OSD_ELEMENT_VOLTAGE_5V, osdElementRender_voltage, osdElementData_voltage5V},
-    {OSD_ELEMENT_VOLTAGE_12V, osdElementRender_voltage, osdElementData_voltage12V},
-    {OSD_ELEMENT_VOLTAGE_BATTERY, osdElementRender_voltage, osdElementData_voltageBattery},
-    {OSD_ELEMENT_VOLTAGE_BATTERY_FC, osdElementRender_voltage, osdElementData_voltageBatteryFC},
+    {OSD_ELEMENT_VOLTAGE_5V, osdElementRender_voltageBattery, osdElementData_voltage5V},
+    {OSD_ELEMENT_VOLTAGE_12V, osdElementRender_voltageBattery, osdElementData_voltage12V},
+    {OSD_ELEMENT_VOLTAGE_BATTERY, osdElementRender_voltageBattery, osdElementData_voltageBattery},
+    {OSD_ELEMENT_VOLTAGE_BATTERY_FC, osdElementRender_voltageBattery, osdElementData_voltageBatteryFC},
     {OSD_ELEMENT_FLIGHT_MODE, osdElementRender_flightMode, osdElementData_flightModeFC},
     {OSD_ELEMENT_INDICATOR_MAG, osdElementRender_indicatorMag, osdElementData_indicatorMagFC},
     {OSD_ELEMENT_INDICATOR_BARO, osdElementRender_indicatorBaro, osdElementData_indicatorBaroFC},

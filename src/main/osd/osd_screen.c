@@ -100,10 +100,22 @@ static void osdAdvanceCursor(void)
 
 void osdPrint(char *message)
 {
-    char *charPtr = message;
-
+    uint8_t *charPtr = (uint8_t *)message;
+    bool escape = false;
     while(*charPtr) {
-        osdSetCharacterAtPosition(cursor.x, cursor.y, *charPtr);
+        if (!escape) {
+            if (*charPtr == 0xff) {
+                escape = true;
+                charPtr++;
+                continue;
+            }
+        }
+        if (escape) {
+            osdSetRawCharacterAtPosition(cursor.x, cursor.y, *charPtr);
+            escape = false;
+        } else {
+            osdSetCharacterAtPosition(cursor.x, cursor.y, *charPtr);
+        }
         osdAdvanceCursor();
 
         charPtr++;

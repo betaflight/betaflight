@@ -23,6 +23,18 @@
 
 #define TEST_SCREEN_CHARACTER_COUNT (TEST_ROW_COUNT * TEST_COLUMN_COUNT)
 
+#define TEST_FONT_CHARACTER_12V   0x14
+#define TEST_FONT_CHARACTER_5V    0x15
+#define TEST_FONT_CHARACTER_MAH   0x16
+#define TEST_FONT_CHARACTER_AMP   0x17
+#define TEST_FONT_CHARACTER_ACRO  0x18
+#define TEST_FONT_CHARACTER_HRZN  0x19
+#define TEST_FONT_CHARACTER_ANGL  0x1a
+#define TEST_FONT_CHARACTER_MAG   0x1b
+#define TEST_FONT_CHARACTER_BARO  0x1c
+#define TEST_FONT_CHARACTER_RSSI  0x1d
+#define TEST_FONT_CHARACTER_BATTERY  0x1e
+
 extern "C" {
     #include "build/build_config.h"
 
@@ -157,6 +169,12 @@ void compareScreen(uint8_t x, uint8_t y, uint8_t *content, uint8_t contentLength
     }
 }
 
+void compareScreenCharacterAtPosition(uint8_t x, uint8_t y, uint8_t content)
+{
+    int offset = SCREEN_BUFFER_OFFSET(x, y);
+    EXPECT_EQ(content, textScreenBuffer[offset]);
+}
+
 void expectUnmodifiedScreen(void)
 {
     for (int y = 0; y < TEST_ROW_COUNT; y++) {
@@ -221,10 +239,11 @@ TEST_F(OsdScreenTest, TestOsdElement_MahDrawn)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "MAH: 99999";
+    char expectedAscii[] = "99999";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(5, 0, TEST_FONT_CHARACTER_MAH);
 }
 
 
@@ -241,10 +260,11 @@ TEST_F(OsdScreenTest, TestOsdElement_Amperage)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "AMP:98.76A";
+    char expectedAscii[] = "98.76";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(5, 0, TEST_FONT_CHARACTER_AMP);
 }
 
 
@@ -261,10 +281,11 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage5V)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "5V:  5.1V";
+    char expectedAscii[] = " 5.1V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_5V);
+    compareScreen(1, 0, expectedContent, strlen(expectedAscii));
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_Voltage12V)
@@ -280,13 +301,14 @@ TEST_F(OsdScreenTest, TestOsdElement_Voltage12V)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "12V: 12.6V";
+    char expectedAscii[] = "12.6V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_12V);
+    compareScreen(1, 0, expectedContent, strlen(expectedAscii));
 }
 
-TEST_F(OsdScreenTest, TestOsdElement_VoltagBattery_FC)
+TEST_F(OsdScreenTest, TestOsdElement_VoltageBattery_FC)
 {
     // given
     fcStatus.vbat = 168;
@@ -299,10 +321,11 @@ TEST_F(OsdScreenTest, TestOsdElement_VoltagBattery_FC)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "FC: 16.8V";
+    char expectedAscii[] = "16.8V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_BATTERY);
+    compareScreen(1, 0, expectedContent, strlen(expectedAscii));
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_VoltageBattery)
@@ -318,10 +341,11 @@ TEST_F(OsdScreenTest, TestOsdElement_VoltageBattery)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "BAT: 16.8V";
+    char expectedAscii[] = "16.8V";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
-    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(0, 0, TEST_FONT_CHARACTER_BATTERY);
+    compareScreen(1, 0, expectedContent, strlen(expectedAscii));
 }
 
 TEST_F(OsdScreenTest, TestOsdElement_FlightMode_Horizon)
@@ -464,10 +488,11 @@ TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
     osdDrawTextElement(&element);
 
     // then
-    char expectedAscii[] = "RSSI:100";
+    char expectedAscii[] = "100";
     uint8_t *expectedContent = asciiToFontMap(expectedAscii);
 
     compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+    compareScreenCharacterAtPosition(3, 0, TEST_FONT_CHARACTER_RSSI);
 }
 
 

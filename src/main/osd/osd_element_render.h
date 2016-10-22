@@ -21,6 +21,7 @@
 
 typedef struct voltageAndName_s {
     char *name;
+    uint8_t symbol;
     int16_t voltage;
 } voltageAndName_t;
 
@@ -28,6 +29,7 @@ void osdElementRender_duration(const element_t *element, elementDataProviderFn d
 void osdElementRender_mahDrawn(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_amperage(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_voltage(const element_t *element, elementDataProviderFn dataFn);
+void osdElementRender_voltageBattery(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_flightMode(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_indicatorMag(const element_t *element, elementDataProviderFn dataFn);
 void osdElementRender_indicatorBaro(const element_t *element, elementDataProviderFn dataFn);
