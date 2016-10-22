@@ -39,6 +39,11 @@ typedef enum {
 #define ONESHOT42_TIMER_MHZ   21
 #define MULTISHOT_TIMER_MHZ   84
 #define PWM_BRUSHED_TIMER_MHZ 21
+
+#define MOTOR_BIT_0     7
+#define MOTOR_BIT_1     14
+#define MOTOR_BITLENGTH 19
+
 #elif defined(STM32F7) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  9
 #define ONESHOT42_TIMER_MHZ   27
@@ -49,62 +54,79 @@ typedef enum {
 #define ONESHOT42_TIMER_MHZ   24
 #define MULTISHOT_TIMER_MHZ   72
 #define PWM_BRUSHED_TIMER_MHZ 24
+
+#define MOTOR_BIT_0     14
+#define MOTOR_BIT_1     29
+#define MOTOR_BITLENGTH 39
+
 #endif
 
-#define MOTOR_DMA_BUFFER_SIZE 18 /* resolution + frame reset (2us) */
+#define MOTOR_DMA_BUFFER_SIZE 20 /* resolution + frame reset (4 periods) */
+
+#ifdef USE_DSHOT
+
+typedef enum {
+    MOTOR_UPDATE_NONE = 0x0,
+    MOTOR_UPDATE_VALUE = 0x1,
+    MOTOR_UPDATE_TELEMETRY = 0x2,
+    MOTOR_UPDATE_SYNCED = 0x4,
+} motorUpdateFlags_e;
 
 typedef struct {
     TIM_TypeDef *timer;
     uint16_t timerDmaSources;
 } motorDmaTimer_t;
-
-typedef struct {
-    ioTag_t ioTag;
-    const timerHardware_t *timerHardware;
-    uint16_t value;
-    uint16_t timerDmaSource;
-#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
-#else
-    uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
-#if defined(STM32F7)
-    TIM_HandleTypeDef TimHandle;
-    uint32_t Channel;
-#endif
-} motorDmaOutput_t;
 
 struct timerHardware_s;
 typedef void(*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
-typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointer used after motors are written
+typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);     // function pointer used after motors are written
 
 typedef struct {
     volatile timCCR_t *ccr;
     TIM_TypeDef *tim;
     uint16_t period;
-    pwmWriteFuncPtr pwmWritePtr;
     bool enabled;
     IO_t io;
-} pwmOutputPort_t;
+#ifdef USE_DSHOT
+    const timerHardware_t *timerHardware;
+    uint16_t value;
+    uint16_t timerDmaSource;
+    uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
+#if defined(STM32F7)
+    TIM_HandleTypeDef TimHandle;
+    uint32_t Channel;
+#endif
+    volatile uint8_t updateFlags;
+#endif
+} pwmMotorOutput_t;
+
+#ifdef USE_SERVOS
+typedef struct {
+    volatile timCCR_t *ccr;
+    TIM_TypeDef *tim;
+    uint16_t period;
+    bool enabled;
+    IO_t io;
+} pwmServoOutput_t;
+#endif 
+
+extern pwmMotorOutput_t motors[];
 
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount);
-void servoInit(const servoConfig_t *servoConfig);
-
-void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 #ifdef USE_DSHOT
-void pwmWriteDigital(uint8_t index, uint16_t value);
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType);
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
+void pwmDigitalRequestTelemetry(uint8_t motorIndex);
 #endif
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
+void pwmWriteMotors(const int16_t *value, uint8_t motorCount);
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteMotorUpdate(uint8_t motorCount);
 
+#ifdef USE_SERVOS
+void servoInit(const servoConfig_t *servoConfig);
 void pwmWriteServo(uint8_t index, uint16_t value);
+#endif 
 
-pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
