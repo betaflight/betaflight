@@ -21,6 +21,11 @@
 
 #include "platform.h"
 
+typedef enum {
+    BAUDRATE_NORMAL = 19200,
+    BAUDRATE_KISS   = 38400
+} escBaudRate_e;
+
 #if defined(USE_ESCSERIAL)
 
 #include "build/build_config.h"
@@ -854,7 +859,9 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
     if(motor_output >=USABLE_TIMER_CHANNEL_COUNT)
     	return;
 
-    escPort = openEscSerial(ESCSERIAL1, NULL, motor_output, 19200, 0, mode);
+    uint32_t escBaudrate = (mode == 2) ? BAUDRATE_KISS : BAUDRATE_NORMAL;
+
+    escPort = openEscSerial(ESCSERIAL1, NULL, motor_output, escBaudrate, 0, mode);
     uint8_t ch;
     while(1) {
         if (serialRxBytesWaiting(escPort)) {
