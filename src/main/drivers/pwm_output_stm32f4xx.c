@@ -58,8 +58,6 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    motor->value = value;
-
     motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
     motor->dmaBuffer[1]  = (value & 0x200) ? MOTOR_BIT_1 : MOTOR_BIT_0;
     motor->dmaBuffer[2]  = (value & 0x100) ? MOTOR_BIT_1 : MOTOR_BIT_0;
