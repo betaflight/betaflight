@@ -17,7 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
 
@@ -668,7 +667,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
 }
 
-uint32_t escSerialTotalBytesWaiting(serialPort_t *instance)
+uint32_t escSerialTotalBytesWaiting(const serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;
@@ -717,13 +716,13 @@ void escSerialSetMode(serialPort_t *instance, portMode_t mode)
     instance->mode = mode;
 }
 
-bool isEscSerialTransmitBufferEmpty(serialPort_t *instance)
+bool isEscSerialTransmitBufferEmpty(const serialPort_t *instance)
 {
 	// start listening
     return instance->txBufferHead == instance->txBufferTail;
 }
 
-uint32_t escSerialTxBytesFree(serialPort_t *instance)
+uint32_t escSerialTxBytesFree(const serialPort_t *instance)
 {
     if ((instance->mode & MODE_TX) == 0) {
         return 0;
