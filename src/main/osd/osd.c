@@ -114,7 +114,7 @@ void osdDisplaySplash(void)
 {
     osdHardwareDrawLogo();
 
-    osdPrintAt(10, 7, "CLEANFLIGHT");
+    osdPrintAt(9, 7, "CLEANFLIGHT");
 }
 
 void osdInit(void)
@@ -255,7 +255,8 @@ void osdUpdate(void)
 
     if (timerState[tim2Hz].toggle && splashDone) {
         if (!osdIsCameraConnected()) {
-            osdPrintAt(11, 4, "NO CAMERA");
+            osdPrintAt(14, 4, "NO");
+            osdPrintAt(12, 5, "CAMERA");
         }
     }
 

@@ -214,7 +214,7 @@ static void osdDrawStaticElement(uint8_t x, uint8_t y, const uint8_t element[], 
 
 void osdHardwareDrawLogo(void)
 {
-	osdDrawStaticElement(14,5, logoElement, ARRAYLEN(logoElement), 3);
+	osdDrawStaticElement(13, 5, logoElement, ARRAYLEN(logoElement), 3);
 }
 
 void osdHardwareDisplayMotor(uint8_t x, uint8_t y, uint8_t percent)
