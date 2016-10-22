@@ -1,0 +1,81 @@
+<div class="tab-logging toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title" i18n="tabLogging"></div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+        </div>
+        <div class="note">
+            <div class="note_spacer">
+                <p i18n="loggingNote"></p>
+            </div>
+        </div>
+        <div class="properties">
+            <dl>
+                <dt>
+                    <label><input type="checkbox" name="MSP_RAW_IMU" /> MSP_RAW_IMU</label>
+                </dt>
+                <dd>9 columns (accel[x, y, z], gyro[x, y, z], mag[x, y, z])</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_ATTITUDE" /> MSP_ATTITUDE</label>
+                </dt>
+                <dd>3 columns (x, y, z)</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_ALTITUDE" /> MSP_ALTITUDE</label>
+                </dt>
+                <dd>one column</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_RAW_GPS" /> MSP_RAW_GPS</label>
+                </dt>
+                <dd>7 columns</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_ANALOG" /> MSP_ANALOG</label>
+                </dt>
+                <dd>4 columns</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_RC" /> MSP_RC</label>
+                </dt>
+                <dd>8 columns by default</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_MOTOR" /> MSP_MOTOR</label>
+                </dt>
+                <dd>8 columns by default</dd>
+                <dt>
+                    <label><input type="checkbox" name="MSP_DEBUG" /> MSP_DEBUG</label>
+                </dt>
+                <dd>4 columns</dd>
+            </dl>
+        </div>
+        <select class="speed" name="speed">
+            <option value="10">10 ms</option>
+            <option value="20">20 ms</option>
+            <option value="30">30 ms</option>
+            <option value="40">40 ms</option>
+            <option value="50">50 ms</option>
+            <option value="100" selected="selected">100 ms</option>
+            <option value="250">250 ms</option>
+            <option value="500">500 ms</option>
+            <option value="1000">1000 ms</option>
+            <option value="2000">2000 ms</option>
+            <option value="5000">5000 ms</option>
+        </select>
+        <div class="info">
+            <dl>
+                <dt i18n="loggingSamplesSaved"></dt>
+                <dd class="samples">0</dd>
+                <dt i18n="loggingLogSize"></dt>
+                <dd class="size">0 Bytes</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="content_toolbar">
+        <div class="btn back_btn">
+            <a class="back" href="#" i18n="loggingBack"></a>
+        </div>
+        <div class="btn logging_btn">
+            <a class="logging" href="#" i18n="loggingStart"></a>
+        </div>
+        <div class="btn file_btn">
+            <a class="log_file" href="#" i18n="loggingButtonLogFile"></a>
+        </div>
+    </div>
+</div>

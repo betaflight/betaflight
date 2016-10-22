@@ -1,0 +1,259 @@
+.tab_setup .model-and-info {
+    float: left;
+}
+
+.tab_setup .default_btn {
+    margin-bottom: 10px;
+}
+
+#interactive_block {
+    position: absolute;
+    width: calc(75% - 30px);
+    height: calc(100% - 245px);
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #e4e4e4;
+    margin-bottom: 10px;
+}
+
+.attitude_info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 120px;
+    margin: 0px 0px 0px 0px;
+    font-weight: normal;
+    color: #616161;
+}
+
+.attitude_info dl {
+    width: 100%;
+}
+
+.attitude_info dt {
+    width: 50%;
+    float: left;
+}
+
+.attitude_info dd {
+    width: 50%;
+    float: left;
+}
+
+#interactive_block a.reset {
+    position: absolute;
+    display: block;
+    top: 10px;
+    right: 10px;
+    border-radius: 3px;
+    bottom: 10px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0 15px 0 15px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid silver;
+    background-color: #ececec;
+    z-index: 100;
+}
+
+#interactive_block a.reset:hover {
+    background-color: #dedcdc;
+}
+
+#canvas_wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-image: url(../images/paper.jpg);
+    background-size: 100%;
+    background-position: center;
+    border-radius: 5px;
+}
+
+#canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.gui_box grey .block_wrapper {
+    font-size: 0;
+}
+/**/
+.gui_box grey .block {
+    float: left;
+    display: block;
+    margin-left: 10px;
+    border: 1px solid silver;
+}
+
+.gui_box grey .block .head {
+    display: block;
+    text-align: center;
+    line-height: 20px;
+    font-weight: bold;
+    border-bottom: 1px solid silver;
+    background-color: #ececec;
+}
+
+.gui_box grey .block.info {
+    display: inline-block;
+    margin-bottom: 10px;
+    vertical-align: top;
+    font-size: 12px;
+    border: 1px solid silver;
+}
+
+.block.info .fields {
+    padding: 5px 5px 3px 5px;
+}
+
+.block.info dt {
+    float: left;
+    width: 99px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.block.info dd {
+    width: 76px;
+    height: 20px;
+    line-height: 20px;
+    margin-left: 99px;
+}
+
+.block.gps {
+    width: 185px;
+    margin-bottom: 10px;
+}
+
+.block.gps .fields {
+    padding: 5px 5px 3px 5px;
+}
+
+.block.gps dt {
+    float: left;
+    width: 85px;
+    height: 20px;
+    margin-bottom: 2px;
+    line-height: 20px;
+}
+
+.block.instruments {
+    width: 285px;
+    align-content: center;
+    text-align: center;
+}
+
+.buttons {
+    bottom: 20px;
+}
+
+.cell_setup {
+    border-bottom: solid 1px #ddd;
+    padding-bottom: 8px;
+    padding-top: 7px;
+}
+
+.tab_setup .content_wrapper {
+    position: initial;
+}
+
+.spacerbottom {
+    margin-bottom: 10px;
+}
+
+.initialstyle {
+    position: initial;
+}
+
+.buttonarea {
+    min-height: 100px; 
+    width: 20%;
+}
+
+.halfbuttons {
+    width: calc(100% - 10px);
+}
+
+.setupinfo {
+    width: 80%;
+}
+
+.modelwrapper {
+    clear: both; 
+    margin-bottom: 5px;
+}
+
+.instrumentsbox {
+    margin-bottom: 0px;
+}
+
+@media only screen and (max-width: 1055px) , only screen and (max-device-width: 1055px) {
+    .block.instrument .attitude {
+        width: 50px !important;
+        height: 50px !important;
+    }
+    .block.instrument .heading {
+        width: 50px;
+        height: 50px;
+    }
+    #interactive_block {
+        position: absolute;
+        width: calc(75% - 20px);
+        height: calc(100% - 218px);
+    }
+}
+
+#accel_calib_running {
+    display: none;
+    
+    width: 100%;
+    position: relative;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    float: left;
+    
+    padding: 5px 0px 5px 0px;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ffbb00;
+    color: #ffbb00;
+    font-family: 'open_sanssemibold', Arial;
+    font-size: 12px;
+    line-height: 13px;
+    transition: all ease 0.2s;
+    text-decoration:none;
+    
+}
+
+#mag_calib_running {
+    display: none;
+    
+    width: 100%;
+    position: relative;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    float: left;
+    
+    padding: 5px 0px 5px 0px;
+    text-align: center;
+    background-color: #fff;
+    border-radius: 4px;
+    border: 1px solid #ffbb00;
+    color: #ffbb00;
+    font-family: 'open_sanssemibold', Arial;
+    font-size: 12px;
+    line-height: 13px;
+    transition: all ease 0.2s;
+    text-decoration:none;
+}
+
+.data-loading-setup {
+    width: 100%;
+    height: 100%;
+
+}

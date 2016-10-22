@@ -52,6 +52,40 @@ endif
 arm_sdk_clean:
 	$(V1) [ ! -d "$(ARM_SDK_DIR)" ] || $(RM) -r $(ARM_SDK_DIR)
 
+# Set nwjs
+NWJS_SDK_DIR := $(TOOLS_DIR)/nwjs-sdk-v0.17.6
+
+.PHONY: nwjs_sdk_install
+
+# source: http://nwjs.io/downloads/
+ifdef LINUX
+  NWJS  := $(NWJS_SDK_DIR)/nw
+  nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-linux-ia32.tar.gz
+endif
+
+ifdef MACOSX
+  NWJS  := $(NWJS_SDK_DIR)/nwjs.app/Contents/MacOS/nwjs
+  nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-osx-x64.zip
+endif
+
+ifdef WINDOWS
+  NWJS  := $(NWJS_SDK_DIR)/nw.exe
+  nwjs_sdk_install: NWJS_SDK_URL  := https://dl.nwjs.io/v0.17.6/nwjs-sdk-v0.17.6-win-ia32.zip
+endif
+
+nwjs_sdk_install: NWJS_SDK_FILE := $(notdir $(NWJS_SDK_URL))
+# order-only prereq on directory existance:
+nwjs_sdk_install: | $(DL_DIR) $(TOOLS_DIR)
+nwjs_sdk_install: nwjs_sdk_clean
+	$(V1) [ -f "$(DL_DIR)/$(NWJS_SDK_FILE)" ] || curl -L -k -o "$(DL_DIR)/$(NWJS_SDK_FILE)" "$(NWJS_SDK_URL)"
+	$(V1) mkdir -p $(TOOLS_TMP_DIR) && unzip -q -d $(TOOLS_TMP_DIR) "$(DL_DIR)/$(NWJS_SDK_FILE)"
+	$(V1) mv $(TOOLS_TMP_DIR)/nwjs* $(NWJS_SDK_DIR)
+	$(V1) rm -r $(TOOLS_TMP_DIR)
+
+.PHONY: nwjs_sdk_clean
+nwjs_sdk_clean:
+	$(V1) [ ! -d "$(NWJS_SDK_DIR)" ] || $(RM) -r $(NWJS_SDK_DIR)
+
 .PHONY: openocd_win_install
 
 openocd_win_install: | $(DL_DIR) $(TOOLS_DIR)

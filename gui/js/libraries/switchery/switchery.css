@@ -1,0 +1,98 @@
+/*
+ *
+ * Main stylesheet for Switchery.
+ * http://abpetkov.github.io/switchery/
+ *
+ */
+
+/* Switchery defaults. */
+
+.switchery {
+  background-color: #fff;
+  border: 1px solid #fff;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-block;
+  height: 14px;
+  position: relative;
+  vertical-align: middle;
+  width: 45px;
+  z-index:1000;
+  opacity:1 !important;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  box-sizing: content-box;
+  background-clip: content-box;
+}
+
+.switchery > small {
+  background: #fff;
+  border-radius: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  height: 14px;
+  position: absolute;
+  top: 0;
+  width: 14px; 
+}
+
+.switcherymid {
+  background-color: #fff;
+  border: 1px solid #fff;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-block;
+  height: 14px;
+  position: relative;
+  vertical-align: middle;
+  width: 35px;
+
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  box-sizing: content-box;
+  background-clip: content-box;
+}
+
+.switcherymid > small {
+  background: #fff;
+  border-radius: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  height: 14px;
+  position: absolute;
+  top: 0;
+  width: 14px;  
+}
+
+/* Switchery sizes. */
+
+.switchery-small {
+  border: none !important;
+  border-radius: 20px;
+  height: 10px;
+  width: 20px;
+  margin-top:-3px;
+  margin-right:3px;
+}
+
+.switchery-small > small {
+  height: 10px;
+  width: 10px;
+}
+
+.switchery-large {
+  border-radius: 40px;
+  height: 40px;
+  width: 66px;
+}
+
+.switchery-large > small {
+  height: 40px;
+  width: 40px;
+}
+
+

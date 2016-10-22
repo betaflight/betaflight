@@ -1,0 +1,158 @@
+<div class="tab-setup">
+    <div class="content_wrapper initialstyle">
+        <!-- should be the first DIV on each tab -->
+        <div class="cf_column full spacerbottom">
+            <div class="tab_title" i18n="tabSetup">Setup</div>
+            <div class="cf_doc_version_bt">
+                <a id="button-documentation" href="" target="_blank"></a>
+            </div>
+            <div class="cf_column fourth buttonarea">
+                <div class="spacer_right">
+                    <div class="default_btn">
+                        <div id="accel_calib_rest">
+                            <a class="calibrateAccel" id="default_btn green" href="#"
+                                i18n="initialSetupButtonCalibrateAccel"></a>
+                        </div>
+                        
+                        <div id="accel_calib_running">
+                            <div class="data-loading-setup">
+                                <p>Calibrating...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="default_btn">
+                        <div id="mag_calib_rest">
+                            <a class="calibrateMag" href="#" i18n="initialSetupButtonCalibrateMag"></a>
+                        </div>
+                        
+                        <div id="mag_calib_running">
+                            <div class="data-loading-setup">
+                                <p>Calibrating...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="default_btn">
+                        <a class="resetSettings" href="#" i18n="initialSetupButtonReset"></a>
+                    </div>
+                    <div class="half">
+                        <div class="spacer_right halfbuttons">
+                            <div class="default_btn half">
+                                <a class="backup" href="#" i18n="initialSetupButtonBackup"></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="half">
+                        <div class="default_btn half">
+                            <a class="restore" href="#" i18n="initialSetupButtonRestore"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="threefourth_right setupinfo">
+                <div class="cell_setup">
+                    <span i18n="initialSetupCalibrateAccelText"></span>
+                </div>
+                <div class="cell_setup">
+                    <span i18n="initialSetupCalibrateMagText"></span>
+                </div>
+                <div class="cell_setup">
+                    <span i18n="initialSetupResetText"></span>
+                </div>
+                <div class="cell_setup">
+                    <span i18n="initialSetupBackupRestoreText"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modelwrapper"></div>
+        <div class="cf_column threefourth_left">
+            <div class="spacer_right">
+                <div class="model-and-info">
+                    <div id="interactive_block">
+                        <div id="canvas_wrapper">
+                            <canvas id="canvas"></canvas>
+                            <div class="attitude_info">
+                                <dl>
+                                    <dt>Heading:</dt>
+                                    <dd class="heading">&nbsp;</dd>
+                                    <dt>Pitch:</dt>
+                                    <dd class="pitch">&nbsp;</dd>
+                                    <dt>Roll:</dt>
+                                    <dd class="roll">&nbsp;</dd>
+                                </dl>
+                            </div>
+                        </div>
+                        <a class="reset" href="#" i18n="initialSetupButtonResetZaxis"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="cf_column fourth">
+            <div class="spacer_left">
+                <div class="gui_box grey">
+                    <div class="gui_box_titlebar">
+                        <div class="spacer_box_title" i18n="initialSetupInfoHead"></div>
+                    </div>
+                    <div class="spacer_box">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" class="cf_table">
+                            <tbody>
+                                <tr>
+                                    <td i18n="initialSetupBattery"></td>
+                                    <td class="bat-voltage">0 V</td>
+                                </tr>
+                                <tr>
+                                    <td i18n="initialSetupDrawn"></td>
+                                    <td class="bat-mah-drawn">0 mAh</td>
+                                </tr>
+                                <tr>
+                                    <td i18n="initialSetupDrawing"></td>
+                                    <td class="bat-mah-drawing">0.00 A</td>
+                                </tr>
+                                <tr class="noboarder">
+                                    <td i18n="initialSetupRSSI"></td>
+                                    <td class="rssi">0 %</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="spacer_left">
+                <div class="gui_box grey">
+                    <div class="gui_box_titlebar">
+                        <div class="spacer_box_title" i18n="initialSetupGPSHead"></div>
+                    </div>
+                    <div class="spacer_box">
+                        <table width="100%" border="0" cellpadding="0" cellspacing="0" class="cf_table">
+                            <tbody>
+                                <tr>
+                                    <td i18n="gps3dFix"></td>
+                                    <td class="gpsFix"></td>
+                                </tr>
+                                <tr>
+                                    <td i18n="gpsSats"></td>
+                                    <td class="gpsSats"></td>
+                                </tr>
+                                <tr>
+                                    <td i18n="gpsLat"></td>
+                                    <td class="gpsLat"></td>
+                                </tr>
+                                <tr class="noboarder">
+                                    <td i18n="gpsLon"></td>
+                                    <td class="gpsLon"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="spacer_left">
+                <div class="gui_box grey instrumentsbox" align="center">
+                    <div class="gui_box_titlebar" align="left">
+                        <div class="spacer_box_title" i18n="initialSetupInstrumentsHead"></div>
+                    </div>
+                    <span id="attitude"></span> <span id="heading"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

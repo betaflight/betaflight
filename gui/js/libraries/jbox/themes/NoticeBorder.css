@@ -1,0 +1,45 @@
+
+/* jBox: Notice */
+
+.jBox-NoticeBorder .jBox-container {
+	border-radius: 6px;
+}
+
+.jBox-NoticeBorder .jBox-content,
+.jBox-NoticeBorder .jBox-title {
+	padding-left: 26px;
+}
+
+.jBox-NoticeBorder.jBox-Notice-color .jBox-container {
+	color: #fff;
+	text-shadow: 0 -1px 0 #000;
+	background: rgba(0, 0, 0, .92);
+}
+
+.jBox-NoticeBorder.jBox-Notice-color .jBox-container:after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 8px;
+	border-radius: 5px 0 0 5px;
+	background-image: linear-gradient(45deg, rgba(255, 255, 255, .5) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .5) 50%, rgba(255, 255, 255, .5) 75%, transparent 75%, transparent);
+	background-size: 18px 18px;
+}
+
+.jBox-NoticeBorder.jBox-Notice-red .jBox-container:after {
+	background-color: #ee0000;
+}
+
+.jBox-NoticeBorder.jBox-Notice-green .jBox-container:after {
+	background-color: #95cc2a;
+}
+
+.jBox-NoticeBorder.jBox-Notice-blue .jBox-container:after {
+	background-color: #4cb4ff;
+}
+
+.jBox-NoticeBorder.jBox-Notice-yellow .jBox-container:after {
+	background-color: #ffba00;
+}

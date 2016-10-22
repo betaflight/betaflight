@@ -1,0 +1,132 @@
+<div class="tab-failsafe toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <div class="tab_title">Failsafe</div>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="https://github.com/betaflight/betaflight/releases" target="_blank"></a>
+        </div>
+        <div class="note newpane">
+            <div class="note_spacer">
+                <p i18n="failsafeFeaturesHelpNew"></p>
+                </p>
+            </div>
+        </div>
+        <div class="note oldpane">
+            <div class="note_spacer">
+                <p i18n="failsafeFeaturesHelpOld"></p>
+                </p>
+            </div>
+        </div>
+        <div class="leftWrapper">
+            <div class="gui_box grey oldpane">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="failsafePaneTitleOld"></div>
+                </div>
+                <div class="spacer_box">
+                    <table>
+                        <tbody class="featuresOld rxFailsafe">
+                            <!-- table generated here -->
+                        </tbody>
+                    </table>
+                    <div class="number">
+                        <label> <input type="number" name="failsafe_throttle_old" min="0" max="2000" /> <span
+                            i18n="failsafeThrottleItemOld"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="gui_box grey newpane">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="failsafePulsrangeTitle"></div>
+                    <div class="helpicon cf_tip" i18n_title="failsafePulsrangeHelp"></div>
+                </div>
+                <div class="spacer_box">
+                    <div class="number">
+                        <label> <input type="number" name="rx_min_usec" min="750" max="2250" /> <span
+                            i18n="failsafeRxMinUsecItem"></span>
+                        </label>
+                    </div>
+                    <div class="number">
+                        <label> <input type="number" name="rx_max_usec" min="750" max="2250" /> <span
+                            i18n="failsafeRxMaxUsecItem"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="gui_box grey stage1 newpane">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="failsafeChannelFallbackSettingsTitle"></div>
+                    <div class="helpicon cf_tip" i18n_title="failsafeChannelFallbackSettingsHelp"></div>
+                </div>
+                <div class="spacer_box">
+                    <div class="activechannellist">
+                        <!-- list generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="rightWrapper">
+            <div class="gui_box grey newpane">
+                <div class="gui_box_titlebar">
+                    <div class="spacer_box_title" i18n="failsafeStageTwoSettingsTitle"></div>
+                </div>
+                <div class="spacer_box">
+                    <table>
+                        <tbody class="featuresNew rxFailsafe">
+                            <!-- table generated here -->
+                        </tbody>
+                    </table>
+                    <div class="checkbox stage2">
+                        <div class="numberspacer" >
+                            <input type="checkbox" name="failsafe_kill_switch" class="toggle" id="failsafe_kill_switch" />
+                        </div>
+                        <label for="failsafe_kill_switch"><span i18n="failsafeKillSwitchItem"></span>
+                        </label>
+                        <div class="helpicon cf_tip" i18n_title="failsafeKillSwitchHelp"></div>
+                    </div>
+                    <div class="number stage2">
+                        <label> <input type="number" name="failsafe_delay" min="0" max="200" /> <span
+                            i18n="failsafeDelayItem"></span>
+                        </label>
+                        <div class="helpicon cf_tip" i18n_title="failsafeDelayHelp"></div>
+                    </div>
+                    <div class="number stage2">
+                        <label> <input type="number" name="failsafe_throttle_low_delay" min="0" max="2000" /> <span
+                            i18n="failsafeThrottleLowItem"></span>
+                        </label>
+                        <div class="helpicon cf_tip" i18n_title="failsafeThrottleLowHelp"></div>
+                    </div>
+                    <!-- radio buttons  -->
+                    <div class="subline stage2" i18n="failsafeSubTitle1"></div>
+                    <div class="radioarea pro1 stage2">
+                        <div class="radiobuttons"><input class="procedure" id="drop" name="group1" type="radio"/>
+                            <label for="drop" i18n="failsafeProcedureItemSelect2"></label>
+                        </div>
+                    </div>
+                    <div class="radioarea pro2 stage2">
+                        <div class="radiobuttons"><input class="procedure" id="land" name="group1" type="radio" checked/>
+                            <label for="land" i18n="failsafeProcedureItemSelect1"></label>
+                        </div>
+                        <div class="proceduresettings">
+                            <div class="number">
+                                <label> <input type="number" name="failsafe_throttle" min="0" max="2000" /> <span
+                                    i18n="failsafeThrottleItem"></span>
+                                </label>
+                            </div>
+                            <div class="number">
+                                <label> <input type="number" name="failsafe_off_delay" min="0" max="2000" /> <span
+                                    i18n="failsafeOffDelayItem"></span>
+                                </label>
+                                <div class="helpicon cf_tip" i18n_title="failsafeOffDelayHelp"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content_toolbar">
+        <div class="btn save_btn">
+            <a class="save" href="#" i18n="configurationButtonSave"></a>
+        </div>
+    </div>
+</div>

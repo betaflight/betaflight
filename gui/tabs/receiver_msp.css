@@ -1,0 +1,141 @@
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 12px;
+    color: #303030;
+    margin: 10px;
+}
+
+.control-gimbals {
+    /* A generous padding around the window edges ensures that we continue to receive mousemove events (since 
+     * cursor stays in the window for longer)
+     */
+    padding: 25px;
+    padding-bottom: 0;
+    text-align: center;
+}
+
+.control-gimbal {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    background-color: #eee;
+    margin-left: 1em;
+    margin-right: 1em;
+    margin-bottom: 2em;
+    display: inline-block;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.crosshair {
+    display: block;
+    position: absolute;
+    background-color: #ddd;
+}
+
+.crosshair-vert {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+}
+
+.crosshair-horz {
+    height: 1px;
+    width: 100%;
+    top: 50%;
+}
+
+.gimbal-label {
+    display: block;
+    position: absolute;
+    text-align: center;
+}
+
+.gimbal-label-horz {
+    top: calc(100% + 0.5em);
+    width: 100%;
+}
+
+.gimbal-label-vert {
+    transform: rotate(-90deg);
+    /*transform-origin:0% 100%;*/
+    top: calc(50% - 0.5em);
+    width: 100%;
+    left: calc(-50% - 1em);
+}
+
+.control-stick {
+    background-color: rgba(255, 50, 50, 1.0);
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+    display: block;
+    border-radius: 100%;
+    position: absolute;
+    cursor: pointer;
+}
+
+.control-slider {
+    margin: 20px;
+}
+
+.tooltip {
+    position: absolute;
+    left: calc(100% + 24px);
+    top: 0;
+}
+
+.control-slider .slider {
+    margin-left: 50px;
+    margin-right: 50px;
+}
+
+.slider-label {
+    position: absolute;
+    text-align: right;
+    width: 40px;
+    left: -65px;
+}
+
+a {
+    text-decoration: none;
+    color: #000;
+    font-family: 'open_sanssemibold', Arial;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+.button-enable a {
+    /*  common styles for content toolbar buttons */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    background-color: #ffbb00;
+    border-radius: 3px;
+    border: 1px solid #4c8829;
+    color: #fff;
+    float: left;
+    font-family: 'open_sansbold', Arial;
+    font-size: 12px;
+    text-shadow: 0px 1px rgba(0, 0, 0, 0.25);
+    display: block;
+    cursor: pointer;
+    transition: all ease 0.2s;
+    padding: 0px;
+    padding-left: 9px;
+    padding-right: 9px;
+    line-height: 28px;
+}
+
+.button-enable a:hover {
+    background-color: #6ac435;
+    transition: all ease 0.2s;
+}
+.button-enable a:active {
+    background-color: #4d9324;
+    transition: all ease 0.0s;
+    box-shadow: inset 0px 1px 5px rgba(0, 0, 0, 0.35);
+}

@@ -1,0 +1,47 @@
+{
+    "manifest_version": 2,
+    "minimum_chrome_version": "38",
+    "version": "1.8.1",
+    "author": "Betaflight Squad",
+    "name": "Betaflight - Configurator",
+    "short_name": "Betaflight",
+    "description": "Crossplatform configuration tool for Betaflight flight control system",
+
+    "offline_enabled": true,
+
+    "default_locale": "en",
+
+    "app": {
+        "background": {
+            "scripts": ["eventPage.js"],
+            "persistent": false
+        }
+    },
+
+    "sandbox": {
+    "pages": ["tabs/map.html"]
+    },
+         
+        "permissions": [
+        "https://maps.googleapis.com/*",    
+        "https://*.github.com/",
+        "https://*.githubusercontent.com/",
+        "http://*.baseflight.net/",
+        "https://*.amazonaws.com/",
+        "serial",
+        "usb",
+        "storage",
+        "fileSystem",
+        "fileSystem.write",
+        "fileSystem.retainEntries",
+        "notifications",
+        "alwaysOnTopWindows",
+        {"usbDevices": [
+            {"vendorId": 1155, "productId": 57105}
+        ]}
+    ],
+
+    "icons": {
+        "128": "images/bf_icon_128.png"
+    }
+}

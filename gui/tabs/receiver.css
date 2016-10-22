@@ -1,0 +1,476 @@
+.tab-receiver {
+    font-weight: normal;
+}
+
+.tab-receiver .spacer {
+    padding-left: 10px;
+    padding-right: 9px;
+    width: calc(100% - 18px);
+}
+
+.tab-receiver input[type="number"]::-webkit-inner-spin-button {
+    border: 0;
+}
+
+.tab-receiver .help {
+    padding: 10px;
+    background-color: #ffcb18;
+    margin-bottom: 10px;
+}
+
+.tab-receiver .bars {
+    float: left;
+    width: calc(50% - 20px);
+    font-weight: bold;
+}
+
+.tab-receiver .bars ul {
+    margin-bottom: 5px;
+    clear: left;
+}
+
+.tab-receiver .bars li {
+    float: left;
+    height: 22px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+
+.tab-receiver .bars .name {
+    padding: 0 10px 0 0;
+    width: 50px;
+    text-align: right;
+}
+
+.tab-receiver .bars .meter {
+    width: calc(100% - 60px);
+}
+
+.tab-receiver .bars .meter-bar {
+    position: relative;
+    margin-top: 2px;
+    width: calc(100% - 2px);
+    height: 15px;
+    border: 1px solid silver;
+    background-color: #f4f4f4;
+    border-radius: 3px;
+}
+
+.tab-receiver .bars .meter-bar .label {
+    position: absolute;
+    width: 50px;
+    height: 15px;
+    line-height: 15px;
+    text-align: center;
+    color: #474747;
+}
+
+.tab-receiver .bars .meter-bar .fill {
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+    width: 50%;
+    height: 15px;
+    background-color: green;
+}
+
+.tab-receiver .bars .meter-bar .fill .label {
+    color: white;
+}
+
+.tab-receiver .bars ul:nth-of-type(1) .fill {
+    background-color: #f1453d;
+}
+
+.tab-receiver .bars ul:nth-of-type(2) .fill {
+    background-color: #673fb4;
+}
+
+.tab-receiver .bars ul:nth-of-type(3) .fill {
+    background-color: #2b98f0;
+}
+
+.tab-receiver .bars ul:nth-of-type(4) .fill {
+    background-color: #1fbcd2;
+}
+
+.tab-receiver .bars ul:nth-of-type(5) .fill {
+    background-color: #159588;
+}
+
+.tab-receiver .bars ul:nth-of-type(6) .fill {
+    background-color: #50ae55;
+}
+
+.tab-receiver .bars ul:nth-of-type(7) .fill {
+    background-color: #cdda49;
+}
+
+.tab-receiver .bars ul:nth-of-type(8) .fill {
+    background-color: #fdc02f;
+}
+
+.tab-receiver .bars ul:nth-of-type(9) .fill {
+    background-color: #fc5830;
+}
+
+.tab-receiver .bars ul:nth-of-type(10) .fill {
+    background-color: #785549;
+}
+
+.tab-receiver .bars ul:nth-of-type(11) .fill {
+    background-color: #9e9e9e;
+}
+
+.tab-receiver .bars ul:nth-of-type(12) .fill {
+    background-color: #617d8a;
+}
+
+.tab-receiver .bars ul:nth-of-type(13) .fill {
+    background-color: #cf267d;
+}
+
+.tab-receiver .bars ul:nth-of-type(14) .fill {
+    background-color: #7a1464;
+}
+
+.tab-receiver .bars ul:nth-of-type(15) .fill {
+    background-color: #3a7a14;
+}
+
+.tab-receiver .bars ul:nth-of-type(16) .fill {
+    background-color: #14407a;
+}
+
+.tab-receiver .tunings {
+    float: right;
+    position: relative;
+    margin: 0px 0px 20px 0;
+    width: 100%;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    background-color: #DEDEDE;
+}
+
+.tab-receiver .tunings .head {
+    height: 15px;
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+    font-weight: normal;
+    background: #828885;
+    color: white;
+    border-top-left-radius: 3px;
+    border-right: 1px solid silver;
+}
+.tab-receiver .tunings table {
+    border-collapse: collapse;
+}
+
+.tab-receiver .tunings table, .tab-receiver .tunings table th, .tab-receiver .tunings table td {
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+}
+
+.tab-receiver .tunings table th {
+    background: #828885;
+    color: white;
+    border-right: 1px solid silver;
+    font-weight: normal;
+}
+
+.tab-receiver .tunings table th:first-child {
+    border-top-left-radius: 3px;
+}
+
+.tab-receiver .tunings table th:last-child {
+    border-top-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-receiver .tunings table td {
+    background: #DEDEDE;
+    border-right: 1px solid silver;
+}
+
+.tab-receiver .tunings table td:first-child {
+    border-bottom-left-radius: 3px;
+}
+
+.tab-receiver .tunings table td:last-child {
+    border-bottom-right-radius: 3px;
+    border-right: 0px;
+}
+
+.tab-receiver .tunings table td {
+    padding: 1px;
+}
+
+.tab-receiver .tunings table tr:nth-child(odd) {
+    background-color: #ececec;
+}
+
+.tab-receiver .tunings table input {
+    width: calc(100% - 8px);
+    border: 1px solid silver;
+    border-radius: 3px;
+    height: 20px;
+    margin: 3px;
+    line-height: 20px;
+    text-align: right;
+}
+
+.tab-receiver .rssi_channel_wrapper {
+    float: right;
+    margin: 0px 0px 20px 0;
+    border-left: 0;
+    width: 30%;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background-color: #DEDEDE;
+}
+
+.tab-receiver .rssi_channel_wrapper select {
+    height: 22px;
+    padding-left: 5px;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 8px);
+}
+.tab-receiver .rssi_channel_wrapper .head {
+    height: 15px;
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+    font-weight: normal;
+    background: #828885;
+    color: white;
+    border-top-right-radius: 3px;
+}
+
+.tab-receiver .rssi_channel_wrapper select {
+    height: 22px;
+    padding-left: 5px;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 8px);
+}
+
+.tab-receiver .rcmap_wrapper {
+    float: right;
+    position: relative;
+    margin: 0px 0px 20px 0;
+    width: calc(70% - 0px);
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    background-color: #DEDEDE;
+}
+
+.tab-receiver .rcmap_wrapper .head {
+    height: 15px;
+    padding: 4px;
+    text-align: left;
+    padding-left: 6px;
+    font-weight: normal;
+    background: #828885;
+    color: white;
+    border-top-left-radius: 3px;
+    border-right: 1px solid silver;
+}
+
+.tab-receiver .hybrid_element {
+    border-right: 1px solid silver;
+}
+
+.tab-receiver .hybrid_element input {
+    position: absolute;
+    padding-left: 5px;
+    width: calc(100% - 36px);
+    height: 20px;
+    z-index: 2;
+    border-radius: 0px;
+    border: 1px solid silver;
+    margin: 4px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.tab-receiver .hybrid_element select {
+    height: 22px;
+    z-index: 1;
+    border: 1px solid silver;
+    margin: 4px;
+    width: calc(100% - 10px);
+}
+
+.tab-receiver .rcInterpolation td {
+    padding: 5px;
+}
+
+.tab-receiver .rcInterpolation td:first-child {
+    width: 20%;
+    padding-bottom: 6px;
+    padding-top: 5px;
+}
+
+.tab-receiver .rcInterpolation td:last-child {
+    width: 80%;
+}
+
+.tab-receiver .rcInterpolation td {
+    width: 20%;
+}
+
+.tab-receiver .rcInterpolation .slider input {
+    -webkit-appearance: slider-horizontal
+}
+
+.tab-receiver .curves {
+    float: left;
+    margin-right: 10px;
+}
+
+.tab-receiver .throttle_curve {
+    margin: 0 0px 0px 0;
+    width: 200px;
+    height: 117px;
+    border: 1px solid silver;
+    border-radius: 3px;
+    background-image: url(../images/paper.jpg);
+    background-size: 200%;
+    background-position: center;
+}
+
+.tab-receiver select[name="rx_refresh_rate"] {
+    float: right;
+    border: 1px solid silver;
+}
+
+.tab-receiver #RX_plot {
+    width: 100%;
+    height: 200px;
+}
+
+.tab-receiver #RX_plot .line:nth-child(1) {
+    stroke: #f1453d;
+}
+
+.tab-receiver #RX_plot .line:nth-child(2) {
+    stroke: #673fb4;
+}
+
+.tab-receiver #RX_plot .line:nth-child(3) {
+    stroke: #2b98f0;
+}
+
+.tab-receiver #RX_plot .line:nth-child(4) {
+    stroke: #1fbcd2;
+}
+
+.tab-receiver #RX_plot .line:nth-child(5) {
+    stroke: #159588;
+}
+
+.tab-receiver #RX_plot .line:nth-child(6) {
+    stroke: #50ae55;
+}
+
+.tab-receiver #RX_plot .line:nth-child(7) {
+    stroke: #cdda49;
+}
+
+.tab-receiver #RX_plot .line:nth-child(8) {
+    stroke: #fdc02f;
+}
+
+.tab-receiver #RX_plot .line:nth-child(9) {
+    stroke: #fc5830;
+}
+
+.tab-receiver #RX_plot .line:nth-child(10) {
+    stroke: #785549;
+}
+
+.tab-receiver #RX_plot .line:nth-child(11) {
+    stroke: #9e9e9e;
+}
+
+.tab-receiver #RX_plot .line:nth-child(12) {
+    stroke: #7a6614;
+}
+
+.tab-receiver #RX_plot .line:nth-child(13) {
+    stroke: #cf267d;
+}
+
+.tab-receiver #RX_plot .line:nth-child(14) {
+    stroke: #7a1464;
+}
+
+.tab-receiver #RX_plot .line:nth-child(15) {
+    stroke: #3a7a14;
+}
+
+.tab-receiver #RX_plot .line:nth-child(16) {
+    stroke: #14407a;
+}
+
+.tab-receiver .buttons {
+    width: calc(100% - 20px);
+    position: absolute;
+    bottom: 10px;
+}
+
+/* SVG classes*/
+.tab-receiver .grid .tick {
+    stroke: silver;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+.tab-receiver .line {
+    stroke-width: 2px;
+    fill: none;
+}
+
+.tab-receiver .grid path {
+    stroke-width: 0;
+}
+
+.tab-receiver .axis path, .axis line {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+.tab-receiver text {
+    stroke: none;
+    fill: #828885;
+    font-size: 10px;
+}
+
+.tab-receiver .pid_titlebar {
+    border-radius: 3px;
+}
+
+.tab-receiver .model_preview_cell {
+    position: relative;
+    width: 100%;
+    height: 180px;
+}
+
+.tab-receiver .model_preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url(../images/paper.jpg);
+    background-size: 100%;
+    background-position: center;
+    margin-top: -1px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}

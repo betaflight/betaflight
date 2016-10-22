@@ -75,6 +75,7 @@ include $(ROOT)/make/local.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT)/tools
+TOOLS_TMP_DIR := $(ROOT)/tools/tmp
 BUILD_DIR := $(ROOT)/build
 DL_DIR := $(ROOT)/downloads
 
@@ -942,3 +943,10 @@ $(TARGET_OBJS) : Makefile
 
 # include auto-generated dependencies
 -include $(TARGET_DEPS)
+
+.PHONY: gui
+ifneq ($(shell [ -d "$(NWJS_SDK_DIR)" ] && echo "exists"), exists)
+gui: $(V1) nwjs_sdk_install
+endif
+gui:
+	$(V1) $(NWJS) gui

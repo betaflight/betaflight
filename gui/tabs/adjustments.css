@@ -1,0 +1,124 @@
+#tab-adjustments-templates {
+    display: none;
+}
+
+.tab-adjustments .range .marker, .tab-adjustments .channel-slider .noUi-connect {
+    background: #ffbb00;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
+.noUi-target {
+    border-radius: 4px;
+    border: 1px solid #D3D3D3;
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
+}
+
+.noUi-background {
+    box-shadow: inset 0 0px 2px rgba(0, 0, 0, 0.4), 0px 1px 0px rgba(255, 255, 255, 0.6);
+    background: #D2D2D2;
+}
+
+.tab-adjustments .adjustments {
+    width: 100%;
+    border-spacing: 0px;
+}
+
+.tab-adjustments td {
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #cccccc;
+}
+
+.tab-adjustments .range:first-child {
+    border-top: 0px;
+}
+
+.tab-adjustments .range:last-child {
+    border-bottom: 0px;
+}
+
+.tab-adjustments .adjustments thead td {
+    text-align: center;
+    white-space: nowrap;
+    padding: 10px 10px;
+    background-color: #828885;
+    color: white;
+}
+
+.tab-adjustments .adjustments thead td:first-child {
+    border-top-left-radius: 5px;
+}
+
+.tab-adjustments .adjustments thead td:last-child {
+    border-top-right-radius: 5px;
+}
+
+.tab-adjustments .adjustment:nth-child(odd) {
+    background-color: #f4f4f4;
+}
+
+.tab-adjustments .adjustments {
+    background-color: #e4e4e4;
+}
+
+.tab-adjustments .adjustment select {
+    /* outline: 1px solid silver; */
+    border-radius: 3px;
+    border: 1px solid silver;    
+}
+
+.tab-adjustments .adjustment td {
+    text-align: center;
+}
+
+.tab-adjustments .adjustment .info {
+    width: 5%;
+    height: 80px;
+}
+
+.tab-adjustments .adjustment .info .enabling {
+    white-space: nowrap;
+}
+
+.tab-adjustments .adjustment .channelInfo {
+    width: 5%;
+    padding: 0px 10px;
+}
+
+.tab-adjustments .adjustment .channelInfo .limits {
+    padding: 5px 0px;
+}
+
+.tab-adjustments .adjustment .range {
+    width: 65%;
+    padding: 0px 20px;
+}
+
+.tab-adjustments .adjustment .range .channel-slider {
+    margin-top: -28px;
+}
+
+.tab-adjustments .adjustment .range .marker {
+    position: absolute;
+    left: 50%;
+    top: 27px;
+    height: 13px;
+    width: 6px;
+    margin-left: -3px;
+    border-radius: 3px;
+}
+
+.tab-adjustments .adjustment .functionSelection {
+    width: 5%;
+}
+
+.tab-adjustments .adjustment .adjustmentSlot {
+    width: 5%;
+}
+
+.tab-adjustments .adjustment .functionSwitchChannel {
+    width: 5%;
+}
+
+.tab-adjustments .spacebottom {
+    margin-bottom: 15px;
+}

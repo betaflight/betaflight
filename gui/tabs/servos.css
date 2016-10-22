@@ -1,0 +1,183 @@
+.tab-servos .title {
+    margin-top: 0px;
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #e4e4e4;
+    border-bottom: 0;
+    background-color: #DADADA;
+    color: #797979;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+}
+
+.tab-servos table {
+    margin-bottom: 10px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tab-servos table, .tab-servos table th, .tab-servos table td {
+    border-left: 0px;
+    border-right: 0px;
+    border-top: 0px;
+}
+
+.tab-servos input[type="number"]::-webkit-inner-spin-button {
+    border: 0;
+}
+
+.tab-servos .directions .direction select {
+    height: 19px;
+    line-height: 19px;
+}
+
+.tab-servos table th {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: center;
+    border: 1px solid #e4e4e4;
+}
+
+.tab-servos table td {
+    border-bottom: 1px solid #e4e4e4;
+    padding: 6px 5px 7px 5px;
+    border-left: 1px solid #e4e4e4;
+    border-right: 1px solid #e4e4e4;
+}
+
+.tab-servos table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.tab-servos table tr:first-child {
+    border-left: 1px solid #e4e4e4;
+    border-right: 1px solid #e4e4e4;
+    background-color: #828885;
+    color: #FFF;
+    line-height: 14px;
+}
+
+.tab-servos table td:nth-child(2) {
+    width: 140px;
+}
+
+.tab-servos table td:nth-child(3) {
+    width: 140px;
+}
+
+.tab-servos table td:nth-child(4) {
+    width: 140px;
+}
+
+.tab-servos table td:nth-child(19) {
+    width: 110px;
+}
+
+.tab-servos table .main {
+    font-weight: bold;
+    text-align: center;
+    background-color: #ececec;
+}
+
+.tab-servos table .channel {
+    width: 40px;
+    text-align: center;
+}
+
+.tab-servos table input {
+    border: 1px solid silver;
+    border-radius: 3px;
+}
+
+.tab-servos table select {
+    border: 1px solid silver;
+}
+
+.tab-servos table .channel input {
+    vertical-align: middle;
+}
+
+.tab-servos table input[type="number"] {
+    display: block;
+    width: 100%;
+    height: 20px;
+    line-height: 20px;
+    text-align: right;
+}
+
+.tab-servos .direction .name {
+    float: left;
+    display: block;
+    width: 60px;
+}
+
+.tab-servos .direction .alternate {
+    float: left;
+    display: block;
+    width: 60px;
+}
+
+.tab-servos .direction .first {
+    float: left;
+    margin: 2px 10px 0 20px;
+}
+
+.tab-servos .direction .second {
+    float: left;
+    margin: 2px 10px 0 0;
+}
+
+.tab-servos .direction .rate {
+    width: 110px;
+    height: 20px;
+    text-align: center;
+}
+
+.tab-servos .live {
+    float: left;
+    margin-top: 0px;
+}
+
+.tab-servos .live span {
+    float: left;
+}
+
+.tab-servos .live input {
+    float: left;
+    margin: 0 0 0 5px;
+}
+
+.tab-servos .buttons {
+    width: calc(100% - 20px);
+    position: absolute;
+    bottom: 10px;
+}
+
+.tab-servos .require-support {
+    display: none;
+}
+
+.tab-servos.supported .require-support {
+    display: block;
+}
+
+.tab-servos .require-upgrade {
+    display: block;
+}
+
+.tab-servos.supported .require-upgrade {
+    display: none;
+}
+
+.tab-servos .live span {
+    margin-right: 10px;
+}
+
+.tab-servos .wide {
+    width: 120px;
+} 
+
+.tab-servos .short {
+    width: 40px;
+} 

@@ -1,0 +1,326 @@
+.tab-motors .modelAndAccel {
+    float: left;
+    width: 100%;
+    margin-bottom: 0px;
+}
+
+.tab-motors .spacer {
+    width: calc(100% - 34px);
+    margin: 10px;
+}
+
+.tab-motors #accel {
+    float: left;
+    width: calc(100% - 292px);
+}
+
+.tab-motors .mixerPreview {
+    float: left;
+}
+
+.tab-motors .mixerPreview img {
+    width: 120px;
+    height: 120px;
+    margin-top: 18px;
+    margin-left: 10px;
+}
+
+.tab-motors .plot_control {
+    float: right;
+    width: 160px;
+    /* border: 1px solid silver; */
+    height: 100%;
+    height: 180px;
+    margin: 0px;
+    background-color: #ECECEC;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.tab-motors .plot_control .title {
+    line-height: 20px;
+    font-weight: bold;
+    padding-left: 10px;
+    padding-top: 10px;
+    text-align: left;
+}
+
+.tab-motors .plot_control dl {
+    padding: 10px 10px 0 10px;
+    line-height: 22px;
+    float: left;
+}
+
+.tab-motors .plot_control dt {
+    float: left;
+    width: 60px;
+    height: 22px;
+    font-weight: bold;
+}
+
+.tab-motors .plot_control dd {
+    /* margin-left: 20px; */
+    height: 25px;
+    float: right;
+    width: 73px;
+}
+
+.tab-motors .plot_control select {
+    float: right;
+    width: 80px;
+    border: 1px solid silver;
+}
+
+.tab-motors .plot_control .x {
+    background-color: #00A8F0;
+    padding: 3px;
+    color: #fff;
+    height: 12px;
+    float: right;
+    border-radius: 3px;
+    line-height: 12px;
+    margin-bottom: 2px;
+    text-align: right;
+}
+
+.tab-motors .plot_control .y {
+    background-color: #C0D800;
+    padding: 3px;
+    color: #fff;
+    height: 12px;
+    float: right;
+    border-radius: 3px;
+    line-height: 12px;
+    margin-bottom: 2px;
+    text-align: right;
+}
+
+.tab-motors .plot_control .z {
+    background-color: #CB4B4B;
+    padding: 3px;
+    color: #fff;
+    height: 12px;
+    float: right;
+    border-radius: 3px;
+    line-height: 12px;
+    margin-bottom: 2px;
+    text-align: right;
+}
+
+.tab-motors .plot_control .rms {
+    background-color: #00D800;
+    padding: 3px;
+    color: #fff;
+    height: 12px;
+    float: right;
+    border-radius: 3px;
+    line-height: 12px;
+    margin-bottom: 2px;
+    text-align: right;
+}
+
+.tab-motors .plot_control .x, .tab-sensors .plot_control .y, .tab-sensors .plot_control .z {
+    text-align: right;
+}
+
+.tab-motors .plot_control .title a:hover {
+    text-decoration: underline;
+}
+
+.tab-motors svg {
+    float: left;
+    width: calc(100% - 168px); /* - (plot control, margin)*/
+    height: 140px;
+    margin-top: 10px;
+}
+
+.tab-motors .grid .tick {
+    stroke: silver;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+.tab-motors .grid path {
+    stroke-width: 0;
+}
+
+.tab-motors .data .line {
+    stroke-width: 2px;
+    fill: none;
+}
+
+.tab-motors .axis path, .tab-motors .axis line {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+}
+
+.tab-motors text {
+    stroke: none;
+    fill: #828885;
+    font-size: 10px;
+}
+
+.tab-motors .line:nth-child(1) {
+    stroke: #00A8F0;
+}
+
+.tab-motors .line:nth-child(2) {
+    stroke: #C0D800;
+}
+
+.tab-motors .line:nth-child(3) {
+    stroke: #CB4B4B;
+}
+
+.tab-motors .motorblock {
+    margin-bottom: 0px;
+    background-color: #ECECEC;
+    /*background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.15));*/
+}
+
+.tab-motors .left.motors {
+    float: left;
+    width: calc(50% - 50px);
+}
+
+.tab-motors .right.servos {
+    float: right;
+    width: 50%;
+}
+
+.tab-motors .title {
+    padding-bottom: 2px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.tab-motors .title2 {
+    padding-bottom: 2px;
+    text-align: center;
+    font-size: 12px;
+    font-family: 'open_sanslight', Arial;
+}
+
+.tab-motors .titles {
+    height: 20px;
+}
+
+.tab-motors .titles li {
+    float: left;
+    width: calc((100% / 9) - 10px);
+    margin-right: 10px;
+    text-align: center;
+}
+
+.tab-motors .servos .titles li {
+    float: right;
+    width: calc((100% / 8) - 10px);
+    margin: 0 0 0 10px;
+}
+
+.tab-motors .titles .active {
+    color: green;
+}
+
+.tab-motors .m-block {
+    float: left;
+    width: calc((100% / 9) - 10px);
+    height: 100px;
+    margin-right: 10px;
+    text-align: center;
+    background-color: #f4f4f4;
+    border-radius: 3px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.tab-motors .m-block .meter-bar {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    background-color: #E0E0E0;
+    border-radius: 3px;
+    border: 1px solid #F5F5F5;
+}
+
+.tab-motors .m-block .label {
+    position: absolute;
+    width: 100%;
+    bottom: 45px;
+    text-align: center;
+    font-weight: bold;
+    color: #474747;
+}
+
+.tab-motors .m-block .indicator .label {
+    color: white;
+}
+
+.tab-motors .servos .m-block {
+    float: right;
+    width: calc((100% / 8) - 10px);
+    margin: 0 0 0 10px;
+    border-radius: 3px;
+}
+
+.tab-motors .indicator {
+    position: absolute;
+    overflow: hidden;
+    width: 100%;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.tab-motors .motor_testing {
+    margin-top: 15px;
+}
+
+.tab-motors .motor_testing .left {
+    width: calc(50% - 50px);
+}
+
+.tab-motors .motor_testing .sliders input {
+    -webkit-appearance: slider-vertical;
+    width: calc((100% / 9) - 13px);
+    height: 73px;
+    margin-left: 10px;
+}
+
+.tab-motors .motor_testing .sliders input:first-child {
+    margin-left: 0px;
+}
+
+.tab-motors .motor_testing .values {
+    margin-top: 5px;
+}
+
+.tab-motors .motor_testing .values li:first-child {
+    margin-left: 0px;
+}
+
+.tab-motors .motor_testing .values li {
+    float: left;
+    width: calc((100% / 9) - 10px);
+    margin-left: 10px;
+    text-align: center;
+}
+
+.tab-motors .motor_testing .notice {
+    float: right;
+    width: calc(50% - 24px);
+    padding: 5px;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+    background-color: #FFFFFF;
+    font-size: 11px;
+}
+
+.tab-motors .motor_testing .notice p {
+    margin-bottom: 10px;
+}
+
+.tab-motors .motor_testing .notice .motorsEnableTestMode {
+    margin-left: 10px;
+}

@@ -1,0 +1,126 @@
+<div class="tab-osd toolbar_fixed_bottom">
+    <div class="content_wrapper">
+        <h1 class="tab_title">
+            OSD
+        </h1>
+        <div class="cf_doc_version_bt">
+            <a id="button-documentation" href="" target="_blank"></a>
+        </div>
+        <div class="unsupported hide">
+            <p class="note">Your flight controller isn't responding to OSD commands. This probably means that it does not have an integrated BetaFlight OSD.</p>
+            <p class="note">Note that some flight controllers have an onboard <a href="https://www.youtube.com/watch?v=ikKH_6SQ-Tk" target="_blank">MinimOSD</a> that can be flashed and configured with <a href="https://github.com/ShikOfTheRa/scarab-osd/releases/latest" target="_blank">scarab-osd</a>, however the MinimOSD cannot be configured through this interface.</p>
+        </div>
+        <div class="supported hide">
+            <div class="cf_column third_left elements">
+                <div class="spacer_right">
+                    <div class="gui_box grey">
+                        <div
+                            class="gui_box_titlebar"
+                            style="margin-bottom: 0px;">
+                            <div class="spacer_box_title">
+                                Elements
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="display-fields"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cf_column twothird">
+                <div class="gui_box grey preview" style="float: left;">
+                    <div class="gui_box_titlebar image">
+                        <div class="spacer_box_title">
+                          Preview <span>(drag to change position)</span><span class="preview-logo cf_tip" title="Show or hide the logo in the preview window. This will not change any settings on the flight controller."></span>
+                        </div>
+                    </div>
+                    <div class="display-layout">
+                        <div class="col right">
+                            <div class="preview">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cf_column third_right" style="width: calc(100% - 377px);">
+                    <div class="gui_box grey">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">Video
+                                Format
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="video-types"></div>
+                        </div>
+                    </div>
+                    <div class="gui_box grey units-container" style="display:none;">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">Units
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="units"></div>
+                        </div>
+                    </div>
+                    <div class="gui_box grey alarms-container" style="display:none;">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">
+                              Alarms
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="alarms"></div>
+                        </div>
+                    </div>
+                    <div class="gui_box grey" style="display:none;">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">VTX
+                                Settings
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="vtx-settings"></div>
+                        </div>
+                    </div>
+                    <div class="gui_box grey" style="display:none;">
+                        <div class="gui_box_titlebar">
+                            <div class="spacer_box_title">Craft Name
+                            </div>
+                        </div>
+                        <div class="spacer_box">
+                            <div class="callsign"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="fontmanagercontent" style="display:none; width:600px;">
+                <div class="font-picker" style="margin-bottom: 10px;">
+                    <h1 class="tab_title">Font presets:</h1>
+                    <div class="content_wrapper font-preview"></div>
+                    <div class="fontbuttons">
+                        <button data-font-file="default">Default</button>
+                        <button data-font-file="bold">Bold</button>
+                        <button data-font-file="large">Large</button>
+                        <button class="load_font_file">Open Font File</button>
+                    </div>
+                    <div class="info">
+                        <a name="progressbar"></a>
+                        <progress class="progress" value="0" min="0" max="100"></progress>
+                        <div class="progressLabel" style="margin-top: -21px; width: 95%; text-align: center; color: white; position: absolute;"></div>
+                    </div>
+                </div>
+                <div class="default_btn green" style="width:100%; float:left; margin-bottom: 0px;
+                    ">
+                    <a class="flash_font active">Upload Font</a>
+                </div>
+            </div>
+            <div class="content_toolbar supported hide" style="left:0;">
+                <div class="btn">
+                    <a class="active save" href="#" >Save</a>
+                </div>
+                <div class="btn">
+                    <a class="fonts" id="fontmanager" href="#" >Font Manager</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
