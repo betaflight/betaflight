@@ -44,4 +44,4 @@ const uint8_t font_max7456_12x18_asciiToFontMapping[128];
 #define FONT_CHARACTER_MOTOR_OFF 0x0d // circle outline
 
 
-#define FONT_VERSION 1
+#define FONT_VERSION 2
