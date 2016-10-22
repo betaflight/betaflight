@@ -58,24 +58,22 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[1]  = (value & 0x200) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[2]  = (value & 0x100) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[3]  = (value & 0x80)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[4]  = (value & 0x40)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[5]  = (value & 0x20)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[6]  = (value & 0x10)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[7]  = (value & 0x8)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[8]  = (value & 0x4)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[9]  = (value & 0x2)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[10] = (value & 0x1)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[11] = MOTOR_BIT_0; /* telemetry is always false for the moment */
-        
-    /* check sum */
-    motor->dmaBuffer[12] = (value & 0x400) ^ (value & 0x40) ^ (value & 0x4) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[13] = (value & 0x200) ^ (value & 0x20) ^ (value & 0x2) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[14] = (value & 0x100) ^ (value & 0x10) ^ (value & 0x1) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[15] = (value & 0x80)  ^ (value & 0x8)  ^ (0x0)         ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    // compute checksum
+    int csum = 0;
+    int csum_data = packet;
+    for (int i = 0; i < 3; i++) {
+        csum ^=  csum_data;   // xor data by nibbles
+        csum_data >>= 4;
+    }
+    csum &= 0xf;
+    // append checksum
+    packet = (packet << 4) | csum;
+    // generate pulses for whole packet
+    for (int i = 0; i < 16; i++) {
+        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        packet <<= 1;
+    }
 
     DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
     DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
