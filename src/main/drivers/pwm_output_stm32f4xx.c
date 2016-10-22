@@ -36,24 +36,19 @@
 #define MOTOR_DSHOT600_MHZ    12
 #define MOTOR_DSHOT150_MHZ    3
 
-static uint8_t dmaMotorTimerCount = 0;
-static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
+extern uint8_t dmaMotorTimerCount;
+extern motorDmaTimer_t dmaMotorTimers[];
 
-uint8_t getTimerIndex(TIM_TypeDef *timer)
-{
-    for (int i = 0; i < dmaMotorTimerCount; i++) {
-        if (dmaMotorTimers[i].timer == timer) {
-            return i;
-        }
-    }
-    dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
-    return dmaMotorTimerCount-1;
-}
+uint8_t getTimerIndex(TIM_TypeDef *timer);
+void pwmWriteValueToDmaBuffer(uint16_t value, uint32_t *buffer, uint8_t flags);
 
-void pwmDigitalRequestTelemetry(uint8_t motorIndex)
+static void motor_DMA_IRQHandlerSynchronised(dmaChannelDescriptor_t *descriptor)
 {
-    for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        motors[motorIndex].updateFlags |= (i == motorIndex) ? MOTOR_UPDATE_TELEMETRY : MOTOR_UPDATE_NONE;
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        pwmMotorOutput_t * const motor = &motors[descriptor->userParam];
+        DMA_Cmd(descriptor->stream, DISABLE);
+        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
 
@@ -61,6 +56,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         pwmMotorOutput_t * const motor = &motors[descriptor->userParam];
+        
         if (motor->updateFlags & MOTOR_UPDATE_VALUE || motor->updateFlags & MOTOR_UPDATE_TELEMETRY) {
             pwmWriteValueToDmaBuffer(motor->value, motor->dmaBuffer, motor->updateFlags);
             motor->updateFlags = 0; 
@@ -70,7 +66,22 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     }
 }
 
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType)
+void pwmStartMotorDma(const pwmMotorOutput_t *motor)
+{
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);  
+    DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
+}
+
+void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
+{
+    UNUSED(motorCount);
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
+        TIM_SetCounter(dmaMotorTimers[i].timer, 0);
+        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
+    }
+}
+
+void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, motorUpdateFlags_e flags)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
@@ -165,6 +176,9 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
     
+    bool synchronised = (flags & MOTOR_UPDATE_SYNCED);
+    dmaSetHandler(timerHardware->dmaIrqHandler, synchronised ? motor_DMA_IRQHandlerSynchronised : motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
+    
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
     DMA_StructInit(&DMA_InitStructure);
@@ -177,7 +191,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+    DMA_InitStructure.DMA_Mode = synchronised ? DMA_Mode_Normal : DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
     DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Enable;
     DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
@@ -189,19 +203,18 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(stream, dmaItFlag);
     
-    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 
 void pwmStartDigitalOutput(void)
 {
-    for (uint8_t i; i < MAX_SUPPORTED_MOTORS; i++) {
+    for (int i; i < MAX_SUPPORTED_MOTORS; i++) {
         if (motors[i].enabled && motors[i].timerHardware) {
             //DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);  
             DMA_Cmd(motors[i].timerHardware->dmaStream, ENABLE);
         }
     }
     
-    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
     }
@@ -209,7 +222,7 @@ void pwmStartDigitalOutput(void)
 
 void pwmStopDigitalOutput(void)
 {
-    for (uint8_t i; i < MAX_SUPPORTED_MOTORS; i++) {
+    for (int i; i < MAX_SUPPORTED_MOTORS; i++) {
         if (motors[i].enabled && motors[i].timerHardware) {
             DMA_Cmd(motors[i].timerHardware->dmaStream, DISABLE);
             TIM_DMACmd(motors[i].timerHardware->tim, motors[i].timerDmaSource, DISABLE);

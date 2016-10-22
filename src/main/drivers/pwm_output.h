@@ -69,6 +69,7 @@ typedef enum {
     MOTOR_UPDATE_NONE = 0x0,
     MOTOR_UPDATE_VALUE = 0x1,
     MOTOR_UPDATE_TELEMETRY = 0x2,
+    MOTOR_UPDATE_SYNCED = 0x4,
 } motorUpdateFlags_e;
 
 typedef struct {
@@ -115,10 +116,7 @@ extern pwmMotorOutput_t motors[];
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount);
 
 #ifdef USE_DSHOT
-void pwmWriteValueToDmaBuffer(uint16_t value, uint32_t *buffer, uint8_t flags);
-void pwmStartDigitalOutput(void);
-void pwmStopDigitalOutput(void);
-void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType);
+void pwmDigitalRequestTelemetry(uint8_t motorIndex);
 #endif
 
 void pwmWriteMotors(const int16_t *value, uint8_t motorCount);

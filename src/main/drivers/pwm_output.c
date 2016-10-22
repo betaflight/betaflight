@@ -32,6 +32,20 @@ pwmMotorOutput_t motors[MAX_SUPPORTED_MOTORS];
 static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
 static pwmWriteFuncPtr pwmWritePtr = NULL;
 
+#ifdef USE_DSHOT
+
+#define MAX_DMA_TIMERS 8
+
+uint8_t dmaMotorTimerCount = 0;
+motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
+
+void pwmStartMotorDma(const pwmMotorOutput_t *motor);
+void pwmStartDigitalOutput(void);
+void pwmStopDigitalOutput(void);
+void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
+void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, motorUpdateFlags_e flags);
+#endif
+
 #ifdef USE_SERVOS
 static pwmServoOutput_t servos[MAX_SUPPORTED_SERVOS];
 #endif
@@ -131,18 +145,16 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 }
 
 #ifdef USE_DSHOT
-static void pwmWriteDigital(uint8_t index, uint16_t value)
+
+uint8_t getTimerIndex(TIM_TypeDef *timer)
 {
-    pwmMotorOutput_t * const motor = &motors[index];
-
-    motor->value = value;
-    motor->updateFlags |= MOTOR_UPDATE_VALUE;
-}
-
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
-{
-    UNUSED(motorCount);
-
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
+        if (dmaMotorTimers[i].timer == timer) {
+            return i;
+        }
+    }
+    dmaMotorTimers[dmaMotorTimerCount++].timer = timer;
+    return dmaMotorTimerCount - 1;
 }
 
 void pwmWriteValueToDmaBuffer(uint16_t value, uint32_t *buffer, uint8_t flags)
@@ -160,12 +172,39 @@ void pwmWriteValueToDmaBuffer(uint16_t value, uint32_t *buffer, uint8_t flags)
     buffer[10] = (value & 0x1)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
     buffer[11] = (flags & MOTOR_UPDATE_TELEMETRY) ? MOTOR_BIT_1 : MOTOR_BIT_0; 
         
-        /* check sum */
+    /* check sum */
     buffer[12] = (value & 0x400) ^ (value & 0x40) ^ (value & 0x4) ? MOTOR_BIT_1 : MOTOR_BIT_0;
     buffer[13] = (value & 0x200) ^ (value & 0x20) ^ (value & 0x2) ? MOTOR_BIT_1 : MOTOR_BIT_0;
     buffer[14] = (value & 0x100) ^ (value & 0x10) ^ (value & 0x1) ? MOTOR_BIT_1 : MOTOR_BIT_0;
     buffer[15] = (value & 0x80)  ^ (value & 0x8)  ^ ((flags & MOTOR_UPDATE_TELEMETRY) ? 0x1 : 0x0) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-}   
+}
+
+static void pwmWriteDigital(uint8_t index, uint16_t value)
+{
+    pwmMotorOutput_t * const motor = &motors[index];
+
+    if (pwmCompleteWritePtr == NULL) {
+        if (motor->value != value) {
+            motor->value = value;
+            motor->updateFlags |= MOTOR_UPDATE_VALUE;
+        }
+        return;
+    }
+    
+    pwmWriteValueToDmaBuffer(value, motor->dmaBuffer, motor->updateFlags);
+    pwmStartMotorDma(motor);
+}
+
+void pwmDigitalRequestTelemetry(uint8_t motorIndex)
+{
+    for (uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        if (i == motorIndex) {
+            motors[motorIndex].updateFlags |= MOTOR_UPDATE_TELEMETRY;
+        } else {
+            motors[motorIndex].updateFlags &= ~MOTOR_UPDATE_TELEMETRY;
+        }
+    }
+}
 #endif
 
 void pwmWriteMotors(const int16_t *value, uint8_t motorCount)
@@ -275,6 +314,9 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     case PWM_TYPE_DSHOT150:
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         pwmWritePtr = pwmWriteDigital;
+        if (!useUnsyncedPwm) {
+            pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
+        }
         break;
 #endif
     }
@@ -297,7 +339,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 
 #ifdef USE_DSHOT
         if (pwmWritePtr == pwmWriteDigital) {
-            pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
+            pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol, useUnsyncedPwm ? MOTOR_UPDATE_NONE : MOTOR_UPDATE_SYNCED);
             continue;
         }
 #endif
