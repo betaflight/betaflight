@@ -185,11 +185,13 @@ void pwmWriteMotors(const int16_t *value, uint8_t motorCount)
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
+#ifdef USE_DSHOT
     if (pwmWritePtr == pwmWriteDigital) {
         pwmStopDigitalOutput();    
         return;
     }
-    
+#endif
+
     for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (motors[index].ccr) {
@@ -312,9 +314,11 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         }
     }
     
+#ifdef USE_DSHOT
     if (pwmWritePtr == pwmWriteDigital) {
         pwmStartDigitalOutput();
     }
+#endif
 }
 
 bool pwmIsSynced(void) 
