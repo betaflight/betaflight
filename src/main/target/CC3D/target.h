@@ -106,7 +106,7 @@
 // USART3, PB11 (Flexport)
 #define BIND_PIN   PB11
 
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
+//#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB0
