@@ -177,8 +177,6 @@ bool spiInit(SPIDevice device)
 {
     switch (device)
     {
-    case SPIINVALID:
-        return false;
     case SPIDEV_1:
 #ifdef USE_SPI_DEVICE_1
         spiInitDevice(device);
@@ -200,6 +198,8 @@ bool spiInit(SPIDevice device)
 #else
         break;
 #endif
+    default:
+        return false;
     }
     return false;
 }

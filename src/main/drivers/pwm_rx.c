@@ -428,7 +428,6 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
 void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer, uint8_t pwmProtocol)
 {
-    pwmOutputPort_t *motors = pwmGetMotors();
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS; motorIndex++) {
         if (!motors[motorIndex].enabled || motors[motorIndex].tim != pwmTimer) {
             continue;

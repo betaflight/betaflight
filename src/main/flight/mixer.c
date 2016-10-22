@@ -67,7 +67,6 @@ static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
 static airplaneConfig_t *airplaneConfig;
 static rxConfig_t *rxConfig;
-static bool syncMotorOutputWithPidLoop = false;
 
 static mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -337,7 +336,8 @@ static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, d
 static float rcCommandThrottleRange;
 
 // Add here scaled ESC outputs for digital protol
-void initEscEndpoints(void) {
+void initEscEndpoints(void) 
+{
     if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
@@ -447,8 +447,6 @@ void mixerConfigureOutput(void)
 
     motorCount = 0;
 
-    syncMotorOutputWithPidLoop = pwmIsSynced();
-
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
@@ -507,7 +505,6 @@ void mixerConfigureOutput(void)
     mixerResetDisarmedMotors();
 }
 
-
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers)
 {
     int i;
@@ -541,8 +538,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 #else
 void mixerConfigureOutput(void)
 {
-    syncMotorOutputWithPidLoop = pwmIsSynced();
-    
     motorCount = QUAD_MOTOR_COUNT;
 
     for (uint8_t i = 0; i < motorCount; i++) {
@@ -647,13 +642,7 @@ void writeServos(void)
 
 void writeMotors(void)
 {
-	for (uint8_t i = 0; i < motorCount; i++) {
-        pwmWriteMotor(i, motor[i]);
-	}
-
-    if (syncMotorOutputWithPidLoop) {
-        pwmCompleteMotorUpdate(motorCount);
-    }
+    pwmWriteMotors(motor, motorCount);
 }
 
 void writeAllMotors(int16_t mc)

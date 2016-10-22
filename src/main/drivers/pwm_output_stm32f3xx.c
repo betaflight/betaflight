@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -35,13 +36,8 @@
 #define MOTOR_DSHOT600_MHZ    24
 #define MOTOR_DSHOT150_MHZ    6
 
-#define MOTOR_BIT_0     14
-#define MOTOR_BIT_1     29
-#define MOTOR_BITLENGTH 39
-
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
-static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 uint8_t getTimerIndex(TIM_TypeDef *timer)
 {
@@ -54,49 +50,15 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDigital(uint8_t index, uint16_t value)
-{
-    motorDmaOutput_t * const motor = &dmaMotors[index];
-
-    motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[1]  = (value & 0x200) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[2]  = (value & 0x100) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[3]  = (value & 0x80)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[4]  = (value & 0x40)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[5]  = (value & 0x20)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[6]  = (value & 0x10)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[7]  = (value & 0x8)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[8]  = (value & 0x4)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[9]  = (value & 0x2)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[10] = (value & 0x1)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[11] = MOTOR_BIT_0; /* telemetry is always false for the moment */
-        
-    /* check sum */
-    motor->dmaBuffer[12] = (value & 0x400) ^ (value & 0x40) ^ (value & 0x4) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[13] = (value & 0x200) ^ (value & 0x20) ^ (value & 0x2) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[14] = (value & 0x100) ^ (value & 0x10) ^ (value & 0x1) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[15] = (value & 0x80)  ^ (value & 0x8)  ^ (0x0)         ? MOTOR_BIT_1 : MOTOR_BIT_0;
-
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
-    DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
-}
-
-void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
-{
-    UNUSED(motorCount);
-    
-    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
-        TIM_SetCounter(dmaMotorTimers[i].timer, 0);
-        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
-    }
-}
-
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
-        DMA_Cmd(descriptor->channel, DISABLE);
-        TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+        pwmMotorOutput_t * const motor = &motors[descriptor->userParam];
+        if (motor->updateFlags & MOTOR_UPDATE_VALUE || motor->updateFlags & MOTOR_UPDATE_TELEMETRY) {
+            pwmWriteValueToDmaBuffer(motor->value, motor->dmaBuffer, motor->updateFlags);
+            motor->updateFlags = 0; 
+        }
+
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     }
 }
@@ -106,9 +68,11 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     TIM_OCInitTypeDef TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
+    pwmMotorOutput_t * const motor = &motors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
+    memset(motor->dmaBuffer, 0, MOTOR_DMA_BUFFER_SIZE);
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
     
@@ -203,7 +167,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
     DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
@@ -212,4 +176,28 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_ITConfig(channel, DMA_IT_TC, ENABLE);
 }
 
+void pwmStartDigitalOutput(void)
+{
+    for (uint8_t i; i < MAX_SUPPORTED_MOTORS; i++) {
+        if (motors[i].enabled && motors[i].timerHardware) {
+            //DMA_SetCurrDataCounter(motors[i].timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
+            DMA_Cmd(motors[i].timerHardware->dmaChannel, ENABLE);
+        }
+    }
+    
+    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
+        TIM_SetCounter(dmaMotorTimers[i].timer, 0);
+        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
+    }
+}
+
+void pwmStopDigitalOutput(void)
+{
+    for (uint8_t i; i < MAX_SUPPORTED_MOTORS; i++) {
+        if (motors[i].enabled && motors[i].timerHardware) {
+            DMA_Cmd(motors[i].timerHardware->dmaChannel, DISABLE);
+            TIM_DMACmd(motors[i].timerHardware->tim, motors[i].timerDmaSource, DISABLE);
+        }
+    }
+}
 #endif

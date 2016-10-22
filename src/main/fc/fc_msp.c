@@ -649,7 +649,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
-            sbufWriteU16(dst, i < MAX_SUPPORTED_MOTORS ? constrain(motor[i], 1, 2047) : 0); // TODO - Fix 0 handling in the configurator. This is just a workaround
+            sbufWriteU16(dst, i < MAX_SUPPORTED_MOTORS && motors[i].enabled ? constrain(motor[i], 1, 2047) : 0); // TODO - Fix 0 handling in the configurator. This is just a workaround
         }
         break;
     case MSP_RC:

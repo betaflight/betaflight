@@ -135,11 +135,10 @@ uint8_t esc4wayInit(void)
     pwmDisableMotors();
     escCount = 0;
     memset(&escHardware, 0, sizeof(escHardware));
-    pwmOutputPort_t *pwmMotors = pwmGetMotors();
     for (volatile uint8_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (pwmMotors[i].enabled) {
-            if (pwmMotors[i].io != IO_NONE) {
-                escHardware[escCount].io = pwmMotors[i].io;
+        if (motors[i].enabled) {
+            if (motors[i].io != IO_NONE) {
+                escHardware[escCount].io = motors[i].io;
                 setEscInput(escCount);
                 setEscHi(escCount);
                 escCount++;
