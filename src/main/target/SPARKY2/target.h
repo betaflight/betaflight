@@ -113,6 +113,8 @@
 //#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
+#define VBAT_ADC_PIN            PC3
+#define CURRENT_METER_ADC_PIN   PC2
 
 #define LED_STRIP
 #define LED_STRIP_TIMER         TIM5
