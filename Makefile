@@ -37,9 +37,9 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
-## Set verbosity level based on the V= parameter
-## V=0 Low
-## v=1 High
+## V                 : Set verbosity level based on the V= parameter
+##                     V=0 Low
+##                     V=1 High
 export AT := @
 
 ifndef V
@@ -67,7 +67,7 @@ INCLUDE_DIRS    = $(SRC_DIR) \
                   $(ROOT)/src/main/target
 LINKER_DIR      = $(ROOT)/src/main/target/link
 
-## Build tools, so we all share the same versions
+# Build tools, so we all share the same versions
 # import macros common to all supported build systems
 include $(ROOT)/make/system-id.mk
 # developer preferences, edit these at will, they'll be gitignored
@@ -902,7 +902,7 @@ cppcheck: $(CSOURCES)
 cppcheck-result.xml: $(CSOURCES)
 	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
-## mkdirs
+# mkdirs
 $(DL_DIR):
 	mkdir -p $@
 
@@ -913,7 +913,7 @@ $(BUILD_DIR):
 	mkdir -p $@
 
 ## help              : print this help message and exit
-help: Makefile
+help: Makefile make/tools.mk
 	$(V0) @echo ""
 	$(V0) @echo "Makefile for the $(FORKNAME) firmware"
 	$(V0) @echo ""
@@ -924,7 +924,7 @@ help: Makefile
 	$(V0) @echo ""
 	$(V0) @echo "Valid TARGET values are: $(VALID_TARGETS)"
 	$(V0) @echo ""
-	$(V0) @sed -n 's/^## //p' $<
+	$(V0) @sed -n 's/^## //p' $?
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
