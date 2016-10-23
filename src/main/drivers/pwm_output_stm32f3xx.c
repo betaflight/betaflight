@@ -149,36 +149,12 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
     TIM_OCInitStructure.TIM_Pulse = 0;
 
-    uint32_t timerChannelAddress = 0;
-    switch (timerHardware->channel) {
-        case TIM_Channel_1:
-            TIM_OC1Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC1;
-            timerChannelAddress = (uint32_t)(&timer->CCR1);
-            TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_2:
-            TIM_OC2Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC2;
-            timerChannelAddress = (uint32_t)(&timer->CCR2);
-            TIM_OC2PreloadConfig(timer, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_3:
-            TIM_OC3Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC3;
-            timerChannelAddress = (uint32_t)(&timer->CCR3);
-            TIM_OC3PreloadConfig(timer, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_4:
-            TIM_OC4Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC4;
-            timerChannelAddress = (uint32_t)(&timer->CCR4);
-            TIM_OC4PreloadConfig(timer, TIM_OCPreload_Enable);
-            break;
-    }
+    timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
+    timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
+    motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
 
-    TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
+    TIM_CCxCmd(timer, timerHardware->channel, TIM_CCx_Enable);
 
     if (configureTimer) {
         TIM_CtrlPWMOutputs(timer, ENABLE);  
@@ -193,7 +169,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_Cmd(channel, DISABLE);
     DMA_DeInit(channel);
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = timerChannelAddress;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_BufferSize = MOTOR_DMA_BUFFER_SIZE;
