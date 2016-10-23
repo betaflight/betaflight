@@ -22,6 +22,7 @@
 
 #include "io.h"
 #include "timer.h"
+#include "timer_stm32f4xx.h"
 #include "pwm_output.h"
 #include "nvic.h"
 #include "dma.h"
@@ -58,26 +59,22 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    motor->value = value;
-
-    motor->dmaBuffer[0]  = (value & 0x400) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[1]  = (value & 0x200) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[2]  = (value & 0x100) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[3]  = (value & 0x80)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[4]  = (value & 0x40)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[5]  = (value & 0x20)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[6]  = (value & 0x10)  ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[7]  = (value & 0x8)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[8]  = (value & 0x4)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[9]  = (value & 0x2)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[10] = (value & 0x1)   ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[11] = MOTOR_BIT_0; /* telemetry is always false for the moment */
-        
-    /* check sum */
-    motor->dmaBuffer[12] = (value & 0x400) ^ (value & 0x40) ^ (value & 0x4) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[13] = (value & 0x200) ^ (value & 0x20) ^ (value & 0x2) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[14] = (value & 0x100) ^ (value & 0x10) ^ (value & 0x1) ? MOTOR_BIT_1 : MOTOR_BIT_0;
-    motor->dmaBuffer[15] = (value & 0x80)  ^ (value & 0x8)  ^ (0x0)         ? MOTOR_BIT_1 : MOTOR_BIT_0;
+    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    // compute checksum
+    int csum = 0;
+    int csum_data = packet;
+    for (int i = 0; i < 3; i++) {
+        csum ^=  csum_data;   // xor data by nibbles
+        csum_data >>= 4;
+    }
+    csum &= 0xf;
+    // append checksum
+    packet = (packet << 4) | csum;
+    // generate pulses for whole packet
+    for (int i = 0; i < 16; i++) {
+        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        packet <<= 1;
+    }
 
     DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);  
     DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
@@ -143,38 +140,9 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = 0;
 
-    uint32_t timerChannelAddress = 0;
-    uint32_t dmaItFlag = 0;
-    switch (timerHardware->channel) {
-        case TIM_Channel_1:
-            TIM_OC1Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC1;
-            timerChannelAddress = (uint32_t)(&timer->CCR1);
-            TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
-            dmaItFlag = DMA_IT_TCIF1;
-            break;
-        case TIM_Channel_2:
-            TIM_OC2Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC2;
-            timerChannelAddress = (uint32_t)(&timer->CCR2);
-            TIM_OC2PreloadConfig(timer, TIM_OCPreload_Enable);
-            dmaItFlag = DMA_IT_TCIF2;
-            break;
-        case TIM_Channel_3:
-            TIM_OC3Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC3;
-            timerChannelAddress = (uint32_t)(&timer->CCR3);
-            TIM_OC3PreloadConfig(timer, TIM_OCPreload_Enable);
-            dmaItFlag = DMA_IT_TCIF3;
-            break;
-        case TIM_Channel_4:
-            TIM_OC4Init(timer, &TIM_OCInitStructure);
-            motor->timerDmaSource = TIM_DMA_CC4;
-            timerChannelAddress = (uint32_t)(&timer->CCR4);
-            TIM_OC4PreloadConfig(timer, TIM_OCPreload_Enable);
-            dmaItFlag = DMA_IT_TCIF4;
-            break;
-    }
+    timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);
+    timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
+    motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
     
     TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
@@ -191,7 +159,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_DeInit(stream);
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
-    DMA_InitStructure.DMA_PeripheralBaseAddr = timerChannelAddress;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)motor->dmaBuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
     DMA_InitStructure.DMA_BufferSize = MOTOR_DMA_BUFFER_SIZE;
@@ -209,7 +177,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_Init(stream, &DMA_InitStructure);
 
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
-    DMA_ClearITPendingBit(stream, dmaItFlag);
+    DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(timerHardware->dmaStream));
     
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }

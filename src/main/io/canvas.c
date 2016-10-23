@@ -9,11 +9,19 @@
 
 #ifdef CANVAS
 
+#include "drivers/system.h"
+
 #include "io/cms_types.h"
 
 #include "fc/fc_msp.h"
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
+
+void canvasOutput(uint8_t cmd, uint8_t *buf, int len)
+{
+    mspSerialPush(cmd, buf, len);
+    delayMicroseconds(len * 150); // XXX Kludge!!!
+}
 
 void canvasGetSize(uint8_t *pRows, uint8_t *pCols)
 {
@@ -25,7 +33,7 @@ void canvasBegin(void)
 {
     uint8_t subcmd[] = { 0 };
 
-    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
+    canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasHeartBeat(void)
@@ -37,21 +45,18 @@ void canvasEnd(void)
 {
     uint8_t subcmd[] = { 1 };
 
-    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
+    canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasClear(void)
 {
     uint8_t subcmd[] = { 2 };
 
-    mspSerialPush(MSP_CANVAS, subcmd, sizeof(subcmd));
+    canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
 void canvasWrite(uint8_t col, uint8_t row, char *string)
 {
-
-//debug[0]++; // Let's capture excess canvas writes
-
     int len;
     char buf[30 + 4];
 
@@ -64,7 +69,7 @@ void canvasWrite(uint8_t col, uint8_t row, char *string)
     buf[3] = 0;
     memcpy((char *)&buf[4], string, len);
 
-    mspSerialPush(MSP_CANVAS, (uint8_t *)buf, len + 4);
+    canvasOutput(MSP_CANVAS, (uint8_t *)buf, len + 4);
 }
 
 screenFnVTable_t canvasVTable = {

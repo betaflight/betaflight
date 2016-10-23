@@ -35,11 +35,19 @@
 #define UART5_TX_BUFFER_SIZE    256
 #define UART6_RX_BUFFER_SIZE    256
 #define UART6_TX_BUFFER_SIZE    256
+#define UART7_RX_BUFFER_SIZE    256
+#define UART7_TX_BUFFER_SIZE    256
+#define UART8_RX_BUFFER_SIZE    256
+#define UART8_TX_BUFFER_SIZE    256
 
 typedef struct {
     serialPort_t port;
 
-#ifdef STM32F4
+#if defined(STM32F7)
+    DMA_HandleTypeDef rxDMAHandle;
+    DMA_HandleTypeDef txDMAHandle;
+#endif
+#if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *rxDMAStream;
     DMA_Stream_TypeDef *txDMAStream;
     uint32_t rxDMAChannel;
@@ -48,7 +56,6 @@ typedef struct {
     DMA_Channel_TypeDef *rxDMAChannel;
     DMA_Channel_TypeDef *txDMAChannel;
 #endif
-
     uint32_t rxDMAIrq;
     uint32_t txDMAIrq;
 
@@ -58,6 +65,10 @@ typedef struct {
     uint32_t txDMAPeripheralBaseAddr;
     uint32_t rxDMAPeripheralBaseAddr;
 
+#ifdef USE_HAL_DRIVER
+    // All USARTs can also be used as UART, and we use them only as UART.
+    UART_HandleTypeDef Handle;
+#endif
     USART_TypeDef *USARTx;
 } uartPort_t;
 

@@ -129,15 +129,6 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
-#ifdef USE_DPRINTF
-#include "common/printf.h"
-#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
-serialPort_t *debugSerialPort = NULL;
-#define dprintf(x) if (debugSerialPort) printf x
-#else
-#define dprintf(x)
-#endif
-
 typedef enum {
     SYSTEM_STATE_INITIALISING   = 0,
     SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
@@ -151,6 +142,10 @@ static uint8_t systemState = SYSTEM_STATE_INITIALISING;
 
 void init(void)
 {
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
     printfSupportInit();
 
     initEEPROM();
@@ -240,7 +235,9 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+#if !defined(USE_HAL_DRIVER)
     dmaInit();
+#endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
@@ -253,16 +250,6 @@ void init(void)
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
-#endif
-
-#ifdef USE_DPRINTF
-    // Setup debugSerialPort
-
-    debugSerialPort = openSerialPort(DPRINTF_SERIAL_PORT, FUNCTION_NONE, NULL, 115200, MODE_RXTX, 0);
-    if (debugSerialPort) {
-        setPrintfSerialPort(debugSerialPort);
-        dprintf(("debugSerialPort: OK\r\n"));
-    }
 #endif
 
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
@@ -303,13 +290,13 @@ void init(void)
 #endif
 
     mixerConfigureOutput();
-    
+    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
     beeperInit(&masterConfig.beeperConfig);
 #endif
-
+/* temp until PGs are implemented. */
 #ifdef INVERTER
     initInverter();
 #endif
@@ -333,6 +320,9 @@ void init(void)
 #else
     spiInit(SPIDEV_3);
 #endif
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
 #endif
 #endif
 
@@ -542,7 +532,7 @@ void init(void)
 
 #if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
     // Ensure the SPI Tx DMA doesn't overlap with the led strip
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
 #else
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
@@ -651,7 +641,6 @@ int main(void)
     }
 }
 #endif
-
 
 #ifdef DEBUG_HARDFAULTS
 //from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/

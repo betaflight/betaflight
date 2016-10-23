@@ -715,14 +715,128 @@ static void simple_ftoa(int32_t value, char *floatString)
         floatString[0] = ' ';
 }
 
+void cmsDrawMenuEntry(OSD_Entry *p, uint8_t row, bool drawPolled)
+{
+    char buff[10];
+
+    switch (p->type) {
+    case OME_POS:; // Semi-colon required to add an empty statement
+#ifdef OSD
+        uint32_t address = (uint32_t)p->data;
+        uint16_t *val;
+
+        val = (uint16_t *)address;
+        if (!(*val & VISIBLE_FLAG))
+            break;
+#endif
+
+    case OME_Submenu:
+        if (cmsScreenCleared)
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, ">");
+        break;
+    case OME_Bool:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            if (*((uint8_t *)(p->data))) {
+                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
+            } else {
+                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
+            }
+            p->changed = false;
+        }
+        break;
+    case OME_TAB: {
+        if (p->changed || cmsScreenCleared) {
+            OSD_TAB_t *ptr = p->data;
+            cmsScreenWrite(RIGHT_MENU_COLUMN - 5, row, (char *)ptr->names[*ptr->val]);
+            p->changed = false;
+        }
+        break;
+    }
+    case OME_VISIBLE:
+#ifdef OSD
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            uint32_t address = (uint32_t)p->data;
+            uint16_t *val;
+
+            val = (uint16_t *)address;
+
+            if (VISIBLE(*val)) {
+                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
+            } else {
+                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
+            }
+            p->changed = false;
+        }
+#endif
+        break;
+    case OME_UINT8:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            OSD_UINT8_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            p->changed = false;
+        }
+        break;
+    case OME_INT8:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            OSD_INT8_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            p->changed = false;
+        }
+        break;
+    case OME_UINT16:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            OSD_UINT16_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            p->changed = false;
+        }
+        break;
+    case OME_INT16:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            OSD_UINT16_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            p->changed = false;
+        }
+        break;
+    case OME_Poll_INT16:
+        if (p->data && drawPolled) {
+            OSD_UINT16_t *ptr = p->data;
+            itoa(*ptr->val, buff, 10);
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+        }
+        break;
+    case OME_FLOAT:
+        if ((p->changed || cmsScreenCleared) && p->data) {
+            OSD_FLOAT_t *ptr = p->data;
+            simple_ftoa(*ptr->val * ptr->multipler, buff);
+            cmsScreenWrite(RIGHT_MENU_COLUMN - 1, row, "      ");
+            cmsScreenWrite(RIGHT_MENU_COLUMN - 1, row, buff);
+            p->changed = false;
+        }
+        break;
+    case OME_OSD_Exit:
+    case OME_Label:
+    case OME_END:
+    case OME_Back:
+        break;
+    }
+}
+
 void cmsDrawMenu(void)
 {
     uint8_t i = 0;
     OSD_Entry *p;
-    char buff[10];
     uint8_t top = (cmsRows - currentMenuIdx) / 2 - 1;
 
-    // XXX Need denom based on absolute time?
+    // XXX Need to denom based on absolute time
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
@@ -745,115 +859,7 @@ void cmsDrawMenu(void)
         if (cmsScreenCleared)
             cmsScreenWrite(LEFT_MENU_COLUMN + 2, i + top, p->text);
 
-        switch (p->type) {
-            case OME_POS:; // Semi-colon required to add an empty statement
-#ifdef OSD
-                uint32_t address = (uint32_t)p->data;
-                uint16_t *val;
-
-                val = (uint16_t *)address;
-                if (!(*val & VISIBLE_FLAG))
-                    break;
-#endif
-
-            case OME_Submenu:
-                if (cmsScreenCleared)
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, ">");
-                break;
-            case OME_Bool:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    if (*((uint8_t *)(p->data))) {
-                        cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "YES");
-                    } else {
-                        cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "NO ");
-                    }
-                    p->changed = false;
-                }
-                break;
-            case OME_TAB: {
-                if (p->changed || cmsScreenCleared) {
-                    OSD_TAB_t *ptr = p->data;
-                    cmsScreenWrite(RIGHT_MENU_COLUMN - 5, i + top, (char *)ptr->names[*ptr->val]);
-                    p->changed = false;
-                }
-                break;
-            }
-            case OME_VISIBLE:
-#ifdef OSD
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    uint32_t address = (uint32_t)p->data;
-                    uint16_t *val;
-
-                    val = (uint16_t *)address;
-
-                    if (VISIBLE(*val)) {
-                        cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "YES");
-                    } else {
-                        cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "NO ");
-                    }
-                    p->changed = false;
-                }
-#endif
-                break;
-            case OME_UINT8:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    OSD_UINT8_t *ptr = p->data;
-                    itoa(*ptr->val, buff, 10);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "     ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, buff);
-                    p->changed = false;
-                }
-                break;
-            case OME_INT8:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    OSD_INT8_t *ptr = p->data;
-                    itoa(*ptr->val, buff, 10);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "     ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, buff);
-                    p->changed = false;
-                }
-                break;
-            case OME_UINT16:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    OSD_UINT16_t *ptr = p->data;
-                    itoa(*ptr->val, buff, 10);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "     ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, buff);
-                    p->changed = false;
-                }
-                break;
-            case OME_INT16:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    OSD_UINT16_t *ptr = p->data;
-                    itoa(*ptr->val, buff, 10);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "     ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, buff);
-                    p->changed = false;
-                }
-                break;
-            case OME_Poll_INT16:
-                if (p->data && drawPolled) {
-                    OSD_UINT16_t *ptr = p->data;
-                    itoa(*ptr->val, buff, 10);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, "     ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN, i + top, buff);
-                }
-                break;
-            case OME_FLOAT:
-                if ((p->changed || cmsScreenCleared) && p->data) {
-                    OSD_FLOAT_t *ptr = p->data;
-                    simple_ftoa(*ptr->val * ptr->multipler, buff);
-                    cmsScreenWrite(RIGHT_MENU_COLUMN - 1, i + top, "      ");
-                    cmsScreenWrite(RIGHT_MENU_COLUMN - 1, i + top, buff);
-                    p->changed = false;
-                }
-                break;
-            case OME_OSD_Exit:
-            case OME_Label:
-            case OME_END:
-            case OME_Back:
-                break;
-        }
+        cmsDrawMenuEntry(p, top + i, drawPolled);
 
         i++;
 

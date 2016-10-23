@@ -39,7 +39,7 @@
 #include "dma.h"
 #include "light_ws2811strip.h"
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
 uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];

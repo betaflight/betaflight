@@ -127,8 +127,6 @@
 #define WS2811_DMA_STREAM               DMA1_Stream4
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
 #define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 #define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define SENSORS_SET (SENSOR_ACC)

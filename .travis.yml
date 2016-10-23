@@ -10,6 +10,7 @@ env:
 #  - TARGET=ALIENFLIGHTF1
   - TARGET=ALIENFLIGHTF3
   - TARGET=ALIENFLIGHTF4
+  - TARGET=ANYFCF7
   - TARGET=BETAFLIGHTF3
   - TARGET=BLUEJAYF4
   - TARGET=CC3D
@@ -77,7 +78,7 @@ compiler: clang
 install:
   - make arm_sdk_install
 
-before_script: tools/gcc-arm-none-eabi-5_4-2016q2/bin/arm-none-eabi-gcc --version
+before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
 cache: apt

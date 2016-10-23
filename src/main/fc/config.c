@@ -449,7 +449,7 @@ uint16_t getCurrentMinthrottle(void)
     return masterConfig.motorConfig.minthrottle;
 }
 
-// Default settings
+
 void createDefaultConfig(master_t *config)
 {
     // Clear all configuration

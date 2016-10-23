@@ -15,7 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MAX_DENOISE_WINDOW_SIZE 120
+#ifdef STM32F10X
+#define MAX_FIR_WINDOW_SIZE 60
+#else
+#define MAX_FIR_WINDOW_SIZE 120
+#endif
 
 typedef struct pt1Filter_s {
     float state;
@@ -34,7 +38,7 @@ typedef struct firFilterState_s {
     int targetCount;
     int index;
     float movingSum;
-    float state[MAX_DENOISE_WINDOW_SIZE];
+    float state[MAX_FIR_WINDOW_SIZE];
 } firFilterState_t;
 
 typedef enum {
