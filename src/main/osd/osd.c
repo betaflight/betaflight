@@ -115,9 +115,11 @@ static const element_t osdDefaultElements[] = {
     { 22, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
     {  8, -1, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
     { 13, -5, EF_ENABLED, OSD_ELEMENT_MOTORS },
+#if defined(FC) && defined(VTX)
     {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_CHANNEL },
     {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_BAND },
     {  5, -5, EF_ENABLED, OSD_ELEMENT_VTX_RFPOWER },
+#endif
 };
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {
