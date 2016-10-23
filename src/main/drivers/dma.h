@@ -21,6 +21,8 @@ typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channel
 
 #if defined(STM32F4) || defined(STM32F7)
 
+uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream);
+
 typedef enum {
     DMA1_ST0_HANDLER = 0,
     DMA1_ST1_HANDLER,

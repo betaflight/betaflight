@@ -481,8 +481,6 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
 
-
-
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + timHw->channel);
@@ -770,4 +768,62 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag)
         }
     }
     return NULL;
+}
+
+#if !defined(USE_HAL_DRIVER)
+void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1Init(tim, init);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2Init(tim, init);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3Init(tim, init);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4Init(tim, init);
+        break;
+    }
+}
+
+void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4PreloadConfig(tim, preload);
+        break;
+    }
+}
+#endif 
+
+volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
+{
+    return (volatile timCCR_t*)((volatile char*)&tim->CCR1 + channel);
+}
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        return TIM_DMA_CC1;
+    case TIM_Channel_2:
+        return TIM_DMA_CC2;
+    case TIM_Channel_3:
+        return TIM_DMA_CC3;
+    case TIM_Channel_4:
+        return TIM_DMA_CC4;
+    }
+    return 0;
 }

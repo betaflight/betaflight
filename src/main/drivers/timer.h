@@ -175,4 +175,10 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
+#else
+void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init);
+void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
 #endif
+
+volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
+uint16_t timerDmaSource(uint8_t channel);
