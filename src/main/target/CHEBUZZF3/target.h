@@ -93,6 +93,9 @@
 #define USE_UART2
 #define SERIAL_PORT_COUNT 3
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
 
