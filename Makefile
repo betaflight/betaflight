@@ -92,6 +92,7 @@ HSE_VALUE       = 8000000
 # used for turning on features like VCP and SDCARD
 FEATURES        =
 
+SAMPLE_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3D FURYF4 NAZE REVO SIRINFPV SPARKY SPRACINGF3 SPRACINGF3EVO STM32F3DISCOVERY
 ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 
@@ -827,6 +828,8 @@ $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) echo %% $(notdir $<)
 	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
+## sample            : Build all sample (travis) targets
+sample: $(SAMPLE_TARGETS)
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
