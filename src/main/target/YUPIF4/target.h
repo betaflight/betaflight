@@ -70,6 +70,8 @@
 
 #define SERIAL_PORT_COUNT       4 // VCP, UART1, UART3, UART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 // SD Card
 #define USE_SDCARD
