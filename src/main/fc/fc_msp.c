@@ -649,10 +649,14 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
     case MSP_MOTOR:
         for (unsigned i = 0; i < 8; i++) {
+            if (i >= MAX_SUPPORTED_MOTORS || !pwmGetMotors()[i].enabled) {
+                sbufWriteU16(dst, 0);
+                continue;
+            }
             if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_DSHOT150 || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_DSHOT600)
-                sbufWriteU16(dst, i < MAX_SUPPORTED_MOTORS ? constrain((motor[i] / 2) + 1000, 1000, 2000) : 0); // This is to get it working in the configurator
+                sbufWriteU16(dst, constrain((motor[i] / 2) + 1000, 1000, 2000)); // This is to get it working in the configurator
             else
-                sbufWriteU16(dst, i < MAX_SUPPORTED_MOTORS ? motor[i] : 0);
+                sbufWriteU16(dst, motor[i]);
         }
         break;
     case MSP_RC:
