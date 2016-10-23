@@ -93,13 +93,13 @@ extern const struct serialPortVTable escSerialVTable[];
 
 escSerial_t escSerialPorts[MAX_ESCSERIAL_PORTS];
 
-void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
-void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialTimerEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
+void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialTimerBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture);
 static void serialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
-void setTxSignal(escSerial_t *escSerial, uint8_t state)
+void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
 {
     if (state) {
         IOHi(escSerial->txIO);
@@ -118,7 +118,7 @@ static void escSerialGPIOConfig(ioTag_t tag, ioConfig_t cfg)
     IOConfigGPIO(IOGetByTag(tag), cfg);
 }
 
-void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
+void serialInputPortConfigEsc(const timerHardware_t *timerHardwarePtr)
 {
 #ifdef STM32F10X
     escSerialGPIOConfig(timerHardwarePtr->tag, IOCFG_IPU);
@@ -174,7 +174,7 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     uint32_t timerPeriod=34;
     TIM_DeInit(timerHardwarePtr->tim);
     timerConfigure(timerHardwarePtr, timerPeriod, 1);
-    timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimer);
+    timerChCCHandlerInit(&escSerialPorts[reference].timerCb, onSerialTimerEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].timerCb, NULL);
 }
 
@@ -198,7 +198,7 @@ static void serialTimerRxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     TIM_DeInit(timerHardwarePtr->tim);
     timerConfigure(timerHardwarePtr, 0xFFFF, 1);
     serialICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
-    timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChange);
+    timerChCCHandlerInit(&escSerialPorts[reference].edgeCb, onSerialRxPinChangeEsc);
     timerChConfigCallbacks(timerHardwarePtr, &escSerialPorts[reference].edgeCb, NULL);
 }
 
@@ -248,9 +248,9 @@ serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbac
     escSerial->escSerialPortIndex = portIndex;
 
     escSerial->txIO = IOGetByTag(escSerial->rxTimerHardware->tag);
-    serialInputPortConfig(escSerial->rxTimerHardware);
+    serialInputPortConfigEsc(escSerial->rxTimerHardware);
 
-    setTxSignal(escSerial, ENABLE);
+    setTxSignalEsc(escSerial, ENABLE);
     delay(50);
 
     if(mode==0){
@@ -293,7 +293,7 @@ void closeEscSerial(escSerialPortIndex_e portIndex, uint16_t output)
 
 /*********************************************/
 
-void processTxState(escSerial_t *escSerial)
+void processTxStateEsc(escSerial_t *escSerial)
 {
     uint8_t mask;
     static uint8_t bitq=0, transmitStart=0;
@@ -303,7 +303,7 @@ void processTxState(escSerial_t *escSerial)
 
     if(transmitStart==0)
     {
-        setTxSignal(escSerial, 1);
+        setTxSignalEsc(escSerial, 1);
     }
     if (!escSerial->isTransmittingData) {
         char byteToSend;
@@ -349,22 +349,22 @@ reload:
         {
             if(bitq==0 || bitq==1)
             {
-                setTxSignal(escSerial, 1);
+                setTxSignalEsc(escSerial, 1);
             }
             if(bitq==2 || bitq==3)
             {
-                setTxSignal(escSerial, 0);
+                setTxSignalEsc(escSerial, 0);
             }
         }
         else
         {
             if(bitq==0 || bitq==2)
             {
-                setTxSignal(escSerial, 1);
+                setTxSignalEsc(escSerial, 1);
             }
             if(bitq==1 ||bitq==3)
             {
-                setTxSignal(escSerial, 0);
+                setTxSignalEsc(escSerial, 0);
             }
         }
         bitq++;
@@ -383,7 +383,7 @@ reload:
 
     if (isEscSerialTransmitBufferEmpty((serialPort_t *)escSerial)) {
         escSerial->isTransmittingData = false;
-        serialInputPortConfig(escSerial->rxTimerHardware);
+        serialInputPortConfigEsc(escSerial->rxTimerHardware);
     }
 }
 
@@ -425,7 +425,7 @@ void processTxStateBL(escSerial_t *escSerial)
         mask = escSerial->internalTxBuffer & 1;
         escSerial->internalTxBuffer >>= 1;
 
-        setTxSignal(escSerial, mask);
+        setTxSignalEsc(escSerial, mask);
         escSerial->bitsLeftToTransmit--;
         return;
     }
@@ -434,7 +434,7 @@ void processTxStateBL(escSerial_t *escSerial)
     if (isEscSerialTransmitBufferEmpty((serialPort_t *)escSerial)) {
         if(escSerial->mode==1)
         {
-            serialInputPortConfig(escSerial->rxTimerHardware);
+            serialInputPortConfigEsc(escSerial->rxTimerHardware);
         }
     }
 }
@@ -577,7 +577,7 @@ void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 }
 /*-------------------------BL*/
 
-void extractAndStoreRxByte(escSerial_t *escSerial)
+void extractAndStoreRxByteEsc(escSerial_t *escSerial)
 {
     if ((escSerial->port.mode & MODE_RX) == 0) {
         return;
@@ -593,7 +593,7 @@ void extractAndStoreRxByte(escSerial_t *escSerial)
     }
 }
 
-void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
+void onSerialTimerEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
     escSerial_t *escSerial = container_of(cbRec, escSerial_t, timerCb);
@@ -610,10 +610,10 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 
 
-    processTxState(escSerial);
+    processTxStateEsc(escSerial);
 }
 
-void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
+void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
     static uint8_t zerofirst=0;
@@ -666,7 +666,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
         bytes++;
         if(bytes>3)
         {
-            extractAndStoreRxByte(escSerial);
+            extractAndStoreRxByteEsc(escSerial);
         }
         escSerial->internalRxBuffer=0;
     }
