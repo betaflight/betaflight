@@ -31,7 +31,6 @@
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 
-static mspProcessCommandFnPtr mspProcessCommandFn;
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 
@@ -145,7 +144,7 @@ static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
     serialEndWrite(msp->port);
 }
 
-static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
+static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
 {
     static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
 
@@ -179,7 +178,7 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
  *
  * Called periodically by the scheduler.
  */
-void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
@@ -197,7 +196,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
             }
 
             if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
-                mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort);
+                mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
                 break; // process one command at a time so as not to block.
             }
         }
@@ -208,9 +207,8 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
     }
 }
 
-void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFnToUse)
+void mspSerialInit(void)
 {
-    mspProcessCommandFn = mspProcessCommandFnToUse;
     memset(mspPorts, 0, sizeof(mspPorts));
     mspSerialAllocatePorts();
 }

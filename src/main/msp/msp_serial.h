@@ -62,7 +62,7 @@ typedef struct mspPort_s {
 } mspPort_t;
 
 
-void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
-void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData);
+void mspSerialInit(void);
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn);
 void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

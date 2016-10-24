@@ -31,6 +31,7 @@
 #include "drivers/serial.h"
 
 #include "fc/config.h"
+#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
@@ -97,7 +98,7 @@ static void taskHandleSerial(uint32_t currentTime)
         return;
     }
 #endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
 #ifdef BEEPER
