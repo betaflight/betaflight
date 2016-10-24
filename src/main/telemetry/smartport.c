@@ -23,6 +23,7 @@
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/fc_msp.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
@@ -56,6 +57,8 @@
 #include "config/config_profile.h"
 #include "config/feature.h"
 
+#include "msp/msp.h"
+
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
 
@@ -70,7 +73,11 @@ enum
 enum
 {
     FSSP_START_STOP = 0x7E,
+    FSSP_BYTE_STUFF = 0x7D,
+
     FSSP_DATA_FRAME = 0x10,
+    FSSP_MSPC_FRAME = 0x30, // MSP client frame
+    FSSP_MSPS_FRAME = 0x32, // MSP server frame
 
     // ID of sensor. Must be something that is polled by FrSky RX
     FSSP_SENSOR_ID1 = 0x1B,
@@ -152,22 +159,79 @@ static uint8_t smartPortHasRequest = 0;
 static uint8_t smartPortIdCnt = 0;
 static uint32_t smartPortLastRequestTime = 0;
 
+/* uint8_t physicalId */
+/* uint8_t primId */
+/* uint16_t id */
+/* uint32_t data */
+#define SMARTPORT_FRAME_SIZE 8
+
+#define SMARTPORT_MSP_VERSION 1
+
+static uint8_t smartPortRxBuffer[SMARTPORT_FRAME_SIZE];
+static uint8_t smartPortRxBytes = 0;
+static bool smartPortFrameReceived = false;
+
+static uint8_t smartPortMspTxBuffer[256];
+static mspPacket_t smartPortMspReply;
+static bool smartPortMspReplyPending = false;
+
+// If set, this should be executed once the reply buffer
+// has been sent back to the transmitter
+static mspPostProcessFnPtr mspPostProcessFn = NULL;
+
 static void smartPortDataReceive(uint16_t c)
 {
+    static bool skipUntilStart = true;
+    static bool byteStuffing = false;
+
     uint32_t now = millis();
 
-    // look for a valid request sequence
-    static uint8_t lastChar;
-    if (lastChar == FSSP_START_STOP) {
-        smartPortState = SPSTATE_WORKING;
-        if (c == FSSP_SENSOR_ID1 && (serialRxBytesWaiting(smartPortSerialPort) == 0)) {
+    if (c == FSSP_START_STOP) {
+        smartPortRxBytes = 0;
+        smartPortHasRequest = 0;
+        skipUntilStart = false;
+        return;
+    }
+    else if (skipUntilStart) {
+        return;
+    }
+
+    if (smartPortRxBytes == 0) {
+        if ((c == FSSP_SENSOR_ID1)
+            && (serialRxBytesWaiting(smartPortSerialPort) == 0)) {
+
+            // our slot is starting...
             smartPortLastRequestTime = now;
             smartPortHasRequest = 1;
-            // we only responde to these IDs
-            // the X4R-SB does send other IDs, we ignore them, but take note of the time
+        }
+        else if (c == FSSP_SENSOR_ID2) {
+            smartPortRxBuffer[smartPortRxBytes++] = c;
+        }
+        else {
+            skipUntilStart = true;
         }
     }
-    lastChar = c;
+    else {
+
+        //TODO: add CRC checking
+
+        if (c == FSSP_BYTE_STUFF) {
+            byteStuffing = true;
+            return;
+        }
+
+        if (byteStuffing) {
+            c ^= 0x20;
+            byteStuffing = false;
+        }
+
+        smartPortRxBuffer[smartPortRxBytes++] = c;
+
+        if(smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
+            smartPortFrameReceived = true;
+            skipUntilStart = true;
+        }
+    }
 }
 
 static void smartPortSendByte(uint8_t c, uint16_t *crcp)
@@ -190,19 +254,29 @@ static void smartPortSendByte(uint8_t c, uint16_t *crcp)
     *crcp = crc;
 }
 
-static void smartPortSendPackage(uint16_t id, uint32_t val)
+static void smartPortSendPackageEx(uint8_t primId, uint8_t* data)
 {
     uint16_t crc = 0;
-    smartPortSendByte(FSSP_DATA_FRAME, &crc);
-    uint8_t *u8p = (uint8_t*)&id;
-    smartPortSendByte(u8p[0], &crc);
-    smartPortSendByte(u8p[1], &crc);
-    u8p = (uint8_t*)&val;
-    smartPortSendByte(u8p[0], &crc);
-    smartPortSendByte(u8p[1], &crc);
-    smartPortSendByte(u8p[2], &crc);
-    smartPortSendByte(u8p[3], &crc);
+    smartPortSendByte(primId, &crc);
+    for(uint8_t i=0;i<6;i++) {
+        smartPortSendByte(*(data++), &crc);
+    }
     smartPortSendByte(0xFF - (uint8_t)crc, NULL);
+}
+
+static void smartPortSendPackage(uint16_t id, uint32_t val)
+{
+    uint8_t packet[6];
+    uint8_t *u8p = (uint8_t*)&id;
+    packet[0] = u8p[0];
+    packet[1] = u8p[1];
+    u8p = (uint8_t*)&val;
+    packet[2] = u8p[0];
+    packet[3] = u8p[1];
+    packet[4] = u8p[2];
+    packet[5] = u8p[3];
+
+    smartPortSendPackageEx(FSSP_DATA_FRAME,packet);
 }
 
 void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
@@ -270,6 +344,175 @@ void checkSmartPortTelemetryState(void)
         freeSmartPortTelemetryPort();
 }
 
+static void resetMspPacket(mspPacket_t* packet)
+{
+    packet->buf.ptr = NULL;
+    packet->buf.end = NULL;
+    packet->cmd     = -1;
+    packet->result  = 0;
+}
+
+static void processMspPacket(mspPacket_t* packet)
+{
+    smartPortMspReply.buf.ptr    = smartPortMspTxBuffer;
+    smartPortMspReply.buf.end    = ARRAYEND(smartPortMspTxBuffer);
+
+    smartPortMspReply.cmd    = -1;
+    smartPortMspReply.result = 0;
+
+    mspPostProcessFn = NULL;
+    const mspResult_e status = mspFcProcessCommand(packet, &smartPortMspReply,
+                                                   &mspPostProcessFn);
+
+    if (status != MSP_RESULT_NO_REPLY) {
+        // change streambuf direction
+        sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
+
+        smartPortMspReplyPending = true;
+    }
+    else {
+        //TODO: send ACK reply to avoid re-transmission?
+    }
+}
+
+/**
+ * Frame format:
+ * - Header: 1 byte
+ *   - Version: 3 bits
+ *   - Start-flag: 1 bit
+ *   - CSeq: 4 bits
+ *
+ * - MSP payload:
+ *   - Size: 1 Byte
+ *   - Type: 1 Byte
+ *   - payload...
+ *   - CRC
+ */
+void handleSmartPortMspFrame(uint8_t* frame, uint8_t size)
+{
+    static uint8_t mspBuffer[64];
+    static uint8_t mspStarted = 0;
+    static uint8_t lastSeq = 0;
+    static uint8_t checksum = 0;
+
+    static mspPacket_t cmd = {
+        .buf = { .ptr = mspBuffer, .end = mspBuffer },
+        .cmd = -1,
+        .result = 0
+    };
+    
+    //TODO: re-assemble MSP frame & forward to MSP port when complete
+    uint8_t* p = frame;
+    uint8_t* end = frame + size;
+    
+    uint8_t head = *(p++);  
+    uint8_t seq = head & 0xF;
+    uint8_t version = (head & 0xE0) >> 5;
+
+    if (version != SMARTPORT_MSP_VERSION) {
+        // TODO: should a version mismatch error
+        //       be sent back to the transmitter?
+        resetMspPacket(&cmd);
+        return;
+    }
+
+    // check start-flag
+    if (head & (1 << 4)) {
+
+        //TODO: if (frame[1] > 64) error!
+        uint8_t p_size = *(p++);
+        cmd.cmd = *(p++);
+        cmd.result = 0;
+
+        cmd.buf.ptr = mspBuffer;
+        cmd.buf.end = mspBuffer + p_size;
+
+        checksum = p_size ^ cmd.cmd;
+        mspStarted = 1;
+    }
+    else if (!mspStarted) {
+        // no start packet yet, throw this one away
+        return;
+    }
+    else if (((lastSeq + 1) & 0x7) != seq) {
+        // packet loss detected!
+        resetMspPacket(&cmd);
+        return;
+    }
+
+    // copy payload bytes
+    while ((p < end) && sbufBytesRemaining(&cmd.buf)) {
+        checksum ^= *p;
+        sbufWriteU8(&cmd.buf,*(p++));
+    }
+
+    // reached end of smart port frame
+    if (p == end) {
+        lastSeq = seq;
+        return;
+    }
+
+    // last byte must be the checksum
+    if (checksum != *p) {
+        resetMspPacket(&cmd);
+        return;
+    }
+
+    // end of MSP packet reached
+    mspStarted = 0;
+    sbufSwitchToReader(&cmd.buf,mspBuffer);
+
+    processMspPacket(&cmd);
+}
+
+bool smartPortSendMspReply()
+{
+    static uint8_t checksum = 0;
+    static uint8_t seq = 0;
+
+    uint8_t packet[6];
+    uint8_t* p = packet;
+    uint8_t* end = p + 6;
+    
+    sbuf_t* txBuf = &smartPortMspReply.buf;
+
+    // detect first reply packet
+    if (txBuf->ptr == smartPortMspTxBuffer) {
+
+        uint8_t size = sbufBytesRemaining(txBuf);
+
+        // header
+        *(p++) = (SMARTPORT_MSP_VERSION << 5) | (1 << 4) | (seq++ & 0xF);
+        
+        *(p++) = size;
+        *(p++) = smartPortMspReply.cmd;
+
+        checksum = sbufBytesRemaining(txBuf) ^ smartPortMspReply.cmd;        
+    }
+
+    while ((p < end) && (sbufBytesRemaining(txBuf) > 0)) {
+        *p = sbufReadU8(txBuf);
+        checksum ^= *(p++); // MSP checksum
+    }
+
+    // to be continued...
+    if (p == end) {
+        smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
+        return true;
+    }
+
+    // nothing left in txBuf,
+    // append the MSP checksum
+    *(p++) = checksum;
+
+    // pad with zeros
+    while (p < end)
+        *(p++) = 0;
+
+    smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
+    return false;
+}
+
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
@@ -295,6 +538,16 @@ void handleSmartPortTelemetry(void)
         return;
     }
 
+    if(smartPortFrameReceived) {
+        smartPortFrameReceived = false;
+        // do not check the physical ID here again
+        // unless we start receiving other sensors' packets
+        uint8_t primId = smartPortRxBuffer[1];
+        if(primId == FSSP_MSPC_FRAME) {
+            handleSmartPortMspFrame(smartPortRxBuffer+2,6);
+        }
+    }
+    
     while (smartPortHasRequest) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
@@ -302,6 +555,12 @@ void handleSmartPortTelemetry(void)
             return;
         }
 
+        if(smartPortMspReplyPending) {
+            smartPortMspReplyPending = smartPortSendMspReply();
+            smartPortHasRequest = 0;
+            return;
+        }
+        
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
