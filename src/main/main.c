@@ -208,6 +208,8 @@ void init(void)
     delayMicroseconds(10);  // allow configuration to settle
 
     if (!isMPUSoftReset()) {
+#if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
+        // two buttons required
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
@@ -221,6 +223,7 @@ void init(void)
                 LED0_TOGGLE;
             }
         } while (bothButtonsHeld);
+#endif
     }
 #endif
 
