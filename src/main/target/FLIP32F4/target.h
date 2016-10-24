@@ -71,7 +71,7 @@
 
 //#define PITOT
 //#define USE_PITOT_MS4525
-#define PITOT_I2C_INSTANCE      I2C_DEVICE_EXT
+#define PITOT_I2C_INSTANCE      I2C_DEVICE
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -110,7 +110,7 @@
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_2)
-#define I2C_DEVICE_EXT          (I2CDEV_2)
+#define I2C_DEVICE_SHARES_UART3
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
