@@ -336,9 +336,16 @@ static motorMixer_t *customMixers;
 static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, deadbandMotor3dHigh, deadbandMotor3dLow;
 static float rcCommandThrottleRange;
 
+bool isMotorProtocolDshot(void) {
+    if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
+        return true;
+    else
+        return false;
+}
+
 // Add here scaled ESC outputs for digital protol
 void initEscEndpoints(void) {
-    if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600) {
+    if (isMotorProtocolDshot()) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
         maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
@@ -843,7 +850,7 @@ void mixTable(void *pidProfilePtr)
         motor[i] = lrintf( motorOutputMin + (motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle))) );
 
         if (failsafeIsActive()) {
-            if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
+            if (isMotorProtocolDshot())
                 motor[i] = (motor[i] < motorOutputMin) ? disarmMotorOutput : motor[i]; // Prevent getting into special reserved range
 
             motor[i] = constrain(motor[i], disarmMotorOutput, motorOutputMax);
@@ -875,7 +882,7 @@ void mixTable(void *pidProfilePtr)
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
         for (i = 0; i < motorCount; i++) {
-            if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600) {
+            if (isMotorProtocolDshot()) {
                 motor[i] = (motor_disarmed[i] < motorOutputMin) ? disarmMotorOutput : motor_disarmed[i]; // Prevent getting into special reserved range
 
                 if (motor_disarmed[i] != disarmMotorOutput)
