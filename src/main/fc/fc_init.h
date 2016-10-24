@@ -17,21 +17,14 @@
 
 #pragma once
 
-#define SOFTSERIAL_BUFFER_SIZE 256
-
 typedef enum {
-    SOFTSERIAL1 = 0,
-    SOFTSERIAL2
-} softSerialPortIndex_e;
+    SYSTEM_STATE_INITIALISING   = 0,
+    SYSTEM_STATE_CONFIG_LOADED  = (1 << 0),
+    SYSTEM_STATE_SENSORS_READY  = (1 << 1),
+    SYSTEM_STATE_MOTORS_READY   = (1 << 2),
+    SYSTEM_STATE_TRANSPONDER_ENABLED = (1 << 3),
+    SYSTEM_STATE_READY          = (1 << 7)
+} systemState_e;
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portOptions_t options);
-serialPort_t *softSerialLoopbackPort(void);
-
-// serialPort API
-void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
-uint32_t softSerialRxBytesWaiting(const serialPort_t *instance);
-uint8_t softSerialTxBytesFree(const serialPort_t *instance);
-uint8_t softSerialReadByte(serialPort_t *instance);
-void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isSoftSerialTransmitBufferEmpty(const serialPort_t *s);
-
+extern uint8_t systemState;
+void init(void);
