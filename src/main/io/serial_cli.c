@@ -3095,11 +3095,11 @@ static void cliMotor(char *cmdline)
             cliShowArgumentRangeError("value", 1000, 2000);
             return;
         } else {
-            motor_disarmed[motor_index] = motor_value;
+            motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
         }
     }
 
-    cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+    cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
 static void cliPlaySound(char *cmdline)

@@ -1141,7 +1141,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS

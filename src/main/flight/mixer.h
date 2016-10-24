@@ -104,7 +104,6 @@ void mixerUseConfigs(
         airplaneConfig_t *airplaneConfigToUse,
         struct rxConfig_s *rxConfigToUse);
 
-void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 
@@ -117,4 +116,7 @@ void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
+
 bool isMotorProtocolDshot(void);
+uint16_t convertExternalToMotor(uint16_t externalValue);
+uint16_t convertMotorToExternal(uint16_t motorValue);
