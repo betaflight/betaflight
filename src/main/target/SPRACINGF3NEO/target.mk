@@ -15,5 +15,7 @@ TARGET_SRC = \
             drivers/transponder_ir.c \
             drivers/transponder_ir_stm32f30x.c \
             drivers/max7456.c \
+            drivers/vtx_rtc6705.c \
+            io/osd.c \
             io/transponder_ir.c \
-            io/osd.c
+            io/vtx.c

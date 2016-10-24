@@ -48,6 +48,8 @@
 #include "io/flashfs.h"
 #include "io/osd.h"
 
+#include "io/vtx.h"
+
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -251,7 +253,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-#ifdef VTX
+#ifdef USE_RTC6705
         case OSD_VTX_CHANNEL:
         {
             sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
