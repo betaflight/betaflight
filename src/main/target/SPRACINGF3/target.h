@@ -134,4 +134,7 @@
 #define CMS
 
 // Use external OSD to run CMS
-#define CANVAS
+//#define CANVAS
+
+// USE I2C OLED display to run CMS
+#define OLEDCMS

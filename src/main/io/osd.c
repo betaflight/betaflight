@@ -397,7 +397,9 @@ void osdInit(void)
         }
     }
 
+#ifdef CMS
     cmsInit();
+#endif
 
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
@@ -405,7 +407,9 @@ void osdInit(void)
     max7456Write(12, 8, STARTUP_HELP_TEXT2);
     max7456Write(12, 9, STARTUP_HELP_TEXT3);
 
+#ifdef CMS
     cmsScreenResync(); // Was max7456RefreshAll(); may be okay.
+#endif
 
     refreshTimeout = 4 * REFRESH_1S;
 }
