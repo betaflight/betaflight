@@ -3,7 +3,7 @@
 ## Features
 
 * STM32F405 CPU
-* Integrated Accelerometer/Gyro MPU6500 via SPI bus
+* Integrated Accelerometer/Gyro MPU6000 via SPI bus
 * Integrated Magnetometer HMC5883
 * Integrated Barometer MS5611
 * Integrated 433MHz OPlink Modem -> Not supported
