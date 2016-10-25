@@ -153,6 +153,9 @@
 #define USE_UART5
 #define SERIAL_PORT_COUNT       6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 

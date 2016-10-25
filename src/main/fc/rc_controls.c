@@ -81,6 +81,7 @@ bool isAirmodeActive(void) {
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX
+#define UNUSED(x) (void)(x)
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
 #else

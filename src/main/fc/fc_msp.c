@@ -660,7 +660,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
                 sbufWriteU16(dst, 0);
                 continue;
             }
-            if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_DSHOT150 || masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_DSHOT600)
+            if (isMotorProtocolDshot())
                 sbufWriteU16(dst, constrain((motor[i] / 2) + 1000, 1000, 2000)); // This is to get it working in the configurator
             else
                 sbufWriteU16(dst, motor[i]);
@@ -1789,10 +1789,9 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 /*
  * Return a pointer to the process command function
  */
-mspProcessCommandFnPtr mspFcInit(void)
+void mspFcInit(void)
 {
     initActiveBoxIds();
-    return mspFcProcessCommand;
 }
 
 void mspServerPush(mspPacket_t *push, uint8_t *data, int len)

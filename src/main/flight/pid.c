@@ -102,9 +102,9 @@ biquadFilter_t dtermFilterLpf[3];
 biquadFilter_t dtermFilterNotch[3];
 bool dtermNotchInitialised;
 bool dtermBiquadLpfInitialised;
-firFilterState_t dtermDenoisingState[3];
+firFilterDenoise_t dtermDenoisingState[3];
 
-void initFilters(const pidProfile_t *pidProfile) {
+static void pidInitFilters(const pidProfile_t *pidProfile) {
     int axis;
     static uint8_t lowpassFilterType;
 
@@ -120,7 +120,7 @@ void initFilters(const pidProfile_t *pidProfile) {
         }
 
         if (pidProfile->dterm_filter_type == FILTER_FIR) {
-            for (axis = 0; axis < 3; axis++) initFirFilter(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
+            for (axis = 0; axis < 3; axis++) firFilterDenoiseInit(&dtermDenoisingState[axis], pidProfile->dterm_lpf_hz, targetPidLooptime);
         }
         lowpassFilterType = pidProfile->dterm_filter_type;
     }
@@ -141,7 +141,7 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
 
     float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
 
-    initFilters(pidProfile);
+    pidInitFilters(pidProfile);
 
     if (FLIGHT_MODE(HORIZON_MODE)) {
         // Figure out the raw stick positions
@@ -284,7 +284,7 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
                 else if (pidProfile->dterm_filter_type == FILTER_PT1)
                     delta = pt1FilterApply4(&deltaFilter[axis], delta, pidProfile->dterm_lpf_hz, getdT());
                 else
-                    delta = firFilterUpdate(&dtermDenoisingState[axis], delta);
+                    delta = firFilterDenoiseUpdate(&dtermDenoisingState[axis], delta);
             }
 
             DTerm = Kd[axis] * delta * tpaFactor;

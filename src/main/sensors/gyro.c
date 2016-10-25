@@ -49,7 +49,7 @@ static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT], gyroFilterNotch_2[XYZ_AXIS_COUNT];
 static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
-static firFilterState_t gyroDenoiseState[XYZ_AXIS_COUNT];
+static firFilterDenoise_t gyroDenoiseState[XYZ_AXIS_COUNT];
 static uint8_t gyroSoftLpfType;
 static uint16_t gyroSoftNotchHz1, gyroSoftNotchHz2;
 static float gyroSoftNotchQ1, gyroSoftNotchQ2;
@@ -83,7 +83,7 @@ void gyroInit(void)
             else if (gyroSoftLpfType == FILTER_PT1)
                 gyroDt = (float) gyro.targetLooptime * 0.000001f;
             else
-                initFirFilter(&gyroDenoiseState[axis], gyroSoftLpfHz, gyro.targetLooptime);
+                firFilterDenoiseInit(&gyroDenoiseState[axis], gyroSoftLpfHz, gyro.targetLooptime);
         }
     }
 
@@ -198,7 +198,7 @@ void gyroUpdate(void)
             else if (gyroSoftLpfType == FILTER_PT1)
                 gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], (float) gyroADC[axis], gyroSoftLpfHz, gyroDt);
             else
-                gyroADCf[axis] = firFilterUpdate(&gyroDenoiseState[axis], (float) gyroADC[axis]);
+                gyroADCf[axis] = firFilterDenoiseUpdate(&gyroDenoiseState[axis], (float) gyroADC[axis]);
 
             if (debugMode == DEBUG_NOTCH)
                 debug[axis] = lrintf(gyroADCf[axis]);

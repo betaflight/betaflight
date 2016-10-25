@@ -291,7 +291,9 @@ void init(void)
 #endif
 
     mixerConfigureOutput();
-    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
+#ifdef USE_SERVOS
+    servoConfigureOutput();
+#endif
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -456,7 +458,8 @@ void init(void)
 
     imuInit();
 
-    mspSerialInit(mspFcInit());
+    mspFcInit();
+    mspSerialInit();
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

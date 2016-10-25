@@ -33,6 +33,7 @@
 #define MAX_DMA_TIMERS 8
 
 #define MOTOR_DSHOT600_MHZ    12
+#define MOTOR_DSHOT300_MHZ    6
 #define MOTOR_DSHOT150_MHZ    3
 
 #define MOTOR_BIT_0     7
@@ -128,7 +129,19 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     if (configureTimer) {
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         
-        uint32_t hz = (pwmProtocolType == PWM_TYPE_DSHOT600 ? MOTOR_DSHOT600_MHZ : MOTOR_DSHOT150_MHZ) * 1000000;
+        uint32_t hz;
+        switch (pwmProtocolType) {
+            case(PWM_TYPE_DSHOT600):
+                hz = MOTOR_DSHOT600_MHZ * 1000000;
+                break;
+            case(PWM_TYPE_DSHOT300):
+                hz = MOTOR_DSHOT300_MHZ * 1000000;
+                break;
+            default:
+            case(PWM_TYPE_DSHOT150):
+                hz = MOTOR_DSHOT150_MHZ * 1000000;
+        }
+
         motor->TimHandle.Instance = timerHardware->tim;
         motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;;
         motor->TimHandle.Init.Period = MOTOR_BITLENGTH;

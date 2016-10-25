@@ -122,10 +122,11 @@
 
 #define USE_UART1
 #define USE_UART2
-#define USE_UART3
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+//#define USE_UART3
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       3
+#define SERIAL_PORT_COUNT       2
 
 //#define SOFTSERIAL_1_TIMER TIM3
 //#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
@@ -134,7 +135,6 @@
 //#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 //#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
-// USART3 only on NAZE32_SP - Flex Port
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 

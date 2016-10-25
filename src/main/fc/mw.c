@@ -65,6 +65,7 @@
 #include "scheduler/scheduler.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
@@ -740,7 +741,7 @@ void subTaskMainSubprocesses(void)
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
     #ifndef USE_QUAD_MIXER_ONLY
     #ifdef USE_SERVOS
-                    && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+                    && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
     #endif
                     && masterConfig.mixerMode != MIXER_AIRPLANE
                     && masterConfig.mixerMode != MIXER_FLYING_WING
@@ -794,6 +795,8 @@ void subTaskMotorUpdate(void)
     mixTable(&currentProfile->pidProfile);
 
 #ifdef USE_SERVOS
+    // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
+    servoTable();
     filterServos();
     writeServos();
 #endif

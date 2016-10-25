@@ -189,6 +189,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         break;
 #ifdef USE_DSHOT
     case PWM_TYPE_DSHOT600:
+    case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
@@ -230,7 +231,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         motors[motorIndex].pwmWritePtr = pwmWritePtr;
         if (useUnsyncedPwm) {
             const uint32_t hz = timerMhzCounter * 1000000;
-            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, hz / motorConfig->motorPwmProtocol, idlePulse);
+            pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, hz / motorConfig->motorPwmRate, idlePulse);
         } else {
             pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, 0xFFFF, 0);
         }
