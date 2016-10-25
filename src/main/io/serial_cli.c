@@ -430,7 +430,8 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B",
     "XB-B-RJ01",
     "IBUS",
-    "JETIEXBUS"
+    "JETIEXBUS",
+    "CRSF"
 };
 #endif
 
