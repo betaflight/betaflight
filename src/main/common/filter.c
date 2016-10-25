@@ -270,7 +270,7 @@ int16_t firFilterInt16Get(const firFilter_t *filter, int index)
 }
 
 void initFirFilter(firFilterState_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime) {
-    filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_DENOISE_WINDOW_SIZE);
+    filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_FIR_WINDOW_SIZE);
 }
 
 /* prototype function for denoising of signal by dynamic moving average. Mainly for test purposes */

@@ -33,9 +33,9 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    0, IOCFG_IPD }, // PWM8 - RC8
     { TIM1, IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn, 1, IOCFG_IPD }, // PWM9 - OUT1
     { TIM1, IO_TAG(PA11), TIM_Channel_4, TIM1_CC_IRQn, 1, IOCFG_IPD }, // PWM10 - OUT2
-    { TIM4, IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,    0, IOCFG_IPD }, // PWM11 - OUT3
-    { TIM4, IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,    0, IOCFG_IPD }, // PWM12 - OUT4
-    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    0, IOCFG_IPD }, // PWM13 - OUT5
-    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    0, IOCFG_IPD }  // PWM14 - OUT6
+    { TIM4, IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,    1, IOCFG_IPD }, // PWM11 - OUT3
+    { TIM4, IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,    1, IOCFG_IPD }, // PWM12 - OUT4
+    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    1, IOCFG_IPD }, // PWM13 - OUT5
+    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    1, IOCFG_IPD }  // PWM14 - OUT6
 };
 

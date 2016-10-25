@@ -14,23 +14,26 @@
 ##############################
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_4-2016q2
+ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-5_4-2016q3
 # Checked below, Should match the output of $(shell arm-none-eabi-gcc -dumpversion)
 GCC_REQUIRED_VERSION := 5.4.1
 
+## arm_sdk_install   : Install Arm SDK
 .PHONY: arm_sdk_install
+
+ARM_SDK_URL_BASE  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926
 
 # source: https://launchpad.net/gcc-arm-embedded/5.0/
 ifdef LINUX
-  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update/+download/gcc-arm-none-eabi-5_4-2016q2-20160622-linux.tar.bz2
+  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-linux.tar.bz2
 endif
 
 ifdef MACOSX
-  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update/+download/gcc-arm-none-eabi-5_4-2016q2-20160622-mac.tar.bz2
+  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
 endif
 
 ifdef WINDOWS
-  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update/+download/gcc-arm-none-eabi-5_4-2016q2-20160622-win32.zip
+  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
 endif
 
 arm_sdk_install: ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
@@ -48,6 +51,7 @@ else
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
 
+## arm_sdk_clean     : Uninstall Arm SDK
 .PHONY: arm_sdk_clean
 arm_sdk_clean:
 	$(V1) [ ! -d "$(ARM_SDK_DIR)" ] || $(RM) -r $(ARM_SDK_DIR)

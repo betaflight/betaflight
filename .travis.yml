@@ -10,6 +10,7 @@ env:
 #  - TARGET=ALIENFLIGHTF1
   - TARGET=ALIENFLIGHTF3
   - TARGET=ALIENFLIGHTF4
+  - TARGET=ANYFCF7
   - TARGET=BETAFLIGHTF3
   - TARGET=BLUEJAYF4
   - TARGET=CC3D
@@ -20,7 +21,6 @@ env:
 #  - TARGET=COLIBRI_OPBL
 #  - TARGET=COLIBRI_RACE
 #  - TARGET=DOGE
-#  - TARGET=EUSTM32F103RC
 #  - TARGET=F4BY
 #  - TARGET=FURYF3
   - TARGET=FURYF4
@@ -31,11 +31,9 @@ env:
 #  - TARGET=MICROSCISKY
 #  - TARGET=MOTOLAB
   - TARGET=NAZE
-#  - TARGET=OLIMEXINO
 #  - TARGET=OMNIBUS
 #  - TARGET=OMNIBUSF4
 #  - TARGET=PIKOBLX
-#  - TARGET=PORT103R
 #  - TARGET=RACEBASE
   - TARGET=REVO
 #  - TARGET=REVONANO
@@ -77,7 +75,7 @@ compiler: clang
 install:
   - make arm_sdk_install
 
-before_script: tools/gcc-arm-none-eabi-5_4-2016q2/bin/arm-none-eabi-gcc --version
+before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
 cache: apt

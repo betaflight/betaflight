@@ -72,6 +72,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -259,7 +260,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
-    motorConfig->digitalIdleOffset = 0;
+    motorConfig->digitalIdleOffset = 40;
 
     uint8_t motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
@@ -380,7 +381,11 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
+#ifdef USE_VCP
         serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_500000;
+#else
+        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
+#endif
         serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
         serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
         serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
@@ -407,12 +412,16 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
     mixerConfig->yaw_motor_direction = 1;
-#ifdef USE_SERVOS
-    mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400;
-    mixerConfig->servo_lowpass_enable = 0;
-#endif
 }
+
+#ifdef USE_SERVOS
+void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
+{
+    servoMixerConfig->tri_unarmed_servo = 1;
+    servoMixerConfig->servo_lowpass_freq = 400;
+    servoMixerConfig->servo_lowpass_enable = 0;
+}
+#endif
 
 uint8_t getCurrentProfile(void)
 {
@@ -448,7 +457,7 @@ uint16_t getCurrentMinthrottle(void)
     return masterConfig.motorConfig.minthrottle;
 }
 
-// Default settings
+
 void createDefaultConfig(master_t *config)
 {
     // Clear all configuration
@@ -573,13 +582,13 @@ void createDefaultConfig(master_t *config)
     config->auto_disarm_delay = 5;
     config->small_angle = 25;
 
-    resetMixerConfig(&config->mixerConfig);
-
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
     // Motor/ESC/Servo
+    resetMixerConfig(&config->mixerConfig);
     resetMotorConfig(&config->motorConfig);
 #ifdef USE_SERVOS
+    resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
@@ -774,7 +783,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
 #endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;

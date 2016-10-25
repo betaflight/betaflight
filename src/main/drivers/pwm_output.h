@@ -28,6 +28,7 @@ typedef enum {
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
     PWM_TYPE_DSHOT600,
+    PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT150,
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
@@ -39,6 +40,11 @@ typedef enum {
 #define ONESHOT42_TIMER_MHZ   21
 #define MULTISHOT_TIMER_MHZ   84
 #define PWM_BRUSHED_TIMER_MHZ 21
+#elif defined(STM32F7) // must be multiples of timer clock
+#define ONESHOT125_TIMER_MHZ  9
+#define ONESHOT42_TIMER_MHZ   27
+#define MULTISHOT_TIMER_MHZ   54
+#define PWM_BRUSHED_TIMER_MHZ 27
 #else
 #define ONESHOT125_TIMER_MHZ  8
 #define ONESHOT42_TIMER_MHZ   24
@@ -58,10 +64,14 @@ typedef struct {
     const timerHardware_t *timerHardware;
     uint16_t value;
     uint16_t timerDmaSource;
-#if defined(STM32F3) || defined(STM32F4)
+#if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
+#endif
+#if defined(STM32F7)
+    TIM_HandleTypeDef TimHandle;
+    uint32_t Channel;
 #endif
 } motorDmaOutput_t;
 

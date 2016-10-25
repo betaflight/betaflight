@@ -96,6 +96,9 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
 #define USE_SPI
@@ -127,8 +130,6 @@
 #define WS2811_DMA_STREAM               DMA1_Stream4
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
 #define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 #define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define SENSORS_SET (SENSOR_ACC)

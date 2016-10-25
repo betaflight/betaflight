@@ -103,14 +103,14 @@
 #define ACC_BMA280_ALIGN        CW0_DEG
 #define ACC_MPU6500_ALIGN       CW0_DEG
 
-//#define BARO
-//#define USE_BARO_MS5611
-//#define USE_BARO_BMP085
-//#define USE_BARO_BMP280
+#define BARO
+#define USE_BARO_MS5611
+#define USE_BARO_BMP085
+#define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MAG_HMC5883
-//#define MAG_HMC5883_ALIGN       CW180_DEG
+#define MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN       CW180_DEG
 
 //#define SONAR
 //#define SONAR_TRIGGER_PIN       PB0
@@ -122,10 +122,11 @@
 
 #define USE_UART1
 #define USE_UART2
-#define USE_UART3
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+//#define USE_UART3
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       3
+#define SERIAL_PORT_COUNT       2
 
 //#define SOFTSERIAL_1_TIMER TIM3
 //#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
@@ -134,7 +135,6 @@
 //#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
 //#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
-// USART3 only on NAZE32_SP - Flex Port
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
@@ -151,11 +151,11 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-//#define LED_STRIP
-//#define WS2811_TIMER                    TIM3
-//#define WS2811_PIN                      PA6
-//#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-//#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define LED_STRIP
+#define WS2811_TIMER                    TIM3
+#define WS2811_PIN                      PA6
+#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef GPS
 

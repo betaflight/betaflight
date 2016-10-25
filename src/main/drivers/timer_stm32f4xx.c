@@ -136,4 +136,3 @@ void TIM_SelectOCxM_NoDisable(TIM_TypeDef* TIMx, uint16_t TIM_Channel, uint16_t 
         *(__IO uint32_t *) tmp |= (uint16_t)(TIM_OCMode << 8);
     }
 }
-

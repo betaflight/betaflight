@@ -70,6 +70,8 @@
 
 #define SERIAL_PORT_COUNT       4 // VCP, UART1, UART3, UART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 // SD Card
 #define USE_SDCARD
@@ -131,8 +133,6 @@
 #define WS2811_TIMER_CHANNEL            TIM_Channel_4
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
 #define WS2811_DMA_CHANNEL              DMA_Channel_5
 #define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
 #define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM3
