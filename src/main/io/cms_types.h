@@ -23,7 +23,6 @@ typedef enum
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
     //wlasciwosci elementow
     OME_VISIBLE,
-    OME_POS,
     OME_TAB,
     OME_END,
 } OSD_MenuElement;
@@ -34,8 +33,20 @@ typedef struct
     OSD_MenuElement type;
     OSDMenuFuncPtr func;
     void *data;
-    bool changed;
+    uint8_t flags;
 } OSD_Entry;
+
+// Bits in flags
+#define PRINT_VALUE    0x01  // Value has been changed, need to redraw
+#define PRINT_LABEL    0x02  // Text label should be printed
+
+#define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
+#define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
+#define CLR_PRINTVALUE(p) { (p)->flags &= ~PRINT_VALUE; }
+
+#define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
+#define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
+#define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
 
 typedef struct
 {
@@ -86,11 +97,11 @@ typedef struct
 } OSD_TAB_t;
 
 typedef struct screenFnVTable_s {
-    void (*getsize)(uint8_t *, uint8_t *);
-    void (*begin)(void);
-    void (*end)(void);
-    void (*clear)(void);
-    void (*write)(uint8_t, uint8_t, char *);
-    void (*heartbeat)(void);
+    void (*getDevParam)(uint8_t *, uint8_t *, uint16_t *, uint16_t *);
+    int (*begin)(void);
+    int (*end)(void);
+    int (*clear)(void);
+    int (*write)(uint8_t, uint8_t, char *);
+    int (*heartbeat)(void);
     void (*resync)(void);
 } screenFnVTable_t;

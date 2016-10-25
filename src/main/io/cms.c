@@ -1,3 +1,25 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ Created by Marcin Baliniak
+ OSD-CMS separation by jflyper
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -7,7 +29,11 @@
 
 #include "build/version.h"
 
+#ifdef CMS
+
 #include "drivers/system.h"
+
+#include "common/typeconversion.h"
 
 #include "io/cms_types.h"
 #include "io/canvas.h"
@@ -29,35 +55,64 @@
 
 // Configuration Menu System forwards
 
-uint8_t cmsHandleKey(uint8_t);
-void cmsUpdateMaxRows(void);
 void cmsOpenMenu(void);
-void cmsExitMenu(void * ptr);
-void cmsChangeScreen(void * ptr);
+void cmsExitMenu(void *);
+void cmsChangeScreen(void *);
 void cmsMenuBack(void);
-void cmsDrawMenu(void);
-void cmsGetSize(uint8_t *, uint8_t *);
-void cmsEraseFlash(void *ptr);
+void cmsEraseFlash(void *);
 
 screenFnVTable_t *pScreenFnVTable;
 
-// Force draw all elements if true
-bool cmsScreenCleared;
-
-// Function vector may be good here.
-
 uint8_t cmsRows;
 uint8_t cmsCols;
+uint16_t cmsBuftime;
+uint16_t cmsBufsize;
+uint16_t cmsBatchsize;
 
-void cmsGetSize(uint8_t *pRows, uint8_t *pCols)
+#define CMS_UPDATE_INTERVAL 50 // msec
+
+//#define MAX_MENU_ITEMS    (cmsGetRowsCount() - 2)
+#define MAX_MENU_ITEMS    (cmsRows - 2)
+
+// XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
+// dynamically depending on size of the active output device,
+// or statically to accomodate sizes of all supported devices.
+//
+// Device characteristics
+// OLED
+//   21 cols x 8 rows
+//     128x64 with 5x7 (6x8) : 21 cols x 8 rows
+// MAX7456 (PAL)
+//   30 cols x 16 rows
+// MAX7456 (NTSC)
+//   30 cols x 13 rows
+// HoTT Telemetry Screen
+//   21 cols x 8 rows
+//
+
+#define LEFT_MENU_COLUMN  1
+//#define RIGHT_MENU_COLUMN (cmsCols - 7)
+#define RIGHT_MENU_COLUMN (cmsCols - 9 - 7)
+
+bool cmsScreenCleared;
+OSD_Entry *currentMenu;
+OSD_Entry *nextPage = NULL;
+
+int8_t currentCursorPos = 0;
+int8_t lastCursorPos;
+uint8_t currentMenuIdx = 0;
+uint16_t *currentElement = NULL;
+
+void cmsGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
 {
-    pScreenFnVTable->getsize(pRows, pCols);
+    pScreenFnVTable->getDevParam(pRows, pCols, pBuftime, pBufsize);
 }
 
 void cmsScreenClear(void)
 {
     pScreenFnVTable->clear();
     cmsScreenCleared = true;
+    lastCursorPos = -1;
 }
 
 void cmsScreenBegin(void)
@@ -71,9 +126,9 @@ void cmsScreenEnd(void)
     pScreenFnVTable->end();
 }
 
-void cmsScreenWrite(uint8_t x, uint8_t y, char *s)
+int cmsScreenWrite(uint8_t x, uint8_t y, char *s)
 {
-    pScreenFnVTable->write(x, y, s);
+    return pScreenFnVTable->write(x, y, s);
 }
 
 void cmsScreenHeartBeat(void)
@@ -87,7 +142,7 @@ void cmsScreenResync(void)
     if (pScreenFnVTable->resync)
         pScreenFnVTable->resync();
 
-    pScreenFnVTable->getsize(&cmsRows, &cmsCols);
+    pScreenFnVTable->getDevParam(&cmsRows, &cmsCols, &cmsBuftime, &cmsBufsize);
 }
 
 void cmsScreenInit(void)
@@ -117,58 +172,8 @@ pScreenFnVTable = canvasInit();
 #define KEY_RIGHT   4
 #define KEY_ESC     5
 
-#define curr_profile masterConfig.profile[masterConfig.current_profile_index]
-
-//osd current screen - to reduce long lines ;-)
-#define OSD_cfg masterConfig.osdProfile
-
-#if 0
-uint16_t refreshTimeout = 0;
-
-#define VISIBLE_FLAG  0x0800
-#define BLINK_FLAG    0x0400
-bool blinkState = true;
-
-#define OSD_POS(x,y)  (x | (y << 5))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> 5) & 0x001F)
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
-#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
-
-extern uint8_t RSSI; // TODO: not used?
-
-static uint16_t flyTime = 0;
-uint8_t statRssi;
-
-statistic_t stats;
-#endif
-
-#define BUTTON_TIME   2
-#define BUTTON_PAUSE  5
-
-// XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
-// dynamically depending on size of the active output device,
-// or statically to accomodate sizes of all supported devices.
-//
-// Device characteristics
-// OLED
-//   21 cols x 8 rows
-//     128x64 with 5x7 (6x8) : 21 cols x 8 rows
-// MAX7456 (PAL)
-//   30 cols x 16 rows
-// MAX7456 (NTSC)
-//   30 cols x 13 rows
-// HoTT Telemetry Screen
-//   21 cols x 8 rows
-//
-// Right column size be 5 chars??? (now 7)
-
-#define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN 23
-
-//#define MAX_MENU_ITEMS    (cmsGetRowsCount() - 2)
-#define MAX_MENU_ITEMS    (cmsRows - 2)
+#define BUTTON_TIME   250 // msec
+#define BUTTON_PAUSE  500 // msec
 
 //uint8_t armState;
 uint8_t featureBlackbox = 0;
@@ -182,21 +187,10 @@ OSD_Entry *menuStack[10]; //tab to save menu stack
 uint8_t menuStackHistory[10]; //current position in menu stack
 uint8_t menuStackIdx = 0;
 
-OSD_Entry *currentMenu;
-OSD_Entry *nextPage = NULL;
-
-int8_t currentMenuPos = 0;
-int8_t lastMenuPos;
-uint8_t currentMenuIdx = 0;
-uint16_t *currentElement = NULL;
-
 #ifdef OSD
 OSD_Entry menuAlarms[];
 OSD_Entry menuOsdLayout[];
 OSD_Entry menuOsdActiveElems[];
-#if 0 // Not supported yet (or drop GUI position editing)
-OSD_Entry menuOsdElemsPositions[];
-#endif
 #endif
 
 OSD_Entry menuFeatures[];
@@ -218,44 +212,44 @@ OSD_Entry menuMisc[];
 
 OSD_Entry menuMain[] =
 {
-    {"----MAIN MENU----", OME_Label, NULL, NULL, true},
+    {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
+    {"CFG. IMU", OME_Submenu, cmsChangeScreen, &menuImu[0], 0},
+    {"FEATURES", OME_Submenu, cmsChangeScreen, &menuFeatures[0], 0},
 #ifdef OSD
-    {"SCREEN LAYOUT", OME_Submenu, cmsChangeScreen, &menuOsdLayout[0], true},
-    {"ALARMS", OME_Submenu, cmsChangeScreen, &menuAlarms[0], true},
+    {"SCR LAYOUT", OME_Submenu, cmsChangeScreen, &menuOsdLayout[0], 0},
+    {"ALARMS", OME_Submenu, cmsChangeScreen, &menuAlarms[0], 0},
 #endif
-    {"CFG. IMU", OME_Submenu, cmsChangeScreen, &menuImu[0], true},
-    {"FEATURES", OME_Submenu, cmsChangeScreen, &menuFeatures[0], true},
-    {"SAVE & EXIT", OME_OSD_Exit, cmsExitMenu, (void*)1, true},
-    {"EXIT", OME_OSD_Exit, cmsExitMenu, (void*)0, true},
-    {NULL,OME_END, NULL, NULL, true}
+    {"SAVE&REBOOT", OME_OSD_Exit, cmsExitMenu, (void*)1, 0},
+    {"EXIT", OME_OSD_Exit, cmsExitMenu, (void*)0, 0},
+    {NULL,OME_END, NULL, NULL, 0}
 };
 
 OSD_Entry menuFeatures[] =
 {
-    {"----- FEATURES -----", OME_Label, NULL, NULL, true},
-    {"BLACKBOX", OME_Submenu, cmsChangeScreen, &menuBlackbox[0], true},
-#ifdef LED_STRIP
-    {"LED STRIP", OME_Submenu, cmsChangeScreen, &menuLedstrip[0], true},
-#endif // LED_STRIP
+    {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
+    {"BLACKBOX", OME_Submenu, cmsChangeScreen, &menuBlackbox[0], 0},
 #if defined(VTX) || defined(USE_RTC6705)
-    {"VTX", OME_Submenu, cmsChangeScreen, &menu_vtx[0], true},
+    {"VTX", OME_Submenu, cmsChangeScreen, &menu_vtx[0], 0},
 #endif // VTX || USE_RTC6705
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+#ifdef LED_STRIP
+    {"LED STRIP", OME_Submenu, cmsChangeScreen, &menuLedstrip[0], 0},
+#endif // LED_STRIP
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
 
 OSD_Entry menuBlackbox[] =
 {
-    {"--- BLACKBOX ---", OME_Label, NULL, NULL, true},
-    {"ENABLED", OME_Bool, NULL, &featureBlackbox, true},
-    {"RATE DENOM", OME_UINT8, NULL, &entryBlackboxRateDenom, true},
+    {"--- BLACKBOX ---", OME_Label, NULL, NULL, 0},
+    {"ENABLED", OME_Bool, NULL, &featureBlackbox, 0},
+    {"RATE DENOM", OME_UINT8, NULL, &entryBlackboxRateDenom, 0},
 #ifdef USE_FLASHFS
-    {"ERASE FLASH", OME_Submenu, cmsEraseFlash, NULL, true},
+    {"ERASE FLASH", OME_Submenu, cmsEraseFlash, NULL, 0},
 #endif // USE_FLASHFS
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 #ifdef LED_STRIP
@@ -263,25 +257,25 @@ OSD_Entry menuBlackbox[] =
 uint8_t ledColor;
 
 static const char * const LED_COLOR_NAMES[] = {
-    "   BLACK   ",
-    "   WHITE   ",
-    "   RED     ",
-    "   ORANGE  ",
-    "   YELLOW  ",
-    " LIME GREEN",
-    "   GREEN   ",
-    " MINT GREEN",
-    "   CYAN    ",
-    " LIGHT BLUE",
-    "   BLUE    ",
-    "DARK VIOLET",
-    "   MAGENTA ",
-    "  DEEP PINK"
+    "BLACK   ",
+    "WHITE   ",
+    "RED     ",
+    "ORANGE  ",
+    "YELLOW  ",
+    "LIME GRN",
+    "GREEN   ",
+    "MINT GRN",
+    "CYAN    ",
+    "LT BLUE ",
+    "BLUE    ",
+    "DK VIOLT",
+    "MAGENTA ",
+    "DEEP PNK"
 };
 
 //find first led with color flag and restore color index
 //after saving all leds with flags color will have color set in OSD
-void getLedColor(void)
+static void getLedColor(void)
 {
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
         const ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
@@ -310,11 +304,11 @@ OSD_TAB_t entryLed = {&ledColor, 13, &LED_COLOR_NAMES[0]};
 
 OSD_Entry menuLedstrip[] =
 {
-    {"--- LED TRIP ---", OME_Label, NULL, NULL, true},
-    {"ENABLED", OME_Bool, NULL, &featureLedstrip, true},
-    {"LED COLOR", OME_TAB, applyLedColor, &entryLed, true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- LED STRIP ---", OME_Label, NULL, NULL, 0},
+    {"ENABLED", OME_Bool, NULL, &featureLedstrip, 0},
+    {"LED COLOR", OME_TAB, applyLedColor, &entryLed, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 #endif // LED_STRIP
 
@@ -337,19 +331,19 @@ OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 
 OSD_Entry menu_vtx[] =
 {
-    {"--- VTX ---", OME_Label, NULL, NULL, true},
-    {"ENABLED", OME_Bool, NULL, &featureVtx, true},
+    {"--- VTX ---", OME_Label, NULL, NULL, 0},
+    {"ENABLED", OME_Bool, NULL, &featureVtx, 0},
 #ifdef VTX
-    {"VTX MODE", OME_UINT8, NULL, &entryVtxMode, true},
-    {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz, true},
+    {"VTX MODE", OME_UINT8, NULL, &entryVtxMode, 0},
+    {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz, 0},
 #endif // VTX
-    {"BAND", OME_TAB, NULL, &entryVtxBand, true},
-    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, true},
+    {"BAND", OME_TAB, NULL, &entryVtxBand, 0},
+    {"CHANNEL", OME_UINT8, NULL, &entryVtxChannel, 0},
 #ifdef USE_RTC6705
-    {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power, true},
+    {"LOW POWER", OME_Bool, NULL, &masterConfig.vtx_power, 0},
 #endif // USE_RTC6705
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 #endif // VTX || USE_RTC6705
 
@@ -363,30 +357,30 @@ OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 
 
 OSD_Entry menuMisc[]=
 {
-    {"----- MISC -----", OME_Label, NULL, NULL, true},
-    {"GYRO LOWPASS", OME_UINT8, NULL, &entryGyroSoftLpfHz, true},
-    {"DTERM LPF", OME_UINT16, NULL, &entryDtermLpf, true},
-    {"YAW LPF", OME_UINT16, NULL, &entryYawLpf, true},
-    {"YAW P LIMIT", OME_UINT16, NULL, &entryYawPLimit, true},
-    {"MINTHROTTLE", OME_UINT16, NULL, &entryMinThrottle, true},
-    {"VBAT SCALE", OME_UINT8, NULL, &entryVbatScale, true},
-    {"VBAT CELL MAX", OME_UINT8, NULL, &entryVbatMaxCell, true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- MISC ---", OME_Label, NULL, NULL, 0},
+    {"GYRO LPF", OME_UINT8, NULL, &entryGyroSoftLpfHz, 0},
+    {"DTERM LPF", OME_UINT16, NULL, &entryDtermLpf, 0},
+    {"YAW LPF", OME_UINT16, NULL, &entryYawLpf, 0},
+    {"YAW P LIM", OME_UINT16, NULL, &entryYawPLimit, 0},
+    {"MIN THR", OME_UINT16, NULL, &entryMinThrottle, 0},
+    {"VBAT SCALE", OME_UINT8, NULL, &entryVbatScale, 0},
+    {"VBAT CLMAX", OME_UINT8, NULL, &entryVbatMaxCell, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
 
 OSD_Entry menuImu[] =
 {
-    {"-----CFG. IMU-----", OME_Label, NULL, NULL, true},
-    {"PID", OME_Submenu, cmsChangeScreen, &menuPid[0], true},
-    {"PID PROFILE", OME_UINT8, NULL, &entryPidProfile, true},
-    {"RATE & RXPO", OME_Submenu, cmsChangeScreen, &menuRateExpo[0], true},
-    {"RC PREVIEW", OME_Submenu, cmsChangeScreen, &menuRc[0], true},
-    {"MISC", OME_Submenu, cmsChangeScreen, &menuMisc[0], true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- CFG. IMU ---", OME_Label, NULL, NULL, 0},
+    {"PID PROF", OME_UINT8, NULL, &entryPidProfile, 0},
+    {"PID", OME_Submenu, cmsChangeScreen, &menuPid[0], 0},
+    {"RATE&RXPO", OME_Submenu, cmsChangeScreen, &menuRateExpo[0], 0},
+    {"RC PREV", OME_Submenu, cmsChangeScreen, &menuRc[0], 0},
+    {"MISC", OME_Submenu, cmsChangeScreen, &menuMisc[0], 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 uint8_t tempPid[4][3];
@@ -405,21 +399,21 @@ static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
 
 OSD_Entry menuPid[] =
 {
-    {"------- PID -------", OME_Label, NULL, NULL, true},
-    {"ROLL P", OME_UINT8, NULL, &entryRollP, true},
-    {"ROLL I", OME_UINT8, NULL, &entryRollI, true},
-    {"ROLL D", OME_UINT8, NULL, &entryRollD, true},
+    {"--- PID ---", OME_Label, NULL, NULL, 0},
+    {"ROLL P", OME_UINT8, NULL, &entryRollP, 0},
+    {"ROLL I", OME_UINT8, NULL, &entryRollI, 0},
+    {"ROLL D", OME_UINT8, NULL, &entryRollD, 0},
 
-    {"PITCH P", OME_UINT8, NULL, &entryPitchP, true},
-    {"PITCH I", OME_UINT8, NULL, &entryPitchI, true},
-    {"PITCH D", OME_UINT8, NULL, &entryPitchD, true},
+    {"PITCH P", OME_UINT8, NULL, &entryPitchP, 0},
+    {"PITCH I", OME_UINT8, NULL, &entryPitchI, 0},
+    {"PITCH D", OME_UINT8, NULL, &entryPitchD, 0},
 
-    {"YAW P", OME_UINT8, NULL, &entryYawP, true},
-    {"YAW I", OME_UINT8, NULL, &entryYawI, true},
-    {"YAW D", OME_UINT8, NULL, &entryYawD, true},
+    {"YAW P", OME_UINT8, NULL, &entryYawP, 0},
+    {"YAW I", OME_UINT8, NULL, &entryYawI, 0},
+    {"YAW D", OME_UINT8, NULL, &entryYawD, 0},
 
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 controlRateConfig_t rateProfile;
@@ -428,6 +422,7 @@ static OSD_FLOAT_t entryRollRate = {&rateProfile.rates[0], 0, 250, 1, 10};
 static OSD_FLOAT_t entryPitchRate = {&rateProfile.rates[1], 0, 250, 1, 10};
 static OSD_FLOAT_t entryYawRate = {&rateProfile.rates[2], 0, 250, 1, 10};
 static OSD_FLOAT_t entryRcRate = {&rateProfile.rcRate8, 0, 200, 1, 10};
+static OSD_FLOAT_t entryRcYawRate = {&rateProfile.rcYawRate8, 0, 200, 1, 10};
 static OSD_FLOAT_t entryRcExpo = {&rateProfile.rcExpo8, 0, 100, 1, 10};
 static OSD_FLOAT_t entryRcExpoYaw = {&rateProfile.rcYawExpo8, 0, 100, 1, 10};
 static OSD_FLOAT_t extryTpaEntry = {&rateProfile.dynThrPID, 0, 70, 1, 10};
@@ -437,19 +432,20 @@ static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSe
 
 OSD_Entry menuRateExpo[] =
 {
-    {"----RATE & EXPO----", OME_Label, NULL, NULL, true},
-    {"ROLL RATE", OME_FLOAT, NULL, &entryRollRate, true},
-    {"PITCH RATE", OME_FLOAT, NULL, &entryPitchRate, true},
-    {"YAW RATE", OME_FLOAT, NULL, &entryYawRate, true},
-    {"RC RATE", OME_FLOAT, NULL, &entryRcRate, true},
-    {"RC EXPO", OME_FLOAT, NULL, &entryRcExpo, true},
-    {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw, true},
-    {"THR PID ATT", OME_FLOAT, NULL, &extryTpaEntry, true},
-    {"TPA BRKPT", OME_UINT16, NULL, &entryTpaBreak, true},
-    {"D SETPT", OME_FLOAT, NULL, &entryDSetpoint, true},
-    {"D SETPT TRNS", OME_FLOAT, NULL, &entryPSetpoint, true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- RATE&EXPO ---", OME_Label, NULL, NULL, 0},
+    {"RC RATE", OME_FLOAT, NULL, &entryRcYawRate, 0},
+    {"RC YAW RATE", OME_FLOAT, NULL, &entryRcRate, 0},
+    {"ROLL SUPER", OME_FLOAT, NULL, &entryRollRate, 0},
+    {"PITCH SUPER", OME_FLOAT, NULL, &entryPitchRate, 0},
+    {"YAW SUPER", OME_FLOAT, NULL, &entryYawRate, 0},
+    {"RC EXPO", OME_FLOAT, NULL, &entryRcExpo, 0},
+    {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw, 0},
+    {"THR PID ATT", OME_FLOAT, NULL, &extryTpaEntry, 0},
+    {"TPA BRKPT", OME_UINT16, NULL, &entryTpaBreak, 0},
+    {"D SETPT", OME_FLOAT, NULL, &entryDSetpoint, 0},
+    {"D SETPT TRN", OME_FLOAT, NULL, &entryPSetpoint, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 static OSD_INT16_t entryRcRoll = {&rcData[ROLL], 1, 2500, 0};
@@ -463,25 +459,21 @@ static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
 
 OSD_Entry menuRc[] =
 {
-    {"---- RC PREVIEW ----", OME_Label, NULL, NULL, true},
-    {"ROLL", OME_Poll_INT16, NULL, &entryRcRoll, true},
-    {"PITCH", OME_Poll_INT16, NULL, &entryRcPitch, true},
-    {"THROTTLE", OME_Poll_INT16, NULL, &entryRcThrottle, true},
-    {"YAW", OME_Poll_INT16, NULL, &entryRcYaw, true},
-    {"AUX1", OME_Poll_INT16, NULL, &entryRcAux1, true},
-    {"AUX2", OME_Poll_INT16, NULL, &entryRcAux2, true},
-    {"AUX3", OME_Poll_INT16, NULL, &entryRcAux3, true},
-    {"AUX4", OME_Poll_INT16, NULL, &entryRcAux4, true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- RC PREV ---", OME_Label, NULL, NULL, 0},
+    {"ROLL", OME_Poll_INT16, NULL, &entryRcRoll, 0},
+    {"PITCH", OME_Poll_INT16, NULL, &entryRcPitch, 0},
+    {"THROTTLE", OME_Poll_INT16, NULL, &entryRcThrottle, 0},
+    {"YAW", OME_Poll_INT16, NULL, &entryRcYaw, 0},
+    {"AUX1", OME_Poll_INT16, NULL, &entryRcAux1, 0},
+    {"AUX2", OME_Poll_INT16, NULL, &entryRcAux2, 0},
+    {"AUX3", OME_Poll_INT16, NULL, &entryRcAux3, 0},
+    {"AUX4", OME_Poll_INT16, NULL, &entryRcAux4, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
 
 bool cmsInMenu = false;
-
-//
-// CMS specific functions
-//
 
 void cmsUpdateMaxRows(void)
 {
@@ -497,9 +489,9 @@ void cmsUpdateMaxRows(void)
     currentMenuIdx--;
 }
 
-uint8_t cmsHandleKey(uint8_t key)
+uint16_t cmsHandleKey(uint8_t key)
 {
-    uint8_t res = BUTTON_TIME;
+    uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
 
     if (!currentMenu)
@@ -511,8 +503,8 @@ uint8_t cmsHandleKey(uint8_t key)
     }
 
     if (key == KEY_DOWN) {
-        if (currentMenuPos < currentMenuIdx) {
-            currentMenuPos++;
+        if (currentCursorPos < currentMenuIdx) {
+            currentCursorPos++;
         } else {
             if (nextPage) // we have more pages
             {
@@ -520,33 +512,30 @@ uint8_t cmsHandleKey(uint8_t key)
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
-                currentMenuPos = 0;
-                lastMenuPos = -1;
+                currentCursorPos = 0;
                 cmsUpdateMaxRows();
             } else {
-                currentMenuPos = 0;
+                currentCursorPos = 0;
             }
         }
     }
 
     if (key == KEY_UP) {
-        currentMenuPos--;
+        currentCursorPos--;
 
-        if ((currentMenu + currentMenuPos)->type == OME_Label && currentMenuPos > 0)
-            currentMenuPos--;
+        if ((currentMenu + currentCursorPos)->type == OME_Label && currentCursorPos > 0)
+            currentCursorPos--;
 
-        if (currentMenuPos == -1 || (currentMenu + currentMenuPos)->type == OME_Label) {
+        if (currentCursorPos == -1 || (currentMenu + currentCursorPos)->type == OME_Label) {
             if (nextPage) {
                 cmsScreenClear();
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
-                currentMenuPos = 0;
-                lastMenuPos = -1;
+                currentCursorPos = 0;
                 cmsUpdateMaxRows();
             } else {
-                currentMenuPos = currentMenuIdx;
-                // lastMenuPos = -1;
+                currentCursorPos = currentMenuIdx;
             }
         }
     }
@@ -554,22 +543,9 @@ uint8_t cmsHandleKey(uint8_t key)
     if (key == KEY_DOWN || key == KEY_UP)
         return res;
 
-    p = currentMenu + currentMenuPos;
+    p = currentMenu + currentCursorPos;
 
     switch (p->type) {
-        case OME_POS:
-#if 0
-#ifdef OSD
-            if (key == KEY_RIGHT) {
-                uint32_t address = (uint32_t)p->data;
-                uint16_t *val;
-
-                val = (uint16_t *)address;
-                if (!(*val & VISIBLE_FLAG)) // no submenu for hidden elements
-                    break;
-            }
-#endif
-#endif
         case OME_Submenu:
         case OME_OSD_Exit:
             if (p->func && key == KEY_RIGHT) {
@@ -588,7 +564,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     *val = 1;
                 else
                     *val = 0;
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_VISIBLE:
@@ -603,7 +579,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     *val |= VISIBLE_FLAG;
                 else
                     *val %= ~VISIBLE_FLAG;
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
 #endif
             break;
@@ -619,7 +595,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     if (*ptr->val > ptr->min)
                         *ptr->val -= ptr->step;
                 }
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_TAB:
@@ -636,7 +612,7 @@ uint8_t cmsHandleKey(uint8_t key)
                 }
                 if (p->func)
                     p->func(p->data);
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_INT8:
@@ -650,7 +626,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     if (*ptr->val > ptr->min)
                         *ptr->val -= ptr->step;
                 }
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_UINT16:
@@ -664,7 +640,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     if (*ptr->val > ptr->min)
                         *ptr->val -= ptr->step;
                 }
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_INT16:
@@ -678,7 +654,7 @@ uint8_t cmsHandleKey(uint8_t key)
                     if (*ptr->val > ptr->min)
                         *ptr->val -= ptr->step;
                 }
-                p->changed = true;
+                SET_PRINTVALUE(p);
             }
             break;
         case OME_Poll_INT16:
@@ -689,7 +665,7 @@ uint8_t cmsHandleKey(uint8_t key)
     return res;
 }
 
-static void simple_ftoa(int32_t value, char *floatString)
+static void cmsFtoa(int32_t value, char *floatString)
 {
     uint8_t k;
     // np. 3450
@@ -715,111 +691,124 @@ static void simple_ftoa(int32_t value, char *floatString)
         floatString[0] = ' ';
 }
 
-void cmsDrawMenuEntry(OSD_Entry *p, uint8_t row, bool drawPolled)
+void cmsPad(char *buf, int size)
+{
+    int i;
+
+    for (i = 0 ; i < size ; i++) {
+        if (buf[i] == 0)
+            break;
+    }
+
+    for ( ; i < size ; i++) {
+        buf[i] = ' ';
+    }
+
+    buf[size] = 0;
+}
+
+int cmsDrawMenuEntry(OSD_Entry *p, uint8_t row, bool drawPolled)
 {
     char buff[10];
+    int cnt = 0;
 
     switch (p->type) {
-    case OME_POS:; // Semi-colon required to add an empty statement
-#ifdef OSD
-        uint32_t address = (uint32_t)p->data;
-        uint16_t *val;
-
-        val = (uint16_t *)address;
-        if (!(*val & VISIBLE_FLAG))
-            break;
-#endif
-
     case OME_Submenu:
-        if (cmsScreenCleared)
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, ">");
+        if (IS_PRINTVALUE(p))  {
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, ">");
+            CLR_PRINTVALUE(p);
+        }
         break;
     case OME_Bool:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             if (*((uint8_t *)(p->data))) {
-                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
+                cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
             } else {
-                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
+                cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
             }
-            p->changed = false;
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_TAB: {
-        if (p->changed || cmsScreenCleared) {
+        if (IS_PRINTVALUE(p)) {
             OSD_TAB_t *ptr = p->data;
-            cmsScreenWrite(RIGHT_MENU_COLUMN - 5, row, (char *)ptr->names[*ptr->val]);
-            p->changed = false;
+            //cnt = cmsScreenWrite(RIGHT_MENU_COLUMN - 5, row, (char *)ptr->names[*ptr->val]);
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, (char *)ptr->names[*ptr->val]);
+            CLR_PRINTVALUE(p);
         }
         break;
     }
     case OME_VISIBLE:
 #ifdef OSD
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             uint32_t address = (uint32_t)p->data;
             uint16_t *val;
 
             val = (uint16_t *)address;
 
             if (VISIBLE(*val)) {
-                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
+                cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, "YES");
             } else {
-                cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
+                cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, "NO ");
             }
-            p->changed = false;
+            CLR_PRINTVALUE(p);
         }
 #endif
         break;
     case OME_UINT8:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
-            p->changed = false;
+            cmsPad(buff, 5);
+            //cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_INT8:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             OSD_INT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
-            p->changed = false;
+            cmsPad(buff, 5);
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_UINT16:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
-            p->changed = false;
+            cmsPad(buff, 5);
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_INT16:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
-            p->changed = false;
+            cmsPad(buff, 5);
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_Poll_INT16:
         if (p->data && drawPolled) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, "     ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            cmsPad(buff, 5);
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN, row, buff);
+            // PRINTVALUE not cleared on purpose
         }
         break;
     case OME_FLOAT:
-        if ((p->changed || cmsScreenCleared) && p->data) {
+        if (IS_PRINTVALUE(p) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
-            simple_ftoa(*ptr->val * ptr->multipler, buff);
-            cmsScreenWrite(RIGHT_MENU_COLUMN - 1, row, "      ");
-            cmsScreenWrite(RIGHT_MENU_COLUMN - 1, row, buff);
-            p->changed = false;
+            cmsFtoa(*ptr->val * ptr->multipler, buff);
+            cmsPad(buff, 5);
+            // XXX One char left ???
+            cnt = cmsScreenWrite(RIGHT_MENU_COLUMN - 1, row, buff);
+            CLR_PRINTVALUE(p);
         }
         break;
     case OME_OSD_Exit:
@@ -828,79 +817,108 @@ void cmsDrawMenuEntry(OSD_Entry *p, uint8_t row, bool drawPolled)
     case OME_Back:
         break;
     }
+
+    return cnt;
 }
 
-void cmsDrawMenu(void)
+void cmsDrawMenu(uint32_t currentTime)
 {
-    uint8_t i = 0;
+    UNUSED(currentTime);
+
+    uint8_t i;
     OSD_Entry *p;
     uint8_t top = (cmsRows - currentMenuIdx) / 2 - 1;
 
+    // Polled (dynamic) value display denominator.
     // XXX Need to denom based on absolute time
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
+    int16_t cnt = 0;
+
     if (!currentMenu)
         return;
 
-    if ((currentMenu + currentMenuPos)->type == OME_Label) // skip label
-        currentMenuPos++;
-
-    if (lastMenuPos >= 0 && currentMenuPos != lastMenuPos)
-        cmsScreenWrite(LEFT_MENU_COLUMN, lastMenuPos + top, "  ");
-
-    for (p = currentMenu; p->type != OME_END; p++) {
-
-        if (currentMenuPos == i && lastMenuPos != currentMenuPos) {
-            cmsScreenWrite(LEFT_MENU_COLUMN, i + top, " >");
-            lastMenuPos = currentMenuPos;
+    if (cmsScreenCleared) {
+        for (p = currentMenu, i= 0; p->type != OME_END; p++, i++) {
+            SET_PRINTLABEL(p);
+            SET_PRINTVALUE(p);
         }
 
-        if (cmsScreenCleared)
-            cmsScreenWrite(LEFT_MENU_COLUMN + 2, i + top, p->text);
-
-        cmsDrawMenuEntry(p, top + i, drawPolled);
-
-        i++;
-
-        if (i == MAX_MENU_ITEMS) // max per page
+        if (i > MAX_MENU_ITEMS) // max per page
         {
-            nextPage = currentMenu + i;
+            nextPage = currentMenu + MAX_MENU_ITEMS;
             if (nextPage->type == OME_END)
                 nextPage = NULL;
-            break;
+        }
+
+        cmsScreenCleared = false;
+    }
+
+    // Cursor manipulation
+
+    if ((currentMenu + currentCursorPos)->type == OME_Label) // skip label
+        currentCursorPos++;
+
+    if (lastCursorPos >= 0 && currentCursorPos != lastCursorPos) {
+        cnt += cmsScreenWrite(LEFT_MENU_COLUMN, lastCursorPos + top, "  ");
+    }
+
+    if (lastCursorPos != currentCursorPos) {
+        cnt += cmsScreenWrite(LEFT_MENU_COLUMN, currentCursorPos + top, " >");
+        lastCursorPos = currentCursorPos;
+    }
+
+    // Print text labels
+    for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS && p->type != OME_END; i++, p++) {
+        if (IS_PRINTLABEL(p)) {
+            cnt += cmsScreenWrite(LEFT_MENU_COLUMN + 2, i + top, p->text);
+            CLR_PRINTLABEL(p);
+            if (cnt > cmsBatchsize)
+                return;
         }
     }
-    cmsScreenCleared = false;
+
+    // Print values
+
+    // XXX Polled values at latter positions in the list may not be
+    // XXX printed if the cnt exceeds cmsBatchsize in the middle of the list.
+
+    for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS && p->type != OME_END; i++, p++) {
+        if (IS_PRINTVALUE(p)) {
+            cnt += cmsDrawMenuEntry(p, top + i, drawPolled);
+            if (cnt > cmsBatchsize)
+                return;
+        }
+    }
 }
 
 void cmsChangeScreen(void *ptr)
 {
     uint8_t i;
     if (ptr) {
-        cmsScreenClear();
         // hack - save profile to temp
         if (ptr == &menuPid[0]) {
             for (i = 0; i < 3; i++) {
-                tempPid[i][0] = curr_profile.pidProfile.P8[i];
-                tempPid[i][1] = curr_profile.pidProfile.I8[i];
-                tempPid[i][2] = curr_profile.pidProfile.D8[i];
+                tempPid[i][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i];
+                tempPid[i][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i];
+                tempPid[i][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i];
             }
-            tempPid[3][0] = curr_profile.pidProfile.P8[PIDLEVEL];
-            tempPid[3][1] = curr_profile.pidProfile.I8[PIDLEVEL];
-            tempPid[3][2] = curr_profile.pidProfile.D8[PIDLEVEL];
+            tempPid[3][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL];
+            tempPid[3][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL];
+            tempPid[3][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL];
         }
 
         if (ptr == &menuRateExpo[0])
             memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
 
         menuStack[menuStackIdx] = currentMenu;
-        menuStackHistory[menuStackIdx] = currentMenuPos;
+        menuStackHistory[menuStackIdx] = currentCursorPos;
         menuStackIdx++;
 
         currentMenu = (OSD_Entry *)ptr;
-        currentMenuPos = 0;
-        lastMenuPos = -1; // XXX this?
+        currentCursorPos = 0;
+        cmsScreenClear();
         cmsUpdateMaxRows();
     }
 }
@@ -913,14 +931,14 @@ void cmsMenuBack(void)
     // hack to save pid profile
     if (currentMenu == &menuPid[0]) {
         for (i = 0; i < 3; i++) {
-            curr_profile.pidProfile.P8[i] = tempPid[i][0];
-            curr_profile.pidProfile.I8[i] = tempPid[i][1];
-            curr_profile.pidProfile.D8[i] = tempPid[i][2];
+            masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i] = tempPid[i][0];
+            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i] = tempPid[i][1];
+            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i] = tempPid[i][2];
         }
 
-        curr_profile.pidProfile.P8[PIDLEVEL] = tempPid[3][0];
-        curr_profile.pidProfile.I8[PIDLEVEL] = tempPid[3][1];
-        curr_profile.pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
     }
 
     // hack - save rate config for current profile
@@ -932,13 +950,9 @@ void cmsMenuBack(void)
         menuStackIdx--;
         nextPage = NULL;
         currentMenu = menuStack[menuStackIdx];
-        currentMenuPos = menuStackHistory[menuStackIdx];
-        lastMenuPos = -1;
+        currentCursorPos = menuStackHistory[menuStackIdx];
 
         cmsUpdateMaxRows();
-    }
-    else {
-        cmsOpenMenu();
     }
 }
 
@@ -947,15 +961,11 @@ void cmsOpenMenu(void)
     if (cmsInMenu)
         return;
 
-    if (feature(FEATURE_LED_STRIP))
-        featureLedstrip = 1;
-
-    if (feature(FEATURE_BLACKBOX))
-        featureBlackbox = 1;
+    featureLedstrip = feature(FEATURE_LED_STRIP) ? 1 : 0;
+    featureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
 
 #if defined(VTX) || defined(USE_RTC6705)
-    if (feature(FEATURE_VTX))
-        featureVtx = 1;
+    featureVtx = feature(FEATURE_VTX) ? 1 : 0;
 #endif // VTX || USE_RTC6705
 
 #ifdef VTX
@@ -972,27 +982,28 @@ void cmsOpenMenu(void)
     getLedColor();
 #endif // LED_STRIP
 
-    // cmsRows = cmsGetRowsCount();
-    cmsGetSize(&cmsRows, &cmsCols);
+    cmsGetDevParam(&cmsRows, &cmsCols, &cmsBuftime, &cmsBufsize);
+
+    cmsBatchsize = (cmsBuftime < CMS_UPDATE_INTERVAL) ? cmsBufsize : (cmsBufsize * CMS_UPDATE_INTERVAL) / cmsBuftime;
+
     cmsInMenu = true;
     cmsScreenBegin();
-    cmsScreenClear();
     currentMenu = &menuMain[0];
     cmsChangeScreen(currentMenu);
 }
 
 void cmsExitMenu(void *ptr)
 {
-    cmsScreenClear();
-
-    cmsScreenWrite(5, 3, "RESTARTING IMU...");
-    cmsScreenResync(); // Was max7456RefreshAll(); why at this timing?
-
-    stopMotors();
-    stopPwmAllMotors();
-    delay(200);
-
     if (ptr) {
+        cmsScreenClear();
+
+        cmsScreenWrite(5, 3, "RESTARTING IMU...");
+        cmsScreenResync(); // Was max7456RefreshAll(); why at this timing?
+
+        stopMotors();
+        stopPwmAllMotors();
+        delay(200);
+
         // save local variables to configuration
         if (featureBlackbox)
             featureSet(FEATURE_BLACKBOX);
@@ -1026,24 +1037,31 @@ void cmsExitMenu(void *ptr)
 
     cmsScreenEnd();
 
-    systemReset();
+    if (ptr)
+        systemReset();
 }
 
 void cmsUpdate(uint32_t currentTime)
 {
-    static uint8_t rcDelay = BUTTON_TIME;
-    uint8_t key = 0;
+    static int16_t rcDelay = BUTTON_TIME;
+    static uint32_t lastCalled = 0;
     static uint32_t lastCmsHeartBeat = 0;
 
-    // detect enter to menu
-    if (IS_MID(THROTTLE) && IS_HI(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+    uint8_t key = 0;
+
+    // Detect menu invocation
+    if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
         // XXX Double enter!?
         cmsOpenMenu();
+        rcDelay = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
+        lastCalled = currentTime;
+        return;
     }
 
     if (cmsInMenu) {
-        if (rcDelay) {
-            rcDelay--;
+        if (rcDelay > 0) {
+            rcDelay -= currentTime - lastCalled;
+            debug[0] = rcDelay;
         }
         else if (IS_HI(PITCH)) {
             key = KEY_UP;
@@ -1067,16 +1085,14 @@ void cmsUpdate(uint32_t currentTime)
             rcDelay = BUTTON_TIME;
         }
 
-        // XXX Element position adjustment is hard to separate.
-        // XXX May need to drop it upon real separation.
-        // XXX Don't know if this still works
+        lastCalled = currentTime;
 
         if (key && !currentElement) {
             rcDelay = cmsHandleKey(key);
             return;
         }
 
-        cmsDrawMenu();
+        cmsDrawMenu(currentTime);
 
         if (currentTime > lastCmsHeartBeat + 500) {
             // Heart beat for external CMS display device @ 500msec
@@ -1087,12 +1103,16 @@ void cmsUpdate(uint32_t currentTime)
     }
 }
 
-void cmsHandler(uint32_t currentTime)
+void cmsHandler(uint32_t unusedTime)
 {
-    static uint32_t counter = 0;
+    UNUSED(unusedTime);
 
-    if (counter++ % 5 == 0) {
-        cmsUpdate(currentTime);
+    static uint32_t lastCalled = 0;
+    uint32_t now = millis();
+
+    if (now - lastCalled >= CMS_UPDATE_INTERVAL) {
+        cmsUpdate(now);
+        lastCalled = now;
     }
 
     // do not allow ARM if we are in menu
@@ -1129,85 +1149,57 @@ void cmsEraseFlash(void *ptr)
 #ifdef OSD
 //
 // OSD specific menu pages and items
-// XXX Should be part of the osd.c, or new osd_csm.c.
+// XXX Should be part of the osd.c, or new osd_cms.c.
 //
 OSD_Entry menuOsdLayout[] =
 {
-    {"---SCREEN LAYOUT---", OME_Label, NULL, NULL, true},
-    {"ACTIVE ELEM.", OME_Submenu, cmsChangeScreen, &menuOsdActiveElems[0], true},
-#if 0
-    {"POSITION", OME_Submenu, cmsChangeScreen, &menuOsdElemsPositions[0], true},
-#endif
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"---SCREEN LAYOUT---", OME_Label, NULL, NULL, 0},
+    {"ACTIVE ELEM.", OME_Submenu, cmsChangeScreen, &menuOsdActiveElems[0], 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 
-OSD_UINT8_t entryAlarmRssi = {&OSD_cfg.rssi_alarm, 5, 90, 5};
-OSD_UINT16_t entryAlarmCapacity = {&OSD_cfg.cap_alarm, 50, 30000, 50};
-OSD_UINT16_t enryAlarmFlyTime = {&OSD_cfg.time_alarm, 1, 200, 1};
-OSD_UINT16_t entryAlarmAltitude = {&OSD_cfg.alt_alarm, 1, 200, 1};
+OSD_UINT8_t entryAlarmRssi = {&masterConfig.osdProfile.rssi_alarm, 5, 90, 5};
+OSD_UINT16_t entryAlarmCapacity = {&masterConfig.osdProfile.cap_alarm, 50, 30000, 50};
+OSD_UINT16_t enryAlarmFlyTime = {&masterConfig.osdProfile.time_alarm, 1, 200, 1};
+OSD_UINT16_t entryAlarmAltitude = {&masterConfig.osdProfile.alt_alarm, 1, 200, 1};
 
 OSD_Entry menuAlarms[] =
 {
-    {"------ ALARMS ------", OME_Label, NULL, NULL, true},
-    {"RSSI", OME_UINT8, NULL, &entryAlarmRssi, true},
-    {"MAIN BATT.", OME_UINT16, NULL, &entryAlarmCapacity, true},
-    {"FLY TIME", OME_UINT16, NULL, &enryAlarmFlyTime, true},
-    {"MAX ALTITUDE", OME_UINT16, NULL, &entryAlarmAltitude, true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
+    {"RSSI", OME_UINT8, NULL, &entryAlarmRssi, 0},
+    {"MAIN BAT", OME_UINT16, NULL, &entryAlarmCapacity, 0},
+    {"FLY TIME", OME_UINT16, NULL, &enryAlarmFlyTime, 0},
+    {"MAX ALT", OME_UINT16, NULL, &entryAlarmAltitude, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
-
-#if 0 // Not supported yet (or drop support for GUI position editing)
-OSD_Entry menuOsdElemsPositions[] =
-{
-    {"---POSITION---", OME_Label, NULL, NULL, true},
-    {"RSSI", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_RSSI_VALUE], true},
-    {"MAIN BATTERY", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE], true},
-    {"UPTIME", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_ONTIME], true},
-    {"FLY TIME", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_FLYTIME], true},
-    {"FLY MODE", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_FLYMODE], true},
-    {"NAME", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_CRAFT_NAME], true},
-    {"THROTTLE", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_THROTTLE_POS], true},
-
-#ifdef VTX
-    {"VTX CHAN", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_VTX_CHANNEL], true},
-#endif // VTX
-    {"CURRENT (A)", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_CURRENT_DRAW], true},
-    {"USED MAH", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_MAH_DRAWN], true},
-#ifdef GPS
-    {"GPS SPEED", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_GPS_SPEED], true},
-    {"GPS SATS.", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_GPS_SATS], true},
-#endif // GPS
-    {"ALTITUDE", OME_POS, osdEditElement, &OSD_cfg.item_pos[OSD_ALTITUDE], true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
-};
-#endif
 
 OSD_Entry menuOsdActiveElems[] =
 {
-    {" --ACTIV ELEM.-- ", OME_Label, NULL, NULL, true},
-    {"RSSI", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_RSSI_VALUE], true},
-    {"MAIN BATTERY", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE], true},
-    {"HORIZON", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON], true},
-    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_HORIZON_SIDEBARS], true},
-    {"UPTIME", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_ONTIME], true},
-    {"FLY TIME", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_FLYTIME], true},
-    {"FLY MODE", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_FLYMODE], true},
-    {"NAME", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_CRAFT_NAME], true},
-    {"THROTTLE", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_THROTTLE_POS], true},
+    {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
+    {"RSSI", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], 0},
+    {"MAIN BATTERY", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"HORIZON", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS], 0},
+    {"UPTIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ONTIME], 0},
+    {"FLY TIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYTIME], 0},
+    {"FLY MODE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYMODE], 0},
+    {"NAME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME], 0},
+    {"THROTTLE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], 0},
 #ifdef VTX
-    {"VTX CHAN", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_VTX_CHANNEL]},
+    {"VTX CHAN", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
 #endif // VTX
-    {"CURRENT (A)", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_CURRENT_DRAW], true},
-    {"USED MAH", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_MAH_DRAWN], true},
+    {"CURRENT (A)", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW], 0},
+    {"USED MAH", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN], 0},
 #ifdef GPS
-    {"GPS SPEED", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_GPS_SPEED], true},
-    {"GPS SATS.", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_GPS_SATS], true},
+    {"GPS SPEED", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED], 0},
+    {"GPS SATS.", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], 0},
 #endif // GPS
-    {"ALTITUDE", OME_VISIBLE, NULL, &OSD_cfg.item_pos[OSD_ALTITUDE], true},
-    {"BACK", OME_Back, NULL, NULL, true},
-    {NULL, OME_END, NULL, NULL, true}
+    {"ALTITUDE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
 };
 #endif
+
+#endif // CMS

@@ -67,9 +67,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-//#include "io/osd.h"
 #include "io/serial_4way.h"
-//#include "io/vtx.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"

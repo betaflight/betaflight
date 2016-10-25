@@ -53,9 +53,6 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-// Short hands
-#define OSD_cfg masterConfig.osdProfile
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -80,16 +77,7 @@ extern serialPort_t *debugSerialPort;
 #define IS_LO(X)  (rcData[X] < 1250)
 #define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
 
-//#define VISIBLE_FLAG  0x0800 // defined in osd.h
-#define BLINK_FLAG    0x0400
 bool blinkState = true;
-
-#define OSD_POS(x,y)  (x | (y << 5))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> 5) & 0x001F)
-//#define VISIBLE(x)    (x & VISIBLE_FLAG) // defined in osd.h
-#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
-#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
 
 //extern uint8_t RSSI; // TODO: not used?
 
@@ -158,11 +146,11 @@ void osdDrawElements(void)
 
 void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(OSD_cfg.item_pos[item]) || BLINK(OSD_cfg.item_pos[item]))
+    if (!VISIBLE(masterConfig.osdProfile.item_pos[item]) || BLINK(masterConfig.osdProfile.item_pos[item]))
         return;
 
-    uint8_t elemPosX = OSD_X(OSD_cfg.item_pos[item]);
-    uint8_t elemPosY = OSD_Y(OSD_cfg.item_pos[item]);
+    uint8_t elemPosX = OSD_X(masterConfig.osdProfile.item_pos[item]);
+    uint8_t elemPosY = OSD_Y(masterConfig.osdProfile.item_pos[item]);
     char buff[32];
 
     switch(item) {
@@ -396,7 +384,7 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    max7456Init(OSD_cfg.video_system);
+    max7456Init(masterConfig.osdProfile.video_system);
 
     max7456ClearScreen();
 
@@ -413,9 +401,9 @@ void osdInit(void)
 
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
-    max7456Write(7, 7, "MENU: THRT MID");
-    max7456Write(13, 8, "YAW RIGHT");
-    max7456Write(13, 9, "PITCH UP");
+    max7456Write(7, 7,  STARTUP_HELP_TEXT1);
+    max7456Write(12, 8, STARTUP_HELP_TEXT2);
+    max7456Write(12, 9, STARTUP_HELP_TEXT3);
 
     cmsScreenResync(); // Was max7456RefreshAll(); may be okay.
 
@@ -427,7 +415,7 @@ void osdInit(void)
  */
 char osdGetAltitudeSymbol()
 {
-    switch (OSD_cfg.units) {
+    switch (masterConfig.osdProfile.units) {
         case OSD_UNIT_IMPERIAL:
             return 0xF;
         default:
@@ -441,7 +429,7 @@ char osdGetAltitudeSymbol()
  */
 int32_t osdGetAltitude(int32_t alt)
 {
-    switch (OSD_cfg.units) {
+    switch (masterConfig.osdProfile.units) {
         case OSD_UNIT_IMPERIAL:
             return (alt * 328) / 100; // Convert to feet / 100
         default:
@@ -454,44 +442,44 @@ void osdUpdateAlarms(void)
     int32_t alt = osdGetAltitude(BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
-    if (statRssi < OSD_cfg.rssi_alarm)
-        OSD_cfg.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
+    if (statRssi < masterConfig.osdProfile.rssi_alarm)
+        masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
     if (vbat <= (batteryWarningVoltage - 1))
-        OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
 
     if (STATE(GPS_FIX) == 0)
-        OSD_cfg.item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
 
-    if (flyTime / 60 >= OSD_cfg.time_alarm && ARMING_FLAG(ARMED))
-        OSD_cfg.item_pos[OSD_FLYTIME] |= BLINK_FLAG;
+    if (flyTime / 60 >= masterConfig.osdProfile.time_alarm && ARMING_FLAG(ARMED))
+        masterConfig.osdProfile.item_pos[OSD_FLYTIME] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
 
-    if (mAhDrawn >= OSD_cfg.cap_alarm)
-        OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
+    if (mAhDrawn >= masterConfig.osdProfile.cap_alarm)
+        masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 
-    if (alt >= OSD_cfg.alt_alarm)
-        OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+    if (alt >= masterConfig.osdProfile.alt_alarm)
+        masterConfig.osdProfile.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
     else
-        OSD_cfg.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+        masterConfig.osdProfile.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
 }
 
 void osdResetAlarms(void)
 {
-    OSD_cfg.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
-    OSD_cfg.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
-    OSD_cfg.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
-    OSD_cfg.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
-    OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    masterConfig.osdProfile.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+    masterConfig.osdProfile.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+    masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 }
 
 void osdResetStats(void)
@@ -654,20 +642,42 @@ void osdUpdate(uint32_t currentTime)
 // OSD specific CMS functions
 //
 
-void osdGetSize(uint8_t *pRows, uint8_t *pCols)
+void osdGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
 {
     *pRows = max7456GetRowsCount();
     *pCols = 30;
+    *pBuftime = 1;     // Very fast
+    *pBufsize = 50000; // Very large
 }
 
-void osdMenuBegin(void) {
+int osdMenuBegin(void)
+{
     osdResetAlarms();
     osdInMenu = true;
     refreshTimeout = 0;
+
+    return 0;
 }
 
-void osdMenuEnd(void) {
+int osdMenuEnd(void)
+{
     osdInMenu = false;
+
+    return 0;
+}
+
+int osdClearScreen(void)
+{
+    max7456ClearScreen();
+
+    return 0;
+}
+
+int osdWrite(uint8_t x, uint8_t y, char *s)
+{
+    max7456Write(x, y, s);
+
+    return 0;
 }
 
 #ifdef EDIT_ELEMENT_SUPPORT
@@ -688,20 +698,20 @@ void osdEditElement(void *ptr)
 
 void osdDrawElementPositioningHelp(void)
 {
-    max7456Write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
-    max7456Write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
-    max7456Write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 2, "TO MOVE ELEM. ");
-    max7456Write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 3, "              ");
-    max7456Write(OSD_X(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(OSD_cfg.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
+    max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");
+    max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]) + 1, "USE ROLL/PITCH");
+    max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]) + 2, "TO MOVE ELEM. ");
+    max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]) + 3, "              ");
+    max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
 }
 #endif
 
 screenFnVTable_t osdVTable = {
-    osdGetSize,
+    osdGetDevParam,
     osdMenuBegin,
     osdMenuEnd,
-    max7456ClearScreen,
-    max7456Write,
+    osdClearScreen,
+    osdWrite,
     NULL,
     max7456RefreshAll,
 };

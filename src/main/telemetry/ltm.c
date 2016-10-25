@@ -65,8 +65,6 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/beeper.h"
-//#include "io/osd.h"
-//#include "io/vtx.h"
 
 #include "rx/rx.h"
 
