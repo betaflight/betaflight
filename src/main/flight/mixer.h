@@ -230,3 +230,4 @@ void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
+bool isMotorProtocolDshot(void);

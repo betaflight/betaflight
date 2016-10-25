@@ -28,6 +28,7 @@ typedef enum {
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
     PWM_TYPE_DSHOT600,
+    PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT150,
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;

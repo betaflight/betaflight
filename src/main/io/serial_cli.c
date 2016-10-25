@@ -525,7 +525,7 @@ static const char * const lookupTableSuperExpoYaw[] = {
 static const char * const lookupTablePwmProtocol[] = {
     "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED", 
 #ifdef USE_DSHOT 
-    "DSHOT600", "DSHOT150"
+    "DSHOT600", "DSHOT300", "DSHOT150"
 #endif
 };
 
