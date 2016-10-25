@@ -288,7 +288,9 @@ void init(void)
 #endif
 
     mixerConfigureOutput();
+#ifdef USE_SERVOS
     servoConfigureOutput();
+#endif
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
