@@ -170,6 +170,17 @@
 #define MAX7456_DMA_IRQ_HANDLER_ID      DMA1Channel2Descriptor
 #endif
 
+#if (SPRACINGF3NEO_REV >= 5)
+#define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_VSYNC_GPIO              GPIOC
+#define MAX7456_VSYNC_PIN               Pin_5
+#define MAX7456_VSYNC_IO                PC5
+
+#define MAX7456_HSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
+#define MAX7456_HSYNC_GPIO              GPIOC
+#define MAX7456_HSYNC_PIN               Pin_4
+#define MAX7456_HSYNC_IO                PC4
+#else
 #define MAX7456_VSYNC_GPIO_PERIPHERAL   RCC_AHBPeriph_GPIOC
 #define MAX7456_VSYNC_GPIO              GPIOC
 #define MAX7456_VSYNC_PIN               Pin_4
@@ -179,6 +190,7 @@
 #define MAX7456_HSYNC_GPIO              GPIOC
 #define MAX7456_HSYNC_PIN               Pin_5
 #define MAX7456_HSYNC_IO                PC5
+#endif
 
 // Bus Switched Device, Device B.
 #define VTX_RTC6705
