@@ -27,11 +27,9 @@
 #endif
 
 #define LED0                    PB5
-// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
-//#define LED1                    PB4
+#define LED1                    PB4
 
 #define BEEPER                  PB4
-#define BEEPER_INVERTED
 
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
@@ -58,13 +56,6 @@
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_MAG3110
-
-//#define USE_MAG_DATA_READY_SIGNAL
-//#define ENSURE_MAG_DATA_READY_IS_HIGH
-//#define MAG_INT_EXTI            PB7
-
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
 
 #define BARO
 #define USE_BARO_BMP085
@@ -117,7 +108,7 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-// #define RSSI_ADC_GPIO_PIN       PA0
+#define RSSI_ADC_PIN            PA0
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
@@ -146,8 +137,7 @@
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 
 #define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
+#define BIND_PIN                PB11 //UART3_RX_PIN
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -160,4 +150,4 @@
 #define TARGET_IO_PORTD         0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
