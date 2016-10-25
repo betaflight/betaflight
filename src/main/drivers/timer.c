@@ -693,7 +693,7 @@ void timerInit(void)
 #if defined(STM32F3) || defined(STM32F4)
     for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
 
@@ -755,14 +755,11 @@ void timerForceOverflow(TIM_TypeDef *tim)
     }
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag)
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
     for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
-            if (flag && (timerHardware[i].output & flag) == flag) {
-                return &timerHardware[i];
-            } else if (!flag && timerHardware[i].output == flag) { 
-                // TODO: shift flag by one so not to be 0
+            if (flag && (timerHardware[i].usageFlags & flag) == flag) {
                 return &timerHardware[i];
             }
         }

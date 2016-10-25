@@ -54,6 +54,13 @@ typedef uint32_t timCNT_t;
 #error "Unknown CPU defined"
 #endif
 
+typedef enum {
+    TIM_USE_PPM   = 0x1,
+    TIM_USE_PWM   = 0x2,
+    TIM_USE_MOTOR = 0x4,
+    TIM_USE_SERVO = 0x8,
+    TIM_USE_LED   = 0x16
+} timerUsageFlag_e;
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
 struct timerCCHandlerRec_s;
@@ -80,8 +87,8 @@ typedef struct timerHardware_s {
     ioTag_t tag;
     uint8_t channel;
     uint8_t irq;
+    timerUsageFlag_e usageFlags;
     uint8_t output;
-    ioConfig_t ioMode;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
@@ -171,7 +178,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - 
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag);
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
 
 #if defined(USE_HAL_DRIVER)
 TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim);
