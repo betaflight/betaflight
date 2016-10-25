@@ -51,12 +51,21 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOE) },
     { RCC_AHB1(GPIOF) },
 };
+#elif defined(STM32F7)
+const struct ioPortDef_s ioPortDefs[] = {
+    { RCC_AHB1(GPIOA) },
+    { RCC_AHB1(GPIOB) },
+    { RCC_AHB1(GPIOC) },
+    { RCC_AHB1(GPIOD) },
+    { RCC_AHB1(GPIOE) },
+    { RCC_AHB1(GPIOF) },
+};
 # endif
 
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
-    "SONAR", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-    "BARO", "MPU", "INVERTER", "LED STRIP", "LED", "RECEIVER", "TRANSMITTER"
+    "SONAR_TRIGGER", "SONAR_ECHO", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
+    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI" 
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
@@ -129,6 +138,8 @@ uint32_t IO_EXTI_Line(IO_t io)
     return IO_GPIOPinIdx(io);
 #elif defined(STM32F4)
     return 1 << IO_GPIOPinIdx(io);
+#elif defined(STM32F7)
+    return 1 << IO_GPIOPinIdx(io);
 #else
 # error "Unknown target type"
 #endif
@@ -138,14 +149,25 @@ bool IORead(IO_t io)
 {
     if (!io)
         return false;
+#if defined(USE_HAL_DRIVER)
+    return !! HAL_GPIO_ReadPin(IO_GPIO(io),IO_Pin(io));
+#else
     return !! (IO_GPIO(io)->IDR & IO_Pin(io));
+#endif
 }
 
 void IOWrite(IO_t io, bool hi)
 {
     if (!io)
         return;
-#ifdef STM32F4
+#if defined(USE_HAL_DRIVER)
+    if (hi) {
+        HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_SET);
+    }
+    else {
+        HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_RESET);
+    }
+#elif defined(STM32F4)
     if (hi) {
         IO_GPIO(io)->BSRRL = IO_Pin(io);
     }
@@ -161,7 +183,9 @@ void IOHi(IO_t io)
 {
     if (!io)
         return;
-#ifdef STM32F4
+#if defined(USE_HAL_DRIVER)
+    HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_SET);
+#elif defined(STM32F4)
     IO_GPIO(io)->BSRRL = IO_Pin(io);
 #else
     IO_GPIO(io)->BSRR = IO_Pin(io);
@@ -172,7 +196,9 @@ void IOLo(IO_t io)
 {
     if (!io)
         return;
-#ifdef STM32F4
+#if defined(USE_HAL_DRIVER)
+    HAL_GPIO_WritePin(IO_GPIO(io),IO_Pin(io),GPIO_PIN_RESET);
+#elif defined(STM32F4)
     IO_GPIO(io)->BSRRH = IO_Pin(io);
 #else
     IO_GPIO(io)->BRR = IO_Pin(io);
@@ -187,7 +213,10 @@ void IOToggle(IO_t io)
     // Read pin state from ODR but write to BSRR because it only changes the pins
     // high in the mask value rather than all pins. XORing ODR directly risks
     // setting other pins incorrectly because it change all pins' state.
-#ifdef STM32F4
+#if defined(USE_HAL_DRIVER)
+    (void)mask;
+    HAL_GPIO_TogglePin(IO_GPIO(io),IO_Pin(io));
+#elif defined(STM32F4)
     if (IO_GPIO(io)->ODR & mask) {
         IO_GPIO(io)->BSRRH = mask;
     } else {
@@ -206,8 +235,8 @@ void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t ind
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
-	ioRec->resource = resource;
-	ioRec->index = index;
+    ioRec->resource = resource;
+    ioRec->index = index;
 }
 
 void IORelease(IO_t io)
@@ -245,6 +274,40 @@ void IOConfigGPIO(IO_t io, ioConfig_t cfg)
     GPIO_Init(IO_GPIO(io), &init);
 }
 
+#elif defined(STM32F7)
+
+void IOConfigGPIO(IO_t io, ioConfig_t cfg)
+{
+    if (!io)
+        return;
+    rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
+    RCC_ClockCmd(rcc, ENABLE);
+
+    GPIO_InitTypeDef init = {
+        .Pin = IO_Pin(io),
+        .Mode = (cfg >> 0) & 0x13,
+        .Speed = (cfg >> 2) & 0x03,
+        .Pull = (cfg >> 5) & 0x03,
+    };
+    HAL_GPIO_Init(IO_GPIO(io), &init);
+}
+
+void IOConfigGPIOAF(IO_t io, ioConfig_t cfg, uint8_t af)
+{
+    if (!io)
+        return;
+    rccPeriphTag_t rcc = ioPortDefs[IO_GPIOPortIdx(io)].rcc;
+    RCC_ClockCmd(rcc, ENABLE);
+
+    GPIO_InitTypeDef init = {
+        .Pin = IO_Pin(io),
+        .Mode = (cfg >> 0) & 0x13,
+        .Speed = (cfg >> 2) & 0x03,
+        .Pull = (cfg >> 5) & 0x03,
+        .Alternate = af
+    };
+    HAL_GPIO_Init(IO_GPIO(io), &init);
+}
 #elif defined(STM32F3) || defined(STM32F4)
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg)

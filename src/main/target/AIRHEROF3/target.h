@@ -30,7 +30,6 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU INT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -61,6 +60,9 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define SOFTSERIAL_1_TIMER TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
@@ -79,9 +81,8 @@
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
-#define CURRENT_METER_ADC_PIN   PB1
+#define ADC_INSTANCE            ADC2
 #define VBAT_ADC_PIN            PA4
-#define RSSI_ADC_PIN            PA1
 
 #define LED_STRIP
 #define WS2811_TIMER                    TIM3
@@ -89,6 +90,7 @@
 #define WS2811_DMA_CHANNEL              DMA1_Channel6
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_2
 
 #define GPS
 

@@ -17,8 +17,45 @@
 
 #pragma once
 
+#include <stdlib.h>
+
+#include "config/config_profile.h"
+
+#include "drivers/pwm_rx.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/sonar_hcsr04.h"
+
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
+
+#include "io/serial.h"
+#include "io/gimbal.h"
+#include "io/motors.h"
+#include "io/servos.h"
+#include "io/gps.h"
+#include "io/osd.h"
+#include "io/ledstrip.h"
+#include "io/vtx.h"
+
+#include "rx/rx.h"
+
+#include "telemetry/telemetry.h"
+
+#include "sensors/sensors.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+
+
 // System-wide
-typedef struct master_t {
+typedef struct master_s {
     uint8_t version;
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
@@ -28,24 +65,17 @@ typedef struct master_t {
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    escAndServoConfig_t escAndServoConfig;
+    motorConfig_t motorConfig;
     flight3DConfig_t flight3DConfig;
 
-    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
-    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
-    uint8_t motor_pwm_protocol;             // Pwm Protocol
-    uint8_t use_unsyncedPwm;
-
 #ifdef USE_SERVOS
+    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-#endif
-
-#ifdef CC3D
-    uint8_t use_buzzer_p6;
 #endif
 
     // global sensor-related stuff
@@ -79,7 +109,7 @@ typedef struct master_t {
 
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
-    float acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    uint16_t acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
     uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
@@ -93,6 +123,7 @@ typedef struct master_t {
 
 #ifdef GPS
     gpsProfile_t gpsProfile;
+    gpsConfig_t gpsConfig;
 #endif
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
@@ -112,13 +143,22 @@ typedef struct master_t {
     mixerConfig_t mixerConfig;
     airplaneConfig_t airplaneConfig;
 
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
-
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
+
+#ifndef SKIP_RX_PWM_PPM
+    ppmConfig_t ppmConfig;
+    pwmConfig_t pwmConfig;
+#endif
+    
+#ifdef BEEPER
+    beeperConfig_t beeperConfig;
+#endif
+
+#ifdef SONAR
+    sonarConfig_t sonarConfig;
+#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
@@ -166,11 +206,14 @@ typedef struct master_t {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
+    char name[MAX_NAME_LENGTH + 1];
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
-    uint8_t chk;                            // XOR checksum
-   
-    char name[MAX_NAME_LENGTH+1];
-   
+    uint8_t chk;                            // XOR checksum 
+    /* 
+        do not add properties after the CHK
+        as it is assumed to exist at length-1 
+    */
 } master_t;
 
 extern master_t masterConfig;

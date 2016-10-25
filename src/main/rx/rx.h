@@ -38,10 +38,10 @@
 #define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
-    SERIAL_RX_FRAME_PENDING = 0,
-    SERIAL_RX_FRAME_COMPLETE = (1 << 0),
-    SERIAL_RX_FRAME_FAILSAFE = (1 << 1)
-} serialrxFrameState_t;
+    RX_FRAME_PENDING = 0,
+    RX_FRAME_COMPLETE = (1 << 0),
+    RX_FRAME_FAILSAFE = (1 << 1)
+} rxFrameState_e;
 
 typedef enum {
     SERIALRX_SPEKTRUM1024 = 0,
@@ -72,6 +72,8 @@ typedef enum {
 #else
 #define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
 #endif
+
+extern uint16_t rssi;
 
 extern const char rcChannelLetters[];
 
@@ -113,6 +115,9 @@ typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
     uint8_t serialrx_provider;              // type of UART-based receiver (0 = spek 10, 1 = spek 11, 2 = sbus). Must be enabled by FEATURE_RX_SERIAL first.
     uint8_t sbus_inversion;                 // default sbus (Futaba, FrSKY) is inverted. Support for uninverted OpenLRS (and modified FrSKY) receivers.
+    uint8_t rx_spi_protocol;               // type of nrf24 protocol (0 = v202 250kbps). Must be enabled by FEATURE_RX_NRF24 first.
+    uint32_t rx_spi_id;
+    uint8_t rx_spi_rf_channel_count;
     uint8_t spektrum_sat_bind;              // number of bind pulses for Spektrum satellite receivers
     uint8_t spektrum_sat_bind_autoreset;    // whenever we will reset (exit) binding mode after hard reboot
     uint8_t rssi_channel;
@@ -136,32 +141,33 @@ typedef struct rxConfig_s {
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
+struct rxRuntimeConfig_s;
+typedef uint16_t (*rcReadRawDataPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
+typedef uint8_t (*rcFrameStatusPtr)(void);
+
 typedef struct rxRuntimeConfig_s {
-    uint8_t channelCount;                  // number of rc channels as reported by current input driver
-    uint8_t auxChannelCount;
+    uint8_t          channelCount; // number of RC channels as reported by current input driver
+    uint16_t         rxRefreshRate;
+    rcReadRawDataPtr rcReadRawFunc;
+    rcFrameStatusPtr rcFrameStatusFunc;
 } rxRuntimeConfig_t;
 
-extern rxRuntimeConfig_t rxRuntimeConfig;
-
-typedef uint16_t (*rcReadRawDataPtr)(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
+extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
 struct modeActivationCondition_s;
-void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
-void useRxConfig(rxConfig_t *rxConfigToUse);
-void updateRx(uint32_t currentTime);
+void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
+void useRxConfig(const rxConfig_t *rxConfigToUse);
+bool rxUpdate(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-bool shouldProcessRx(uint32_t currentTime);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
-void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
+uint16_t rxGetRefreshRate(void);

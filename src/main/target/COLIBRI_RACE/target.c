@@ -19,68 +19,9 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    PWM11  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    0xFFFF
-};
-
-const uint16_t multiPWM[] = {
-    // prevent crashing, but do nothing
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    PWM11  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    PWM11  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    // prevent crashing, but do nothing
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM10  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    PWM11  | (MAP_TO_MOTOR_OUTPUT << 8), // Swap to servo if needed
-    0xFFFF
-};
-
+#include "drivers/timer.h"
+ 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            0, IOCFG_AF_PP_PD, GPIO_AF_6 }, // PWM1 - PA8
     { TIM3,  IO_TAG(PC6),  TIM_Channel_1, TIM3_IRQn,               1, IOCFG_AF_PP,    GPIO_AF_2 }, // PWM2 - PC6

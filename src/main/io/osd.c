@@ -22,69 +22,44 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <ctype.h>
 
-#include <string.h>
 #include "platform.h"
 
-#include "debug.h"
-#include "version.h"
-#include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/utils.h"
-#include "common/printf.h"
-#include "common/typeconversion.h"
+#ifdef OSD
 
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
+#include "build/version.h"
+
+#include "common/utils.h"
+
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
-#include "drivers/light_ws2811strip.h"
-#include "drivers/sound_beeper.h"
+
+#include "io/flashfs.h"
+#include "io/osd.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
+
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
 
-#include "io/display.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/flashfs.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/beeper.h"
-#include "io/osd.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "common/printf.h"
 
 #define IS_HI(X)  (rcData[X] > 1750)
 #define IS_LO(X)  (rcData[X] < 1250)
@@ -166,7 +141,7 @@ bool inMenu = false;
 
 typedef void (* OSDMenuFuncPtr)(void *data);
 
-void osdUpdate(uint8_t guiKey);
+void osdUpdate(uint32_t currentTime);
 char osdGetAltitudeSymbol();
 int32_t osdGetAltitude(int32_t alt);
 void osdOpenMenu(void);
@@ -350,7 +325,6 @@ void applyLedColor(void * ptr)
         if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR)
             *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), ledColor, ledGetDirection(ledConfig), ledGetFunction(ledConfig), ledGetOverlay(ledConfig), 0);
     }
-    updateLedStrip();
 }
 
 OSD_TAB_t entryLed = {&ledColor, 13, &LED_COLOR_NAMES[0]};
@@ -400,7 +374,7 @@ OSD_Entry menu_vtx[] =
 };
 #endif // VTX || USE_RTC6705
 
-OSD_UINT16_t entryMinThrottle = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
+OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
 OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
 OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
@@ -1172,7 +1146,7 @@ void osdArmMotors(void)
     osdResetStats();
 }
 
-void updateOsd(void)
+void updateOsd(uint32_t currentTime)
 {
     static uint32_t counter;
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -1183,7 +1157,7 @@ void updateOsd(void)
 
     // redraw values in buffer
     if (counter++ % 5 == 0)
-        osdUpdate(0);
+        osdUpdate(currentTime);
     else // rest of time redraw screen 10 chars per idle to don't lock the main idle
         max7456DrawScreen();
 
@@ -1192,7 +1166,7 @@ void updateOsd(void)
         DISABLE_ARMING_FLAG(OK_TO_ARM);
 }
 
-void osdUpdate(uint8_t guiKey)
+void osdUpdate(uint32_t currentTime)
 {
     static uint8_t rcDelay = BUTTON_TIME;
     static uint8_t lastSec = 0;
@@ -1214,7 +1188,7 @@ void osdUpdate(uint8_t guiKey)
 
     osdUpdateStats();
 
-    sec = millis() / 1000;
+    sec = currentTime / 1000000;
 
     if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
@@ -1257,9 +1231,6 @@ void osdUpdate(uint8_t guiKey)
             key = KEY_ESC;
             rcDelay = BUTTON_TIME;
         }
-
-        if (guiKey)
-            key = guiKey;
 
         if (key && !currentElement) {
             rcDelay = osdHandleKey(key);
@@ -1499,7 +1470,7 @@ void osdDrawElements(void)
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
-extern uint16_t rssi; // FIXME dependency on mw.c
+
 
 void osdDrawSingleElement(uint8_t item)
 {
@@ -1708,3 +1679,5 @@ void osdDrawSingleElement(uint8_t item)
 
     max7456Write(elemPosX, elemPosY, buff);
 }
+
+#endif // OSD

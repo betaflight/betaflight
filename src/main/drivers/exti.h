@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "io_types.h"
 
 // old EXTI interface, to be replaced
 typedef struct extiConfig_s {
@@ -35,6 +35,10 @@ struct extiCallbackRec_s {
 void EXTIInit(void);
 
 void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn);
+#if defined(STM32F7)
+void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, ioConfig_t config);
+#else
 void EXTIConfig(IO_t io, extiCallbackRec_t *cb, int irqPriority, EXTITrigger_TypeDef trigger);
+#endif
 void EXTIRelease(IO_t io);
 void EXTIEnable(IO_t io, bool enable);

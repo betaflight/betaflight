@@ -22,9 +22,11 @@
 
 #ifdef USE_FLASH_M25P16
 
-#include "drivers/flash_m25p16.h"
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
+#include "flash.h"
+#include "flash_m25p16.h"
+#include "io.h"
+#include "bus_spi.h"
+#include "system.h"
 
 #define M25P16_INSTRUCTION_RDID             0x9F
 #define M25P16_INSTRUCTION_READ_BYTES       0x03

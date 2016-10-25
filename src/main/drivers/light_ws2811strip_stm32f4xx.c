@@ -30,15 +30,16 @@
 #include "system.h"
 #include "rcc.h"
 #include "timer.h"
+#include "timer_stm32f4xx.h"
 
 #if !defined(WS2811_PIN)
 #define WS2811_PIN                      PA0
 #define WS2811_TIMER                    TIM5
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
 #define WS2811_TIMER_CHANNEL            TIM_Channel_1
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 #endif
 
 static IO_t ws2811IO = IO_NONE;
@@ -68,7 +69,7 @@ void ws2811LedStripHardwareInit(void)
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(WS2811_TIMER));
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), WS2811_TIMER_GPIO_AF);
 
     // Stop timer
     TIM_Cmd(WS2811_TIMER, DISABLE);
@@ -93,33 +94,9 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
     TIM_OCInitStructure.TIM_Pulse = 0;
 
-    uint32_t channelAddress = 0;
-    switch (WS2811_TIMER_CHANNEL) {
-        case TIM_Channel_1:
-            TIM_OC1Init(WS2811_TIMER, &TIM_OCInitStructure);
-            timDMASource = TIM_DMA_CC1;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
-            TIM_OC1PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_2:
-            TIM_OC2Init(WS2811_TIMER, &TIM_OCInitStructure);
-            timDMASource = TIM_DMA_CC2;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
-            TIM_OC2PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_3:
-            TIM_OC3Init(WS2811_TIMER, &TIM_OCInitStructure);
-            timDMASource = TIM_DMA_CC3;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
-            TIM_OC3PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;
-        case TIM_Channel_4:
-            TIM_OC4Init(WS2811_TIMER, &TIM_OCInitStructure);
-            timDMASource = TIM_DMA_CC4;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
-            TIM_OC4PreloadConfig(WS2811_TIMER, TIM_OCPreload_Enable);
-            break;
-    }
+    timerOCInit(WS2811_TIMER, WS2811_TIMER_CHANNEL, &TIM_OCInitStructure);
+    timerOCPreloadConfig(WS2811_TIMER, WS2811_TIMER_CHANNEL, TIM_OCPreload_Enable);
+    timDMASource = timerDmaSource(WS2811_TIMER_CHANNEL);
 
     TIM_CtrlPWMOutputs(WS2811_TIMER, ENABLE);
     TIM_ARRPreloadConfig(WS2811_TIMER, ENABLE);
@@ -132,7 +109,7 @@ void ws2811LedStripHardwareInit(void)
     DMA_DeInit(WS2811_DMA_STREAM);
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_Channel = WS2811_DMA_CHANNEL;
-    DMA_InitStructure.DMA_PeripheralBaseAddr = channelAddress;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(WS2811_TIMER, WS2811_TIMER_CHANNEL);
     DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral;
     DMA_InitStructure.DMA_BufferSize = WS2811_DMA_BUFFER_SIZE;
@@ -150,7 +127,7 @@ void ws2811LedStripHardwareInit(void)
     DMA_Init(WS2811_DMA_STREAM, &DMA_InitStructure);
 
     DMA_ITConfig(WS2811_DMA_STREAM, DMA_IT_TC, ENABLE);
-    DMA_ClearITPendingBit(WS2811_DMA_STREAM, WS2811_DMA_IT);
+    DMA_ClearITPendingBit(WS2811_DMA_STREAM, dmaFlag_IT_TCIF(WS2811_DMA_STREAM));
 
     dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 

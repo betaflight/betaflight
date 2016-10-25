@@ -20,7 +20,8 @@
 #include <math.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -48,7 +49,7 @@ static const gyroConfig_t *gyroConfig;
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT], gyroFilterNotch_2[XYZ_AXIS_COUNT];
 static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
-static firFilterState_t gyroDenoiseState[XYZ_AXIS_COUNT];
+static firFilterDenoise_t gyroDenoiseState[XYZ_AXIS_COUNT];
 static uint8_t gyroSoftLpfType;
 static uint16_t gyroSoftNotchHz1, gyroSoftNotchHz2;
 static float gyroSoftNotchQ1, gyroSoftNotchQ2;
@@ -82,7 +83,7 @@ void gyroInit(void)
             else if (gyroSoftLpfType == FILTER_PT1)
                 gyroDt = (float) gyro.targetLooptime * 0.000001f;
             else
-                initFirFilter(&gyroDenoiseState[axis], gyroSoftLpfHz, gyro.targetLooptime);
+                firFilterDenoiseInit(&gyroDenoiseState[axis], gyroSoftLpfHz, gyro.targetLooptime);
         }
     }
 
@@ -119,7 +120,7 @@ void gyroSetCalibrationCycles(void)
     calibratingG = gyroCalculateCalibratingCycles();
 }
 
-static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThreshold)
+static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 {
     static int32_t g[3];
     static stdev_t var[3];
@@ -181,7 +182,7 @@ void gyroUpdate(void)
     alignSensors(gyroADC, gyroADC, gyroAlign);
 
     if (!isGyroCalibrationComplete()) {
-        performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
+        performGyroCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
     applyGyroZero();
@@ -197,7 +198,7 @@ void gyroUpdate(void)
             else if (gyroSoftLpfType == FILTER_PT1)
                 gyroADCf[axis] = pt1FilterApply4(&gyroFilterPt1[axis], (float) gyroADC[axis], gyroSoftLpfHz, gyroDt);
             else
-                gyroADCf[axis] = firFilterUpdate(&gyroDenoiseState[axis], (float) gyroADC[axis]);
+                gyroADCf[axis] = firFilterDenoiseUpdate(&gyroDenoiseState[axis], (float) gyroADC[axis]);
 
             if (debugMode == DEBUG_NOTCH)
                 debug[axis] = lrintf(gyroADCf[axis]);

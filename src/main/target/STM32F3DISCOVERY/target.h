@@ -31,12 +31,12 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-#define LED0                    PE8 // Blue LEDs - PE8/PE12
+#define LED0                    PE8  // Blue LEDs - PE8/PE12
 #define LED0_INVERTED
-#define LED1                    PE10  // Orange LEDs - PE10/PE14
+#define LED1                    PE10 // Orange LEDs - PE10/PE14
 #define LED1_INVERTED
 
-#define BEEPER                  PE9 // Red LEDs - PE9/PE13
+#define BEEPER                  PE9  // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
 #define USE_SPI
@@ -73,29 +73,47 @@
 // PB12 SPI2_NSS
 
 #define GYRO
+#define USE_FAKE_GYRO
 #define USE_GYRO_L3GD20
 #define L3GD20_SPI              SPI1
 #define L3GD20_CS_PIN           PE3
 #define GYRO_L3GD20_ALIGN       CW270_DEG
-
+#define USE_GYRO_L3G4200D
+#define USE_GYRO_MPU3050
+#define USE_GYRO_MPU6050
+#define USE_GYRO_SPI_MPU6000
+#define MPU6000_CS_PIN          SPI2_NSS_PIN
+#define MPU6000_SPI_INSTANCE    SPI2
 // Support the GY-91 MPU9250 dev board
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define MPU6500_CS_PIN          PC14
 #define MPU6500_SPI_INSTANCE    SPI2
 #define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
+#define USE_GYRO_SPI_MPU9250
+#define MPU9250_CS_PIN          SPI2_NSS_PIN
+#define MPU9250_SPI_INSTANCE    SPI2
 
 #define ACC
+#define USE_FAKE_ACC
+#define USE_ACC_ADXL345
+#define USE_ACC_BMA280
+#define USE_ACC_MMA8452
+#define USE_ACC_MPU6050
 #define USE_ACC_LSM303DLHC
+#define USE_ACC_MPU6000
+#define USE_ACC_SPI_MPU6000
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
+#define USE_ACC_MPU9250
+#define USE_ACC_SPI_MPU9250
 #define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
 
-//#define BARO
-//#define BMP280_CS_PIN         PB12
-//#define BMP280_SPI_INSTANCE   SPI2
-//#define USE_BARO_BMP280
-//#define USE_BARO_SPI_BMP280
+#define BARO
+#define USE_FAKE_BARO
+#define USE_BARO_BMP085
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
 
 #define OSD
 #define USE_MAX7456
@@ -120,20 +138,24 @@
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
 #define MAG
+#define USE_FAKE_MAG
+#define USE_MAG_AK8963
+#define USE_MAG_AK8975
 #define USE_MAG_HMC5883
 
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
-#define SERIAL_PORT_COUNT       3
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
+#define SERIAL_PORT_COUNT       6
 
-// uart2 gpio for shared serial rx/ppm
-//#define UART2_TX_PIN        GPIO_Pin_5 // PD5
-//#define UART2_RX_PIN        GPIO_Pin_6 // PD6
-//#define UART2_GPIO          GPIOD
-//#define UART2_GPIO_AF       GPIO_AF_7
-//#define UART2_TX_PINSOURCE  GPIO_PinSource5
-//#define UART2_RX_PINSOURCE  GPIO_PinSource6
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
+#define UART3_TX_PIN            PB10 // PB10 (AF7)
+#define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)
@@ -145,6 +167,8 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
+#define USE_DSHOT 
+
 #define LED_STRIP
 #define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
@@ -152,8 +176,15 @@
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-
 #define LED_STRIP_TIMER                 TIM16
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
+
+#define SPEKTRUM_BIND
+#define BIND_PIN                PA3 // USART2, PA3
+
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -165,5 +196,6 @@
 #define TARGET_IO_PORTE         0xffff
 #define TARGET_IO_PORTF         0x00ff
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
 

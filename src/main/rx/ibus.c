@@ -16,7 +16,7 @@
  *
  *
  * Driver for IBUS (Flysky) receiver
- *   - initial implementation for MultiWii by Cesco/Plüschi
+ *   - initial implementation for MultiWii by Cesco/PlÂ¸schi
  *   - implementation for BaseFlight by Andreas (fiendie) Tacke
  *   - ported to CleanFlight by Konstantin (digitalentity) Sharlaimov
  */
@@ -25,9 +25,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
-#include "build_config.h"
+#ifdef SERIAL_RX
+
+#include "common/utils.h"
 
 #include "drivers/system.h"
 
@@ -51,49 +53,13 @@
 #define IBUS_BAUDRATE 115200
 
 static uint8_t ibusModel;
-static uint8_t ibusSyncByte;
+static uint8_t ibusSyncByte = 0;
 static uint8_t ibusFrameSize;
 static uint8_t ibusChannelOffset;
 static uint16_t ibusChecksum;
 
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
-
-static void ibusDataReceive(uint16_t c);
-static uint16_t ibusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxConfig);
-
-    if (callback)
-        *callback = ibusReadRawRC;
-
-    ibusSyncByte = 0;
-
-    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = ibusPort;
-    }
-#endif
-
-    return ibusPort != NULL;
-}
 
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
 
@@ -145,7 +111,7 @@ static void ibusDataReceive(uint16_t c)
 uint8_t ibusFrameStatus(void)
 {
     uint8_t i, offset;
-    uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
+    uint8_t frameStatus = RX_FRAME_PENDING;
     uint16_t chksum, rxsum;
 
     if (!ibusFrameDone) {
@@ -168,14 +134,47 @@ uint8_t ibusFrameStatus(void)
         for (i = 0, offset = ibusChannelOffset; i < IBUS_MAX_CHANNEL; i++, offset += 2) {
             ibusChannelData[i] = ibus[offset] + (ibus[offset + 1] << 8);
         }
-        frameStatus = SERIAL_RX_FRAME_COMPLETE;
+        frameStatus = RX_FRAME_COMPLETE;
     }
 
     return frameStatus;
 }
 
-static uint16_t ibusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
 }
+
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
+
+    rxRuntimeConfig->rcReadRawFunc = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = ibusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = ibusPort;
+    }
+#endif
+
+    return ibusPort != NULL;
+}
+#endif

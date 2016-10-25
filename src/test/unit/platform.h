@@ -17,6 +17,10 @@
 
 #pragma once
 
+#define U_ID_0 0
+#define U_ID_1 1
+#define U_ID_2 2
+
 #define MAG
 #define BARO
 #define GPS
@@ -26,15 +30,7 @@
 #define USE_SERVOS
 #define TRANSPONDER
 
-#define SERIAL_PORT_COUNT 4
-
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
-
-#define TARGET_BOARD_IDENTIFIER "TEST"
-
-#define U_ID_0 0
-#define U_ID_1 1
-#define U_ID_2 2
 
 typedef enum
 {
@@ -42,20 +38,19 @@ typedef enum
     Mode_Out_PP = 0x10,
 } GPIO_Mode;
 
-typedef struct
-{
-    void* test;
-} GPIO_TypeDef;
-
-typedef struct
-{
-    void* test;
-} TIM_TypeDef;
-
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
-
 typedef enum {TEST_IRQ = 0 } IRQn_Type;
+typedef enum {
+    EXTI_Trigger_Rising = 0x08,
+    EXTI_Trigger_Falling = 0x0C,
+    EXTI_Trigger_Rising_Falling = 0x10
+} EXTITrigger_TypeDef;
+
+typedef struct
+{
+    void *test;
+} GPIO_TypeDef;
 
 typedef struct {
     void* test;
@@ -67,3 +62,5 @@ void DMA_ClearFlag(uint32_t);
 
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
+
+#include "target.h"

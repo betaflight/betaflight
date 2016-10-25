@@ -17,10 +17,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#include "drivers/flash.h"
-
 #define FLASHFS_WRITE_BUFFER_SIZE 128
 #define FLASHFS_WRITE_BUFFER_USABLE (FLASHFS_WRITE_BUFFER_SIZE - 1)
 
@@ -35,7 +31,8 @@ uint32_t flashfsGetOffset();
 uint32_t flashfsGetWriteBufferFreeSpace();
 uint32_t flashfsGetWriteBufferSize();
 int flashfsIdentifyStartOfFreeSpace();
-const flashGeometry_t* flashfsGetGeometry();
+struct flashGeometry_s;
+const struct flashGeometry_s* flashfsGetGeometry();
 
 void flashfsSeekAbs(uint32_t offset);
 void flashfsSeekRel(int32_t offset);

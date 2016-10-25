@@ -18,7 +18,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "BETAFC"
+#define TARGET_BOARD_IDENTIFIER "BFFC"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
@@ -32,7 +32,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define MPU6000_CS_PIN          PA15
+#define MPU6000_CS_PIN          PC13
 #define MPU6000_SPI_INSTANCE    SPI1
 
 
@@ -62,6 +62,9 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -74,7 +77,6 @@
 #define SOFTSERIAL_2_TIMER      TIM3
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 5
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 6
-
 
 #undef USE_I2C
 
@@ -93,8 +95,13 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-
-
+#define OSD
+// include the max7456 driver
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PA1
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
@@ -130,6 +137,7 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

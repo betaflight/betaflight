@@ -47,7 +47,7 @@ typedef enum {
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
-void beeperUpdate(void);
+void beeperUpdate(uint32_t currentTime);
 void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);

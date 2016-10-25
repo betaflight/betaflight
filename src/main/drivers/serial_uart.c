@@ -25,7 +25,7 @@
 
 #include "platform.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/utils.h"
 #include "gpio.h"
@@ -93,7 +93,7 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s = NULL;
 
@@ -133,7 +133,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
     // callback works for IRQ-based RX ONLY
-    s->port.callback = callback;
+    s->port.rxCallback = rxCallback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;
@@ -295,9 +295,9 @@ void uartStartTxDMA(uartPort_t *s)
 #endif
 }
 
-uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
+uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t*)instance;
 #ifdef STM32F4
     if (s->rxDMAStream) {
         uint32_t rxDMAHead = s->rxDMAStream->NDTR;
@@ -319,9 +319,9 @@ uint32_t uartTotalRxBytesWaiting(serialPort_t *instance)
     }
 }
 
-uint8_t uartTotalTxBytesFree(serialPort_t *instance)
+uint32_t uartTotalTxBytesFree(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t*)instance;
+    const uartPort_t *s = (const uartPort_t*)instance;
 
     uint32_t bytesUsed;
 
@@ -362,9 +362,9 @@ uint8_t uartTotalTxBytesFree(serialPort_t *instance)
     return (s->port.txBufferSize - 1) - bytesUsed;
 }
 
-bool isUartTransmitBufferEmpty(serialPort_t *instance)
+bool isUartTransmitBufferEmpty(const serialPort_t *instance)
 {
-    uartPort_t *s = (uartPort_t *)instance;
+    const uartPort_t *s = (const uartPort_t *)instance;
 #ifdef STM32F4
     if (s->txDMAStream)
 #else

@@ -35,7 +35,7 @@
 
 #ifdef TELEMETRY
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -49,6 +49,10 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_rx.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -57,7 +61,6 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -77,13 +80,10 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
 
-#include "config/config.h"
-#include "config/runtime_config.h"
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100
 
-extern uint16_t rssi;           // FIXME dependency on mw.c
 static serialPort_t *ltmPort;
 static serialPortConfig_t *portConfig;
 static telemetryConfig_t *telemetryConfig;

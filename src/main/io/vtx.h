@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "fc/rc_controls.h"
+
 #define VTX_BAND_MIN                            1
 #define VTX_BAND_MAX                            5
 #define VTX_CHANNEL_MIN                         1

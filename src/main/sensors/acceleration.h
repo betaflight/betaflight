@@ -17,25 +17,28 @@
 
 #pragma once
 
+#include "drivers/accgyro.h"
+#include "sensors/sensors.h"
+
 // Type of accelerometer used/detected
 typedef enum {
     ACC_DEFAULT = 0,
-    ACC_NONE,
-    ACC_ADXL345,
-    ACC_MPU6050,
-    ACC_MMA8452,
-    ACC_BMA280,
-    ACC_LSM303DLHC,
-    ACC_MPU6000,
-    ACC_MPU6500,
-    ACC_MPU9250,
-    ACC_FAKE,
+    ACC_NONE = 1,
+    ACC_ADXL345 = 2,
+    ACC_MPU6050 = 3,
+    ACC_MMA8452 = 4,
+    ACC_BMA280 = 5,
+    ACC_LSM303DLHC = 6,
+    ACC_MPU6000 = 7,
+    ACC_MPU6500 = 8,
+    ACC_ICM20689 = 9,
+    ACC_FAKE = 10,
     ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
 
 extern sensor_align_e accAlign;
 extern acc_t acc;
-extern uint32_t accTargetLooptime;
+extern uint32_t accSamplingInterval;
 
 extern int32_t accSmooth[XYZ_AXIS_COUNT];
 
@@ -49,9 +52,12 @@ typedef union rollAndPitchTrims_u {
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
+void accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
-void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);
-void setAccelerationFilter(float initialAccLpfCutHz);
+union flightDynamicsTrims_u;
+void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
+void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+

@@ -369,8 +369,8 @@ void usartIrqHandler(uartPort_t *s)
     uint32_t ISR = s->USARTx->ISR;
 
     if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
-        if (s->port.callback) {
-            s->port.callback(s->USARTx->RDR);
+        if (s->port.rxCallback) {
+            s->port.rxCallback(s->USARTx->RDR);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->RDR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {

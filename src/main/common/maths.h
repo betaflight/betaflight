@@ -51,7 +51,7 @@ typedef struct fp_vector {
     float Z;
 } t_fp_vector_def;
 
-typedef union {
+typedef union u_fp_vector {
     float A[3];
     t_fp_vector_def V;
 } t_fp_vector;
@@ -134,3 +134,6 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
+uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a);
+

@@ -65,6 +65,6 @@ typedef struct {
     int16_t max_altitude;
 } statistic_t;
 
+void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile_t *osdProfile);
-void updateOsd(void);

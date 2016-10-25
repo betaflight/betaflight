@@ -20,12 +20,14 @@
 #include <string.h>
 
 #include "platform.h"
+
+#include "build/atomic.h"
+
 #include "common/utils.h"
-#include "common/atomic.h"
 
 #include "nvic.h"
 
-#include "gpio.h"
+#include "io.h"
 #include "rcc.h"
 #include "system.h"
 
@@ -205,18 +207,6 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     return 0;
 }
 
-#if defined(STM32F3) || defined(STM32F4)
-uint8_t timerGPIOAF(TIM_TypeDef *tim)
-{
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
-        if (timerDefinitions[i].TIMx == tim) {
-            return timerDefinitions[i].alternateFunction;
-        }
-    }
-    return 0;
-}
-#endif
-
 void timerNVICConfigure(uint8_t irq)
 {
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -237,23 +227,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
-#if defined (STM32F40_41xxx)
-    if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-    }
-    else {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-    }
-#elif defined (STM32F411xE)
-    if (tim == TIM1 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-    }
-    else {
-        TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / 2 / ((uint32_t)mhz * 1000000)) - 1;
-    }
-#else
-    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
-#endif
+    TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(tim) / ((uint32_t)mhz * 1000000)) - 1;
 
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -506,8 +480,6 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
 {
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
-
-
 
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
@@ -781,4 +753,77 @@ void timerForceOverflow(TIM_TypeDef *tim)
         // Force an overflow by setting the UG bit
         tim->EGR |= TIM_EGR_UG;
     }
+}
+
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag)
+{
+    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].tag == tag) {
+            if (flag && (timerHardware[i].output & flag) == flag) {
+                return &timerHardware[i];
+            } else if (!flag && timerHardware[i].output == flag) { 
+                // TODO: shift flag by one so not to be 0
+                return &timerHardware[i];
+            }
+        }
+    }
+    return NULL;
+}
+
+#if !defined(USE_HAL_DRIVER)
+void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1Init(tim, init);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2Init(tim, init);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3Init(tim, init);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4Init(tim, init);
+        break;
+    }
+}
+
+void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        TIM_OC1PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_2:
+        TIM_OC2PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_3:
+        TIM_OC3PreloadConfig(tim, preload);
+        break;
+    case TIM_Channel_4:
+        TIM_OC4PreloadConfig(tim, preload);
+        break;
+    }
+}
+#endif 
+
+volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
+{
+    return (volatile timCCR_t*)((volatile char*)&tim->CCR1 + channel);
+}
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+    case TIM_Channel_1:
+        return TIM_DMA_CC1;
+    case TIM_Channel_2:
+        return TIM_DMA_CC2;
+    case TIM_Channel_3:
+        return TIM_DMA_CC3;
+    case TIM_Channel_4:
+        return TIM_DMA_CC4;
+    }
+    return 0;
 }

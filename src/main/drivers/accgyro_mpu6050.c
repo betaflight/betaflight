@@ -20,10 +20,11 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "nvic.h"
 

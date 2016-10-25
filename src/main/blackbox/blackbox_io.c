@@ -1,69 +1,33 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#include "blackbox_io.h"
-
-#include "version.h"
-#include "build_config.h"
-
-#include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/encoding.h"
-
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
-#include "drivers/sound_beeper.h"
-
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
-#include "io/display.h"
-#include "io/escservo.h"
-#include "rx/rx.h"
-#include "io/rc_controls.h"
-#include "io/osd.h"
-#include "io/vtx.h"
-
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/serial_cli.h"
-#include "io/serial_msp.h"
-#include "io/statusindicator.h"
-#include "rx/msp.h"
-#include "telemetry/telemetry.h"
-#include "common/printf.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-
-#include "io/flashfs.h"
-#include "io/asyncfatfs/asyncfatfs.h"
+#include "platform.h"
 
 #ifdef BLACKBOX
+
+#include "blackbox_io.h"
+
+#include "build/version.h"
+#include "build/build_config.h"
+
+#include "common/encoding.h"
+#include "common/printf.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+
+#include "flight/pid.h"
+
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/flashfs.h"
+
+#include "msp/msp_serial.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
 
 #define BLACKBOX_SERIAL_PORT_MODE MODE_TX
 
@@ -93,6 +57,9 @@ static struct {
         BLACKBOX_SDCARD_READY_TO_LOG
     } state;
 } blackboxSDCard;
+
+#define LOGFILE_PREFIX "LOG"
+#define LOGFILE_SUFFIX "BFL"
 
 #endif
 
@@ -648,7 +615,7 @@ void blackboxDeviceClose(void)
              * of time to shut down asynchronously, we're the only ones that know when to call it.
              */
             if (blackboxPortSharing == PORTSHARING_SHARED) {
-                mspAllocateSerialPorts(&masterConfig.serialConfig);
+                mspSerialAllocatePorts();
             }
         break;
         default:
@@ -690,22 +657,12 @@ static void blackboxCreateLogFile()
 {
     uint32_t remainder = blackboxSDCard.largestLogFileNumber + 1;
 
-    char filename[13];
-
-    filename[0] = 'L';
-    filename[1] = 'O';
-    filename[2] = 'G';
+    char filename[] = LOGFILE_PREFIX "00000." LOGFILE_SUFFIX; 
 
     for (int i = 7; i >= 3; i--) {
         filename[i] = (remainder % 10) + '0';
         remainder /= 10;
     }
-
-    filename[8] = '.';
-    filename[9] = 'T';
-    filename[10] = 'X';
-    filename[11] = 'T';
-    filename[12] = 0;
 
     blackboxSDCard.state = BLACKBOX_SDCARD_WAITING;
 
@@ -739,10 +696,8 @@ static bool blackboxSDCardBeginLog()
             while (afatfs_findNext(blackboxSDCard.logDirectory, &blackboxSDCard.logDirectoryFinder, &directoryEntry) == AFATFS_OPERATION_SUCCESS) {
                 if (directoryEntry && !fat_isDirectoryEntryTerminator(directoryEntry)) {
                     // If this is a log file, parse the log number from the filename
-                    if (
-                        directoryEntry->filename[0] == 'L' && directoryEntry->filename[1] == 'O' && directoryEntry->filename[2] == 'G'
-                        && directoryEntry->filename[8] == 'T' && directoryEntry->filename[9] == 'X' && directoryEntry->filename[10] == 'T'
-                    ) {
+                    if (strncmp(directoryEntry->filename, LOGFILE_PREFIX, strlen(LOGFILE_PREFIX)) == 0
+                        && strncmp(directoryEntry->filename + 8, LOGFILE_SUFFIX, strlen(LOGFILE_SUFFIX)) == 0) {
                         char logSequenceNumberString[6];
 
                         memcpy(logSequenceNumberString, directoryEntry->filename + 3, 5);

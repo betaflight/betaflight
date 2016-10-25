@@ -23,10 +23,10 @@
 
 #ifdef DISPLAY
 
-#include "version.h"
-#include "debug.h"
+#include "build/version.h"
+#include "build/debug.h"
 
-#include "build_config.h"
+#include "build/build_config.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"
@@ -46,7 +46,9 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
-#include "io/rc_controls.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -57,11 +59,12 @@
 #include "flight/navigation.h"
 #endif
 
-#include "config/config.h"
-#include "config/runtime_config.h"
+#include "config/feature.h"
 #include "config/config_profile.h"
 
 #include "io/display.h"
+
+#include "rx/rx.h"
 
 #include "scheduler/scheduler.h"
 
@@ -578,17 +581,16 @@ void showDebugPage(void)
 }
 #endif
 
-void updateDisplay(void)
+void displayUpdate(uint32_t currentTime)
 {
-    uint32_t now = micros();
     static uint8_t previousArmedState = 0;
 
-    bool updateNow = (int32_t)(now - nextDisplayUpdateAt) >= 0L;
+    const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = now + DISPLAY_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTime + DISPLAY_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -608,7 +610,7 @@ void updateDisplay(void)
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(now - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
+                (((int32_t)(currentTime - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
@@ -618,7 +620,7 @@ void updateDisplay(void)
 
     if (pageState.pageChanging) {
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-        pageState.nextPageAt = now + PAGE_CYCLE_FREQUENCY;
+        pageState.nextPageAt = currentTime + PAGE_CYCLE_FREQUENCY;
 
         // Some OLED displays do not respond on the first initialisation so refresh the display
         // when the page changes in the hopes the hardware responds.  This also allows the
@@ -699,7 +701,7 @@ void displayInit(rxConfig_t *rxConfigToUse)
     memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);
 
-    updateDisplay();
+    displayUpdate(micros());
 
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }

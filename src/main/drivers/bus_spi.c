@@ -21,6 +21,7 @@
 #include <platform.h>
 
 #include "bus_spi.h"
+#include "exti.h"
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
@@ -98,13 +99,17 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 
 void spiInitDevice(SPIDevice device)
 {
-    SPI_InitTypeDef spiInit;
-
     spiDevice_t *spi = &(spiHardwareMap[device]);
 
 #ifdef SDCARD_SPI_INSTANCE
-    if (spi->dev == SDCARD_SPI_INSTANCE)
-        spi->sdcard = true;
+    if (spi->dev == SDCARD_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
+#endif
+#ifdef RX_SPI_INSTANCE
+    if (spi->dev == RX_SPI_INSTANCE) {
+        spi->leadingEdge = true;
+    }
 #endif
 
     // Enable SPI clock
@@ -120,21 +125,24 @@ void spiInitDevice(SPIDevice device)
     IOConfigGPIOAF(IOGetByTag(spi->miso), SPI_IO_AF_CFG, spi->af);
     IOConfigGPIOAF(IOGetByTag(spi->mosi), SPI_IO_AF_CFG, spi->af);
 
-    if (spi->nss)
+    if (spi->nss) {
         IOConfigGPIOAF(IOGetByTag(spi->nss), SPI_IO_CS_CFG, spi->af);
+    }
 #endif
 #if defined(STM32F10X)
     IOConfigGPIO(IOGetByTag(spi->sck), SPI_IO_AF_SCK_CFG);
     IOConfigGPIO(IOGetByTag(spi->miso), SPI_IO_AF_MISO_CFG);
     IOConfigGPIO(IOGetByTag(spi->mosi), SPI_IO_AF_MOSI_CFG);
 
-    if (spi->nss)
+    if (spi->nss) {
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
+    }
 #endif
 
-            // Init SPI hardware
+    // Init SPI hardware
     SPI_I2S_DeInit(spi->dev);
 
+    SPI_InitTypeDef spiInit;
     spiInit.SPI_Mode = SPI_Mode_Master;
     spiInit.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
     spiInit.SPI_DataSize = SPI_DataSize_8b;
@@ -143,11 +151,10 @@ void spiInitDevice(SPIDevice device)
     spiInit.SPI_CRCPolynomial = 7;
     spiInit.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
 
-    if (spi->sdcard) {
+    if (spi->leadingEdge) {
         spiInit.SPI_CPOL = SPI_CPOL_Low;
         spiInit.SPI_CPHA = SPI_CPHA_1Edge;
-    }
-    else {
+    } else {
         spiInit.SPI_CPOL = SPI_CPOL_High;
         spiInit.SPI_CPHA = SPI_CPHA_2Edge;
     }
@@ -160,8 +167,10 @@ void spiInitDevice(SPIDevice device)
     SPI_Init(spi->dev, &spiInit);
     SPI_Cmd(spi->dev, ENABLE);
 
-    if (spi->nss)
+    if (spi->nss) {
+        // Drive NSS high to disable connected SPI device.
         IOHi(IOGetByTag(spi->nss));
+    }
 }
 
 bool spiInit(SPIDevice device)
@@ -186,6 +195,13 @@ bool spiInit(SPIDevice device)
 #endif
     case SPIDEV_3:
 #if defined(USE_SPI_DEVICE_3) && (defined(STM32F303xC) || defined(STM32F4))
+        spiInitDevice(device);
+        return true;
+#else
+        break;
+#endif
+    case SPIDEV_4:
+#if defined(USE_SPI_DEVICE_4)
         spiInitDevice(device);
         return true;
 #else
