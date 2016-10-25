@@ -108,7 +108,7 @@
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
 
-#define MAG
+//#define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW180_DEG
 
