@@ -54,6 +54,8 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
+#include "io/cms_types.h"
+
 #ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
@@ -581,9 +583,18 @@ void showDebugPage(void)
 }
 #endif
 
+#ifdef OLEDCMS
+static bool displayInCMS = false;
+#endif
+
 void displayUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
+
+#ifdef OLEDCMS
+    if (displayInCMS)
+        return;
+#endif
 
     const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
@@ -732,5 +743,62 @@ void displayDisablePageCycling(void)
 {
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
+
+#ifdef OLEDCMS
+#include "io/cms_types.h"
+
+void displayCMSGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
+{
+    *pRows = 8;
+    *pCols = 21;
+    *pBuftime = 1;
+    *pBufsize = 50000;
+}
+
+int displayCMSBegin(void)
+{
+    displayInCMS = true;
+
+    return 0;
+}
+
+int displayCMSEnd(void)
+{
+    displayInCMS = false;
+
+    return 0;
+}
+
+int displayCMSClear(void)
+{
+    i2c_OLED_clear_display_quick();
+
+    return 0;
+}
+
+int displayCMSWrite(uint8_t x, uint8_t y, char *s)
+{
+    i2c_OLED_set_xy(x, y);
+    i2c_OLED_send_string(s);
+
+    return 0;
+}
+
+screenFnVTable_t displayCMSVTable = {
+    displayCMSGetDevParam,
+    displayCMSBegin,
+    displayCMSEnd,
+    displayCMSClear,
+    displayCMSWrite,
+    NULL,
+    NULL,
+};
+
+screenFnVTable_t *displayCMSInit(void)
+{
+    return &displayCMSVTable;
+}
+
+#endif // OLEDCMS
 
 #endif

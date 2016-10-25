@@ -45,3 +45,5 @@ void displayEnablePageCycling(void);
 void displayDisablePageCycling(void);
 void displayResetPageCycling(void);
 void displaySetNextPageChangeAt(uint32_t futureMicros);
+
+screenFnVTable_t *displayCMSInit(void);

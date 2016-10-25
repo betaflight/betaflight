@@ -40,6 +40,7 @@
 
 #include "io/flashfs.h"
 #include "io/osd.h"
+#include "io/display.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -61,7 +62,7 @@ void cmsChangeScreen(void *);
 void cmsMenuBack(void);
 void cmsEraseFlash(void *);
 
-screenFnVTable_t *pScreenFnVTable;
+screenFnVTable_t *pScreenFnVTable = NULL;
 
 uint8_t cmsRows;
 uint8_t cmsCols;
@@ -91,8 +92,7 @@ uint16_t cmsBatchsize;
 //
 
 #define LEFT_MENU_COLUMN  1
-//#define RIGHT_MENU_COLUMN (cmsCols - 7)
-#define RIGHT_MENU_COLUMN (cmsCols - 9 - 7)
+#define RIGHT_MENU_COLUMN (cmsCols - 7)
 
 bool cmsScreenCleared;
 OSD_Entry *currentMenu;
@@ -153,6 +153,10 @@ pScreenFnVTable = osdCmsInit();
 
 #ifdef CANVAS
 pScreenFnVTable = canvasInit();
+#endif
+
+#ifdef OLEDCMS
+pScreenFnVTable = displayCMSInit();
 #endif
 }
 
@@ -1106,6 +1110,9 @@ void cmsUpdate(uint32_t currentTime)
 void cmsHandler(uint32_t unusedTime)
 {
     UNUSED(unusedTime);
+
+    if (pScreenFnVTable == NULL)
+        return;
 
     static uint32_t lastCalled = 0;
     uint32_t now = millis();

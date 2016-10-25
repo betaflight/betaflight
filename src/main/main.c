@@ -74,6 +74,8 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "io/cms_types.h"
+
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -86,7 +88,6 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
-#include "io/cms_types.h"
 #include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
