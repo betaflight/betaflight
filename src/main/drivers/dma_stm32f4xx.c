@@ -99,4 +99,5 @@ uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream)
     RETURN_TCIF_FLAG(stream, 5);
     RETURN_TCIF_FLAG(stream, 6);
     RETURN_TCIF_FLAG(stream, 7);
+    return 0;
 }
