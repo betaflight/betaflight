@@ -38,6 +38,7 @@
 
 #include "osd/fonts/font_max7456_12x18.h"
 
+// #define DEBUG_MAX7456_EXTI
 #define MAX7456_MODE_MASK_PAL 0x40
 #define MAX7456_CENTER_PAL 0x8
 
@@ -176,11 +177,20 @@ void max7456_updateLOSState(void)
     //debug[0] = max7456State.los;
 }
 
+#ifdef DEBUG_MAX7456_EXTI
+static uint32_t losCounter = 0;
+static uint32_t vsyncCounter = 0;
+static uint32_t hsyncCounter = 0;
+#endif
+
 void LOS_EXTI_Handler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
-    static uint32_t callCount = 0;
-    callCount++;
+    
+#ifdef DEBUG_MAX7456_EXTI
+    losCounter++;
+#endif
+
     max7456State.losCounter++;
     max7456_updateLOSState();
 }
@@ -188,8 +198,10 @@ void LOS_EXTI_Handler(extiCallbackRec_t* cb)
 void VSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
-    static uint32_t callCount = 0;
-    callCount++;
+#ifdef DEBUG_MAX7456_EXTI
+    vsyncCounter++;
+#endif
+
     max7456State.vSyncDetected = true;
     max7456State.frameCounter++;
     //debug[1] = max7456State.frameCounter;
@@ -198,8 +210,10 @@ void VSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 void HSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
-    static uint32_t callCount = 0;
-    callCount++;
+#ifdef DEBUG_MAX7456_EXTI
+    hsyncCounter++;
+#endif
+
     max7456State.hSyncDetected = true;
 }
 
