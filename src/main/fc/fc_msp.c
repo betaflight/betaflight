@@ -1782,8 +1782,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 /*
  * Return a pointer to the process command function
  */
-mspProcessCommandFnPtr mspFcInit(void)
+void mspFcInit(void)
 {
     initActiveBoxIds();
-    return mspFcProcessCommand;
 }
