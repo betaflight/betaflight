@@ -29,6 +29,7 @@
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 
@@ -65,10 +66,11 @@ typedef struct master_s {
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     motorConfig_t motorConfig;
-    servoConfig_t servoConfig;
     flight3DConfig_t flight3DConfig;
 
 #ifdef USE_SERVOS
+    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration

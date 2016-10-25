@@ -288,7 +288,7 @@ void init(void)
 #endif
 
     mixerConfigureOutput();
-    // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
+    servoConfigureOutput();
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER

@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "drivers/io.h"
-#include "flight/mixer.h"
+#include "drivers/io_types.h"
+#include "flight/servos.h"
 
 typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1 to 2ms)

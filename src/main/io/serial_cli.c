@@ -823,9 +823,9 @@ const clivalue_t valueTable[] = {
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
 #ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
-    { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
-    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.servoMixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
+    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoPwmRate, .config.minmax = { 50,  498 } },
     { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
 #endif

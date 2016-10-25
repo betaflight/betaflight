@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "drivers/io_types.h"
 #include "flight/mixer.h"
 
 typedef struct motorConfig_s {
