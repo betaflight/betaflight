@@ -80,7 +80,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: UART6 RX, not used as PWM, definition inherited from REVO target
     { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: small CH5 pad, not used as PWM, definition inherited from REVO target
     { TIM8,  IO_TAG(PC9),  TIM_Channel_4, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: small CH6 pad, not used as PWM, definition inherited from REVO target
-
     { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM3 }, // MOTOR_1
     { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,           1, IOCFG_AF_PP_PD, GPIO_AF_TIM3 }, // MOTOR_2
     { TIM9,  IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM9_IRQn,  1, IOCFG_AF_PP_PD, GPIO_AF_TIM9 }, // MOTOR_3
