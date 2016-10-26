@@ -497,6 +497,10 @@ bool smartPortSendMspReply()
 
         checksum = sbufBytesRemaining(txBuf) ^ smartPortMspReply.cmd;        
     }
+    else {
+        // header
+        *(p++) = (SMARTPORT_MSP_VERSION << 5) | (seq++ & 0xF);
+    }
 
     while ((p < end) && (sbufBytesRemaining(txBuf) > 0)) {
         *p = sbufReadU8(txBuf);
