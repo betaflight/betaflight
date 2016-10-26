@@ -1093,6 +1093,7 @@ void osdUpdateFCState(void)
 {
     fcStatus.vbat = vbat;
     fcStatus.fcState = packFlightModeFlags();
+    fcStatus.rssi = rssi;
 }
 
 void taskDrawScreen(void)
