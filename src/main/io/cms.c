@@ -214,15 +214,28 @@ OSD_Entry menuRc[];
 OSD_Entry menuRateExpo[];
 OSD_Entry menuMisc[];
 
+static char infoGitRev[GIT_SHORT_REVISION_LENGTH];
+static char infoTargetName[] = __TARGET__;
+
+OSD_Entry menuInfo[] = {
+    { "--- INFO ---", OME_Label, NULL, NULL, 0 },
+    { FC_VERSION_STRING, OME_Label, NULL, NULL, 0 },
+    { infoGitRev, OME_Label, NULL, NULL, 0 },
+    { infoTargetName, OME_Label, NULL, NULL, 0 },
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
 OSD_Entry menuMain[] =
 {
     {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
-    {"CFG. IMU", OME_Submenu, cmsChangeScreen, &menuImu[0], 0},
+    {"CFG&IMU", OME_Submenu, cmsChangeScreen, &menuImu[0], 0},
     {"FEATURES", OME_Submenu, cmsChangeScreen, &menuFeatures[0], 0},
 #ifdef OSD
     {"SCR LAYOUT", OME_Submenu, cmsChangeScreen, &menuOsdLayout[0], 0},
     {"ALARMS", OME_Submenu, cmsChangeScreen, &menuAlarms[0], 0},
 #endif
+    {"INFO", OME_Submenu, cmsChangeScreen, &menuInfo[0], 0},
     {"SAVE&REBOOT", OME_OSD_Exit, cmsExitMenu, (void*)1, 0},
     {"EXIT", OME_OSD_Exit, cmsExitMenu, (void*)0, 0},
     {NULL,OME_END, NULL, NULL, 0}
@@ -861,7 +874,7 @@ void cmsDrawMenu(uint32_t currentTime)
 
     // Cursor manipulation
 
-    if ((currentMenu + currentCursorPos)->type == OME_Label) // skip label
+    while ((currentMenu + currentCursorPos)->type == OME_Label) // skip label
         currentCursorPos++;
 
     if (lastCursorPos >= 0 && currentCursorPos != lastCursorPos) {
@@ -1129,6 +1142,14 @@ void cmsHandler(uint32_t unusedTime)
 
 void cmsInit(void)
 {
+    int i;
+    for (i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
+        if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
+            infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
+        else
+            infoGitRev[i] = shortGitRevision[i];
+    }
+
     cmsScreenInit();
 }
 
