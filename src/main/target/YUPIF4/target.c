@@ -22,11 +22,11 @@
 #include "drivers/timer.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM8, IO_TAG(PC8), TIM_Channel_3, TIM8_CC_IRQn,  0, IOCFG_AF_PP, GPIO_AF_TIM8 }, // PPM IN
-    { TIM2, IO_TAG(PA0), TIM_Channel_1, TIM2_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM2 }, // MS1
-    { TIM2, IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM2 }, // MS2
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM2 }, // MS3
-    { TIM2, IO_TAG(PA3), TIM_Channel_4, TIM2_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM2 }, // MS4
-    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM3 }, // MS5
-    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,     1, IOCFG_AF_PP, GPIO_AF_TIM3 }, // MS6
+    { TIM8, IO_TAG(PC8), TIM_Channel_3, TIM8_CC_IRQn,  TIM_USE_PPM,   0, GPIO_AF_TIM8 }, // PPM IN
+    { TIM2, IO_TAG(PA0), TIM_Channel_1, TIM2_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM2 }, // MS1
+    { TIM2, IO_TAG(PA1), TIM_Channel_2, TIM2_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM2 }, // MS2
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM2 }, // MS3
+    { TIM2, IO_TAG(PA3), TIM_Channel_4, TIM2_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM2 }, // MS4
+    { TIM3, IO_TAG(PB0), TIM_Channel_3, TIM3_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM3 }, // MS5
+    { TIM3, IO_TAG(PB1), TIM_Channel_4, TIM3_IRQn,     TIM_USE_MOTOR, 1, GPIO_AF_TIM3 }, // MS6
 };
