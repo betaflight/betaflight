@@ -158,7 +158,9 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 #ifdef USE_UART1_RX_DMA
     s->rxDMAChannel = DMA1_Channel5;
 #endif
+#ifdef USE_UART1_TX_DMA
     s->txDMAChannel = DMA1_Channel4;
+#endif
 
     s->USARTx = USART1;
 
