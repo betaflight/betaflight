@@ -27,7 +27,6 @@
 
 #include "build/build_config.h"
 
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
 #include "fc/config.h"

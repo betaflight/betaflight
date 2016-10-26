@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "drivers/compass.h"
+
+
 // Type of magnetometer used/detected
 typedef enum {
     MAG_DEFAULT = 0,

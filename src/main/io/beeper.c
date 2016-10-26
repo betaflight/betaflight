@@ -23,13 +23,10 @@
 
 #include "common/utils.h"
 
-#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-
-#include "fc/rc_controls.h"
 
 #include "io/statusindicator.h"
 #include "io/vtx.h"
