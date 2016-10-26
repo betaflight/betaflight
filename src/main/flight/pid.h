@@ -94,5 +94,5 @@ enum {
     MAG_HOLD_ENABLED
 };
 
-void updateMagHoldHeading(int16_t heading);
+void updateMagHoldHeading(int16_t heading, uint8_t reset);
 int16_t getMagHoldHeading();
