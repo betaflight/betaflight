@@ -483,10 +483,7 @@ bool smartPortSendMspReply()
 
         // header
         *(p++) = (SMARTPORT_MSP_VERSION << 5) | (1 << 4) | (seq++ & 0xF);
-        
         *(p++) = size;
-        *(p++) = smartPortMspReply.cmd;
-
         checksum = sbufBytesRemaining(txBuf) ^ smartPortMspReply.cmd;        
     }
     else {
