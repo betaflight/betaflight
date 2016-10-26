@@ -116,8 +116,8 @@ static const element_t osdDefaultElements[] = {
     {  8, -1, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
     { 13, -5, EF_ENABLED, OSD_ELEMENT_MOTORS },
 #if defined(FC) && defined(VTX)
-    {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_CHANNEL },
     {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_BAND },
+    {  3, -5, EF_ENABLED, OSD_ELEMENT_VTX_CHANNEL },
     {  5, -5, EF_ENABLED, OSD_ELEMENT_VTX_RFPOWER },
 #endif
 };
