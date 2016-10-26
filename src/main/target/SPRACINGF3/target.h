@@ -102,6 +102,8 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
+#define USE_DSHOT
+
 #define LED_STRIP
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2

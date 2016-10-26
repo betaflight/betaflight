@@ -28,24 +28,20 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-
-#include "drivers/accgyro.h"
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
-
-#include "rx/rx.h"
-
 #include "fc/rc_controls.h"
-#include "io/gps.h"
+#include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 #include "flight/gtune.h"
 
-#include "fc/runtime_config.h"
+#include "io/gps.h"
+
+#include "rx/rx.h"
+
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
 
 extern float rcInput[3];
 extern float setpointRate[3];

@@ -24,10 +24,6 @@
 
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-
 #include "rx/rx.h"
 #include "rx/msp.h"
 
