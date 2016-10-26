@@ -29,8 +29,6 @@
 #include "drivers/io_impl.h"
 #include "drivers/system.h"
 #include "drivers/light_led.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 
 #include "io/serial.h"
 

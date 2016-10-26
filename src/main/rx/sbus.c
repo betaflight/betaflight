@@ -27,11 +27,6 @@
 
 #include "drivers/system.h"
 
-#include "drivers/gpio.h"
-#include "drivers/inverter.h"
-
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
 #ifdef TELEMETRY
