@@ -244,7 +244,7 @@ void resetServoConfig(servoConfig_t *servoConfig)
     servoConfig->servoCenterPulse = 1500;
     servoConfig->servoPwmRate = 50;
 
-    uint8_t servoIndex = 0;
+    int servoIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
             servoConfig->ioTags[servoIndex] = timerHardware[i].tag;
@@ -270,7 +270,7 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffset = 40;
 
-    uint8_t motorIndex = 0;
+    int motorIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
             motorConfig->ioTags[motorIndex] = timerHardware[i].tag;
@@ -324,7 +324,7 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 
 void resetPwmConfig(pwmConfig_t *pwmConfig)
 {
-    uint8_t inputIndex = 0;
+    int inputIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
         if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
