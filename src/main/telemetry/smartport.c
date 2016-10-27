@@ -451,10 +451,13 @@ bool smartPortSendMspReply()
         if (smartPortMspReply.result == MSP_RESULT_ERROR) {
             *p++ |= SMARTPORT_MSP_ERROR_FLAG;
             *p++ = SMARTPORT_MSP_ERROR;
+            *p++ = SMARTPORT_MSP_ERROR ^ smartPortMspReply.cmd; // MSP checksum
+            while (p < end) *p++ = 0; // pad with zeros
             smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
             return false;
         }
 
+        p++;
         *p++ = size;
         checksum = size ^ smartPortMspReply.cmd;
     }
