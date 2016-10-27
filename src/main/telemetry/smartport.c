@@ -180,16 +180,16 @@ typedef struct smartPortFrame_s {
 #define SMARTPORT_FRAME_SIZE  sizeof(smartPortFrame_t)
 #define SMARTPORT_TX_BUF_SIZE 256
 
-#define SMARTPORT_PAYLOAD_SIZE   (SMARTPORT_FRAME_SIZE - 3*sizeof(uint8_t))
-#define SMARTPORT_PAYLOAD_OFFSET 2
+#define SMARTPORT_PAYLOAD_OFFSET offsetof(smartPortFrame_t, valueId)
+#define SMARTPORT_PAYLOAD_SIZE   (SMARTPORT_FRAME_SIZE - SMARTPORT_PAYLOAD_OFFSET - 1)
 
-static uint8_t smartPortRxBuffer[SMARTPORT_FRAME_SIZE];
+static smartPortFrame_t smartPortRxBuffer;
 static uint8_t smartPortRxBytes = 0;
 static bool smartPortFrameReceived = false;
 
 #define SMARTPORT_MSP_VERSION    1
 #define SMARTPORT_MSP_VER_SHIFT  5
-#define SMARTPORT_MSP_VER_MASK   0xE0
+#define SMARTPORT_MSP_VER_MASK   (0x7 << SMARTPORT_MSP_VER_SHIFT)
 #define SMARTPORT_MSP_VERSION_S  (SMARTPORT_MSP_VERSION << SMARTPORT_MSP_VER_SHIFT)
 
 #define SMARTPORT_MSP_START_FLAG (1 << 4)
@@ -219,6 +219,7 @@ static void smartPortDataReceive(uint16_t c)
         return;
     }
 
+    uint8_t* rxBuffer = (uint8_t*)&smartPortRxBuffer;
     if (smartPortRxBytes == 0) {
         if ((c == FSSP_SENSOR_ID1) && (serialRxBytesWaiting(smartPortSerialPort) == 0)) {
 
@@ -227,7 +228,7 @@ static void smartPortDataReceive(uint16_t c)
             smartPortHasRequest = 1;
         }
         else if (c == FSSP_SENSOR_ID2) {
-            smartPortRxBuffer[smartPortRxBytes++] = c;
+            rxBuffer[smartPortRxBytes++] = c;
             checksum = 0;
         }
         else {
@@ -246,7 +247,7 @@ static void smartPortDataReceive(uint16_t c)
             byteStuffing = false;
         }
 
-        smartPortRxBuffer[smartPortRxBytes++] = c;
+        rxBuffer[smartPortRxBytes++] = c;
 
         if(smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
             if (c == (0xFF - checksum)) {
@@ -413,7 +414,7 @@ static void processMspPacket(mspPacket_t* packet)
  *   - payload...
  *   - CRC
  */
-void handleSmartPortMspFrame(uint8_t* frame, uint8_t size)
+void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
 {
     static uint8_t mspBuffer[SMARTPORT_MSP_RX_BUF_SIZE];
     static uint8_t mspStarted = 0;
@@ -427,8 +428,8 @@ void handleSmartPortMspFrame(uint8_t* frame, uint8_t size)
     };
     
     // re-assemble MSP frame & forward to MSP port when complete
-    uint8_t* p = frame;
-    uint8_t* end = frame + size;
+    uint8_t* p = ((uint8_t*)sp_frame) + SMARTPORT_PAYLOAD_OFFSET;
+    uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
     
     uint8_t head = *p++;
     uint8_t seq = head & SMARTPORT_MSP_SEQ_MASK;
@@ -569,11 +570,10 @@ void handleSmartPortTelemetry(void)
         smartPortFrameReceived = false;
         // do not check the physical ID here again
         // unless we start receiving other sensors' packets
-        smartPortFrame_t* frame = (smartPortFrame_t*)smartPortRxBuffer;
-        if(frame->frameId == FSSP_MSPC_FRAME) {
+        if(smartPortRxBuffer.frameId == FSSP_MSPC_FRAME) {
 
             // Pass only the payload: skip sensorId & frameId
-            handleSmartPortMspFrame(smartPortRxBuffer + SMARTPORT_PAYLOAD_OFFSET, SMARTPORT_PAYLOAD_SIZE);
+            handleSmartPortMspFrame(&smartPortRxBuffer);
         }
     }
     
