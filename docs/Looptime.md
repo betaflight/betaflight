@@ -6,7 +6,7 @@ More, with asynchronous gyro processing, not all tasks are executed in the same 
 
 ## `async_mode = NONE`
 
-Gyroscope sampling and filtering, Accelerometer sampling and filtering, Attitude computation and PID control loop are executed as single tasks and processed one ofter the other.
+Gyroscope sampling and filtering, Accelerometer sampling and filtering, Attitude computation and PID control loop are executed as single tasks and processed one after another.
 
 | **gyro_sync**     | **gyro_lpf**      | **Control Loop Rate** (actual looptime) [us] |
 | ----              | ----              | -----                     |   
