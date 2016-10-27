@@ -11,19 +11,11 @@
 
 #include "drivers/system.h"
 
-#include "io/cms_types.h"
+#include "io/cms.h"
 
 #include "fc/fc_msp.h"
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
-
-void canvasGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
-{
-    *pRows = 13;
-    *pCols = 30;
-    *pBuftime = 23;     // = 256/(115200/10)
-    *pBufsize = 192;    // 256 * 3/4 (Be conservative)
-}
 
 int canvasOutput(uint8_t cmd, uint8_t *buf, int len)
 {
@@ -85,10 +77,18 @@ screenFnVTable_t canvasVTable = {
     NULL,
 };
 
-screenFnVTable_t *canvasInit(void)
+displayPort_t canvasDisplayPort = {
+    .rows = 13,
+    .cols = 30,
+    .pBuftime = 23,          // = 256/(115200/10)
+    .pBufsize = 192,         // 256 * 3/4 (Be conservative)
+    .VTable = canvasVTable,
+};
+
+displayPort_t *canvasInit(void)
 {
     mspSerialPushInit(mspFcPushInit()); // Called once at startup to initialize push function in msp
 
-    return &canvasVTable;
+    return &canvasDisplayPort;
 }
 #endif

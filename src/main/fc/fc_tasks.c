@@ -40,7 +40,7 @@
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
 
-#include "io/cms_types.h"
+#include "io/cms.h"
 
 #include "io/beeper.h"
 #include "io/display.h"

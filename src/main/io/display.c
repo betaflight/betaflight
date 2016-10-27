@@ -54,7 +54,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
-#include "io/cms_types.h"
+#include "io/cms.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -745,15 +745,7 @@ void displayDisablePageCycling(void)
 }
 
 #ifdef OLEDCMS
-#include "io/cms_types.h"
-
-void displayCMSGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
-{
-    *pRows = 8;
-    *pCols = 21;
-    *pBuftime = 1;
-    *pBufsize = 50000;
-}
+#include "io/cms.h"
 
 int displayCMSBegin(void)
 {
@@ -785,7 +777,6 @@ int displayCMSWrite(uint8_t x, uint8_t y, char *s)
 }
 
 screenFnVTable_t displayCMSVTable = {
-    displayCMSGetDevParam,
     displayCMSBegin,
     displayCMSEnd,
     displayCMSClear,
@@ -794,9 +785,17 @@ screenFnVTable_t displayCMSVTable = {
     NULL,
 };
 
-screenFnVTable_t *displayCMSInit(void)
+displayPort_t displayCMSDisplayPort = {
+    .rows = 8,
+    .cols = 21,
+    .buftime = 1,
+    .bufsize = 50000,
+    .VTable = &displayCMSVTable,
+};
+
+displayPort_t *displayCmsInit(void)
 {
-    return &displayCMSVTable;
+    return &displayCMSDisplayPort;
 }
 
 #endif // OLEDCMS

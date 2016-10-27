@@ -1,3 +1,3 @@
 #pragma once
 
-screenFnVTable_t *canvasInit(void);
+displayPort_t *canvasInit(void);

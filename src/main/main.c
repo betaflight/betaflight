@@ -74,7 +74,7 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
-#include "io/cms_types.h"
+#include "io/cms.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"

@@ -47,7 +47,7 @@
 
 #include "rx/rx.h"
 
-#include "io/cms_types.h"
+#include "io/cms.h"
 
 #include "io/gps.h"
 #include "io/beeper.h"

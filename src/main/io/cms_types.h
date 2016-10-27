@@ -5,7 +5,7 @@
 
 #pragma once
 
-typedef void (*OSDMenuFuncPtr)(void *data);
+typedef void (*OSDMenuFuncPtr)(displayPort_t *, void *);
 
 //type of elements
 typedef enum
@@ -95,13 +95,3 @@ typedef struct
     uint8_t max;
     const char * const *names;
 } OSD_TAB_t;
-
-typedef struct screenFnVTable_s {
-    void (*getDevParam)(uint8_t *, uint8_t *, uint16_t *, uint16_t *);
-    int (*begin)(void);
-    int (*end)(void);
-    int (*clear)(void);
-    int (*write)(uint8_t, uint8_t, char *);
-    int (*heartbeat)(void);
-    void (*resync)(void);
-} screenFnVTable_t;

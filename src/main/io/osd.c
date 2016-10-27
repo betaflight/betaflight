@@ -37,8 +37,8 @@
 
 #include "drivers/system.h"
 
-#include "io/cms_types.h"
 #include "io/cms.h"
+#include "io/cms_types.h"
 
 #include "io/flashfs.h"
 #include "io/osd.h"
@@ -404,12 +404,10 @@ void osdInit(void)
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
     max7456Write(7, 7,  STARTUP_HELP_TEXT1);
-    max7456Write(12, 8, STARTUP_HELP_TEXT2);
-    max7456Write(12, 9, STARTUP_HELP_TEXT3);
+    max7456Write(11, 8, STARTUP_HELP_TEXT2);
+    max7456Write(11, 9, STARTUP_HELP_TEXT3);
 
-#ifdef CMS
-    cmsScreenResync(); // Was max7456RefreshAll(); may be okay.
-#endif
+    max7456RefreshAll();
 
     refreshTimeout = 4 * REFRESH_1S;
 }
@@ -646,14 +644,6 @@ void osdUpdate(uint32_t currentTime)
 // OSD specific CMS functions
 //
 
-void osdGetDevParam(uint8_t *pRows, uint8_t *pCols, uint16_t *pBuftime, uint16_t *pBufsize)
-{
-    *pRows = max7456GetRowsCount();
-    *pCols = 30;
-    *pBuftime = 1;     // Very fast
-    *pBufsize = 50000; // Very large
-}
-
 int osdMenuBegin(void)
 {
     osdResetAlarms();
@@ -711,7 +701,6 @@ void osdDrawElementPositioningHelp(void)
 #endif
 
 screenFnVTable_t osdVTable = {
-    osdGetDevParam,
     osdMenuBegin,
     osdMenuEnd,
     osdClearScreen,
@@ -720,8 +709,16 @@ screenFnVTable_t osdVTable = {
     max7456RefreshAll,
 };
 
-screenFnVTable_t *osdCmsInit(void)
+displayPort_t osdDisplayPort = {
+    .buftime = 1,         // Very fast
+    .bufsize = 50000,     // Very large
+    .VTable = &osdVTable,
+};
+
+displayPort_t *osdCmsInit(void)
 {
-    return &osdVTable;
+    osdDisplayPort.rows = max7456GetRowsCount();
+    osdDisplayPort.cols = 30;
+    return &osdDisplayPort;
 }
 #endif // OSD
