@@ -198,6 +198,10 @@
 #define RTC6705_CS_GPIO                 GPIOF
 #define RTC6705_CS_PIN                  GPIO_Pin_4
 
+#define USE_RTC6705_CLK_HACK
+#define RTC6705_CLK_GPIO                GPIOB
+#define RTC6705_CLK_PIN                 GPIO_Pin_3
+
 #if (SPRACINGF3NEO_REV >= 5)
 #define RTC6705_SPI_INSTANCE            SPI3
 #else

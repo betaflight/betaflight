@@ -83,7 +83,12 @@
 #define RTC6705_SET_DIVMULT 1000000 //Division value (to fit into a uint32_t) (Hz to MHz)
 
 #define DISABLE_RTC6705 GPIO_SetBits(RTC6705_CS_GPIO,   RTC6705_CS_PIN)
+#ifdef USE_RTC6705_CLK_HACK
+// HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
+#define ENABLE_RTC6705  {GPIO_SetBits(RTC6705_CLK_GPIO, RTC6705_CLK_PIN); delayMicroseconds(5); GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN); }
+#else
 #define ENABLE_RTC6705  GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN)
+#endif
 
 #define DISABLE_RTC6705_POWER GPIO_SetBits(RTC6705_POWER_GPIO,   RTC6705_POWER_PIN)
 #define ENABLE_RTC6705_POWER  GPIO_ResetBits(RTC6705_POWER_GPIO, RTC6705_POWER_PIN)
