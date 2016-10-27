@@ -453,7 +453,7 @@ bool smartPortSendMspReply()
     }
     else {
         // header
-        *p++ = SMARTPORT_MSP_VERSION_S | (seq++ & SMARTPORT_MSP_SEQ_MASK);
+        *p++ = (seq++ & SMARTPORT_MSP_SEQ_MASK);
     }
 
     while ((p < end) && (sbufBytesRemaining(txBuf) > 0)) {
