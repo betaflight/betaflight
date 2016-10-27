@@ -102,6 +102,13 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
+#define USE_DSHOT
+
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
+
 #define LED_STRIP
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2

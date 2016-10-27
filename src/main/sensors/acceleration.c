@@ -26,8 +26,6 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/system.h"
 
 #include "fc/config.h"

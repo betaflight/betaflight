@@ -29,13 +29,8 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/light_led.h"
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/timer.h"
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"

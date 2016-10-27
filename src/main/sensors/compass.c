@@ -22,9 +22,6 @@
 
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
-#include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
 #include "drivers/light_led.h"
 
 #include "fc/config.h"
