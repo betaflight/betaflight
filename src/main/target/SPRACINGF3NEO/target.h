@@ -208,6 +208,7 @@
 #define RTC6705_POWER_GPIO              GPIOC
 #define RTC6705_POWER_PIN               GPIO_Pin_3
 
+#define SPI_SHARED_MAX7456_AND_RTC6705
 
 #define USE_ADC
 //#define DEBUG_ADC_CHANNELS

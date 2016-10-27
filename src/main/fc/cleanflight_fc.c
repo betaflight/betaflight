@@ -138,6 +138,10 @@ static bool isRXDataNew;
 
 extern pidControllerFuncPtr pid_controller;
 
+#ifdef VTX
+bool canUpdateVTX(void);
+#endif
+
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
     accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
@@ -627,7 +631,9 @@ void processRx(void)
 #endif
 
 #ifdef VTX
-    updateVTXState();
+    if (canUpdateVTX()) {
+        updateVTXState();
+    }
 #endif
 }
 
@@ -881,7 +887,9 @@ void taskPid(void)
     }
 
 #ifdef VTX
-    handleVTXControlButton();
+    if (canUpdateVTX()) {
+        handleVTXControlButton();
+    }
 #endif
 
 }

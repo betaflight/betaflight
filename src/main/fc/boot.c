@@ -68,6 +68,10 @@
 #include "drivers/video.h"
 #include "drivers/video_textscreen.h"
 
+#ifdef MAX7456_SPI_INSTANCE
+#include "drivers/video_max7456.h"
+#endif
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
@@ -194,6 +198,18 @@ void flashLedsAndBeep(void)
     LED0_OFF;
     LED1_OFF;
 }
+
+#ifdef VTX
+bool canUpdateVTX(void)
+{
+#if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
+    if (feature(FEATURE_OSD)) {
+        return !max7456_isBusy();
+    }
+#endif
+    return true;
+}
+#endif
 
 #ifdef BUTTONS
 void buttonsInit(void)
@@ -485,6 +501,7 @@ void init(void)
 #endif
 
 #ifdef VTX
+    while (!canUpdateVTX()) {};
     vtxInit();
 #endif
 
