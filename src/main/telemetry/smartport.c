@@ -194,6 +194,8 @@ static uint8_t smartPortMspTxBuffer[SMARTPORT_TX_BUF_SIZE];
 static mspPacket_t smartPortMspReply;
 static bool smartPortMspReplyPending = false;
 
+#define SMARTPORT_MSP_RES_ERROR -10
+
 enum {
     SMARTPORT_MSP_VER_MISMATCH=0,
     SMARTPORT_MSP_CRC_ERROR=1,
@@ -393,8 +395,10 @@ static void processMspPacket(mspPacket_t* packet)
 {
     initSmartPortMspReply(0);
 
-    mspFcProcessCommand(packet, &smartPortMspReply, NULL);
-
+    if (mspFcProcessCommand(packet, &smartPortMspReply, NULL) == MSP_RESULT_ERROR) {
+        sbufWriteU8(&smartPortMspReply.buf, SMARTPORT_MSP_ERROR);
+    }
+    
     // change streambuf direction
     sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
     smartPortMspReplyPending = true;
@@ -414,7 +418,8 @@ static void processMspPacket(mspPacket_t* packet)
  *     - payload
  *     - CRC (request type included)
  *   - if Error-flag == 1:
- *     - Error: 1 Byte
+ *     - size: 1 byte (== 1)
+ *     - error: 1 Byte
  *       - 0: Version mismatch (type=0)
  *       - 1: Sequence number error
  *       - 2: MSP error
@@ -434,23 +439,16 @@ bool smartPortSendMspReply()
     // detect first reply packet
     if (txBuf->ptr == smartPortMspTxBuffer) {
 
-        uint8_t size = sbufBytesRemaining(txBuf);
-
         // header
-        
-        *p = SMARTPORT_MSP_START_FLAG | (seq++ & SMARTPORT_MSP_SEQ_MASK);
-
-        if (smartPortMspReply.result == MSP_RESULT_ERROR) {
-            *p++ |= SMARTPORT_MSP_ERROR_FLAG;
-            *p++ = SMARTPORT_MSP_ERROR;
-            *p++ = SMARTPORT_MSP_ERROR ^ smartPortMspReply.cmd; // MSP checksum
-            while (p < end) *p++ = 0; // pad with zeros
-            smartPortSendPackageEx(FSSP_MSPS_FRAME,packet);
-            return false;
+        uint8_t head = SMARTPORT_MSP_START_FLAG | (seq++ & SMARTPORT_MSP_SEQ_MASK);
+        if (smartPortMspReply.result < 0) {
+            head |= SMARTPORT_MSP_ERROR_FLAG;
         }
+        *p++ = head;
 
-        p++;
+        uint8_t size = sbufBytesRemaining(txBuf);
         *p++ = size;
+
         checksum = size ^ smartPortMspReply.cmd;
     }
     else {
@@ -485,6 +483,8 @@ void smartPortSendErrorReply(uint8_t error, int16_t cmd)
 {
     initSmartPortMspReply(cmd);
     sbufWriteU8(&smartPortMspReply.buf,error);
+    smartPortMspReply.result = SMARTPORT_MSP_RES_ERROR;
+
     sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
     smartPortMspReplyPending = true;
 }
