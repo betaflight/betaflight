@@ -174,12 +174,13 @@ typedef struct smartPortFrame_s {
     uint8_t  frameId;
     uint16_t valueId;
     uint32_t data;
-} smartPortFrame_t;
+    uint8_t  crc;
+} __attribute__((packed)) smartPortFrame_t;
 
 #define SMARTPORT_FRAME_SIZE  sizeof(smartPortFrame_t)
 #define SMARTPORT_TX_BUF_SIZE 256
 
-#define SMARTPORT_PAYLOAD_SIZE   (SMARTPORT_FRAME_SIZE - 2*sizeof(uint8_t))
+#define SMARTPORT_PAYLOAD_SIZE   (SMARTPORT_FRAME_SIZE - 3*sizeof(uint8_t))
 #define SMARTPORT_PAYLOAD_OFFSET 2
 
 static uint8_t smartPortRxBuffer[SMARTPORT_FRAME_SIZE];
@@ -204,6 +205,7 @@ static void smartPortDataReceive(uint16_t c)
 {
     static bool skipUntilStart = true;
     static bool byteStuffing = false;
+    static uint16_t checksum = 0;
 
     uint32_t now = millis();
 
@@ -226,14 +228,13 @@ static void smartPortDataReceive(uint16_t c)
         }
         else if (c == FSSP_SENSOR_ID2) {
             smartPortRxBuffer[smartPortRxBytes++] = c;
+            checksum = 0;
         }
         else {
             skipUntilStart = true;
         }
     }
     else {
-
-        //TODO: add CRC checking
 
         if (c == FSSP_DLE) {
             byteStuffing = true;
@@ -248,8 +249,15 @@ static void smartPortDataReceive(uint16_t c)
         smartPortRxBuffer[smartPortRxBytes++] = c;
 
         if(smartPortRxBytes == SMARTPORT_FRAME_SIZE) {
-            smartPortFrameReceived = true;
+            if (c == (0xFF - checksum)) {
+                smartPortFrameReceived = true;
+            }
             skipUntilStart = true;
+        }
+        else if (smartPortRxBytes < SMARTPORT_FRAME_SIZE) {
+            checksum += c;
+            checksum += checksum >> 8;
+            checksum &= 0x00FF;
         }
     }
 }
