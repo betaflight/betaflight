@@ -7,7 +7,6 @@ doc_files=(
 	'Safety.md'
 	'Installation.md'
 	'Configuration.md'
-	'Cli.md'
 	'Serial.md'
 	'Rx.md'
 	'Spektrum bind.md'
@@ -41,6 +40,7 @@ doc_files=(
     'Board - CJMCU.md'
     'Board - Olimexino.md'
     'Board - ChebuzzF3.md'
+    'Cli.md'
 )
 
 if which gimli >/dev/null; then
