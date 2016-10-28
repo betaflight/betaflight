@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
- //Target code By Hector "Hectech FPV" Hind
+ //Target code By BorisB and Hector "Hectech FPV" Hind
 
 #pragma once
 
@@ -43,6 +43,13 @@
 #define EXTI_CALLBACK_HANDLER_COUNT 1
 #define MPU_INT_EXTI                PC13
 #define USE_EXTI
+
+#define USE_DSHOT
+
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
 
 #define USB_IO
 
