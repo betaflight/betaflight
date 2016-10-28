@@ -34,9 +34,9 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_9,  DMA1_Channel5, DMA1_CH5_HANDLER },  // PWM4 - PA2
 
     // UART3 RX/TX
-    //{ TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1, NULL, 0 }, // PWM5  - PB10 - TIM2_CH3 / UART3_TX (AF7)
-    //{ TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1, NULL, 0 }, // PWM6 - PB11 - TIM2_CH4 / UART3_RX (AF7)
+    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1, NULL, 0 }, // PWM5  - PB10 - TIM2_CH3 / UART3_TX (AF7)
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1, NULL, 0 }, // PWM6 - PB11 - TIM2_CH4 / UART3_RX (AF7)
     { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2, NULL, 0 },  // PWM7 - PB7
     { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2, NULL, 0 },  // PWM8 - PB6
-    //{ TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER },  // GPIO_TIMER / LED_STRIP
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER },  // GPIO_TIMER / LED_STRIP
 };
