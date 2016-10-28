@@ -101,15 +101,6 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#ifdef USE_DPRINTF
-#include "common/printf.h"
-#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
-extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
-#else
-#define dprintf(x)
-#endif
-
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif

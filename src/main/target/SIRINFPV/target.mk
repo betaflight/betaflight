@@ -13,4 +13,5 @@ TARGET_SRC = \
             drivers/vtx_soft_spi_rtc6705.c \
             drivers/max7456.c \
             io/osd.c \
-            io/cms.c
+            io/cms.c \
+            io/canvas.c

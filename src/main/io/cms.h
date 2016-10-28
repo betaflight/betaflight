@@ -21,8 +21,14 @@ typedef struct displayPort_s {
     bool cleared;
 } displayPort_t;
 
+// Device management
+typedef void (*cmsDeviceInitFuncPtr)(displayPort_t *);
+bool cmsDeviceRegister(cmsDeviceInitFuncPtr);
+
+// For main.c and scheduler
 void cmsInit(void);
 void cmsHandler(uint32_t);
+
 
 #if 0
 void cmsOpenMenu();

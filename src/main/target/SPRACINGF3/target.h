@@ -140,4 +140,4 @@
 #define CANVAS
 
 // USE I2C OLED display to run CMS
-//#define OLEDCMS
+#define OLEDCMS

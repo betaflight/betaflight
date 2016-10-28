@@ -91,6 +91,7 @@
 #include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/canvas.h"
 
 #include "scheduler/scheduler.h"
 
@@ -398,6 +399,10 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+#ifdef CMS
+    cmsInit();
+#endif
+
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
@@ -417,10 +422,6 @@ void init(void)
     if (feature(FEATURE_OSD)) {
         osdInit();
     }
-#endif
-
-#ifdef CMS
-    cmsInit();
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
@@ -460,6 +461,12 @@ void init(void)
 
     mspFcInit();
     mspSerialInit();
+
+#ifdef CANVAS
+    if (feature(FEATURE_CANVAS)) {
+        canvasInit();
+    }
+#endif
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

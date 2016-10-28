@@ -68,7 +68,6 @@ int canvasWrite(uint8_t col, uint8_t row, char *string)
 }
 
 screenFnVTable_t canvasVTable = {
-    canvasGetDevParam,
     canvasBegin,
     canvasEnd,
     canvasClear,
@@ -77,18 +76,19 @@ screenFnVTable_t canvasVTable = {
     NULL,
 };
 
-displayPort_t canvasDisplayPort = {
-    .rows = 13,
-    .cols = 30,
-    .pBuftime = 23,          // = 256/(115200/10)
-    .pBufsize = 192,         // 256 * 3/4 (Be conservative)
-    .VTable = canvasVTable,
-};
+void canvasCmsInit(displayPort_t *pPort)
+{
+    pPort->rows = 13;
+    pPort->cols = 30;
+    pPort->buftime = 23;          // = 256/(115200/10)
+    pPort->bufsize = 192;         // 256 * 3/4 (Be conservative)
+    pPort->VTable = &canvasVTable;
+}
 
-displayPort_t *canvasInit(void)
+void canvasInit()
 {
     mspSerialPushInit(mspFcPushInit()); // Called once at startup to initialize push function in msp
 
-    return &canvasDisplayPort;
+    cmsDeviceRegister(canvasCmsInit);
 }
 #endif

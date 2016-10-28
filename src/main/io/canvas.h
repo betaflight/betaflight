@@ -1,3 +1,3 @@
 #pragma once
-
-displayPort_t *canvasInit(void);
+void canvasInit(void);
+void canvasCmsInit(displayPort_t *);

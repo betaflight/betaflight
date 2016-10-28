@@ -46,4 +46,6 @@ void displayDisablePageCycling(void);
 void displayResetPageCycling(void);
 void displaySetNextPageChangeAt(uint32_t futureMicros);
 
-displayPort_t *displayCmsInit(void);
+#ifdef CMS
+void displayCmsInit(displayPort_t *);
+#endif

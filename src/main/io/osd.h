@@ -66,7 +66,10 @@ typedef struct {
 void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile_t *osdProfile);
-displayPort_t *osdCmsInit(void);
+
+#ifdef CMS
+void osdCmsInit(displayPort_t *);
+#endif
 
 // Character coordinate and attributes
 

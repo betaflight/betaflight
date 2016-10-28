@@ -707,6 +707,10 @@ void displayInit(rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
+#ifdef CMS
+    cmsDeviceRegister(displayCmsInit);
+#endif
+
     rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
@@ -747,28 +751,28 @@ void displayDisablePageCycling(void)
 #ifdef OLEDCMS
 #include "io/cms.h"
 
-int displayCMSBegin(void)
+int displayCmsBegin(void)
 {
     displayInCMS = true;
 
     return 0;
 }
 
-int displayCMSEnd(void)
+int displayCmsEnd(void)
 {
     displayInCMS = false;
 
     return 0;
 }
 
-int displayCMSClear(void)
+int displayCmsClear(void)
 {
     i2c_OLED_clear_display_quick();
 
     return 0;
 }
 
-int displayCMSWrite(uint8_t x, uint8_t y, char *s)
+int displayCmsWrite(uint8_t x, uint8_t y, char *s)
 {
     i2c_OLED_set_xy(x, y);
     i2c_OLED_send_string(s);
@@ -776,28 +780,23 @@ int displayCMSWrite(uint8_t x, uint8_t y, char *s)
     return 0;
 }
 
-screenFnVTable_t displayCMSVTable = {
-    displayCMSBegin,
-    displayCMSEnd,
-    displayCMSClear,
-    displayCMSWrite,
+screenFnVTable_t displayCmsVTable = {
+    displayCmsBegin,
+    displayCmsEnd,
+    displayCmsClear,
+    displayCmsWrite,
     NULL,
     NULL,
 };
 
-displayPort_t displayCMSDisplayPort = {
-    .rows = 8,
-    .cols = 21,
-    .buftime = 1,
-    .bufsize = 50000,
-    .VTable = &displayCMSVTable,
-};
-
-displayPort_t *displayCmsInit(void)
+void displayCmsInit(displayPort_t *pPort)
 {
-    return &displayCMSDisplayPort;
+    pPort->rows = 8;
+    pPort->cols = 21;
+    pPort->buftime = 1;
+    pPort->bufsize = 50000;
+    pPort->VTable = &displayCmsVTable;
 }
-
 #endif // OLEDCMS
 
 #endif

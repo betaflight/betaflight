@@ -96,10 +96,10 @@
 #define CMS
 
 // Use external OSD to run CMS
-//#define CANVAS
+#define CANVAS
 
 // USE I2C OLED display to run CMS
-//#define OLEDCMS
+#define OLEDCMS
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk

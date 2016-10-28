@@ -64,13 +64,6 @@
 
 #include "build/debug.h"
 
-#ifdef USE_DPRINTF
-extern serialPort_t *debugSerialPort;
-#define dprintf(x) if (debugSerialPort) printf x
-#else
-#define dprintf(x)
-#endif
-
 // Things in both OSD and CMS
 
 #define IS_HI(X)  (rcData[X] > 1750)
@@ -398,7 +391,7 @@ void osdInit(void)
     }
 
 #ifdef CMS
-    cmsInit();
+    cmsDeviceRegister(osdCmsInit);
 #endif
 
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
@@ -709,16 +702,12 @@ screenFnVTable_t osdVTable = {
     max7456RefreshAll,
 };
 
-displayPort_t osdDisplayPort = {
-    .buftime = 1,         // Very fast
-    .bufsize = 50000,     // Very large
-    .VTable = &osdVTable,
-};
-
-displayPort_t *osdCmsInit(void)
+void osdCmsInit(displayPort_t *pPort)
 {
-    osdDisplayPort.rows = max7456GetRowsCount();
-    osdDisplayPort.cols = 30;
-    return &osdDisplayPort;
+    pPort->rows = max7456GetRowsCount();
+    pPort->cols = 30;
+    pPort->buftime = 1;         // Very fast
+    pPort->bufsize = 50000;     // Very large
+    pPort->VTable = &osdVTable;
 }
 #endif // OSD

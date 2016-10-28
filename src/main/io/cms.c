@@ -37,7 +37,9 @@
 
 #include "io/cms.h"
 #include "io/cms_types.h"
+#ifdef CANVAS
 #include "io/canvas.h"
+#endif
 
 #include "io/flashfs.h"
 #include "io/osd.h"
@@ -57,9 +59,50 @@
 
 #include "build/debug.h"
 
+// Device management
+
+#define CMS_MAX_DEVICE 4
+
+cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
+int cmsDeviceCount;
+int cmsCurrentDevice = -1;
+int cmsLastDevice = -1;
+
+bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
+{
+    if (cmsDeviceCount == CMS_MAX_DEVICE)
+        return false;
+
+    cmsDeviceInitFunc[cmsDeviceCount++] = func;
+
+    return true;
+}
+
+cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
+{
+    if (cmsDeviceCount == 0)
+        return NULL;
+
+    if (cmsCurrentDevice < 0)
+        cmsCurrentDevice = 0;
+
+    return cmsDeviceInitFunc[cmsCurrentDevice];
+}
+
+cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
+{
+    if (cmsDeviceCount == 0)
+        return NULL;
+
+    cmsCurrentDevice = (cmsCurrentDevice + 1) % cmsDeviceCount; // -1 Okay
+
+    return cmsDeviceInitFunc[cmsCurrentDevice];
+}
+
 #define CMS_UPDATE_INTERVAL 50 // msec
 
-// XXX Why is this here? Something is wrong?
+// XXX Why is this here? Something wrong?
+// XXX We need something like Drawing Context that holds all state variables?
 int8_t lastCursorPos;
 
 void cmsScreenClear(displayPort_t *instance)
@@ -97,21 +140,9 @@ void cmsScreenResync(displayPort_t *instance)
         instance->VTable->resync();
 }
 
-displayPort_t *cmsScreenInit(void)
+void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 {
-#ifdef OSD
-    return osdCmsInit();
-#endif
-
-#ifdef CANVAS
-    return canvasCmsInit();
-#endif
-
-#ifdef OLEDCMS
-    return displayCmsInit();
-#endif
-
-    return NULL;
+    cmsDeviceInitFunc(pDisp);
 }
 
 
@@ -407,38 +438,31 @@ void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
 
 // XXX Needs separation
 OSD_Entry menuPid[];
+void cmsx_PidRead(void);
+void cmsx_PidWriteback(void);
 OSD_Entry menuRateExpo[];
-uint8_t tempPid[4][3];
-controlRateConfig_t rateProfile;
+void cmsx_RateExpoRead(void);
+void cmsx_RateExpoWriteback(void);
 
 void cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 {
-    uint8_t i;
     if (ptr) {
-        // hack - save profile to temp
-        // XXX (jflyper) This hack could be avoided by adding pre- and post-
-        // (onEntry and onExit?) functions to OSD_Entry, that are called
-        // before and after the menu item is displayed.
-        if (ptr == &menuPid[0]) {
-            for (i = 0; i < 3; i++) {
-                tempPid[i][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i];
-                tempPid[i][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i];
-                tempPid[i][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i];
-            }
-            tempPid[3][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL];
-            tempPid[3][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL];
-            tempPid[3][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL];
-        }
-
+        // XXX (jflyper): This can be avoided by adding pre- and post-
+        // XXX (or onEnter and onExit) functions?
+        if (ptr == &menuPid[0])
+            cmsx_PidRead();
         if (ptr == &menuRateExpo[0])
-            memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+            cmsx_RateExpoRead();
 
-        menuStack[menuStackIdx] = currentMenu;
-        menuStackHistory[menuStackIdx] = currentCursorPos;
-        menuStackIdx++;
-
-        currentMenu = (OSD_Entry *)ptr;
-        currentCursorPos = 0;
+        if ((OSD_Entry *)ptr != currentMenu) {
+            // Stack it and move to a new menu.
+            // (ptr == curretMenu case occurs when reopening for display sw)
+            menuStack[menuStackIdx] = currentMenu;
+            menuStackHistory[menuStackIdx] = currentCursorPos;
+            menuStackIdx++;
+            currentMenu = (OSD_Entry *)ptr;
+            currentCursorPos = 0;
+        }
         cmsScreenClear(pDisplay);
         cmsUpdateMaxRows(pDisplay);
     }
@@ -446,25 +470,14 @@ void cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 
 void cmsMenuBack(displayPort_t *pDisplay)
 {
-    uint8_t i;
-
     // becasue pids and rates meybe stored in profiles we need some thicks to manipulate it
     // hack to save pid profile
-    if (currentMenu == &menuPid[0]) {
-        for (i = 0; i < 3; i++) {
-            masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i] = tempPid[i][0];
-            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i] = tempPid[i][1];
-            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i] = tempPid[i][2];
-        }
-
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
-    }
+    if (currentMenu == &menuPid[0])
+        cmsx_PidWriteback();
 
     // hack - save rate config for current profile
     if (currentMenu == &menuRateExpo[0])
-        memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+        cmsx_RateExpoWriteback();
 
     if (menuStackIdx) {
         cmsScreenClear(pDisplay);
@@ -477,29 +490,43 @@ void cmsMenuBack(displayPort_t *pDisplay)
     }
 }
 
+// XXX This should go to device
+void cmsComputeBatchsize(displayPort_t *pDisplay)
+{
+    pDisplay->batchsize = (pDisplay->buftime < CMS_UPDATE_INTERVAL) ? pDisplay->bufsize : (pDisplay->bufsize * CMS_UPDATE_INTERVAL) / pDisplay->buftime;
+}
+
 // XXX Separation
 void cmsx_FeatureRead(void);
 void cmsx_FeatureWriteback(void);
 void cmsx_InfoInit(void);
 
-void cmsMenuOpen(displayPort_t *pDisplay)
+displayPort_t currentDisplay;
+
+void cmsMenuOpen(void)
 {
-    if (cmsInMenu)
+    cmsDeviceInitFuncPtr initfunc;
+
+    if (!cmsInMenu) {
+        // New open
+        cmsInMenu = true;
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+        initfunc = cmsDeviceSelectCurrent(); 
+        cmsx_FeatureRead();
+        currentMenu = &menuMain[0];
+    } else {
+        // Switch display
+        cmsScreenEnd(&currentDisplay);
+        initfunc = cmsDeviceSelectNext();
+    }
+
+    if (!initfunc)
         return;
 
-    cmsx_FeatureRead();
-
-    if (!pDisplay)
-        return;
-
-    pDisplay->batchsize = (pDisplay->buftime < CMS_UPDATE_INTERVAL) ? pDisplay->bufsize : (pDisplay->bufsize * CMS_UPDATE_INTERVAL) / pDisplay->buftime;
-
-    cmsInMenu = true;
-    DISABLE_ARMING_FLAG(OK_TO_ARM);
-
-    cmsScreenBegin(pDisplay);
-    currentMenu = &menuMain[0];
-    cmsMenuChange(pDisplay, currentMenu);
+    cmsScreenInit(&currentDisplay, initfunc);
+    cmsComputeBatchsize(&currentDisplay);
+    cmsScreenBegin(&currentDisplay);
+    cmsMenuChange(&currentDisplay, currentMenu);
 }
 
 void cmsMenuExit(displayPort_t *pDisplay, void *ptr)
@@ -715,19 +742,20 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
 
     uint8_t key = 0;
 
-    // Detect menu invocation
-    if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
-        // XXX Double enter!?
-        cmsMenuOpen(pDisplay);
-        rcDelay = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
-        lastCalled = currentTime;
-        return;
-    }
-
-    if (cmsInMenu) {
+    if (!cmsInMenu) {
+        // Detect menu invocation
+        if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+            cmsMenuOpen();
+            rcDelay = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
+        }
+    } else {
         if (rcDelay > 0) {
-            rcDelay -= currentTime - lastCalled;
-            debug[0] = rcDelay;
+            rcDelay -= (currentTime - lastCalled);
+        }
+        else if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+            // Double enter = display switching
+            cmsMenuOpen();
+            rcDelay = BUTTON_PAUSE;
         }
         else if (IS_HI(PITCH)) {
             key = KEY_UP;
@@ -751,10 +779,10 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
             rcDelay = BUTTON_TIME;
         }
 
-        lastCalled = currentTime;
+        //lastCalled = currentTime;
 
         if (key && !currentElement) {
-            rcDelay = cmsHandleKey(pDisplay, key);
+            rcDelay = cmsHandleKey(&currentDisplay, key);
             return;
         }
 
@@ -763,33 +791,31 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
         if (currentTime > lastCmsHeartBeat + 500) {
             // Heart beat for external CMS display device @ 500msec
             // (Timeout @ 1000msec)
-            cmsScreenHeartBeat(pDisplay);
+            cmsScreenHeartBeat(&currentDisplay);
             lastCmsHeartBeat = currentTime;
         }
     }
+    lastCalled = currentTime;
 }
-
-displayPort_t *currentDisplay = NULL;
 
 void cmsHandler(uint32_t unusedTime)
 {
     UNUSED(unusedTime);
 
-    if (!currentDisplay)
+    if (cmsDeviceCount < 0)
         return;
 
     static uint32_t lastCalled = 0;
     uint32_t now = millis();
 
     if (now - lastCalled >= CMS_UPDATE_INTERVAL) {
-        cmsUpdate(currentDisplay, now);
+        cmsUpdate(&currentDisplay, now);
         lastCalled = now;
     }
 }
 
 void cmsInit(void)
 {
-    currentDisplay = cmsScreenInit();
     cmsx_InfoInit();
 }
 
@@ -803,6 +829,8 @@ void cmsInit(void)
 
 OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
 
+uint8_t tempPid[4][3];
+
 static OSD_UINT8_t entryRollP = {&tempPid[PIDROLL][0], 10, 150, 1};
 static OSD_UINT8_t entryRollI = {&tempPid[PIDROLL][1], 1, 150, 1};
 static OSD_UINT8_t entryRollD = {&tempPid[PIDROLL][2], 0, 150, 1};
@@ -814,6 +842,35 @@ static OSD_UINT8_t entryPitchD = {&tempPid[PIDPITCH][2], 0, 150, 1};
 static OSD_UINT8_t entryYawP = {&tempPid[PIDYAW][0], 10, 150, 1};
 static OSD_UINT8_t entryYawI = {&tempPid[PIDYAW][1], 1, 150, 1};
 static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
+
+void cmsx_PidRead(void)
+{
+    uint8_t i;
+
+    for (i = 0; i < 3; i++) {
+        tempPid[i][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i];
+        tempPid[i][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i];
+        tempPid[i][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i];
+    }
+    tempPid[3][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL];
+    tempPid[3][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL];
+    tempPid[3][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL];
+}
+
+void cmsx_PidWriteback(void)
+{
+    uint8_t i;
+
+    for (i = 0; i < 3; i++) {
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i] = tempPid[i][0];
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i] = tempPid[i][1];
+        masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i] = tempPid[i][2];
+    }
+
+    masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+    masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+    masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+}
 
 OSD_Entry menuPid[] =
 {
@@ -834,6 +891,11 @@ OSD_Entry menuPid[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
+//
+// Rate & Expo
+//
+controlRateConfig_t rateProfile;
+
 static OSD_FLOAT_t entryRollRate = {&rateProfile.rates[0], 0, 250, 1, 10};
 static OSD_FLOAT_t entryPitchRate = {&rateProfile.rates[1], 0, 250, 1, 10};
 static OSD_FLOAT_t entryYawRate = {&rateProfile.rates[2], 0, 250, 1, 10};
@@ -845,6 +907,16 @@ static OSD_FLOAT_t extryTpaEntry = {&rateProfile.dynThrPID, 0, 70, 1, 10};
 static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10};
 static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.setpointRelaxRatio, 0, 100, 1, 10};
 static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
+
+void cmsx_RateExpoRead()
+{
+    memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+}
+
+void cmsx_RateExpoWriteback()
+{
+    memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+}
 
 OSD_Entry menuRateExpo[] =
 {
@@ -931,6 +1003,29 @@ OSD_Entry menuImu[] =
 //
 // Black box
 //
+
+//
+// Should goto flashfs eventually.
+//
+#ifdef USE_FLASHFS
+void cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
+{
+    UNUSED(ptr);
+
+    cmsScreenClear(pDisplay);
+    cmsScreenWrite(pDisplay, 5, 3, "ERASING FLASH...");
+    cmsScreenResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+
+    flashfsEraseCompletely();
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    cmsScreenClear(pDisplay);
+    cmsScreenResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+}
+#endif // USE_FLASHFS
+
 uint8_t featureBlackbox = 0;
 
 OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
@@ -1055,28 +1150,6 @@ OSD_Entry menuLedstrip[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 #endif // LED_STRIP
-
-//
-// Should goto flashfs eventually.
-//
-#ifdef USE_FLASHFS
-void cmsx_EraseFlash(void *ptr)
-{
-    UNUSED(ptr);
-
-    cmsScreenClear(currentDisplay);
-    cmsScreenWrite(currentDisplay5, 3, "ERASING FLASH...");
-    cmsScreenResync(currentDisplay); // Was max7456RefreshAll(); Why at this timing?
-
-    flashfsEraseCompletely();
-    while (!flashfsIsReady()) {
-        delay(100);
-    }
-
-    cmsScreenClear(currentDisplay);
-    cmsScreenResync(currentDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
-}
-#endif // USE_FLASHFS
 
 #ifdef OSD
 //
@@ -1221,10 +1294,13 @@ void cmsx_FeatureWriteback(void)
     else
         featureClear(FEATURE_BLACKBOX);
 
+#ifdef LED_STRIP
     if (featureLedstrip)
         featureSet(FEATURE_LED_STRIP);
     else
         featureClear(FEATURE_LED_STRIP);
+#endif
+
 #if defined(VTX) || defined(USE_RTC6705)
     if (featureVtx)
         featureSet(FEATURE_VTX);
@@ -1243,5 +1319,6 @@ void cmsx_FeatureWriteback(void)
 
     saveConfigAndNotify();
 }
+
 
 #endif // CMS
