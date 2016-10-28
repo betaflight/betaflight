@@ -703,7 +703,7 @@ void displayInit(rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
-#ifdef CMS
+#if defined(CMS) && defined(OLEDCMS)
     cmsDeviceRegister(displayCmsInit);
 #endif
 
