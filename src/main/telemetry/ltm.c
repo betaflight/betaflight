@@ -44,10 +44,6 @@
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

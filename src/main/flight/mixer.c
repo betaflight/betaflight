@@ -47,6 +47,13 @@
 #include "fc/runtime_config.h"
 
 #include "config/feature.h"
+#include "config/config_master.h"
+
+#define EXTERNAL_DSHOT_CONVERSION_FACTOR 2
+// (minimum output value(1001) - (minimum input value(48) / conversion factor(2))
+#define EXTERNAL_DSHOT_CONVERSION_OFFSET 977
+#define EXTERNAL_CONVERSION_MIN_VALUE 1000
+#define EXTERNAL_CONVERSION_MAX_VALUE 2000
 
 uint8_t motorCount;
 
@@ -234,21 +241,26 @@ static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, d
 static float rcCommandThrottleRange;
 
 bool isMotorProtocolDshot(void) {
+#ifdef USE_DSHOT
     if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
         return true;
     else
+#endif
         return false;
 }
 
 // Add here scaled ESC outputs for digital protol
 void initEscEndpoints(void) {
+#ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
         maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
-        deadbandMotor3dHigh = DSHOT_3D_DEADBAND_HIGH;
-        deadbandMotor3dLow = DSHOT_3D_DEADBAND_LOW;
-    } else {
+	    deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+	    deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+    } else
+#endif
+    {
         disarmMotorOutput = (feature(FEATURE_3D)) ? flight3DConfig->neutral3d : motorConfig->mincommand;
         minMotorOutputNormal = motorConfig->minthrottle;
         maxMotorOutputNormal = motorConfig->maxthrottle;
@@ -359,7 +371,7 @@ void mixerResetDisarmedMotors(void)
     int i;
     // set disarmed motor values
     for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-        motor_disarmed[i] = feature(FEATURE_3D) ? flight3DConfig->neutral3d : motorConfig->mincommand;
+        motor_disarmed[i] = disarmMotorOutput;
 }
 
 void writeMotors(void)
@@ -373,7 +385,7 @@ void writeMotors(void)
     }
 }
 
-void writeAllMotors(int16_t mc)
+static void writeAllMotors(int16_t mc)
 {
     // Sends commands to all motors
     for (uint8_t i = 0; i < motorCount; i++) {
@@ -385,7 +397,7 @@ void writeAllMotors(int16_t mc)
 
 void stopMotors(void)
 {
-    writeAllMotors(feature(FEATURE_3D) ? flight3DConfig->neutral3d : motorConfig->mincommand);
+    writeAllMotors(disarmMotorOutput);
 
     delay(50); // give the timers and ESCs a chance to react.
 }
@@ -511,14 +523,31 @@ void mixTable(pidProfile_t *pidProfile)
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
         for (i = 0; i < motorCount; i++) {
-            if (isMotorProtocolDshot()) {
-                motor[i] = (motor_disarmed[i] < motorOutputMin) ? disarmMotorOutput : motor_disarmed[i]; // Prevent getting into special reserved range
-
-                if (motor_disarmed[i] != disarmMotorOutput)
-                    motor[i] = (motor_disarmed[i] - 1000) * 2; // TODO - Perhaps needs rescaling as it will never reach 2047 during motor tests
-            } else {
-                motor[i] = motor_disarmed[i];
-            }
+            motor[i] = motor_disarmed[i];
         }
     }
+}
+
+uint16_t convertExternalToMotor(uint16_t externalValue)
+{
+    uint16_t motorValue = externalValue;
+#ifdef USE_DSHOT
+    if (isMotorProtocolDshot()) {
+        motorValue = externalValue <= EXTERNAL_CONVERSION_MIN_VALUE ? DSHOT_DISARM_COMMAND : constrain((externalValue - EXTERNAL_DSHOT_CONVERSION_OFFSET) * EXTERNAL_DSHOT_CONVERSION_FACTOR, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
+    }
+#endif
+
+    return motorValue;
+}
+
+uint16_t convertMotorToExternal(uint16_t motorValue)
+{
+    uint16_t externalValue = motorValue;
+#ifdef USE_DSHOT
+    if (isMotorProtocolDshot()) {
+        externalValue = motorValue < DSHOT_MIN_THROTTLE ? EXTERNAL_CONVERSION_MIN_VALUE : constrain((motorValue / EXTERNAL_DSHOT_CONVERSION_FACTOR) + EXTERNAL_DSHOT_CONVERSION_OFFSET, EXTERNAL_CONVERSION_MIN_VALUE + 1, EXTERNAL_CONVERSION_MAX_VALUE);
+    }
+#endif
+
+    return externalValue;
 }

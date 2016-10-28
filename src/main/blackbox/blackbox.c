@@ -36,6 +36,7 @@
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
+#include "drivers/pwm_output.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -895,7 +896,17 @@ void stopInTestMode(void)
  */
 bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
-    uint16_t inactiveMotorCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.motorConfig.mincommand);
+    uint16_t inactiveMotorCommand;
+    if (feature(FEATURE_3D)) {
+       inactiveMotorCommand = masterConfig.flight3DConfig.neutral3d;
+#ifdef USE_DSHOT
+    } else if (isMotorProtocolDshot()) {
+       inactiveMotorCommand = DSHOT_DISARM_COMMAND;
+#endif
+    } else {
+       inactiveMotorCommand = masterConfig.motorConfig.mincommand;
+    }
+
     int i;
     bool atLeastOneMotorActivated = false;
 

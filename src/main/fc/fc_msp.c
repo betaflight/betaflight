@@ -35,18 +35,13 @@
 #include "common/streambuf.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/io.h"
 #include "drivers/flash.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
-#include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
@@ -651,10 +646,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
                 sbufWriteU16(dst, 0);
                 continue;
             }
-            if (isMotorProtocolDshot())
-                sbufWriteU16(dst, constrain((motor[i] / 2) + 1000, 1000, 2000)); // This is to get it working in the configurator
-            else
-                sbufWriteU16(dst, motor[i]);
+
+            sbufWriteU16(dst, convertMotorToExternal(motor[i]));
         }
         break;
     case MSP_RC:
@@ -1323,8 +1316,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.batteryConfig.vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         break;
     case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-            motor_disarmed[i] = sbufReadU16(src);
+        for (i = 0; i < 8; i++) { // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
+            motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
+        }
         break;
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS

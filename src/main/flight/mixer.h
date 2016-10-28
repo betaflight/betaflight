@@ -21,12 +21,30 @@
 
 #define QUAD_MOTOR_COUNT 4
 
+/*
+  DshotSettingRequest (KISS24). Spin direction, 3d and save Settings reqire 10 requests.. and the TLM Byte must always be high if 1-47 are used to send settings
+  0 = stop
+  1-5: beep
+  6: ESC info request (FW Version and SN sent over the tlm wire)
+  7: spin direction 1
+  8: spin direction 2
+  9: 3d mode off
+  10: 3d mode on
+  11: ESC settings request (saved settings over the TLM wire)
+  12: save Settings
+
+  3D Mode:
+  0 = stop
+  48   (low) - 1047 (high) -> positive direction
+  1048 (low) - 2047 (high) -> negative direction
+*/
+
 // Digital protocol has fixed values
 #define DSHOT_DISARM_COMMAND      0
 #define DSHOT_MIN_THROTTLE       48
 #define DSHOT_MAX_THROTTLE     2047
-#define DSHOT_3D_DEADBAND_LOW   900  // TODO - not agreed yet
-#define DSHOT_3D_DEADBAND_HIGH 1100  // TODO - not agreed yet
+#define DSHOT_3D_MAX_POSITIVE  1047 // TODO - Not working yet!! Mixer requires some throttle rescaling changes
+#define DSHOT_3D_MIN_NEGATIVE  1048//  TODO - Not working yet!! Mixer requires some throttle rescaling changes
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
@@ -104,7 +122,6 @@ void mixerUseConfigs(
         airplaneConfig_t *airplaneConfigToUse,
         struct rxConfig_s *rxConfigToUse);
 
-void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 
@@ -117,4 +134,7 @@ void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
+
 bool isMotorProtocolDshot(void);
+uint16_t convertExternalToMotor(uint16_t externalValue);
+uint16_t convertMotorToExternal(uint16_t motorValue);

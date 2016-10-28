@@ -24,8 +24,6 @@
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "drivers/serial.h"
-
 #include "io/serial.h"
 
 #include "msp/msp.h"

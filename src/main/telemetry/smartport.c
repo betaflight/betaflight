@@ -19,13 +19,6 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -34,7 +27,6 @@
 #include "io/beeper.h"
 #include "io/motors.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 
 #include "sensors/boardalignment.h"

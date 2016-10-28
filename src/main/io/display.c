@@ -28,12 +28,8 @@
 
 #include "build/build_config.h"
 
-#include "drivers/serial.h"
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "common/printf.h"
 #include "common/maths.h"

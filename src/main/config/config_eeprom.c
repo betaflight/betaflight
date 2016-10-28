@@ -76,7 +76,7 @@
 #if defined(STM32F40_41xxx)
 #define FLASH_PAGE_COUNT 4 // just to make calculations work
 #elif defined (STM32F411xE)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
+#define FLASH_PAGE_COUNT 3  // just to make calculations work
 #elif defined (STM32F745xx)
 #define FLASH_PAGE_COUNT 4 // just to make calculations work
 #else

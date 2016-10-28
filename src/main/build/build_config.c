@@ -20,8 +20,4 @@
 
 #include "platform.h"
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "flight/mixer.h"
-
 #include "build_config.h"
