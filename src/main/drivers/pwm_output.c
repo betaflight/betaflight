@@ -248,9 +248,15 @@ void pwmServoConfig(const timerHardware_t *timerHardware, uint8_t servoIndex, ui
     servos[servoIndex] = pwmOutConfig(timerHardware, PWM_TIMER_MHZ, 1000000 / servoPwmRate, servoCenterPulse);
 }
 
+#include "debug.h"
+
 void pwmWriteServo(uint8_t index, uint16_t value)
 {
     if (servos[index] && index < MAX_SERVOS) {
+        if (index < 2) {
+            debug[index*2] = index;
+            debug[index*2+1] = value;
+        }
         *servos[index]->ccr = value;
     }
 }

@@ -246,9 +246,16 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
             }
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS)
+#if defined(SPRACINGF3MINI)
             // remap PWM6+7 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(OMNIBUS)
+            // UART3 and PWM6+7 (shared case caught above)
+            // remap PWM6+7 as servos
+            if ((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM2)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
