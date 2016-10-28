@@ -256,8 +256,8 @@ void initEscEndpoints(void) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
         maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
-        deadbandMotor3dHigh = DSHOT_3D_DEADBAND_HIGH;
-        deadbandMotor3dLow = DSHOT_3D_DEADBAND_LOW;
+	    deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+	    deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
     } else
 #endif
     {
