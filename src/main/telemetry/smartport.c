@@ -374,14 +374,6 @@ void checkSmartPortTelemetryState(void)
         freeSmartPortTelemetryPort();
 }
 
-static void resetMspPacket(mspPacket_t* packet)
-{
-    packet->buf.ptr = NULL;
-    packet->buf.end = NULL;
-    packet->cmd     = -1;
-    packet->result  = 0;
-}
-
 static void initSmartPortMspReply(int16_t cmd)
 {
     smartPortMspReply.buf.ptr    = smartPortMspTxBuffer;
@@ -544,7 +536,7 @@ void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
     }
     else if (((lastSeq + 1) & SMARTPORT_MSP_SEQ_MASK) != seq) {
         // packet loss detected!
-        resetMspPacket(&cmd);
+        mspStarted = 0;
         return;
     }
 

@@ -71,7 +71,7 @@ local function mspReceivedReply(payload)
       -- return error
       -- CRC checking missing
 
-      --return bit32.band(payload[idx],0xFF)
+      --return payload[idx]
       return nil
    end
    
@@ -93,8 +93,10 @@ local function mspReceivedReply(payload)
    elseif not mspStarted then
       mspReceivedReply_cnt3 = mspReceivedReply_cnt3 + 1
       return nil
-   -- TODO: add sequence number checking
-   -- elseif ...
+
+   elseif bit32.band(lastSeq+1,0x0F) ~= seq then
+      mspStarted = false
+      return nil
    end
 
    while (idx <= 6) and (mspRxIdx <= mspRxSize) do
