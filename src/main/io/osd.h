@@ -52,6 +52,8 @@ typedef struct {
     uint16_t alt_alarm;
 
     uint8_t video_system;
+    uint8_t row_shiftdown;
+
     osd_unit_t units;
 } osd_profile_t;
 

@@ -470,7 +470,7 @@ void cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 
 void cmsMenuBack(displayPort_t *pDisplay)
 {
-    // becasue pids and rates meybe stored in profiles we need some thicks to manipulate it
+    // becasue pids and rates may be stored in profiles we need some thicks to manipulate it
     // hack to save pid profile
     if (currentMenu == &menuPid[0])
         cmsx_PidWriteback();

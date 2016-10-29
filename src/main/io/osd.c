@@ -390,10 +390,6 @@ void osdInit(void)
         }
     }
 
-#ifdef CMS
-    cmsDeviceRegister(osdCmsInit);
-#endif
-
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
     max7456Write(7, 7,  STARTUP_HELP_TEXT1);
@@ -403,6 +399,10 @@ void osdInit(void)
     max7456RefreshAll();
 
     refreshTimeout = 4 * REFRESH_1S;
+
+#ifdef CMS
+    cmsDeviceRegister(osdCmsInit);
+#endif
 }
 
 /**
@@ -637,6 +637,8 @@ void osdUpdate(uint32_t currentTime)
 // OSD specific CMS functions
 //
 
+uint8_t shiftdown;
+
 int osdMenuBegin(void)
 {
     osdResetAlarms();
@@ -662,7 +664,7 @@ int osdClearScreen(void)
 
 int osdWrite(uint8_t x, uint8_t y, char *s)
 {
-    max7456Write(x, y, s);
+    max7456Write(x, y + shiftdown, s);
 
     return 0;
 }
@@ -704,7 +706,8 @@ screenFnVTable_t osdVTable = {
 
 void osdCmsInit(displayPort_t *pPort)
 {
-    pPort->rows = max7456GetRowsCount();
+    shiftdown = masterConfig.osdProfile.row_shiftdown;
+    pPort->rows = max7456GetRowsCount() - shiftdown;
     pPort->cols = 30;
     pPort->buftime = 1;         // Very fast
     pPort->bufsize = 50000;     // Very large
