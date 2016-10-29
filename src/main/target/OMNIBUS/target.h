@@ -127,9 +127,13 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
+#define USE_DSHOT
+
+// DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
+#ifndef USE_DSHOT
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+#endif
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -142,8 +146,6 @@
 
 //#define RSSI_ADC_PIN                PB1
 //#define ADC_INSTANCE                ADC3
-
-#define USE_DSHOT
 
 #define LED_STRIP
 #define WS2811_PIN                      PA8
