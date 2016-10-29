@@ -28,8 +28,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_2, NULL, 0 }, // PPM - PB4
     // PB5 / TIM3 CH2 is connected to USBPresent
 
-    { TIM8,  IO_TAG(PB8),  TIM_Channel_2, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_10, DMA2_Channel5, DMA2_CH5_HANDLER },  // PWM1 - PB8
-    { TIM8,  IO_TAG(PB9),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_10, DMA2_Channel1, DMA2_CH1_HANDLER },  // PWM2 - PB9
+    { TIM8,  IO_TAG(PB8),  TIM_Channel_2, TIM8_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_10, DMA2_Channel5, DMA2_CH5_HANDLER },  // PWM1 - PB8
+    { TIM8,  IO_TAG(PB9),  TIM_Channel_3, TIM8_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_10, DMA2_Channel1, DMA2_CH1_HANDLER },  // PWM2 - PB9
     { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1,  DMA1_Channel7, DMA1_CH7_HANDLER },  // PWM3 - PA3
     { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_9,  DMA1_Channel5, DMA1_CH5_HANDLER },  // PWM4 - PA2
 
