@@ -290,6 +290,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
+    telemetryConfig->smartportExternalInverter = 0;
 }
 #endif
 

@@ -44,6 +44,9 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_precision;
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
+#ifdef TELEMETRY_SMARTPORT
+    uint8_t smartportExternalInverter;
+#endif
 } telemetryConfig_t;
 
 void telemetryInit(void);
@@ -59,4 +62,3 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing);
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM)
-
