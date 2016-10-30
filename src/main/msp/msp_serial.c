@@ -229,6 +229,11 @@ void mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
             continue;
         }
 
+        // XXX Avoid zombie VCP port
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
         mspPushCommandFn(&push, data, datalen);
 
         sbufSwitchToReader(&push.buf, pushBuf);
