@@ -102,7 +102,7 @@ cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 #define CMS_UPDATE_INTERVAL 50 // msec
 
 // XXX Why is this here? Something wrong?
-// XXX We need something like Drawing Context that holds all state variables?
+// XXX Something like Drawing Context that holds all state variables would be the way...
 int8_t lastCursorPos;
 
 void cmsScreenClear(displayPort_t *instance)
@@ -1214,8 +1214,11 @@ OSD_Entry menuOsdLayout[] =
 static char infoGitRev[GIT_SHORT_REVISION_LENGTH];
 static char infoTargetName[] = __TARGET__;
 
+#include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
+
 OSD_Entry menuInfo[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
+    { BETAFLIGHT_IDENTIFIER, OME_Label, NULL, NULL, 0 },
     { FC_VERSION_STRING, OME_Label, NULL, NULL, 0 },
     { infoGitRev, OME_Label, NULL, NULL, 0 },
     { infoTargetName, OME_Label, NULL, NULL, 0 },
