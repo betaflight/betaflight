@@ -81,7 +81,7 @@
 
 #define USB_DETECT_PIN                   GPIO_Pin_5
 #define USB_DETECT_GPIO_PORT             GPIOB
-#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
+#define USB_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOB
 
 #define USE_VCP
 #define USE_UART1
