@@ -15,23 +15,31 @@ REQUEST_FRAME_ID = 0x30
 REPLY_FRAME_ID   = 0x32
 
 -- Sequence number for next MSP/SPORT packet
-sportMspSeq = 0
+local sportMspSeq = 0
 
-mspRxBuf = {}
-mspRxIdx = 1
-mspRxCRC = 0
-mspStarted = false
+local mspRxBuf = {}
+local mspRxIdx = 1
+local mspRxCRC = 0
+local mspStarted = false
 
 -- Stats
-requestsSent    = 0
-repliesReceived = 0
+mspRequestsSent    = 0
+mspRepliesReceived = 0
+mspPkRxed = 0
+mspErrorPk = 0
+mspStartPk = 0
+mspOutOfOrder = 0
+mspCRCErrors = 0
 
-mspReceivedReply_cnt = 0
-mspReceivedReply_cnt1 = 0
-mspReceivedReply_cnt2 = 0
-mspReceivedReply_cnt3 = 0
-
-lastReqTS = 0
+local function mspResetStats()
+   mspRequestsSent    = 0
+   mspRepliesReceived = 0
+   mspPkRxed = 0
+   mspErrorPk = 0
+   mspStartPk = 0
+   mspOutOfOrderPk = 0
+   mspCRCErrors = 0
+end
 
 local function mspSendRequest(cmd)
 
@@ -47,15 +55,13 @@ local function mspSendRequest(cmd)
    value = bit32.band(cmd,0xFF)        -- MSP command
    value = value + bit32.lshift(cmd,8) -- CRC
 
-   requestsSent = requestsSent + 1
+   mspRequestsSent = requestsSent + 1
    return sportTelemetryPush(LOCAL_SENSOR_ID, REQUEST_FRAME_ID, dataId, value)
 end
 
 local function mspReceivedReply(payload)
 
-   -- TODO: MSP checksum checking
-
-   mspReceivedReply_cnt = mspReceivedReply_cnt + 1
+   mspPkRxed = mspPkRxed + 1
    
    local idx      = 1
    local head     = payload[idx]
@@ -66,7 +72,7 @@ local function mspReceivedReply(payload)
       -- error flag set
       mspStarted = false
 
-      mspReceivedReply_cnt1 = mspReceivedReply_cnt1 + 1
+      mspErrorPk = mspErrorPk + 1
 
       -- return error
       -- CRC checking missing
@@ -88,13 +94,14 @@ local function mspReceivedReply(payload)
       idx = idx + 1
       mspStarted = true
       
-      mspReceivedReply_cnt2 = mspReceivedReply_cnt2 + 1
+      mspStartPk = mspStartPk + 1
 
    elseif not mspStarted then
-      mspReceivedReply_cnt3 = mspReceivedReply_cnt3 + 1
+      mspOutOfOrder = mspOutOfOrder + 1
       return nil
 
    elseif bit32.band(lastSeq+1,0x0F) ~= seq then
+      mspOutOfOrder = mspOutOfOrder + 1
       mspStarted = false
       return nil
    end
@@ -114,14 +121,15 @@ local function mspReceivedReply(payload)
    -- check CRC
    if mspRxCRC ~= payload[idx] then
       mspStarted = false
+      mspCRCErrors = mspCRCErrors + 1
    end
 
-   repliesReceived = repliesReceived + 1
+   mspRepliesReceived = mspRepliesReceived + 1
    mspStarted = false
    return mspRxBuf
 end
 
-local function pollReply()
+local function mspPollReply()
    local sensorId, frameId, dataId, value = sportTelemetryPop()
    if sensorId == REMOTE_SENSOR_ID and frameId == REPLY_FRAME_ID then
 
@@ -142,6 +150,8 @@ local function pollReply()
    end
 end
 
+local lastReqTS = 0
+
 local function run(event)
 
    local now = getTime()
@@ -157,28 +167,38 @@ local function run(event)
 
    lcd.clear()
 
-   lcd.drawText(1,11,"Requests:",0)
-   lcd.drawNumber(60,11,requestsSent)
+   -- do we have valid telemetry data?
+   if getValue("rssi") > 0 then
+
+      -- draw screen
+      lcd.drawText(1,11,"Requests:",0)
+      lcd.drawNumber(60,11,mspRequestsSent)
    
-   lcd.drawText(1,21,"Replies:",0)
-   lcd.drawNumber(60,21,repliesReceived)
+      lcd.drawText(1,21,"Replies:",0)
+      lcd.drawNumber(60,21,mspRepliesReceived)
 
-   lcd.drawText(1,31,"cnt:",0)
-   lcd.drawNumber(30,31,mspReceivedReply_cnt)
+      lcd.drawText(1,31,"PkRxed:",0)
+      lcd.drawNumber(30,31,mspPkRxed)
 
-   lcd.drawText(1,41,"cnt1:",0)
-   lcd.drawNumber(30,41,mspReceivedReply_cnt1)
+      lcd.drawText(1,41,"ErrorPk:",0)
+      lcd.drawNumber(30,41,mspErrorPk)
 
-   lcd.drawText(71,31,"cnt2:",0)
-   lcd.drawNumber(100,31,mspReceivedReply_cnt2)
+      lcd.drawText(71,31,"StartPk:",0)
+      lcd.drawNumber(100,31,mspStartPk)
 
-   lcd.drawText(71,41,"cnt3:",0)
-   lcd.drawNumber(100,41,mspReceivedReply_cnt3)
+      lcd.drawText(71,41,"OutOfOrder:",0)
+      lcd.drawNumber(100,41,mspOutOfOrder)
 
-   -- last request is at least 2s old
-   if lastReqTS + 200 <= now then
-      mspSendRequest(117) -- MSP_PIDNAMES
-      lastReqTS = now
+      lcd.drawText(1,51,"CRCErrors:",0)
+      lcd.drawNumber(30,51,mspCRCErrors)
+
+      -- last request is at least 2s old
+      if lastReqTS + 200 <= now then
+         mspSendRequest(117) -- MSP_PIDNAMES
+         lastReqTS = now
+      end
+   else
+      lcd.drawText(20,30,"No telemetry signal", XXLSIZE + BLINK)
    end
 
    pollReply()
