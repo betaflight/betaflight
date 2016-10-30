@@ -59,7 +59,14 @@
 
 #define MAG_AK8963_ALIGN CW270_DEG_FLIP
 
-//#define SONAR
+#define SONAR
+#define SONAR_TRIGGER_PIN           Pin_0   // ESC output 7 - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_TRIGGER_GPIO          GPIOB
+#define SONAR_ECHO_PIN              Pin_1   // ESC output 8 - only 3.3v ( add a 1K Ohms resistor )
+#define SONAR_ECHO_GPIO             GPIOB
+#define SONAR_TRIGGER_IO            PB0
+#define SONAR_ECHO_IO               PB1
+
 #define BEEPER
 #define LED0
 

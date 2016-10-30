@@ -726,6 +726,7 @@ SPRACINGF3EVO_SRC	 = \
 		   drivers/serial_usb_vcp.c \
 		   drivers/sdcard.c \
 		   drivers/sdcard_standard.c \
+		   drivers/sonar_hcsr04.c \
 		   drivers/transponder_ir.c \
 		   drivers/transponder_ir_stm32f30x.c \
 		   io/asyncfatfs/asyncfatfs.c \
