@@ -506,6 +506,7 @@ CC3D_SRC = \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_spi_mpu6000.c \
 		   drivers/barometer_bmp085.c \
+		   drivers/barometer_bmp280.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/bus_spi.c \
 		   drivers/compass_hmc5883l.c \
