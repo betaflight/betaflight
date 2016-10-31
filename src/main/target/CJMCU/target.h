@@ -92,6 +92,7 @@
 #define BLACKBOX
 #define GTUNE
 #else
+#define SKIP_3D_FLIGHT
 #define SKIP_SERIAL_PASSTHROUGH
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_FRILLS

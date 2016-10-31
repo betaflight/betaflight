@@ -1004,11 +1004,13 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU32(dst, 0); // future exp
             break;
 
+#ifndef SKIP_3D_FLIGHT
         case MSP_3D:
             sbufWriteU16(dst, motor3DConfig()->deadband3d_low);
             sbufWriteU16(dst, motor3DConfig()->deadband3d_high);
             sbufWriteU16(dst, motor3DConfig()->neutral3d);
             break;
+#endif
 
         case MSP_RC_DEADBAND:
             sbufWriteU8(dst, rcControlsConfig()->deadband);
@@ -1206,12 +1208,13 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
 
+#ifndef SKIP_3D_FLIGHT
         case MSP_SET_3D:
             motor3DConfig()->deadband3d_low = sbufReadU16(src);
             motor3DConfig()->deadband3d_high = sbufReadU16(src);
             motor3DConfig()->neutral3d = sbufReadU16(src);
             break;
-
+#endif
         case MSP_SET_RC_DEADBAND:
             rcControlsConfig()->deadband = sbufReadU8(src);
             rcControlsConfig()->yaw_deadband = sbufReadU8(src);

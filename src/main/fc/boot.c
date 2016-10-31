@@ -418,9 +418,7 @@ void init(void)
 
     pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
     pwm_params.motorPwmRate = motorConfig()->motor_pwm_rate;
-    pwm_params.idlePulse = motorConfig()->mincommand;
-    if (feature(FEATURE_3D))
-        pwm_params.idlePulse = motor3DConfig()->neutral3d;
+    pwm_params.idlePulse = calculateMotorOff();
     if (pwm_params.motorPwmRate > 500)
         pwm_params.idlePulse = 0; // brushed motors
 

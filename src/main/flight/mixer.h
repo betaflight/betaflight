@@ -97,7 +97,9 @@ typedef struct motor3DConfig_s {
     uint16_t neutral3d;                     // center 3d value
 } motor3DConfig_t;
 
+#ifndef SKIP_3D_FLIGHT
 PG_DECLARE(motor3DConfig_t, motor3DConfig);
+#endif
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
@@ -116,3 +118,4 @@ void writeMotors(void);
 void stopMotors(void);
 void StopPwmAllMotors(void);
 void mixerInitialiseServoFiltering(uint32_t targetLooptime);
+int16_t calculateMotorOff(void);
