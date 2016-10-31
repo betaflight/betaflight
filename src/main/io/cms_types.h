@@ -5,7 +5,7 @@
 
 #pragma once
 
-typedef void (*OSDMenuFuncPtr)(displayPort_t *, void *);
+typedef long (*OSDMenuFuncPtr)(displayPort_t *, void *);
 
 //type of elements
 typedef enum

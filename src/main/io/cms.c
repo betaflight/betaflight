@@ -444,7 +444,7 @@ OSD_Entry menuRateExpo[];
 void cmsx_RateExpoRead(void);
 void cmsx_RateExpoWriteback(void);
 
-void cmsMenuChange(displayPort_t *pDisplay, void *ptr)
+long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
         // XXX (jflyper): This can be avoided by adding pre- and post-
@@ -466,9 +466,11 @@ void cmsMenuChange(displayPort_t *pDisplay, void *ptr)
         cmsScreenClear(pDisplay);
         cmsUpdateMaxRows(pDisplay);
     }
+
+    return 0;
 }
 
-void cmsMenuBack(displayPort_t *pDisplay)
+long cmsMenuBack(displayPort_t *pDisplay)
 {
     // becasue pids and rates may be stored in profiles we need some thicks to manipulate it
     // hack to save pid profile
@@ -488,6 +490,8 @@ void cmsMenuBack(displayPort_t *pDisplay)
 
         cmsUpdateMaxRows(pDisplay);
     }
+
+    return 0;
 }
 
 // XXX This should go to device
@@ -529,7 +533,7 @@ void cmsMenuOpen(void)
     cmsMenuChange(&currentDisplay, currentMenu);
 }
 
-void cmsMenuExit(displayPort_t *pDisplay, void *ptr)
+long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
         cmsScreenClear(pDisplay);
@@ -554,6 +558,8 @@ void cmsMenuExit(displayPort_t *pDisplay, void *ptr)
         systemReset();
 
     ENABLE_ARMING_FLAG(OK_TO_ARM);
+
+    return 0;
 }
 
 uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
@@ -1125,7 +1131,7 @@ static void getLedColor(void)
 }
 
 //udate all leds with flag color
-static void applyLedColor(displayPort_t *pDisplay, void *ptr)
+static long applyLedColor(displayPort_t *pDisplay, void *ptr)
 {
     UNUSED(ptr);
     UNUSED(pDisplay); // Arrgh
@@ -1135,6 +1141,8 @@ static void applyLedColor(displayPort_t *pDisplay, void *ptr)
         if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR)
             *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), ledColor, ledGetDirection(ledConfig), ledGetFunction(ledConfig), ledGetOverlay(ledConfig), 0);
     }
+
+    return 0;
 }
 
 static uint8_t featureLedstrip;

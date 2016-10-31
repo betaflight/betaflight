@@ -29,17 +29,10 @@ bool cmsDeviceRegister(cmsDeviceInitFuncPtr);
 void cmsInit(void);
 void cmsHandler(uint32_t);
 
-
-#if 0
-void cmsOpenMenu();
-void cmsUpdate(uint32_t);
-void cmsScreenResync(displayPort_t *);
-#endif
-
 // Required for external CMS tables
 
-void cmsChangeScreen(displayPort_t *, void *);
-void cmsExitMenu(displayPort_t *, void *);
+long cmsChangeScreen(displayPort_t *, void *);
+long cmsExitMenu(displayPort_t *, void *);
 
 #define STARTUP_HELP_TEXT1 "MENU: THR MID"
 #define STARTUP_HELP_TEXT2     "+ YAW LEFT"
