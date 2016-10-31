@@ -73,7 +73,7 @@ static void icm20689SpiInit(void)
     IOInit(icmSpi20689CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
     IOConfigGPIO(icmSpi20689CsPin, SPI_IO_CS_CFG);
 
-    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_FAST);
+    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     hardwareInitialised = true;
 }
@@ -101,7 +101,7 @@ bool icm20689SpiDetect(void)
         }
     } while (attemptsRemaining--);
 
-    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_FAST);
+    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
     return true;
 
@@ -175,6 +175,6 @@ void icm20689GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
-    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_FAST);
+    spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
 
 }
