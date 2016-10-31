@@ -36,19 +36,13 @@
 
 #include "sensors/voltage.h"
 
+
 voltageMeterState_t voltageMeterStates[MAX_VOLTAGE_METERS];
 
-static const uint8_t voltageMeterAdcChannelMap[] = {
-#ifdef ADC_BATTERY
-    ADC_BATTERY,
-#endif
-#ifdef ADC_POWER_12V
-    ADC_POWER_12V,
-#endif
-#ifdef ADC_POWER_5V
-    ADC_POWER_5V,
-#endif
-};
+voltageMeterState_t *getVoltageMeter(uint8_t index)
+{
+    return &voltageMeterStates[index];
+}
 
 PG_REGISTER_ARR_WITH_RESET_FN(voltageMeterConfig_t, MAX_VOLTAGE_METERS, voltageMeterConfig, PG_VOLTAGE_METER_CONFIG, 0);
 
@@ -62,6 +56,20 @@ void pgResetFn_voltageMeterConfig(voltageMeterConfig_t *instance)
         );
     }
 }
+
+
+#ifdef USE_ADC
+static const uint8_t voltageMeterAdcChannelMap[] = {
+#ifdef ADC_BATTERY
+    ADC_BATTERY,
+#endif
+#ifdef ADC_POWER_12V
+    ADC_POWER_12V,
+#endif
+#ifdef ADC_POWER_5V
+    ADC_POWER_5V,
+#endif
+};
 
 STATIC_UNIT_TESTED uint16_t voltageAdcToVoltage(const uint16_t src, voltageMeterConfig_t *config)
 {
@@ -96,11 +104,6 @@ uint16_t getVoltageForADCChannel(uint8_t channel)
     failureMode(FAILURE_DEVELOPER);
 
     return 0;
-}
-
-voltageMeterState_t *getVoltageMeter(uint8_t index)
-{
-    return &voltageMeterStates[index];
 }
 
 // unfiltered - always recalcualates voltage based on last adc sensor reading
@@ -150,3 +153,11 @@ void voltageMeterInit(void)
         biquadFilterInitLPF(&state->vbatFilterState, VBATT_LPF_FREQ, 50000);
     }
 }
+#else
+void voltageMeterInit(void)
+{
+}
+void voltageMeterUpdate(void)
+{
+}
+#endif

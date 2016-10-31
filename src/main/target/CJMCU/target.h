@@ -59,6 +59,7 @@
 // #define SOFT_I2C_PB1011 // If SOFT_I2C is enabled above, need to define pinout as well (I2C1 = PB67, I2C2 = PB1011)
 // #define SOFT_I2C_PB67
 
+#if (FLASH_SIZE > 64)
 #define USE_ADC
 
 #define ADC_INSTANCE                ADC1
@@ -73,6 +74,7 @@
 #define ADC_CHANNEL_COUNT 1
 
 #define ADC_BATTERY     ADC_CHANNEL1
+#endif
 
 #define DEFAULT_RX_FEATURE FEATURE_RX_PPM
 

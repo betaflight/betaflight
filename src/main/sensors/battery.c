@@ -66,6 +66,7 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
 
 void batteryUpdate(void)
 {
+#ifdef ADC_BATTERY
     vbat = getVoltageForADCChannel(ADC_BATTERY);
 
     /* battery has just been connected*/
@@ -129,6 +130,7 @@ void batteryUpdate(void)
         case BATTERY_NOT_PRESENT:
             break;
     }
+#endif
 }
 
 batteryState_e getBatteryState(void)
