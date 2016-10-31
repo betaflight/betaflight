@@ -175,23 +175,20 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
 
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
-    
 
-    static DMA_HandleTypeDef  hdma_tim;
-    
     /* Set the parameters to be configured */
-    hdma_tim.Init.Channel  = timerHardware->dmaChannel;
-    hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD ;
-    hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
-    hdma_tim.Init.Mode = DMA_NORMAL;
-    hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
-    hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-    hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
-    hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    motor->hdma_tim.Init.Channel  = timerHardware->dmaChannel;
+    motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
+    motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
+    motor->hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD ;
+    motor->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
+    motor->hdma_tim.Init.Mode = DMA_NORMAL;
+    motor->hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
+    motor->hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    motor->hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    motor->hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
+    motor->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
     if(timerHardware->dmaStream == NULL)
@@ -199,10 +196,10 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         /* Initialization Error */
         return;
     }
-    hdma_tim.Instance = timerHardware->dmaStream;
+    motor->hdma_tim.Instance = timerHardware->dmaStream;
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], hdma_tim);
+    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);
 
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
