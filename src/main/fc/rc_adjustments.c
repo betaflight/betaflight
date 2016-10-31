@@ -188,72 +188,82 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         case ADJUSTMENT_ROLL_D:
             setAdjustment(&pidProfile()->D8[PIDROLL],ADJUSTMENT_ROLL_D,delta,PID_MIN,PID_MAX);
             break;
+    }
+
+    uint8_t* ptr = NULL;
+    switch (adjustmentFunction) {
         case ADJUSTMENT_YAW_P:
-                setAdjustment(&pidProfile()->P8[PIDYAW],ADJUSTMENT_YAW_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDYAW];
             break;
         case ADJUSTMENT_YAW_I:
-            setAdjustment(&pidProfile()->I8[PIDYAW],ADJUSTMENT_YAW_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDYAW];
             break;
         case ADJUSTMENT_YAW_D:
-                setAdjustment(&pidProfile()->D8[PIDYAW],ADJUSTMENT_YAW_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDYAW];
             break;
         case ADJUSTMENT_LEVEL_P:
-            setAdjustment(&pidProfile()->P8[PIDLEVEL],ADJUSTMENT_LEVEL_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDLEVEL];
             break;
         case ADJUSTMENT_LEVEL_I:
-            setAdjustment(&pidProfile()->I8[PIDLEVEL],ADJUSTMENT_LEVEL_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDLEVEL];
             break;
         case ADJUSTMENT_LEVEL_D:
-            setAdjustment(&pidProfile()->D8[PIDLEVEL],ADJUSTMENT_LEVEL_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDLEVEL];
             break;
         case ADJUSTMENT_ALT_P:
-            setAdjustment(&pidProfile()->P8[PIDALT],ADJUSTMENT_ALT_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDALT];
             break;
         case ADJUSTMENT_ALT_I:
-            setAdjustment(&pidProfile()->I8[PIDALT],ADJUSTMENT_ALT_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDALT];
             break;
         case ADJUSTMENT_ALT_D:
-            setAdjustment(&pidProfile()->D8[PIDALT],ADJUSTMENT_ALT_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDALT];
             break;
         case ADJUSTMENT_POS_P:
-            setAdjustment(&pidProfile()->P8[PIDPOS],ADJUSTMENT_POS_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDPOS];
             break;
         case ADJUSTMENT_POS_I:
-            setAdjustment(&pidProfile()->I8[PIDPOS],ADJUSTMENT_POS_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDPOS];
             break;
         case ADJUSTMENT_POSR_P:
-            setAdjustment(&pidProfile()->P8[PIDPOSR],ADJUSTMENT_POSR_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDPOSR];
             break;
         case ADJUSTMENT_POSR_I:
-            setAdjustment(&pidProfile()->I8[PIDPOSR],ADJUSTMENT_POSR_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDPOSR];
             break;
         case ADJUSTMENT_POSR_D:
-            setAdjustment(&pidProfile()->D8[PIDPOSR],ADJUSTMENT_POSR_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDPOSR];
             break;
        case ADJUSTMENT_NAVR_P:
-            setAdjustment(&pidProfile()->P8[PIDNAVR],ADJUSTMENT_NAVR_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDNAVR];
             break;
         case ADJUSTMENT_NAVR_I:
-            setAdjustment(&pidProfile()->I8[PIDNAVR],ADJUSTMENT_NAVR_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDNAVR];
             break;
         case ADJUSTMENT_NAVR_D:
-            setAdjustment(&pidProfile()->D8[PIDNAVR],ADJUSTMENT_NAVR_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDNAVR];
             break;
         case ADJUSTMENT_MAG_P:
-            setAdjustment(&pidProfile()->P8[PIDMAG],ADJUSTMENT_MAG_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDMAG];
             break;
         case ADJUSTMENT_VEL_P:
-            setAdjustment(&pidProfile()->P8[PIDVEL],ADJUSTMENT_VEL_P,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->P8[PIDVEL];
             break;
         case ADJUSTMENT_VEL_I:
-            setAdjustment(&pidProfile()->I8[PIDVEL],ADJUSTMENT_VEL_I,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->I8[PIDVEL];
             break;
         case ADJUSTMENT_VEL_D:
-            setAdjustment(&pidProfile()->D8[PIDVEL],ADJUSTMENT_VEL_D,delta,PID_MIN,PID_MAX);
+            ptr = &pidProfile()->D8[PIDVEL];
             break;
         default:
             break;
     };
+
+    if (ptr) {
+        setAdjustment(ptr,adjustmentFunction,delta,PID_MIN,PID_MAX);
+    }
+
+
 }
 
 void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
