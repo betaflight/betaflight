@@ -205,6 +205,15 @@ void msp4WayIfFn(mspPort_t *msp)
 }
 #endif
 
+#ifndef SKIP_SERIAL_PASSTHROUGH
+static serialPort_t *passThroughPort;
+
+void mspSerialPassthroughFn(mspPort_t *msp)
+{
+    serialPassthrough(msp->port, passThroughPort, NULL, NULL);
+}
+#endif
+
 void mspRebootFn(mspPort_t *msp)
 {
     waitForSerialPortToFinishTransmitting(msp->port);  // TODO - postpone reboot, allow all modules to react
@@ -1410,6 +1419,28 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                 rxConfig()->rcmap[i] = sbufReadU8(src);
             }
             break;
+
+#ifndef SKIP_SERIAL_PASSTHROUGH
+    case MSP_PASSTHROUGH_SERIAL:
+        if (!ARMING_FLAG(ARMED)) {
+            int id = sbufReadU8(src);
+            serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
+            if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
+                passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
+                                                 115200, MODE_RXTX,
+                                                 SERIAL_NOT_INVERTED);
+                if (!passThroughPort) {
+                    return -1;
+                    break;
+                }
+            } else {
+                passThroughPort = passThroughPortUsage->serialPort;
+            }
+
+            mspPostProcessFn = mspSerialPassthroughFn;
+        }
+        break;
+#endif
 
         case MSP_SET_CF_SERIAL_CONFIG: {
             int portConfigSize = sizeof(uint8_t) + sizeof(uint16_t) + (sizeof(uint8_t) * 4);

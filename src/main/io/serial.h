@@ -103,6 +103,7 @@ typedef struct serialConfig_s {
 PG_DECLARE(serialConfig_t, serialConfig);
 typedef void serialConsumer(uint8_t);
 
+
 //
 // configuration
 //
@@ -114,12 +115,11 @@ serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifie
 bool doesConfigurationUsePort(serialPortIdentifier_e portIdentifier);
 serialPortConfig_t *findSerialPortConfig(uint16_t mask);
 serialPortConfig_t *findNextSerialPortConfig(uint16_t mask);
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 
 portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function);
 bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 bool isSerialPortOpen(serialPortConfig_t *portConfig);
-
-serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
 
 //
 // runtime
