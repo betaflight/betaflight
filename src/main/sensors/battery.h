@@ -23,6 +23,7 @@ typedef struct batteryConfig_s {
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
     uint16_t batteryCapacity;               // mAh
     uint8_t amperageMeterSource;             // see amperageMeter_e - used for telemetry, led strip, legacy MSP.
+    uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
 } batteryConfig_t;
 
 PG_DECLARE(batteryConfig_t, batteryConfig);

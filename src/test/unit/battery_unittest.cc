@@ -51,7 +51,8 @@ TEST(BatteryTest, BatteryStateAndHysteresis)
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
         .batteryCapacity = 0,    // UNUSED
-        .amperageMeterSource = 0  // UNUSED
+        .amperageMeterSource = 0, // UNUSED
+        .vbathysteresis = 1
     };
 
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));
@@ -67,14 +68,14 @@ TEST(BatteryTest, BatteryStateAndHysteresis)
             {104, BATTERY_WARNING},
             // creep back up to battery ok
             {105, BATTERY_WARNING},
-            {106, BATTERY_WARNING},
+            {106, BATTERY_OK},
             {107, BATTERY_OK},
             // fall down to battery critical level
             {104, BATTERY_WARNING},
             {98, BATTERY_CRITICAL},
             // creep back up to battery warning
             {99, BATTERY_CRITICAL},
-            {100, BATTERY_CRITICAL},
+            {100, BATTERY_WARNING},
             {101, BATTERY_WARNING},
 
     };
@@ -110,7 +111,8 @@ TEST(BatteryTest, LipoCellCount)
         .vbatmincellvoltage = 33,
         .vbatwarningcellvoltage = 35,
         .batteryCapacity = 0,    // UNUSED
-        .amperageMeterSource = 0  // UNUSED
+        .amperageMeterSource = 0, // UNUSED
+        .vbathysteresis = 1
     };
 
     memcpy(batteryConfig(), &testBatteryConfig, sizeof(*batteryConfig()));

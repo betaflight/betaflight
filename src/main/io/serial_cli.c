@@ -653,6 +653,7 @@ const clivalue_t valueTable[] = {
     { "amperage_meter_offset",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  3300 } , PG_AMPERAGE_METER_CONFIG, offsetof(amperageMeterConfig_t, offset)},
     { "multiwii_amperage_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON } , PG_MSP_SERVER_CONFIG, offsetof(mspServerConfig_t, multiwiiCurrentMeterOutput)},
     { "amperage_meter_source",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AMPERAGE_METER } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, amperageMeterSource)},
+    { "vbat_hysteresis",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  250 } , PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbathysteresis)},
 
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, gyro_align)},
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT } , PG_SENSOR_ALIGNMENT_CONFIG, offsetof(sensorAlignmentConfig_t, acc_align)},

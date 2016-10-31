@@ -59,12 +59,10 @@ PG_RESET_TEMPLATE(batteryConfig_t, batteryConfig,
     .vbatmaxcellvoltage = 43,
     .vbatmincellvoltage = 33,
     .vbatwarningcellvoltage = 35,
+    .vbathysteresis = 1,
 );
 
 #define VBATTERY_STABLE_DELAY 40
-
-/* Batt Hysteresis of +/-100mV */
-#define VBATT_HYSTERESIS 1
 
 void batteryUpdate(void)
 {
@@ -105,23 +103,23 @@ void batteryUpdate(void)
     switch(batteryState)
     {
         case BATTERY_OK:
-            if (vbat <= (batteryWarningVoltage - VBATT_HYSTERESIS)) {
+            if (vbat <= (batteryWarningVoltage - batteryConfig()->vbathysteresis)) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_WARNING:
-            if (vbat <= (batteryCriticalVoltage - VBATT_HYSTERESIS)) {
+            if (vbat <= (batteryCriticalVoltage - batteryConfig()->vbathysteresis)) {
                 batteryState = BATTERY_CRITICAL;
                 beeper(BEEPER_BAT_CRIT_LOW);
-            } else if (vbat > (batteryWarningVoltage + VBATT_HYSTERESIS)){
+            } else if (vbat > batteryWarningVoltage) {
                 batteryState = BATTERY_OK;
             } else {
                 beeper(BEEPER_BAT_LOW);
             }
             break;
         case BATTERY_CRITICAL:
-            if (vbat > (batteryCriticalVoltage + VBATT_HYSTERESIS)){
+            if (vbat > batteryCriticalVoltage) {
                 batteryState = BATTERY_WARNING;
                 beeper(BEEPER_BAT_LOW);
             } else {
