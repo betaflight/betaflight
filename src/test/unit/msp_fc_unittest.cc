@@ -572,6 +572,8 @@ int16_t rcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
 rxRuntimeConfig_t rxRuntimeConfig;
 // from system.c
 void delay(uint32_t ms) {UNUSED(ms);}
+uint32_t millis(void) { return 0;}
+
 // from system_stm32fN0x.c
 void systemReset(void) {}
 void systemResetToBootloader(void) {}
@@ -584,6 +586,10 @@ serialPort_t *usbVcpOpen(void) { return NULL; }
 serialPort_t *uartOpen(USART_TypeDef *, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) { return NULL; }
 serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portOptions_t) { return NULL; }
 void serialSetMode(serialPort_t *, portMode_t) {}
+
+void serialWrite(serialPort_t *, uint8_t) {}
+uint32_t serialRxBytesWaiting(const serialPort_t *) { return 0; }
+uint8_t serialRead(serialPort_t *) { return 0; }
 
 void mspSerialProcess() {}
 int mspClientProcessInCommand(mspPacket_t *) { return false; }

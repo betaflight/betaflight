@@ -260,6 +260,7 @@ void handleOneshotFeatureChangeOnRestart(void) {}
 void stopMotors(void) {}
 uint8_t armingFlags = 0;
 void delay(uint32_t ms) {UNUSED(ms);}
+uint32_t millis(void) { return 0;}
 // from system_stm32fN0x.c
 void systemReset(void) {}
 void systemResetToBootloader(void) {}
@@ -269,5 +270,6 @@ serialPort_t *uartOpen(USART_TypeDef *, serialReceiveCallbackPtr, uint32_t, port
 serialPort_t *openSoftSerial(softSerialPortIndex_e, serialReceiveCallbackPtr, uint32_t, portOptions_t) { return NULL; }
 void serialSetMode(serialPort_t *, portMode_t) {}
 bool isRebootScheduled = false;
+
 }
 

@@ -99,6 +99,7 @@ Click on a command to jump to the relevant documentation page.
 | [`rxrange`](Rx.md)                      | configure rx channel ranges (end-points)       |
 | [`rxfail`](Rx.md)                       | show/set rx failsafe settings                  |
 | `save`                                  | save and reboot                                |
+| `serialpassthrough`                     | serial passthrough mode, reset board to exit   |
 | `set`                                   | name=value or blank or * for list              |
 | `status`                                | show system status                             |
 | `version`                               | show version                                   |
@@ -106,8 +107,6 @@ Click on a command to jump to the relevant documentation page.
 | [`servo`](Mixer.md)                     | configure servos                               |
 | `sd_info`                               | sdcard info                                    |
 | `tasks`                                 | show task stats                                |
-
-
 
 ## CLI Variable Reference
 
