@@ -39,8 +39,10 @@
 
 #include "common/pilot.h"
 
+#ifdef OSD
 PG_REGISTER_WITH_RESET_TEMPLATE(pilotConfig_t, pilotConfig, PG_PILOT_CONFIG, 0);
 
 PG_RESET_TEMPLATE(pilotConfig_t, pilotConfig,
     .callsign = " CLEANFLIGHT! ",
 );
+#endif
