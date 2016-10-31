@@ -23,6 +23,7 @@
 
 #include "drivers/timer.h"
 
+#if defined(USE_DSHOT)
 // DSHOT TEST
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM12, IO_TAG(PB14), TIM_CHANNEL_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP ,  GPIO_AF9_TIM12,  NULL,         0,             0  }, // S1_IN
@@ -32,7 +33,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM8,  IO_TAG(PC9),  TIM_CHANNEL_4, TIM8_CC_IRQn,        0, IOCFG_AF_PP ,  GPIO_AF3_TIM8,  NULL,         0,             0  }, // S5_IN
     { TIM8,  IO_TAG(PC8),  TIM_CHANNEL_3, TIM8_CC_IRQn,        0, IOCFG_AF_PP ,  GPIO_AF3_TIM8,  NULL,         0,             0  }, // S6_IN
 
-    { TIM4,  IO_TAG(PB8),  TIM_CHANNEL_3, TIM4_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF2_TIM4, DMA1_Stream7, DMA_CHANNEL_5, DMA1_ST7_HANDLER  }, // S10_OUT 1
+    { TIM4,  IO_TAG(PB8),  TIM_CHANNEL_3, TIM4_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF2_TIM4, DMA1_Stream7, DMA_CHANNEL_2, DMA1_ST7_HANDLER  }, // S10_OUT 1
     { TIM2,  IO_TAG(PA2),  TIM_CHANNEL_3, TIM2_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF1_TIM2, DMA1_Stream1, DMA_CHANNEL_3, DMA1_ST1_HANDLER  }, // S6_OUT  2
     { TIM2,  IO_TAG(PA3),  TIM_CHANNEL_4, TIM2_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF1_TIM2, DMA1_Stream6, DMA_CHANNEL_3, DMA1_ST6_HANDLER  }, // S1_OUT  4
     { TIM5,  IO_TAG(PA1),  TIM_CHANNEL_2, TIM5_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF2_TIM5, DMA1_Stream4, DMA_CHANNEL_6, DMA1_ST4_HANDLER  }, // S2_OUT
@@ -43,8 +44,8 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  IO_TAG(PB3),  TIM_CHANNEL_2, TIM2_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF1_TIM2,  NULL,         0,             0  }, // S8_OUT
     { TIM3,  IO_TAG(PB4),  TIM_CHANNEL_1, TIM3_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF2_TIM3,  NULL,         0,             0  }, // S9_OUT
 };
-
-/* STANDARD LAYOUT
+#else
+// STANDARD LAYOUT
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM12, IO_TAG(PB14), TIM_CHANNEL_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP ,  GPIO_AF9_TIM12}, // S1_IN
     { TIM12, IO_TAG(PB15), TIM_CHANNEL_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP ,  GPIO_AF9_TIM12}, // S2_IN
@@ -64,7 +65,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  IO_TAG(PB3),  TIM_CHANNEL_2, TIM2_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF1_TIM2}, // S8_OUT
     { TIM3,  IO_TAG(PB4),  TIM_CHANNEL_1, TIM3_IRQn,           1, IOCFG_AF_PP ,  GPIO_AF2_TIM3}, // S9_OUT
 };
-*/
+#endif
 
 // ALTERNATE LAYOUT
 //const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
