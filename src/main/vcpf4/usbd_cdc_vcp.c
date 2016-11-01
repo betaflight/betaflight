@@ -194,7 +194,9 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
         
-        while (CDC_Send_FreeBytes() == 0);
+        while (CDC_Send_FreeBytes() == 0) {
+            delay(1);
+        }
     }
 
     return USBD_OK;
