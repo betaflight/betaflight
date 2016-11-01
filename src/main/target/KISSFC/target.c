@@ -32,10 +32,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn,     TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED,  GPIO_AF_1, DMA1_Channel7, DMA1_CH7_HANDLER },
 
     { TIM2,  IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,               TIM_USE_PWM | TIM_USE_PPM, 0, GPIO_AF_1,  NULL, 0}, // TODO - Cleanup. KISS FC uses the same pin for serial and PPM
-    { TIM2,  IO_TAG(PA15), TIM_Channel_1, TIM2_IRQn,               TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},
-    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               TIM_USE_PWM, 0, GPIO_AF_1,  NULL, 0},
-    { TIM4,  IO_TAG(PA13), TIM_Channel_2, TIM4_IRQn,               TIM_USE_PWM, 0, GPIO_AF_10, NULL, 0},
-    { TIM8,  IO_TAG(PA14), TIM_Channel_3, TIM8_CC_IRQn,            TIM_USE_PWM, 0, GPIO_AF_5,  NULL, 0},
+    { TIM2,  IO_TAG(PA15), TIM_Channel_1, TIM2_IRQn,               TIM_USE_PWM,               0, GPIO_AF_1,  NULL, 0},
+    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               TIM_USE_PWM,               0, GPIO_AF_1,  NULL, 0},
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,               TIM_USE_PWM,               0, GPIO_AF_1,  NULL, 0},
+    //{ TIM4,  IO_TAG(PA13), TIM_Channel_2, TIM4_IRQn,               TIM_USE_PWM,               0, GPIO_AF_10, NULL, 0},
+    //{ TIM8,  IO_TAG(PA14), TIM_Channel_3, TIM8_CC_IRQn,            TIM_USE_PWM,               0, GPIO_AF_5,  NULL, 0},
 };
 
