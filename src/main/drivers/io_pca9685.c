@@ -9,9 +9,6 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
-#include "fc/runtime_config.h"
-
 #define PCA9685_ADDR 0x40
 #define PCA9685_MODE1 0x00
 #define PCA9685_PRESCALE 0xFE
