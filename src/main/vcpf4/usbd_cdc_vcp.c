@@ -48,7 +48,6 @@ extern uint32_t APP_Rx_ptr_in;
     APP TX is the circular buffer for data that is transmitted from the APP (host)
     to the USB device (flight controller).
 */
-#define APP_TX_DATA_SIZE      1024
 static uint8_t APP_Tx_Buffer[APP_TX_DATA_SIZE]; 
 static uint32_t APP_Tx_ptr_out = 0;
 static uint32_t APP_Tx_ptr_in = 0;
@@ -195,7 +194,7 @@ static uint16_t VCP_DataTx(const uint8_t* Buf, uint32_t Len)
         APP_Rx_Buffer[APP_Rx_ptr_in] = Buf[i];
         APP_Rx_ptr_in = (APP_Rx_ptr_in + 1) % APP_RX_DATA_SIZE;
         
-        while (CDC_Send_FreeBytes() <= 0);
+        while (CDC_Send_FreeBytes() == 0);
     }
 
     return USBD_OK;
@@ -247,14 +246,10 @@ static uint16_t VCP_DataRx(uint8_t* Buf, uint32_t Len)
         return USBD_FAIL;
     }
 
-    __disable_irq();
-
     for (uint32_t i = 0; i < Len; i++) {
         APP_Tx_Buffer[APP_Tx_ptr_in] = Buf[i];
         APP_Tx_ptr_in = (APP_Tx_ptr_in + 1) % APP_TX_DATA_SIZE;
     }
-
-    __enable_irq();
 
     return USBD_OK;
 }
