@@ -350,12 +350,15 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 #endif
 }
 
-void updateMagHoldHeading(int16_t heading, uint8_t reset)
+void updateMagHoldHeading(int16_t heading)
 {
     magHoldTargetHeading = heading;
-    if (reset) {
-        pt1FilterReset(&magHoldRateFilter, (float) heading);
-    }
+}
+
+void resetMagHoldHeading(int16_t heading)
+{
+    updateMagHoldHeading(heading);
+    pt1FilterReset(&magHoldRateFilter, (float) heading);
 }
 
 int16_t getMagHoldHeading() {
@@ -476,7 +479,7 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
     uint8_t magHoldState = getMagHoldState();
 
     if (magHoldState == MAG_HOLD_UPDATE_HEADING) {
-        updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw), false);
+        updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
     }
 
     for (int axis = 0; axis < 3; axis++) {

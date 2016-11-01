@@ -230,7 +230,7 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
-            updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw), true);
+            resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
 
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
@@ -401,7 +401,7 @@ void processRx(void)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
-                updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw), true);
+                resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
                 ENABLE_FLIGHT_MODE(MAG_MODE);
             }
         } else {

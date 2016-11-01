@@ -1094,7 +1094,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_HEAD:
-        updateMagHoldHeading(sbufReadU16(src), false);
+        updateMagHoldHeading(sbufReadU16(src));
         break;
 
     case MSP_SET_RAW_RC:
