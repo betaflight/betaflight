@@ -208,7 +208,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
             break;
         }
 
-        const timerHardware_t *timerHardware = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_MOTOR);
         
         if (timerHardware == NULL) {
             /* flag failure and disable ability to arm */
@@ -271,7 +271,7 @@ void servoInit(const servoConfig_t *servoConfig)
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_OUTPUT, RESOURCE_INDEX(servoIndex));
         IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
         
-        const timerHardware_t *timer = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_SERVO);
         
         if (timer == NULL) {
             /* flag failure and disable ability to arm */
