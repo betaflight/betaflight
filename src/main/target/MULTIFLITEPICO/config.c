@@ -39,7 +39,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-// alternative defaults settings for PICOBFC targets
+// alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config) {
     config->mag_hardware = MAG_NONE;            // disabled by default
     

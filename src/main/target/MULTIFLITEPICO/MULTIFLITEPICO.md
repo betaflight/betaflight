@@ -40,7 +40,7 @@ For more detail of the different bind modes please refer the CleanFlight Spektru
 
 Deltang receivers in serial mode will work like any other Spektrum satellite receiver (10bit, 22ms) only the bind process will be different. 
 
-The pin layout for the PICOBFC is very similar to SPRACINGF3.
+The pin layout for the MULTIFLITEPICO is very similar to SPRACINGF3.
 
 ## Flashing the firmware
 
