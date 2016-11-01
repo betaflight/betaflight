@@ -145,7 +145,7 @@ It is possible to use DIY UART inverter to connect SmartPort receivers to F1 and
 When external inverter is used, following configuration has to be applied:
 
 ```
-set smartport_external_inverter = ON
+set smartport_uart_unidir = ON
 set telemetry_inversion = OFF
 ```
 

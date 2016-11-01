@@ -226,7 +226,7 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    if (telemetryConfig->smartportExternalInverter) {
+    if (telemetryConfig->smartportUartUnidirectional) {
         portOptions = SERIAL_UNIDIR;
     } else {
         portOptions = SERIAL_BIDIR;

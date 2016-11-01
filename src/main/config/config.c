@@ -291,7 +291,7 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
     telemetryConfig->frsky_vfas_precision = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
 #ifdef TELEMETRY_SMARTPORT
-    telemetryConfig->smartportExternalInverter = 0;
+    telemetryConfig->smartportUartUnidirectional = 0;
 #endif
 }
 #endif

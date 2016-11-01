@@ -723,7 +723,7 @@ const clivalue_t valueTable[] = {
     { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_vfas_precision, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH }, 0 },
     { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.hottAlarmSoundInterval, .config.minmax = { 0,  120 }, 0 },
 #ifdef TELEMETRY_SMARTPORT
-    { "smartport_external_inverter",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.smartportExternalInverter, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "smartport_uart_unidir",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.smartportUartUnidirectional, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
 #endif
 

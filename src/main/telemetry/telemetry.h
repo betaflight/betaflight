@@ -45,7 +45,7 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
 #ifdef TELEMETRY_SMARTPORT
-    uint8_t smartportExternalInverter;
+    uint8_t smartportUartUnidirectional;
 #endif
 } telemetryConfig_t;
 
