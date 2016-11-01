@@ -38,6 +38,8 @@
 
 #include "sensors/sensors.h"
 
+#include "io/cms.h"
+
 #include "io/serial.h"
 #include "io/display.h"
 #include "io/gps.h"

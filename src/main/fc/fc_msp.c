@@ -62,9 +62,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/osd.h"
 #include "io/serial_4way.h"
-#include "io/vtx.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -1779,4 +1777,18 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 void mspFcInit(void)
 {
     initActiveBoxIds();
+}
+
+void mspServerPush(mspPacket_t *push, uint8_t *data, int len)
+{
+    sbuf_t *dst = &push->buf;
+
+    while (len--) {
+        sbufWriteU8(dst, *data++);
+    }
+}
+
+mspPushCommandFnPtr mspFcPushInit(void)
+{
+    return mspServerPush;
 }

@@ -60,6 +60,17 @@
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
 
+<<<<<<< HEAD
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
+
+#ifdef VTX_SMARTAUDIO
+#include "io/vtx_smartaudio.h"
+#endif
+
+=======
+>>>>>>> bfdev-osd-cms-separation-poc
 #include "common/printf.h"
 
 #include "build/debug.h"
@@ -83,6 +94,15 @@ uint16_t refreshTimeout = 0;
 #define REFRESH_1S    12
 
 uint8_t armState;
+<<<<<<< HEAD
+uint8_t featureBlackbox = 0;
+uint8_t featureLedstrip = 0;
+
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+uint8_t featureVtx = 0, vtxBand, vtxChannel;
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+=======
+>>>>>>> bfdev-osd-cms-separation-poc
 
 // OSD forwards
 
@@ -129,6 +149,64 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_CRAFT_NAME);
     osdDrawSingleElement(OSD_ALTITUDE);
 
+<<<<<<< HEAD
+typedef struct
+{
+    uint8_t *val;
+    uint8_t min;
+    uint8_t max;
+    uint8_t step;
+    uint16_t multipler;
+} OSD_FLOAT_t;
+
+typedef struct
+{
+    uint8_t *val;
+    uint8_t max;
+    const char * const *names;
+} OSD_TAB_t;
+
+OSD_Entry *menuStack[10]; //tab to save menu stack
+uint8_t menuStackHistory[10]; //current position in menu stack
+uint8_t menuStackIdx = 0;
+
+OSD_Entry *currentMenu;
+OSD_Entry *nextPage = NULL;
+
+int8_t currentMenuPos = 0;
+uint8_t currentMenuIdx = 0;
+uint16_t *currentElement = NULL;
+
+OSD_Entry menuAlarms[];
+OSD_Entry menuOsdLayout[];
+OSD_Entry menuOsdActiveElems[];
+OSD_Entry menuOsdElemsPositions[];
+OSD_Entry menuFeatures[];
+OSD_Entry menuBlackbox[];
+#ifdef LED_STRIP
+OSD_Entry menuLedstrip[];
+#endif // LED_STRIP
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+OSD_Entry menu_vtx[];
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+OSD_Entry menuImu[];
+OSD_Entry menuPid[];
+OSD_Entry menuRc[];
+OSD_Entry menuRateExpo[];
+OSD_Entry menuMisc[];
+
+OSD_Entry menuMain[] =
+{
+    {"----MAIN MENU----", OME_Label, NULL, NULL},
+    {"SCREEN LAYOUT", OME_Submenu, osdChangeScreen, &menuOsdLayout[0]},
+    {"ALARMS", OME_Submenu, osdChangeScreen, &menuAlarms[0]},
+    {"CFG. IMU", OME_Submenu, osdChangeScreen, &menuImu[0]},
+    {"FEATURES", OME_Submenu, osdChangeScreen, &menuFeatures[0]},
+    {"SAVE & EXIT", OME_OSD_Exit, osdExitMenu, (void*)1},
+    {"EXIT", OME_OSD_Exit, osdExitMenu, (void*)0},
+    {NULL,OME_END, NULL, NULL}
+};
+=======
 #ifdef GPS
     if (sensors(SENSOR_GPS) || osdInMenu) {
         osdDrawSingleElement(OSD_GPS_SATS);
@@ -136,11 +214,26 @@ void osdDrawElements(void)
     }
 #endif // GPS
 }
+>>>>>>> bfdev-osd-cms-separation-poc
 
 void osdDrawSingleElement(uint8_t item)
 {
+<<<<<<< HEAD
+    {"----- FEATURES -----", OME_Label, NULL, NULL},
+    {"BLACKBOX", OME_Submenu, osdChangeScreen, &menuBlackbox[0]},
+#ifdef LED_STRIP
+    {"LED STRIP", OME_Submenu, osdChangeScreen, &menuLedstrip[0]},
+#endif // LED_STRIP
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+    {"VTX", OME_Submenu, osdChangeScreen, &menu_vtx[0]},
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+    {"BACK", OME_Back, NULL, NULL},
+    {NULL, OME_END, NULL, NULL}
+};
+=======
     if (!VISIBLE(masterConfig.osdProfile.item_pos[item]) || BLINK(masterConfig.osdProfile.item_pos[item]))
         return;
+>>>>>>> bfdev-osd-cms-separation-poc
 
     uint8_t elemPosX = OSD_X(masterConfig.osdProfile.item_pos[item]);
     uint8_t elemPosY = OSD_Y(masterConfig.osdProfile.item_pos[item]);
@@ -220,8 +313,122 @@ void osdDrawSingleElement(uint8_t item)
         {
             char *p = "ACRO";
 
+<<<<<<< HEAD
+#ifdef VTX_SMARTAUDIO
+static const char * const smartAudioBandNames[] = {
+    "--------",
+    "BOSCAM A",
+    "BOSCAM B",
+    "BOSCAM E",
+    "FATSHARK",
+    "RACEBAND",
+};
+OSD_TAB_t entrySmartAudioBand = { &smartAudioBand, 5, &smartAudioBandNames[0], NULL };
+
+static const char * const smartAudioChanNames[] = {
+    "-", "1", "2", "3", "4", "5", "6", "7", "8",
+};
+
+OSD_TAB_t entrySmartAudioChan = { &smartAudioChan, 8, &smartAudioChanNames[0], NULL };
+
+static const char * const smartAudioPowerNames[] = {
+    "---",
+    " 25",
+    "200",
+    "500",
+    "800",
+};
+
+OSD_TAB_t entrySmartAudioPower = { &smartAudioPower, 4, &smartAudioPowerNames[0]};
+
+static const char * const smartAudioTxModeNames[] = {
+    "------",
+    "PIT-OR",
+    "PIT-IR",
+    "ACTIVE",
+};
+
+OSD_TAB_t entrySmartAudioTxMode = { &smartAudioTxMode, 3, &smartAudioTxModeNames[0]};
+
+OSD_UINT16_t entrySmartAudioFreq = { &smartAudioFreq, 5600, 5900, 0 };
+
+static const char * const smartAudioOpModelNames[] = {
+    "FREE",
+    "PIT",
+};
+
+OSD_TAB_t entrySmartAudioOpModel = { &smartAudioOpModel, 1, &smartAudioOpModelNames[0] };
+
+static const char * const smartAudioPitFModeNames[] = {
+    "IN-RANGE",
+    "OUT-RANGE",
+};
+
+OSD_TAB_t entrySmartAudioPitFMode = { &smartAudioPitFMode, 1, &smartAudioPitFModeNames[0] };
+
+OSD_UINT16_t entrySmartAudioORFreq = { &smartAudioORFreq, 5600, 5900, 1 };
+
+OSD_Entry menu_smartAudioConfig[] = {
+    { "--- SMARTAUDIO CONFIG ---", OME_Label, NULL, NULL },
+    { "OP MODEL", OME_TAB, smartAudioConfigureOpModelByGvar, &entrySmartAudioOpModel },
+    { "PIT FREQ", OME_TAB, smartAudioConfigurePitFModeByGvar, &entrySmartAudioPitFMode },
+    { "OR FREQ", OME_UINT16, NULL, &entrySmartAudioORFreq }, // OME_Poll_UINT16
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+
+static const char * const smartAudioStatusNames[] = {
+    "OFFLINE",
+    "ONLINE V1",
+    "ONLINE V2",
+};
+
+OSD_TAB_t entrySmartAudioOnline = { &smartAudioStatus, 2, &smartAudioStatusNames[0] };
+OSD_UINT16_t entrySmartAudioBaudrate = { &smartAudioSmartbaud, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatBadpre = { &saerr_badpre, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatBadlen = { &saerr_badlen, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatCrcerr = { &saerr_crcerr, 0, 0, 0 };
+OSD_UINT16_t entrySmartAudioStatOooerr = { &saerr_oooresp, 0, 0, 0 };
+
+OSD_Entry menu_smartAudioStats[] = {
+    { "--- SMARTAUDIO STATS ---", OME_Label, NULL, NULL },
+    { "STATUS", OME_TAB, NULL, &entrySmartAudioOnline },
+    { "BAUDRATE", OME_UINT16, NULL, &entrySmartAudioBaudrate },
+    { "BADPRE", OME_UINT16, NULL, &entrySmartAudioStatBadpre },
+    { "BADLEN", OME_UINT16, NULL, &entrySmartAudioStatBadlen },
+    { "CRCERR", OME_UINT16, NULL, &entrySmartAudioStatCrcerr },
+    { "OOOERR", OME_UINT16, NULL, &entrySmartAudioStatOooerr },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+
+OSD_Entry menu_vtx[] =
+{
+    { "-- VTX SMARTAUDIO --", OME_Label, NULL, NULL },
+    { smartAudioStatusString, OME_Label, NULL, NULL },
+    { "TXMODE", OME_TAB, smartAudioSetTxModeByGvar, &entrySmartAudioTxMode },
+    { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand },
+    { "CHAN", OME_TAB, smartAudioConfigureChanByGvar, &entrySmartAudioChan },
+    { "FREQ", OME_UINT16, NULL, &entrySmartAudioFreq },
+    { "POWER", OME_TAB, smartAudioConfigurePowerByGvar, &entrySmartAudioPower },
+    { "CONFIG", OME_Submenu, osdChangeScreen, &menu_smartAudioConfig[0] },
+    { "STAT", OME_Submenu, osdChangeScreen, &menu_smartAudioStats[0] },
+    { "BACK", OME_Back, NULL, NULL },
+    { NULL, OME_END, NULL, NULL }
+};
+#endif // VTX_SMARTAUDIO
+
+OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
+OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
+OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
+OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
+OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
+OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
+OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
+=======
             if (isAirmodeActive())
                 p = "AIR";
+>>>>>>> bfdev-osd-cms-separation-poc
 
             if (FLIGHT_MODE(FAILSAFE_MODE))
                 p = "!FS";
@@ -685,6 +892,89 @@ void osdEditElement(void *ptr)
     max7456ClearScreen();
 }
 
+<<<<<<< HEAD
+void osdExitMenu(void *ptr)
+{
+    max7456ClearScreen();
+    max7456Write(5, 3, "RESTARTING IMU...");
+    max7456RefreshAll();
+    stopMotors();
+    stopPwmAllMotors();
+    delay(200);
+
+    if (ptr) {
+        // save local variables to configuration
+        if (featureBlackbox)
+            featureSet(FEATURE_BLACKBOX);
+        else
+            featureClear(FEATURE_BLACKBOX);
+
+        if (featureLedstrip)
+            featureSet(FEATURE_LED_STRIP);
+        else
+            featureClear(FEATURE_LED_STRIP);
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+        if (featureVtx)
+            featureSet(FEATURE_VTX);
+        else
+            featureClear(FEATURE_VTX);
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+
+#ifdef VTX
+        masterConfig.vtxBand = vtxBand;
+        masterConfig.vtx_channel = vtxChannel - 1;
+#endif // VTX
+
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+        masterConfig.vtx_channel = vtxBand * 8 + vtxChannel - 1;
+#endif // USE_RTC6705 || VTX_SMARTAUDIO
+
+        saveConfigAndNotify();
+    }
+
+    systemReset();
+}
+
+void osdOpenMenu(void)
+{
+    if (inMenu)
+        return;
+
+    if (feature(FEATURE_LED_STRIP))
+        featureLedstrip = 1;
+
+    if (feature(FEATURE_BLACKBOX))
+        featureBlackbox = 1;
+
+#if defined(VTX) || defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+    if (feature(FEATURE_VTX))
+        featureVtx = 1;
+#endif // VTX || USE_RTC6705 || VTX_SMARTAUDIO
+
+#ifdef VTX
+    vtxBand = masterConfig.vtxBand;
+    vtxChannel = masterConfig.vtx_channel + 1;
+#endif // VTX
+
+#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+    vtxBand = masterConfig.vtx_channel / 8;
+    vtxChannel = masterConfig.vtx_channel % 8 + 1;
+#endif // USE_RTC6705
+
+    osdRows = max7456GetRowsCount();
+    inMenu = true;
+    refreshTimeout = 0;
+    max7456ClearScreen();
+    currentMenu = &menuMain[0];
+    osdResetAlarms();
+    osdChangeScreen(currentMenu);
+#ifdef LED_STRIP
+    getLedColor();
+#endif // LED_STRIP
+}
+
+=======
+>>>>>>> bfdev-osd-cms-separation-poc
 void osdDrawElementPositioningHelp(void)
 {
     max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), "---  HELP --- ");

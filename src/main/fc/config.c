@@ -63,6 +63,7 @@
 #include "io/servos.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 

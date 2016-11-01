@@ -74,6 +74,8 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "io/cms.h"
+
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -89,6 +91,7 @@
 #include "io/osd.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
+#include "io/canvas.h"
 
 #include "scheduler/scheduler.h"
 
@@ -396,6 +399,10 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+#ifdef CMS
+    cmsInit();
+#endif
+
 #ifdef DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
@@ -454,6 +461,12 @@ void init(void)
 
     mspFcInit();
     mspSerialInit();
+
+#ifdef CANVAS
+    if (feature(FEATURE_CANVAS)) {
+        canvasInit();
+    }
+#endif
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

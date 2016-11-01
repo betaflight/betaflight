@@ -21,3 +21,5 @@
 
 void mspFcInit(void);
 mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
+
+mspPushCommandFnPtr mspFcPushInit(void);

@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -54,6 +52,8 @@ typedef struct {
     uint16_t alt_alarm;
 
     uint8_t video_system;
+    uint8_t row_shiftdown;
+
     osd_unit_t units;
 } osd_profile_t;
 
@@ -68,3 +68,18 @@ typedef struct {
 void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile_t *osdProfile);
+
+#ifdef CMS
+void osdCmsInit(displayPort_t *);
+#endif
+
+// Character coordinate and attributes
+
+#define OSD_POS(x,y)  (x | (y << 5))
+#define OSD_X(x)      (x & 0x001F)
+#define OSD_Y(x)      ((x >> 5) & 0x001F)
+#define VISIBLE_FLAG  0x0800
+#define BLINK_FLAG    0x0400
+#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
+#define BLINK_OFF(x)  (x & ~BLINK_FLAG)

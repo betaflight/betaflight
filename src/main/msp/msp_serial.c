@@ -211,3 +211,38 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
+mspPushCommandFnPtr mspPushCommandFn;
+
+void mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
+{
+    static uint8_t pushBuf[30];
+
+    mspPacket_t push = {
+        .buf = { .ptr = pushBuf, .end = ARRAYEND(pushBuf), },
+        .cmd = cmd,
+        .result = 0,
+    };
+
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        mspPushCommandFn(&push, data, datalen);
+
+        sbufSwitchToReader(&push.buf, pushBuf);
+
+        mspSerialEncode(mspPort, &push);
+    }
+}
+
+void mspSerialPushInit(mspPushCommandFnPtr mspPushCommandFnToUse)
+{
+    mspPushCommandFn = mspPushCommandFnToUse;
+}

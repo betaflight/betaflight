@@ -85,11 +85,13 @@ typedef enum {
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif
-#ifdef CMS
-    TASK_CMS,
-#endif
+<<<<<<< HEAD
 #ifdef VTX_CONTROL
     TASK_VTXCTRL,
+=======
+#ifdef CMS
+    TASK_CMS,
+>>>>>>> bfdev-osd-cms-separation-poc
 #endif
 
     /* Count of real tasks */

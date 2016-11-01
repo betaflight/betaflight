@@ -216,6 +216,9 @@
 #define MSP_OSD_VIDEO_CONFIG            180
 #define MSP_SET_OSD_VIDEO_CONFIG        181
 
+// External OSD canvas mode messages
+#define MSP_CANVAS                      182
+
 //
 // Multwii original MSP commands
 //

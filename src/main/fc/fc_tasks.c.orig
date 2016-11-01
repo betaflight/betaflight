@@ -46,11 +46,11 @@
 #include "io/display.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/cms.h"
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
-#include "io/vtx_smartaudio.h"
 
 #include "msp/msp_serial.h"
 
@@ -345,12 +345,14 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
+<<<<<<< HEAD
+#ifdef VTX_CONTROL
+    setTaskEnabled(TASK_VTXCTRL, true);
+=======
 #ifdef CMS
     // XXX Should check FEATURE
     setTaskEnabled(TASK_CMS, true);
-#endif
-#ifdef VTX_CONTROL
-    setTaskEnabled(TASK_VTXCTRL, true);
+>>>>>>> bfdev-osd-cms-separation-poc
 #endif
 }
 
@@ -512,21 +514,21 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef CMS
-    [TASK_CMS] = {
-        .taskName = "CMS",
-        .taskFunc = cmsHandler,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
+<<<<<<< HEAD
 #ifdef VTX_CONTROL
     [TASK_VTXCTRL] = {
         .taskName = "VTXCTRL",
         .taskFunc = taskVtxControl,
         .desiredPeriod = 1000000 / 5,          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
+=======
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+>>>>>>> bfdev-osd-cms-separation-poc
     },
 #endif
 };

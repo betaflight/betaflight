@@ -27,10 +27,10 @@ uint8_t smartAudioTxMode;
 uint8_t smartAudioPitFMode;
 uint16_t smartAudioORFreq;
 
-void smartAudioConfigureOpModelByGvar(void *);
-void smartAudioConfigurePitFModeByGvar(void *);
-void smartAudioConfigureBandByGvar(void *);
-void smartAudioConfigureChanByGvar(void *);
-void smartAudioConfigurePowerByGvar(void *);
-void smartAudioSetTxModeByGvar(void *);
+long smartAudioConfigureOpModelByGvar(displayPort_t *, void *self);
+long smartAudioConfigurePitFModeByGvar(displayPort_t *, void *self);
+long smartAudioConfigureBandByGvar(displayPort_t *, void *self);
+long smartAudioConfigureChanByGvar(displayPort_t *, void *self);
+long smartAudioConfigurePowerByGvar(displayPort_t *, void *self);
+long smartAudioSetTxModeByGvar(displayPort_t *, void *self);
 #endif

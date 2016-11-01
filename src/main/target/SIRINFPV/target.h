@@ -139,6 +139,15 @@
 
 #define OSD
 
+// Configuratoin Menu System
+#define CMS
+
+// Use external OSD to run CMS
+#define CANVAS
+
+// USE I2C OLED display to run CMS
+#define OLEDCMS
+
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_SERVOS

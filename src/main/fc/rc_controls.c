@@ -40,6 +40,8 @@
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
+#include "io/cms.h"
+
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motors.h"
