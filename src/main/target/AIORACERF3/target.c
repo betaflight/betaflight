@@ -35,5 +35,5 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,           TIM_USE_MOTOR,    1, GPIO_AF_1 },  // PWM8
     { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,           TIM_USE_MOTOR,    1, GPIO_AF_1 }, // UART3_TX (AF7)
     { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,           TIM_USE_MOTOR,    1, GPIO_AF_1 }, // UART3_RX (AF7)
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,        TIM_USE_LEd,      1, GPIO_AF_6 },  //LED_STRIP
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,        TIM_USE_LED,      1, GPIO_AF_6 },  //LED_STRIP
 };
