@@ -230,6 +230,8 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
+            resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
                 serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
@@ -399,8 +401,8 @@ void processRx(void)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
+                resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
                 ENABLE_FLIGHT_MODE(MAG_MODE);
-                updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
             }
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
@@ -656,4 +658,3 @@ void taskUpdateRxMain(void)
     updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
     isRXDataNew = true;
 }
-

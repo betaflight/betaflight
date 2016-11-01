@@ -95,4 +95,5 @@ enum {
 };
 
 void updateMagHoldHeading(int16_t heading);
+void resetMagHoldHeading(int16_t heading);
 int16_t getMagHoldHeading();
