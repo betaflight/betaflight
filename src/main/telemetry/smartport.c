@@ -14,6 +14,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
