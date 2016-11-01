@@ -84,7 +84,7 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
     
-    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
     }
