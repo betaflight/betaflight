@@ -269,6 +269,19 @@ static void taskUpdateOsd(uint32_t currentTime)
 }
 #endif
 
+#ifdef VTX_CONTROL
+// Everything that listens to VTX devices
+void taskVtxControl(uint32_t currentTime)
+{
+    if (ARMING_FLAG(ARMED))
+        return;
+
+#ifdef VTX_SMARTAUDIO
+    smartAudioProcess(currentTime);
+#endif
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -328,6 +341,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef VTX_CONTROL
+    setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 }
 
@@ -485,6 +501,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BST_MASTER_PROCESS",
         .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef VTX_CONTROL
+    [TASK_VTXCTRL] = {
+        .taskName = "VTXCTRL",
+        .taskFunc = taskVtxControl,
+        .desiredPeriod = 1000000 / 5,          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

@@ -16,9 +16,11 @@
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
+#if 0
 #include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
+#endif
 #include "config/config_master.h"
 
 #include "build/build_config.h"

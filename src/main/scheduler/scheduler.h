@@ -86,7 +86,7 @@ typedef enum {
     TASK_BST_MASTER_PROCESS,
 #endif
 #ifdef VTX_CONTROL
-    TASK_VTX_CONTROL,
+    TASK_VTXCTRL,
 #endif
 
     /* Count of real tasks */
