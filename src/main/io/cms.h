@@ -7,6 +7,7 @@ typedef struct screenFnVTable_s {
     int (*write)(uint8_t, uint8_t, char *);
     int (*heartbeat)(void);
     void (*resync)(void);
+    uint16_t (*txroom)(void);
 } screenFnVTable_t;
 
 typedef struct displayPort_s {
@@ -14,8 +15,7 @@ typedef struct displayPort_s {
     uint8_t cols;
     uint16_t buftime;
     uint16_t bufsize;
-    uint16_t batchsize;         // Computed by CMS
-    screenFnVTable_t *VTable;
+    screenFnVTable_t *vTable;
 
     // CMS state
     bool cleared;

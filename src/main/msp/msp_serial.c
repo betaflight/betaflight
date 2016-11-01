@@ -246,3 +246,28 @@ void mspSerialPushInit(mspPushCommandFnPtr mspPushCommandFnToUse)
 {
     mspPushCommandFn = mspPushCommandFnToUse;
 }
+
+uint16_t mspSerialPushTxRoom()
+{
+    uint16_t minroom = 50000;
+
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        uint32_t room = mspPort->port->vTable->serialTotalTxFree(mspPort->port);
+
+        if (room < minroom) {
+            minroom = room;
+        }
+    }
+
+    return minroom;
+}

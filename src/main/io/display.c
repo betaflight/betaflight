@@ -783,6 +783,7 @@ screenFnVTable_t displayCmsVTable = {
     displayCmsWrite,
     NULL,
     NULL,
+    NULL,
 };
 
 void displayCmsInit(displayPort_t *pPort)
@@ -791,7 +792,7 @@ void displayCmsInit(displayPort_t *pPort)
     pPort->cols = 21;
     pPort->buftime = 1;
     pPort->bufsize = 50000;
-    pPort->VTable = &displayCmsVTable;
+    pPort->vTable = &displayCmsVTable;
 }
 #endif // OLEDCMS
 

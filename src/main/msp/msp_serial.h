@@ -68,3 +68,4 @@ void mspSerialAllocatePorts(void);
 void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);
 void mspSerialPushInit(mspPushCommandFnPtr mspPushCommandFn);
 void mspSerialPush(uint8_t, uint8_t *, int);
+uint16_t mspSerialPushTxRoom();

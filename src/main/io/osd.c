@@ -702,6 +702,7 @@ screenFnVTable_t osdVTable = {
     osdWrite,
     NULL,
     max7456RefreshAll,
+    NULL,
 };
 
 void osdCmsInit(displayPort_t *pPort)
@@ -709,8 +710,6 @@ void osdCmsInit(displayPort_t *pPort)
     shiftdown = masterConfig.osdProfile.row_shiftdown;
     pPort->rows = max7456GetRowsCount() - shiftdown;
     pPort->cols = 30;
-    pPort->buftime = 1;         // Very fast
-    pPort->bufsize = 50000;     // Very large
-    pPort->VTable = &osdVTable;
+    pPort->vTable = &osdVTable;
 }
 #endif // OSD

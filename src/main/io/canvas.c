@@ -67,6 +67,11 @@ int canvasWrite(uint8_t col, uint8_t row, char *string)
     return canvasOutput(MSP_CANVAS, (uint8_t *)buf, len + 4);
 }
 
+uint16_t canvasTxRoom()
+{
+    return mspSerialPushTxRoom();
+}
+
 screenFnVTable_t canvasVTable = {
     canvasBegin,
     canvasEnd,
@@ -74,15 +79,14 @@ screenFnVTable_t canvasVTable = {
     canvasWrite,
     canvasHeartBeat,
     NULL,
+    canvasTxRoom,
 };
 
 void canvasCmsInit(displayPort_t *pPort)
 {
     pPort->rows = 13;
     pPort->cols = 30;
-    pPort->buftime = 23;          // = 256/(115200/10)
-    pPort->bufsize = 192;         // 256 * 3/4 (Be conservative)
-    pPort->VTable = &canvasVTable;
+    pPort->vTable = &canvasVTable;
 }
 
 void canvasInit()

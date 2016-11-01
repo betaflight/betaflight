@@ -107,37 +107,45 @@ int8_t lastCursorPos;
 
 void cmsScreenClear(displayPort_t *instance)
 {
-    instance->VTable->clear();
+    instance->vTable->clear();
     instance->cleared = true;
     lastCursorPos = -1; // XXX Here
 }
 
 void cmsScreenBegin(displayPort_t *instance)
 {
-    instance->VTable->begin();
-    instance->VTable->clear();
+    instance->vTable->begin();
+    instance->vTable->clear();
 }
 
 void cmsScreenEnd(displayPort_t *instance)
 {
-    instance->VTable->end();
+    instance->vTable->end();
 }
 
 int cmsScreenWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)
 {
-    return instance->VTable->write(x, y, s);
+    return instance->vTable->write(x, y, s);
 }
 
 void cmsScreenHeartBeat(displayPort_t *instance)
 {
-    if (instance->VTable->heartbeat)
-        instance->VTable->heartbeat();
+    if (instance->vTable->heartbeat)
+        instance->vTable->heartbeat();
 }
 
 void cmsScreenResync(displayPort_t *instance)
 {
-    if (instance->VTable->resync)
-        instance->VTable->resync();
+    if (instance->vTable->resync)
+        instance->vTable->resync();
+}
+
+uint16_t cmsScreenTxRoom(displayPort_t *instance)
+{
+    if (instance->vTable->txroom)
+        return instance->vTable->txroom();
+    else
+        return 10000;
 }
 
 void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
@@ -377,7 +385,7 @@ void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
-    int16_t cnt = 0;
+    int room = cmsScreenTxRoom(pDisplay);
 
     if (!currentMenu)
         return;
@@ -404,20 +412,26 @@ void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
         currentCursorPos++;
 
     if (lastCursorPos >= 0 && currentCursorPos != lastCursorPos) {
-        cnt += cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, lastCursorPos + top, "  ");
+        room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, lastCursorPos + top, "  ");
     }
 
+    if (room < 30)
+        return;
+
     if (lastCursorPos != currentCursorPos) {
-        cnt += cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, currentCursorPos + top, " >");
+        room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, currentCursorPos + top, " >");
         lastCursorPos = currentCursorPos;
     }
+
+    if (room < 30)
+        return;
 
     // Print text labels
     for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
-            cnt += cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
+            room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
             CLR_PRINTLABEL(p);
-            if (cnt > pDisplay->batchsize)
+            if (room < 30)
                 return;
         }
     }
@@ -425,12 +439,12 @@ void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
     // Print values
 
     // XXX Polled values at latter positions in the list may not be
-    // XXX printed if the cnt exceeds batchsize in the middle of the list.
+    // XXX printed if not enough room in the middle of the list.
 
     for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
-            cnt += cmsDrawMenuEntry(pDisplay, p, top + i, drawPolled);
-            if (cnt > pDisplay->batchsize)
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i, drawPolled);
+            if (room < 30)
                 return;
         }
     }
@@ -494,12 +508,6 @@ long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-// XXX This should go to device
-void cmsComputeBatchsize(displayPort_t *pDisplay)
-{
-    pDisplay->batchsize = (pDisplay->buftime < CMS_UPDATE_INTERVAL) ? pDisplay->bufsize : (pDisplay->bufsize * CMS_UPDATE_INTERVAL) / pDisplay->buftime;
-}
-
 // XXX Separation
 void cmsx_FeatureRead(void);
 void cmsx_FeatureWriteback(void);
@@ -528,7 +536,6 @@ void cmsMenuOpen(void)
         return;
 
     cmsScreenInit(&currentDisplay, initfunc);
-    cmsComputeBatchsize(&currentDisplay);
     cmsScreenBegin(&currentDisplay);
     cmsMenuChange(&currentDisplay, currentMenu);
 }
