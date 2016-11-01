@@ -25,7 +25,7 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
+#define USABLE_TIMER_CHANNEL_COUNT 9
 
 #define MPU6000_CS_PIN          PA15
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -45,11 +45,8 @@
 #define USE_EXTI
 
 #define USE_DSHOT
-
-// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
-#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
-#undef USE_UART1_TX_DMA
-#endif
+#define REMAP_TIM16_DMA
+#define REMAP_TIM17_DMA
 
 #define USB_IO
 
