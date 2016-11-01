@@ -67,6 +67,9 @@
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -99,6 +102,13 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
+#define USE_DSHOT
+
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
+
 #define LED_STRIP
 
 #define USE_LED_STRIP_ON_DMA1_CHANNEL2
@@ -108,6 +118,7 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

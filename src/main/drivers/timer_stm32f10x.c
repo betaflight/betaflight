@@ -37,6 +37,12 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
 #endif
 };
 
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return 1;
+}
+
 /**
   * @brief  Selects the TIM Output Compare Mode.
   * @note   This function does NOT disable the selected channel before changing the Output

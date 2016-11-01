@@ -173,6 +173,7 @@
 #define WS2811_DMA_IT                   DMA_IT_TCIF2
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
 #define WS2811_TIMER_CHANNEL            TIM_Channel_1
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -182,11 +183,13 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define USE_DSHOT
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 5
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) )
 

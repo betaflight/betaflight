@@ -33,7 +33,6 @@
 
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -59,10 +58,11 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
+#include "fc/config.h"
 #include "fc/mw.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -713,7 +713,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWriteNames(pidnames);
             break;
         case BST_PID_CONTROLLER:
-            bstWrite8(currentProfile->pidProfile.pidController);
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -1042,8 +1041,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             cycleTime = bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
-            currentProfile->pidProfile.pidController = bstRead8();
-            pidSetController(currentProfile->pidProfile.pidController);
             break;
         case BST_SET_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1144,7 +1141,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS

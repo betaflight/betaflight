@@ -29,12 +29,10 @@
 
 #ifdef SERIAL_RX
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
 #ifdef TELEMETRY
@@ -58,41 +56,6 @@ static uint32_t sumhChannels[SUMH_MAX_CHANNEL_COUNT];
 
 static serialPort_t *sumhPort;
 
-static void sumhDataReceive(uint16_t c);
-static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-
-bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    UNUSED(rxConfig);
-
-    rxRuntimeConfig->channelCount = SUMH_MAX_CHANNEL_COUNT;
-    rxRuntimeConfig->rxRefreshRate = 11000;
-
-    rxRuntimeConfig->rcReadRawFunc = sumhReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = sumhFrameStatus;
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = sumhPort;
-    }
-#endif
-
-    return sumhPort != NULL;
-}
 
 // Receive ISR callback
 static void sumhDataReceive(uint16_t c)
@@ -147,5 +110,37 @@ static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     }
 
     return sumhChannels[chan];
+}
+
+bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = SUMH_MAX_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFunc = sumhReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = sumhFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    sumhPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumhDataReceive, SUMH_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = sumhPort;
+    }
+#endif
+
+    return sumhPort != NULL;
 }
 #endif

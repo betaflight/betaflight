@@ -17,7 +17,21 @@
 
 #pragma once
 
+#include "common/streambuf.h"
 
-void mspInit(void);
-bool mspProcessReceivedData(uint8_t c);
-void mspProcessReceivedCommand(void);
+// return positive for ACK, negative on error, zero for no reply
+typedef enum {
+    MSP_RESULT_ACK = 1,
+    MSP_RESULT_ERROR = -1,
+    MSP_RESULT_NO_REPLY = 0
+} mspResult_e;
+
+typedef struct mspPacket_s {
+    sbuf_t buf;
+    int16_t cmd;
+    int16_t result;
+} mspPacket_t;
+
+struct serialPort_s;
+typedef void (*mspPostProcessFnPtr)(struct serialPort_s *port); // msp post process function, used for gracefully handling reboots, etc.
+typedef mspResult_e (*mspProcessCommandFnPtr)(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);

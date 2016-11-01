@@ -99,6 +99,7 @@ static uartPort_t uartPort4;
 static uartPort_t uartPort5;
 #endif
 
+#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA)
 static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
@@ -110,6 +111,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
     else
         s->txDMAEmpty = true;
 }
+#endif
 
 void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
@@ -150,27 +152,33 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s->port.baudRate = baudRate;
 
-    s->port.rxBuffer = rx1Buffer;
-    s->port.txBuffer = tx1Buffer;
     s->port.rxBufferSize = UART1_RX_BUFFER_SIZE;
     s->port.txBufferSize = UART1_TX_BUFFER_SIZE;
-
-#ifdef USE_UART1_RX_DMA
-    s->rxDMAChannel = DMA1_Channel5;
-#endif
-    s->txDMAChannel = DMA1_Channel4;
+    s->port.rxBuffer = rx1Buffer;
+    s->port.txBuffer = tx1Buffer;
 
     s->USARTx = USART1;
 
+#ifdef USE_UART1_RX_DMA
+    s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
+#endif
+#ifdef USE_UART1_TX_DMA
+    s->txDMAChannel = DMA1_Channel4;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
+#endif
 
     RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
+
+#if defined(USE_UART1_TX_DMA) || defined(USE_UART1_RX_DMA)
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
+#endif
 
     serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7, 1);
 
+#ifdef USE_UART1_TX_DMA
     dmaSetHandler(DMA1_CH4_HANDLER, handleUsartTxDma, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
+#endif
 
 #ifndef USE_UART1_RX_DMA
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -369,8 +377,8 @@ void usartIrqHandler(uartPort_t *s)
     uint32_t ISR = s->USARTx->ISR;
 
     if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
-        if (s->port.callback) {
-            s->port.callback(s->USARTx->RDR);
+        if (s->port.rxCallback) {
+            s->port.rxCallback(s->USARTx->RDR);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead++] = s->USARTx->RDR;
             if (s->port.rxBufferHead >= s->port.rxBufferSize) {

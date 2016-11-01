@@ -40,6 +40,7 @@
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
+#define USE_UART1_TX_DMA
 
 #endif
 
@@ -55,6 +56,7 @@
 
 #if (FLASH_SIZE > 128)
 #define DISPLAY
+#define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP

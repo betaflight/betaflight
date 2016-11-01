@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/serial.h"
+
 typedef enum {
     PORTSHARING_UNUSED = 0,
     PORTSHARING_NOT_SHARED,
@@ -47,8 +49,14 @@ typedef enum {
     BAUD_115200,
     BAUD_230400,
     BAUD_250000,
+    BAUD_400000,
+    BAUD_460800,
     BAUD_500000,
+    BAUD_921600,
     BAUD_1000000,
+    BAUD_1500000,
+    BAUD_2000000,
+    BAUD_2470000
 } baudRate_e;
 
 extern const uint32_t baudRates[];
@@ -62,6 +70,8 @@ typedef enum {
     SERIAL_PORT_USART4,
     SERIAL_PORT_USART5,
     SERIAL_PORT_USART6,
+    SERIAL_PORT_USART7,
+    SERIAL_PORT_USART8,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
@@ -125,7 +135,7 @@ serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identi
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
-    serialReceiveCallbackPtr callback,
+    serialReceiveCallbackPtr rxCallback,
     uint32_t baudrate,
     portMode_t mode,
     portOptions_t options
@@ -140,5 +150,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);

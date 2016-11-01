@@ -20,11 +20,11 @@
 
 #include "platform.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "io/motors.h"
 
+#include "fc/config.h"
 #include "fc/rc_curves.h"
 #include "fc/rc_controls.h"
 

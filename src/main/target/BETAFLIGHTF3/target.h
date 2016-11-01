@@ -14,27 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
- //Target code By Hector "Hectech FPV" Hind
+ //Target code By BorisB and Hector "Hectech FPV" Hind
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "BETAFC"
+#define TARGET_BOARD_IDENTIFIER "BFF3"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
-
-//#define LED0                    PC14
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
-#define USE_MAG_DATA_READY_SIGNAL
-#define ENSURE_MAG_DATA_READY_IS_HIGH
+#define USABLE_TIMER_CHANNEL_COUNT 10
 
 #define MPU6000_CS_PIN          PA15
 #define MPU6000_SPI_INSTANCE    SPI1
-
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -46,14 +40,18 @@
 
 // MPU6000 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
+#define EXTI_CALLBACK_HANDLER_COUNT 1
 #define MPU_INT_EXTI                PC13
 #define USE_EXTI
 
-#define USB_IO
+#define USE_DSHOT
 
-//#define USE_FLASHFS
-//#define USE_FLASH_M25P16
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
+
+#define USB_IO
 
 #define USE_VCP
 #define USE_UART1
@@ -61,6 +59,9 @@
 #define USE_UART3
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -74,7 +75,6 @@
 #define SOFTSERIAL_2_TIMER      TIM3
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 5
 #define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 6
-
 
 #undef USE_I2C
 
@@ -93,8 +93,13 @@
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
 
-
-
+#define OSD
+// include the max7456 driver
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PA1
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
@@ -102,7 +107,6 @@
 
 #define SDCARD_DETECT_PIN                   PC14
 #define SDCARD_SPI_INSTANCE                 SPI2
-//#define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
 
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
@@ -110,9 +114,6 @@
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
-//#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
-//#define SDCARD_DMA_CHANNEL                  DMA_Channel_0
-
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
@@ -130,6 +131,7 @@
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -148,4 +150,4 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17) )

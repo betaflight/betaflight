@@ -151,6 +151,9 @@
 #define USE_UART5
 #define SERIAL_PORT_COUNT       6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
@@ -164,6 +167,8 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
+#define USE_DSHOT 
+
 #define LED_STRIP
 #define WS2811_PIN                      PB8 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
@@ -172,6 +177,7 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
 #define LED_STRIP_TIMER                 TIM16
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // USART2, PA3

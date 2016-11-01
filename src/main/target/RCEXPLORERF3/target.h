@@ -69,6 +69,9 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
 
@@ -111,6 +114,7 @@
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

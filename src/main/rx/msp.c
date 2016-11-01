@@ -22,11 +22,7 @@
 
 #ifndef SKIP_RX_MSP
 
-#include "build/build_config.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
+#include "common/utils.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -69,6 +65,7 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxConfig);
 
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 20000;
 
     rxRuntimeConfig->rcReadRawFunc = rxMspReadRawRC;
     rxRuntimeConfig->rcFrameStatusFunc = rxMspFrameStatus;

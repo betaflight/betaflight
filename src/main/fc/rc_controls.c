@@ -23,19 +23,28 @@
 
 #include "platform.h"
 
+#include "blackbox/blackbox.h"
+
 #include "build/build_config.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "drivers/system.h"
+
+#include "fc/config.h"
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
-#include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+#include "io/gps.h"
+#include "io/beeper.h"
+#include "io/motors.h"
+#include "io/vtx.h"
+#include "io/display.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -45,22 +54,10 @@
 
 #include "rx/rx.h"
 
-#include "io/gps.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
-#include "io/vtx.h"
-
-#include "io/display.h"
-
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
 
-#include "blackbox/blackbox.h"
-
-#include "fc/mw.h"
 
 static motorConfig_t *motorConfig;
 static pidProfile_t *pidProfile;
@@ -79,6 +76,7 @@ bool isAirmodeActive(void) {
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX
+#define UNUSED(x) (void)(x)
     UNUSED(adjustmentFunction);
     UNUSED(newValue);
 #else

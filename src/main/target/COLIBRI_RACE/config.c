@@ -24,14 +24,12 @@
 
 #include "sensors/battery.h"
 
-#include "config/config.h"
 #include "config/config_master.h"
 
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(master_t *config) 
 {
-    config->motorConfig.minthrottle = 1025;
     config->motorConfig.maxthrottle = 1980;
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;

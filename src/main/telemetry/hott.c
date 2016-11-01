@@ -67,7 +67,6 @@
 
 #include "drivers/system.h"
 
-#include "drivers/serial.h"
 #include "io/serial.h"
 
 #include "fc/runtime_config.h"

@@ -36,13 +36,12 @@
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config)
+void targetConfiguration(master_t *config) 
 {
     config->mag_hardware = MAG_NONE;            // disabled by default
     config->rxConfig.spektrum_sat_bind = 5;

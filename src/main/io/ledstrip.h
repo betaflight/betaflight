@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/color.h"
+
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
@@ -165,7 +167,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
-void updateLedStrip(uint32_t currentTime);
+void ledStripUpdate(uint32_t currentTime);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 

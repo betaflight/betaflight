@@ -54,6 +54,8 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT       3
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART2_TX_PIN            PA14 // PA14 / SWCLK
 #define UART2_RX_PIN            PA15

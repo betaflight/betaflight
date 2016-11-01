@@ -16,6 +16,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <platform.h>
 
@@ -23,12 +24,12 @@
 
 #include "hardware_revision.h"
 
-
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(master_t *config)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         config->sensorAlignmentConfig.gyro_align = CW180_DEG;
         config->sensorAlignmentConfig.acc_align  = CW180_DEG;
+        config->beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
     }
 }

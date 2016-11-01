@@ -19,22 +19,14 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "fc/rc_controls.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
@@ -55,12 +47,12 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
+#include "rx/rx.h"
+#include "rx/msp.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "fc/runtime_config.h"
-
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 

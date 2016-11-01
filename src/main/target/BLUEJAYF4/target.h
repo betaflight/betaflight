@@ -111,6 +111,9 @@
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
@@ -140,6 +143,7 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
+#define USE_DSHOT
 #define LED_STRIP
 // LED Strip can run off Pin 6 (PB1) of the ESC outputs.
 #define WS2811_PIN                      PB1
@@ -147,8 +151,7 @@
 #define WS2811_TIMER_CHANNEL            TIM_Channel_4
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
 #define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM3
 #define WS2811_DMA_CHANNEL              DMA_Channel_5
 #define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
 

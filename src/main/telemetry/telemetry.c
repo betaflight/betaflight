@@ -26,14 +26,14 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
+
 #include "io/serial.h"
 
-#include "rx/rx.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
-
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
+#include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
@@ -41,6 +41,8 @@
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
 #include "telemetry/jetiexbus.h"
+#include "telemetry/mavlink.h"
+#include "rx/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -56,6 +58,10 @@ void telemetryInit(void)
     initSmartPortTelemetry(telemetryConfig);
     initLtmTelemetry(telemetryConfig);
     initJetiExBusTelemetry(telemetryConfig);
+
+#if defined(TELEMETRY_MAVLINK)
+    initMAVLinkTelemetry();
+#endif
 
     telemetryCheckState();
 }
@@ -88,6 +94,10 @@ void telemetryCheckState(void)
     checkSmartPortTelemetryState();
     checkLtmTelemetryState();
     checkJetiExBusTelemetryState();
+
+#if defined(TELEMETRY_MAVLINK)
+    checkMAVLinkTelemetryState();
+#endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -97,6 +107,10 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleJetiExBusTelemetry();
+
+#if defined(TELEMETRY_MAVLINK)
+    handleMAVLinkTelemetry();
+#endif
 }
 
 #endif

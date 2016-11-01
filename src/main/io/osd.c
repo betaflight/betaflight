@@ -38,12 +38,12 @@
 #include "io/flashfs.h"
 #include "io/osd.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -575,8 +575,8 @@ OSD_Entry menuRateExpo[] =
     {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw},
     {"THR. PID ATT.", OME_FLOAT, NULL, &extryTpaEntry},
     {"TPA BREAKPOINT", OME_UINT16, NULL, &entryTpaBreak},
-    {"PTERM SRATE RATIO", OME_FLOAT, NULL, &entryPSetpoint},
     {"D SETPOINT", OME_FLOAT, NULL, &entryDSetpoint},
+    {"D SETPOINT TRANSITION", OME_FLOAT, NULL, &entryPSetpoint},
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };

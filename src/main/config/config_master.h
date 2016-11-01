@@ -17,49 +17,41 @@
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 
-#include "common/color.h"
-#include "common/axis.h"
+#include "config/config_profile.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/sonar_hcsr04.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/imu.h"
+#include "flight/navigation.h"
 
 #include "io/serial.h"
 #include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
-#include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
+#include "io/ledstrip.h"
 #include "io/vtx.h"
 
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "sensors/sensors.h"
+#include "sensors/gyro.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
 
 
 // System-wide
@@ -74,19 +66,16 @@ typedef struct master_s {
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     motorConfig_t motorConfig;
-    servoConfig_t servoConfig;
     flight3DConfig_t flight3DConfig;
 
 #ifdef USE_SERVOS
+    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
-#endif
-
-#ifdef CC3D
-    uint8_t use_buzzer_p6;
 #endif
 
     // global sensor-related stuff
@@ -157,6 +146,19 @@ typedef struct master_s {
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
+
+#ifndef SKIP_RX_PWM_PPM
+    ppmConfig_t ppmConfig;
+    pwmConfig_t pwmConfig;
+#endif
+    
+#ifdef BEEPER
+    beeperConfig_t beeperConfig;
+#endif
+
+#ifdef SONAR
+    sonarConfig_t sonarConfig;
+#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];

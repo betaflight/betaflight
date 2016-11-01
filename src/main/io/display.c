@@ -28,12 +28,8 @@
 
 #include "build/build_config.h"
 
-#include "drivers/serial.h"
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -46,7 +42,9 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -57,10 +55,7 @@
 #include "flight/navigation.h"
 #endif
 
-#include "config/config.h"
 #include "config/feature.h"
-#include "fc/runtime_config.h"
-
 #include "config/config_profile.h"
 
 #include "io/display.h"
@@ -582,7 +577,7 @@ void showDebugPage(void)
 }
 #endif
 
-void updateDisplay(uint32_t currentTime)
+void displayUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
@@ -702,7 +697,7 @@ void displayInit(rxConfig_t *rxConfigToUse)
     memset(&pageState, 0, sizeof(pageState));
     displaySetPage(PAGE_WELCOME);
 
-    updateDisplay(micros());
+    displayUpdate(micros());
 
     displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }

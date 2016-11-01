@@ -97,6 +97,9 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, UART1, UART2, UART3
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -128,6 +131,7 @@
 #define WS2811_DMA_IT                   DMA_IT_TCIF3
 #define WS2811_DMA_CHANNEL              DMA_Channel_2
 #define WS2811_DMA_IRQ                  DMA1_Stream3_IRQn
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM4
 
 // alternative defaults for Colibri/Gemini target
 #define TARGET_CONFIG

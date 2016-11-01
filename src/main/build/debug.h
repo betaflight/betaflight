@@ -21,6 +21,8 @@
 extern int16_t debug[DEBUG16_VALUE_COUNT];
 extern uint8_t debugMode;
 
+#define DEBUG_SET(mode, index, value) {if (debugMode == (mode)) {debug[(index)] = (value);}}
+
 #define DEBUG_SECTION_TIMES
 
 #ifdef DEBUG_SECTION_TIMES

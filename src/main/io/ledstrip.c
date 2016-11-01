@@ -44,7 +44,9 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -63,19 +65,16 @@
 #include "io/osd.h"
 #include "io/vtx.h"
 
-#include "rx/rx.h"
-
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 
+#include "rx/rx.h"
+
 #include "telemetry/telemetry.h"
 
-#include "fc/runtime_config.h"
-
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -675,8 +674,8 @@ static void applyLedIndicatorLayer(bool updateNow, uint32_t *timer)
         if (rxIsReceivingSignal()) {
             // calculate update frequency
             int scale = MAX(ABS(rcCommand[ROLL]), ABS(rcCommand[PITCH]));  // 0 - 500
-            scale += (50 - INDICATOR_DEADBAND);  // start increasing frequency right after deadband
-            *timer += LED_STRIP_HZ(5) * 50 / MAX(50, scale);   // 5 - 50Hz update, 2.5 - 25Hz blink
+            scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
+            *timer += LED_STRIP_HZ(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
 
             flash = !flash;
         } else {
@@ -926,7 +925,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void updateLedStrip(uint32_t currentTime)
+void ledStripUpdate(uint32_t currentTime)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;

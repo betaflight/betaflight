@@ -42,6 +42,12 @@ C_FLAGS = $(COMMON_FLAGS) \
 CXX_FLAGS = $(COMMON_FLAGS) \
 	-std=gnu++11
 
+# Compiler flags for coverage instrumentation
+COVERAGE_FLAGS := --coverage
+
+C_FLAGS   += $(COVERAGE_FLAGS)
+CXX_FLAGS += $(COVERAGE_FLAGS)
+
 # Gather up all of the tests.
 TEST_SRC = $(sort $(wildcard $(TEST_DIR)/*.cc))
 TESTS = $(TEST_SRC:$(TEST_DIR)/%.cc=%)
@@ -104,6 +110,36 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
+$(OBJECT_DIR)/common/filter.o : \
+	$(USER_DIR)/common/filter.c \
+	$(USER_DIR)/common/filter.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/filter.c -o $@
+
+$(OBJECT_DIR)/common_filter_unittest.o : \
+	$(TEST_DIR)/common_filter_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/common_filter_unittest.cc -o $@
+
+$(OBJECT_DIR)/common_filter_unittest : \
+	$(OBJECT_DIR)/common_filter_unittest.o \
+	$(OBJECT_DIR)/common/filter.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/drivers/io.o : \
+	$(USER_DIR)/drivers/io.c \
+	$(USER_DIR)/drivers/io.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/io.c -o $@
 
 $(OBJECT_DIR)/sensors/battery.o : $(USER_DIR)/sensors/battery.c $(USER_DIR)/sensors/battery.h $(GTEST_HEADERS)
 	@mkdir -p $(dir $@)
@@ -484,6 +520,7 @@ $(OBJECT_DIR)/baro_bmp085_unittest.o : \
 
 $(OBJECT_DIR)/baro_bmp085_unittest : \
 	$(OBJECT_DIR)/drivers/barometer_bmp085.o \
+	$(OBJECT_DIR)/drivers/io.o \
 	$(OBJECT_DIR)/baro_bmp085_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
@@ -536,9 +573,32 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+
+## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
 
+## junittest   : Build and run the Unit Tests, producing Junit XML result files."
+junittest: EXEC_OPTS = "--gtest_output=xml:$<_results.xml" 
+junittest: $(TESTS:%=test-%)
+
 test-%: $(OBJECT_DIR)/%
-	$<
+	$< $(EXEC_OPTS)
+
+## help        : print this help message and exit
+## what        : print this help message and exit
+## usage       : print this help message and exit
+help what usage: Makefile
+	@echo ""
+	@echo "Makefile for Unit Tests"
+	@echo ""
+	@echo "Usage:"
+	@echo "        make [goal] "
+	@echo ""
+	@echo "Valid goals are:"
+	@echo ""
+	@sed -n 's/^## //p' $<
+	@echo ""
+	@echo "Any of the Unit Test programs can be used as goals:"
+	@$(foreach prg, $(TEST_BINARIES), echo "    $(prg)";)
 
 -include $(DEPS)

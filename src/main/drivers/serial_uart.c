@@ -93,12 +93,16 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Cmd(uartPort->USARTx, ENABLE);
 }
 
-serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options)
+serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallback, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
     uartPort_t *s = NULL;
 
-    if (USARTx == USART1) {
+    if (false) {
+#ifdef USE_UART1
+    } else if (USARTx == USART1) {
         s = serialUART1(baudRate, mode, options);
+
+#endif
 #ifdef USE_UART2
     } else if (USARTx == USART2) {
         s = serialUART2(baudRate, mode, options);
@@ -129,7 +133,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
     // callback works for IRQ-based RX ONLY
-    s->port.callback = callback;
+    s->port.rxCallback = rxCallback;
     s->port.mode = mode;
     s->port.baudRate = baudRate;
     s->port.options = options;

@@ -28,17 +28,14 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
-#include "drivers/serial.h"
 #include "drivers/adc.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
@@ -107,8 +104,6 @@ static uint8_t nullFrameStatus(void)
     return RX_FRAME_PENDING;
 }
 
-bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-
 void useRxConfig(const rxConfig_t *rxConfigToUse)
 {
     rxConfig = rxConfigToUse;
@@ -150,6 +145,39 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChann
         rxChannelRangeConfiguration++;
     }
 }
+
+#ifdef SERIAL_RX
+bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    bool enabled = false;
+    switch (rxConfig->serialrx_provider) {
+    case SERIALRX_SPEKTRUM1024:
+    case SERIALRX_SPEKTRUM2048:
+        enabled = spektrumInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_SBUS:
+        enabled = sbusInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_SUMD:
+        enabled = sumdInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_SUMH:
+        enabled = sumhInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_XBUS_MODE_B:
+    case SERIALRX_XBUS_MODE_B_RJ01:
+        enabled = xBusInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_IBUS:
+        enabled = ibusInit(rxConfig, rxRuntimeConfig);
+        break;
+    case SERIALRX_JETIEXBUS:
+        enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
+        break;
+    }
+    return enabled;
+}
+#endif
 
 void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeActivationConditions)
 {
@@ -217,37 +245,6 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
 }
 
 #ifdef SERIAL_RX
-bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    bool enabled = false;
-    switch (rxConfig->serialrx_provider) {
-    case SERIALRX_SPEKTRUM1024:
-    case SERIALRX_SPEKTRUM2048:
-        enabled = spektrumInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_SBUS:
-        enabled = sbusInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_SUMD:
-        enabled = sumdInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_SUMH:
-        enabled = sumhInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_XBUS_MODE_B:
-    case SERIALRX_XBUS_MODE_B_RJ01:
-        enabled = xBusInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_IBUS:
-        enabled = ibusInit(rxConfig, rxRuntimeConfig);
-        break;
-    case SERIALRX_JETIEXBUS:
-        enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
-        break;
-    }
-    return enabled;
-}
-
 static uint8_t serialRxFrameStatus(const rxConfig_t *rxConfig)
 {
     /**

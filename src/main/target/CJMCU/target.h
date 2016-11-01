@@ -32,8 +32,8 @@
 #define ACC
 #define USE_ACC_MPU6050
 
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 
@@ -107,7 +107,6 @@
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define SKIP_SERIAL_PASSTHROUGH
-#define SKIP_PID_FLOAT
 #undef USE_CLI
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
