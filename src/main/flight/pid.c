@@ -358,7 +358,7 @@ void updateMagHoldHeading(int16_t heading)
 void resetMagHoldHeading(int16_t heading)
 {
     updateMagHoldHeading(heading);
-    pt1FilterReset(&magHoldRateFilter, (float) heading);
+    pt1FilterReset(&magHoldRateFilter, 0.0f);
 }
 
 int16_t getMagHoldHeading() {
