@@ -446,6 +446,7 @@ void generatePitchRollCurve(controlRateConfig_t *) {}
 void generateThrottleCurve(controlRateConfig_t *) {}
 void delay(uint32_t) {}
 
+void initVTXState(void) {}
 void setControlRateProfile(uint8_t) {}
 void resetControlRateConfig(controlRateConfig_t *) {}
 void configureRateProfileSelection(uint8_t, uint8_t) {}
