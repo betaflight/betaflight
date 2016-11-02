@@ -266,30 +266,26 @@ void osdDrawSingleElement(uint8_t item)
 #endif // VTX
 
         case OSD_CROSSHAIRS:
-        {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
-
+            elemPosX = 14 - 1; // Offset for 1 char to the left
+            elemPosY = 6;
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
-
-            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-            screenBuffer[position] = (SYM_AH_CENTER);
-
-            return;
-        }
+                ++elemPosY;
+            buff[0] = SYM_AH_CENTER_LINE;
+            buff[1] = SYM_AH_CENTER;
+            buff[2] = SYM_AH_CENTER_LINE_RIGHT;
+            buff[3] = 0;
+            break;
 
         case OSD_ARTIFICIAL_HORIZON:
         {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
+            elemPosX = 14;
+            elemPosY = 6 - 4; // Top center of the AH area
 
             int rollAngle = attitude.values.roll;
             int pitchAngle = attitude.values.pitch;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
+                ++elemPosY;
 
             if (pitchAngle > AH_MAX_PITCH)
                 pitchAngle = AH_MAX_PITCH;
@@ -300,13 +296,15 @@ void osdDrawSingleElement(uint8_t item)
             if (rollAngle < -AH_MAX_ROLL)
                 rollAngle = -AH_MAX_ROLL;
 
-            for (uint8_t x = 0; x <= 8; x++) {
-                int y = (rollAngle * (4 - x)) / 64;
-                y -= pitchAngle / 8;
-                y += 41;
+            // Convert pitchAngle to y compensation value
+            pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
+
+            for (int8_t x = -4; x <= 4; x++) {
+                int y = (rollAngle * x) / 64;
+                y -= pitchAngle;
+                // y += 41; // == 4 * 9 + 5
                 if (y >= 0 && y <= 81) {
-                    uint16_t pos = position - 7 + LINE * (y / 9) + 3 - 4 * LINE + x;
-                    screenBuffer[pos] = (SYM_AH_BAR9_0 + (y % 9));
+                    max7456WriteChar(elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
                 }
             }
 
@@ -317,23 +315,23 @@ void osdDrawSingleElement(uint8_t item)
 
         case OSD_HORIZON_SIDEBARS:
         {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
+            elemPosX = 14;
+            elemPosY = 6;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
+                ++elemPosY;
 
             // Draw AH sides
             int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
-            for (int8_t x = -hudheight; x <= hudheight; x++) {
-                screenBuffer[position - hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
-                screenBuffer[position + hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+            for (int8_t y = -hudheight; y <= hudheight; y++) {
+                max7456WriteChar(elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                max7456WriteChar(elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
             }
 
             // AH level indicators
-            screenBuffer[position - hudwidth + 1] = (SYM_AH_LEFT);
-            screenBuffer[position + hudwidth - 1] = (SYM_AH_RIGHT);
+            max7456WriteChar(elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
+            max7456WriteChar(elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
             return;
         }

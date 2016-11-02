@@ -289,8 +289,8 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         }
         break;
     }
-    case OME_VISIBLE:
 #ifdef OSD
+    case OME_VISIBLE:
         if (IS_PRINTVALUE(p) && p->data) {
             uint32_t address = (uint32_t)p->data;
             uint16_t *val;
@@ -304,8 +304,8 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             }
             CLR_PRINTVALUE(p);
         }
-#endif
         break;
+#endif
     case OME_UINT8:
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT8_t *ptr = p->data;
@@ -644,8 +644,8 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 SET_PRINTVALUE(p);
             }
             break;
-        case OME_VISIBLE:
 #ifdef OSD
+        case OME_VISIBLE:
             if (p->data) {
                 uint32_t address = (uint32_t)p->data;
                 uint16_t *val;
@@ -658,8 +658,8 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                     *val %= ~VISIBLE_FLAG;
                 SET_PRINTVALUE(p);
             }
-#endif
             break;
+#endif
         case OME_UINT8:
         case OME_FLOAT:
             if (p->data) {
@@ -1018,7 +1018,7 @@ OSD_Entry menuImu[] =
 // Should goto flashfs eventually.
 //
 #ifdef USE_FLASHFS
-void cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
+long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 {
     UNUSED(ptr);
 
@@ -1033,6 +1033,8 @@ void cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 
     cmsScreenClear(pDisplay);
     cmsScreenResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+
+    return 0;
 }
 #endif // USE_FLASHFS
 
