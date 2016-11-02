@@ -83,18 +83,18 @@ static void bufferWrite(uint32_t *buffer, uint16_t value)
 }
 
 #ifdef USE_CYCLIC_DSHOT
-static void enableDMAOutput(uint8_t index)
+static void enableDMAOutput(uint32_t index)
 {
-    if (!(index < dmaMotorCount)) {
+    uint8_t motorIndex = index % dmaMotorCount;
+    if (motorIndex == 0) {
         if (!updateRequired) {
             updateInprogress = false;
             return;
         }
-        index = 0;
         updateRequired = false;
     }
 
-    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     bufferWrite(motor->dmaBuffer, motor->value);
 
     DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
@@ -121,12 +121,10 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
     UNUSED(motorCount);
 
 #ifdef USE_CYCLIC_DSHOT
+    updateRequired = true;
     if (!updateInprogress) {
-        updateRequired = false;
         updateInprogress = true;
         enableDMAOutput(0);
-    } else {
-        updateRequired = true;
     }
 #else
     for(int i = 0; i < dmaMotorTimerCount; i++) {
