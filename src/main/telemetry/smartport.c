@@ -195,7 +195,7 @@ static uint8_t smartPortMspTxBuffer[SMARTPORT_TX_BUF_SIZE];
 static mspPacket_t smartPortMspReply;
 static bool smartPortMspReplyPending = false;
 
-#define SMARTPORT_MSP_RES_ERROR -10
+#define SMARTPORT_MSP_RES_ERROR (-10)
 
 enum {
     SMARTPORT_MSP_VER_MISMATCH=0,
@@ -216,8 +216,7 @@ static void smartPortDataReceive(uint16_t c)
         smartPortHasRequest = 0;
         skipUntilStart = false;
         return;
-    }
-    else if (skipUntilStart) {
+    } else if (skipUntilStart) {
         return;
     }
 
@@ -228,8 +227,7 @@ static void smartPortDataReceive(uint16_t c)
             // our slot is starting...
             smartPortLastRequestTime = now;
             smartPortHasRequest = 1;
-        }
-        else if (c == FSSP_SENSOR_ID2) {
+        } else if (c == FSSP_SENSOR_ID2) {
             rxBuffer[smartPortRxBytes++] = c;
             checksum = 0;
         }
@@ -256,8 +254,7 @@ static void smartPortDataReceive(uint16_t c)
                 smartPortFrameReceived = true;
             }
             skipUntilStart = true;
-        }
-        else if (smartPortRxBytes < SMARTPORT_FRAME_SIZE) {
+        } else if (smartPortRxBytes < SMARTPORT_FRAME_SIZE) {
             checksum += c;
             checksum += checksum >> 8;
             checksum &= 0x00FF;
@@ -530,12 +527,10 @@ void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
 
         checksum = p_size ^ cmd.cmd;
         mspStarted = 1;
-    }
-    else if (!mspStarted) {
+    } else if (!mspStarted) {
         // no start packet yet, throw this one away
         return;
-    }
-    else if (((lastSeq + 1) & SMARTPORT_MSP_SEQ_MASK) != seq) {
+    } else if (((lastSeq + 1) & SMARTPORT_MSP_SEQ_MASK) != seq) {
         // packet loss detected!
         mspStarted = 0;
         return;
@@ -772,13 +767,10 @@ void handleSmartPortTelemetry(void)
                     smartPortSendPackage(id, (STATE(GPS_FIX) ? 1000 : 0) + (STATE(GPS_FIX_HOME) ? 2000 : 0) + GPS_numSat);
                     smartPortHasRequest = 0;
 #endif
-                }
-                else if (feature(FEATURE_GPS)) {
+                } else if (feature(FEATURE_GPS)) {
                     smartPortSendPackage(id, 0);
                     smartPortHasRequest = 0;
-                }
-
-                else if (telemetryConfig->pidValuesAsTelemetry){
+                } else if (telemetryConfig->pidValuesAsTelemetry){
                     switch (t2Cnt) {
                         case 0:
                             tmp2 = currentProfile->pidProfile.P8[ROLL];
