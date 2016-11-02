@@ -39,7 +39,7 @@ OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 OSD_Entry cmsx_menuVtx[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
-    {"ENABLED", OME_Bool, NULL, &featureVtx, 0},
+    {"ENABLED", OME_Bool, NULL, &cmsx_featureVtx, 0},
 #ifdef VTX
     {"VTX MODE", OME_UINT8, NULL, &entryVtxMode, 0},
     {"VTX MHZ", OME_UINT16, NULL, &entryVtxMhz, 0},
@@ -79,7 +79,7 @@ void cmsx_Vtx_ConfigRead(void)
 #endif // USE_RTC6705
 }
 
-void cmsx_Vtx_ConfigRead(void)
+void cmsx_Vtx_ConfigWriteback(void)
 {
 #ifdef VTX
     masterConfig.vtxBand = cmsx_vtxBand;
