@@ -183,16 +183,22 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
 
     // Calculate TPA factor - different logic for airplanes and multirotors
     if (STATE(FIXED_WING)) {
-        // tpa_rate is ignored for fixed wings, set to non-zero to enable TPA
+        // tpa_rate is amount of curve TPA applied to PIDs
         // tpa_breakpoint for fixed wing is cruise throttle value (value at which PIDs were tuned)
         if (controlRateConfig->dynThrPID != 0 && controlRateConfig->tpa_breakpoint > motorConfig->minthrottle) {
             if (rcCommand[THROTTLE] > motorConfig->minthrottle) {
+                // Calculate TPA according to throttle
                 tpaFactor = 0.5f + ((float)(controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
-                tpaFactor = constrainf(tpaFactor, 0.6f, 1.67f);
+
+                // Limit to [0.5; 2] range
+                tpaFactor = constrainf(tpaFactor, 0.5f, 2.0f);
             }
             else {
-                tpaFactor = 1.67f;
+                tpaFactor = 2.0f;
             }
+
+            // Attenuate TPA curve according to configured amount
+            tpaFactor = 1.0f + (tpaFactor - 1.0f) * (controlRateConfig->dynThrPID / 100.0f);
         }
         else {
             tpaFactor = 1.0f;
