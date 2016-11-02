@@ -683,7 +683,7 @@ int osdHeartbeat(void)
     return 0;
 }
 
-uint32_t osdTxroom(void)
+uint32_t osdTxBytesFree(void)
 {
     return UINT32_MAX;
 }
@@ -721,7 +721,7 @@ displayPortVTable_t osdVTable = {
     osdWrite,
     osdHeartbeat,
     osdResync,
-    osdTxroom,
+    osdTxBytesFree,
 };
 
 void osdCmsInit(displayPort_t *pPort)

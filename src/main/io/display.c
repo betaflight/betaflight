@@ -788,7 +788,7 @@ void displayCmsResync(displayPort_t *pPort)
     UNUSED(pPort);
 }
 
-uint32_t displayCmsTxroom(void)
+uint32_t displayCmsTxBytesFree(void)
 {
     return UINT32_MAX;
 }
@@ -800,7 +800,7 @@ displayPortVTable_t displayCmsVTable = {
     displayCmsWrite,
     displayCmsHeartbeat,
     displayCmsResync,
-    displayCmsTxroom,
+    displayCmsTxBytesFree,
 };
 
 void displayCmsInit(displayPort_t *pPort)

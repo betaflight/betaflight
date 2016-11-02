@@ -136,9 +136,9 @@ void cmsScreenResync(displayPort_t *instance)
     instance->vTable->resync(instance);
 }
 
-uint16_t cmsScreenTxRoom(displayPort_t *instance)
+uint16_t cmsScreenTxBytesFree(displayPort_t *instance)
 {
-    return instance->vTable->txroom();
+    return instance->vTable->txBytesFree();
 }
 
 void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
@@ -376,7 +376,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
-    uint32_t room = cmsScreenTxRoom(pDisplay);
+    uint32_t room = cmsScreenTxBytesFree(pDisplay);
 
     if (!currentMenu)
         return;

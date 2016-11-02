@@ -9,7 +9,7 @@ typedef struct displayPortVTable_s {
     int (*write)(uint8_t col, uint8_t row, char *text);
     int (*heartbeat)(void);
     void (*resync)(struct displayPort_s *pPort);
-    uint32_t (*txroom)(void);
+    uint32_t (*txBytesFree)(void);
 } displayPortVTable_t;
 
 typedef struct displayPort_s {

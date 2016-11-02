@@ -75,7 +75,7 @@ void canvasResync(displayPort_t *pPort)
     pPort->rows = 30;
 }
 
-uint32_t canvasTxRoom(void)
+uint32_t canvasTxBytesFree(void)
 {
     return mspSerialTxBytesFree();
 }
@@ -87,7 +87,7 @@ displayPortVTable_t canvasVTable = {
     canvasWrite,
     canvasHeartBeat,
     canvasResync,
-    canvasTxRoom,
+    canvasTxBytesFree,
 };
 
 void canvasCmsInit(displayPort_t *pPort)
