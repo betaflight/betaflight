@@ -31,14 +31,10 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/light_led.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"

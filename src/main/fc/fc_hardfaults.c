@@ -21,7 +21,10 @@
 #include "platform.h"
 
 #include "drivers/light_led.h"
+#include "drivers/system.h"
+
 #include "fc/fc_init.h"
+
 #include "flight/mixer.h"
 
 #ifdef DEBUG_HARDFAULTS

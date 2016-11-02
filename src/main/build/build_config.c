@@ -20,8 +20,6 @@
 
 #include "platform.h"
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
 #include "flight/mixer.h"
 

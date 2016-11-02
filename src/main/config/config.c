@@ -30,15 +30,9 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/pwm_output.h"
-#include "drivers/rx_nrf24l01.h"
 #include "drivers/serial.h"
 
 #include "sensors/sensors.h"

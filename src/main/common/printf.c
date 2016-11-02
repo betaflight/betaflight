@@ -38,11 +38,9 @@
 
 #include "build/build_config.h"
 
-
 #include "drivers/serial.h"
-#include "io/serial.h"
 
-#include "build/build_config.h"
+#include "io/serial.h"
 
 #include "printf.h"
 

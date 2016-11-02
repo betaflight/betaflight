@@ -19,6 +19,8 @@
 
 #ifdef GPS
 
+#include "io/serial.h"
+
 #define GPS_HDOP_TO_EPH_MULTIPLIER      2   // empirical value
 
 typedef enum {

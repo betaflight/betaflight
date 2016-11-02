@@ -28,8 +28,6 @@
 
 #ifndef SKIP_RX_PWM_PPM
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
 #include "config/config.h"

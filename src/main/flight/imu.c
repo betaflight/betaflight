@@ -35,9 +35,6 @@
 #include "common/filter.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"

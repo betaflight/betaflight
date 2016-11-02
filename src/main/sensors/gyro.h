@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/accgyro.h"
+
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,

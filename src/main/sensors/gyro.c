@@ -25,10 +25,6 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
-
 #include "io/beeper.h"
 #include "io/statusindicator.h"
 

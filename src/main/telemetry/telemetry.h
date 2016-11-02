@@ -51,7 +51,8 @@ typedef struct telemetryConfig_s {
 
 void telemetryInit(void);
 bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig);
-extern serialPort_t *telemetrySharedPort;
+struct serialPort_s;
+extern struct serialPort_s *telemetrySharedPort;
 
 void telemetryCheckState(void);
 struct rxConfig_s;

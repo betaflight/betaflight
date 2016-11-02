@@ -28,18 +28,14 @@
 
 #include "build/debug.h"
 
-
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/light_led.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"

@@ -25,41 +25,36 @@
 
 #include "build/build_config.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "config/config.h"
+#include "config/feature.h"
+
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+#include "flight/navigation_rewrite.h"
+#include "flight/failsafe.h"
+
+#include "io/gps.h"
+#include "io/beeper.h"
+#include "io/motors.h"
+
+#include "rx/rx.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
-
-#include "rx/rx.h"
-
-#include "io/gps.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
-#include "fc/runtime_config.h"
-
-#include "io/display.h"
-
-#include "flight/pid.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/failsafe.h"
-
-#include "config/config.h"
-#include "config/feature.h"
-
-#include "blackbox/blackbox.h"
-
-#include "mw.h"
 
 #define AIRMODE_DEADBAND 25
 

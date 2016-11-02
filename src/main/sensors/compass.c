@@ -25,17 +25,14 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/sensor.h"
-#include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-
-#include "sensors/boardalignment.h"
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
 
+#include "drivers/compass.h"
+#include "drivers/light_led.h"
+
+#include "fc/runtime_config.h"
+
+#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 

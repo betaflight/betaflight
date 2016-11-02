@@ -33,8 +33,6 @@
 #include "common/axis.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/serial.h"
 
 #include "io/serial.h"
