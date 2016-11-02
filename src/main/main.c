@@ -62,4 +62,3 @@ int main(void)
         processLoopback();
     }
 }
-
