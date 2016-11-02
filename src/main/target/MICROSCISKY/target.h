@@ -91,7 +91,6 @@
 #undef GPS
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
-#define DISPLAY
 
 
 // IO - assuming all IOs on 48pin package

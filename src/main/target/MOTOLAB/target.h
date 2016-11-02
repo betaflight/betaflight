@@ -91,7 +91,6 @@
 #define SENSORS_SET             (SENSOR_ACC)
 
 #undef GPS
-#define DISPLAY
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 

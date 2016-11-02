@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define ENABLE_DEBUG_OLED_PAGE
+#define ENABLE_DEBUG_DASHBOARD_PAGE
 
 typedef enum {
     PAGE_WELCOME,
@@ -30,18 +30,18 @@ typedef enum {
 #ifdef GPS
     PAGE_GPS,
 #endif
-#ifdef ENABLE_DEBUG_OLED_PAGE
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     PAGE_DEBUG,
 #endif
 } pageId_e;
 
 struct rxConfig_s;
-void displayInit(struct rxConfig_s *intialRxConfig);
-void displayUpdate(uint32_t currentTime);
+void dashboardInit(struct rxConfig_s *intialRxConfig);
+void dashboardUpdate(uint32_t currentTime);
 
-void displayShowFixedPage(pageId_e pageId);
+void dashboardShowFixedPage(pageId_e pageId);
 
-void displayEnablePageCycling(void);
-void displayDisablePageCycling(void);
-void displayResetPageCycling(void);
-void displaySetNextPageChangeAt(uint32_t futureMicros);
+void dashboardEnablePageCycling(void);
+void dashboardDisablePageCycling(void);
+void dashboardResetPageCycling(void);
+void dashboardSetNextPageChangeAt(uint32_t futureMicros);
