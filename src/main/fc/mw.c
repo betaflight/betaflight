@@ -100,8 +100,6 @@ uint8_t motorControlEnable = false;
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-extern uint32_t currentTime;
-
 static bool isRXDataNew;
 
 bool isCalibrating(void)
@@ -258,7 +256,7 @@ void mwArm(void)
     }
 }
 
-void processRx(void)
+void processRx(uint32_t currentTime)
 {
     static bool armedBeeperOn = false;
 
@@ -522,13 +520,13 @@ void filterRc(bool isRXDataNew)
 }
 
 // Function for loop trigger
-void taskGyro(void) {
+void taskGyro(uint32_t currentTime) {
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (masterConfig.gyroSync) {
-        while (1) {
+        while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
             if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
@@ -548,25 +546,25 @@ void taskGyro(void) {
 #endif
 }
 
-void taskMainPidLoop(void)
+void taskMainPidLoop(uint32_t currentTime)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
 #ifdef ASYNC_GYRO_PROCESSING
     if (getAsyncMode() == ASYNC_MODE_NONE) {
-        taskGyro();
+        taskGyro(currentTime);
     }
 
     if (getAsyncMode() != ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
         imuUpdateAccelerometer();
-        imuUpdateAttitude();
+        imuUpdateAttitude(currentTime);
     }
 #else
     /* Update gyroscope */
-    taskGyro();
+    taskGyro(currentTime);
     imuUpdateAccelerometer();
-    imuUpdateAttitude();
+    imuUpdateAttitude(currentTime);
 #endif
 
 
@@ -670,21 +668,21 @@ void taskMainPidLoop(void)
 
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox();
+        handleBlackbox(micros());
     }
 #endif
 
 }
 
-bool taskUpdateRxCheck(uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
-    updateRx(currentTime);
-    return shouldProcessRx(currentTime);
+
+    return updateRx(currentTime);
 }
 
-void taskUpdateRxMain(void)
+void taskUpdateRxMain(uint32_t currentTime)
 {
-    processRx();
+    processRx(currentTime);
     isRXDataNew = true;
 }

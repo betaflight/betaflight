@@ -272,7 +272,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(GPS)
-void mavlinkSendPosition(void)
+void mavlinkSendPosition(uint32_t currentTime)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -289,7 +289,7 @@ void mavlinkSendPosition(void)
 
     mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
+        currentTime,
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
         gpsFixType,
         // lat Latitude in 1E7 degrees
@@ -314,7 +314,7 @@ void mavlinkSendPosition(void)
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
+        currentTime,
         // lat Latitude in 1E7 degrees
         gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
@@ -501,7 +501,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(void)
+void processMAVLinkTelemetry(uint32_t currentTime)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
@@ -514,7 +514,7 @@ void processMAVLinkTelemetry(void)
 
 #ifdef GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition();
+        mavlinkSendPosition(currentTime);
     }
 #endif
 
@@ -527,7 +527,7 @@ void processMAVLinkTelemetry(void)
     }
 }
 
-void handleMAVLinkTelemetry(void)
+void handleMAVLinkTelemetry(uint32_t currentTime)
 {
     if (!mavlinkTelemetryEnabled) {
         return;
@@ -537,10 +537,9 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
-    uint32_t now = micros();
-    if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
-        processMAVLinkTelemetry();
-        lastMavlinkMessage = now;
+    if ((currentTime - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+        processMAVLinkTelemetry(currentTime);
+        lastMavlinkMessage = currentTime;
     }
 }
 

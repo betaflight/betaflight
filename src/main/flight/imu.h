@@ -49,7 +49,7 @@ typedef struct imuRuntimeConfig_s {
 struct pidProfile_s;
 void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, struct pidProfile_s *initialPidProfile);
 
-void imuUpdateAttitude(void);
+void imuUpdateAttitude(uint32_t currentTime);
 void imuUpdateAccelerometer(void);
 void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);

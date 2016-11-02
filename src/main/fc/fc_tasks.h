@@ -19,25 +19,13 @@
 
 #include <stdint.h>
 
-void taskHandleSerial(void);
-void taskUpdateBeeper(void);
-void taskUpdateBattery(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskSystem(void);
+void taskMainPidLoopChecker(uint32_t currentTime);
+bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime);
+void taskUpdateRxMain(uint32_t currentTime);
+void taskSystem(uint32_t currentTime);
+void taskStackCheck(uint32_t currentTime);
 
-#ifdef USE_PMW_SERVO_DRIVER
-void taskSyncPwmDriver(void);
-#endif
-
-void taskStackCheck(void);
-
-void taskMainPidLoop(void);
-void taskGyro(void);
-
-#ifdef ASYNC_GYRO_PROCESSING
-void taskAcc(void);
-void taskAttitude(void);
-#endif
+void taskMainPidLoop(uint32_t currentTime);
+void taskGyro(uint32_t currentTime);
 
 void fcTasksInit(void);

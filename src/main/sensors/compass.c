@@ -43,8 +43,6 @@
 mag_t mag;                   // mag access functions
 float magneticDeclination = 0.0f;       // calculated at startup from config
 
-extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
-
 int16_t magADCRaw[XYZ_AXIS_COUNT];
 int32_t magADC[XYZ_AXIS_COUNT];
 sensor_align_e magAlign = 0;
@@ -74,7 +72,7 @@ bool isCompassReady(void)
 
 static sensorCalibrationState_t calState;
 
-void updateCompass(flightDynamicsTrims_t *magZero)
+void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 {
     static uint32_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];

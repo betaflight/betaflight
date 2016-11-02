@@ -79,15 +79,14 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-extern uint32_t currentTime;
-
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 
-void taskHandleSerial(void)
+void taskHandleSerial(uint32_t currentTime)
 {
+    UNUSED(currentTime);
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
@@ -98,12 +97,12 @@ void taskHandleSerial(void)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
 }
 
-void taskUpdateBeeper(void)
+void taskUpdateBeeper(uint32_t currentTime)
 {
-    beeperUpdate();          //call periodic beeper handler
+    beeperUpdate(currentTime);          //call periodic beeper handler
 }
 
-void taskUpdateBattery(void)
+void taskUpdateBattery(uint32_t currentTime)
 {
     static uint32_t vbatLastServiced = 0;
     static uint32_t ibatLastServiced = 0;
@@ -127,7 +126,7 @@ void taskUpdateBattery(void)
 }
 
 #ifdef GPS
-void taskProcessGPS(void)
+void taskProcessGPS(uint32_t currentTime)
 {
     // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
     // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
@@ -143,17 +142,19 @@ void taskProcessGPS(void)
 #endif
 
 #ifdef MAG
-void taskUpdateCompass(void)
+void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(&masterConfig.magZero);
+        updateCompass(currentTime, &masterConfig.magZero);
     }
 }
 #endif
 
 #ifdef BARO
-void taskUpdateBaro(void)
+void taskUpdateBaro(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     if (sensors(SENSOR_BARO)) {
         const uint32_t newDeadline = baroUpdate();
         if (newDeadline != 0) {
@@ -166,8 +167,10 @@ void taskUpdateBaro(void)
 #endif
 
 #ifdef SONAR
-void taskUpdateSonar(void)
+void taskUpdateSonar(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     if (sensors(SENSOR_SONAR)) {
         rangefinderUpdate();
     }
@@ -177,36 +180,38 @@ void taskUpdateSonar(void)
 #endif
 
 #ifdef DISPLAY
-void taskUpdateDisplay(void)
+void taskUpdateDisplay(uint32_t currentTime)
 {
     if (feature(FEATURE_DISPLAY)) {
-        updateDisplay();
+        updateDisplay(currentTime);
     }
 }
 #endif
 
 #ifdef TELEMETRY
-void taskTelemetry(void)
+void taskTelemetry(uint32_t currentTime)
 {
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
     }
 }
 #endif
 
 #ifdef LED_STRIP
-void taskLedStrip(void)
+void taskLedStrip(uint32_t currentTime)
 {
     if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip();
+        updateLedStrip(currentTime);
     }
 }
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
-void taskSyncPwmDriver(void) {
+void taskSyncPwmDriver(uint32_t currentTime)
+{
+    UNUSED(currentTime);
 
     if (feature(FEATURE_PWM_SERVO_DRIVER)) {
         pwmDriverSync();
@@ -215,11 +220,15 @@ void taskSyncPwmDriver(void) {
 #endif
 
 #ifdef ASYNC_GYRO_PROCESSING
-void taskAttitude(void) {
-    imuUpdateAttitude();
+void taskAttitude(uint32_t currentTime)
+{
+    imuUpdateAttitude(currentTime);
 }
 
-void taskAcc(void) {
+void taskAcc(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+
     imuUpdateAccelerometer();
 }
 #endif
