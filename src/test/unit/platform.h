@@ -17,17 +17,9 @@
 
 #pragma once
 
-#define MAG
-#define BARO
-#define GPS
-#define DISPLAY
-#define TELEMETRY
-#define LED_STRIP
-#define USE_SERVOS
-
-#define SERIAL_PORT_COUNT 4
-
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
+#define U_ID_0 0
+#define U_ID_1 1
+#define U_ID_2 2
 
 typedef enum
 {
