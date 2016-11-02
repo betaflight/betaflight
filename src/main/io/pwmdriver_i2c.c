@@ -15,7 +15,7 @@ static uint8_t driverImplementationIndex = 0;
 typedef struct {
     bool (*initFunction)(void);
     void (*writeFunction)(uint8_t servoIndex, uint16_t off);
-    void (*setFrequencyFunction)(float freq);
+    void (*setFrequencyFunction)(uint16_t freq);
     void (*syncFunction)(uint8_t cycleIndex);
 } pwmDriverDriver_t;
 
