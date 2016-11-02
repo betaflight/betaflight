@@ -177,14 +177,14 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         }
 #endif
 
-#ifdef RSSI_ADC_GPIO
+#ifdef RSSI_ADC_PIN
         if (init->useRSSIADC && timerHardwarePtr->tag == IO_TAG(RSSI_ADC_PIN)) {
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, i, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
             continue;
         }
 #endif
 
-#ifdef CURRENT_METER_ADC_GPIO
+#ifdef CURRENT_METER_ADC_PIN
         if (init->useCurrentMeterADC && timerHardwarePtr->tag == IO_TAG(CURRENT_METER_ADC_PIN)) {
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_SKIPPED, BOOT_EVENT_FLAGS_WARNING, i, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 3);
             continue;

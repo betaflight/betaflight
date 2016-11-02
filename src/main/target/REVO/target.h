@@ -57,13 +57,6 @@
 #define MAG_HMC5883_ALIGN       CW90_DEG
 #define USE_MAG_MAG3110
 
-//#define USE_MAG_DATA_READY_SIGNAL
-//#define ENSURE_MAG_DATA_READY_IS_HIGH
-//#define MAG_INT_EXTI            PB7
-
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
-
 #define BARO
 #define USE_BARO_BMP085
 #define USE_BARO_BMP280
@@ -115,21 +108,22 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_GPIO_PIN       PA0
+#define RSSI_ADC_PIN            PA0
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
 #define LED_STRIP
-// LED Strip can run off Pin 6 (PA0) of the ESC outputs.
-#define WS2811_PIN                      PA0
+// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
+#define WS2811_GPIO_AF                  GPIO_AF_TIM5
+#define WS2811_PIN                      PA1
 #define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_1
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_TIMER_CHANNEL            TIM_Channel_2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream4
 #define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
+#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
+#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
@@ -142,6 +136,9 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
 
+#define SPEKTRUM_BIND
+#define BIND_PIN                PB11 //UART3_RX_PIN
+
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // Number of available PWM outputs
@@ -153,4 +150,4 @@
 #define TARGET_IO_PORTD         0xffff
 
 #define USABLE_TIMER_CHANNEL_COUNT 12
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
