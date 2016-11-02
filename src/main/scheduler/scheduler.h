@@ -67,8 +67,8 @@ typedef enum {
 #if defined(BARO) || defined(SONAR)
     TASK_ALTITUDE,
 #endif
-#ifdef DISPLAY
-    TASK_DISPLAY,
+#ifdef USE_DASHBOARD
+    TASK_DASHBOARD,
 #endif
 #ifdef TELEMETRY
     TASK_TELEMETRY,

@@ -45,7 +45,7 @@ typedef enum {
     FEATURE_RX_MSP = 1 << 14,
     FEATURE_RSSI_ADC = 1 << 15,
     FEATURE_LED_STRIP = 1 << 16,
-    FEATURE_DISPLAY = 1 << 17,
+    FEATURE_DASHBOARD = 1 << 17,
     FEATURE_OSD = 1 << 18,
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,

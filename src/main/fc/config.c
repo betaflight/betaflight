@@ -903,8 +903,8 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
-        featureClear(FEATURE_DISPLAY);
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
+        featureClear(FEATURE_DASHBOARD);
     }
 #endif
 

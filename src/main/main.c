@@ -82,7 +82,7 @@
 #include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
@@ -395,9 +395,9 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-        displayInit(&masterConfig.rxConfig);
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardInit(&masterConfig.rxConfig);
     }
 #endif
 
@@ -585,13 +585,13 @@ void init(void)
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit(&masterConfig.batteryConfig);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
-        displayShowFixedPage(PAGE_GPS);
+        dashboardShowFixedPage(PAGE_GPS);
 #else
-        displayResetPageCycling();
-        displayEnablePageCycling();
+        dashboardResetPageCycling();
+        dashboardEnablePageCycling();
 #endif
     }
 #endif
