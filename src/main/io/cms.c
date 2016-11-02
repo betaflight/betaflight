@@ -37,9 +37,7 @@
 
 #include "io/cms.h"
 #include "io/cms_types.h"
-#ifdef CANVAS
 #include "io/canvas.h"
-#endif
 
 #include "io/flashfs.h"
 #include "io/osd.h"
@@ -130,22 +128,17 @@ int cmsScreenWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)
 
 void cmsScreenHeartBeat(displayPort_t *instance)
 {
-    if (instance->vTable->heartbeat)
-        instance->vTable->heartbeat();
+    instance->vTable->heartbeat();
 }
 
 void cmsScreenResync(displayPort_t *instance)
 {
-    if (instance->vTable->resync)
-        instance->vTable->resync();
+    instance->vTable->resync(instance);
 }
 
 uint16_t cmsScreenTxRoom(displayPort_t *instance)
 {
-    if (instance->vTable->txroom)
-        return instance->vTable->txroom();
-    else
-        return 10000;
+    return instance->vTable->txroom();
 }
 
 void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
@@ -372,10 +365,8 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     return cnt;
 }
 
-void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
+void cmsDrawMenu(displayPort_t *pDisplay)
 {
-    UNUSED(currentTime);
-
     uint8_t i;
     OSD_Entry *p;
     uint8_t top = (pDisplay->rows - currentMenuIdx) / 2 - 1;
@@ -385,7 +376,7 @@ void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTime)
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
-    int room = cmsScreenTxRoom(pDisplay);
+    uint32_t room = cmsScreenTxRoom(pDisplay);
 
     if (!currentMenu)
         return;
@@ -799,7 +790,7 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
             return;
         }
 
-        cmsDrawMenu(pDisplay, currentTime);
+        cmsDrawMenu(pDisplay);
 
         if (currentTime > lastCmsHeartBeat + 500) {
             // Heart beat for external CMS display device @ 500msec
@@ -811,15 +802,13 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
     lastCalled = currentTime;
 }
 
-void cmsHandler(uint32_t unusedTime)
+void cmsHandler(uint32_t currentTime)
 {
-    UNUSED(unusedTime);
-
     if (cmsDeviceCount < 0)
         return;
 
     static uint32_t lastCalled = 0;
-    uint32_t now = millis();
+    const uint32_t now = currentTime / 1000;
 
     if (now - lastCalled >= CMS_UPDATE_INTERVAL) {
         cmsUpdate(&currentDisplay, now);
@@ -1243,8 +1232,7 @@ OSD_Entry menuInfo[] = {
 
 void cmsx_InfoInit(void)
 {
-    int i;
-    for (i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
+    for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
             infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
         else

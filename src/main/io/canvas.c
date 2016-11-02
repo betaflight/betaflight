@@ -9,6 +9,8 @@
 
 #ifdef CANVAS
 
+#include "common/utils.h"
+
 #include "drivers/system.h"
 
 #include "io/cms.h"
@@ -67,32 +69,36 @@ int canvasWrite(uint8_t col, uint8_t row, char *string)
     return canvasOutput(MSP_CANVAS, (uint8_t *)buf, len + 4);
 }
 
-uint16_t canvasTxRoom()
+void canvasResync(displayPort_t *pPort)
 {
-    return mspSerialPushTxRoom();
+    pPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
+    pPort->rows = 30;
 }
 
-screenFnVTable_t canvasVTable = {
+uint32_t canvasTxRoom(void)
+{
+    return mspSerialTxBytesFree();
+}
+
+displayPortVTable_t canvasVTable = {
     canvasBegin,
     canvasEnd,
     canvasClear,
     canvasWrite,
     canvasHeartBeat,
-    NULL,
+    canvasResync,
     canvasTxRoom,
 };
 
 void canvasCmsInit(displayPort_t *pPort)
 {
-    pPort->rows = 13;
+    pPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
     pPort->cols = 30;
     pPort->vTable = &canvasVTable;
 }
 
 void canvasInit()
 {
-    mspSerialPushInit(mspFcPushInit()); // Called once at startup to initialize push function in msp
-
     cmsDeviceRegister(canvasCmsInit);
 }
 #endif

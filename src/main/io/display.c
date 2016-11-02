@@ -23,6 +23,8 @@
 
 #ifdef DISPLAY
 
+#include "common/utils.h"
+
 #include "build/version.h"
 #include "build/debug.h"
 
@@ -776,22 +778,35 @@ int displayCmsWrite(uint8_t x, uint8_t y, char *s)
     return 0;
 }
 
-screenFnVTable_t displayCmsVTable = {
+int displayCmsHeartbeat(void)
+{
+    return 0;
+}
+
+void displayCmsResync(displayPort_t *pPort)
+{
+    UNUSED(pPort);
+}
+
+uint32_t displayCmsTxroom(void)
+{
+    return UINT32_MAX;
+}
+
+displayPortVTable_t displayCmsVTable = {
     displayCmsBegin,
     displayCmsEnd,
     displayCmsClear,
     displayCmsWrite,
-    NULL,
-    NULL,
-    NULL,
+    displayCmsHeartbeat,
+    displayCmsResync,
+    displayCmsTxroom,
 };
 
 void displayCmsInit(displayPort_t *pPort)
 {
-    pPort->rows = 8;
-    pPort->cols = 21;
-    pPort->buftime = 1;
-    pPort->bufsize = 50000;
+    pPort->rows = SCREEN_CHARACTER_ROW_COUNT;
+    pPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
     pPort->vTable = &displayCmsVTable;
 }
 #endif // OLEDCMS

@@ -392,9 +392,11 @@ void osdInit(void)
 
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
-    max7456Write(7, 7,  STARTUP_HELP_TEXT1);
-    max7456Write(11, 8, STARTUP_HELP_TEXT2);
-    max7456Write(11, 9, STARTUP_HELP_TEXT3);
+#ifdef CMS
+    max7456Write(7, 7,  CMS_STARTUP_HELP_TEXT1);
+    max7456Write(11, 8, CMS_STARTUP_HELP_TEXT2);
+    max7456Write(11, 9, CMS_STARTUP_HELP_TEXT3);
+#endif
 
     max7456RefreshAll();
 
@@ -669,6 +671,23 @@ int osdWrite(uint8_t x, uint8_t y, char *s)
     return 0;
 }
 
+void osdResync(displayPort_t *pPort)
+{
+    max7456RefreshAll();
+    pPort->rows = max7456GetRowsCount() - masterConfig.osdProfile.row_shiftdown;
+    pPort->cols = 30;
+}
+
+int osdHeartbeat(void)
+{
+    return 0;
+}
+
+uint32_t osdTxroom(void)
+{
+    return UINT32_MAX;
+}
+
 #ifdef EDIT_ELEMENT_SUPPORT
 void osdEditElement(void *ptr)
 {
@@ -695,21 +714,19 @@ void osdDrawElementPositioningHelp(void)
 }
 #endif
 
-screenFnVTable_t osdVTable = {
+displayPortVTable_t osdVTable = {
     osdMenuBegin,
     osdMenuEnd,
     osdClearScreen,
     osdWrite,
-    NULL,
-    max7456RefreshAll,
-    NULL,
+    osdHeartbeat,
+    osdResync,
+    osdTxroom,
 };
 
 void osdCmsInit(displayPort_t *pPort)
 {
-    shiftdown = masterConfig.osdProfile.row_shiftdown;
-    pPort->rows = max7456GetRowsCount() - shiftdown;
-    pPort->cols = 30;
+    osdResync(pPort);
     pPort->vTable = &osdVTable;
 }
 #endif // OSD

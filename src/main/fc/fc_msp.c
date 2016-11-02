@@ -1778,17 +1778,3 @@ void mspFcInit(void)
 {
     initActiveBoxIds();
 }
-
-void mspServerPush(mspPacket_t *push, uint8_t *data, int len)
-{
-    sbuf_t *dst = &push->buf;
-
-    while (len--) {
-        sbufWriteU8(dst, *data++);
-    }
-}
-
-mspPushCommandFnPtr mspFcPushInit(void)
-{
-    return mspServerPush;
-}
