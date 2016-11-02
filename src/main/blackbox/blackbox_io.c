@@ -28,6 +28,7 @@
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/encoding.h"
+#include "common/streambuf.h"
 
 #include "drivers/gpio.h"
 #include "drivers/sensor.h"
@@ -50,23 +51,27 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
-#include "rx/rx.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
-
 
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
+
+#include "msp/msp_serial.h"
+
 #include "rx/msp.h"
+#include "rx/rx.h"
+
 #include "telemetry/telemetry.h"
 #include "common/printf.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
@@ -666,7 +671,7 @@ void blackboxDeviceClose(void)
              * of time to shut down asynchronously, we're the only ones that know when to call it.
              */
             if (blackboxPortSharing == PORTSHARING_SHARED) {
-                mspAllocateSerialPorts();
+                mspSerialAllocatePorts();
             }
         break;
         default:

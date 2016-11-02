@@ -199,8 +199,8 @@
 #define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
 
 // Betaflight Additional Commands
-#define MSP_PID_ADVANCED_CONFIG         90
-#define MSP_SET_PID_ADVANCED_CONFIG     91
+#define MSP_ADVANCED_CONFIG             90
+#define MSP_SET_ADVANCED_CONFIG         91
 
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93

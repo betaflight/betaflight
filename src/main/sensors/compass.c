@@ -20,6 +20,7 @@
 #include <math.h>
 
 #include "platform.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"

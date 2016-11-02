@@ -119,6 +119,7 @@
 #undef GPS_PROTO_NAZA
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
+#undef TELEMETRY_IBUS
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    12

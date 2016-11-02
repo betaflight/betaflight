@@ -65,7 +65,7 @@ git clone https://github.com/iNavFlight/inav.git
 
 ![GIT Checkout](assets/012.git_checkout.png)
 
-To compile your INAV binaries, enter the cleanflight directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
+To compile your INAV binaries, enter the inav directory and build the project using the make command. You can append TARGET=[HARDWARE] if you want to build anything other than the default NAZE target:
 
 ```bash
 cd inav

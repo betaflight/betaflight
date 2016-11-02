@@ -103,11 +103,11 @@
 #define USE_RX_INAV
 #define USE_RX_SYMA
 #define USE_RX_V202
-#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
-#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_CSN_PIN                   PA0
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CE_PIN                    PA1
+#define RX_DEFAULT_PROTOCOL         NRF24RX_V202_1M
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOA
+#define RX_NSS_PIN                  PA0
+#define RX_CE_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_CE_PIN                   PA1
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1)

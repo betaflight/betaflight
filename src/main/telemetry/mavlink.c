@@ -48,6 +48,8 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/motors.h"
+#include "io/servos.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -59,6 +61,7 @@
 #include "rx/rx.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -74,6 +77,7 @@
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #include "fc/mw.h"
 

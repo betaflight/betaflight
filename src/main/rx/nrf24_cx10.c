@@ -32,7 +32,7 @@
 #include "drivers/rx_xn297.h"
 #include "drivers/system.h"
 
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 #include "rx/nrf24_cx10.h"
 
 /*
@@ -71,7 +71,7 @@ enum {
 #define FLAG_VIDEO      0x02
 #define FLAG_PICTURE    0x04
 
-static nrf24_protocol_t cx10Protocol;
+static rx_spi_protocol_e cx10Protocol;
 
 typedef enum {
     STATE_BIND = 0,
@@ -129,10 +129,10 @@ STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t *pVal)
 void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
     const uint8_t offset = (cx10Protocol == NRF24RX_CX10) ? 0 : 4;
-    rcData[NRF24_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
-    rcData[NRF24_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[7 + offset]); // elevator
-    rcData[NRF24_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]); // throttle
-    rcData[NRF24_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);  // rudder
+    rcData[RC_SPI_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
+    rcData[RC_SPI_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[7 + offset]); // elevator
+    rcData[RC_SPI_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]); // throttle
+    rcData[RC_SPI_YAW] = cx10ConvertToPwmUnsigned(&payload[11 + offset]);  // rudder
     const uint8_t flags1 = payload[13 + offset];
     const uint8_t rate = flags1 & FLAG_MODE_MASK; // takes values 0, 1, 2
     if (rate == RATE_LOW) {
@@ -193,12 +193,12 @@ static bool cx10ReadPayloadIfAvailable(uint8_t *payload)
 
 /*
  * This is called periodically by the scheduler.
- * Returns NRF24_RECEIVED_DATA if a data packet was received.
+ * Returns RX_SPI_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload)
+rx_spi_received_e cx10Nrf24DataReceived(uint8_t *payload)
 {
     static uint8_t ackCount;
-    nrf24_received_t ret = NRF24_RECEIVED_NONE;
+    rx_spi_received_e ret = RX_SPI_RECEIVED_NONE;
     int totalDelayUs;
     uint32_t timeNowUs;
 
@@ -209,7 +209,7 @@ nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload)
             if (bindPacket) {
                 // set the hopping channels as determined by the txId received in the bind packet
                 cx10SetHoppingChannels(txId);
-                ret = NRF24_RECEIVED_BIND;
+                ret = RX_SPI_RECEIVED_BIND;
                 protocolState = STATE_ACK;
                 ackCount = 0;
             }
@@ -259,7 +259,7 @@ nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload)
         if (cx10ReadPayloadIfAvailable(payload)) {
             cx10HopToNextChannel();
             timeOfLastHop = timeNowUs;
-            ret = NRF24_RECEIVED_DATA;
+            ret = RX_SPI_RECEIVED_DATA;
         }
         if (timeNowUs > timeOfLastHop + hopTimeout) {
             cx10HopToNextChannel();
@@ -269,7 +269,7 @@ nrf24_received_t cx10Nrf24DataReceived(uint8_t *payload)
     return ret;
 }
 
-static void cx10Nrf24Setup(nrf24_protocol_t protocol)
+static void cx10Nrf24Setup(rx_spi_protocol_e protocol)
 {
     cx10Protocol = protocol;
     protocolState = STATE_BIND;
@@ -295,7 +295,7 @@ static void cx10Nrf24Setup(nrf24_protocol_t protocol)
 void cx10Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = RC_CHANNEL_COUNT;
-    cx10Nrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
+    cx10Nrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
 }
 #endif
 

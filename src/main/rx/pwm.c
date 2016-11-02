@@ -33,17 +33,18 @@
 #include "drivers/pwm_rx.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"
 
-static uint16_t pwmReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
+static uint16_t pwmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
 {
     UNUSED(rxRuntimeConfigPtr);
     return pwmRead(channel);
 }
 
-static uint16_t ppmReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
+static uint16_t ppmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
 {
     UNUSED(rxRuntimeConfigPtr);
     return ppmRead(channel);

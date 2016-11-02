@@ -34,6 +34,7 @@ typedef enum {
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 8), // 256
+    FUNCTION_TELEMETRY_IBUS      = (1 << 9) // 512
 } serialPortFunction_e;
 
 typedef enum {
@@ -136,9 +137,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
-void handleSerial(void);
-
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
-void handleSerial(void);
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);

@@ -59,6 +59,7 @@
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"

@@ -48,39 +48,39 @@
 #define USE_RX_NRF24
 #ifdef USE_RX_NRF24
 
-#define NRF24_SPI_INSTANCE      SPI1
-#define USE_NRF24_SPI1
+#define USE_RX_SPI
+#define RX_SPI_INSTANCE         SPI1
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_CE_PIN            PA4
-#define NRF24_CSN_PIN           PA11
-#define NRF24_SCK_PIN           PA5
-#define NRF24_MISO_PIN          PA6
-#define NRF24_MOSI_PIN          PA7
-#define NRF24_IRQ_PIN           PA8
+#define RX_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
+#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_CE_PIN               PA4
+#define RX_NSS_PIN              PA11
+#define RX_SCK_PIN              PA5
+#define RX_MISO_PIN             PA6
+#define RX_MOSI_PIN             PA7
+#define RX_IRQ_PIN              PA8
 // CJMCU has NSS on PA11, rather than the standard PA4
-#define SPI1_NSS_PIN            NRF24_CSN_PIN
-#define SPI1_SCK_PIN            NRF24_SCK_PIN
-#define SPI1_MISO_PIN           NRF24_MISO_PIN
-#define SPI1_MOSI_PIN           NRF24_MOSI_PIN
+#define SPI1_NSS_PIN            RX_NSS_PIN
+#define SPI1_SCK_PIN            RX_SCK_PIN
+#define SPI1_MISO_PIN           RX_MISO_PIN
+#define SPI1_MOSI_PIN           RX_MOSI_PIN
 
 #define USE_RX_NRF24
-#define USE_RX_CX10
+//#define USE_RX_CX10
 #define USE_RX_H8_3D
 #define USE_RX_INAV
 #define USE_RX_SYMA
 #define USE_RX_V202
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_INAV
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_H8_3D
-#define NRF24_DEFAULT_PROTOCOL  NRF24RX_CX10A
-//#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X5
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
+#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_INAV
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_H8_3D
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_CX10A
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_V202_1M
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 //#define TELEMETRY
 //#define TELEMETRY_LTM
 //#define TELEMETRY_NRF24_LTM
@@ -108,6 +108,9 @@
 #if (FLASH_SIZE <= 64)
 #undef BLACKBOX
 #endif
+
+#define STACK_CHECK
+#define DEBUG_STACK
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    4

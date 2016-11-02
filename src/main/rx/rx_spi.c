@@ -20,13 +20,13 @@
 
 #include <platform.h>
 
-#ifdef USE_RX_NRF24
+#ifdef USE_RX_SPI
 
 #include "build/build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "rx/rx.h"
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 #include "rx/nrf24_cx10.h"
 #include "rx/nrf24_syma.h"
 #include "rx/nrf24_v202.h"
@@ -34,31 +34,32 @@
 #include "rx/nrf24_inav.h"
 
 
-uint16_t nrf24RcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-STATIC_UNIT_TESTED uint8_t nrf24Payload[NRF24L01_MAX_PAYLOAD_SIZE];
-STATIC_UNIT_TESTED uint8_t nrf24NewPacketAvailable; // set true when a new packet is received
+uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
+STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
 typedef void (*protocolInitPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-typedef nrf24_received_t (*protocolDataReceivedPtr)(uint8_t *payload);
+typedef rx_spi_received_e (*protocolDataReceivedPtr)(uint8_t *payload);
 typedef void (*protocolSetRcDataFromPayloadPtr)(uint16_t *rcData, const uint8_t *payload);
 
 static protocolInitPtr protocolInit;
 static protocolDataReceivedPtr protocolDataReceived;
 static protocolSetRcDataFromPayloadPtr protocolSetRcDataFromPayload;
 
-STATIC_UNIT_TESTED uint16_t rxNrf24ReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
+STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
+    BUILD_BUG_ON(NRF24L01_MAX_PAYLOAD_SIZE > RX_SPI_MAX_PAYLOAD_SIZE);
     if (channel >= rxRuntimeConfig->channelCount) {
         return 0;
     }
-    if (nrf24NewPacketAvailable) {
-        protocolSetRcDataFromPayload(nrf24RcData, nrf24Payload);
-        nrf24NewPacketAvailable = false;
+    if (rxSpiNewPacketAvailable) {
+        protocolSetRcDataFromPayload(rxSpiRcData, rxSpiPayload);
+        rxSpiNewPacketAvailable = false;
     }
-    return nrf24RcData[channel];
+    return rxSpiRcData[channel];
 }
 
-STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
+STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
 {
     switch (protocol) {
     default:
@@ -105,33 +106,33 @@ STATIC_UNIT_TESTED bool rxNrf24SetProtocol(nrf24_protocol_t protocol)
 }
 
 /*
- * Returns true if the NRF24L01 has received new data.
+ * Returns true if the RX has received new data.
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-bool rxNrf24DataReceived(void)
+bool rxSpiDataReceived(void)
 {
-    if (protocolDataReceived(nrf24Payload) == NRF24_RECEIVED_DATA) {
-        nrf24NewPacketAvailable = true;
+    if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
+        rxSpiNewPacketAvailable = true;
         return true;
     }
     return false;
 }
 
 /*
- * Set and initialize the NRF24 protocol
+ * Set and initialize the RX protocol
  */
-bool rxNrf24Init(nfr24l01_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxSpiInit(rx_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     bool ret = false;
-    NRF24L01_SpiInit(spiType);
-    if (rxNrf24SetProtocol(rxConfig->nrf24rx_protocol)) {
+    rxSpiDeviceInit(spiType);
+    if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
         protocolInit(rxConfig, rxRuntimeConfig);
         ret = true;
     }
-    nrf24NewPacketAvailable = false;
+    rxSpiNewPacketAvailable = false;
     if (callback) {
-        *callback = rxNrf24ReadRawRC;
+        *callback = rxSpiReadRawRC;
     }
     return ret;
 }

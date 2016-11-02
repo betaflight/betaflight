@@ -70,11 +70,11 @@ static bool deviceInitialised[] = {
     false
 };
 
-static bool i2cOverClock;
-
 void i2cSetOverclock(uint8_t overClock)
 {
-    i2cOverClock = overClock ? true : false;
+    for (unsigned i = 0; i < sizeof(i2cHardwareMap) / sizeof(i2cHardwareMap[0]); i++) {
+        i2cHardwareMap[i].overClock = overClock;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

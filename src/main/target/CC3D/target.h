@@ -79,19 +79,20 @@
 #endif
 
 #ifdef USE_RX_NRF24
-#define DEFAULT_RX_FEATURE      FEATURE_RX_NRF24
+#define USE_RX_SPI
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
 #define DEFAULT_FEATURES        FEATURE_SOFTSPI
 #define USE_RX_SYMA
 //#define USE_RX_V202
 #define USE_RX_CX10
 //#define USE_RX_H8_3D
 #define USE_RX_INAV
-#define NRF24_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
-//#define NRF24_DEFAULT_PROTOCOL NRF24RX_V202_1M
-//#define NRF24_DEFAULT_PROTOCOL NRF24RX_H8_3D
+#define RX_SPI_DEFAULT_PROTOCOL  NRF24RX_SYMA_X5C
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_V202_1M
+//#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_H8_3D
 
 #define USE_SOFTSPI
-#define USE_NRF24_SOFTSPI
+#define USE_RX_SOFTSPI
 
 // RC pinouts
 // RC1              GND
@@ -104,14 +105,14 @@
 // RC8  PA1/TIM2    CE / RX_PPM
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_CSN_PIN                   PA0
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CE_PIN                    PA1
-#define NRF24_CSN_PIN                   PA0
-#define NRF24_SCK_PIN                   PB5
-#define NRF24_MOSI_PIN                  PB1
-#define NRF24_MISO_PIN                  PB0
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOA
+#define RX_NSS_PIN                  PA0
+#define RX_CE_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_CE_PIN                   PA1
+#define RX_NSS_PIN                  PA0
+#define RX_SCK_PIN                  PB5
+#define RX_MOSI_PIN                 PB1
+#define RX_MISO_PIN                 PB0
 
 #define SERIAL_PORT_COUNT 3
 
@@ -198,6 +199,7 @@
 #endif //OPBL
 
 
+#define SKIP_CLI_RESOURCES
 #define SKIP_RX_MSP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
@@ -205,6 +207,7 @@
 #undef SPEKTRUM_BIND
 #undef TELEMETRY
 #undef TELEMETRY_LTM
+#undef TELEMETRY_IBUS
 #endif
 
 // Number of available PWM outputs

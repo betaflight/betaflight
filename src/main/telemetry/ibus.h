@@ -17,20 +17,10 @@
 
 #pragma once
 
-#include <stdint.h>
+void initIbusTelemetry(telemetryConfig_t *);
 
-void taskMainPidLoopChecker(void);
-void taskHandleSerial(void);
-void taskUpdateBeeper(void);
-void taskUpdateBattery(void);
-bool taskUpdateRxCheck(uint32_t currentDeltaTime);
-void taskUpdateRxMain(void);
-void taskProcessGPS(void);
-void taskUpdateCompass(void);
-void taskUpdateBaro(void);
-void taskUpdateSonar(void);
-void taskUpdateDisplay(void);
-void taskTelemetry(void);
-void taskLedStrip(void);
-void taskSystem(void);
+void handleIbusTelemetry(void);
+void checkIbusTelemetryState(void);
 
+void configureIbusTelemetryPort(void);
+void freeIbusTelemetryPort(void);

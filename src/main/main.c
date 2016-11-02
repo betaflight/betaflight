@@ -50,6 +50,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
+#include "drivers/pwm_output.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -62,6 +63,10 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/exti.h"
+#include "drivers/io_pca9685.h"
+
+#include "fc/fc_tasks.h"
+#include "fc/msp_fc.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -70,15 +75,18 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "fc/rc_controls.h"
 
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/serial_msp.h"
+#include "io/pwmdriver_i2c.h"
 #include "io/serial_cli.h"
+
+#include "msp/msp_serial.h"
 
 #include "scheduler/scheduler.h"
 
@@ -98,14 +106,17 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
+#include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -215,10 +226,9 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-#ifdef USE_SERVOS
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer, masterConfig.customServoMixer);
-#else
     mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+#ifdef USE_SERVOS
+    servosInit(masterConfig.customServoMixer);
 #endif
 
     drv_pwm_config_t pwm_params;
@@ -265,20 +275,38 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.escAndServoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
+    pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
+    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
 #endif
 
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
-    pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
-    if (feature(FEATURE_3D))
+    pwm_params.pwmProtocolType = masterConfig.motorConfig.motorPwmProtocol;
+    pwm_params.useFastPwm = (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT125) || 
+                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
+                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_MULTISHOT);
+    pwm_params.motorPwmRate = masterConfig.motorConfig.motorPwmRate;
+    pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
+    if (feature(FEATURE_3D)) {
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
+    }
+
+    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+        pwm_params.useFastPwm = false;
+        featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
+    }
 
 #ifndef SKIP_RX_PWM_PPM
     pwmRxInit(masterConfig.inputFilteringMode);
+#endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+    /*
+    If external PWM driver is enabled, for example PCA9685, disable internal
+    servo handling mechanism, since external device will do that
+    */
+    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+        pwm_params.useServos = false;
+    }
 #endif
 
     // pwmInit() needs to be called as soon as possible for ESC compatibility reasons
@@ -286,7 +314,7 @@ void init(void)
 
     mixerUsePWMIOConfiguration();
 
-    if (!feature(FEATURE_ONESHOT125))
+    if (!pwm_params.useFastPwm)
         motorControlEnable = true;
 
     addBootlogEvent2(BOOT_EVENT_PWM_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
@@ -453,7 +481,7 @@ void init(void)
 
     imuInit();
 
-    mspInit();
+    mspSerialInit(mspFcInit());
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
@@ -481,7 +509,7 @@ void init(void)
         &currentProfile->rcControlsConfig,
         &masterConfig.rxConfig,
         &masterConfig.flight3DConfig,
-        &masterConfig.escAndServoConfig
+        &masterConfig.motorConfig
     );
 #endif
 
@@ -572,9 +600,15 @@ void init(void)
     LED2_ON;
 #endif
 
+#ifdef USE_PMW_SERVO_DRIVER
+    pwmDriverInitialize();
+#endif
+
     // Latch active features AGAIN since some may be modified by init().
     latchActiveFeatures();
     motorControlEnable = true;
+
+    fcTasksInit();
 
     addBootlogEvent2(BOOT_EVENT_SYSTEM_READY, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_READY;
@@ -597,45 +631,6 @@ void processLoopback(void) {
 int main(void)
 {
     init();
-
-    /* Setup scheduler */
-    schedulerInit();
-
-    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
-    setTaskEnabled(TASK_GYROPID, true);
-
-    setTaskEnabled(TASK_SERIAL, true);
-#ifdef BEEPER
-    setTaskEnabled(TASK_BEEPER, true);
-#endif
-    setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
-    setTaskEnabled(TASK_RX, true);
-#ifdef GPS
-    setTaskEnabled(TASK_GPS, feature(FEATURE_GPS));
-#endif
-#ifdef MAG
-    setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
-#if (defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)) && defined(USE_MAG_AK8963)
-    // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
-#endif
-#endif
-#ifdef BARO
-    setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
-#endif
-#ifdef SONAR
-    setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
-#endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
-#endif
-#ifdef TELEMETRY
-    setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-#endif
-#ifdef LED_STRIP
-    setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
-#endif
-
     while (true) {
         scheduler();
         processLoopback();

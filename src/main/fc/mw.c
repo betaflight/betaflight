@@ -18,14 +18,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
-#include "build/debug.h"
+#include "blackbox/blackbox.h"
 
-#include "scheduler/scheduler.h"
-#include "scheduler/scheduler_tasks.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
@@ -35,20 +33,15 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/light_led.h"
 
-#include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/rangefinder.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/gyro.h"
@@ -60,32 +53,35 @@
 
 #include "io/beeper.h"
 #include "io/display.h"
-#include "io/escservo.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
-#include "io/ledstrip.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
+
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "scheduler/scheduler.h"
+
 #include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/hil.h"
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
 #include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
 // June 2013     V2.2-dev
 
@@ -95,10 +91,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
@@ -214,12 +206,12 @@ void mwDisarm(void)
     }
 }
 
-#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
+#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK | FUNCTION_TELEMETRY_IBUS)
 
 void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
-        mspReleasePortIfAllocated(sharedPort);
+        mspSerialReleasePortIfAllocated(sharedPort);
         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     }
 }
@@ -238,11 +230,13 @@ void mwArm(void)
             ENABLE_ARMING_FLAG(WAS_EVER_ARMED);
             headFreeModeHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 
+            resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+
 #ifdef BLACKBOX
             if (feature(FEATURE_BLACKBOX)) {
                 serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
                 if (sharedBlackboxAndMspPort) {
-                    mspReleasePortIfAllocated(sharedBlackboxAndMspPort);
+                    mspSerialReleasePortIfAllocated(sharedBlackboxAndMspPort);
                 }
                 startBlackbox();
             }
@@ -337,7 +331,7 @@ void processRx(void)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch, masterConfig.fixed_wing_auto_arm);
 
     updateActivatedModes(currentProfile->modeActivationConditions, currentProfile->modeActivationOperator);
 
@@ -407,8 +401,8 @@ void processRx(void)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         if (IS_RC_MODE_ACTIVE(BOXMAG)) {
             if (!FLIGHT_MODE(MAG_MODE)) {
+                resetMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
                 ENABLE_FLIGHT_MODE(MAG_MODE);
-                updateMagHoldHeading(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
             }
         } else {
             DISABLE_FLIGHT_MODE(MAG_MODE);
@@ -476,7 +470,7 @@ void processRx(void)
         } else {
             // the telemetry state must be checked immediately so that shared serial ports are released.
             telemetryCheckState();
-            mspAllocateSerialPorts();
+            mspSerialAllocatePorts();
         }
     }
 #endif
@@ -498,7 +492,7 @@ void filterRc(bool isRXDataNew)
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
-        biquadFilterInit(&filteredCycleTimeState, 1, gyro.targetLooptime);
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
         filterInitialised = true;
     }
 
@@ -561,7 +555,7 @@ void taskMainPidLoop(void)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-            && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+            && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
 #endif
             && masterConfig.mixerMode != MIXER_AIRPLANE
             && masterConfig.mixerMode != MIXER_FLYING_WING
@@ -583,10 +577,10 @@ void taskMainPidLoop(void)
         }
 
         if (thrTiltCompStrength) {
-            rcCommand[THROTTLE] = constrain(masterConfig.escAndServoConfig.minthrottle
-                                            + (rcCommand[THROTTLE] - masterConfig.escAndServoConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
-                                            masterConfig.escAndServoConfig.minthrottle,
-                                            masterConfig.escAndServoConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(masterConfig.motorConfig.minthrottle
+                                            + (rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
+                                            masterConfig.motorConfig.minthrottle,
+                                            masterConfig.motorConfig.maxthrottle);
         }
     }
 
@@ -631,6 +625,7 @@ void taskMainPidLoop(void)
         handleBlackbox();
     }
 #endif
+
 }
 
 // Function for loop trigger
@@ -650,39 +645,6 @@ void taskMainPidLoopChecker(void) {
     taskMainPidLoop();
 }
 
-void taskHandleSerial(void)
-{
-    handleSerial();
-}
-
-void taskUpdateBeeper(void)
-{
-    beeperUpdate();          //call periodic beeper handler
-}
-
-void taskUpdateBattery(void)
-{
-    static uint32_t vbatLastServiced = 0;
-    static uint32_t ibatLastServiced = 0;
-
-    if (feature(FEATURE_VBAT)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            uint32_t vbatTimeDelta = currentTime - vbatLastServiced;
-            vbatLastServiced = currentTime;
-            updateBattery(vbatTimeDelta);
-        }
-    }
-
-    if (feature(FEATURE_CURRENT_METER)) {
-        int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-        }
-    }
-}
-
 bool taskUpdateRxCheck(uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
@@ -696,82 +658,3 @@ void taskUpdateRxMain(void)
     updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
     isRXDataNew = true;
 }
-
-#ifdef GPS
-void taskProcessGPS(void)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsThread();
-    }
-
-    if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
-    }
-}
-#endif
-
-#ifdef MAG
-void taskUpdateCompass(void)
-{
-    if (sensors(SENSOR_MAG)) {
-        updateCompass(&masterConfig.magZero);
-    }
-}
-#endif
-
-#ifdef BARO
-void taskUpdateBaro(void)
-{
-    if (sensors(SENSOR_BARO)) {
-        const uint32_t newDeadline = baroUpdate();
-        if (newDeadline != 0) {
-            rescheduleTask(TASK_SELF, newDeadline);
-        }
-    }
-
-    //updatePositionEstimator_BaroTopic(currentTime);
-}
-#endif
-
-#ifdef SONAR
-void taskUpdateSonar(void)
-{
-    if (sensors(SENSOR_SONAR)) {
-        rangefinderUpdate();
-    }
-
-    //updatePositionEstimator_SonarTopic(currentTime);
-}
-#endif
-
-#ifdef DISPLAY
-void taskUpdateDisplay(void)
-{
-    if (feature(FEATURE_DISPLAY)) {
-        updateDisplay();
-    }
-}
-#endif
-
-#ifdef TELEMETRY
-void taskTelemetry(void)
-{
-    telemetryCheckState();
-
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    }
-}
-#endif
-
-#ifdef LED_STRIP
-void taskLedStrip(void)
-{
-    if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip();
-    }
-}
-#endif

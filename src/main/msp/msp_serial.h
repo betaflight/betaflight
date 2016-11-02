@@ -17,36 +17,42 @@
 
 #pragma once
 
-#include "io/serial.h"
-#include "drivers/serial.h"
+#include "msp/msp.h"
 
 // Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
 #define MAX_MSP_PORT_COUNT 2
 
 typedef enum {
-    IDLE,
-    HEADER_START,
-    HEADER_M,
-    HEADER_ARROW,
-    HEADER_SIZE,
-    HEADER_CMD,
-    COMMAND_RECEIVED
+    MSP_IDLE,
+    MSP_HEADER_START,
+    MSP_HEADER_M,
+    MSP_HEADER_ARROW,
+    MSP_HEADER_SIZE,
+    MSP_HEADER_CMD,
+    MSP_COMMAND_RECEIVED
 } mspState_e;
 
-#define MSP_PORT_INBUF_SIZE 64
+typedef enum {
+    MSP_EVALUATE_NON_MSP_DATA,
+    MSP_SKIP_NON_MSP_DATA
+} mspEvaluateNonMspData_e;
 
+#define MSP_PORT_INBUF_SIZE 64
+#define MSP_PORT_OUTBUF_SIZE 256
+
+struct serialPort_s;
 typedef struct mspPort_s {
-    serialPort_t *port; // null when port unused.
+    struct serialPort_s *port; // null when port unused.
     uint8_t offset;
     uint8_t dataSize;
     uint8_t checksum;
-    uint8_t indRX;
-    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
-    mspState_e c_state;
     uint8_t cmdMSP;
+    mspState_e c_state;
+    uint8_t inBuf[MSP_PORT_INBUF_SIZE];
 } mspPort_t;
 
-void mspInit(void);
-void mspProcess(void);
-void mspAllocateSerialPorts(void);
-void mspReleasePortIfAllocated(serialPort_t *serialPort);
+
+void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFn);
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData);
+void mspSerialAllocatePorts(void);
+void mspSerialReleasePortIfAllocated(struct serialPort_s *serialPort);

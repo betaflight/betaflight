@@ -17,8 +17,51 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "common/axis.h"
+#include "common/color.h"
+#include "common/maths.h"
+
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "drivers/pwm_rx.h"
+#include "drivers/serial.h"
+
+#include "fc/rc_controls.h"
+
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/ledstrip.h"
+#include "io/motors.h"
+#include "io/serial.h"
+#include "io/servos.h"
+
+#include "rx/rx.h"
+
+#include "sensors/sensors.h"
+#include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
+
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+
+#include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
+
 // System-wide
-typedef struct master_t {
+typedef struct master_s {
     uint8_t version;
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
@@ -36,11 +79,9 @@ typedef struct master_t {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
     // motor/esc/servo related stuff
-    escAndServoConfig_t escAndServoConfig;
+    motorConfig_t motorConfig;
+    servoConfig_t servoConfig;
     flight3DConfig_t flight3DConfig;
-
-    uint16_t motor_pwm_rate;                // The update rate of motor outputs (50-498Hz)
-    uint16_t servo_pwm_rate;                // The update rate of servo outputs (50-498Hz)
 
     // global sensor-related stuff
 
@@ -74,12 +115,14 @@ typedef struct master_t {
 
     failsafeConfig_t failsafeConfig;
 
+    uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
     uint8_t small_angle;
 
     // mixer-related configuration
     mixerConfig_t mixerConfig;
+    servoMixerConfig_t servoMixerConfig;
 
 #ifdef GPS
     gpsConfig_t gpsConfig;

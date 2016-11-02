@@ -44,9 +44,9 @@
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
-#include "telemetry/ltm.h"
 #include "telemetry/mavlink.h"
 #include "telemetry/jetiexbus.h"
+#include "telemetry/ibus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -79,6 +79,10 @@ void telemetryInit(void)
 
 #if defined(TELEMETRY_JETIEXBUS)
     initJetiExBusTelemetry();
+#endif
+
+#if defined(TELEMETRY_IBUS)
+    initIbusTelemetry(telemetryConfig);
 #endif
 
     telemetryCheckState();
@@ -130,6 +134,11 @@ void telemetryCheckState(void)
 #if defined(TELEMETRY_JETIEXBUS)
     checkJetiExBusTelemetryState();
 #endif
+
+#if defined(TELEMETRY_IBUS)
+    checkIbusTelemetryState();
+#endif
+
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -160,6 +169,11 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 #if defined(TELEMETRY_JETIEXBUS)
     handleJetiExBusTelemetry();
 #endif
+
+#if defined(TELEMETRY_IBUS)
+    handleIbusTelemetry();
+#endif
+
 }
 
 #endif

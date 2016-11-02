@@ -21,7 +21,7 @@
 #include "rx/rx.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
-#include "io/escservo.h"
+#include "io/motors.h"
 
 
 #define PITCH_LOOKUP_LENGTH 7
@@ -31,9 +31,9 @@
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 int16_t lookupThrottleRCMid;                         // THROTTLE curve mid point
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoConfig_t *escAndServoConfig)
+void generateThrottleCurve(controlRateConfig_t *controlRateConfig, motorConfig_t *motorConfig)
 {
-    lookupThrottleRCMid = escAndServoConfig->minthrottle + (int32_t)(escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle) * controlRateConfig->thrMid8 / 100; // [MINTHROTTLE;MAXTHROTTLE]
+    lookupThrottleRCMid = motorConfig->minthrottle + (int32_t)(motorConfig->maxthrottle - motorConfig->minthrottle) * controlRateConfig->thrMid8 / 100; // [MINTHROTTLE;MAXTHROTTLE]
 
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {
         const int16_t tmp = 10 * i - controlRateConfig->thrMid8;
@@ -43,7 +43,7 @@ void generateThrottleCurve(controlRateConfig_t *controlRateConfig, escAndServoCo
         if (tmp < 0)
             y = controlRateConfig->thrMid8;
         lookupThrottleRC[i] = 10 * controlRateConfig->thrMid8 + tmp * (100 - controlRateConfig->thrExpo8 + (int32_t) controlRateConfig->thrExpo8 * (tmp * tmp) / (y * y)) / 10;
-        lookupThrottleRC[i] = escAndServoConfig->minthrottle + (int32_t) (escAndServoConfig->maxthrottle - escAndServoConfig->minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
+        lookupThrottleRC[i] = motorConfig->minthrottle + (int32_t) (motorConfig->maxthrottle - motorConfig->minthrottle) * lookupThrottleRC[i] / 1000; // [MINTHROTTLE;MAXTHROTTLE]
     }
 }
 

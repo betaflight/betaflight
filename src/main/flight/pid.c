@@ -88,6 +88,7 @@ extern bool motorLimitReached;
 extern float dT;
 
 int16_t magHoldTargetHeading;
+static pt1Filter_t magHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
 static float tpaFactor;
@@ -333,6 +334,12 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         pidState->errorGyroIfLimit = ABS(pidState->errorGyroIf);
     }
 
+#ifdef USE_SERVOS
+    if (STATE(FIXED_WING) && pidProfile->fixedWingItermThrowLimit != 0) {
+        pidState->errorGyroIf = constrainf(pidState->errorGyroIf, -pidProfile->fixedWingItermThrowLimit, pidProfile->fixedWingItermThrowLimit);
+    }
+#endif
+
     axisPID[axis] = newOutputLimited;
 
 #ifdef BLACKBOX
@@ -346,6 +353,12 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 void updateMagHoldHeading(int16_t heading)
 {
     magHoldTargetHeading = heading;
+}
+
+void resetMagHoldHeading(int16_t heading)
+{
+    updateMagHoldHeading(heading);
+    pt1FilterReset(&magHoldRateFilter, 0.0f);
 }
 
 int16_t getMagHoldHeading() {
@@ -388,8 +401,6 @@ uint8_t getMagHoldState()
  */
 float pidMagHold(const pidProfile_t *pidProfile)
 {
-
-    static pt1Filter_t magHoldRateFilter;
     float magHoldRate;
 
     int16_t error = DECIDEGREES_TO_DEGREES(attitude.values.yaw) - magHoldTargetHeading;

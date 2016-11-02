@@ -19,6 +19,7 @@
 
 #define I2C1_OVERCLOCK false
 #define I2C2_OVERCLOCK false
+#define USE_I2C_PULLUP          // Enable built-in pullups on all boards in case external ones are too week
 
 #define USE_SERVOS
 #define SERIAL_RX
@@ -48,9 +49,11 @@
 #define DISPLAY_ARMED_BITMAP
 #define TELEMETRY_MAVLINK
 #define BOOTLOG_DESCRIPTIONS
+#define TELEMETRY_IBUS
+#define USE_PMW_SERVO_DRIVER
+#define PWM_DRIVER_PCA9685
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP
 #define DISABLE_UNCOMMON_MIXERS
 #endif
-

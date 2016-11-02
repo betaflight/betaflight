@@ -38,7 +38,7 @@
 
 __ALIGN_BEGIN USB_OTG_CORE_HANDLE  USB_OTG_dev __ALIGN_END;
 
-uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength);  // HJI
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint8_t sendLength);  // HJI
 uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len);       // HJI
 uint8_t usbIsConfigured(void);  // HJI
 uint8_t usbIsConnected(void);   // HJI

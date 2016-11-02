@@ -134,7 +134,8 @@ typedef struct ledCounts_s {
 
 
 ledConfig_t *ledConfigs;
-hsvColor_t *colors;
+struct hsvColor_s;
+struct hsvColor_s *colors;
 modeColorIndexes_t *modeColors;
 specialColorIndexes_t specialColors;
 
@@ -163,7 +164,7 @@ bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
+void ledStripInit(ledConfig_t *ledConfigsToUse, struct hsvColor_s *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
 void updateLedStrip(void);
 
@@ -173,7 +174,7 @@ extern uint16_t rssi; // FIXME dependency on mw.c
 
 
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
-void applyDefaultColors(hsvColor_t *colors);
+void applyDefaultColors(struct hsvColor_s *colors);
 void applyDefaultModeColors(modeColorIndexes_t *modeColors);
 void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
 

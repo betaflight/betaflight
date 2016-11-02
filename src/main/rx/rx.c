@@ -22,31 +22,30 @@
 #include <string.h>
 
 #include "platform.h"
+
 #include "build/build_config.h"
-
 #include "build/debug.h"
-
-
 
 #include "common/maths.h"
 
 #include "config/config.h"
+#include "config/feature.h"
 
 #include "drivers/serial.h"
 #include "drivers/adc.h"
-
-#include "io/serial.h"
-#include "fc/rc_controls.h"
-
-
-#include "flight/failsafe.h"
-
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/rx_nrf24l01.h"
+#include "drivers/rx_spi.h"
 #include "drivers/system.h"
 
+#include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+
+#include "io/serial.h"
+
+#include "rx/rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
 #include "rx/spektrum.h"
@@ -56,9 +55,7 @@
 #include "rx/xbus.h"
 #include "rx/ibus.h"
 #include "rx/jetiexbus.h"
-#include "rx/nrf24.h"
-
-#include "rx/rx.h"
+#include "rx/rx_spi.h"
 
 
 //#define DEBUG_RX_SIGNAL_LOSS
@@ -96,7 +93,7 @@ rxRuntimeConfig_t rxRuntimeConfig;
 static rxConfig_t *rxConfig;
 static uint8_t rcSampleIndex = 0;
 
-static uint16_t nullReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
+static uint16_t nullReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel) {
     UNUSED(rxRuntimeConfig);
     UNUSED(channel);
 
@@ -192,13 +189,13 @@ void rxInit(rxConfig_t *rxConfig, modeActivationCondition_t *modeActivationCondi
     }
 #endif
 
-#ifdef USE_RX_NRF24
-    if (feature(FEATURE_RX_NRF24)) {
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
         rxRefreshRate = 10000;
-        const nfr24l01_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? NFR24L01_SOFTSPI : NFR24L01_SPI;
-        const bool enabled = rxNrf24Init(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
+        const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
+        const bool enabled = rxSpiInit(spiType, rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
         if (!enabled) {
-            featureClear(FEATURE_RX_NRF24);
+            featureClear(FEATURE_RX_SPI);
             rcReadRawFunc = nullReadRawRC;
         }
     }
@@ -362,9 +359,9 @@ void updateRx(uint32_t currentTime)
     }
 #endif
 
-#ifdef USE_RX_NRF24
-    if (feature(FEATURE_RX_NRF24)) {
-        rxDataReceived = rxNrf24DataReceived();
+#ifdef USE_RX_SPI
+    if (feature(FEATURE_RX_SPI)) {
+        rxDataReceived = rxSpiDataReceived();
         if (rxDataReceived) {
             rxSignalReceived = true;
             rxIsInFailsafeMode = false;
@@ -667,4 +664,3 @@ void updateRSSI(uint32_t currentTime)
 void initRxRefreshRate(uint16_t *rxRefreshRatePtr) {
     *rxRefreshRatePtr = rxRefreshRate;
 }
-

@@ -138,6 +138,7 @@
 
 //#define USE_RX_NRF24
 #ifdef USE_RX_NRF24
+#define USE_RX_SPI
 
 #define USE_RX_CX10
 #define USE_RX_H8_3D
@@ -151,7 +152,8 @@
 //#define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
 
 #define USE_SOFTSPI
-#define USE_NRF24_SOFTSPI
+#define USE_RX_SOFTSPI
+
 // RC pinouts
 // RC1              GND
 // RC2              power
@@ -165,13 +167,13 @@
 // RC10 PB1/TIM3    MOSI /softserial2 TX / sonar echo / current
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define NRF24_CE_PIN                    PA1
-#define NRF24_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define NRF24_CSN_PIN                   PA6
-#define NRF24_CSN_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define NRF24_SCK_PIN                   PA7
-#define NRF24_MOSI_PIN                  PB1
-#define NRF24_MISO_PIN                  PB0
+#define RX_CE_PIN                   PA1
+#define RX_CE_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
+#define RX_NSS_PIN                  PA6
+#define RX_NSS_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOA
+#define RX_SCK_PIN                  PA7
+#define RX_MOSI_PIN                 PB1
+#define RX_MISO_PIN                 PB0
 #endif // USE_NRF24
 
 #define USE_ADC
@@ -193,10 +195,11 @@
 
 #define SPEKTRUM_BIND
 // USART2, PA3
-#define BIND_PIN                        PA3
+#define BIND_PIN                PA3
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define SKIP_CLI_RESOURCES
 #define TARGET_MOTOR_COUNT      6
 #define DISABLE_UNCOMMON_MIXERS
 
@@ -205,6 +208,7 @@
 
 #undef TELEMETRY_HOTT
 #undef TELEMETRY_SMARTPORT
+#undef TELEMETRY_IBUS
 
 // Disable all GPS protocols except UBLOX
 #undef GPS_PROTO_NMEA

@@ -17,6 +17,8 @@
 
 #pragma once
 
+extern int16_t telemTemperature1;
+
 void handleInflightCalibrationStickPosition();
 
 void mwDisarm(void);

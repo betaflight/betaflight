@@ -31,7 +31,7 @@
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
 
-#include "rx/nrf24.h"
+#include "rx/rx_spi.h"
 #include "rx/nrf24_v202.h"
 
 /*
@@ -97,10 +97,10 @@ STATIC_UNIT_TESTED uint8_t bind_phase;
 static uint32_t packet_timer;
 STATIC_UNIT_TESTED uint8_t txid[TXIDSIZE];
 static uint32_t rx_timeout;
-extern uint16_t nrf24RcData[];
+extern uint16_t rxSpiRcData[];
 
-static const unsigned char v2x2_channelindex[] = {NRF24_THROTTLE,NRF24_YAW,NRF24_PITCH,NRF24_ROLL,
-        NRF24_AUX1,NRF24_AUX2,NRF24_AUX3,NRF24_AUX4,NRF24_AUX5,NRF24_AUX6,NRF24_AUX7};
+static const unsigned char v2x2_channelindex[] = {RC_SPI_THROTTLE,RC_SPI_YAW,RC_SPI_PITCH,RC_SPI_ROLL,
+        RC_SPI_AUX1,RC_SPI_AUX2,RC_SPI_AUX3,RC_SPI_AUX4,RC_SPI_AUX5,RC_SPI_AUX6,RC_SPI_AUX7};
 
 static void prepare_to_bind(void)
 {
@@ -147,41 +147,41 @@ static void decode_bind_packet(uint8_t *packet)
 }
 
 // Returns whether the data was successfully decoded
-static nrf24_received_t decode_packet(uint8_t *packet)
+static rx_spi_received_e decode_packet(uint8_t *packet)
 {
     if(bind_phase != PHASE_BOUND) {
         decode_bind_packet(packet);
-        return NRF24_RECEIVED_BIND;
+        return RX_SPI_RECEIVED_BIND;
     }
     // Decode packet
     if ((packet[14] & V2X2_FLAG_BIND) == V2X2_FLAG_BIND) {
-        return NRF24_RECEIVED_BIND;
+        return RX_SPI_RECEIVED_BIND;
     }
     if (packet[7] != txid[0] ||
         packet[8] != txid[1] ||
         packet[9] != txid[2]) {
-        return NRF24_RECEIVED_NONE;
+        return RX_SPI_RECEIVED_NONE;
     }
     // Restore regular interval
     rx_timeout = 10000L; // 4ms interval, duplicate packets, (8ms unique) + 25%
     // TREA order in packet to MultiWii order is handled by
     // correct assignment to channelindex
     // Throttle 0..255 to 1000..2000
-    nrf24RcData[v2x2_channelindex[0]] = ((uint16_t)packet[0]) * 1000 / 255 + 1000;
+    rxSpiRcData[v2x2_channelindex[0]] = ((uint16_t)packet[0]) * 1000 / 255 + 1000;
     for (int i = 1; i < 4; ++i) {
         uint8_t a = packet[i];
-        nrf24RcData[v2x2_channelindex[i]] = ((uint16_t)(a < 0x80 ? 0x7f - a : a)) * 1000 / 255 + 1000;
+        rxSpiRcData[v2x2_channelindex[i]] = ((uint16_t)(a < 0x80 ? 0x7f - a : a)) * 1000 / 255 + 1000;
     }
     const uint8_t flags[] = {V2X2_FLAG_LED, V2X2_FLAG_FLIP, V2X2_FLAG_CAMERA, V2X2_FLAG_VIDEO}; // two more unknown bits
     for (int i = 4; i < 8; ++i) {
-        nrf24RcData[v2x2_channelindex[i]] = (packet[14] & flags[i-4]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+        rxSpiRcData[v2x2_channelindex[i]] = (packet[14] & flags[i-4]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     }
     const uint8_t flags10[] = {V2X2_FLAG_HEADLESS, V2X2_FLAG_MAG_CAL_X, V2X2_FLAG_MAG_CAL_Y};
     for (int i = 8; i < 11; ++i) {
-        nrf24RcData[v2x2_channelindex[i]] = (packet[10] & flags10[i-8]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
+        rxSpiRcData[v2x2_channelindex[i]] = (packet[10] & flags10[i-8]) ? PWM_RANGE_MAX : PWM_RANGE_MIN;
     }
     packet_timer = micros();
-    return NRF24_RECEIVED_DATA;
+    return RX_SPI_RECEIVED_DATA;
 }
 
 void v202Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
@@ -191,7 +191,7 @@ void v202Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
     // Ideally the decoding of the packet should be moved into here, to reduce the overhead of v202DataReceived function.
 }
 
-static nrf24_received_t readrx(uint8_t *packet)
+static rx_spi_received_e readrx(uint8_t *packet)
 {
     if (!(NRF24L01_ReadReg(NRF24L01_07_STATUS) & BV(NRF24L01_07_STATUS_RX_DR))) {
         uint32_t t = micros() - packet_timer;
@@ -199,7 +199,7 @@ static nrf24_received_t readrx(uint8_t *packet)
             switch_channel();
             packet_timer = micros();
         }
-        return NRF24_RECEIVED_NONE;
+        return RX_SPI_RECEIVED_NONE;
     }
     packet_timer = micros();
     NRF24L01_WriteReg(NRF24L01_07_STATUS, BV(NRF24L01_07_STATUS_RX_DR)); // clear the RX_DR flag
@@ -212,14 +212,14 @@ static nrf24_received_t readrx(uint8_t *packet)
 
 /*
  * This is called periodically by the scheduler.
- * Returns NRF24_RECEIVED_DATA if a data packet was received.
+ * Returns RX_SPI_RECEIVED_DATA if a data packet was received.
  */
-nrf24_received_t v202Nrf24DataReceived(uint8_t *packet)
+rx_spi_received_e v202Nrf24DataReceived(uint8_t *packet)
 {
     return readrx(packet);
 }
 
-static void v202Nrf24Setup(nrf24_protocol_t protocol)
+static void v202Nrf24Setup(rx_spi_protocol_e protocol)
 {
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV(NRF24L01_00_CONFIG_CRCO)); // 2-bytes CRC
 
@@ -253,7 +253,6 @@ static void v202Nrf24Setup(nrf24_protocol_t protocol)
 void v202Nrf24Init(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfig->channelCount = V2X2_RC_CHANNEL_COUNT;
-    v202Nrf24Setup((nrf24_protocol_t)rxConfig->nrf24rx_protocol);
+    v202Nrf24Setup((rx_spi_protocol_e)rxConfig->rx_spi_protocol);
 }
-
 #endif

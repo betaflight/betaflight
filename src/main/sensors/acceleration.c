@@ -58,7 +58,7 @@ void accInit(uint32_t targetLooptime)
     accTargetLooptime = targetLooptime;
     if (accLpfCutHz) {
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInit(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
         }
     }
 }
@@ -223,7 +223,7 @@ void setAccelerationFilter(uint8_t initialAccLpfCutHz)
     accLpfCutHz = initialAccLpfCutHz;
     if (accTargetLooptime) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInit(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
         }
     }
 }
