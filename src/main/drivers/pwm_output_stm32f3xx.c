@@ -41,6 +41,8 @@
 #define MOTOR_BITLENGTH 39
 
 static uint8_t dmaMotorTimerCount = 0;
+static uint8_t dmaMotorCount = 0;
+static volatile bool updateRequired = false;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
@@ -55,11 +57,9 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
     return dmaMotorTimerCount-1;
 }
 
-void pwmWriteDigital(uint8_t index, uint16_t value)
+void bufferWrite(uint32_t *buffer, uint16_t value)
 {
-    motorDmaOutput_t * const motor = &dmaMotors[index];
-
-    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    uint16_t packet = (value << 1) | 0; // Here goes telemetry bit (false for now)
     // compute checksum
     int csum = 0;
     int csum_data = packet;
@@ -72,22 +72,44 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     packet = (packet << 4) | csum;
     // generate pulses for whole packet
     for (int i = 0; i < 16; i++) {
-        motor->dmaBuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
+        buffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;  // MSB first
         packet <<= 1;
     }
+}
 
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
-    DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
+static void enableDMAOutput(void)
+{
+    static uint8_t dmaMotorIndex = 0;
+
+    if(updateRequired) {
+        if(dmaMotorIndex < dmaMotorCount) {
+            motorDmaOutput_t * const motor = &dmaMotors[dmaMotorIndex];
+            bufferWrite(motor->dmaBuffer,motor->value);
+
+            DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel,MOTOR_DMA_BUFFER_SIZE);
+            TIM_SetCounter(motor->timerHardware->tim,0);
+            TIM_DMACmd(motor->timerHardware->tim,motor->timerDmaSource,ENABLE);
+            DMA_Cmd(motor->timerHardware->dmaChannel,ENABLE);
+            dmaMotorIndex++;
+        } else {
+            dmaMotorIndex = 0;
+            updateRequired = false;
+        }
+    }
+}
+
+void pwmWriteDigital(uint8_t index, uint16_t value)
+{
+    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motor->value = value;
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
-    
-    for (int i = 0; i < dmaMotorTimerCount; i++) {
-        TIM_SetCounter(dmaMotorTimers[i].timer, 0);
-        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
-    }
+
+    updateRequired = true;
+    enableDMAOutput();
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -97,6 +119,7 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
         DMA_Cmd(descriptor->channel, DISABLE);
         TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+        enableDMAOutput();
     }
 }
 
@@ -107,7 +130,12 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
+    if (motorIndex > dmaMotorCount-1) {
+        // no need to pass motor index can just make it consecutive motors configured, and increment motor count.
+        dmaMotorCount = motorIndex+1;
+    }
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
     
