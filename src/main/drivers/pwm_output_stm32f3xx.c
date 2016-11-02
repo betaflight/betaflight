@@ -42,8 +42,12 @@
 
 static uint8_t dmaMotorTimerCount = 0;
 static uint8_t dmaMotorCount = 0;
+
+#ifdef USE_CYCLIC_DSHOT
 static volatile bool updateRequired = false;
 static volatile bool updateInprogress = false;
+#endif
+
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
@@ -78,6 +82,7 @@ static void bufferWrite(uint32_t *buffer, uint16_t value)
     }
 }
 
+#ifdef USE_CYCLIC_DSHOT
 static void enableDMAOutput(uint8_t index)
 {
     if (!(index < dmaMotorCount)) {
@@ -97,16 +102,25 @@ static void enableDMAOutput(uint8_t index)
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, ENABLE); 
     DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
 }
+#endif
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
 {
-    dmaMotors[index].value = value;
+    motorDmaOutput_t * const motor = &dmaMotors[index];
+    motor->value = value;
+
+#ifndef USE_CYCLIC_DSHOT
+    bufferWrite(motor->dmaBuffer, motor->value);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);  
+    DMA_Cmd(motor->timerHardware->dmaChannel, ENABLE);
+#endif
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
 
+#ifdef USE_CYCLIC_DSHOT
     if (!updateInprogress) {
         updateRequired = false;
         updateInprogress = true;
@@ -114,6 +128,12 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
     } else {
         updateRequired = true;
     }
+#else
+    for(int i = 0; i < dmaMotorTimerCount; i++) {
+        TIM_SetCounter(dmaMotorTimers[i].timer, 0);
+        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
+    }
+#endif
 }
 
 static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
@@ -124,7 +144,9 @@ static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
         TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
 
+#ifdef USE_CYCLIC_DSHOT
         enableDMAOutput(descriptor->userParam + 1);
+#endif
     }
 }
 
