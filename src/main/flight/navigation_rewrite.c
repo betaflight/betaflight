@@ -2194,7 +2194,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
 #endif
 
     // Reset all navigation requests - NAV controllers will set them if necessary
-    DISABLE_STATE(NAV_MOTOR_STOP);
+    DISABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
 
     // No navigation when disarmed
     if (!ARMING_FLAG(ARMED)) {

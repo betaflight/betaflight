@@ -142,8 +142,8 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
                 pidResetErrorAccumulators();
 
                 // Throttle control logic
-                ENABLE_STATE(NAV_MOTOR_STOP);                               // If MOTOR_STOP is enabled mixer will keep motor stopped
-                rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOT_STOP is disabled, motors will spin at minthrottle
+                ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);                       // If MOTOR_STOP is enabled mixer will keep motor stopped
+                rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
             }
         }
     }
@@ -155,8 +155,8 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
         pidResetErrorAccumulators();
 
         // Throttle control logic
-        ENABLE_STATE(NAV_MOTOR_STOP);                               // If MOTOR_STOP is enabled mixer will keep motor stopped
-        rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOT_STOP is disabled, motors will spin at minthrottle
+        ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);                       // If MOTOR_STOP is enabled mixer will keep motor stopped
+        rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
     }
 
     // Control beeper
