@@ -17,13 +17,10 @@
 
 #pragma once
 
-#include "sensor.h"
+struct acc_s;
+bool fakeAccDetect(struct acc_s *acc);
+void fakeAccSet(int16_t x, int16_t y, int16_t z);
 
-typedef struct mag_s {
-    sensorInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
-} mag_t;
-
-#ifndef MAG_I2C_INSTANCE
-#define MAG_I2C_INSTANCE I2C_DEVICE
-#endif
+struct gyro_s;
+bool fakeGyroDetect(struct gyro_s *gyro);
+void fakeGyroSet(int16_t x, int16_t y, int16_t z);
