@@ -76,7 +76,6 @@ typedef struct softSerial_s {
 } softSerial_t;
 
 extern timerHardware_t* serialTimerHardware;
-extern softSerial_t softSerialPorts[];
 
 extern const struct serialPortVTable softSerialVTable[];
 
@@ -226,6 +225,15 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
 
     return &softSerial->port;
+}
+
+serialPort_t *softSerialLoopbackPort(void)
+{
+    serialPort_t *loopbackPort = (serialPort_t*)&(softSerialPorts[0]);
+    if (!loopbackPort->vTable) {
+        loopbackPort = openSoftSerial(0, NULL, 19200, SERIAL_NOT_INVERTED);
+    }
+    return loopbackPort;
 }
 
 /*********************************************/

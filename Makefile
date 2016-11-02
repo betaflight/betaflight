@@ -411,10 +411,12 @@ COMMON_SRC = \
             flight/servos.c \
             flight/pid.c \
             io/beeper.c \
-            fc/msp_fc.c \
+            fc/fc_init.c \
+            fc/fc_tasks.c \
+            fc/fc_hardfaults.c \
+            fc/fc_msp.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
-            fc/fc_tasks.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \

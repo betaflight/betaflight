@@ -46,6 +46,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
 
+#include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
