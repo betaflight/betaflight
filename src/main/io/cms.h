@@ -32,9 +32,12 @@ void cmsInit(void);
 void cmsHandler(uint32_t currentTime);
 
 // Required for external CMS tables
+void cmsScreenClear(displayPort_t *pPort);
+void cmsScreenResync(displayPort_t *pPort);
+int cmsScreenWrite(displayPort_t *pPort, uint8_t x, uint8_t y, char *s);
 
-long cmsChangeScreen(displayPort_t *pPort, void *ptr);
-long cmsExitMenu(displayPort_t *pPort, void *ptr);
+long cmsMenuChange(displayPort_t *pPort, void *ptr);
+long cmsMenuExit(displayPort_t *pPort, void *ptr);
 
 #define CMS_STARTUP_HELP_TEXT1 "MENU: THR MID"
 #define CMS_STARTUP_HELP_TEXT2     "+ YAW LEFT"
