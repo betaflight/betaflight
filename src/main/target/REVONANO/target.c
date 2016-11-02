@@ -23,7 +23,7 @@
 #include "drivers/timer.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,    TIM_USE_PWM | TIME_USE_PPM,   0, GPIO_AF_TIM2 },  // PPM
+    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,    TIM_USE_PWM | TIM_USE_PPM,   0, GPIO_AF_TIM2 },  // PPM
     { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S2_IN
     { TIM3, IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S3_IN
     { TIM3, IO_TAG(PA7),  TIM_Channel_2, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S4_IN
