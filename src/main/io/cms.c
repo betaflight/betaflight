@@ -258,6 +258,12 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     int cnt = 0;
 
     switch (p->type) {
+    case OME_String:
+        if (IS_PRINTVALUE(p) && p->data) {
+            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, p->data);
+            CLR_PRINTVALUE(p);
+        }
+        break;
     case OME_Submenu:
         if (IS_PRINTVALUE(p))  {
             cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, ">");
@@ -728,6 +734,8 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 SET_PRINTVALUE(p);
             }
             break;
+        case OME_String:
+            break;
         case OME_Poll_INT16:
         case OME_Label:
         case OME_END:
@@ -976,7 +984,7 @@ OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 
 OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
 OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
 
-OSD_Entry menuMisc[]=
+OSD_Entry menuImuMisc[]=
 {
     {"--- MISC ---", OME_Label, NULL, NULL, 0},
     {"GYRO LPF", OME_UINT8, NULL, &entryGyroSoftLpfHz, 0},
@@ -992,12 +1000,12 @@ OSD_Entry menuMisc[]=
 
 OSD_Entry menuImu[] =
 {
-    {"--- CFG. IMU ---", OME_Label, NULL, NULL, 0},
+    {"--- CFG.IMU ---", OME_Label, NULL, NULL, 0},
     {"PID PROF", OME_UINT8, NULL, &entryPidProfile, 0},
     {"PID", OME_Submenu, cmsMenuChange, &menuPid[0], 0},
     {"RATE&RXPO", OME_Submenu, cmsMenuChange, &menuRateExpo[0], 0},
     {"RC PREV", OME_Submenu, cmsMenuChange, &menuRc[0], 0},
-    {"MISC", OME_Submenu, cmsMenuChange, &menuMisc[0], 0},
+    {"MISC", OME_Submenu, cmsMenuChange, &menuImuMisc[0], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
@@ -1222,10 +1230,17 @@ static char infoTargetName[] = __TARGET__;
 
 OSD_Entry menuInfo[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
+    { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
+    { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
+    { "GITREV", OME_String, NULL, infoGitRev, 0 },
+    { "TARGET", OME_String, NULL, infoTargetName, 0 },
+
+#if 0
     { BETAFLIGHT_IDENTIFIER, OME_Label, NULL, NULL, 0 },
     { FC_VERSION_STRING, OME_Label, NULL, NULL, 0 },
     { infoGitRev, OME_Label, NULL, NULL, 0 },
     { infoTargetName, OME_Label, NULL, NULL, 0 },
+#endif
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
