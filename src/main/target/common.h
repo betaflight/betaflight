@@ -52,8 +52,10 @@
 #define TELEMETRY_IBUS
 #define USE_PMW_SERVO_DRIVER
 #define PWM_DRIVER_PCA9685
+#define NAV_MAX_WAYPOINTS       60
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP
 #define DISABLE_UNCOMMON_MIXERS
+#define NAV_MAX_WAYPOINTS       30
 #endif

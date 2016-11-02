@@ -82,7 +82,6 @@
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       60
 
 #define LED_STRIP
 #if 1
