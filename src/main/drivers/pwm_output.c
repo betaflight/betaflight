@@ -156,7 +156,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
-    uint32_t timerMhzCounter;
+    uint32_t timerMhzCounter = 0;
     pwmWriteFuncPtr pwmWritePtr;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
     bool isDigital = false;
