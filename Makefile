@@ -452,6 +452,7 @@ COMMON_SRC = \
             sensors/compass.c \
             sensors/gyro.c \
             sensors/initialisation.c \
+            sensors/diagnostics.c \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 

@@ -533,10 +533,8 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 warningFlags |= 1 << WARNING_FAILSAFE;
             if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
-#ifdef MAG
-            if (masterConfig.mag_hardware != MAG_NONE && !compassIsWorking())
+            if (!isHardwareHealthy())
                 warningFlags |= 1 << WARNING_HW_ERROR;
-#endif
         }
         *timer += LED_STRIP_HZ(10);
     }

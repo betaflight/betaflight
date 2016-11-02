@@ -55,4 +55,4 @@ bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
-bool compassIsWorking(void);
+bool isCompassHealthy(void);
