@@ -75,7 +75,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     const float cs = cosf(omega);
     const float alpha = sn / (2 * Q);
 
-    float b0, b1, b2, a0, a1, a2;
+    float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
 
     switch (filterType) {
         case FILTER_LPF:

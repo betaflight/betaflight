@@ -620,7 +620,7 @@ void handleSmartPortTelemetry(void)
         smartPortIdCnt++;
 
         int32_t tmpi;
-        uint32_t tmp2;
+        uint32_t tmp2 = 0;
         static uint8_t t1Cnt = 0;
         static uint8_t t2Cnt = 0;
 
