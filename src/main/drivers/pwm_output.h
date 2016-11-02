@@ -62,7 +62,7 @@ typedef struct {
 typedef struct {
     ioTag_t ioTag;
     const timerHardware_t *timerHardware;
-    uint16_t value;
+    volatile uint16_t value;
     uint16_t timerDmaSource;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
