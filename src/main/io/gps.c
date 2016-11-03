@@ -41,7 +41,7 @@
 #include "io/cms.h"
 
 #include "io/serial.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/gps.h"
 
 #include "flight/gps_conversion.h"
@@ -1074,9 +1074,9 @@ static bool gpsNewFrameUBLOX(uint8_t data)
 static void gpsHandlePassthrough(uint8_t data)
  {
      gpsNewData(data);
- #ifdef DISPLAY
-     if (feature(FEATURE_DISPLAY)) {
-         displayUpdate(micros());
+ #ifdef USE_DASHBOARD
+     if (feature(FEATURE_DASHBOARD)) {
+         dashboardUpdate(micros());
      }
  #endif
 
@@ -1090,9 +1090,9 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     if(!(gpsPort->mode & MODE_TX))
         serialSetMode(gpsPort, gpsPort->mode | MODE_TX);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-        displayShowFixedPage(PAGE_GPS);
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardShowFixedPage(PAGE_GPS);
     }
 #endif
 

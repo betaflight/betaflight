@@ -266,30 +266,26 @@ void osdDrawSingleElement(uint8_t item)
 #endif // VTX
 
         case OSD_CROSSHAIRS:
-        {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
-
+            elemPosX = 14 - 1; // Offset for 1 char to the left
+            elemPosY = 6;
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
-
-            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-            screenBuffer[position] = (SYM_AH_CENTER);
-
-            return;
-        }
+                ++elemPosY;
+            buff[0] = SYM_AH_CENTER_LINE;
+            buff[1] = SYM_AH_CENTER;
+            buff[2] = SYM_AH_CENTER_LINE_RIGHT;
+            buff[3] = 0;
+            break;
 
         case OSD_ARTIFICIAL_HORIZON:
         {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
+            elemPosX = 14;
+            elemPosY = 6 - 4; // Top center of the AH area
 
             int rollAngle = attitude.values.roll;
             int pitchAngle = attitude.values.pitch;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
+                ++elemPosY;
 
             if (pitchAngle > AH_MAX_PITCH)
                 pitchAngle = AH_MAX_PITCH;
@@ -300,13 +296,15 @@ void osdDrawSingleElement(uint8_t item)
             if (rollAngle < -AH_MAX_ROLL)
                 rollAngle = -AH_MAX_ROLL;
 
-            for (uint8_t x = 0; x <= 8; x++) {
-                int y = (rollAngle * (4 - x)) / 64;
-                y -= pitchAngle / 8;
-                y += 41;
+            // Convert pitchAngle to y compensation value
+            pitchAngle = (pitchAngle / 8) - 41; // 41 = 4 * 9 + 5
+
+            for (int8_t x = -4; x <= 4; x++) {
+                int y = (rollAngle * x) / 64;
+                y -= pitchAngle;
+                // y += 41; // == 4 * 9 + 5
                 if (y >= 0 && y <= 81) {
-                    uint16_t pos = position - 7 + LINE * (y / 9) + 3 - 4 * LINE + x;
-                    screenBuffer[pos] = (SYM_AH_BAR9_0 + (y % 9));
+                    max7456WriteChar(elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
                 }
             }
 
@@ -317,23 +315,23 @@ void osdDrawSingleElement(uint8_t item)
 
         case OSD_HORIZON_SIDEBARS:
         {
-            uint8_t *screenBuffer = max7456GetScreenBuffer();
-            uint16_t position = 194;
+            elemPosX = 14;
+            elemPosY = 6;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
-                position += 30;
+                ++elemPosY;
 
             // Draw AH sides
             int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
-            for (int8_t x = -hudheight; x <= hudheight; x++) {
-                screenBuffer[position - hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
-                screenBuffer[position + hudwidth + (x * LINE)] = (SYM_AH_DECORATION);
+            for (int8_t y = -hudheight; y <= hudheight; y++) {
+                max7456WriteChar(elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                max7456WriteChar(elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
             }
 
             // AH level indicators
-            screenBuffer[position - hudwidth + 1] = (SYM_AH_LEFT);
-            screenBuffer[position + hudwidth - 1] = (SYM_AH_RIGHT);
+            max7456WriteChar(elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
+            max7456WriteChar(elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
             return;
         }
@@ -392,9 +390,11 @@ void osdInit(void)
 
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
-    max7456Write(7, 7,  STARTUP_HELP_TEXT1);
-    max7456Write(11, 8, STARTUP_HELP_TEXT2);
-    max7456Write(11, 9, STARTUP_HELP_TEXT3);
+#ifdef CMS
+    max7456Write(7, 7,  CMS_STARTUP_HELP_TEXT1);
+    max7456Write(11, 8, CMS_STARTUP_HELP_TEXT2);
+    max7456Write(11, 9, CMS_STARTUP_HELP_TEXT3);
+#endif
 
     max7456RefreshAll();
 
@@ -636,6 +636,7 @@ void osdUpdate(uint32_t currentTime)
 //
 // OSD specific CMS functions
 //
+#include "io/cms_osd.h"
 
 uint8_t shiftdown;
 
@@ -669,6 +670,23 @@ int osdWrite(uint8_t x, uint8_t y, char *s)
     return 0;
 }
 
+void osdResync(displayPort_t *pPort)
+{
+    max7456RefreshAll();
+    pPort->rows = max7456GetRowsCount() - masterConfig.osdProfile.row_shiftdown;
+    pPort->cols = 30;
+}
+
+int osdHeartbeat(void)
+{
+    return 0;
+}
+
+uint32_t osdTxBytesFree(void)
+{
+    return UINT32_MAX;
+}
+
 #ifdef EDIT_ELEMENT_SUPPORT
 void osdEditElement(void *ptr)
 {
@@ -695,22 +713,70 @@ void osdDrawElementPositioningHelp(void)
 }
 #endif
 
-screenFnVTable_t osdVTable = {
+displayPortVTable_t osdVTable = {
     osdMenuBegin,
     osdMenuEnd,
     osdClearScreen,
     osdWrite,
-    NULL,
-    max7456RefreshAll,
+    osdHeartbeat,
+    osdResync,
+    osdTxBytesFree,
 };
 
 void osdCmsInit(displayPort_t *pPort)
 {
-    shiftdown = masterConfig.osdProfile.row_shiftdown;
-    pPort->rows = max7456GetRowsCount() - shiftdown;
-    pPort->cols = 30;
-    pPort->buftime = 1;         // Very fast
-    pPort->bufsize = 50000;     // Very large
-    pPort->VTable = &osdVTable;
+    osdResync(pPort);
+    pPort->vTable = &osdVTable;
 }
+
+OSD_UINT8_t entryAlarmRssi = {&masterConfig.osdProfile.rssi_alarm, 5, 90, 5};
+OSD_UINT16_t entryAlarmCapacity = {&masterConfig.osdProfile.cap_alarm, 50, 30000, 50};
+OSD_UINT16_t enryAlarmFlyTime = {&masterConfig.osdProfile.time_alarm, 1, 200, 1};
+OSD_UINT16_t entryAlarmAltitude = {&masterConfig.osdProfile.alt_alarm, 1, 200, 1};
+
+OSD_Entry cmsx_menuAlarms[] =
+{
+    {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
+    {"RSSI", OME_UINT8, NULL, &entryAlarmRssi, 0},
+    {"MAIN BAT", OME_UINT16, NULL, &entryAlarmCapacity, 0},
+    {"FLY TIME", OME_UINT16, NULL, &enryAlarmFlyTime, 0},
+    {"MAX ALT", OME_UINT16, NULL, &entryAlarmAltitude, 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+OSD_Entry menuOsdActiveElems[] =
+{
+    {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
+    {"RSSI", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], 0},
+    {"MAIN BATTERY", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"HORIZON", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_HORIZON_SIDEBARS], 0},
+    {"UPTIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ONTIME], 0},
+    {"FLY TIME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYTIME], 0},
+    {"FLY MODE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_FLYMODE], 0},
+    {"NAME", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME], 0},
+    {"THROTTLE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], 0},
+#ifdef VTX
+    {"VTX CHAN", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL]},
+#endif // VTX
+    {"CURRENT (A)", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW], 0},
+    {"USED MAH", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN], 0},
+#ifdef GPS
+    {"GPS SPEED", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED], 0},
+    {"GPS SATS.", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], 0},
+#endif // GPS
+    {"ALTITUDE", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+OSD_Entry cmsx_menuOsdLayout[] =
+{
+    {"---SCREEN LAYOUT---", OME_Label, NULL, NULL, 0},
+    {"ACTIVE ELEM.", OME_Submenu, cmsMenuChange, &menuOsdActiveElems[0], 0},
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
 #endif // OSD

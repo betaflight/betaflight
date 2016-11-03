@@ -55,7 +55,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define DISPLAY
+#define USE_DASHBOARD
 #define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP

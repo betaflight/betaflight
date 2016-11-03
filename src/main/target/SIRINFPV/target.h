@@ -137,6 +137,8 @@
 //#define USE_QUAD_MIXER_ONLY
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
+#define USE_DASHBOARD
+
 #define OSD
 
 // Configuratoin Menu System

@@ -33,4 +33,6 @@ long smartAudioConfigureBandByGvar(displayPort_t *, void *self);
 long smartAudioConfigureChanByGvar(displayPort_t *, void *self);
 long smartAudioConfigurePowerByGvar(displayPort_t *, void *self);
 long smartAudioSetTxModeByGvar(displayPort_t *, void *self);
+
+extern OSD_Entry cmsx_menuVtxSmartAudio[];
 #endif

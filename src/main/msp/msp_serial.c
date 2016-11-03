@@ -211,8 +211,6 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
-mspPushCommandFnPtr mspPushCommandFn;
-
 void mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
 {
     static uint8_t pushBuf[30];
@@ -234,7 +232,7 @@ void mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
             continue;
         }
 
-        mspPushCommandFn(&push, data, datalen);
+        sbufWriteData(&push.buf, data, datalen);
 
         sbufSwitchToReader(&push.buf, pushBuf);
 
@@ -242,7 +240,27 @@ void mspSerialPush(uint8_t cmd, uint8_t *data, int datalen)
     }
 }
 
-void mspSerialPushInit(mspPushCommandFnPtr mspPushCommandFnToUse)
+uint32_t mspSerialTxBytesFree()
 {
-    mspPushCommandFn = mspPushCommandFnToUse;
+    uint32_t minroom = UINT16_MAX;
+
+    for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        uint32_t room = serialTxBytesFree(mspPort->port);
+
+        if (room < minroom) {
+            minroom = room;
+        }
+    }
+
+    return minroom;
 }

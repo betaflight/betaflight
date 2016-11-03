@@ -45,11 +45,8 @@
 #define USE_EXTI
 
 #define USE_DSHOT
-
-// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
-#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
-#undef USE_UART1_TX_DMA
-#endif
+#define REMAP_TIM16_DMA
+#define REMAP_TIM17_DMA
 
 #define USB_IO
 
@@ -66,11 +63,11 @@
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
-#define UART2_TX_PIN            PA2 // PA14 / SWCLK
+#define UART2_TX_PIN            PA2
 #define UART2_RX_PIN            PA3
 
-#define UART3_TX_PIN            PB10 // PB10 (AF7)
-#define UART3_RX_PIN            PB11 // PB11 (AF7)
+#define UART3_TX_PIN            PB10
+#define UART3_RX_PIN            PB11
 
 #define SOFTSERIAL_2_TIMER      TIM3
 #define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 5
@@ -81,7 +78,6 @@
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
-//GPIO_AF_1
 
 #define SPI1_NSS_PIN            PA15
 #define SPI1_SCK_PIN            PB3

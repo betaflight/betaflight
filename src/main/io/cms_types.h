@@ -8,6 +8,7 @@
 typedef long (*OSDMenuFuncPtr)(displayPort_t *, void *);
 
 //type of elements
+
 typedef enum
 {
     OME_Label,
@@ -20,9 +21,12 @@ typedef enum
     OME_UINT16,
     OME_INT16,
     OME_Poll_INT16,
+    OME_String,
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
     //wlasciwosci elementow
+#ifdef OSD
     OME_VISIBLE,
+#endif
     OME_TAB,
     OME_END,
 } OSD_MenuElement;
@@ -95,3 +99,8 @@ typedef struct
     uint8_t max;
     const char * const *names;
 } OSD_TAB_t;
+
+typedef struct
+{
+    char *val;
+} OSD_String_t;

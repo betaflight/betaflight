@@ -46,7 +46,7 @@
 #include "io/beeper.h"
 #include "io/motors.h"
 #include "io/vtx.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -293,13 +293,13 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         return;
     }
 
-#ifdef DISPLAY
+#ifdef USE_DASHBOARD
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {
-        displayDisablePageCycling();
+        dashboardDisablePageCycling();
     }
 
     if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_HI) {
-        displayEnablePageCycling();
+        dashboardEnablePageCycling();
     }
 #endif
 

@@ -92,11 +92,13 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+//#define USE_DASHBOARD
+
 // Configuratoin Menu System
 #define CMS
 
 // Use external OSD to run CMS
-#define CANVAS
+//#define CANVAS
 
 // USE I2C OLED display to run CMS
 #define OLEDCMS
