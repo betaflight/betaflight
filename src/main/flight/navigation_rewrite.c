@@ -118,6 +118,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_RTH_LAND(navig
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_INITIALIZE(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_FINISHED(navigationFSMState_t previousState);
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navigationFSMState_t previousState);
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationFSMState_t previousState);
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_IN_PROGRESS(navigationFSMState_t previousState);
 
 static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     /** Idle state ******************************************************/
@@ -135,6 +138,7 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
             [NAV_FSM_EVENT_SWITCH_TO_RTH]               = NAV_STATE_RTH_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_WAYPOINT]          = NAV_STATE_WAYPOINT_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING] = NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
+            [NAV_FSM_EVENT_SWITCH_TO_LAUNCH]            = NAV_STATE_LAUNCH_INITIALIZE,
         }
     },
 
@@ -626,6 +630,50 @@ static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .mwError = MW_NAV_ERROR_LANDING,
         .onEvent = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_EMERGENCY_LANDING_FINISHED,
+            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
+        }
+    },
+
+    [NAV_STATE_LAUNCH_INITIALIZE] = {
+        .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE,
+        .timeoutMs = 0,
+        .stateFlags = NAV_REQUIRE_ANGLE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
+        .mwState = MW_NAV_STATE_NONE,
+        .mwError = MW_NAV_ERROR_NONE,
+        .onEvent = {
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_LAUNCH_WAIT,
+            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
+        }
+    },
+
+    [NAV_STATE_LAUNCH_WAIT] = {
+        .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_WAIT,
+        .timeoutMs = 10,
+        .stateFlags = NAV_CTL_LAUNCH | NAV_REQUIRE_ANGLE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
+        .mwState = MW_NAV_STATE_NONE,
+        .mwError = MW_NAV_ERROR_NONE,
+        .onEvent = {
+            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_LAUNCH_WAIT,    // re-process the state
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_LAUNCH_IN_PROGRESS,
+            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
+        }
+    },
+
+    [NAV_STATE_LAUNCH_IN_PROGRESS] = {
+        .onEntry = navOnEnteringState_NAV_STATE_LAUNCH_IN_PROGRESS,
+        .timeoutMs = 10,
+        .stateFlags = NAV_CTL_LAUNCH | NAV_REQUIRE_ANGLE,
+        .mapToFlightModes = NAV_LAUNCH_MODE,
+        .mwState = MW_NAV_STATE_NONE,
+        .mwError = MW_NAV_ERROR_NONE,
+        .onEvent = {
+            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_LAUNCH_IN_PROGRESS,    // re-process the state
+            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_IDLE,
+            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
         }
     },
@@ -1225,6 +1273,40 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_FINIS
     // TODO:
     UNUSED(previousState);
     return NAV_FSM_EVENT_SUCCESS;
+}
+
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navigationFSMState_t previousState)
+{
+    const uint32_t currentTime = micros();
+    UNUSED(previousState);
+
+    resetFixedWingLaunchController(currentTime);
+
+    return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_WAIT
+}
+
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationFSMState_t previousState)
+{
+    const uint32_t currentTime = micros();
+    UNUSED(previousState);
+
+    if (isFixedWingLaunchDetected()) {
+        enableFixedWingLaunchController(currentTime);
+        return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_MOTOR_DELAY
+    }
+
+    return NAV_FSM_EVENT_NONE;
+}
+
+static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_IN_PROGRESS(navigationFSMState_t previousState)
+{
+    UNUSED(previousState);
+
+    if (isFixedWingLaunchFinishedOrAborted()) {
+        return NAV_FSM_EVENT_SUCCESS;
+    }
+
+    return NAV_FSM_EVENT_NONE;
 }
 
 static navigationFSMState_t navSetNewFSMState(navigationFSMState_t newState)
@@ -2111,6 +2193,9 @@ void applyWaypointNavigationAndAltitudeHold(void)
 #endif
 #endif
 
+    // Reset all navigation requests - NAV controllers will set them if necessary
+    DISABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);
+
     // No navigation when disarmed
     if (!ARMING_FLAG(ARMED)) {
         // If we are disarmed, abort forced RTH
@@ -2152,7 +2237,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
 void swithNavigationFlightModes(void)
 {
     flightModeFlags_e enabledNavFlightModes = navGetMappedFlightModes(posControl.navState);
-    flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE) & (~enabledNavFlightModes);
+    flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE | NAV_LAUNCH_MODE) & (~enabledNavFlightModes);
     DISABLE_FLIGHT_MODE(disabledFlightModes);
     ENABLE_FLIGHT_MODE(enabledNavFlightModes);
 }
@@ -2173,12 +2258,33 @@ static bool canActivatePosHoldMode(void)
 static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
 {
     static bool canActivateWaypoint = false;
+    static bool canActivateLaunchMode = false;
 
     //We can switch modes only when ARMED
     if (ARMING_FLAG(ARMED)) {
         // Flags if we can activate certain nav modes (check if we have required sensors and they provide valid data)
         bool canActivateAltHold = canActivateAltHoldMode();
         bool canActivatePosHold = canActivatePosHoldMode();
+
+        // LAUNCH mode has priority over any other NAV mode
+        if (STATE(FIXED_WING)) {
+            if (IS_RC_MODE_ACTIVE(BOXNAVLAUNCH)) {     // FIXME: Only available for fixed wing aircrafts now
+                if (canActivateLaunchMode) {
+                    canActivateLaunchMode = false;
+                    return NAV_FSM_EVENT_SWITCH_TO_LAUNCH;
+                }
+                else if FLIGHT_MODE(NAV_LAUNCH_MODE) {
+                    // Make sure we don't bail out to IDLE
+                    return NAV_FSM_EVENT_NONE;
+                }
+            }
+            else {
+                // If we were in LAUNCH mode - force switch to IDLE
+                if (FLIGHT_MODE(NAV_LAUNCH_MODE)) {
+                    return NAV_FSM_EVENT_SWITCH_TO_IDLE;
+                }
+            }
+        }
 
         // RTH/Failsafe_RTH can override PASSTHRU
         if (posControl.flags.forcedRTHActivated || IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
@@ -2220,6 +2326,9 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
     }
     else {
         canActivateWaypoint = false;
+
+        // Launch mode can only be activated if BOX is turned on prior to arming (avoid switching to LAUNCH in flight)
+        canActivateLaunchMode = IS_RC_MODE_ACTIVE(BOXNAVLAUNCH);
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
@@ -2263,6 +2372,8 @@ int8_t naivationGetHeadingControlState(void)
 
 bool naivationBlockArming(void)
 {
+    const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD);
+    const bool navLaunchComboModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP));
     bool shouldBlockArming = false;
 
     if (!posControl.navConfig->flags.extra_arming_safety)
@@ -2274,7 +2385,7 @@ bool naivationBlockArming(void)
     }
 
     // Don't allow arming if any of NAV modes is active
-    if ((!ARMING_FLAG(ARMED)) && (IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD))) {
+    if (!ARMING_FLAG(ARMED) && navBoxModesEnabled && !navLaunchComboModesEnabled) {
         shouldBlockArming = true;
     }
 

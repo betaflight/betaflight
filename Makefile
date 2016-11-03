@@ -461,6 +461,7 @@ HIGHEND_SRC = \
             flight/navigation_rewrite.c \
             flight/navigation_rewrite_multicopter.c \
             flight/navigation_rewrite_fixedwing.c \
+            flight/navigation_rewrite_fw_launch.c \
             flight/navigation_rewrite_pos_estimator.c \
             flight/navigation_rewrite_geo.c \
             flight/gps_conversion.c \

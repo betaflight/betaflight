@@ -119,6 +119,10 @@ static const uint8_t beep_2longerBeeps[] = {
 static const uint8_t beep_gyroCalibrated[] = {
     20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
 };
+// two short beeps and a pause (first pause, then short beep)
+static const uint8_t beep_launchModeBeep[] = {
+    5, 5, 5, 100, BEEPER_COMMAND_STOP
+};
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
@@ -173,9 +177,10 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
+    { BEEPER_ENTRY(BEEPER_LAUNCH_MODE_ENABLED,   18, beep_launchModeBeep,  "LAUNCH_MODE") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
