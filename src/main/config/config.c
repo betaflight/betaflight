@@ -381,6 +381,40 @@ static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 }
 #endif
 
+#ifdef ASYNC_GYRO_PROCESSING
+uint32_t getPidUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
+        return getGyroUpdateRate();
+    } else {
+        return masterConfig.looptime;
+    }
+}
+
+uint32_t getGyroUpdateRate(void) {
+    return gyro.targetLooptime;
+}
+
+uint16_t getAccUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / masterConfig.accTaskFrequency;
+    } else {
+        return getPidUpdateRate();
+    }
+}
+
+uint16_t getAttitudeUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / masterConfig.attitudeTaskFrequency;
+    } else {
+        return getPidUpdateRate();
+    }
+}
+
+uint8_t getAsyncMode(void) {
+    return masterConfig.asyncMode;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -521,6 +555,12 @@ static void resetConf(void)
     masterConfig.i2c_overclock = 0;
     masterConfig.gyroSync = 0;
     masterConfig.gyroSyncDenominator = 2;
+
+#ifdef ASYNC_GYRO_PROCESSING
+    masterConfig.accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
+    masterConfig.attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT;
+    masterConfig.asyncMode = ASYNC_MODE_NONE;
+#endif
 
     resetPidProfile(&currentProfile->pidProfile);
 
@@ -835,16 +875,38 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#ifdef ASYNC_GYRO_PROCESSING
+    /*
+     * When async processing mode is enabled, gyroSync has to be forced to "ON"
+     */
+    if (getAsyncMode() != ASYNC_MODE_NONE) {
+        masterConfig.gyroSync = 1;
+    }
+#endif
+
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (masterConfig.gyroSync && masterConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        masterConfig.gyroSyncDenominator = 2;
-    }
 
-    // avoid overloading the CPU when looptime < 2000 and GPS
-    if (masterConfig.looptime && featureConfigured(FEATURE_GPS)) {
-        masterConfig.looptime = 2000;
+    if (featureConfigured(FEATURE_GPS)) {
+        // avoid overloading the CPU when looptime < 2000 and GPS
+
+        uint8_t denominatorLimit = 2;
+
+        if (masterConfig.gyro_lpf == 0) {
+            denominatorLimit = 16;
+        }
+
+        if (masterConfig.gyroSyncDenominator < denominatorLimit) {
+            masterConfig.gyroSyncDenominator = denominatorLimit;
+        }
+
+        if (masterConfig.looptime < 2000) {
+            masterConfig.looptime = 2000;
+        }
+
     }
+#else
+
 #endif
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))

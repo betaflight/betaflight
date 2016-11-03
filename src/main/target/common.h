@@ -29,6 +29,7 @@
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #else
+#define ASYNC_GYRO_PROCESSING
 #define BOOTLOG
 #define BLACKBOX
 #define GPS

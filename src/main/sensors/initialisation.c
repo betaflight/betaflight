@@ -755,7 +755,17 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     if (detectAcc(accHardwareToUse)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc);
-        accInit(gyro.targetLooptime); // acc and gyro updated at same frequency in taskMainPidLoop in mw.c
+    #ifdef ASYNC_GYRO_PROCESSING
+        /*
+         * ACC will be updated at its own rate
+         */
+        accInit(getAccUpdateRate());
+    #else
+        /*
+         * acc updated at same frequency in taskMainPidLoop in mw.c
+         */
+        accInit(gyro.targetLooptime);
+    #endif
     }
 
 #ifdef BARO

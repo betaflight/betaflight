@@ -492,7 +492,11 @@ void filterRc(bool isRXDataNew)
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
+    #ifdef ASYNC_GYRO_PROCESSING
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, getPidUpdateRate());
+    #else
         biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
+    #endif
         filterInitialised = true;
     }
 
@@ -521,13 +525,54 @@ void filterRc(bool isRXDataNew)
     }
 }
 
+// Function for loop trigger
+void taskGyro(void) {
+    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
+    // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
+    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+
+    if (masterConfig.gyroSync) {
+        while (1) {
+        #ifdef ASYNC_GYRO_PROCESSING
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+        #else
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        #endif
+                break;
+            }
+        }
+    }
+
+    /* Update actual hardware readings */
+    gyroUpdate();
+
+#ifdef ASYNC_GYRO_PROCESSING
+    /* Update IMU for better accuracy */
+    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTime));
+#endif
+}
+
 void taskMainPidLoop(void)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    if (getAsyncMode() == ASYNC_MODE_NONE) {
+        taskGyro();
+    }
+
+    if (getAsyncMode() != ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
+        imuUpdateAccelerometer();
+        imuUpdateAttitude();
+    }
+#else
+    /* Update gyroscope */
+    taskGyro();
     imuUpdateAccelerometer();
-    imuUpdateGyroAndAttitude();
+    imuUpdateAttitude();
+#endif
+
 
     annexCode();
 
@@ -626,23 +671,6 @@ void taskMainPidLoop(void)
     }
 #endif
 
-}
-
-// Function for loop trigger
-void taskMainPidLoopChecker(void) {
-    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
-    // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-
-    if (masterConfig.gyroSync) {
-        while (1) {
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-                break;
-            }
-        }
-    }
-
-    taskMainPidLoop();
 }
 
 bool taskUpdateRxCheck(uint32_t currentDeltaTime)

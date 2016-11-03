@@ -33,6 +33,7 @@
 #include "config/feature.h"
 
 #include "fc/runtime_config.h"
+#include "config/feature.h"
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
