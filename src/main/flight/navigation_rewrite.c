@@ -2297,7 +2297,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         }
 
         // RTH/Failsafe_RTH can override PASSTHRU
-        if (posControl.flags.forcedRTHActivated || IS_RC_MODE_ACTIVE(BOXNAVRTH)) {
+        if (posControl.flags.forcedRTHActivated || (IS_RC_MODE_ACTIVE(BOXNAVRTH) && canActivatePosHold && STATE(GPS_FIX_HOME))) {
             // If we request forced RTH - attempt to activate it no matter what
             // This might switch to emergency landing controller if GPS is unavailable
             canActivateWaypoint = false;    // Block WP mode if we switched to RTH for whatever reason
