@@ -216,6 +216,7 @@ void serialRxInit(rxConfig_t *rxConfig)
 {
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
+#ifdef USE_SERIALRX_SPEKTRUM
         case SERIALRX_SPEKTRUM1024:
             rxRefreshRate = 22000;
             enabled = spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
@@ -224,31 +225,46 @@ void serialRxInit(rxConfig_t *rxConfig)
             rxRefreshRate = 11000;
             enabled = spektrumInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_SBUS
         case SERIALRX_SBUS:
             rxRefreshRate = 11000;
             enabled = sbusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_SUMD
         case SERIALRX_SUMD:
             rxRefreshRate = 11000;
             enabled = sumdInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_SUMH
         case SERIALRX_SUMH:
             rxRefreshRate = 11000;
             enabled = sumhInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_XBUS
         case SERIALRX_XBUS_MODE_B:
         case SERIALRX_XBUS_MODE_B_RJ01:
             rxRefreshRate = 11000;
             enabled = xBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_IBUS
         case SERIALRX_IBUS:
             rxRefreshRate = 20000; // TODO - Verify speed
             enabled = ibusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+#ifdef USE_SERIALRX_JETIEXBUS
         case SERIALRX_JETIEXBUS:
             rxRefreshRate = 5500;
             enabled = jetiExBusInit(rxConfig, &rxRuntimeConfig, &rcReadRawFunc);
             break;
+#endif
+        default:
+            enabled = false;
     }
 
     if (!enabled) {
@@ -269,22 +285,38 @@ uint8_t serialRxFrameStatus(rxConfig_t *rxConfig)
      * should be used instead of the switch statement below.
      */
     switch (rxConfig->serialrx_provider) {
+#ifdef USE_SERIALRX_SPEKTRUM
         case SERIALRX_SPEKTRUM1024:
         case SERIALRX_SPEKTRUM2048:
             return spektrumFrameStatus();
+#endif
+#ifdef USE_SERIALRX_SBUS
         case SERIALRX_SBUS:
             return sbusFrameStatus();
+#endif
+#ifdef USE_SERIALRX_SUMD
         case SERIALRX_SUMD:
             return sumdFrameStatus();
+#endif
+#ifdef USE_SERIALRX_SUMH
         case SERIALRX_SUMH:
             return sumhFrameStatus();
+#endif
+#ifdef USE_SERIALRX_XBUS
         case SERIALRX_XBUS_MODE_B:
         case SERIALRX_XBUS_MODE_B_RJ01:
             return xBusFrameStatus();
+#endif
+#ifdef USE_SERIALRX_IBUS
         case SERIALRX_IBUS:
             return ibusFrameStatus();
+#endif
+#ifdef USE_SERIALRX_JETIEXBUS
         case SERIALRX_JETIEXBUS:
             return jetiExBusFrameStatus();
+#endif
+        default:
+            return SERIAL_RX_FRAME_PENDING;
     }
     return SERIAL_RX_FRAME_PENDING;
 }

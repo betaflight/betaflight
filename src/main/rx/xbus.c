@@ -33,6 +33,7 @@
 //
 // Serial driver for JR's XBus (MODE B) receiver
 //
+#ifdef USE_SERIALRX_XBUS
 
 #define XBUS_CHANNEL_COUNT 12
 #define XBUS_RJ01_CHANNEL_COUNT 12
@@ -316,3 +317,5 @@ static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 
     return data;
 }
+
+#endif

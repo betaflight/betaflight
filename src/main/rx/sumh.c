@@ -39,6 +39,7 @@
 #include "rx/rx.h"
 #include "rx/sumh.h"
 
+#ifdef USE_SERIALRX_SUMH
 // driver for SUMH receiver using UART2
 
 #define SUMH_BAUDRATE 115200
@@ -131,3 +132,5 @@ static uint16_t sumhReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 
     return sumhChannels[chan];
 }
+
+#endif

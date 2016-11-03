@@ -36,6 +36,8 @@
 #include "rx/rx.h"
 #include "rx/sbus.h"
 
+#ifdef USE_SERIALRX_SBUS
+
 /*
  * Observations
  *
@@ -244,3 +246,5 @@ static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     // http://www.wolframalpha.com/input/?i=linear+fit+%7B173%2C+988%7D%2C+%7B1812%2C+2012%7D%2C+%7B993%2C+1500%7D
     return (0.625f * sbusChannelData[chan]) + 880;
 }
+
+#endif

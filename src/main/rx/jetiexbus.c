@@ -49,6 +49,7 @@
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
 
+#ifdef USE_SERIALRX_JETIEXBUS
 
 #ifdef TELEMETRY
 
@@ -611,3 +612,5 @@ void sendJetiExBusTelemetry(uint8_t packetID)
 }
 
 #endif //TELEMETRY
+
+#endif //SKIP_SERIALRX_JETIEXBUS

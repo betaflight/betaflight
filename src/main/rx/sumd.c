@@ -33,6 +33,8 @@
 #include "rx/rx.h"
 #include "rx/sumd.h"
 
+#ifdef USE_SERIALRX_SUMD
+
 // driver for SUMD receiver using UART2
 
 // FIXME test support for more than 8 channels, should probably work up to 12 channels
@@ -176,3 +178,5 @@ static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     return sumdChannels[chan] / 8;
 }
+
+#endif

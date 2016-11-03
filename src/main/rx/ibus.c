@@ -39,6 +39,8 @@
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
+#ifdef USE_SERIALRX_IBUS
+
 #define IBUS_MAX_CHANNEL 10
 #define IBUS_BUFFSIZE 32
 #define IBUS_SYNCBYTE 0x20
@@ -139,3 +141,5 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
 }
+
+#endif

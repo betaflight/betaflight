@@ -42,6 +42,8 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#ifdef USE_SERIALRX_SPEKTRUM
+
 // driver for spektrum satellite receiver / sbus
 
 #define SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT 12
@@ -256,4 +258,6 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
+#endif
+
 #endif
