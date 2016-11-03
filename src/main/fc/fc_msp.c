@@ -1131,6 +1131,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_PID:
+        signalRequiredPIDCoefficientsUpdate();
         for (i = 0; i < PID_ITEM_COUNT; i++) {
             currentProfile->pidProfile.P8[i] = sbufReadU8(src);
             currentProfile->pidProfile.I8[i] = sbufReadU8(src);
@@ -1200,6 +1201,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             if (dataSize >= 11) {
                 currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
             }
+
+            signalRequiredPIDCoefficientsUpdate();
         } else {
             return MSP_RESULT_ERROR;
         }

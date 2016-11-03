@@ -80,9 +80,13 @@ extern int32_t axisPID_P[], axisPID_I[], axisPID_D[], axisPID_Setpoint[];
 
 void pidInit(void);
 void pidResetErrorAccumulators(void);
+
 struct controlRateConfig_s;
+struct motorConfig_s;
 struct rxConfig_s;
-void updatePIDCoefficients(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig, const struct rxConfig_s *rxConfig);
+
+void signalRequiredPIDCoefficientsUpdate(void);
+void updatePIDCoefficients(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig, const struct motorConfig_s *motorConfig);
 void pidController(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig, const struct rxConfig_s *rxConfig);
 
 float pidRateToRcCommand(float rateDPS, uint8_t rate);

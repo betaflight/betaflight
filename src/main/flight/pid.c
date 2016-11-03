@@ -91,6 +91,7 @@ int16_t magHoldTargetHeading;
 static pt1Filter_t magHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
+static bool shouldUpdatePIDCoeffs = false;
 static float tpaFactor;
 int16_t axisPID[FLIGHT_DYNAMICS_INDEX_COUNT];
 
@@ -160,27 +161,58 @@ FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
 #define FP_PID_LEVEL_P_MULTIPLIER   65.6f
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
-#define KD_ATTENUATION_BREAK        0.25f
-
-void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
+void signalRequiredPIDCoefficientsUpdate(void)
 {
-    // TPA should be updated only when TPA is actually set
-    if (controlRateConfig->dynThrPID == 0 || rcData[THROTTLE] < controlRateConfig->tpa_breakpoint) {
-        tpaFactor = 1.0f;
-    } else if (rcData[THROTTLE] < 2000) {
-        tpaFactor = (100 - (uint16_t)controlRateConfig->dynThrPID * (rcData[THROTTLE] - controlRateConfig->tpa_breakpoint) / (2000 - controlRateConfig->tpa_breakpoint)) / 100.0f;
-    } else {
-        tpaFactor = (100 - controlRateConfig->dynThrPID) / 100.0f;
+    shouldUpdatePIDCoeffs = true;
+}
+
+void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const struct motorConfig_s *motorConfig)
+{
+    static uint16_t prevThrottle = 0;
+
+    // Check if throttle changed
+    if (rcCommand[THROTTLE] != prevThrottle) {
+        prevThrottle = rcCommand[THROTTLE];
+        signalRequiredPIDCoefficientsUpdate();
     }
 
-    // Additional throttle-based KD attenuation (kudos to RS2K & Raceflight)
-    float relThrottle = constrainf( ((float)rcData[THROTTLE] - (float)rxConfig->mincheck) / ((float)rxConfig->maxcheck - (float)rxConfig->mincheck), 0.0f, 1.0f);
-    float kdAttenuationFactor;
+    // If nothing changed - don't waste time recalculating coefficients
+    if (!shouldUpdatePIDCoeffs) {
+        return;
+    }
 
-    if (relThrottle < KD_ATTENUATION_BREAK) {
-        kdAttenuationFactor = constrainf((relThrottle / KD_ATTENUATION_BREAK) + 0.50f, 0.0f, 1.0f);
-    } else {
-        kdAttenuationFactor = 1.0f;
+    // Calculate TPA factor - different logic for airplanes and multirotors
+    if (STATE(FIXED_WING)) {
+        // tpa_rate is amount of curve TPA applied to PIDs
+        // tpa_breakpoint for fixed wing is cruise throttle value (value at which PIDs were tuned)
+        if (controlRateConfig->dynThrPID != 0 && controlRateConfig->tpa_breakpoint > motorConfig->minthrottle) {
+            if (rcCommand[THROTTLE] > motorConfig->minthrottle) {
+                // Calculate TPA according to throttle
+                tpaFactor = 0.5f + ((float)(controlRateConfig->tpa_breakpoint - motorConfig->minthrottle) / (rcCommand[THROTTLE] - motorConfig->minthrottle) / 2.0f);
+
+                // Limit to [0.5; 2] range
+                tpaFactor = constrainf(tpaFactor, 0.5f, 2.0f);
+            }
+            else {
+                tpaFactor = 2.0f;
+            }
+
+            // Attenuate TPA curve according to configured amount
+            tpaFactor = 1.0f + (tpaFactor - 1.0f) * (controlRateConfig->dynThrPID / 100.0f);
+        }
+        else {
+            tpaFactor = 1.0f;
+        }
+    }
+    else {
+        // TPA should be updated only when TPA is actually set
+        if (controlRateConfig->dynThrPID == 0 || rcCommand[THROTTLE] < controlRateConfig->tpa_breakpoint) {
+            tpaFactor = 1.0f;
+        } else if (rcCommand[THROTTLE] < motorConfig->maxthrottle) {
+            tpaFactor = (100 - (uint16_t)controlRateConfig->dynThrPID * (rcCommand[THROTTLE] - controlRateConfig->tpa_breakpoint) / (motorConfig->maxthrottle - controlRateConfig->tpa_breakpoint)) / 100.0f;
+        } else {
+            tpaFactor = (100 - controlRateConfig->dynThrPID) / 100.0f;
+        }
     }
 
     // PID coefficients can be update only with THROTTLE and TPA or inflight PID adjustments
@@ -190,10 +222,19 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         pidState[axis].kI = pidProfile->I8[axis] / FP_PID_RATE_I_MULTIPLIER;
         pidState[axis].kD = pidProfile->D8[axis] / FP_PID_RATE_D_MULTIPLIER;
 
-        // Apply TPA to ROLL and PITCH axes
-        if (axis != FD_YAW) {
+        // Apply TPA
+        if (STATE(FIXED_WING)) {
+            // Airplanes - scale all PIDs according to TPA
             pidState[axis].kP *= tpaFactor;
-            pidState[axis].kD *= tpaFactor * kdAttenuationFactor;
+            pidState[axis].kI *= tpaFactor;
+            pidState[axis].kD *= tpaFactor * tpaFactor;     // acceleration scales with speed^2
+        }
+        else {
+            // Multicopter - scale roll/pitch PIDs according to TPA
+            if (axis != FD_YAW) {
+                pidState[axis].kP *= tpaFactor;
+                pidState[axis].kD *= tpaFactor;
+            }
         }
 
         if ((pidProfile->P8[axis] != 0) && (pidProfile->I8[axis] != 0)) {
@@ -202,6 +243,8 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
             pidState[axis].kT = 0;
         }
     }
+
+    shouldUpdatePIDCoeffs = false;
 }
 
 static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidState)
