@@ -637,10 +637,11 @@ bool smartAudioInit()
         return false;
     }
 
-    smartAudioOpModel = masterConfig.vtx_smartaudio_opmodel;
+    saOpmodel = masterConfig.vtx_smartaudio_opmodel;
 
     return true;
 }
+
 void smartAudioProcess(uint32_t now)
 {
     static bool initialSent = false;
@@ -689,28 +690,38 @@ void smartAudioProcess(uint32_t now)
 }
 
 #ifdef CMS
-char smartAudioStatusString[31] = "- - ---- --- ---- -";
+//                         m bc ffff ppp
+//                         0123456789012
+char saStatusString[31] = "- -- ---- ---";
 
+uint8_t saOpmodel = 0;
 uint8_t smartAudioBand = 0;
 uint8_t smartAudioChan = 0;
 uint8_t smartAudioPower = 0;
 uint16_t smartAudioFreq = 0;
 
-static void smartAudioUpdateStatusString(void)
+static void saUpdateStatusString(void)
 {
     if (sa_vers == 0)
         return;
 
-    tfp_sprintf(smartAudioStatusString, "%c %d %4d %3d ",
-        "ABEFR"[sa_chan / 8],
-        (sa_chan % 8) + 1,
-        saFreqTable[sa_chan / 8][sa_chan % 8],
-        (sa_vers == 2) ?  saPowerTable[sa_power].rfpower : saPowerTable[saDacToPowerIndex(sa_power)].rfpower);
-
-    if (sa_vers == 2)
-        tfp_sprintf(&smartAudioStatusString[13], "%4d", sa_pitfreq);
-    else
-        tfp_sprintf(&smartAudioStatusString[13], "%4s", "----");
+    saStatusString[0] = "-FP"[saOpmodel];
+    saStatusString[2] = "ABEFR"[sa_chan / 8];
+    saStatusString[3] = '1' + (sa_chan % 8);
+    tfp_sprintf(&smartAudioStatusString[5], "%4d", 
+            saFreqTable[sa_chan / 8][sa_chan % 8]);
+    saStatusString[9] = ' ';
+    if (sa_opmode & SA_MODE_GET_PITMODE) {
+        saStatusString[10] = 'P';
+        if (sa_opmode & SA_MODE_GET_IN_RANGE_PITMODE) {
+            saStatusString[10] = 'I';
+        } else {
+            saStatusString[10] = 'O';
+        }
+        saStatusString[11] = 0;
+    } else {
+        tfp_sprintf(&saStatusString[10], "%3d", (sa_vers == 2) ?  saPowerTable[sa_power].rfpower : saPowerTable[saDacToPowerIndex(sa_power)].rfpower);
+    }
 }
 
 long smartAudioConfigureBandByGvar(displayPort_t *pDisp, void *self)
@@ -938,7 +949,7 @@ OSD_Entry menu_smartAudioStats[] = {
 
 OSD_Entry cmsx_menuVtxSmartAudio[] =
 {
-    { "-- VTX SMARTAUDIO --", OME_Label, NULL, NULL, 0 },
+    { "- VTX SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
     { smartAudioStatusString, OME_Label, NULL, NULL, 0 },
     { "TXMODE", OME_TAB, smartAudioSetTxModeByGvar, &entrySmartAudioTxMode, 0 },
     { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand, 0 },
