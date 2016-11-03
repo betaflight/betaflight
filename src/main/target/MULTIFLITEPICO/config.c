@@ -73,13 +73,14 @@ void targetConfiguration(master_t *config) {
     config->gyro_sync_denom = 4;
     config->pid_process_denom = 1;
     
-    config->profile[0].pidProfile.P8[ROLL] = 58;
+    config->profile[0].pidProfile.P8[ROLL] = 70;
     config->profile[0].pidProfile.I8[ROLL] = 62;
     config->profile[0].pidProfile.D8[ROLL] = 19;
-    config->profile[0].pidProfile.P8[PITCH] = 58;
+    config->profile[0].pidProfile.P8[PITCH] = 70;
     config->profile[0].pidProfile.I8[PITCH] = 62;
     config->profile[0].pidProfile.D8[PITCH] = 19;
     
     config->profile[0].controlRateProfile[0].rcRate8 = 70;
+    config->profile[0].pidProfile.I8[PIDLEVEL] = 40;
     
 }
