@@ -35,6 +35,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_fake.h"
 #include "drivers/accgyro_l3g4200d.h"
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu.h"
@@ -53,12 +54,14 @@
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_bmp280.h"
+#include "drivers/barometer_fake.h"
 #include "drivers/barometer_ms5611.h"
 
 #include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
-#include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
+#include "drivers/compass_ak8975.h"
+#include "drivers/compass_fake.h"
+#include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_mag3110.h"
 
 #include "drivers/sonar_hcsr04.h"
@@ -101,110 +104,6 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return NULL;
 #endif
 }
-
-#ifdef USE_FAKE_GYRO
-static void fakeGyroInit(uint8_t lpf)
-{
-    UNUSED(lpf);
-}
-
-static bool fakeGyroRead(int16_t *gyroADC)
-{
-    memset(gyroADC, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
-    return true;
-}
-
-static bool fakeGyroReadTemp(int16_t *tempData)
-{
-    UNUSED(tempData);
-    return true;
-}
-
-
-static bool fakeGyroInitStatus(void) {
-    return true;
-}
-
-bool fakeGyroDetect(gyro_t *gyro)
-{
-    gyro->init = fakeGyroInit;
-    gyro->intStatus = fakeGyroInitStatus;
-    gyro->read = fakeGyroRead;
-    gyro->temperature = fakeGyroReadTemp;
-    gyro->scale = 1.0f / 16.4f;
-    return true;
-}
-#endif
-
-#ifdef USE_FAKE_ACC
-static void fakeAccInit(acc_t *acc) {UNUSED(acc);}
-static bool fakeAccRead(int16_t *accData) {
-    memset(accData, 0, sizeof(int16_t[XYZ_AXIS_COUNT]));
-    return true;
-}
-
-bool fakeAccDetect(acc_t *acc)
-{
-    acc->init = fakeAccInit;
-    acc->read = fakeAccRead;
-    acc->revisionCode = 0;
-    return true;
-}
-#endif
-
-#ifdef USE_FAKE_BARO
-static void fakeBaroStartGet(void)
-{
-}
-
-static void fakeBaroCalculate(int32_t *pressure, int32_t *temperature)
-{
-    if (pressure)
-        *pressure = 101325;    // pressure in Pa (0m MSL)
-    if (temperature)
-        *temperature = 2500;   // temperature in 0.01 C = 25 deg
-}
-
-bool fakeBaroDetect(baro_t *baro)
-{
-    // these are dummy as temperature is measured as part of pressure
-    baro->ut_delay = 10000;
-    baro->get_ut = fakeBaroStartGet;
-    baro->start_ut = fakeBaroStartGet;
-
-    // only _up part is executed, and gets both temperature and pressure
-    baro->up_delay = 10000;
-    baro->start_up = fakeBaroStartGet;
-    baro->get_up = fakeBaroStartGet;
-    baro->calculate = fakeBaroCalculate;
-
-    return true;
-}
-#endif
-
-#ifdef USE_FAKE_MAG
-static bool fakeMagInit(void)
-{
-    return true;
-}
-
-static bool fakeMagRead(int16_t *magData)
-{
-    // Always pointint North
-    magData[X] = 4096;
-    magData[Y] = 0;
-    magData[Z] = 0;
-    return true;
-}
-
-static bool fakeMagDetect(mag_t *mag)
-{
-    mag->init = fakeMagInit;
-    mag->read = fakeMagRead;
-
-    return true;
-}
-#endif
 
 bool detectGyro(void)
 {
