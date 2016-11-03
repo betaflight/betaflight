@@ -109,9 +109,6 @@
 #undef BLACKBOX
 #endif
 
-#define STACK_CHECK
-#define DEBUG_STACK
-
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    4
 

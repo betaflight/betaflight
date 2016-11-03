@@ -1003,6 +1003,7 @@ void validateAndFixConfig(void)
 
     /* Limitations of different protocols */
     switch (masterConfig.motorConfig.motorPwmProtocol) {
+#ifndef BRUSHED_MOTORS
     case PWM_TYPE_STANDARD: // Limited to 490 Hz
         masterConfig.motorConfig.motorPwmRate = MIN(masterConfig.motorConfig.motorPwmRate, 490);
         break;
@@ -1018,7 +1019,7 @@ void validateAndFixConfig(void)
     case PWM_TYPE_MULTISHOT:    // 2-16 kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 2000, 16000);
         break;
-
+#endif
     case PWM_TYPE_BRUSHED:      // 500Hz - 32kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 500, 32000);
         break;

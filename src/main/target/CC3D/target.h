@@ -168,15 +168,6 @@
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#undef TELEMETRY_FRSKY
-#undef TELEMETRY_HOTT
-#undef TELEMETRY_SMARTPORT
-
-// Disable all GPS protocols except UBLOX
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
-
 #ifdef OPBL
 
 #ifdef USE_RX_NRF24
@@ -199,16 +190,10 @@
 #endif //OPBL
 
 
-#define SKIP_CLI_RESOURCES
-#define SKIP_RX_MSP
-
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
-#undef TELEMETRY
-#undef TELEMETRY_LTM
-#undef TELEMETRY_IBUS
 #endif
 
 // Number of available PWM outputs
