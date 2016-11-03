@@ -210,6 +210,9 @@ void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, ui
     pwmWriteFuncPtr pwmWritePtr;
 
     switch (proto) {
+#ifdef BRUSHED_MOTORS
+    default:
+#endif
     case PWM_TYPE_BRUSHED:
         timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
         pwmWritePtr = pwmWriteBrushed;
