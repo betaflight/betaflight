@@ -1414,6 +1414,32 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         currentProfile->pidProfile.axisAccelerationLimitYaw = sbufReadU16(src) * 1000;
         break;
 
+    case MSP_SET_INAV_PID:
+        #ifdef ASYNC_GYRO_PROCESSING
+            masterConfig.asyncMode = sbufReadU8(src);
+            masterConfig.accTaskFrequency = sbufReadU16(src);
+            masterConfig.attitudeTaskFrequency = sbufReadU16(src);
+        #else
+            sbufReadU8(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+        #endif
+        #ifdef MAG
+            currentProfile->pidProfile.mag_hold_rate_limit = sbufReadU8(src);
+            sbufReadU8(src); //MAG_HOLD_ERROR_LPF_FREQ
+        #else
+            sbufReadU8(src)
+            sbufReadU8(src)
+        #endif
+            masterConfig.mixerConfig.yaw_jump_prevention_limit = sbufReadU16(src);
+            masterConfig.gyro_lpf = sbufReadU8(src);
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+        break;
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
