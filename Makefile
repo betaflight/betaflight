@@ -737,7 +737,7 @@ OPTIMIZE    = -Os
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
 else
-LTO_FLAGS   = -fuse-linker-plugin $(OPTIMIZE)
+LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 endif
 
