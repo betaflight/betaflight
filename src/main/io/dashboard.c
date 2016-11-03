@@ -757,9 +757,6 @@ int dashboardCmsBegin(void)
 {
     dashboardInCMS = true;
 
-    debug[1]++;
-    delay(300);
-
     return 0;
 }
 
@@ -812,8 +809,6 @@ displayPortVTable_t dashboardCmsVTable = {
 
 void dashboardCmsInit(displayPort_t *pPort)
 {
-debug[1]++;
-delay(300);
     pPort->rows = SCREEN_CHARACTER_ROW_COUNT;
     pPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
     pPort->vTable = &dashboardCmsVTable;
