@@ -164,10 +164,6 @@
 
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PB0
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       60
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // Number of available PWM outputs

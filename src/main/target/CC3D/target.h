@@ -162,7 +162,6 @@
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
 
-#define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION
 
@@ -172,9 +171,6 @@
 
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
-#undef USE_SONAR
-#else
-#undef USE_SONAR_SRF10
 #endif // USE_RX_NRF24
 
 #define TARGET_MOTOR_COUNT 4

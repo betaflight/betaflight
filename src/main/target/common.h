@@ -35,6 +35,7 @@
 #define BLACKBOX
 #define GPS
 #define GPS_PROTO_UBLOX
+#define NAV
 #define TELEMETRY
 #define TELEMETRY_LTM
 #else
@@ -49,6 +50,8 @@
 #define GPS_PROTO_NMEA
 #define GPS_PROTO_I2C_NAV
 #define GPS_PROTO_NAZA
+#define NAV_AUTO_MAG_DECLINATION
+#define NAV_GPS_GLITCH_DETECTION
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
 #define TELEMETRY_IBUS

@@ -182,10 +182,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX)
 
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-
 #define BUTTONS
 #define BUTTON_A_PORT           GPIOB // Non-existent (PB1 used for RSSI/MAXCS)
 #define BUTTON_A_PIN            Pin_1
