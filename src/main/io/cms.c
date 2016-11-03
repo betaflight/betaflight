@@ -37,11 +37,22 @@
 
 #include "io/cms.h"
 #include "io/cms_types.h"
-#include "io/canvas.h"
 
+#ifdef CANVAS
+#include "io/canvas.h"
+#endif
+
+#ifdef USE_FLASHFS
 #include "io/flashfs.h"
+#endif
+
+#ifdef OSD
 #include "io/osd.h"
+#endif
+
+#ifdef USE_DASHBOARD
 #include "io/dashboard.h"
+#endif
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -52,8 +63,6 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "io/cms.h"
 
 #include "build/debug.h"
 
