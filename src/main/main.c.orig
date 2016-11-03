@@ -88,9 +88,10 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+#include "io/cms.h"
 #include "io/osd.h"
-#include "io/canvas.h"
 #include "io/vtx.h"
+#include "io/canvas.h"
 
 #include "scheduler/scheduler.h"
 
@@ -398,13 +399,19 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+<<<<<<< HEAD
 #ifdef CMS
     cmsInit();
 #endif
 
+#ifdef DISPLAY
+    if (feature(FEATURE_DISPLAY)) {
+        displayInit(&masterConfig.rxConfig);
+=======
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit(&masterConfig.rxConfig);
+>>>>>>> betaflight/master
     }
 #endif
 

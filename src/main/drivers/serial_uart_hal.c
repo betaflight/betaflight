@@ -57,7 +57,6 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
 
 static void uartReconfigure(uartPort_t *uartPort)
 {
-    HAL_StatusTypeDef status = HAL_ERROR;
     /*RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3|
             RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5|RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART8;
@@ -90,11 +89,11 @@ static void uartReconfigure(uartPort_t *uartPort)
 
     if(uartPort->port.options & SERIAL_BIDIR)
     {
-        status = HAL_HalfDuplex_Init(&uartPort->Handle);
+        HAL_HalfDuplex_Init(&uartPort->Handle);
     }
     else
     {
-        status = HAL_UART_Init(&uartPort->Handle);
+        HAL_UART_Init(&uartPort->Handle);
     }
 
     // Receive DMA or IRQ
@@ -216,7 +215,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 
 
     s->txDMAEmpty = true;
-    
+
     // common serial initialisation code should move to serialPort::init()
     s->port.rxBufferHead = s->port.rxBufferTail = 0;
     s->port.txBufferHead = s->port.txBufferTail = 0;
@@ -252,7 +251,7 @@ void uartStartTxDMA(uartPort_t *s)
     HAL_UART_StateTypeDef state = HAL_UART_GetState(&s->Handle);
     if((state & HAL_UART_STATE_BUSY_TX) == HAL_UART_STATE_BUSY_TX)
         return;
-   
+
     if (s->port.txBufferHead > s->port.txBufferTail) {
         size = s->port.txBufferHead - s->port.txBufferTail;
         fromwhere = s->port.txBufferTail;
@@ -387,4 +386,3 @@ const struct serialPortVTable uartVTable[] = {
         .endWrite = NULL,
     }
 };
-

@@ -85,7 +85,7 @@ void ws2811LedStripHardwareInit(void)
 
     __DMA1_CLK_ENABLE();
 
-    
+
     /* Set the parameters to be configured */
     hdma_tim.Init.Channel  = WS2811_DMA_CHANNEL;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -103,23 +103,18 @@ void ws2811LedStripHardwareInit(void)
     /* Set hdma_tim instance */
     hdma_tim.Instance = WS2811_DMA_STREAM;
 
-    uint32_t channelAddress = 0;
     switch (WS2811_TIMER_CHANNEL) {
         case TIM_CHANNEL_1:
             timDMASource = TIM_DMA_ID_CC1;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
             break;
         case TIM_CHANNEL_2:
             timDMASource = TIM_DMA_ID_CC2;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
             break;
         case TIM_CHANNEL_3:
             timDMASource = TIM_DMA_ID_CC3;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
             break;
         case TIM_CHANNEL_4:
             timDMASource = TIM_DMA_ID_CC4;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
             break;
     }
 

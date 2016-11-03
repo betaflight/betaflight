@@ -158,6 +158,10 @@ else
 STM32F30x_COMMON_SRC  = startup_stm32f30x_md_gcc.S
 endif
 
+ifeq ($(DEBUG_HARDFAULTS),F7)
+CFLAGS               += -DDEBUG_HARDFAULTS
+endif
+
 REVISION = $(shell git log -1 --format="%h")
 
 FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
@@ -364,7 +368,7 @@ endif
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
-DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT -DDEBUG_HARDFAULTS
+DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
 else
 $(error Unknown MCU for F7 target)
@@ -557,7 +561,7 @@ HIGHEND_SRC = \
             flight/gps_conversion.c \
             io/gps.c \
             io/ledstrip.c \
-            io/display.c \
+            io/dashboard.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -650,7 +654,7 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c 
+            drivers/serial_uart_hal.c
 
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
@@ -730,7 +734,11 @@ OPTIMIZE    = -O0
 LTO_FLAGS   = $(OPTIMIZE)
 else
 OPTIMIZE    = -Os
+ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
+else
+LTO_FLAGS   = -fuse-linker-plugin $(OPTIMIZE)
+endif
 endif
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG

@@ -43,7 +43,7 @@
 #include "io/cms.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/cms.h"
@@ -225,11 +225,11 @@ static void taskCalculateAltitude(uint32_t currentTime)
     }}
 #endif
 
-#ifdef DISPLAY
-static void taskUpdateDisplay(uint32_t currentTime)
+#ifdef USE_DASHBOARD
+static void taskUpdateDashboard(uint32_t currentTime)
 {
-    if (feature(FEATURE_DISPLAY)) {
-        displayUpdate(currentTime);
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardUpdate(currentTime);
     }
 }
 #endif
@@ -310,8 +310,8 @@ void fcTasksInit(void)
 #if defined(BARO) || defined(SONAR)
     setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
 #endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#ifdef USE_DASHBOARD
+    setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
@@ -453,10 +453,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef DISPLAY
-    [TASK_DISPLAY] = {
-        .taskName = "DISPLAY",
-        .taskFunc = taskUpdateDisplay,
+#ifdef USE_DASHBOARD
+    [TASK_DASHBOARD] = {
+        .taskName = "DASHBOARD",
+        .taskFunc = taskUpdateDashboard,
         .desiredPeriod = 1000000 / 10,
         .staticPriority = TASK_PRIORITY_LOW,
     },

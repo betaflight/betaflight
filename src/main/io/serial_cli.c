@@ -148,7 +148,8 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
+static void printResource(uint8_t dumpMask, master_t *defaultConfig);
 static void cliResource(char *cmdline);
 #endif
 #ifdef GPS
@@ -203,6 +204,7 @@ typedef enum {
     DUMP_ALL = (1 << 3),
     DO_DIFF = (1 << 4),
     SHOW_DEFAULTS = (1 << 5),
+    HIDE_UNUSED = (1 << 6),
 } dumpFlags_e;
 
 static const char* const emptyName = "-";
@@ -237,7 +239,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -331,7 +333,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -2740,6 +2742,11 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
         printName(dumpMask);
 
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrint("\r\n# resources\r\n");
+#endif
+        printResource(dumpMask, &defaultConfig);
+
 #ifndef USE_QUAD_MIXER_ONLY
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mixer\r\n");
@@ -3722,7 +3729,7 @@ void cliProcess(void)
     }
 }
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
 
 typedef struct {
     const uint8_t owner;
@@ -3748,13 +3755,72 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 };
 
+static void printResource(uint8_t dumpMask, master_t *defaultConfig)
+{
+    for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
+        const char* owner;
+        owner = ownerNames[resourceTable[i].owner];
+
+        if (resourceTable[i].maxIndex > 0) {
+            for (int index = 0; index < resourceTable[i].maxIndex; index++) {
+                ioTag_t ioPtr = *(resourceTable[i].ptr + index);
+                ioTag_t ioPtrDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+
+                IO_t io = IOGetByTag(ioPtr);
+                IO_t ioDefault = IOGetByTag(ioPtrDefault);
+                bool equalsDefault = io == ioDefault;
+                const char *format = "resource %s %d %c%02d\r\n";
+                const char *formatUnassigned = "resource %s %d NONE\r\n";
+                if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                    cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                } else {
+                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+                }
+                if (DEFIO_TAG_ISEMPTY(io)) {
+                    if (!(dumpMask & HIDE_UNUSED)) {
+                        cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                    }
+                } else {
+                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                }
+            }
+        } else {
+            ioTag_t ioPtr = *resourceTable[i].ptr;
+            ioTag_t ioPtrDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+
+            IO_t io = IOGetByTag(ioPtr);
+            IO_t ioDefault = IOGetByTag(ioPtrDefault);
+            bool equalsDefault = io == ioDefault;
+            const char *format = "resource %s %c%02d\r\n";
+            const char *formatUnassigned = "resource %s NONE\r\n";
+            if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+            } else {
+                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+            }
+            if (DEFIO_TAG_ISEMPTY(io)) {
+                if (!(dumpMask & HIDE_UNUSED)) {
+                    cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+                }
+            } else {
+                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+            }
+        }
+    }
+}
+
 static void cliResource(char *cmdline)
 {
-    int len;
-    len = strlen(cmdline);
+    int len = strlen(cmdline);
 
     if (len == 0) {
-        cliPrintf("IO:\r\n----------------------\r\n");
+        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
+
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
+#endif
         for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
@@ -3768,34 +3834,10 @@ static void cliResource(char *cmdline)
                 cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
             }
         }
-        cliPrintf("\r\nUse: 'resource list' to see how to change resources.\r\n");
-        return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-        for (uint8_t i = 0; i < ARRAYLEN(resourceTable); i++) {
-            const char* owner;
-            owner = ownerNames[resourceTable[i].owner];
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
+#endif
 
-            if (resourceTable[i].maxIndex > 0) {
-                for (int index = 0; index < resourceTable[i].maxIndex; index++) {
-                    
-                    if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr + index))) {
-                        continue;
-                    }
-                    
-                    IO_t io = IOGetByTag(*(resourceTable[i].ptr + index));
-                    if (!io) {
-                        continue;
-                    }
-                    cliPrintf("resource %s %d %c%02d\r\n", owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
-                }
-            } else {
-                if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr))) {
-                    continue;
-                }
-                IO_t io = IOGetByTag(*resourceTable[i].ptr);
-                cliPrintf("resource %s %c%02d\r\n", owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
-            }
-        }
         return;
     }
 
@@ -3836,7 +3878,11 @@ static void cliResource(char *cmdline)
             cliPrintf("Resource is freed!");
             return;
         } else {
-            uint8_t port = (*pch)-'A';
+            uint8_t port = (*pch) - 'A';
+            if (port >= 8) {
+                port = (*pch) - 'a';
+            }
+
             if (port < 8) {
                 pch++;
                 pin = atoi(pch);
@@ -3861,7 +3907,9 @@ static void cliResource(char *cmdline)
 void cliDfu(char *cmdLine)
 {
     UNUSED(cmdLine);
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nRestarting in DFU mode");
+#endif
     cliRebootEx(true);
 }
 

@@ -393,7 +393,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
         
         pwmInputPort_t *port = &pwmInputPorts[channel];
 
-        const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel], TIMER_INPUT_ENABLED);
+        const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel], TIM_USE_PWM);
         
         if (!timer) {
             /* TODO: maybe fail here if not enough channels? */
@@ -408,7 +408,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
         IO_t io = IOGetByTag(pwmConfig->ioTags[channel]);
         IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
-        IOConfigGPIO(io, timer->ioMode);
+        IOConfigGPIO(io, IOCFG_IPD);
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
@@ -459,7 +459,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
 
     pwmInputPort_t *port = &pwmInputPorts[FIRST_PWM_PORT];
 
-    const timerHardware_t *timer = timerGetByTag(ppmConfig->ioTag, TIMER_INPUT_ENABLED);
+    const timerHardware_t *timer = timerGetByTag(ppmConfig->ioTag, TIM_USE_PPM);
     if (!timer) {
         /* TODO: fail here? */
         return;
@@ -472,7 +472,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
 
     IO_t io = IOGetByTag(ppmConfig->ioTag);
     IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
-    IOConfigGPIO(io, timer->ioMode);
+    IOConfigGPIO(io, IOCFG_IPD);
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);

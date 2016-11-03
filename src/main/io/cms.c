@@ -41,7 +41,7 @@
 
 #include "io/flashfs.h"
 #include "io/osd.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -178,7 +178,7 @@ void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 10)
+#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
 displayPort_t currentDisplay;

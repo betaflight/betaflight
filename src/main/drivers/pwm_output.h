@@ -71,7 +71,7 @@ typedef struct {
 #endif
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
-    uint32_t Channel;
+    DMA_HandleTypeDef hdma_tim;
 #endif
 } motorDmaOutput_t;
 
