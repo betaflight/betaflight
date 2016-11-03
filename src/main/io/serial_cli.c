@@ -3608,7 +3608,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
+    cliPrintf("# %s/%s %s %s / %s (%s)\r\n",
+        FC_FIRMWARE_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,
