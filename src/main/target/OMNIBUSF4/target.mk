@@ -7,6 +7,10 @@ TARGET_SRC = \
             drivers/compass_hmc5883l.c \
             drivers/max7456.c \
             io/osd.c \
+            io/osd_max7456.c \
             io/cms.c \
+            io/cms_imu.c \
+            io/cms_blackbox.c \
+            io/cms_ledstrip.c \
             io/canvas.c
 

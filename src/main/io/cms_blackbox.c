@@ -30,17 +30,17 @@ long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 {
     UNUSED(ptr);
 
-    cmsScreenClear(pDisplay);
-    cmsScreenWrite(pDisplay, 5, 3, "ERASING FLASH...");
-    cmsScreenResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+    displayClear(pDisplay);
+    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
+    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
 
     flashfsEraseCompletely();
     while (!flashfsIsReady()) {
         delay(100);
     }
 
-    cmsScreenClear(pDisplay);
-    cmsScreenResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+    displayClear(pDisplay);
+    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 
     return 0;
 }

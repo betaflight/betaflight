@@ -39,15 +39,14 @@
 
 #include "io/cms.h"
 #include "io/cms_types.h"
-
+#include "io/cms_osd.h"
 #include "io/flashfs.h"
 #include "io/osd.h"
+#include "io/osd_max7456.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-
-//#include "flight/pid.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -401,7 +400,7 @@ void osdInit(void)
     refreshTimeout = 4 * REFRESH_1S;
 
 #ifdef CMS
-    cmsDeviceRegister(osdCmsInit);
+    cmsDeviceRegister(osdMax7456Init);
 #endif
 }
 
@@ -633,60 +632,6 @@ void osdUpdate(uint32_t currentTime)
     }
 }
 
-//
-// OSD specific CMS functions
-//
-#include "io/cms_osd.h"
-
-uint8_t shiftdown;
-
-int osdMenuBegin(void)
-{
-    osdResetAlarms();
-    osdInMenu = true;
-    refreshTimeout = 0;
-
-    return 0;
-}
-
-int osdMenuEnd(void)
-{
-    osdInMenu = false;
-
-    return 0;
-}
-
-int osdClearScreen(void)
-{
-    max7456ClearScreen();
-
-    return 0;
-}
-
-int osdWrite(uint8_t x, uint8_t y, char *s)
-{
-    max7456Write(x, y + shiftdown, s);
-
-    return 0;
-}
-
-void osdResync(displayPort_t *pPort)
-{
-    max7456RefreshAll();
-    pPort->rows = max7456GetRowsCount() - masterConfig.osdProfile.row_shiftdown;
-    pPort->cols = 30;
-}
-
-int osdHeartbeat(void)
-{
-    return 0;
-}
-
-uint32_t osdTxBytesFree(void)
-{
-    return UINT32_MAX;
-}
-
 #ifdef EDIT_ELEMENT_SUPPORT
 void osdEditElement(void *ptr)
 {
@@ -712,22 +657,6 @@ void osdDrawElementPositioningHelp(void)
     max7456Write(OSD_X(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]), OSD_Y(masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON]) + 4, "YAW - EXIT    ");
 }
 #endif
-
-displayPortVTable_t osdVTable = {
-    osdMenuBegin,
-    osdMenuEnd,
-    osdClearScreen,
-    osdWrite,
-    osdHeartbeat,
-    osdResync,
-    osdTxBytesFree,
-};
-
-void osdCmsInit(displayPort_t *pPort)
-{
-    osdResync(pPort);
-    pPort->vTable = &osdVTable;
-}
 
 OSD_UINT8_t entryAlarmRssi = {&masterConfig.osdProfile.rssi_alarm, 5, 90, 5};
 OSD_UINT16_t entryAlarmCapacity = {&masterConfig.osdProfile.cap_alarm, 50, 30000, 50};
