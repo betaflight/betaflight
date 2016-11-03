@@ -17,20 +17,33 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "REVO"
-
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
+#if defined(AIRBOTF4)
+#define TARGET_BOARD_IDENTIFIER "AIR4"
+#define USBD_PRODUCT_STRING     "AirbotF4"
+
+#elif defined(REVOLT)
+#define TARGET_BOARD_IDENTIFIER "RVLT"
+#define USBD_PRODUCT_STRING     "Revolt"
+
+#else
+#define TARGET_BOARD_IDENTIFIER "REVO"
 #define USBD_PRODUCT_STRING     "Revolution"
+
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
+#endif
+
 #endif
 
 #define USE_DSHOT
 
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
-//#define LED1                    PB4
+#if !defined(AIRBOTF4)
+#define LED1                    PB4
+#endif
 
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
@@ -41,19 +54,31 @@
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
+#define MPU6500_CS_PIN          PA4
+#define MPU6500_SPI_INSTANCE    SPI1
+
 #define ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
+
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
+
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU9250_ALIGN      CW270_DEG
 
 // MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
+#if !defined(AIRBOTF4) && !defined(REVOLT)
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
@@ -67,6 +92,7 @@
 //#define PITOT
 //#define USE_PITOT_MS4525
 //#define MS4525_BUS I2C_DEVICE_EXT
+#endif
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -78,8 +104,8 @@
 #define VBUS_SENSING_PIN        PC5
 
 #define USE_UART1
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
+#define UART1_RX_PIN            PA10
+#define UART1_TX_PIN            PA9
 #define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
@@ -106,7 +132,7 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
@@ -126,7 +152,7 @@
 #define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
 #define WS2811_DMA_IT                   DMA_IT_TCIF4
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET             (SENSOR_ACC)
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
