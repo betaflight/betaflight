@@ -44,8 +44,6 @@
 #include "sensors/acceleration.h"
 
 
-#define MAG_HOLD_ERROR_LPF_FREQ 2
-
 typedef struct {
     float kP;
     float kI;

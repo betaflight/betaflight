@@ -1064,6 +1064,32 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitYaw / 1000, 0, 65535));
         break;
 
+    case MSP_INAV_PID:
+    #ifdef ASYNC_GYRO_PROCESSING
+        sbufWriteU8(dst, masterConfig.asyncMode);
+        sbufWriteU16(dst, masterConfig.accTaskFrequency);
+        sbufWriteU16(dst, masterConfig.attitudeTaskFrequency);
+    #else
+        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+    #endif
+    #ifdef MAG
+        sbufWriteU8(dst, currentProfile->pidProfile.mag_hold_rate_limit);
+        sbufWriteU8(dst, MAG_HOLD_ERROR_LPF_FREQ);
+    #else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+    #endif
+        sbufWriteU16(dst, masterConfig.mixerConfig.yaw_jump_prevention_limit);
+        sbufWriteU8(dst, masterConfig.gyro_lpf);
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        break;
+
     case MSP_REBOOT:
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
