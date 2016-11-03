@@ -823,27 +823,37 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigationFSMState_t previousState)
 {
-    if (STATE(GPS_FIX_HOME) && posControl.flags.hasValidHeadingSensor) {
-        navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+    if (STATE(GPS_FIX_HOME)) {
+        if (posControl.flags.hasValidHeadingSensor) {
+            navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
-        if ((prevFlags & NAV_CTL_POS) == 0) {
-            resetPositionController();
+            if ((prevFlags & NAV_CTL_POS) == 0) {
+                resetPositionController();
+            }
+
+            if ((prevFlags & NAV_CTL_ALT) == 0) {
+                resetAltitudeController();
+                setupAltitudeController();
+            }
+
+            // Switch between 2D and 3D RTH depending on altitude sensor availability
+            if (posControl.flags.hasValidAltitudeSensor) {
+                // We might have GPS unavailable - in case of 3D RTH set current altitude target
+                setDesiredPosition(&posControl.actualState.pos, 0, NAV_POS_UPDATE_Z);
+
+                return NAV_FSM_EVENT_SWITCH_TO_RTH_3D;
+            }
+            else {
+                return NAV_FSM_EVENT_SWITCH_TO_RTH_2D;
+            }
         }
-
-        if ((prevFlags & NAV_CTL_ALT) == 0) {
-            resetAltitudeController();
-            setupAltitudeController();
+        /* Position sensor failure timeout - land */
+        else if (checkForPositionSensorTimeout()) {
+            return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
         }
-
-        // Switch between 2D and 3D RTH depending on altitude sensor availability
-        if (posControl.flags.hasValidAltitudeSensor) {
-            // We might have GPS unavailable - in case of 3D RTH set current altitude target
-            setDesiredPosition(&posControl.actualState.pos, 0, NAV_POS_UPDATE_Z);
-
-            return NAV_FSM_EVENT_SWITCH_TO_RTH_3D;
-        }
+        /* No valid POS sensor but still within valid timeout - wait */
         else {
-            return NAV_FSM_EVENT_SWITCH_TO_RTH_2D;
+            return NAV_FSM_EVENT_NONE;
         }
     }
     else {
