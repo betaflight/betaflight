@@ -15,33 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define ENABLE_DEBUG_DASHBOARD_PAGE
+#pragma once
 
-typedef enum {
-    PAGE_WELCOME,
-    PAGE_ARMED,
-    PAGE_BATTERY,
-    PAGE_SENSORS,
-    PAGE_RX,
-    PAGE_PROFILE,
-#ifndef SKIP_TASK_STATISTICS
-    PAGE_TASKS,
-#endif
-#ifdef GPS
-    PAGE_GPS,
-#endif
-#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
-    PAGE_DEBUG,
-#endif
-} pageId_e;
-
-struct rxConfig_s;
-void dashboardInit(struct rxConfig_s *intialRxConfig);
-void dashboardUpdate(uint32_t currentTime);
-
-void dashboardShowFixedPage(pageId_e pageId);
-
-void dashboardEnablePageCycling(void);
-void dashboardDisablePageCycling(void);
-void dashboardResetPageCycling(void);
-void dashboardSetNextPageChangeAt(uint32_t futureMicros);
+struct displayPort_s;
+void displayPortOledInit(struct displayPort_s *displayPort);

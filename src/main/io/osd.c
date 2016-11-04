@@ -29,9 +29,9 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef OSD
+
+#include "build/version.h"
 
 #include "common/utils.h"
 
