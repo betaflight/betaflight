@@ -23,14 +23,13 @@
 #include "build/build_config.h"
 
 
-#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "rx/rx.h"
-#include "fc/rc_controls.h"
 
 #include "io/statusindicator.h"
 
@@ -38,6 +37,7 @@
 #include "io/gps.h"
 #endif
 
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "config/config.h"

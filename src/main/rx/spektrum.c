@@ -20,17 +20,15 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
+#include "build/debug.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/light_led.h"
+#include "drivers/serial.h"
 #include "drivers/system.h"
 
-#include "drivers/light_led.h"
-
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
 #include "config/config.h"

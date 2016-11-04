@@ -25,19 +25,16 @@
 
 #include "common/utils.h"
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
-#include "drivers/serial_softserial.h"
+
 #include "io/serial.h"
 
-#include "rx/rx.h"
 #include "fc/rc_controls.h"
-
-
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
+
+#include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"

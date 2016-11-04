@@ -26,13 +26,13 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
-#include "common/maths.h"
 #include "common/axis.h"
+#include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/serial.h"
 #include "drivers/gps_i2cnav.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "io/serial.h"
 #include "io/gps.h"

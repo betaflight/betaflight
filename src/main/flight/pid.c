@@ -22,34 +22,27 @@
 #include <platform.h>
 
 #include "build/build_config.h"
-
 #include "build/debug.h"
 
+#include "common/axis.h"
+#include "common/filter.h"
+#include "common/maths.h"
 
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/navigation_rewrite.h"
 
-#include "common/axis.h"
-#include "common/maths.h"
-#include "common/filter.h"
+#include "io/gps.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
+#include "rx/rx.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 
-#include "rx/rx.h"
-
-#include "fc/rc_controls.h"
-
-#include "io/gps.h"
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
 
 #define MAG_HOLD_ERROR_LPF_FREQ 2
 

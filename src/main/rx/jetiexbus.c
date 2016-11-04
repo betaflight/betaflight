@@ -42,10 +42,12 @@
 #include "common/utils.h"
 #include "build/build_config.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/system.h"
+
 #include "io/serial.h"
+
 #include "rx/rx.h"
 #include "rx/jetiexbus.h"
 
@@ -57,6 +59,7 @@
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/jetiexbus.h"
 
@@ -611,6 +614,6 @@ void sendJetiExBusTelemetry(uint8_t packetID)
     requestLoop++;
 }
 
-#endif //TELEMETRY
+#endif // TELEMETRY
 
-#endif //SKIP_SERIALRX_JETIEXBUS
+#endif // USE_SERIALRX_JETIEXBUS

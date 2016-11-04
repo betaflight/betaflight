@@ -35,15 +35,11 @@
 
 #include "drivers/system.h"
 
-#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
-
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
 
 #include "fc/fc_msp.h"

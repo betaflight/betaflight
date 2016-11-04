@@ -32,26 +32,22 @@
 #include "common/typeconversion.h"
 
 #include "drivers/light_ws2811strip.h"
-#include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/system.h"
 
-#include <common/printf.h>
 #include "common/axis.h"
+#include "common/printf.h"
 #include "common/utils.h"
 
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "io/ledstrip.h"
 #include "io/beeper.h"
@@ -63,6 +59,8 @@
 
 #include "rx/rx.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -70,14 +68,11 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "telemetry/telemetry.h"
-
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
-#include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/config_profile.h"
 #include "config/feature.h"
+
 
 /*
 PG_REGISTER_ARR_WITH_RESET_FN(ledConfig_t, LED_MAX_STRIP_LENGTH, ledConfigs, PG_LED_STRIP_CONFIG, 0);

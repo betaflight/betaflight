@@ -31,12 +31,10 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "drivers/serial.h"
 #include "drivers/adc.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
+#include "drivers/serial.h"
 #include "drivers/system.h"
 
 #include "fc/rc_controls.h"
