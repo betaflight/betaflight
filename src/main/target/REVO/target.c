@@ -30,7 +30,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,        TIM_USE_PWM,   0, GPIO_AF_TIM8,  NULL,         0,             0  },  // S4_IN
     { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,        TIM_USE_PWM,   0, GPIO_AF_TIM8,  NULL,         0,             0  },  // S5_IN
     { TIM8,  IO_TAG(PC9),  TIM_Channel_4, TIM8_CC_IRQn,        TIM_USE_PWM,   0, GPIO_AF_TIM8,  NULL,         0,             0  },  // S6_IN
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,           TIM_USE_PWM,   1, GPIO_AF_TIM3,  DMA1_Stream7, DMA_Channel_5, DMA1_ST7_HANDLER  },  // S1_OUT
+    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM3,  DMA1_Stream7, DMA_Channel_5, DMA1_ST7_HANDLER  },  // S1_OUT
     { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM3,  DMA1_Stream2, DMA_Channel_5, DMA1_ST2_HANDLER  },  // S2_OUT
     { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM2_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM2,  DMA1_Stream6, DMA_Channel_3, DMA1_ST6_HANDLER  },  // S3_OUT
     { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM2,  DMA1_Stream1, DMA_Channel_3, DMA1_ST1_HANDLER  },  // S4_OUT
