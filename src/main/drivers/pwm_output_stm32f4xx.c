@@ -29,6 +29,12 @@
 #include "system.h"
 #include "rcc.h"
 
+#include "config/feature.h"
+
+#include "fc/config.h"
+
+#include "telemetry/esc_telemetry.h"
+
 #ifdef USE_DSHOT
 
 #define MAX_DMA_TIMERS 8
@@ -61,6 +67,15 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
     uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        uint8_t tlmIndex = getEscTelemetryTriggerMotorIndex();
+        if (tlmIndex != ESC_TRIGGER_NONE && tlmIndex == index) {
+            // Set motor to trigger for ESC Telemetry
+            packet = (value << 1) | 1;
+        }
+    }
+
     // compute checksum
     int csum = 0;
     int csum_data = packet;
@@ -77,17 +92,17 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);  
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
     DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
-    
+
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
-        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
+        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
     }
 }
 
@@ -108,23 +123,23 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
-    
+
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
-    
+
     IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     if (configureTimer) {
-        TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;    
+        TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
         TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
-        
+
         uint32_t hz;
         switch (pwmProtocolType) {
             case(PWM_TYPE_DSHOT600):
@@ -141,11 +156,11 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-        TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;        
+        TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
         TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-        TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);        
+        TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
     }
-    
+
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
@@ -162,17 +177,17 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
-    
+
     TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
-    
+
     if (configureTimer) {
         TIM_CtrlPWMOutputs(timer, ENABLE);
-        TIM_ARRPreloadConfig(timer, ENABLE); 
-        TIM_Cmd(timer, ENABLE);       
+        TIM_ARRPreloadConfig(timer, ENABLE);
+        TIM_Cmd(timer, ENABLE);
     }
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
-    
+
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
     DMA_StructInit(&DMA_InitStructure);
@@ -196,7 +211,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(timerHardware->dmaStream));
-    
+
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 
