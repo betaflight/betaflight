@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define TARGET_BOARD_IDENTIFIER "LUXR"
 #else
 #define TARGET_BOARD_IDENTIFIER "LUX"
@@ -28,11 +28,11 @@
 
 #define LED0                    PC15
 #define LED1                    PC14
-#ifndef LUXR_RACE
+#ifndef LUXV2_RACE
 #define LED2                    PC13
 #endif
 
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define BEEPER                  PB9
 #else
 #define BEEPER                  PB13
@@ -50,18 +50,18 @@
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define USE_SPI_DEVICE_2
 #endif
 
 #define SPI1_SCK_PIN            PB3
 #define SPI1_MISO_PIN           PB4
 #define SPI1_MOSI_PIN           PB5
-//#ifndef LUXR_RACE
+//#ifndef LUXV2_RACE
 #define SPI1_NSS_PIN            PA4
 //#endif
 
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
@@ -92,7 +92,7 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #define GYRO
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define USE_GYRO_MPU6000
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN CW270_DEG
@@ -103,7 +103,7 @@
 #endif
 
 #define ACC
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define USE_ACC_MPU6000
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN CW270_DEG
@@ -119,7 +119,7 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define USE_UART4
 #define USE_UART5
 #define SERIAL_PORT_COUNT       6
@@ -156,7 +156,7 @@
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #endif
@@ -174,7 +174,7 @@
 #define TARGET_IO_PORTD         (BIT(2))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#ifdef LUXR_RACE
+#ifdef LUXV2_RACE
 #define USABLE_TIMER_CHANNEL_COUNT 5
 #else
 #define USABLE_TIMER_CHANNEL_COUNT 11
