@@ -960,6 +960,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, j);
             sbufWriteU8(dst, masterConfig.specialColors.color[j]);
         }
+
+        sbufWriteU8(dst, LED_AUX_CHANNEL);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, masterConfig.ledstrip_aux_channel);
+
         break;
 #endif
 
