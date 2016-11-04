@@ -71,13 +71,13 @@ static FixedWingLaunchState_t   launchState;
 #define COS_MAX_LAUNCH_ANGLE    0.70710678f         // cos(45), just to be safe
 static void updateFixedWingLaunchDetector(const uint32_t currentTime)
 {
-    const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw_launch_accel_thresh);
+    const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw.launch_accel_thresh);
     const bool isAircraftAlmostLevel = (calculateCosTiltAngle() >= COS_MAX_LAUNCH_ANGLE);
 
     if (isForwardAccelerationHigh && isAircraftAlmostLevel) {
         launchState.launchDetectionTimeAccum += (currentTime - launchState.launchDetectorPreviosUpdate);
         launchState.launchDetectorPreviosUpdate = currentTime;
-        if (launchState.launchDetectionTimeAccum >= MS2US((uint32_t)posControl.navConfig->fw_launch_time_thresh)) {
+        if (launchState.launchDetectionTimeAccum >= MS2US((uint32_t)posControl.navConfig->fw.launch_time_thresh)) {
             launchState.launchDetected = true;
         }
     }
@@ -129,13 +129,13 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
         // Motor control enabled
         if (launchState.motorControlAllowed) {
             // Abort launch after a pre-set time
-            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_timeout) {
+            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw.launch_timeout) {
                 launchState.launchFinished = true;
             }
 
             // Control throttle
-            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw_launch_motor_timer) {
-                rcCommand[THROTTLE] = posControl.navConfig->fw_launch_throttle;
+            if (timeElapsedSinceLaunchMs >= posControl.navConfig->fw.launch_motor_timer) {
+                rcCommand[THROTTLE] = posControl.navConfig->fw.launch_throttle;
             }
             else {
                 // Until motors are started don't use PID I-term
@@ -166,7 +166,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
 
     // Lock out controls
     rcCommand[ROLL] = 0;
-    rcCommand[PITCH] = pidAngleToRcCommand(-DEGREES_TO_DECIDEGREES(posControl.navConfig->fw_launch_climb_angle), posControl.pidProfile->max_angle_inclination[FD_PITCH]);
+    rcCommand[PITCH] = pidAngleToRcCommand(-DEGREES_TO_DECIDEGREES(posControl.navConfig->fw.launch_climb_angle), posControl.pidProfile->max_angle_inclination[FD_PITCH]);
     rcCommand[YAW] = 0;
 }
 

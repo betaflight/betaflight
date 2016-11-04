@@ -66,15 +66,6 @@ enum {
 
 typedef struct navConfig_s {
     struct {
-        uint8_t use_thr_mid_for_althold;    // Don't remember throttle when althold was initiated, assume that throttle is at Thr Mid = zero climb rate
-        uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
-        uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
-        uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
-        uint8_t rth_tail_first;             // Return to home tail first
-        uint8_t disarm_on_landing;          // 
-    } flags;
-
-    struct {
 #if defined(NAV_AUTO_MAG_DECLINATION)
         uint8_t automatic_mag_declination;
 #endif
@@ -101,41 +92,56 @@ typedef struct navConfig_s {
 
         float max_eph_epv;  // Max estimated position error acceptable for estimation (cm)
         float baro_epv;     // Baro position error
-    } inav;
+    } estimation;
 
-    uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)
-    uint16_t waypoint_radius;               // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
-    uint16_t max_speed;                     // autonomous navigation speed cm/sec
-    uint16_t max_climb_rate;                // max vertical speed limitation cm/sec
-    uint16_t max_manual_speed;              // manual velocity control max horizontal speed
-    uint16_t max_manual_climb_rate;         // manual velocity control max vertical speed
-    uint16_t land_descent_rate;             // normal RTH landing descent rate
-    uint16_t land_slowdown_minalt;          // Altitude to stop lowering descent rate during RTH descend
-    uint16_t land_slowdown_maxalt;          // Altitude to start lowering descent rate during RTH descend
-    uint16_t emerg_descent_rate;            // emergency landing descent rate
-    uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_style) (cm)
-    uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
+    struct {
+        struct {
+            uint8_t use_thr_mid_for_althold;    // Don't remember throttle when althold was initiated, assume that throttle is at Thr Mid = zero climb rate
+            uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
+            uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
+            uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
+            uint8_t rth_tail_first;             // Return to home tail first
+            uint8_t disarm_on_landing;          // 
+        } flags;
 
-    uint8_t  mc_max_bank_angle;             // multicopter max banking angle (deg)
-    uint16_t mc_hover_throttle;             // multicopter hover throttle
-    uint16_t mc_auto_disarm_delay;          // multicopter safety delay for landing detector
+        uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)
+        uint16_t waypoint_radius;               // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
+        uint16_t max_speed;                     // autonomous navigation speed cm/sec
+        uint16_t max_climb_rate;                // max vertical speed limitation cm/sec
+        uint16_t max_manual_speed;              // manual velocity control max horizontal speed
+        uint16_t max_manual_climb_rate;         // manual velocity control max vertical speed
+        uint16_t land_descent_rate;             // normal RTH landing descent rate
+        uint16_t land_slowdown_minalt;          // Altitude to stop lowering descent rate during RTH descend
+        uint16_t land_slowdown_maxalt;          // Altitude to start lowering descent rate during RTH descend
+        uint16_t emerg_descent_rate;            // emergency landing descent rate
+        uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_style) (cm)
+        uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
+    } general;
 
-    uint16_t fw_cruise_throttle;            // Cruise throttle
-    uint16_t fw_min_throttle;               // Minimum allowed throttle in auto mode
-    uint16_t fw_max_throttle;               // Maximum allowed throttle in auto mode
-    uint8_t  fw_max_bank_angle;             // Fixed wing max banking angle (deg)
-    uint8_t  fw_max_climb_angle;            // Fixed wing max banking angle (deg)
-    uint8_t  fw_max_dive_angle;             // Fixed wing max banking angle (deg)
-    uint8_t  fw_pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
-    uint8_t  fw_roll_to_pitch;              // Roll to pitch compensation (in %)
-    uint16_t fw_loiter_radius;              // Loiter radius when executing PH on a fixed wing
-    
-    uint16_t fw_launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
-    uint16_t fw_launch_time_thresh;         // Time threshold for launch detection (ms)
-    uint16_t fw_launch_throttle;            // Launch throttle
-    uint16_t fw_launch_motor_timer;         // Time to wait before setting launch_throttle (ms)
-    uint16_t fw_launch_timeout;             // Launch timeout to disable launch mode and swith to normal flight (ms)
-    uint8_t fw_launch_climb_angle;          // Target climb angle for launch (deg)
+    struct {
+        uint8_t  max_bank_angle;             // multicopter max banking angle (deg)
+        uint16_t hover_throttle;             // multicopter hover throttle
+        uint16_t auto_disarm_delay;          // multicopter safety delay for landing detector
+    } mc;
+
+    struct {
+        uint8_t  max_bank_angle;             // Fixed wing max banking angle (deg)
+        uint8_t  max_climb_angle;            // Fixed wing max banking angle (deg)
+        uint8_t  max_dive_angle;             // Fixed wing max banking angle (deg)
+        uint16_t cruise_throttle;            // Cruise throttle
+        uint16_t min_throttle;               // Minimum allowed throttle in auto mode
+        uint16_t max_throttle;               // Maximum allowed throttle in auto mode
+        uint8_t  pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
+        uint8_t  roll_to_pitch;              // Roll to pitch compensation (in %)
+        uint16_t loiter_radius;              // Loiter radius when executing PH on a fixed wing
+        
+        uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
+        uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
+        uint16_t launch_throttle;            // Launch throttle
+        uint16_t launch_motor_timer;         // Time to wait before setting launch_throttle (ms)
+        uint16_t launch_timeout;             // Launch timeout to disable launch mode and swith to normal flight (ms)
+        uint8_t  launch_climb_angle;         // Target climb angle for launch (deg)
+    } fw;
 } navConfig_t;
 
 typedef struct gpsOrigin_s {
