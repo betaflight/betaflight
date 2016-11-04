@@ -27,6 +27,7 @@ TARGET_SRC = \
             drivers/flash_m25p16.c \
             drivers/max7456.c \
             io/osd.c \
+            io/osd_max7456.c \
             io/canvas.c \
             io/cms.c \
             io/cms_imu.c \
