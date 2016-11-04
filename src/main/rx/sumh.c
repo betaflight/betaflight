@@ -27,6 +27,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SERIALRX_SUMH
+
 #include "build/build_config.h"
 
 #include "drivers/serial.h"
