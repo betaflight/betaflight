@@ -272,9 +272,11 @@ void init(void)
 #endif
 
     pwm_params.pwmProtocolType = masterConfig.motorConfig.motorPwmProtocol;
+#ifndef BRUSHED_MOTORS
     pwm_params.useFastPwm = (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT125) ||
                             (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
                             (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_MULTISHOT);
+#endif
     pwm_params.motorPwmRate = masterConfig.motorConfig.motorPwmRate;
     pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
     if (feature(FEATURE_3D)) {

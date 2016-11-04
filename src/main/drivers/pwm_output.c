@@ -152,6 +152,7 @@ static void pwmWriteBrushed(uint8_t index, uint16_t value)
     *motors[index]->ccr = (value - 1000) * motors[index]->period / 1000;
 }
 
+#ifndef BRUSHED_MOTORS
 static void pwmWriteStandard(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = value;
@@ -171,6 +172,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
     *motors[index]->ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
 }
+#endif
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
@@ -208,32 +210,36 @@ void pwmMotorConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, ui
     pwmWriteFuncPtr pwmWritePtr;
 
     switch (proto) {
-        case PWM_TYPE_BRUSHED:
-            timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
-            pwmWritePtr = pwmWriteBrushed;
-            idlePulse = 0;
-            break;
+#ifdef BRUSHED_MOTORS
+    default:
+#endif
+    case PWM_TYPE_BRUSHED:
+        timerMhzCounter = PWM_BRUSHED_TIMER_MHZ;
+        pwmWritePtr = pwmWriteBrushed;
+        idlePulse = 0;
+        break;
+#ifndef BRUSHED_MOTORS
+    case PWM_TYPE_ONESHOT125:
+        timerMhzCounter = ONESHOT125_TIMER_MHZ;
+        pwmWritePtr = pwmWriteOneShot125;
+        break;
 
-        case PWM_TYPE_ONESHOT125:
-            timerMhzCounter = ONESHOT125_TIMER_MHZ;
-            pwmWritePtr = pwmWriteOneShot125;
-            break;
+    case PWM_TYPE_ONESHOT42:
+        timerMhzCounter = ONESHOT42_TIMER_MHZ;
+        pwmWritePtr = pwmWriteOneShot42;
+        break;
 
-        case PWM_TYPE_ONESHOT42:
-            timerMhzCounter = ONESHOT42_TIMER_MHZ;
-            pwmWritePtr = pwmWriteOneShot42;
-            break;
+    case PWM_TYPE_MULTISHOT:
+        timerMhzCounter = MULTISHOT_TIMER_MHZ;
+        pwmWritePtr = pwmWriteMultiShot;
+        break;
 
-        case PWM_TYPE_MULTISHOT:
-            timerMhzCounter = MULTISHOT_TIMER_MHZ;
-            pwmWritePtr = pwmWriteMultiShot;
-            break;
-
-        case PWM_TYPE_STANDARD:
-        default:
-            timerMhzCounter = PWM_TIMER_MHZ;
-            pwmWritePtr = pwmWriteStandard;
-            break;
+    case PWM_TYPE_STANDARD:
+    default:
+        timerMhzCounter = PWM_TIMER_MHZ;
+        pwmWritePtr = pwmWriteStandard;
+        break;
+#endif
     }
 
     const uint32_t hz = timerMhzCounter * 1000000;

@@ -79,10 +79,6 @@
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA7
 
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-
 #define LED_STRIP
 #if 1
 // LED strip configuration using PWM motor output pin 5.

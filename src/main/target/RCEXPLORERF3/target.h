@@ -110,10 +110,6 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // USART3,
 

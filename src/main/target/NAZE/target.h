@@ -182,7 +182,6 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
 
@@ -198,21 +197,11 @@
 
 //#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SKIP_CLI_RESOURCES
 #define TARGET_MOTOR_COUNT      6
 #define DISABLE_UNCOMMON_MIXERS
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-
-#undef TELEMETRY_HOTT
-#undef TELEMETRY_SMARTPORT
-#undef TELEMETRY_IBUS
-
-// Disable all GPS protocols except UBLOX
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    10

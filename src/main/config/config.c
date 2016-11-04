@@ -1002,6 +1002,9 @@ void validateAndFixConfig(void)
 #endif
 
     /* Limitations of different protocols */
+#ifdef BRUSHED_MOTORS
+    masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 500, 32000);
+#else
     switch (masterConfig.motorConfig.motorPwmProtocol) {
     case PWM_TYPE_STANDARD: // Limited to 490 Hz
         masterConfig.motorConfig.motorPwmRate = MIN(masterConfig.motorConfig.motorPwmRate, 490);
@@ -1018,11 +1021,11 @@ void validateAndFixConfig(void)
     case PWM_TYPE_MULTISHOT:    // 2-16 kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 2000, 16000);
         break;
-
     case PWM_TYPE_BRUSHED:      // 500Hz - 32kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 500, 32000);
         break;
     }
+#endif
 }
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)

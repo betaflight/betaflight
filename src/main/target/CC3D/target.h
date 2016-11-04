@@ -162,28 +162,15 @@
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
 
-#define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
-#undef TELEMETRY_FRSKY
-#undef TELEMETRY_HOTT
-#undef TELEMETRY_SMARTPORT
-
-// Disable all GPS protocols except UBLOX
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
-
 #ifdef OPBL
 
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
-#undef USE_SONAR
-#else
-#undef USE_SONAR_SRF10
 #endif // USE_RX_NRF24
 
 #define TARGET_MOTOR_COUNT 4
@@ -199,16 +186,10 @@
 #endif //OPBL
 
 
-#define SKIP_CLI_RESOURCES
-#define SKIP_RX_MSP
-
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
-#undef TELEMETRY
-#undef TELEMETRY_LTM
-#undef TELEMETRY_IBUS
 #endif
 
 // Number of available PWM outputs
