@@ -22,8 +22,6 @@ typedef struct displayPort_s {
     const struct displayPortVTable_s *vTable;
     uint8_t rows;
     uint8_t cols;
-    uint16_t buftime;
-    uint16_t bufsize;
 
     // CMS state
     bool cleared;
@@ -31,8 +29,8 @@ typedef struct displayPort_s {
 } displayPort_t;
 
 typedef struct displayPortVTable_s {
-    int (*begin)(displayPort_t *displayPort);
-    int (*end)(displayPort_t *displayPort);
+    int (*open)(displayPort_t *displayPort);
+    int (*close)(displayPort_t *displayPort);
     int (*clear)(displayPort_t *displayPort);
     int (*write)(displayPort_t *displayPort, uint8_t col, uint8_t row, char *text);
     int (*heartbeat)(displayPort_t *displayPort);
@@ -40,9 +38,9 @@ typedef struct displayPortVTable_s {
     uint32_t (*txBytesFree)(displayPort_t *displayPort);
 } displayPortVTable_t;
 
+void displayOpen(displayPort_t *instance);
+void displayClose(displayPort_t *instance);
 void displayClear(displayPort_t *instance);
-void displayBegin(displayPort_t *instance);
-void displayEnd(displayPort_t *instance);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);

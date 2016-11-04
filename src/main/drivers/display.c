@@ -35,15 +35,15 @@ void displayClear(displayPort_t *instance)
     instance->lastCursorPos = -1;
 }
 
-void displayBegin(displayPort_t *instance)
+void displayOpen(displayPort_t *instance)
 {
-    instance->vTable->begin(instance);
+    instance->vTable->open(instance);
     instance->vTable->clear(instance);
 }
 
-void displayEnd(displayPort_t *instance)
+void displayClose(displayPort_t *instance)
 {
-    instance->vTable->end(instance);
+    instance->vTable->close(instance);
 }
 
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)

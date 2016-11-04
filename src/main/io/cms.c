@@ -494,7 +494,7 @@ void cmsMenuOpen(void)
         currentMenu = &menuMain[0];
     } else {
         // Switch display
-        displayEnd(&currentDisplay);
+        displayClose(&currentDisplay);
         initfunc = cmsDeviceSelectNext();
     }
 
@@ -502,7 +502,7 @@ void cmsMenuOpen(void)
         return;
 
     cmsScreenInit(&currentDisplay, initfunc);
-    displayBegin(&currentDisplay);
+    displayOpen(&currentDisplay);
     cmsMenuChange(&currentDisplay, currentMenu);
 }
 
@@ -524,7 +524,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 
     cmsInMenu = false;
 
-    displayEnd(pDisplay);
+    displayClose(pDisplay);
     currentMenu = NULL;
 
     if (ptr)
