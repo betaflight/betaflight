@@ -145,6 +145,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         motor->TimHandle.Instance = timerHardware->tim;
         motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;;
         motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
+        motor->TimHandle.Init.RepetitionCounter = 0;
         motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
         motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
         if(HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK)
