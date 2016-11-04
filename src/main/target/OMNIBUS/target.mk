@@ -15,6 +15,7 @@ TARGET_SRC = \
             io/transponder_ir.c \
             drivers/max7456.c \
             io/osd.c \
+            io/osd_max7456.c \
             io/canvas.c \
             io/cms.c \
             io/cms_imu.c \

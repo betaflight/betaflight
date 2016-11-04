@@ -5,9 +5,9 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CANVAS
+
+#include "build/version.h"
 
 #include "common/utils.h"
 
@@ -16,46 +16,48 @@
 #include "io/cms.h"
 
 #include "fc/fc_msp.h"
+
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
-int canvasOutput(uint8_t cmd, uint8_t *buf, int len)
+static int canvasOutput(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
+    UNUSED(displayPort);
     mspSerialPush(cmd, buf, len);
 
     return 6 + len;
 }
 
-int canvasBegin(void)
+static int canvasBegin(displayPort_t *displayPort)
 {
     uint8_t subcmd[] = { 0 };
 
-    return canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
+    return canvasOutput(displayPort, MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
-int canvasHeartBeat(void)
+static int canvasHeartBeat(displayPort_t *displayPort)
 {
-    return canvasBegin();
+    return canvasBegin(displayPort);
 }
 
-int canvasEnd(void)
+static int canvasEnd(displayPort_t *displayPort)
 {
     uint8_t subcmd[] = { 1 };
 
-    return canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
+    return canvasOutput(displayPort, MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
-int canvasClear(void)
+static int canvasClear(displayPort_t *displayPort)
 {
     uint8_t subcmd[] = { 2 };
 
-    return canvasOutput(MSP_CANVAS, subcmd, sizeof(subcmd));
+    return canvasOutput(displayPort, MSP_CANVAS, subcmd, sizeof(subcmd));
 }
 
-int canvasWrite(uint8_t col, uint8_t row, char *string)
+static int canvasWrite(displayPort_t *displayPort, uint8_t col, uint8_t row, char *string)
 {
     int len;
-    char buf[30 + 4];
+    uint8_t buf[30 + 4];
 
     if ((len = strlen(string)) >= 30)
         len = 30;
@@ -64,23 +66,24 @@ int canvasWrite(uint8_t col, uint8_t row, char *string)
     buf[1] = row;
     buf[2] = col;
     buf[3] = 0;
-    memcpy((char *)&buf[4], string, len);
+    memcpy(&buf[4], string, len);
 
-    return canvasOutput(MSP_CANVAS, (uint8_t *)buf, len + 4);
+    return canvasOutput(displayPort, MSP_CANVAS, buf, len + 4);
 }
 
-void canvasResync(displayPort_t *pPort)
+static void canvasResync(displayPort_t *displayPort)
 {
-    pPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
-    pPort->rows = 30;
+    displayPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
+    displayPort->rows = 30;
 }
 
-uint32_t canvasTxBytesFree(void)
+static uint32_t canvasTxBytesFree(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     return mspSerialTxBytesFree();
 }
 
-displayPortVTable_t canvasVTable = {
+static const displayPortVTable_t canvasVTable = {
     canvasBegin,
     canvasEnd,
     canvasClear,
@@ -90,11 +93,10 @@ displayPortVTable_t canvasVTable = {
     canvasTxBytesFree,
 };
 
-void canvasCmsInit(displayPort_t *pPort)
+void canvasCmsInit(displayPort_t *displayPort)
 {
-    pPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
-    pPort->cols = 30;
-    pPort->vTable = &canvasVTable;
+    displayPort->vTable = &canvasVTable;
+    canvasResync(displayPort);
 }
 
 void canvasInit()

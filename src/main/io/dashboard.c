@@ -751,68 +751,74 @@ void dashboardDisablePageCycling(void)
 }
 
 #ifdef OLEDCMS
-#include "io/cms.h"
+#include "drivers/display.h"
 
-int dashboardCmsBegin(void)
+static int dashboardBegin(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     dashboardInCMS = true;
 
     return 0;
 }
 
-int dashboardCmsEnd(void)
+static int dashboardEnd(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     dashboardInCMS = false;
 
     return 0;
 }
 
-int dashboardCmsClear(void)
+static int dashboardClear(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     i2c_OLED_clear_display_quick();
 
     return 0;
 }
 
-int dashboardCmsWrite(uint8_t x, uint8_t y, char *s)
+static int dashboardWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, char *s)
 {
+    UNUSED(displayPort);
     i2c_OLED_set_xy(x, y);
     i2c_OLED_send_string(s);
 
     return 0;
 }
 
-int dashboardCmsHeartbeat(void)
+static int dashboardHeartbeat(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     return 0;
 }
 
-void dashboardCmsResync(displayPort_t *pPort)
+static void dashboardResync(displayPort_t *displayPort)
 {
-    UNUSED(pPort);
+    UNUSED(displayPort);
 }
 
-uint32_t dashboardCmsTxBytesFree(void)
+static uint32_t dashboardTxBytesFree(displayPort_t *displayPort)
 {
+    UNUSED(displayPort);
     return UINT32_MAX;
 }
 
-displayPortVTable_t dashboardCmsVTable = {
-    dashboardCmsBegin,
-    dashboardCmsEnd,
-    dashboardCmsClear,
-    dashboardCmsWrite,
-    dashboardCmsHeartbeat,
-    dashboardCmsResync,
-    dashboardCmsTxBytesFree,
+static const displayPortVTable_t dashboardVTable = {
+    dashboardBegin,
+    dashboardEnd,
+    dashboardClear,
+    dashboardWrite,
+    dashboardHeartbeat,
+    dashboardResync,
+    dashboardTxBytesFree,
 };
 
-void dashboardCmsInit(displayPort_t *pPort)
+void dashboardCmsInit(displayPort_t *displayPort)
 {
-    pPort->rows = SCREEN_CHARACTER_ROW_COUNT;
-    pPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    pPort->vTable = &dashboardCmsVTable;
+    displayPort->rows = SCREEN_CHARACTER_ROW_COUNT;
+    displayPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
+    displayPort->vTable = &dashboardVTable;
 }
 #endif // OLEDCMS
 
-#endif
+#endif // USE_DASHBOARD

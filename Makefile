@@ -485,6 +485,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/display.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \

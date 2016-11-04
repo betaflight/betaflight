@@ -113,48 +113,6 @@ cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 
 #define CMS_UPDATE_INTERVAL 50 // msec
 
-// XXX Why is this here? Something wrong?
-// XXX Something like Drawing Context that holds all state variables would be the way...
-int8_t lastCursorPos;
-
-void cmsScreenClear(displayPort_t *instance)
-{
-    instance->vTable->clear();
-    instance->cleared = true;
-    lastCursorPos = -1; // XXX Here
-}
-
-void cmsScreenBegin(displayPort_t *instance)
-{
-    instance->vTable->begin();
-    instance->vTable->clear();
-}
-
-void cmsScreenEnd(displayPort_t *instance)
-{
-    instance->vTable->end();
-}
-
-int cmsScreenWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)
-{
-    return instance->vTable->write(x, y, s);
-}
-
-void cmsScreenHeartBeat(displayPort_t *instance)
-{
-    instance->vTable->heartbeat();
-}
-
-void cmsScreenResync(displayPort_t *instance)
-{
-    instance->vTable->resync(instance);
-}
-
-uint16_t cmsScreenTxBytesFree(displayPort_t *instance)
-{
-    return instance->vTable->txBytesFree();
-}
-
 void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 {
     cmsDeviceInitFunc(pDisp);
@@ -277,22 +235,22 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     switch (p->type) {
     case OME_String:
         if (IS_PRINTVALUE(p) && p->data) {
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, p->data);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, p->data);
             CLR_PRINTVALUE(p);
         }
         break;
     case OME_Submenu:
         if (IS_PRINTVALUE(p))  {
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, ">");
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, ">");
             CLR_PRINTVALUE(p);
         }
         break;
     case OME_Bool:
         if (IS_PRINTVALUE(p) && p->data) {
             if (*((uint8_t *)(p->data))) {
-                cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
             } else {
-                cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
             }
             CLR_PRINTVALUE(p);
         }
@@ -300,8 +258,8 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     case OME_TAB: {
         if (IS_PRINTVALUE(p)) {
             OSD_TAB_t *ptr = p->data;
-            //cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 5, row, (char *)ptr->names[*ptr->val]);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, (char *)ptr->names[*ptr->val]);
+            //cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 5, row, (char *)ptr->names[*ptr->val]);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, (char *)ptr->names[*ptr->val]);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -315,9 +273,9 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             val = (uint16_t *)address;
 
             if (VISIBLE(*val)) {
-                cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
+                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "YES");
             } else {
-                cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
+                cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "NO ");
             }
             CLR_PRINTVALUE(p);
         }
@@ -328,8 +286,8 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_UINT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cmsPad(buff, 5);
-            //cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "     ");
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            //cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "     ");
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -338,7 +296,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_INT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cmsPad(buff, 5);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -347,7 +305,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cmsPad(buff, 5);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -356,7 +314,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cmsPad(buff, 5);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -365,7 +323,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
             cmsPad(buff, 5);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             // PRINTVALUE not cleared on purpose
         }
         break;
@@ -374,7 +332,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
             OSD_FLOAT_t *ptr = p->data;
             cmsFormatFloat(*ptr->val * ptr->multipler, buff);
             cmsPad(buff, 5);
-            cnt = cmsScreenWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 1, row, buff); // XXX One char left ???
+            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 1, row, buff); // XXX One char left ???
             CLR_PRINTVALUE(p);
         }
         break;
@@ -399,7 +357,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
     static uint8_t pollDenom = 0;
     bool drawPolled = (++pollDenom % 8 == 0);
 
-    uint32_t room = cmsScreenTxBytesFree(pDisplay);
+    uint32_t room = displayTxBytesFree(pDisplay);
 
     if (!currentMenu)
         return;
@@ -425,16 +383,16 @@ void cmsDrawMenu(displayPort_t *pDisplay)
     while ((currentMenu + currentCursorPos)->type == OME_Label) // skip label
         currentCursorPos++;
 
-    if (lastCursorPos >= 0 && currentCursorPos != lastCursorPos) {
-        room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, lastCursorPos + top, "  ");
+    if (pDisplay->lastCursorPos >= 0 && currentCursorPos != pDisplay->lastCursorPos) {
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, pDisplay->lastCursorPos + top, "  ");
     }
 
     if (room < 30)
         return;
 
-    if (lastCursorPos != currentCursorPos) {
-        room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN, currentCursorPos + top, " >");
-        lastCursorPos = currentCursorPos;
+    if (pDisplay->lastCursorPos != currentCursorPos) {
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, currentCursorPos + top, " >");
+        pDisplay->lastCursorPos = currentCursorPos;
     }
 
     if (room < 30)
@@ -443,7 +401,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
     // Print text labels
     for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
-            room -= cmsScreenWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
+            room -= displayWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;
@@ -483,7 +441,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
             currentMenu = (OSD_Entry *)ptr;
             currentCursorPos = 0;
         }
-        cmsScreenClear(pDisplay);
+        displayClear(pDisplay);
         cmsUpdateMaxRows(pDisplay);
     }
 
@@ -502,7 +460,7 @@ long cmsMenuBack(displayPort_t *pDisplay)
         cmsx_RateExpoWriteback();
 
     if (menuStackIdx) {
-        cmsScreenClear(pDisplay);
+        displayClear(pDisplay);
         menuStackIdx--;
         nextPage = NULL;
         currentMenu = menuStack[menuStackIdx];
@@ -527,7 +485,7 @@ void cmsMenuOpen(void)
         currentMenu = &menuMain[0];
     } else {
         // Switch display
-        cmsScreenEnd(&currentDisplay);
+        displayEnd(&currentDisplay);
         initfunc = cmsDeviceSelectNext();
     }
 
@@ -535,17 +493,17 @@ void cmsMenuOpen(void)
         return;
 
     cmsScreenInit(&currentDisplay, initfunc);
-    cmsScreenBegin(&currentDisplay);
+    displayBegin(&currentDisplay);
     cmsMenuChange(&currentDisplay, currentMenu);
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
-        cmsScreenClear(pDisplay);
+        displayClear(pDisplay);
 
-        cmsScreenWrite(pDisplay, 5, 3, "REBOOTING...");
-        cmsScreenResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
+        displayWrite(pDisplay, 5, 3, "REBOOTING...");
+        displayResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
 
         stopMotors();
         stopPwmAllMotors();
@@ -557,7 +515,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 
     cmsInMenu = false;
 
-    cmsScreenEnd(pDisplay);
+    displayEnd(pDisplay);
     currentMenu = NULL;
 
     if (ptr)
@@ -585,9 +543,8 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         if (currentCursorPos < currentMenuIdx) {
             currentCursorPos++;
         } else {
-            if (nextPage) // we have more pages
-            {
-                cmsScreenClear(pDisplay);
+            if (nextPage) { // we have more pages
+                displayClear(pDisplay);
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
@@ -607,7 +564,7 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
         if (currentCursorPos == -1 || (currentMenu + currentCursorPos)->type == OME_Label) {
             if (nextPage) {
-                cmsScreenClear(pDisplay);
+                displayClear(pDisplay);
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
@@ -803,7 +760,7 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
         if (currentTime > lastCmsHeartBeat + 500) {
             // Heart beat for external CMS display device @ 500msec
             // (Timeout @ 1000msec)
-            cmsScreenHeartBeat(&currentDisplay);
+            displayHeartbeat(&currentDisplay);
             lastCmsHeartBeat = currentTime;
         }
     }
