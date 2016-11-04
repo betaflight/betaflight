@@ -40,8 +40,8 @@
 #define USE_DSHOT
 
 #define LED0                    PB5
-// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
-#if defined(AIRBOTF4)
+// Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
+#if defined(AIRBOTF4) || defined(REVOLT)
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
 #else
