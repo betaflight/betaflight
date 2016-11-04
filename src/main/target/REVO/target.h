@@ -41,12 +41,14 @@
 
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
-#if !defined(AIRBOTF4)
-#define LED1                    PB4
-#endif
-
+#if defined(AIRBOTF4)
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
+#else
+#define LED1                    PB4
+#define BEEPER                  NONE
+#endif
+
 
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
