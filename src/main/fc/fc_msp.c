@@ -241,9 +241,7 @@ static void serializeBoxNamesReply(sbuf_t *dst)
         const box_t *box = findBoxByActiveBoxId(activeBoxId);
         if (box) {
             const int len = strlen(box->boxName);
-            for (int j = 0; j < len; j++) {
-                sbufWriteU8(dst, box->boxName[j]);
-            }
+            sbufWriteData(dst, box->boxName, len);
         }
     }
 }
@@ -467,7 +465,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
 #if !defined(NAV) && !defined(USE_FLASHFS)
     UNUSED(src);
 #endif
-    uint32_t i;
 
 #ifdef NAV
     int8_t msp_wp_no;
@@ -483,9 +480,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_FC_VARIANT:
-        for (i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
-            sbufWriteU8(dst, flightControllerIdentifier[i]);
-        }
+        sbufWriteData(dst, flightControllerIdentifier, FLIGHT_CONTROLLER_IDENTIFIER_LENGTH);
         break;
 
     case MSP_FC_VERSION:
@@ -495,9 +490,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_BOARD_INFO:
-        for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
-            sbufWriteU8(dst, boardIdentifier[i]);
-        }
+        sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef NAZE
         sbufWriteU16(dst, hardwareRevision);
 #else
@@ -506,16 +499,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_BUILD_INFO:
-        for (i = 0; i < BUILD_DATE_LENGTH; i++) {
-            sbufWriteU8(dst, buildDate[i]);
-        }
-        for (i = 0; i < BUILD_TIME_LENGTH; i++) {
-            sbufWriteU8(dst, buildTime[i]);
-        }
-
-        for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
-            sbufWriteU8(dst, shortGitRevision[i]);
-        }
+        sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
+        sbufWriteData(dst, buildTime, BUILD_TIME_LENGTH);
+        sbufWriteData(dst, shortGitRevision, GIT_SHORT_REVISION_LENGTH);
         break;
 
     // DEPRECATED - Use MSP_API_VERSION
@@ -564,12 +550,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         {
             // Hack scale due to choice of units for sensor data in multiwii
             const uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, accADC[i] / scale);
-            for (i = 0; i < 3; i++)
+            }
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, gyroADC[i]);
-            for (i = 0; i < 3; i++)
+            }
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, magADC[i]);
+            }
         }
         break;
 
@@ -579,7 +568,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONFIGURATIONS:
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             sbufWriteU16(dst, currentProfile->servoConf[i].min);
             sbufWriteU16(dst, currentProfile->servoConf[i].max);
             sbufWriteU16(dst, currentProfile->servoConf[i].middle);
@@ -591,7 +580,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         }
         break;
     case MSP_SERVO_MIX_RULES:
-        for (i = 0; i < MAX_SERVO_RULES; i++) {
+        for (int i = 0; i < MAX_SERVO_RULES; i++) {
             sbufWriteU8(dst, masterConfig.customServoMixer[i].targetChannel);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].inputSource);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].rate);
@@ -610,8 +599,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_RC:
-        for (i = 0; i < rxRuntimeConfig.channelCount; i++)
+        for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);
+        }
         break;
 
     case MSP_ATTITUDE:
@@ -660,7 +650,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
     case MSP_RC_TUNING:
         sbufWriteU8(dst, 100); //rcRate8 kept for compatibity reasons, this setting is no longer used
         sbufWriteU8(dst, currentControlRateProfile->rcExpo8);
-        for (i = 0 ; i < 3; i++) {
+        for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
         sbufWriteU8(dst, currentControlRateProfile->dynThrPID);
@@ -671,7 +661,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_PID:
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
             sbufWriteU8(dst, currentProfile->pidProfile.P8[i]);
             sbufWriteU8(dst, currentProfile->pidProfile.I8[i]);
             sbufWriteU8(dst, currentProfile->pidProfile.D8[i]);
@@ -689,7 +679,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_MODE_RANGES:
-        for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
             const box_t *box = findBoxByActiveBoxId(mac->modeId);
             sbufWriteU8(dst, box ? box->permanentId : 0);
@@ -700,7 +690,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_ADJUSTMENT_RANGES:
-        for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
+        for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
@@ -716,7 +706,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_BOXIDS:
-        for (i = 0; i < activeBoxIdCount; i++) {
+        for (int i = 0; i < activeBoxIdCount; i++) {
             const box_t *box = findBoxByActiveBoxId(activeBoxIds[i]);
             if (!box) {
                 continue;
@@ -757,7 +747,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
 
     case MSP_MOTOR_PINS:
         // FIXME This is hardcoded and should not be.
-        for (i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++)
             sbufWriteU8(dst, i + 1);
         break;
 
@@ -828,8 +818,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         // output some useful QA statistics
         // debug[x] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
 
-        for (i = 0; i < DEBUG16_VALUE_COUNT; i++)
+        for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
             sbufWriteU16(dst, debug[i]);      // 4 variables are here for general monitoring purpose
+        }
         break;
 
     case MSP_UID:
@@ -892,7 +883,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_RXFAIL_CONFIG:
-        for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
+        for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
             sbufWriteU8(dst, masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
             sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
         }
@@ -903,8 +894,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_RX_MAP:
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
-            sbufWriteU8(dst, masterConfig.rxConfig.rcmap[i]);
+        sbufWriteData(dst, masterConfig.rxConfig.rcmap, MAX_MAPPABLE_RX_INPUTS);
         break;
 
     case MSP_BF_CONFIG:
@@ -923,7 +913,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_CF_SERIAL_CONFIG:
-        for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+        for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
             if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
                 continue;
             };
@@ -938,7 +928,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
 
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
-        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
@@ -947,7 +937,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
+        for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
         }
@@ -1001,8 +991,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         break;
 
     case MSP_BF_BUILD_INFO:
-        for (i = 0; i < 11; i++)
-        sbufWriteU8(dst, buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
+        sbufWriteData(dst, buildDate, 11); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
         sbufWriteU32(dst, 0); // future exp
         sbufWriteU32(dst, 0); // future exp
         break;
@@ -1110,7 +1099,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             } else {
                 uint16_t frame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 
-                for (i = 0; i < channelCount; i++) {
+                for (int i = 0; i < channelCount; i++) {
                     frame[i] = sbufReadU16(src);
                 }
 
@@ -1135,7 +1124,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_PID:
         signalRequiredPIDCoefficientsUpdate();
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
             currentProfile->pidProfile.P8[i] = sbufReadU8(src);
             currentProfile->pidProfile.I8[i] = sbufReadU8(src);
             currentProfile->pidProfile.D8[i] = sbufReadU8(src);
@@ -1187,7 +1176,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize >= 10) {
             sbufReadU8(src); //Read rcRate8, kept for protocol compatibility reasons
             currentControlRateProfile->rcExpo8 = sbufReadU8(src);
-            for (i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) {
                 rate = sbufReadU8(src);
                 if (i == FD_YAW) {
                     currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
@@ -1244,7 +1233,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i++) {
             const int16_t disarmed = sbufReadU16(src);
             if (i < MAX_SUPPORTED_MOTORS) {
                 motor_disarmed[i] = disarmed;
@@ -1488,7 +1477,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RX_MAP:
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+        for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             masterConfig.rxConfig.rcmap[i] = sbufReadU8(src);
         }
         break;
@@ -1545,7 +1534,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
