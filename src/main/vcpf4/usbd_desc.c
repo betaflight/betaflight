@@ -26,6 +26,7 @@
 #include "usbd_conf.h"
 #include "usb_regs.h"
 #include "platform.h"
+#include "build/version.h"
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -57,7 +58,7 @@
   * @{
   */
 #define USBD_LANGID_STRING              0x409
-#define USBD_MANUFACTURER_STRING        "BetaFlight"
+#define USBD_MANUFACTURER_STRING        FC_FIRMWARE_NAME
 
 #ifdef USBD_PRODUCT_STRING
   #define USBD_PRODUCT_HS_STRING          USBD_PRODUCT_STRING
