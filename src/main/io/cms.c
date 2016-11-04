@@ -72,7 +72,7 @@
 #include "io/cms_vtx.h"
 #ifdef OSD
 #include "io/cms_osd.h"
-#endif // OSD
+#endif
 #include "io/cms_ledstrip.h"
 
 // Forwards
@@ -82,7 +82,9 @@ void cmsx_FeatureWriteback(void);
 
 // Device management
 
+#ifndef CMS_MAX_DEVICE
 #define CMS_MAX_DEVICE 4
+#endif
 
 cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
 int cmsDeviceCount;
@@ -152,17 +154,21 @@ displayPort_t currentDisplay;
 
 bool cmsInMenu = false;
 
-OSD_Entry *menuStack[10]; //tab to save menu stack
-uint8_t menuStackHistory[10]; //current position in menu stack
+OSD_Entry menuMain[];
+
+// XXX Does menu backing support backing into second page???
+
+OSD_Entry *menuStack[10];        // Stack to save menu transition
+uint8_t menuStackHistory[10];    // cursorRow in a stacked menu
 uint8_t menuStackIdx = 0;
 
-OSD_Entry menuMain[];
-OSD_Entry *currentMenu = NULL;
-OSD_Entry *nextPage = NULL;
+OSD_Entry *currentMenu;          // Points to top entry of the current page
+OSD_Entry *nextPage;             // Only 2 pages are allowed (for now)
+uint8_t maxRow;                  // Max row in a page
 
-int8_t currentCursorPos = 0;
-uint8_t currentMenuIdx = 0;
-uint16_t *currentElement = NULL;
+int8_t cursorRow;
+
+// Stick/key detection
 
 #define IS_HI(X)  (rcData[X] > 1750)
 #define IS_LO(X)  (rcData[X] < 1250)
@@ -179,18 +185,18 @@ uint16_t *currentElement = NULL;
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-void cmsUpdateMaxRows(displayPort_t *instance)
+void cmsUpdateMaxRow(displayPort_t *instance)
 {
     OSD_Entry *ptr;
 
-    currentMenuIdx = 0;
+    maxRow = 0;
     for (ptr = currentMenu; ptr->type != OME_END; ptr++)
-        currentMenuIdx++;
+        maxRow++;
 
-    if (currentMenuIdx > MAX_MENU_ITEMS(instance))
-        currentMenuIdx = MAX_MENU_ITEMS(instance);
+    if (maxRow > MAX_MENU_ITEMS(instance))
+        maxRow = MAX_MENU_ITEMS(instance);
 
-    currentMenuIdx--;
+    maxRow--;
 }
 
 static void cmsFormatFloat(int32_t value, char *floatString)
@@ -220,7 +226,7 @@ static void cmsFormatFloat(int32_t value, char *floatString)
         floatString[0] = ' ';
 }
 
-void cmsPad(char *buf, int size)
+void cmsPadToSize(char *buf, int size)
 {
     int i;
 
@@ -294,8 +300,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPad(buff, 5);
-            //cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "     ");
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
@@ -304,7 +309,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_INT8_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPad(buff, 5);
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
@@ -313,7 +318,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPad(buff, 5);
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
@@ -322,7 +327,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPad(buff, 5);
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             CLR_PRINTVALUE(p);
         }
@@ -331,7 +336,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (p->data && drawPolled) {
             OSD_UINT16_t *ptr = p->data;
             itoa(*ptr->val, buff, 10);
-            cmsPad(buff, 5);
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
             // PRINTVALUE not cleared on purpose
         }
@@ -340,7 +345,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
             cmsFormatFloat(*ptr->val * ptr->multipler, buff);
-            cmsPad(buff, 5);
+            cmsPadToSize(buff, 5);
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 1, row, buff); // XXX One char left ???
             CLR_PRINTVALUE(p);
         }
@@ -359,7 +364,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
 {
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (pDisplay->rows - currentMenuIdx) / 2 - 1;
+    uint8_t top = (pDisplay->rows - maxRow) / 2 - 1;
 
     // Polled (dynamic) value display denominator.
     // XXX Need to denom based on absolute time
@@ -389,19 +394,19 @@ void cmsDrawMenu(displayPort_t *pDisplay)
 
     // Cursor manipulation
 
-    while ((currentMenu + currentCursorPos)->type == OME_Label) // skip label
-        currentCursorPos++;
+    while ((currentMenu + cursorRow)->type == OME_Label) // skip label
+        cursorRow++;
 
-    if (pDisplay->lastCursorPos >= 0 && currentCursorPos != pDisplay->lastCursorPos) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, pDisplay->lastCursorPos + top, "  ");
+    if (pDisplay->cursorRow >= 0 && cursorRow != pDisplay->cursorRow) {
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, pDisplay->cursorRow + top, "  ");
     }
 
     if (room < 30)
         return;
 
-    if (pDisplay->lastCursorPos != currentCursorPos) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, currentCursorPos + top, " >");
-        pDisplay->lastCursorPos = currentCursorPos;
+    if (pDisplay->cursorRow != cursorRow) {
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, cursorRow + top, " >");
+        pDisplay->cursorRow = cursorRow;
     }
 
     if (room < 30)
@@ -441,17 +446,19 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
         if (ptr == cmsx_menuRateExpo)
             cmsx_RateExpoRead();
 
+        // Stack the current menu and move to a new menu.
+        // The (ptr == curretMenu) case occurs when reopening for display sw
+
         if ((OSD_Entry *)ptr != currentMenu) {
-            // Stack it and move to a new menu.
-            // (ptr == curretMenu case occurs when reopening for display sw)
             menuStack[menuStackIdx] = currentMenu;
-            menuStackHistory[menuStackIdx] = currentCursorPos;
+            menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
             currentMenu = (OSD_Entry *)ptr;
-            currentCursorPos = 0;
+            cursorRow = 0;
         }
+
         displayClear(pDisplay);
-        cmsUpdateMaxRows(pDisplay);
+        cmsUpdateMaxRow(pDisplay);
     }
 
     return 0;
@@ -473,9 +480,8 @@ long cmsMenuBack(displayPort_t *pDisplay)
         menuStackIdx--;
         nextPage = NULL;
         currentMenu = menuStack[menuStackIdx];
-        currentCursorPos = menuStackHistory[menuStackIdx];
-
-        cmsUpdateMaxRows(pDisplay);
+        cursorRow = menuStackHistory[menuStackIdx];
+        cmsUpdateMaxRow(pDisplay);
     }
 
     return 0;
@@ -549,46 +555,42 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     }
 
     if (key == KEY_DOWN) {
-        if (currentCursorPos < currentMenuIdx) {
-            currentCursorPos++;
+        if (cursorRow < maxRow) {
+            cursorRow++;
         } else {
-            if (nextPage) { // we have more pages
+            if (nextPage) { // we have another page
                 displayClear(pDisplay);
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
-                currentCursorPos = 0;
-                cmsUpdateMaxRows(pDisplay);
-            } else {
-                currentCursorPos = 0;
+                cmsUpdateMaxRow(pDisplay);
             }
+            cursorRow = 0;    // Goto top in any case
         }
     }
 
     if (key == KEY_UP) {
-        currentCursorPos--;
+        cursorRow--;
 
-        if ((currentMenu + currentCursorPos)->type == OME_Label && currentCursorPos > 0)
-            currentCursorPos--;
+        if ((currentMenu + cursorRow)->type == OME_Label && cursorRow > 0)
+            cursorRow--;
 
-        if (currentCursorPos == -1 || (currentMenu + currentCursorPos)->type == OME_Label) {
+        if (cursorRow == -1 || (currentMenu + cursorRow)->type == OME_Label) {
             if (nextPage) {
                 displayClear(pDisplay);
                 p = nextPage;
                 nextPage = currentMenu;
                 currentMenu = (OSD_Entry *)p;
-                currentCursorPos = 0;
-                cmsUpdateMaxRows(pDisplay);
-            } else {
-                currentCursorPos = currentMenuIdx;
+                cmsUpdateMaxRow(pDisplay);
             }
+            cursorRow = maxRow;    // Goto bottom in any case
         }
     }
 
     if (key == KEY_DOWN || key == KEY_UP)
         return res;
 
-    p = currentMenu + currentCursorPos;
+    p = currentMenu + cursorRow;
 
     switch (p->type) {
         case OME_Submenu:
@@ -759,7 +761,7 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
 
         //lastCalled = currentTime;
 
-        if (key && !currentElement) {
+        if (key) {
             rcDelay = cmsHandleKey(&currentDisplay, key);
             return;
         }

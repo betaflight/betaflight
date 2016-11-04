@@ -96,6 +96,7 @@
 
 // Configuratoin Menu System
 #define CMS
+#define CMS_MAX_DEVICE 4
 
 // Use external OSD to run CMS
 #define CANVAS

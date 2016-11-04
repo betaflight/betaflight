@@ -24,15 +24,11 @@
 
 #include "display.h"
 
-// XXX Why is this here? Something wrong?
-// XXX Something like Drawing Context that holds all state variables would be the way...
-int8_t lastCursorPos;
-
 void displayClear(displayPort_t *instance)
 {
     instance->vTable->clear(instance);
     instance->cleared = true;
-    instance->lastCursorPos = -1;
+    instance->cursorRow = -1;
 }
 
 void displayOpen(displayPort_t *instance)
