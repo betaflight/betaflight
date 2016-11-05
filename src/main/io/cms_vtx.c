@@ -18,14 +18,18 @@
 
 #if defined(VTX) || defined(USE_RTC6705)
 
-uint8_t cmsx_featureVtx = 0, cmsx_vtxBand, cmsx_vtxChannel;
+static bool featureRead = false;
+static uint8_t cmsx_featureVtx = 0, cmsx_vtxBand, cmsx_vtxChannel;
 
-void cmsx_Vtx_FeatureRead(void)
+static void cmsx_Vtx_FeatureRead(void)
 {
-    cmsx_featureVtx = feature(FEATURE_VTX) ? 1 : 0;
+    if (!featureRead) {
+        cmsx_featureVtx = feature(FEATURE_VTX) ? 1 : 0;
+        featureRead = true;
+    }
 }
 
-void cmsx_Vtx_FeatureWriteback(void)
+static void cmsx_Vtx_FeatureWriteback(void)
 {
     if (cmsx_featureVtx)
         featureSet(FEATURE_VTX);
@@ -41,10 +45,10 @@ static const char * const vtxBandNames[] = {
     "RACEBAND",
 };
 
-OSD_TAB_t entryVtxBand = {&cmsx_vtxBand,4,&vtxBandNames[0]};
-OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
+static OSD_TAB_t entryVtxBand = {&cmsx_vtxBand,4,&vtxBandNames[0]};
+static OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
 
-void cmsx_Vtx_ConfigRead(void)
+static void cmsx_Vtx_ConfigRead(void)
 {
 #ifdef VTX
     cmsx_vtxBand = masterConfig.vtxBand;
@@ -57,7 +61,7 @@ void cmsx_Vtx_ConfigRead(void)
 #endif // USE_RTC6705
 }
 
-void cmsx_Vtx_ConfigWriteback(void)
+static void cmsx_Vtx_ConfigWriteback(void)
 {
 #ifdef VTX
     masterConfig.vtxBand = cmsx_vtxBand;
@@ -70,11 +74,11 @@ void cmsx_Vtx_ConfigWriteback(void)
 }
 
 #ifdef VTX
-OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
-OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
+static OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
+static OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
 #endif // VTX
 
-OSD_Entry cmsx_menuVtxEntries[] =
+static OSD_Entry cmsx_menuVtxEntries[] =
 {
     {"--- VTX ---", OME_Label, NULL, NULL, 0},
     {"ENABLED", OME_Bool, NULL, &cmsx_featureVtx, 0},

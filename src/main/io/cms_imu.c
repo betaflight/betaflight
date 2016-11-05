@@ -31,9 +31,9 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
+static OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
 
-uint8_t tempPid[4][3];
+static uint8_t tempPid[4][3];
 
 static OSD_UINT8_t entryRollP = {&tempPid[PIDROLL][0], 10, 150, 1};
 static OSD_UINT8_t entryRollI = {&tempPid[PIDROLL][1], 1, 150, 1};
@@ -47,7 +47,7 @@ static OSD_UINT8_t entryYawP = {&tempPid[PIDYAW][0], 10, 150, 1};
 static OSD_UINT8_t entryYawI = {&tempPid[PIDYAW][1], 1, 150, 1};
 static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
 
-long cmsx_PidRead(void)
+static long cmsx_PidRead(void)
 {
     uint8_t i;
 
@@ -63,7 +63,7 @@ long cmsx_PidRead(void)
     return 0;
 }
 
-long cmsx_PidWriteback(OSD_Entry *self)
+static long cmsx_PidWriteback(OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -82,7 +82,7 @@ long cmsx_PidWriteback(OSD_Entry *self)
     return 0;
 }
 
-OSD_Entry cmsx_menuPidEntries[] =
+static OSD_Entry cmsx_menuPidEntries[] =
 {
     {"--- PID ---", OME_Label, NULL, NULL, 0},
     {"ROLL P", OME_UINT8, NULL, &entryRollP, 0},
@@ -101,7 +101,7 @@ OSD_Entry cmsx_menuPidEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu cmsx_menuPid = {
+static CMS_Menu cmsx_menuPid = {
     "MENUPID",
     OME_MENU,
     cmsx_PidRead,
@@ -113,7 +113,7 @@ CMS_Menu cmsx_menuPid = {
 //
 // Rate & Expo
 //
-controlRateConfig_t rateProfile;
+static controlRateConfig_t rateProfile;
 
 static OSD_FLOAT_t entryRollRate = {&rateProfile.rates[0], 0, 250, 1, 10};
 static OSD_FLOAT_t entryPitchRate = {&rateProfile.rates[1], 0, 250, 1, 10};
@@ -127,14 +127,14 @@ static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10
 static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.setpointRelaxRatio, 0, 100, 1, 10};
 static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
 
-long cmsx_RateExpoRead(void)
+static long cmsx_RateExpoRead(void)
 {
     memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
 
     return 0;
 }
 
-long cmsx_RateExpoWriteback(OSD_Entry *self)
+static long cmsx_RateExpoWriteback(OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -143,7 +143,7 @@ long cmsx_RateExpoWriteback(OSD_Entry *self)
     return 0;
 }
 
-long cmsx_menuRcConfirmBack(OSD_Entry *self)
+static long cmsx_menuRcConfirmBack(OSD_Entry *self)
 {
     if (self && self->type == OME_Back)
         return 0;
@@ -151,7 +151,7 @@ long cmsx_menuRcConfirmBack(OSD_Entry *self)
         return -1;
 }
 
-OSD_Entry cmsx_menuRateExpoEntries[] =
+static OSD_Entry cmsx_menuRateExpoEntries[] =
 {
     {"--- RATE&EXPO ---", OME_Label, NULL, NULL, 0},
     {"RC RATE", OME_FLOAT, NULL, &entryRcYawRate, 0},
@@ -191,7 +191,7 @@ static OSD_INT16_t entryRcAux2 = {&rcData[AUX2], 1, 2500, 0};
 static OSD_INT16_t entryRcAux3 = {&rcData[AUX3], 1, 2500, 0};
 static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
 
-OSD_Entry cmsx_menuRcEntries[] =
+static OSD_Entry cmsx_menuRcEntries[] =
 {
     {"--- RC PREV ---", OME_Label, NULL, NULL, 0},
     {"ROLL", OME_INT16, NULL, &entryRcRoll, DYNAMIC},
@@ -219,15 +219,15 @@ CMS_Menu cmsx_menuRc = {
 //
 // Misc
 //
-OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
-OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
-OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
-OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
-OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
-OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
-OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
+static OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
+static OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
+static OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
+static OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
+static OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
+static OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
+static OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
 
-OSD_Entry menuImuMiscEntries[]=
+static OSD_Entry menuImuMiscEntries[]=
 {
     {"--- MISC ---", OME_Label, NULL, NULL, 0},
     {"GYRO LPF", OME_UINT8, NULL, &entryGyroSoftLpfHz, 0},
@@ -250,7 +250,7 @@ CMS_Menu menuImuMisc = {
     menuImuMiscEntries,
 };
 
-OSD_Entry cmsx_menuImuEntries[] =
+static OSD_Entry cmsx_menuImuEntries[] =
 {
     {"--- CFG.IMU ---", OME_Label, NULL, NULL, 0},
     {"PID PROF", OME_UINT8, NULL, &entryPidProfile, 0},

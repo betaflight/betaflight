@@ -26,7 +26,7 @@
 #include "io/flashfs.h"
 
 #ifdef USE_FLASHFS
-long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
+static long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 {
     UNUSED(ptr);
 
@@ -46,16 +46,20 @@ long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 }
 #endif // USE_FLASHFS
 
-uint8_t cmsx_FeatureBlackbox;
+static bool featureRead = false;
+static uint8_t cmsx_FeatureBlackbox;
 
-long cmsx_Blackbox_FeatureRead(void)
+static long cmsx_Blackbox_FeatureRead(void)
 {
-    cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
+    if (!featureRead) {
+        cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
+        featureRead = true;
+    }
 
     return 0;
 }
 
-long cmsx_Blackbox_FeatureWriteback(void)
+static long cmsx_Blackbox_FeatureWriteback(void)
 {
     if (cmsx_FeatureBlackbox)
         featureSet(FEATURE_BLACKBOX);
@@ -65,9 +69,9 @@ long cmsx_Blackbox_FeatureWriteback(void)
     return 0;
 }
 
-OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
+static OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
 
-OSD_Entry cmsx_menuBlackboxEntries[] =
+static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     {"--- BLACKBOX ---", OME_Label, NULL, NULL, 0},
     {"ENABLED", OME_Bool, NULL, &cmsx_FeatureBlackbox, 0},

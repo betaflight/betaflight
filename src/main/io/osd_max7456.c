@@ -12,10 +12,9 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 
-displayPort_t osd7456DisplayPort;
+displayPort_t osd7456DisplayPort; // Referenced from osd.c
 
 extern uint16_t refreshTimeout;
-void osdResetAlarms(void);
 
 static int osdMenuBegin(displayPort_t *displayPort)
 {
@@ -71,7 +70,7 @@ static uint32_t osdTxBytesFree(displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
-displayPortVTable_t osdVTable = {
+static displayPortVTable_t osdVTable = {
     osdMenuBegin,
     osdMenuEnd,
     osdClearScreen,

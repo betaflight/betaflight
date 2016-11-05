@@ -542,12 +542,18 @@ static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
 {
     OSD_Entry *p;
 
-    for (p = pMenu->entries; p->type != OME_END ; p++)
-        if (p->type == OME_Submenu)
-            cmsTraverseGlobalExit(p->data);
+    debug[0]++;
 
-    if (pMenu->onGlobalExit)
+    for (p = pMenu->entries; p->type != OME_END ; p++) {
+        if (p->type == OME_Submenu) {
+            cmsTraverseGlobalExit(p->data);
+        }
+    }
+
+    if (pMenu->onGlobalExit) {
+        debug[1]++;
         pMenu->onGlobalExit();
+    }
 }
 
 long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
@@ -566,6 +572,8 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 
         if (currentMenu->onExit)
             currentMenu->onExit((OSD_Entry *)NULL); // Forced exit
+
+        saveConfigAndNotify();
     }
 
     cmsInMenu = false;
@@ -834,7 +842,7 @@ void cmsHandler(uint32_t currentTime)
     }
 }
 
-// Will initializing with menuMain be better?
+// Is initializing with menuMain better?
 // Can it be done with the current main()?
 void cmsInit(void)
 {
