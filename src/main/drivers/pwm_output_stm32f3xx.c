@@ -34,6 +34,8 @@
 
 #include "telemetry/esc_telemetry.h"
 
+#include "build/debug.h"
+
 #ifdef USE_DSHOT
 
 #define MAX_DMA_TIMERS 8
@@ -65,11 +67,10 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    uint16_t packet = (value << 1) | 0;
 
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        uint8_t tlmIndex = getEscTelemetryTriggerMotorIndex();
-        if (tlmIndex != ESC_TRIGGER_NONE && tlmIndex == index) {
+    if (true) { //feature(FEATURE_ESC_TELEMETRY)) { //TODO: check for feature
+        if (escTelemetrySendTrigger(index)) {
             // Set motor to trigger for ESC Telemetry
             packet = (value << 1) | 1;
         }

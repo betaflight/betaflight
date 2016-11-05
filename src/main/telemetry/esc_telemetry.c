@@ -18,6 +18,8 @@
 
 #include "esc_telemetry.h"
 
+#include "build/debug.h"
+
 /*
 KISS ESC TELEMETRY PROTOCOL
 ---------------------------
@@ -45,14 +47,13 @@ typedef struct {
 } esc_telemetry_t;
 
 typedef enum {
-    ESC_TLM_FRAME_PENDING = 0,
-    ESC_TLM_FRAME_COMPLETE = (1 << 0)
+    ESC_TLM_FRAME_PENDING = 1 << 0,     // 1
+    ESC_TLM_FRAME_COMPLETE = 1 << 1     // 2
 } escTlmFrameState_t;
 
 typedef enum {
-    ESC_TLM_TRIGGER_READY = 0,
-    ESC_TLM_TRIGGER_NEXT = (1 << 0),
-    ESC_TLM_TRIGGER_PENDING = (1 << 0),
+    ESC_TLM_TRIGGER_READY = 1 << 0,     // 1
+    ESC_TLM_TRIGGER_PENDING = 1 << 1,   // 2
 } escTlmTriggerState_t;
 
 #define ESC_TLM_BAUDRATE 115200
@@ -61,10 +62,11 @@ typedef enum {
 static bool tlmFrameDone = false;
 static bool firstCycleComplete = false;
 static uint8_t tlm[ESC_TLM_BUFFSIZE] = { 0, };
+static uint8_t tlmFramePosition = 0;
 static serialPort_t *escTelemetryPort = NULL;
 static esc_telemetry_t escTelemetryData[4];
 
-static uint8_t escTelemetryMotor = 0;      // motor index 0 - 3
+static uint8_t escTelemetryMotor = 99;      // motor index 0 - 3
 static bool escTelemetryEnabled = false;
 static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
 
@@ -77,29 +79,29 @@ bool isEscTelemetryEnabled(void)
     return escTelemetryEnabled;
 }
 
-uint8_t getEscTelemetryTriggerMotorIndex(void)
+bool escTelemetrySendTrigger(uint8_t index)
 {
-    if (!escTelemetryEnabled || feature(FEATURE_ESC_TELEMETRY))
-        return ESC_TRIGGER_NONE;
+    // wait 10 seconds before requesting telemetry (let the ESC boot first)
+    if (millis() < 10000) return false;
 
-    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
+    debug[1] = escTelemetryTriggerState;
+
+    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
     {
-        escTelemetryMotor = 0;
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-        return escTelemetryMotor;
+        return false;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_NEXT)
+    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
     {
-        escTelemetryMotor++;
-        if (escTelemetryMotor >= 4) {
-            escTelemetryMotor = 0;
-            firstCycleComplete = true;
+        debug[0] = ((escTelemetryMotor+1)*10);
+
+        if (escTelemetryMotor == index) {
+            debug[0] = ((escTelemetryMotor+1)*10)+1;
+            escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
+            return true;
         }
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-        return escTelemetryMotor;
     }
 
-    return ESC_TRIGGER_NONE;
+    return false;
 }
 
 bool escTelemetryInit(void)
@@ -109,11 +111,14 @@ bool escTelemetryInit(void)
         return false;
     }
 
+    portOptions_t options = (SERIAL_NOT_INVERTED); //SERIAL_INVERTED
+
     // Initialize serial port
-    escTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escTelemetryDataReceive, ESC_TLM_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+    escTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escTelemetryDataReceive, ESC_TLM_BAUDRATE, MODE_RX, options);
 
     if (escTelemetryPort) {
         escTelemetryEnabled = true;
+        escTelemetryMotor = 0;
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
     }
 
@@ -127,24 +132,25 @@ void freeEscTelemetryPort(void)
     escTelemetryEnabled = false;
 }
 
+// void handleEscTelemetry(void)
+// {
+//     while (serialRxBytesWaiting(escTelemetryPort) > 0) {
+//         uint8_t c = serialRead(escTelemetryPort);
+//         escTelemetryDataReceive(c);
+//     }
+//
+// }
+
 // Receive ISR callback
 static void escTelemetryDataReceive(uint16_t c)
 {
-    // uint32_t tlmTime;
-    // static uint32_t tlmTimeLast;
-    static uint8_t tlmFramePosition;
-
-    // tlmTime = micros();
-    //
-    // if ((tlmTime - tlmTimeLast) > 3000)
-    //     tlmFramePosition = 0;
-    //
-    // tlmTimeLast = tlmTime;
-
     tlm[tlmFramePosition] = (uint8_t)c;
+
+    debug[2]++;
 
     if (tlmFramePosition == ESC_TLM_BUFFSIZE - 1) {
         tlmFrameDone = true;
+        tlmFramePosition = 0;
     } else {
         tlmFramePosition++;
     }
@@ -186,7 +192,11 @@ void escTelemetryProcess(uint32_t currentTime)
         return;
     }
 
+    // handleEscTelemetry();
+
     uint8_t state = escTelemetryFrameStatus();
+
+    debug[3] = state;
 
     if (state == ESC_TLM_FRAME_COMPLETE)
     {
@@ -203,7 +213,12 @@ void escTelemetryProcess(uint32_t currentTime)
             }
         }
 
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_NEXT;
+        escTelemetryMotor++;
+        if (escTelemetryMotor >= 4) {           // TODO: nr of motors from configuration
+            escTelemetryMotor = 0;
+            firstCycleComplete = true;
+        }
+        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
     }
 }
 
@@ -218,6 +233,8 @@ static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
 
     return (crc_u);
 }
+
+//-- CRC
 
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 {

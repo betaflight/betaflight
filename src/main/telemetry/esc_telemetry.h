@@ -5,6 +5,6 @@
 uint8_t escTelemetryFrameStatus(void);
 bool escTelemetryInit(void);
 bool isEscTelemetryEnabled(void);
-uint8_t getEscTelemetryTriggerMotorIndex(void);
+bool escTelemetrySendTrigger(uint8_t index);
 
 void escTelemetryProcess(uint32_t currentTime);
