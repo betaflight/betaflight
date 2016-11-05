@@ -34,7 +34,7 @@
 #define RTC6705_FREQ_MAX    5950
 
 
-#define RTC6705_BOOT_DELAY 200 // milliseconds
+#define RTC6705_BOOT_DELAY 350 // milliseconds
 
 void rtc6705IOInit(void);
 void rtc6705SetChannel(uint8_t band, uint8_t channel);
