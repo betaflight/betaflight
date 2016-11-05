@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "io_types.h"
+
 #define WS2811_LED_STRIP_LENGTH 32
 #define WS2811_BITS_PER_LED 24
 #define WS2811_DELAY_BUFFER_LENGTH 42 // for 50us delay
@@ -36,9 +38,9 @@
 #define BIT_COMPARE_0 9  // timer compare value for logical 0
 #endif
 
-void ws2811LedStripInit(void);
+void ws2811LedStripInit(ioTag_t ioTag);
 
-void ws2811LedStripHardwareInit(void);
+void ws2811LedStripHardwareInit(ioTag_t ioTag);
 void ws2811LedStripDMAEnable(void);
 
 void ws2811UpdateStrip(void);

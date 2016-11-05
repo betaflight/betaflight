@@ -867,3 +867,18 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
     }
     return NULL;
 }
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+        case TIM_CHANNEL_1:
+            return TIM_DMA_ID_CC1;
+        case TIM_CHANNEL_2:
+            return TIM_DMA_ID_CC2;
+        case TIM_CHANNEL_3:
+            return TIM_DMA_ID_CC3;
+        case TIM_CHANNEL_4:
+            return TIM_DMA_ID_CC4;
+    }
+    return 0;
+}
