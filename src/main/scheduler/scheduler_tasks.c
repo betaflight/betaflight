@@ -43,7 +43,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 100,     // every 10ms
+        .desiredPeriod = 1000000 / 1000,    // every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
@@ -73,7 +73,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
         .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
 #ifdef BEEPER
@@ -160,7 +160,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
         .desiredPeriod = 1000000 / 250,         // 250 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
@@ -168,7 +168,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
         .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 10,         // 10 Hz
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

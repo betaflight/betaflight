@@ -23,9 +23,7 @@
  * Texmode add-on by Michi (mamaretti32@gmail.com)
  */
 
-#ifndef HOTT_TELEMETRY_H_
-#define HOTT_TELEMETRY_H_
-
+#pragma once
 
 #define HOTTV4_RXTX 4
 
@@ -498,4 +496,3 @@ uint32_t getHoTTTelemetryProviderBaudRate(void);
 
 void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage);
 
-#endif /* HOTT_TELEMETRY_H_ */

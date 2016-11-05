@@ -128,6 +128,8 @@
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
 #define VBAT_ADC_PIN            PA0
+#define CURRENT_METER_ADC_PIN   PA3
+#define RSSI_ADC_PIN            PA2
 
 //#define USE_QUAD_MIXER_ONLY
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -149,8 +151,8 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS             (TIM_N(3) | TIM_N(4))
+#define USABLE_TIMER_CHANNEL_COUNT 7
+#define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(4))
 #define TIMER_APB1_PERIPHERALS  (RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
 #define TIMER_AHB_PERIPHERALS   (RCC_AHBPeriph_GPIOB)
 

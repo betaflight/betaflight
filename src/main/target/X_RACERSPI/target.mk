@@ -1,6 +1,5 @@
 F3_TARGETS   += $(TARGET)
 FEATURES     = ONBOARDFLASH
-TARGET_FLAGS = -DSPRACINGF3
 
 TARGET_SRC = \
             drivers/accgyro_mpu.c \

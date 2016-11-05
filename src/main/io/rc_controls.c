@@ -76,10 +76,6 @@ bool isAirmodeActive(void) {
     return (IS_RC_MODE_ACTIVE(BOXAIRMODE) || feature(FEATURE_AIRMODE));
 }
 
-bool isSuperExpoActive(void) {
-    return (feature(FEATURE_SUPEREXPO_RATES));
-}
-
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
 #ifndef BLACKBOX
     UNUSED(adjustmentFunction);
@@ -486,7 +482,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 
 adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
+static void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
     if (adjustmentState->config == adjustmentConfig) {
@@ -500,7 +496,7 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
     MARK_ADJUSTMENT_FUNCTION_AS_NEW(index);
 }
 
-void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
+static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
 
     if (delta > 0) {
         beeperConfirmationBeeps(2);
@@ -608,7 +604,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
     };
 }
 
-void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
 

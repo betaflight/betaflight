@@ -19,23 +19,12 @@
 
 #define TARGET_BOARD_IDENTIFIER "RGLE" // rgFC_LE
 
-//#define LED0_GPIO   GPIOC
-//#define LED0_PIN    Pin_1  // Blue (Rev 1 & 2) - PB4
-//#define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
-//#define LED1_GPIO   GPIOC
-//#define LED1_PIN    Pin_0  // Green (Rev 1) / Red (Rev 2) - PB5
-//#define LED1_PERIPHERAL RCC_AHBPeriph_GPIOC
 #define LED0        PC1
 #define LED1        PC0
 
-//#define BEEP_GPIO   GPIOA
-//#define BEEP_PIN    Pin_8
-//#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 #define BEEPER      PA8
 #define BEEPER_INVERTED
 
-//#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
-//#define MPU6000_CS_GPIO                  GPIOB
 #define MPU6000_CS_PIN                   PB2
 #define MPU6000_SPI_INSTANCE             SPI2
 
@@ -43,27 +32,15 @@
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 
-//#define SPI1_GPIO               GPIOB
-//#define SPI1_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI1_NSS_PIN	        PB12
-//#define SPI1_NSS_PIN_SOURCE     GPIO_PinSource12
 #define SPI1_SCK_PIN            PB3
-//#define SPI1_SCK_PIN_SOURCE     GPIO_PinSource3
 #define SPI1_MISO_PIN           PB4
-//#define SPI1_MISO_PIN_SOURCE    GPIO_PinSource4
 #define SPI1_MOSI_PIN           PB5
-//#define SPI1_MOSI_PIN_SOURCE    GPIO_PinSource5
 
-//#define SPI2_GPIO               GPIOB
-//#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
 #define SPI2_NSS_PIN	        PB2
-//#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource2
 #define SPI2_SCK_PIN            PB13
-//#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
 #define SPI2_MISO_PIN           PB14
-//#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
 #define SPI2_MOSI_PIN           PB15
-//#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
 
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 
@@ -84,24 +61,12 @@
 #define BARO
 #define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MAG_AK8975
-
-//#define MAG_AK8975_ALIGN CW180_DEG_FLIP
-
 #define USE_SDCARD
 #define USE_SDCARD_SPI1
 
 #define SDCARD_DETECT_INVERTED
 
 #define SDCARD_DETECT_PIN                   PC14
-//#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
-//#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
-//#define SDCARD_DETECT_GPIO_PORT             GPIOC
-//#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOC
-//#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOC
-//#define SDCARD_DETECT_EXTI_IRQn             EXTI15_10_IRQn
-
 #define SDCARD_SPI_INSTANCE                 SPI1
 #define SDCARD_SPI_CS_GPIO                  GPIOB
 #define SDCARD_SPI_CS_PIN                   SPI1_NSS_PIN
@@ -124,42 +89,17 @@
 #define USE_UART4
 #define USE_UART5
 #define SERIAL_PORT_COUNT 6
-//#define SERIAL_PORT_COUNT 6
 
 #define UART1_TX_PIN        PC4 // PC4
 #define UART1_RX_PIN        PC5 // PC5
-//#define UART1_GPIO          GPIOC
-//#define UART1_GPIO_AF       GPIO_AF_7
-//#define UART1_TX_PINSOURCE  GPIO_PinSource4
-//#define UART1_RX_PINSOURCE  GPIO_PinSource5
-
 #define UART2_TX_PIN        PA2 // PA2
 #define UART2_RX_PIN        PA3 // PA3
-//#define UART2_GPIO          GPIOA
-//#define UART2_GPIO_AF       GPIO_AF_7
-//#define UART2_TX_PINSOURCE  GPIO_PinSource2
-//#define UART2_RX_PINSOURCE  GPIO_PinSource3
-
 #define UART3_TX_PIN        PB10 // PB10 (AF7)
 #define UART3_RX_PIN        PB11 // PB11 (AF7)
-//#define UART3_GPIO_AF       GPIO_AF_7
-//#define UART3_GPIO          GPIOB
-//#define UART3_TX_PINSOURCE  GPIO_PinSource10
-//#define UART3_RX_PINSOURCE  GPIO_PinSource11
-
 #define UART4_TX_PIN        PC10 // PC10 (AF5)
 #define UART4_RX_PIN        PC11 // PC11 (AF5)
-//#define UART4_GPIO_AF       GPIO_AF_5
-//#define UART4_GPIO          GPIOC
-//#define UART4_TX_PINSOURCE  GPIO_PinSource10
-//#define UART4_RX_PINSOURCE  GPIO_PinSource11
-
 #define UART5_TX_PIN        PC12 // PB10 (AF7)
 #define UART5_RX_PIN        PD2 // PB11 (AF7)
-//#define UART5_GPIO_AF       GPIO_AF_7
-//#define UART5_GPIO          GPIOB
-//#define UART5_TX_PINSOURCE  GPIO_PinSource10
-//#define UART5_RX_PINSOURCE  GPIO_PinSource11
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA14/AF4), SCL (PA15/AF4)
@@ -194,14 +134,9 @@
 #define ADC_DMA_CHANNEL             DMA2_Channel1
 
 #define VBAT_ADC_PIN           PA4
-//#define VBAT_ADC_GPIO               GPIOA
-//#define VBAT_ADC_GPIO_PIN           GPIO_Pin_4
-//#define VBAT_ADC_CHANNEL            ADC_Channel_1
 
 #define EXTERNAL1_ADC_PIN      PA5
-//#define EXTERNAL1_ADC_GPIO          GPIOA
-//#define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
-//#define EXTERNAL1_ADC_CHANNEL       ADC_Channel_2
+
 #define LED_STRIP
 #define LED_STRIP_TIMER                 TIM17
 
@@ -246,8 +181,7 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define SPEKTRUM_BIND
-// UART5, PD2
-//#define BIND_PORT GPIOD
+
 #define BIND_PIN PD2
 
 // IO - stm32f303rc in 64pin package

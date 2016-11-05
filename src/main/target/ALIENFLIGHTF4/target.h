@@ -27,17 +27,18 @@
 #define LED1                    PD2
 
 #define BEEPER                  PC13
+#define BEEPER_INVERTED
 
 #define INVERTER                PC15
 #define INVERTER_USART          USART2
 
 // MPU interrupt
+#define USE_EXTI
+#define MPU_INT_EXTI            PC14
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-#define MPU_INT_EXTI            PC14
-#define USE_EXTI
 
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
@@ -92,8 +93,6 @@
 
 //#define USE_FLASHFS
 //#define USE_FLASH_M25P16
-
-#define USABLE_TIMER_CHANNEL_COUNT      13
 
 #define USE_VCP
 
@@ -167,6 +166,7 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
 #define SERIALRX_UART           SERIAL_PORT_USART3
+#define RX_CHANNELS_TAER
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -175,5 +175,6 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
+#define USABLE_TIMER_CHANNEL_COUNT      13
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) )
 

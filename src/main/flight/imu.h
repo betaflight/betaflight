@@ -88,3 +88,4 @@ int16_t imuCalculateHeading(t_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
 void imuUpdateAcc(rollAndPitchTrims_t *accelerometerTrims);
+void imuInit(void);

@@ -27,8 +27,12 @@
 #endif
 
 #define LED0                    PB5
-#define LED1                    PB4
+// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
+//#define LED1                    PB4
+
 #define BEEPER                  PB4
+#define BEEPER_INVERTED
+
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
 
@@ -44,10 +48,10 @@
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
 // MPU6000 interrupts
+#define USE_EXTI
+#define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 #define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PC4
-#define USE_EXTI
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -68,8 +72,6 @@
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
-
-#define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
@@ -105,14 +107,29 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_GPIO_PIN       PA0
+//#define RSSI_ADC_PIN            PA0
 
+#define LED_STRIP
+// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
+#define WS2811_GPIO_AF                  GPIO_AF_TIM5
+#define WS2811_PIN                      PA1 
+#define WS2811_TIMER                    TIM5
+#define WS2811_TIMER_CHANNEL            TIM_Channel_2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream4
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
+#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define SENSORS_SET (SENSOR_ACC)
 
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_ONESHOT125)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+
+#define SPEKTRUM_BIND
+// USART3,
+#define BIND_PIN                PB11
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -121,4 +138,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 12
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

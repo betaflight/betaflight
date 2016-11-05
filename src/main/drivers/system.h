@@ -67,5 +67,3 @@ void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
 
 extern uint32_t cachedRccCsrValue;
 
-
-

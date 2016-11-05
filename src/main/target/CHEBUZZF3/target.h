@@ -32,8 +32,6 @@
 #define BEEPER                  PE9 // Red LEDs - PE9/PE13
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 18
-
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -113,5 +111,6 @@
 #define TARGET_IO_PORTE         0xffff
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4)|BIT(9)|BIT(10))
 
+#define USABLE_TIMER_CHANNEL_COUNT 18
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))
 

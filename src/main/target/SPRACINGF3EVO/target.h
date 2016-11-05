@@ -26,12 +26,9 @@
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
-
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
-
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
@@ -40,11 +37,9 @@
 
 
 #define GYRO
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
 #define ACC
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_MPU6500_ALIGN       CW180_DEG
@@ -53,12 +48,11 @@
 #define BARO
 #define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MPU9250_MAG // Enables bypass configuration
-//#define USE_MAG_AK8963
+#define MAG
+#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
-//#define MAG_AK8963_ALIGN CW90_DEG_FLIP
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
 
 //#define SONAR
 
@@ -163,5 +157,6 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
 

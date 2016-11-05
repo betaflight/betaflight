@@ -31,7 +31,14 @@
 #define BEEPER                  PB13
 #define BEEPER_INVERTED
 
+// MPU6500 interrupt
 #define USE_EXTI
+#define MPU_INT_EXTI            PA5
+#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
+#define USE_MPU_DATA_READY_SIGNAL
+#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -46,10 +53,6 @@
 
 #define MPU6000_CS_PIN          SPI1_NSS_PIN
 #define MPU6000_SPI_INSTANCE    SPI1
-
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
@@ -110,7 +113,6 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define LED_STRIP
-#define USE_COLIBTI_RACE_LED_DEFAULT_CONFIG
 
 #define WS2811_PIN                      PA6 // TIM16_CH1
 #define WS2811_TIMER                    TIM16
@@ -118,14 +120,6 @@
 #define WS2811_IRQ                      DMA1_Channel3_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-
-
-// MPU6500 interrupt
-#define USE_EXTI
-#define MPU_INT_EXTI            PA5
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
-#define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -141,5 +135,6 @@
 #define TARGET_IO_PORTD         (BIT(2))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15))
 

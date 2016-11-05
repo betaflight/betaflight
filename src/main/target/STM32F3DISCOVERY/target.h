@@ -81,15 +81,15 @@
 // Support the GY-91 MPU9250 dev board
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define MPU6500_CS_PIN                  PC14
-#define MPU6500_SPI_INSTANCE            SPI2
-#define GYRO_MPU6500_ALIGN CW270_DEG_FLIP
+#define MPU6500_CS_PIN          PC14
+#define MPU6500_SPI_INSTANCE    SPI2
+#define GYRO_MPU6500_ALIGN      CW270_DEG_FLIP
 
 #define ACC
 #define USE_ACC_LSM303DLHC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG_FLIP
+#define ACC_MPU6500_ALIGN       CW270_DEG_FLIP
 
 //#define BARO
 //#define BMP280_CS_PIN         PB12
@@ -136,7 +136,7 @@
 //#define UART2_RX_PINSOURCE  GPIO_PinSource6
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC1
@@ -164,7 +164,6 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTE         0xffff
 #define TARGET_IO_PORTF         0x00ff
-
 
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
 

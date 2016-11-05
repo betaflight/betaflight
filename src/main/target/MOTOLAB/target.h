@@ -21,14 +21,13 @@
 #define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define TARGET_CONFIG
 
 #define LED0                    PB5 // Blue LEDs - PB5
 //#define LED1                    PB9 // Green LEDs - PB9
 
 #define BEEPER                  PA0
 #define BEEPER_INVERTED
-
-#define USABLE_TIMER_CHANNEL_COUNT 9
 
 // MPU6050 interrupts
 #define USE_EXTI
@@ -147,5 +146,6 @@
 // !!TODO - check the following line is correct
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 9
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
 

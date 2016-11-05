@@ -206,12 +206,17 @@ void mixerUseConfigs(
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 #ifdef USE_SERVOS
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers, servoMixer_t *customServoMixers);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
+#else
+void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 #endif
+struct pwmOutputConfiguration_s;
+void mixerUsePWMOutputConfiguration(struct pwmOutputConfiguration_s *pwmOutputConfiguration, bool use_unsyncedPwm);
 void mixerResetDisarmedMotors(void);
-void mixTable(void);
+void mixTable(void *pidProfilePtr);
 void syncMotors(bool enabled);
 void writeMotors(void);
 void stopMotors(void);
