@@ -663,7 +663,7 @@ OSD_UINT16_t entryAlarmCapacity = {&masterConfig.osdProfile.cap_alarm, 50, 30000
 OSD_UINT16_t enryAlarmFlyTime = {&masterConfig.osdProfile.time_alarm, 1, 200, 1};
 OSD_UINT16_t entryAlarmAltitude = {&masterConfig.osdProfile.alt_alarm, 1, 200, 1};
 
-OSD_Entry cmsx_menuAlarms[] =
+OSD_Entry cmsx_menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
     {"RSSI", OME_UINT8, NULL, &entryAlarmRssi, 0},
@@ -674,7 +674,16 @@ OSD_Entry cmsx_menuAlarms[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-OSD_Entry menuOsdActiveElems[] =
+CMS_Menu cmsx_menuAlarms = {
+    "MENUALARMS",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    cmsx_menuAlarmsEntries,
+};
+
+OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
     {"RSSI", OME_VISIBLE, NULL, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], 0},
@@ -700,12 +709,30 @@ OSD_Entry menuOsdActiveElems[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-OSD_Entry cmsx_menuOsdLayout[] =
+CMS_Menu menuOsdActiveElems = {
+    "MENUOSDACT",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    menuOsdActiveElemsEntries,
+};
+
+OSD_Entry cmsx_menuOsdLayoutEntries[] =
 {
     {"---SCREEN LAYOUT---", OME_Label, NULL, NULL, 0},
-    {"ACTIVE ELEM.", OME_Submenu, cmsMenuChange, &menuOsdActiveElems[0], 0},
+    {"ACTIVE ELEM", OME_Submenu, cmsMenuChange, &menuOsdActiveElems, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu cmsx_menuOsdLayout = {
+    "MENULAYOUT",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    cmsx_menuOsdLayoutEntries,
 };
 
 #endif // OSD

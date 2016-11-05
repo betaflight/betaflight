@@ -76,7 +76,39 @@ uint8_t cmsx_FeatureLedstrip;
 
 OSD_TAB_t entryLed = {&ledColor, 13, &LED_COLOR_NAMES[0]};
 
-OSD_Entry cmsx_menuLedstrip[] =
+long cmsx_Ledstrip_FeatureRead(void)
+{
+    cmsx_FeatureLedstrip = feature(FEATURE_LED_STRIP) ? 1 : 0;
+
+    return 0;
+}
+
+long cmsx_Ledstrip_FeatureWriteback(void)
+{
+    if (cmsx_FeatureLedstrip)
+        featureSet(FEATURE_LED_STRIP);
+    else
+        featureClear(FEATURE_LED_STRIP);
+
+    return 0;
+}
+
+long cmsx_Ledstrip_ConfigRead(void)
+{
+    cmsx_GetLedColor();
+
+    return 0;
+}
+
+long cmsx_Ledstrip_onEnter(void)
+{
+    cmsx_Ledstrip_FeatureRead();
+    cmsx_Ledstrip_ConfigRead();
+
+    return 0;
+}
+
+OSD_Entry cmsx_menuLedstripEntries[] =
 {
     {"--- LED STRIP ---", OME_Label, NULL, NULL, 0},
     {"ENABLED", OME_Bool, NULL, &cmsx_FeatureLedstrip, 0},
@@ -85,23 +117,13 @@ OSD_Entry cmsx_menuLedstrip[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-void cmsx_Ledstrip_FeatureRead(void)
-{
-    cmsx_FeatureLedstrip = feature(FEATURE_LED_STRIP) ? 1 : 0;
-}
-
-void cmsx_Ledstrip_FeatureWriteback(void)
-{
-    if (cmsx_FeatureLedstrip)
-        featureSet(FEATURE_LED_STRIP);
-    else
-        featureClear(FEATURE_LED_STRIP);
-}
-
-void cmsx_Ledstrip_ConfigRead(void)
-{
-    cmsx_GetLedColor();
-}
-
+CMS_Menu cmsx_menuLedstrip = {
+    "MENULED",
+    OME_MENU,
+    cmsx_Ledstrip_onEnter,
+    NULL,
+    cmsx_Ledstrip_FeatureWriteback,
+    cmsx_menuLedstripEntries,
+};
 #endif // LED_STRIP
 #endif // CMS

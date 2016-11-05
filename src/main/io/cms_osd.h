@@ -1,2 +1,2 @@
-extern OSD_Entry cmsx_menuAlarms[];
-extern OSD_Entry cmsx_menuOsdLayout[];
+extern CMS_Menu cmsx_menuAlarms;
+extern CMS_Menu cmsx_menuOsdLayout;

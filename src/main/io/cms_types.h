@@ -5,7 +5,7 @@
 
 #pragma once
 
-typedef long (*OSDMenuFuncPtr)(displayPort_t *, void *);
+typedef long (*CMSEntryFuncPtr)(displayPort_t *, void *);
 
 //type of elements
 
@@ -29,13 +29,16 @@ typedef enum
 #endif
     OME_TAB,
     OME_END,
+
+    // Debug aid
+    OME_MENU
 } OSD_MenuElement;
 
 typedef struct
 {
     char *text;
     OSD_MenuElement type;
-    OSDMenuFuncPtr func;
+    CMSEntryFuncPtr func;
     void *data;
     uint8_t flags;
 } OSD_Entry;
@@ -51,6 +54,20 @@ typedef struct
 #define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
 #define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
 #define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
+
+typedef long (*CMSMenuFuncPtr)(void);
+
+typedef struct
+{
+    // These two are debug aids for menu content creators.
+    char *GUARD_text;
+    OSD_MenuElement GUARD_type;
+
+    CMSMenuFuncPtr onEnter;
+    CMSMenuFuncPtr onExit;
+    CMSMenuFuncPtr onGlobalExit;
+    OSD_Entry *entries;
+} CMS_Menu;
 
 typedef struct
 {

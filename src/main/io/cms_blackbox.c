@@ -1,7 +1,7 @@
 //
 // CMS things for blackbox and flashfs.
-// Should be part of blackbox.c (or new blackbox/blackbox_cms.c) and io/flashfs.c
-//
+// 
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -48,9 +48,26 @@ long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
 
 uint8_t cmsx_FeatureBlackbox;
 
+long cmsx_Blackbox_FeatureRead(void)
+{
+    cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
+
+    return 0;
+}
+
+long cmsx_Blackbox_FeatureWriteback(void)
+{
+    if (cmsx_FeatureBlackbox)
+        featureSet(FEATURE_BLACKBOX);
+    else
+        featureClear(FEATURE_BLACKBOX);
+
+    return 0;
+}
+
 OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
 
-OSD_Entry cmsx_menuBlackbox[] =
+OSD_Entry cmsx_menuBlackboxEntries[] =
 {
     {"--- BLACKBOX ---", OME_Label, NULL, NULL, 0},
     {"ENABLED", OME_Bool, NULL, &cmsx_FeatureBlackbox, 0},
@@ -62,16 +79,12 @@ OSD_Entry cmsx_menuBlackbox[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-void cmsx_Blackbox_FeatureRead(void)
-{
-    cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
-}
-
-void cmsx_Blackbox_FeatureWriteback(void)
-{
-    if (cmsx_FeatureBlackbox)
-        featureSet(FEATURE_BLACKBOX);
-    else
-        featureClear(FEATURE_BLACKBOX);
-}
+CMS_Menu cmsx_menuBlackbox = {
+    "MENUBB",
+    OME_MENU,
+    cmsx_Blackbox_FeatureRead,
+    NULL,
+    cmsx_Blackbox_FeatureWriteback,
+    cmsx_menuBlackboxEntries,
+};
 #endif

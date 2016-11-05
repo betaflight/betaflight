@@ -47,7 +47,7 @@ static OSD_UINT8_t entryYawP = {&tempPid[PIDYAW][0], 10, 150, 1};
 static OSD_UINT8_t entryYawI = {&tempPid[PIDYAW][1], 1, 150, 1};
 static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
 
-void cmsx_PidRead(void)
+long cmsx_PidRead(void)
 {
     uint8_t i;
 
@@ -59,9 +59,11 @@ void cmsx_PidRead(void)
     tempPid[3][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL];
     tempPid[3][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL];
     tempPid[3][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL];
+
+    return 0;
 }
 
-void cmsx_PidWriteback(void)
+long cmsx_PidWriteback(void)
 {
     uint8_t i;
 
@@ -74,9 +76,11 @@ void cmsx_PidWriteback(void)
     masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
     masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
     masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+
+    return 0;
 }
 
-OSD_Entry cmsx_menuPid[] =
+OSD_Entry cmsx_menuPidEntries[] =
 {
     {"--- PID ---", OME_Label, NULL, NULL, 0},
     {"ROLL P", OME_UINT8, NULL, &entryRollP, 0},
@@ -93,6 +97,15 @@ OSD_Entry cmsx_menuPid[] =
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu cmsx_menuPid = {
+    "MENUPID",
+    OME_MENU,
+    cmsx_PidRead,
+    cmsx_PidWriteback,
+    NULL,
+    cmsx_menuPidEntries,
 };
 
 //
@@ -112,17 +125,21 @@ static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10
 static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.setpointRelaxRatio, 0, 100, 1, 10};
 static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
 
-void cmsx_RateExpoRead()
+long cmsx_RateExpoRead(void)
 {
     memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+
+    return 0;
 }
 
-void cmsx_RateExpoWriteback()
+long cmsx_RateExpoWriteback(void)
 {
     memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+
+    return 0;
 }
 
-OSD_Entry cmsx_menuRateExpo[] =
+OSD_Entry cmsx_menuRateExpoEntries[] =
 {
     {"--- RATE&EXPO ---", OME_Label, NULL, NULL, 0},
     {"RC RATE", OME_FLOAT, NULL, &entryRcYawRate, 0},
@@ -140,6 +157,16 @@ OSD_Entry cmsx_menuRateExpo[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
+CMS_Menu cmsx_menuRateExpo = {
+    "MENURTEX",
+    OME_MENU,
+    cmsx_RateExpoRead,
+    cmsx_RateExpoWriteback,
+    NULL,
+    cmsx_menuRateExpoEntries,
+};
+
+
 //
 // RC preview
 //
@@ -152,7 +179,7 @@ static OSD_INT16_t entryRcAux2 = {&rcData[AUX2], 1, 2500, 0};
 static OSD_INT16_t entryRcAux3 = {&rcData[AUX3], 1, 2500, 0};
 static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
 
-OSD_Entry cmsx_menuRc[] =
+OSD_Entry cmsx_menuRcEntries[] =
 {
     {"--- RC PREV ---", OME_Label, NULL, NULL, 0},
     {"ROLL", OME_Poll_INT16, NULL, &entryRcRoll, 0},
@@ -167,6 +194,16 @@ OSD_Entry cmsx_menuRc[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
+CMS_Menu cmsx_menuRc = {
+    "MENURC",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    cmsx_menuRcEntries,
+};
+
+
 //
 // Misc
 //
@@ -178,7 +215,7 @@ OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 
 OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
 OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
 
-OSD_Entry menuImuMisc[]=
+OSD_Entry menuImuMiscEntries[]=
 {
     {"--- MISC ---", OME_Label, NULL, NULL, 0},
     {"GYRO LPF", OME_UINT8, NULL, &entryGyroSoftLpfHz, 0},
@@ -192,15 +229,33 @@ OSD_Entry menuImuMisc[]=
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-OSD_Entry cmsx_menuImu[] =
+CMS_Menu menuImuMisc = {
+    "MENUIMU",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    menuImuMiscEntries,
+};
+
+OSD_Entry cmsx_menuImuEntries[] =
 {
     {"--- CFG.IMU ---", OME_Label, NULL, NULL, 0},
     {"PID PROF", OME_UINT8, NULL, &entryPidProfile, 0},
-    {"PID", OME_Submenu, cmsMenuChange, cmsx_menuPid, 0},
-    {"RATE&RXPO", OME_Submenu, cmsMenuChange, cmsx_menuRateExpo, 0},
-    {"RC PREV", OME_Submenu, cmsMenuChange, cmsx_menuRc, 0},
-    {"MISC", OME_Submenu, cmsMenuChange, menuImuMisc, 0},
+    {"PID", OME_Submenu, cmsMenuChange, &cmsx_menuPid, 0},
+    {"RATE&RXPO", OME_Submenu, cmsMenuChange, &cmsx_menuRateExpo, 0},
+    {"RC PREV", OME_Submenu, cmsMenuChange, &cmsx_menuRc, 0},
+    {"MISC", OME_Submenu, cmsMenuChange, &menuImuMisc, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
+};
+
+CMS_Menu cmsx_menuImu = {
+    "MENUIMU",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    cmsx_menuImuEntries,
 };
 #endif // CMS

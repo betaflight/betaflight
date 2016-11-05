@@ -19,6 +19,7 @@
  Created by Marcin Baliniak
  OSD-CMS separation by jflyper
  */
+#define CMS_MENU_DEBUG // For external menu content creators
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -76,9 +77,9 @@
 #include "io/cms_ledstrip.h"
 
 // Forwards
-void cmsx_InfoInit(void);
-void cmsx_FeatureRead(void);
-void cmsx_FeatureWriteback(void);
+long cmsx_InfoInit(void);
+long cmsx_FeatureRead(void);
+long cmsx_FeatureWriteback(void);
 
 // Device management
 
@@ -154,19 +155,41 @@ displayPort_t currentDisplay;
 
 bool cmsInMenu = false;
 
-OSD_Entry menuMain[];
+CMS_Menu menuMain;
+CMS_Menu *currentMenu;          // Points to top entry of the current page
 
 // XXX Does menu backing support backing into second page???
 
-OSD_Entry *menuStack[10];        // Stack to save menu transition
+CMS_Menu *menuStack[10];         // Stack to save menu transition
 uint8_t menuStackHistory[10];    // cursorRow in a stacked menu
 uint8_t menuStackIdx = 0;
 
-OSD_Entry *currentMenu;          // Points to top entry of the current page
-OSD_Entry *nextPage;             // Only 2 pages are allowed (for now)
-uint8_t maxRow;                  // Max row in a page
+OSD_Entry *pageTop;              // Points to top entry of the current page
+OSD_Entry *pageTopAlt;           // Only 2 pages are allowed (for now)
+uint8_t maxRow;                  // Max row in the current page
 
-int8_t cursorRow;
+int8_t entryPos;                 // Absolute position of the cursor
+int8_t cursorRow;                // Position of the cursor relative to pageTop
+
+// Broken menu substitution
+
+char menuErrLabel[21 + 1];
+
+OSD_Entry menuErrEntries[] = {
+    { "BROKEN MENU", OME_Label, NULL, NULL, 0 },
+    { menuErrLabel, OME_String, NULL, NULL, 0 },
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+CMS_Menu menuErr = {
+    "MENU CONTENT BROKEN",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    menuErrEntries,
+};
 
 // Stick/key detection
 
@@ -190,7 +213,7 @@ void cmsUpdateMaxRow(displayPort_t *instance)
     OSD_Entry *ptr;
 
     maxRow = 0;
-    for (ptr = currentMenu; ptr->type != OME_END; ptr++)
+    for (ptr = pageTop; ptr->type != OME_END; ptr++)
         maxRow++;
 
     if (maxRow > MAX_MENU_ITEMS(instance))
@@ -355,6 +378,12 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     case OME_END:
     case OME_Back:
         break;
+    case OME_MENU:
+#ifdef CMS_MENU_DEBUG
+        // Shouldn't happen. Notify creator of this menu content.
+        cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "BADENT");
+#endif
+        break;
     }
 
     return cnt;
@@ -373,20 +402,20 @@ void cmsDrawMenu(displayPort_t *pDisplay)
 
     uint32_t room = displayTxBytesFree(pDisplay);
 
-    if (!currentMenu)
+    if (!pageTop)
         return;
 
     if (pDisplay->cleared) {
-        for (p = currentMenu, i= 0; p->type != OME_END; p++, i++) {
+        for (p = pageTop, i= 0; p->type != OME_END; p++, i++) {
             SET_PRINTLABEL(p);
             SET_PRINTVALUE(p);
         }
 
         if (i > MAX_MENU_ITEMS(pDisplay)) // max per page
         {
-            nextPage = currentMenu + MAX_MENU_ITEMS(pDisplay);
-            if (nextPage->type == OME_END)
-                nextPage = NULL;
+            pageTopAlt = pageTop + MAX_MENU_ITEMS(pDisplay);
+            if (pageTopAlt->type == OME_END)
+                pageTopAlt = NULL;
         }
 
         pDisplay->cleared = false;
@@ -394,7 +423,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
 
     // Cursor manipulation
 
-    while ((currentMenu + cursorRow)->type == OME_Label) // skip label
+    while ((pageTop + cursorRow)->type == OME_Label) // skip label
         cursorRow++;
 
     if (pDisplay->cursorRow >= 0 && cursorRow != pDisplay->cursorRow) {
@@ -413,7 +442,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
         return;
 
     // Print text labels
-    for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
+    for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
             room -= displayWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
             CLR_PRINTLABEL(p);
@@ -427,7 +456,7 @@ void cmsDrawMenu(displayPort_t *pDisplay)
     // XXX Polled values at latter positions in the list may not be
     // XXX printed if not enough room in the middle of the list.
 
-    for (i = 0, p = currentMenu; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
+    for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
             room -= cmsDrawMenuEntry(pDisplay, p, top + i, drawPolled);
             if (room < 30)
@@ -438,24 +467,38 @@ void cmsDrawMenu(displayPort_t *pDisplay)
 
 long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 {
-    if (ptr) {
-        // XXX (jflyper): This can be avoided by adding pre- and post-
-        // XXX (or onEnter and onExit) functions?
-        if (ptr == cmsx_menuPid)
-            cmsx_PidRead();
-        if (ptr == cmsx_menuRateExpo)
-            cmsx_RateExpoRead();
+    CMS_Menu *pMenu = (CMS_Menu *)ptr;
+
+    if (pMenu) {
+#ifdef CMS_MENU_DEBUG
+        if (pMenu->GUARD_type != OME_MENU) {
+            // ptr isn't pointing to a CMS_Menu.
+            if (pMenu->GUARD_type < OME_MENU) {
+                strncpy(menuErrLabel, pMenu->GUARD_text, 21);
+            } else {
+                strncpy(menuErrLabel, "LABEL UNKNOWN", 21);
+            }
+            pMenu = &menuErr;
+        }
+#endif
 
         // Stack the current menu and move to a new menu.
-        // The (ptr == curretMenu) case occurs when reopening for display sw
+        // The (pMenu == curretMenu) case occurs when reopening for display sw
 
-        if ((OSD_Entry *)ptr != currentMenu) {
+        if (pMenu != currentMenu) {
             menuStack[menuStackIdx] = currentMenu;
+            cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
             menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
-            currentMenu = (OSD_Entry *)ptr;
+
+            currentMenu = (CMS_Menu *)ptr;
             cursorRow = 0;
+
+            if (pMenu->onEnter)
+                pMenu->onEnter();
         }
+
+        pageTop = currentMenu->entries;
 
         displayClear(pDisplay);
         cmsUpdateMaxRow(pDisplay);
@@ -466,22 +509,22 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 
 long cmsMenuBack(displayPort_t *pDisplay)
 {
-    // becasue pids and rates may be stored in profiles we need some thicks to manipulate it
-    // hack to save pid profile
-    if (currentMenu == cmsx_menuPid)
-        cmsx_PidWriteback();
-
-    // hack - save rate config for current profile
-    if (currentMenu == cmsx_menuRateExpo)
-        cmsx_RateExpoWriteback();
+    if (currentMenu->onExit)
+        currentMenu->onExit();
 
     if (menuStackIdx) {
         displayClear(pDisplay);
         menuStackIdx--;
-        nextPage = NULL;
         currentMenu = menuStack[menuStackIdx];
         cursorRow = menuStackHistory[menuStackIdx];
+        pageTop = currentMenu->entries; // Temporary for cmsUpdateMaxRow()
         cmsUpdateMaxRow(pDisplay);
+        if (cursorRow > maxRow) {
+            pageTopAlt = currentMenu->entries;
+            pageTop = pageTopAlt + maxRow + 1;
+            cursorRow -= (maxRow + 1);
+            cmsUpdateMaxRow(pDisplay);
+        }
     }
 
     return 0;
@@ -496,8 +539,7 @@ void cmsMenuOpen(void)
         cmsInMenu = true;
         DISABLE_ARMING_FLAG(OK_TO_ARM);
         initfunc = cmsDeviceSelectCurrent(); 
-        cmsx_FeatureRead();
-        currentMenu = &menuMain[0];
+        currentMenu = &menuMain;
     } else {
         // Switch display
         displayClose(&currentDisplay);
@@ -512,6 +554,18 @@ void cmsMenuOpen(void)
     cmsMenuChange(&currentDisplay, currentMenu);
 }
 
+void cmsTraverseGlobalExit(CMS_Menu *pMenu)
+{
+    OSD_Entry *p;
+
+    for (p = pMenu->entries; p->type != OME_END ; p++)
+        if (p->type == OME_Submenu)
+            cmsTraverseGlobalExit(p->data);
+
+    if (pMenu->onGlobalExit)
+        pMenu->onGlobalExit();
+}
+
 long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
@@ -524,8 +578,10 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
         stopPwmAllMotors();
         delay(200);
 
-        // save local variables to configuration
-        cmsx_FeatureWriteback();
+        cmsTraverseGlobalExit(&menuMain);
+
+        if (currentMenu->onExit)
+            currentMenu->onExit();
     }
 
     cmsInMenu = false;
@@ -558,11 +614,11 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         if (cursorRow < maxRow) {
             cursorRow++;
         } else {
-            if (nextPage) { // we have another page
+            if (pageTopAlt) { // we have another page
                 displayClear(pDisplay);
-                p = nextPage;
-                nextPage = currentMenu;
-                currentMenu = (OSD_Entry *)p;
+                p = pageTopAlt;
+                pageTopAlt = pageTop;
+                pageTop = (OSD_Entry *)p;
                 cmsUpdateMaxRow(pDisplay);
             }
             cursorRow = 0;    // Goto top in any case
@@ -572,15 +628,15 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     if (key == KEY_UP) {
         cursorRow--;
 
-        if ((currentMenu + cursorRow)->type == OME_Label && cursorRow > 0)
+        if ((pageTop + cursorRow)->type == OME_Label && cursorRow > 0)
             cursorRow--;
 
-        if (cursorRow == -1 || (currentMenu + cursorRow)->type == OME_Label) {
-            if (nextPage) {
+        if (cursorRow == -1 || (pageTop + cursorRow)->type == OME_Label) {
+            if (pageTopAlt) {
                 displayClear(pDisplay);
-                p = nextPage;
-                nextPage = currentMenu;
-                currentMenu = (OSD_Entry *)p;
+                p = pageTopAlt;
+                pageTopAlt = pageTop;
+                pageTop = (OSD_Entry *)p;
                 cmsUpdateMaxRow(pDisplay);
             }
             cursorRow = maxRow;    // Goto bottom in any case
@@ -590,7 +646,7 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     if (key == KEY_DOWN || key == KEY_UP)
         return res;
 
-    p = currentMenu + cursorRow;
+    p = pageTop + cursorRow;
 
     switch (p->type) {
         case OME_Submenu:
@@ -710,6 +766,9 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
         case OME_Label:
         case OME_END:
             break;
+        case OME_MENU:
+            // Shouldn't happen
+            break;
     }
     return res;
 }
@@ -753,7 +812,7 @@ void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
             key = KEY_RIGHT;
             rcDelay = BUTTON_TIME;
         }
-        else if ((IS_HI(YAW) || IS_LO(YAW)) && currentMenu != cmsx_menuRc) // this menu is used to check transmitter signals so can't exit using YAW
+        else if ((IS_HI(YAW) || IS_LO(YAW)) && currentMenu != &cmsx_menuRc) // this menu is used to check transmitter signals so can't exit using YAW
         {
             key = KEY_ESC;
             rcDelay = BUTTON_TIME;
@@ -794,7 +853,7 @@ void cmsHandler(uint32_t currentTime)
 
 void cmsInit(void)
 {
-    cmsx_InfoInit();
+    //cmsx_InfoInit();
 }
 
 //
@@ -808,7 +867,7 @@ static char infoTargetName[] = __TARGET__;
 
 #include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
-OSD_Entry menuInfo[] = {
+OSD_Entry menuInfoEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
@@ -818,7 +877,16 @@ OSD_Entry menuInfo[] = {
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-void cmsx_InfoInit(void)
+CMS_Menu menuInfo = {
+    "MENUINFO",
+    OME_MENU,
+    cmsx_InfoInit,
+    NULL,
+    NULL,
+    menuInfoEntries,
+};
+
+long cmsx_InfoInit(void)
 {
     for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
@@ -826,16 +894,18 @@ void cmsx_InfoInit(void)
         else
             infoGitRev[i] = shortGitRevision[i];
     }
+
+    return 0;
 }
 
 // Features
 
-OSD_Entry menuFeatures[] =
+OSD_Entry menuFeaturesEntries[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
-    {"BLACKBOX", OME_Submenu, cmsMenuChange, cmsx_menuBlackbox, 0},
+    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
 #if defined(VTX) || defined(USE_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, cmsx_menuVtx, 0},
+    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
 #endif // VTX || USE_RTC6705
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
@@ -844,24 +914,45 @@ OSD_Entry menuFeatures[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
+CMS_Menu menuFeatures = {
+    "MENUFEATURES",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    menuFeaturesEntries,
+};
+
 // Main
 
-OSD_Entry menuMain[] =
+OSD_Entry menuMainEntries[] =
 {
     {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
-    {"CFG&IMU", OME_Submenu, cmsMenuChange, cmsx_menuImu, 0},
-    {"FEATURES", OME_Submenu, cmsMenuChange, menuFeatures, 0},
+    {"CFG&IMU", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
+    {"FEATURES", OME_Submenu, cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
-    {"SCR LAYOUT", OME_Submenu, cmsMenuChange, cmsx_menuOsdLayout, 0},
-    {"ALARMS", OME_Submenu, cmsMenuChange, cmsx_menuAlarms, 0},
+    {"SCR LAYOUT", OME_Submenu, cmsMenuChange, &cmsx_menuOsdLayout, 0},
+    {"ALARMS", OME_Submenu, cmsMenuChange, &cmsx_menuAlarms, 0},
 #endif
-    {"FC&FW INFO", OME_Submenu, cmsMenuChange, menuInfo, 0},
+    {"FC&FW INFO", OME_Submenu, cmsMenuChange, &menuInfo, 0},
+    {"FC&FW INFO1", OME_Submenu, cmsMenuChange, &menuInfo, 0},
+    {"FC&FW INFO2", OME_Submenu, cmsMenuChange, &menuInfo, 0},
     {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
     {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
     {NULL,OME_END, NULL, NULL, 0}
 };
 
-void cmsx_FeatureRead(void)
+CMS_Menu menuMain = {
+    "MENUMAIN",
+    OME_MENU,
+    NULL,
+    NULL,
+    NULL,
+    menuMainEntries,
+};
+
+#if 0
+long cmsx_FeatureRead(void)
 {
     cmsx_Blackbox_FeatureRead();
 
@@ -874,9 +965,11 @@ void cmsx_FeatureRead(void)
     cmsx_Vtx_FeatureRead();
     cmsx_Vtx_ConfigRead();
 #endif // VTX || USE_RTC6705
+
+    return 0;
 }
 
-void cmsx_FeatureWriteback(void)
+long cmsx_FeatureWriteback(void)
 {
     cmsx_Blackbox_FeatureWriteback();
 
@@ -890,6 +983,9 @@ void cmsx_FeatureWriteback(void)
 #endif // VTX || USE_RTC6705
 
     saveConfigAndNotify();
+
+    return 0;
 }
+#endif
 
 #endif // CMS
