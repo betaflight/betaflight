@@ -31,6 +31,7 @@
 #include "build/build_config.h"
 
 #include "drivers/system.h"
+#include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
 
 #include "common/printf.h"
@@ -53,10 +54,10 @@
 #include "flight/failsafe.h"
 
 #include "io/cms.h"
+#include "io/displayport_oled.h"
 
-#ifdef CMS
-void dashboardCmsInit(displayPort_t *pPort); // Forward
-#endif
+displayPort_t *displayPort;
+bool dashboardInCMS = false; // temporary
 
 #ifdef GPS
 #include "io/gps.h"
@@ -585,17 +586,15 @@ void showDebugPage(void)
 }
 #endif
 
-#ifdef OLEDCMS
-static bool dashboardInCMS = false;
-#endif
-
 void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
 #ifdef OLEDCMS
-    if (dashboardInCMS)
+    if (dashboardInCMS) return;
+    if (displayPort && displayPort->inCMS) {
         return;
+    }
 #endif
 
     const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
@@ -703,6 +702,12 @@ void dashboardSetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
+void dashboardCmsInit(displayPort_t *displayPortToUse)
+{
+    displayPort = displayPortToUse;
+    displayPortOledInit(displayPort);
+}
+
 void dashboardInit(rxConfig_t *rxConfigToUse)
 {
     delay(200);
@@ -749,76 +754,4 @@ void dashboardDisablePageCycling(void)
 {
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
-
-#ifdef OLEDCMS
-#include "drivers/display.h"
-
-static int dashboardBegin(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    dashboardInCMS = true;
-
-    return 0;
-}
-
-static int dashboardEnd(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    dashboardInCMS = false;
-
-    return 0;
-}
-
-static int dashboardClear(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    i2c_OLED_clear_display_quick();
-
-    return 0;
-}
-
-static int dashboardWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, char *s)
-{
-    UNUSED(displayPort);
-    i2c_OLED_set_xy(x, y);
-    i2c_OLED_send_string(s);
-
-    return 0;
-}
-
-static int dashboardHeartbeat(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return 0;
-}
-
-static void dashboardResync(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-}
-
-static uint32_t dashboardTxBytesFree(displayPort_t *displayPort)
-{
-    UNUSED(displayPort);
-    return UINT32_MAX;
-}
-
-static const displayPortVTable_t dashboardVTable = {
-    dashboardBegin,
-    dashboardEnd,
-    dashboardClear,
-    dashboardWrite,
-    dashboardHeartbeat,
-    dashboardResync,
-    dashboardTxBytesFree,
-};
-
-void dashboardCmsInit(displayPort_t *displayPort)
-{
-    displayPort->rows = SCREEN_CHARACTER_ROW_COUNT;
-    displayPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    displayPort->vTable = &dashboardVTable;
-}
-#endif // OLEDCMS
-
 #endif // USE_DASHBOARD

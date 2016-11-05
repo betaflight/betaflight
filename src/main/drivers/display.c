@@ -29,6 +29,7 @@ void displayClear(displayPort_t *instance)
     instance->vTable->clear(instance);
     instance->cleared = true;
     instance->cursorRow = -1;
+    instance->inCMS = false;
 }
 
 void displayOpen(displayPort_t *instance)

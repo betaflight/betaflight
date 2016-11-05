@@ -562,6 +562,7 @@ HIGHEND_SRC = \
             flight/gps_conversion.c \
             io/gps.c \
             io/ledstrip.c \
+            io/displayport_oled.c \
             io/dashboard.c \
             sensors/sonar.c \
             sensors/barometer.c \

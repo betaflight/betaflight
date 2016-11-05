@@ -26,6 +26,7 @@ typedef struct displayPort_s {
     // CMS state
     bool cleared;
     int8_t cursorRow;
+    bool inCMS;
 } displayPort_t;
 
 typedef struct displayPortVTable_s {

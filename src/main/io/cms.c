@@ -77,9 +77,11 @@
 #include "io/cms_ledstrip.h"
 
 // Forwards
-long cmsx_InfoInit(void);
+static long cmsx_InfoInit(void);
+#if 0
 long cmsx_FeatureRead(void);
 long cmsx_FeatureWriteback(void);
+#endif
 
 // Device management
 
@@ -87,10 +89,9 @@ long cmsx_FeatureWriteback(void);
 #define CMS_MAX_DEVICE 4
 #endif
 
-cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
-int cmsDeviceCount;
-int cmsCurrentDevice = -1;
-int cmsLastDevice = -1;
+static cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
+static int cmsDeviceCount;
+static int cmsCurrentDevice = -1;
 
 bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
 {
@@ -102,7 +103,7 @@ bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
     return true;
 }
 
-cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
+static cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
@@ -113,7 +114,7 @@ cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
     return cmsDeviceInitFunc[cmsCurrentDevice];
 }
 
-cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
+static cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
@@ -125,7 +126,7 @@ cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 
 #define CMS_UPDATE_INTERVAL 50 // msec
 
-void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
+static void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 {
     cmsDeviceInitFunc(pDisp);
 }
@@ -151,38 +152,37 @@ void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 #define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
-displayPort_t currentDisplay;
+static displayPort_t currentDisplay;
 
-bool cmsInMenu = false;
+static bool cmsInMenu = false;
 
-CMS_Menu menuMain;
-CMS_Menu *currentMenu;          // Points to top entry of the current page
+static CMS_Menu menuMain;
+static CMS_Menu *currentMenu;    // Points to top entry of the current page
 
 // XXX Does menu backing support backing into second page???
 
-CMS_Menu *menuStack[10];         // Stack to save menu transition
-uint8_t menuStackHistory[10];    // cursorRow in a stacked menu
-uint8_t menuStackIdx = 0;
+static CMS_Menu *menuStack[10];  // Stack to save menu transition
+static uint8_t menuStackHistory[10];// cursorRow in a stacked menu
+static uint8_t menuStackIdx = 0;
 
-OSD_Entry *pageTop;              // Points to top entry of the current page
-OSD_Entry *pageTopAlt;           // Only 2 pages are allowed (for now)
-uint8_t maxRow;                  // Max row in the current page
+static OSD_Entry *pageTop;       // Points to top entry of the current page
+static OSD_Entry *pageTopAlt;    // Only 2 pages are allowed (for now)
+static uint8_t maxRow;           // Max row in the current page
 
-int8_t entryPos;                 // Absolute position of the cursor
-int8_t cursorRow;                // Position of the cursor relative to pageTop
+static int8_t cursorRow;
 
 // Broken menu substitution
 
-char menuErrLabel[21 + 1];
+static char menuErrLabel[21 + 1];
 
-OSD_Entry menuErrEntries[] = {
+static OSD_Entry menuErrEntries[] = {
     { "BROKEN MENU", OME_Label, NULL, NULL, 0 },
     { menuErrLabel, OME_String, NULL, NULL, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-CMS_Menu menuErr = {
+static CMS_Menu menuErr = {
     "MENU CONTENT BROKEN",
     OME_MENU,
     NULL,
@@ -208,7 +208,7 @@ CMS_Menu menuErr = {
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-void cmsUpdateMaxRow(displayPort_t *instance)
+static void cmsUpdateMaxRow(displayPort_t *instance)
 {
     OSD_Entry *ptr;
 
@@ -249,7 +249,7 @@ static void cmsFormatFloat(int32_t value, char *floatString)
         floatString[0] = ' ';
 }
 
-void cmsPadToSize(char *buf, int size)
+static void cmsPadToSize(char *buf, int size)
 {
     int i;
 
@@ -265,7 +265,7 @@ void cmsPadToSize(char *buf, int size)
     buf[size] = 0;
 }
 
-int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool drawPolled)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool drawPolled)
 {
     char buff[10];
     int cnt = 0;
@@ -389,7 +389,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     return cnt;
 }
 
-void cmsDrawMenu(displayPort_t *pDisplay)
+static void cmsDrawMenu(displayPort_t *pDisplay)
 {
     uint8_t i;
     OSD_Entry *p;
@@ -507,7 +507,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-long cmsMenuBack(displayPort_t *pDisplay)
+static long cmsMenuBack(displayPort_t *pDisplay)
 {
     if (currentMenu->onExit)
         currentMenu->onExit();
@@ -530,7 +530,7 @@ long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-void cmsMenuOpen(void)
+static void cmsMenuOpen(void)
 {
     cmsDeviceInitFuncPtr initfunc;
 
@@ -554,7 +554,7 @@ void cmsMenuOpen(void)
     cmsMenuChange(&currentDisplay, currentMenu);
 }
 
-void cmsTraverseGlobalExit(CMS_Menu *pMenu)
+static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
 {
     OSD_Entry *p;
 
@@ -566,7 +566,7 @@ void cmsTraverseGlobalExit(CMS_Menu *pMenu)
         pMenu->onGlobalExit();
 }
 
-long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
+static long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
         displayClear(pDisplay);
@@ -597,7 +597,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
+static uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
     uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
@@ -773,7 +773,7 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
+static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
 {
     static int16_t rcDelay = BUTTON_TIME;
     static uint32_t lastCalled = 0;
@@ -853,7 +853,6 @@ void cmsHandler(uint32_t currentTime)
 
 void cmsInit(void)
 {
-    //cmsx_InfoInit();
 }
 
 //
@@ -867,7 +866,7 @@ static char infoTargetName[] = __TARGET__;
 
 #include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
-OSD_Entry menuInfoEntries[] = {
+static OSD_Entry menuInfoEntries[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
@@ -877,7 +876,7 @@ OSD_Entry menuInfoEntries[] = {
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-CMS_Menu menuInfo = {
+static CMS_Menu menuInfo = {
     "MENUINFO",
     OME_MENU,
     cmsx_InfoInit,
@@ -886,7 +885,7 @@ CMS_Menu menuInfo = {
     menuInfoEntries,
 };
 
-long cmsx_InfoInit(void)
+static long cmsx_InfoInit(void)
 {
     for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
         if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
@@ -900,7 +899,7 @@ long cmsx_InfoInit(void)
 
 // Features
 
-OSD_Entry menuFeaturesEntries[] =
+static OSD_Entry menuFeaturesEntries[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
     {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
@@ -914,7 +913,7 @@ OSD_Entry menuFeaturesEntries[] =
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuFeatures = {
+static CMS_Menu menuFeatures = {
     "MENUFEATURES",
     OME_MENU,
     NULL,
@@ -925,7 +924,7 @@ CMS_Menu menuFeatures = {
 
 // Main
 
-OSD_Entry menuMainEntries[] =
+static OSD_Entry menuMainEntries[] =
 {
     {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
     {"CFG&IMU", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
@@ -942,7 +941,7 @@ OSD_Entry menuMainEntries[] =
     {NULL,OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu menuMain = {
+static CMS_Menu menuMain = {
     "MENUMAIN",
     OME_MENU,
     NULL,
@@ -950,42 +949,4 @@ CMS_Menu menuMain = {
     NULL,
     menuMainEntries,
 };
-
-#if 0
-long cmsx_FeatureRead(void)
-{
-    cmsx_Blackbox_FeatureRead();
-
-#ifdef LED_STRIP
-    cmsx_Ledstrip_FeatureRead();
-    cmsx_Ledstrip_ConfigRead();
-#endif
-
-#if defined(VTX) || defined(USE_RTC6705)
-    cmsx_Vtx_FeatureRead();
-    cmsx_Vtx_ConfigRead();
-#endif // VTX || USE_RTC6705
-
-    return 0;
-}
-
-long cmsx_FeatureWriteback(void)
-{
-    cmsx_Blackbox_FeatureWriteback();
-
-#ifdef LED_STRIP
-    cmsx_Ledstrip_FeatureWriteback();
-#endif
-
-#if defined(VTX) || defined(USE_RTC6705)
-    cmsx_Vtx_FeatureWriteback();
-    cmsx_Vtx_ConfigWriteback();
-#endif // VTX || USE_RTC6705
-
-    saveConfigAndNotify();
-
-    return 0;
-}
-#endif
-
 #endif // CMS
