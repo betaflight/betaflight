@@ -63,8 +63,10 @@ long cmsx_PidRead(void)
     return 0;
 }
 
-long cmsx_PidWriteback(void)
+long cmsx_PidWriteback(OSD_Entry *self)
 {
+    UNUSED(self);
+
     uint8_t i;
 
     for (i = 0; i < 3; i++) {
@@ -132,11 +134,21 @@ long cmsx_RateExpoRead(void)
     return 0;
 }
 
-long cmsx_RateExpoWriteback(void)
+long cmsx_RateExpoWriteback(OSD_Entry *self)
 {
+    UNUSED(self);
+
     memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
+}
+
+long cmsx_menuRcConfirmBack(OSD_Entry *self)
+{
+    if (self && self->type == OME_Back)
+        return 0;
+    else
+        return -1;
 }
 
 OSD_Entry cmsx_menuRateExpoEntries[] =
@@ -198,7 +210,7 @@ CMS_Menu cmsx_menuRc = {
     "MENURC",
     OME_MENU,
     NULL,
-    NULL,
+    cmsx_menuRcConfirmBack,
     NULL,
     cmsx_menuRcEntries,
 };

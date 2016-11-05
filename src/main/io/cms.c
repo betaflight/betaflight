@@ -78,10 +78,6 @@
 
 // Forwards
 static long cmsx_InfoInit(void);
-#if 0
-long cmsx_FeatureRead(void);
-long cmsx_FeatureWriteback(void);
-#endif
 
 // Device management
 
@@ -509,8 +505,8 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 
 static long cmsMenuBack(displayPort_t *pDisplay)
 {
-    if (currentMenu->onExit)
-        currentMenu->onExit();
+    if (currentMenu->onExit && currentMenu->onExit(pageTop + cursorRow) < 0)
+        return -1;
 
     if (menuStackIdx) {
         displayClear(pDisplay);
@@ -581,7 +577,7 @@ static long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
         cmsTraverseGlobalExit(&menuMain);
 
         if (currentMenu->onExit)
-            currentMenu->onExit();
+            currentMenu->onExit((OSD_Entry *)NULL); // Forced exit
     }
 
     cmsInMenu = false;
@@ -812,7 +808,7 @@ static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
             key = KEY_RIGHT;
             rcDelay = BUTTON_TIME;
         }
-        else if ((IS_HI(YAW) || IS_LO(YAW)) && currentMenu != &cmsx_menuRc) // this menu is used to check transmitter signals so can't exit using YAW
+        else if (IS_HI(YAW) || IS_LO(YAW))
         {
             key = KEY_ESC;
             rcDelay = BUTTON_TIME;
@@ -856,7 +852,7 @@ void cmsInit(void)
 }
 
 //
-// Menu contents
+// Built-in menu contents and support functions
 //
 
 // Info

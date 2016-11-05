@@ -57,6 +57,15 @@ typedef struct
 
 typedef long (*CMSMenuFuncPtr)(void);
 
+/*
+onExit function is called with self:
+(1) Pointer to an OSD_Entry when cmsMenuBack() was called.
+    Point to an OSD_Entry with type == OME_Back if BACK was selected.
+(2) 0 if called from menu exit (forced exit).
+*/
+
+typedef long (*CMSMenuOnExitPtr)(OSD_Entry *self);
+
 typedef struct
 {
     // These two are debug aids for menu content creators.
@@ -64,7 +73,7 @@ typedef struct
     OSD_MenuElement GUARD_type;
 
     CMSMenuFuncPtr onEnter;
-    CMSMenuFuncPtr onExit;
+    CMSMenuOnExitPtr onExit;
     CMSMenuFuncPtr onGlobalExit;
     OSD_Entry *entries;
 } CMS_Menu;
