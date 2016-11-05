@@ -170,17 +170,17 @@ static int8_t cursorRow;
 
 // Broken menu substitution
 
-static char menuErrLabel[21 + 1];
+static char menuErrLabel[21 + 1] = "RAMDOM DATA";
 
 static OSD_Entry menuErrEntries[] = {
     { "BROKEN MENU", OME_Label, NULL, NULL, 0 },
-    { menuErrLabel, OME_String, NULL, NULL, 0 },
+    { menuErrLabel, OME_Label, NULL, NULL, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
 static CMS_Menu menuErr = {
-    "MENU CONTENT BROKEN",
+    "MENUERR",
     OME_MENU,
     NULL,
     NULL,
@@ -352,17 +352,6 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             CLR_PRINTVALUE(p);
         }
         break;
-#if 0
-    case OME_Poll_INT16:
-        if (p->data && drawPolled) {
-            OSD_UINT16_t *ptr = p->data;
-            itoa(*ptr->val, buff, 10);
-            cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, buff);
-            // PRINTVALUE not cleared on purpose
-        }
-        break;
-#endif
     case OME_FLOAT:
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
@@ -378,6 +367,8 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Back:
         break;
     case OME_MENU:
+        // Fall through
+    default:
 #ifdef CMS_MENU_DEBUG
         // Shouldn't happen. Notify creator of this menu content.
         cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, "BADENT");
@@ -483,10 +474,10 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 #ifdef CMS_MENU_DEBUG
         if (pMenu->GUARD_type != OME_MENU) {
             // ptr isn't pointing to a CMS_Menu.
-            if (pMenu->GUARD_type < OME_MENU) {
-                strncpy(menuErrLabel, pMenu->GUARD_text, 21);
+            if (pMenu->GUARD_type <= OME_MAX) {
+                strncpy(menuErrLabel, pMenu->GUARD_text, sizeof(menuErrLabel) - 1);
             } else {
-                strncpy(menuErrLabel, "LABEL UNKNOWN", 21);
+                strncpy(menuErrLabel, "LABEL UNKNOWN", sizeof(menuErrLabel) - 1);
             }
             pMenu = &menuErr;
         }
@@ -501,7 +492,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
             menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
 
-            currentMenu = (CMS_Menu *)ptr;
+            currentMenu = pMenu;
             cursorRow = 0;
 
             if (pMenu->onEnter)
@@ -950,8 +941,8 @@ static OSD_Entry menuMainEntries[] =
     {"SCR LAYOUT", OME_Submenu, cmsMenuChange, &cmsx_menuOsdLayout, 0},
     {"ALARMS", OME_Submenu, cmsMenuChange, &cmsx_menuAlarms, 0},
 #endif
-    {"FC&FW INFO", OME_Submenu, cmsMenuChange, &menuInfo, 0},
-    {"FC&FW INFO1", OME_Submenu, cmsMenuChange, &menuInfo, 0},
+    {"ERR DEMO", OME_Submenu, cmsMenuChange, &menuErr, 0},
+    {"REAL ERR", OME_Submenu, cmsMenuChange, &menuInfoEntries[0], 0},
     {"FC&FW INFO2", OME_Submenu, cmsMenuChange, &menuInfo, 0},
     {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
     {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},

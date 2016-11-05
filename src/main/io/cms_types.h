@@ -30,7 +30,9 @@ typedef enum
     OME_END,
 
     // Debug aid
-    OME_MENU
+    OME_MENU,
+
+    OME_MAX = OME_MENU
 } OSD_MenuElement;
 
 typedef struct
