@@ -39,7 +39,8 @@ bool ws2811Initialised = false;
 static DMA_Channel_TypeDef *dmaChannel = NULL;
 static TIM_TypeDef *timer = NULL;
 
-static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor) {
+static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+{
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
         DMA_Cmd(descriptor->channel, DISABLE);
