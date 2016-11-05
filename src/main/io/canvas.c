@@ -20,6 +20,8 @@
 #include "msp/msp_protocol.h"
 #include "msp/msp_serial.h"
 
+static displayPort_t canvasDisplayPort;
+
 static int canvasOutput(displayPort_t *displayPort, uint8_t cmd, uint8_t *buf, int len)
 {
     UNUSED(displayPort);
@@ -74,7 +76,7 @@ static int canvasWrite(displayPort_t *displayPort, uint8_t col, uint8_t row, cha
 static void canvasResync(displayPort_t *displayPort)
 {
     displayPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
-    displayPort->rows = 30;
+    displayPort->cols = 30;
 }
 
 static uint32_t canvasTxBytesFree(displayPort_t *displayPort)
@@ -93,14 +95,11 @@ static const displayPortVTable_t canvasVTable = {
     canvasTxBytesFree,
 };
 
-void canvasCmsInit(displayPort_t *displayPort)
-{
-    displayPort->vTable = &canvasVTable;
-    canvasResync(displayPort);
-}
-
 void canvasInit()
 {
-    cmsDeviceRegister(canvasCmsInit);
+    canvasDisplayPort.vTable = &canvasVTable;
+    canvasDisplayPort.inCMS = false;
+    canvasResync(&canvasDisplayPort);
+    cmsDisplayPortRegister(&canvasDisplayPort);
 }
 #endif

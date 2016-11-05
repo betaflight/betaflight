@@ -29,18 +29,19 @@ void displayClear(displayPort_t *instance)
     instance->vTable->clear(instance);
     instance->cleared = true;
     instance->cursorRow = -1;
-    instance->inCMS = false;
 }
 
 void displayOpen(displayPort_t *instance)
 {
     instance->vTable->open(instance);
     instance->vTable->clear(instance);
+    instance->inCMS = true;
 }
 
 void displayClose(displayPort_t *instance)
 {
     instance->vTable->close(instance);
+    instance->inCMS = false;
 }
 
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)

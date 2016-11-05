@@ -12,17 +12,16 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 
-extern bool osdInMenu;
+displayPort_t osd7456DisplayPort;
+
 extern uint16_t refreshTimeout;
 void osdResetAlarms(void);
-
-uint8_t shiftdown;
 
 static int osdMenuBegin(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     osdResetAlarms();
-    osdInMenu = true;
+    displayPort->inCMS = true;
     refreshTimeout = 0;
 
     return 0;
@@ -31,7 +30,7 @@ static int osdMenuBegin(displayPort_t *displayPort)
 static int osdMenuEnd(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    osdInMenu = false;
+    displayPort->inCMS = false;
 
     return 0;
 }
@@ -47,7 +46,7 @@ static int osdClearScreen(displayPort_t *displayPort)
 static int osdWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, char *s)
 {
     UNUSED(displayPort);
-    max7456Write(x, y + shiftdown, s);
+    max7456Write(x, y, s);
 
     return 0;
 }
@@ -56,7 +55,7 @@ static void osdResync(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456RefreshAll();
-    displayPort->rows = max7456GetRowsCount() - masterConfig.osdProfile.row_shiftdown;
+    displayPort->rows = max7456GetRowsCount();
     displayPort->cols = 30;
 }
 
@@ -82,9 +81,11 @@ displayPortVTable_t osdVTable = {
     osdTxBytesFree,
 };
 
-void osdMax7456Init(displayPort_t *displayPort)
+void osd7456DisplayPortInit(void)
 {
-    displayPort->vTable = &osdVTable;
-    osdResync(displayPort);
+    osd7456DisplayPort.vTable = &osdVTable;
+    osd7456DisplayPort.inCMS = false;
+    osdResync(&osd7456DisplayPort);
+    cmsDisplayPortRegister(&osd7456DisplayPort);
 }
 #endif // OSD

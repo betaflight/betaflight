@@ -27,21 +27,21 @@
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
 
+#include "io/cms.h"
 #include "io/displayport_oled.h"
 
-extern bool dashboardInCMS; // temporary
+// Exported
+displayPort_t oledDisplayPort;
 
 static int oledOpen(displayPort_t *displayPort)
 {
-dashboardInCMS = true;
-    displayPort->inCMS = true;
+    UNUSED(displayPort);
     return 0;
 }
 
 static int oledClose(displayPort_t *displayPort)
 {
-dashboardInCMS = false;
-    displayPort->inCMS = false;
+    UNUSED(displayPort);
     return 0;
 }
 
@@ -87,10 +87,13 @@ static const displayPortVTable_t oledVTable = {
     .txBytesFree = oledTxBytesFree
 };
 
-void displayPortOledInit(displayPort_t *displayPort)
+void displayPortOledInit()
 {
-    displayPort->vTable = &oledVTable;
-    displayPort->rows = SCREEN_CHARACTER_ROW_COUNT;
-    displayPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
+    oledDisplayPort.vTable = &oledVTable;
+    oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
+    oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
+    oledDisplayPort.inCMS = false;
+
+    cmsDisplayPortRegister(&oledDisplayPort);
 }
 #endif // OLEDCMS

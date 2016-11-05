@@ -92,8 +92,6 @@ void osdEditElement(void *ptr);
 void osdDrawElements(void);
 void osdDrawSingleElement(uint8_t item);
 
-bool osdInMenu = false;
-
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
@@ -110,7 +108,7 @@ void osdDrawElements(void)
     if (false)
         ;
 #endif
-    else if (sensors(SENSOR_ACC) || osdInMenu)
+    else if (sensors(SENSOR_ACC) || osd7456DisplayPort.inCMS)
     {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_CROSSHAIRS);
@@ -129,7 +127,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ALTITUDE);
 
 #ifdef GPS
-    if (sensors(SENSOR_GPS) || osdInMenu) {
+    if (sensors(SENSOR_GPS) || osd7456DisplayPort.inCMS) {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
     }
@@ -400,7 +398,7 @@ void osdInit(void)
     refreshTimeout = 4 * REFRESH_1S;
 
 #ifdef CMS
-    cmsDeviceRegister(osdMax7456Init);
+    osd7456DisplayPortInit();
 #endif
 }
 
@@ -576,7 +574,7 @@ void updateOsd(uint32_t currentTime)
         max7456DrawScreen();
 
     // do not allow ARM if we are in menu
-    if (osdInMenu)
+    if (osd7456DisplayPort.inCMS)
         DISABLE_ARMING_FLAG(OK_TO_ARM);
 }
 
@@ -622,7 +620,7 @@ void osdUpdate(uint32_t currentTime)
 
     blinkState = (millis() / 200) % 2;
 
-    if (!osdInMenu) {
+    if (!osd7456DisplayPort.inCMS) {
         osdUpdateAlarms();
         osdDrawElements();
 #ifdef OSD_CALLS_CMS

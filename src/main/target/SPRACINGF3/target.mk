@@ -11,6 +11,7 @@ TARGET_SRC = \
             drivers/compass_hmc5883l.c \
             io/canvas.c \
             io/cms.c \
+            io/cms_builtin.c \
             io/cms_imu.c \
             io/cms_blackbox.c \
             io/cms_vtx.c \

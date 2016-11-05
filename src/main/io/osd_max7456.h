@@ -1,3 +1,5 @@
 #pragma once
 
-void osdMax7456Init(displayPort_t *displayPort);
+extern displayPort_t osd7456DisplayPort;
+
+void osd7456DisplayPortInit(void);

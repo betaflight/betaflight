@@ -16,6 +16,7 @@ TARGET_SRC = \
             io/osd_max7456.c \
             io/canvas.c \
             io/cms.c \
+            io/cms_builtin.c \
             io/cms_imu.c \
             io/cms_blackbox.c \
             io/cms_vtx.c \

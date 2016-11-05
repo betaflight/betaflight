@@ -17,5 +17,6 @@
 
 #pragma once
 
-struct displayPort_s;
-void displayPortOledInit(struct displayPort_s *displayPort);
+void displayPortOledInit(void);
+
+extern displayPort_t oledDisplayPort;

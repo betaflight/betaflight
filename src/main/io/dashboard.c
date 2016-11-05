@@ -56,9 +56,6 @@
 #include "io/cms.h"
 #include "io/displayport_oled.h"
 
-displayPort_t *displayPort;
-bool dashboardInCMS = false; // temporary
-
 #ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
@@ -591,8 +588,7 @@ void dashboardUpdate(uint32_t currentTime)
     static uint8_t previousArmedState = 0;
 
 #ifdef OLEDCMS
-    if (dashboardInCMS) return;
-    if (displayPort && displayPort->inCMS) {
+    if (oledDisplayPort.inCMS) {
         return;
     }
 #endif
@@ -702,12 +698,6 @@ void dashboardSetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void dashboardCmsInit(displayPort_t *displayPortToUse)
-{
-    displayPort = displayPortToUse;
-    displayPortOledInit(displayPort);
-}
-
 void dashboardInit(rxConfig_t *rxConfigToUse)
 {
     delay(200);
@@ -715,7 +705,7 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
     delay(200);
 
 #if defined(CMS) && defined(OLEDCMS)
-    cmsDeviceRegister(dashboardCmsInit);
+    displayPortOledInit();
 #endif
 
     rxConfig = rxConfigToUse;

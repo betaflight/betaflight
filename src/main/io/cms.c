@@ -16,10 +16,12 @@
  */
 
 /*
- Created by Marcin Baliniak
+ Original OSD code created by Marcin Baliniak
  OSD-CMS separation by jflyper
+ CMS-displayPort separation by jflyper and martinbudden
  */
-#define CMS_MENU_DEBUG // For external menu content creators
+
+//#define CMS_MENU_DEBUG // For external menu content creators
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,74 +34,54 @@
 
 #ifdef CMS
 
+#include "build/debug.h"
+
 #include "drivers/system.h"
 
 #include "common/typeconversion.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-
-#ifdef CANVAS
-#include "io/canvas.h"
-#endif
-
-#ifdef USE_FLASHFS
-#include "io/flashfs.h"
-#endif
-
-#ifdef OSD
-#include "io/osd.h"
-#endif
-
-#ifdef USE_DASHBOARD
-#include "io/dashboard.h"
-#endif
-
+// For 'ARM' related
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/pid.h"
-
+// For rcData, stopAllMotors, stopPwmAllMotors
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#include "build/debug.h"
+// For VISIBLE* (Actually, included by config_master.h)
+#include "io/osd.h"
 
-// External menu contents
-#include "io/cms_imu.h"
-#include "io/cms_blackbox.h"
-#include "io/cms_vtx.h"
-#ifdef OSD
-#include "io/cms_osd.h"
-#endif
-#include "io/cms_ledstrip.h"
+#include "io/cms.h"
+#include "io/cms_types.h"
 
-// Forwards
-static long cmsx_InfoInit(void);
+// Menu contents
+#include "io/cms_builtin.h"
 
-// Device management
+// DisplayPort management
 
 #ifndef CMS_MAX_DEVICE
 #define CMS_MAX_DEVICE 4
 #endif
 
-static cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
+static displayPort_t *pCurrentDisplay;
+
+static displayPort_t *cmsDisplayPorts[CMS_MAX_DEVICE];
 static int cmsDeviceCount;
 static int cmsCurrentDevice = -1;
 
-bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
+bool cmsDisplayPortRegister(displayPort_t *pDisplay)
 {
     if (cmsDeviceCount == CMS_MAX_DEVICE)
         return false;
 
-    cmsDeviceInitFunc[cmsDeviceCount++] = func;
+    cmsDisplayPorts[cmsDeviceCount++] = pDisplay;
 
     return true;
 }
 
-static cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
+static displayPort_t *cmsDisplayPortSelectCurrent(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
@@ -107,27 +89,21 @@ static cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
     if (cmsCurrentDevice < 0)
         cmsCurrentDevice = 0;
 
-    return cmsDeviceInitFunc[cmsCurrentDevice];
+    return cmsDisplayPorts[cmsCurrentDevice];
 }
 
-static cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
+static displayPort_t *cmsDisplayPortSelectNext(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
 
     cmsCurrentDevice = (cmsCurrentDevice + 1) % cmsDeviceCount; // -1 Okay
 
-    return cmsDeviceInitFunc[cmsCurrentDevice];
+    return cmsDisplayPorts[cmsCurrentDevice];
 }
 
 #define CMS_UPDATE_INTERVAL  50   // Interval of key scans (msec)
 #define CMS_POLL_INTERVAL   100   // Interval of polling dynamic values (msec)
-
-static void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
-{
-    cmsDeviceInitFunc(pDisp);
-}
-
 
 // XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
 // dynamically depending on size of the active output device,
@@ -149,11 +125,8 @@ static void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceIn
 #define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
-static displayPort_t currentDisplay;
-
 static bool cmsInMenu = false;
 
-static CMS_Menu menuMain;
 static CMS_Menu *currentMenu;    // Points to top entry of the current page
 
 // XXX Does menu backing support backing into second page???
@@ -168,7 +141,7 @@ static uint8_t maxRow;           // Max row in the current page
 
 static int8_t cursorRow;
 
-// Broken menu substitution
+#ifdef CMS_MENU_DEBUG // For external menu content creators
 
 static char menuErrLabel[21 + 1] = "RAMDOM DATA";
 
@@ -187,6 +160,7 @@ static CMS_Menu menuErr = {
     NULL,
     menuErrEntries,
 };
+#endif
 
 // Stick/key detection
 
@@ -500,6 +474,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
         }
 
         pageTop = currentMenu->entries;
+        pageTopAlt = NULL;
 
         displayClear(pDisplay);
         cmsUpdateMaxRow(pDisplay);
@@ -541,26 +516,26 @@ static long cmsMenuBack(displayPort_t *pDisplay)
 
 static void cmsMenuOpen(void)
 {
-    cmsDeviceInitFuncPtr initfunc;
-
     if (!cmsInMenu) {
         // New open
+        pCurrentDisplay = cmsDisplayPortSelectCurrent(); 
+        if (!pCurrentDisplay)
+            return;
         cmsInMenu = true;
-        DISABLE_ARMING_FLAG(OK_TO_ARM);
-        initfunc = cmsDeviceSelectCurrent(); 
         currentMenu = &menuMain;
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
     } else {
         // Switch display
-        displayClose(&currentDisplay);
-        initfunc = cmsDeviceSelectNext();
+        displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
+        if (pNextDisplay != pCurrentDisplay) {
+            displayClose(pCurrentDisplay);
+            pCurrentDisplay = pNextDisplay;
+        } else {
+            return;
+        }
     }
-
-    if (!initfunc)
-        return;
-
-    cmsScreenInit(&currentDisplay, initfunc);
-    displayOpen(&currentDisplay);
-    cmsMenuChange(&currentDisplay, currentMenu);
+    displayOpen(pCurrentDisplay);
+    cmsMenuChange(pCurrentDisplay, currentMenu);
 }
 
 static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
@@ -575,7 +550,7 @@ static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
         pMenu->onGlobalExit();
 }
 
-static long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
+long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 {
     if (ptr) {
         displayClear(pDisplay);
@@ -829,7 +804,7 @@ static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
         //lastCalled = currentTime;
 
         if (key) {
-            rcDelay = cmsHandleKey(&currentDisplay, key);
+            rcDelay = cmsHandleKey(pCurrentDisplay, key);
             return;
         }
 
@@ -838,7 +813,7 @@ static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
         if (currentTime > lastCmsHeartBeat + 500) {
             // Heart beat for external CMS display device @ 500msec
             // (Timeout @ 1000msec)
-            displayHeartbeat(&currentDisplay);
+            displayHeartbeat(pCurrentDisplay);
             lastCmsHeartBeat = currentTime;
         }
     }
@@ -854,107 +829,15 @@ void cmsHandler(uint32_t currentTime)
     const uint32_t now = currentTime / 1000;
 
     if (now - lastCalled >= CMS_UPDATE_INTERVAL) {
-        cmsUpdate(&currentDisplay, now);
+        cmsUpdate(pCurrentDisplay, now);
         lastCalled = now;
     }
 }
 
+// Will initializing with menuMain be better?
+// Can it be done with the current main()?
 void cmsInit(void)
 {
 }
 
-//
-// Built-in menu contents and support functions
-//
-
-// Info
-
-static char infoGitRev[GIT_SHORT_REVISION_LENGTH];
-static char infoTargetName[] = __TARGET__;
-
-#include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
-
-static OSD_Entry menuInfoEntries[] = {
-    { "--- INFO ---", OME_Label, NULL, NULL, 0 },
-    { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
-    { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
-    { "GITREV", OME_String, NULL, infoGitRev, 0 },
-    { "TARGET", OME_String, NULL, infoTargetName, 0 },
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu menuInfo = {
-    "MENUINFO",
-    OME_MENU,
-    cmsx_InfoInit,
-    NULL,
-    NULL,
-    menuInfoEntries,
-};
-
-static long cmsx_InfoInit(void)
-{
-    for (int i = 0 ; i < GIT_SHORT_REVISION_LENGTH ; i++) {
-        if (shortGitRevision[i] >= 'a' && shortGitRevision[i] <= 'f')
-            infoGitRev[i] = shortGitRevision[i] - 'a' + 'A';
-        else
-            infoGitRev[i] = shortGitRevision[i];
-    }
-
-    return 0;
-}
-
-// Features
-
-static OSD_Entry menuFeaturesEntries[] =
-{
-    {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
-    {"BLACKBOX", OME_Submenu, cmsMenuChange, &cmsx_menuBlackbox, 0},
-#if defined(VTX) || defined(USE_RTC6705)
-    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
-#endif // VTX || USE_RTC6705
-#ifdef LED_STRIP
-    {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
-#endif // LED_STRIP
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
-};
-
-static CMS_Menu menuFeatures = {
-    "MENUFEATURES",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuFeaturesEntries,
-};
-
-// Main
-
-static OSD_Entry menuMainEntries[] =
-{
-    {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
-    {"CFG&IMU", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES", OME_Submenu, cmsMenuChange, &menuFeatures, 0},
-#ifdef OSD
-    {"SCR LAYOUT", OME_Submenu, cmsMenuChange, &cmsx_menuOsdLayout, 0},
-    {"ALARMS", OME_Submenu, cmsMenuChange, &cmsx_menuAlarms, 0},
-#endif
-    {"ERR DEMO", OME_Submenu, cmsMenuChange, &menuErr, 0},
-    {"REAL ERR", OME_Submenu, cmsMenuChange, &menuInfoEntries[0], 0},
-    {"FC&FW INFO2", OME_Submenu, cmsMenuChange, &menuInfo, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
-    {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
-    {NULL,OME_END, NULL, NULL, 0}
-};
-
-static CMS_Menu menuMain = {
-    "MENUMAIN",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuMainEntries,
-};
 #endif // CMS
