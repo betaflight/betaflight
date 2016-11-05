@@ -16,11 +16,13 @@ REPLY_FRAME_ID   = 0x32
 
 -- Sequence number for next MSP/SPORT packet
 local sportMspSeq = 0
+local sportMspRemoteSeq = 0
 
 local mspRxBuf = {}
 local mspRxIdx = 1
 local mspRxCRC = 0
 local mspStarted = false
+local mspLastReq = 0
 
 -- Stats
 mspRequestsSent    = 0
@@ -55,7 +57,8 @@ local function mspSendRequest(cmd)
    value = bit32.band(cmd,0xFF)        -- MSP command
    value = value + bit32.lshift(cmd,8) -- CRC
 
-   mspRequestsSent = requestsSent + 1
+   mspLastReq = cmd
+   mspRequestsSent = mspRequestsSent + 1
    return sportTelemetryPush(LOCAL_SENSOR_ID, REQUEST_FRAME_ID, dataId, value)
 end
 
@@ -90,7 +93,7 @@ local function mspReceivedReply(payload)
       mspRxBuf = {}
 
       mspRxSize = payload[idx]
-      mspRxCRC  = mspRxSize
+      mspRxCRC  = bit32.bxor(mspRxSize,mspLastReq)
       idx = idx + 1
       mspStarted = true
       
@@ -100,7 +103,7 @@ local function mspReceivedReply(payload)
       mspOutOfOrder = mspOutOfOrder + 1
       return nil
 
-   elseif bit32.band(lastSeq+1,0x0F) ~= seq then
+   elseif bit32.band(sportMspRemoteSeq + 1, 0x0F) ~= seq then
       mspOutOfOrder = mspOutOfOrder + 1
       mspStarted = false
       return nil
@@ -114,7 +117,7 @@ local function mspReceivedReply(payload)
    end
 
    if idx > 6 then
-      lastRxSeq = seq
+      sportMspRemoteSeq = seq
       return
    end
 
@@ -122,6 +125,7 @@ local function mspReceivedReply(payload)
    if mspRxCRC ~= payload[idx] then
       mspStarted = false
       mspCRCErrors = mspCRCErrors + 1
+      return nil
    end
 
    mspRepliesReceived = mspRepliesReceived + 1
@@ -157,18 +161,14 @@ local function run(event)
    local now = getTime()
 
    if event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
-      requestsSent    = 0
-      repliesReceived = 0
-      mspReceivedReply_cnt = 0
-      mspReceivedReply_cnt1 = 0
-      mspReceivedReply_cnt2 = 0
-      mspReceivedReply_cnt3 = 0
+      mspResetStats()
    end
 
    lcd.clear()
-
+   lcd.drawText(41,1,"MSP/SPORT test script",INVERS)
+   
    -- do we have valid telemetry data?
-   if getValue("rssi") > 0 then
+   if getValue("RSSI") > 0 then
 
       -- draw screen
       lcd.drawText(1,11,"Requests:",0)
@@ -178,19 +178,19 @@ local function run(event)
       lcd.drawNumber(60,21,mspRepliesReceived)
 
       lcd.drawText(1,31,"PkRxed:",0)
-      lcd.drawNumber(30,31,mspPkRxed)
+      lcd.drawNumber(60,31,mspPkRxed)
 
       lcd.drawText(1,41,"ErrorPk:",0)
-      lcd.drawNumber(30,41,mspErrorPk)
+      lcd.drawNumber(60,41,mspErrorPk)
 
-      lcd.drawText(71,31,"StartPk:",0)
-      lcd.drawNumber(100,31,mspStartPk)
+      lcd.drawText(91,31,"StartPk:",0)
+      lcd.drawNumber(160,31,mspStartPk)
 
-      lcd.drawText(71,41,"OutOfOrder:",0)
-      lcd.drawNumber(100,41,mspOutOfOrder)
+      lcd.drawText(91,41,"OutOfOrder:",0)
+      lcd.drawNumber(160,41,mspOutOfOrder)
 
       lcd.drawText(1,51,"CRCErrors:",0)
-      lcd.drawNumber(30,51,mspCRCErrors)
+      lcd.drawNumber(60,51,mspCRCErrors)
 
       -- last request is at least 2s old
       if lastReqTS + 200 <= now then
@@ -198,10 +198,10 @@ local function run(event)
          lastReqTS = now
       end
    else
-      lcd.drawText(20,30,"No telemetry signal", XXLSIZE + BLINK)
+      lcd.drawText(15,20,"No telemetry signal", BLINK + DBLSIZE)
    end
 
-   pollReply()
+   mspPollReply()
 end
 
 return {run=run}

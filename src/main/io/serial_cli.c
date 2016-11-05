@@ -936,7 +936,7 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #endif
 #ifdef LED_STRIP
-    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.ledStripConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef USE_RTC6705
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
@@ -1707,8 +1707,8 @@ static void printLed(uint8_t dumpMask, master_t *defaultConfig)
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-        ledConfig = masterConfig.ledConfigs[i];
-        ledConfigDefault = defaultConfig->ledConfigs[i];
+        ledConfig = masterConfig.ledStripConfig.ledConfigs[i];
+        ledConfigDefault = defaultConfig->ledStripConfig.ledConfigs[i];
         equalsDefault = ledConfig == ledConfigDefault;
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
@@ -1745,8 +1745,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
     hsvColor_t *colorDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-        color = &masterConfig.colors[i];
-        colorDefault = &defaultConfig->colors[i];
+        color = &masterConfig.ledStripConfig.colors[i];
+        colorDefault = &defaultConfig->ledStripConfig.colors[i];
         equalsDefault = color->h == colorDefault->h
             && color->s == colorDefault->s
             && color->v == colorDefault->v;
@@ -1791,21 +1791,26 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
-            int colorIndex = masterConfig.modeColors[i].color[j];
-            int colorIndexDefault = defaultConfig->modeColors[i].color[j];
+            int colorIndex = masterConfig.ledStripConfig.modeColors[i].color[j];
+            int colorIndexDefault = defaultConfig->ledStripConfig.modeColors[i].color[j];
             const char *format = "mode_color %u %u %u\r\n";
             cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
             cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
         }
     }
 
+    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-        int colorIndex = masterConfig.specialColors.color[j];
-        int colorIndexDefault = defaultConfig->specialColors.color[j];
-        const char *format = "mode_color %u %u %u\r\n";
+        int colorIndex = masterConfig.ledStripConfig.specialColors.color[j];
+        int colorIndexDefault = defaultConfig->ledStripConfig.specialColors.color[j];
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
+
+    int ledStripAuxChannel = masterConfig.ledStripConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultConfig->ledStripConfig.ledstrip_aux_channel;
+    cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
+    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
@@ -2997,12 +3002,18 @@ static void cliEscPassthrough(char *cmdline)
                 break;
             case 1:
                 index = atoi(pch);
-                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                    printf("passthru at pwm output %d enabled\r\n", index);
+                if(mode == 2 && index == 255)
+                {
+                    printf("passthru on all pwm outputs enabled\r\n");
                 }
-                else {
-                    printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                    return;
+                else{
+                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                        printf("passthru at pwm output %d enabled\r\n", index);
+                    }
+                    else {
+                        printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                        return;
+                    }
                 }
                 break;
         }
@@ -3610,7 +3621,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
+    cliPrintf("# %s/%s %s %s / %s (%s)\r\n",
+        FC_FIRMWARE_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -3739,19 +3751,22 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
-    { OWNER_BEEPER, &masterConfig.beeperConfig.ioTag, 0 },
+    { OWNER_BEEPER,        &masterConfig.beeperConfig.ioTag, 0 },
 #endif 
-    { OWNER_MOTOR, &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_MOTOR,         &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
-    { OWNER_SERVO, &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
+    { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif 
 #ifndef SKIP_RX_PWM_PPM
-    { OWNER_PPMINPUT, &masterConfig.ppmConfig.ioTag, 0 },
-    { OWNER_PWMINPUT, &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
+    { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
+    { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif 
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
-    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+    { OWNER_SONAR_ECHO,    &masterConfig.sonarConfig.echoTag,    0 },
+#endif
+#ifdef LED_STRIP
+    { OWNER_LED_STRIP,     &masterConfig.ledStripConfig.ioTag,   0 },
 #endif
 };
 

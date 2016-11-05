@@ -759,7 +759,7 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
-            if (timerHardware[i].usageFlags & flag) {
+            if (timerHardware[i].usageFlags & flag || flag == 0) {
                 return &timerHardware[i];
             }
         }
@@ -810,6 +810,7 @@ volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
     return (volatile timCCR_t*)((volatile char*)&tim->CCR1 + channel);
 }
 
+#ifndef USE_HAL_DRIVER
 uint16_t timerDmaSource(uint8_t channel)
 {
     switch (channel) {
@@ -824,3 +825,4 @@ uint16_t timerDmaSource(uint8_t channel)
     }
     return 0;
 }
+#endif
