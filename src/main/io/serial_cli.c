@@ -3000,12 +3000,18 @@ static void cliEscPassthrough(char *cmdline)
                 break;
             case 1:
                 index = atoi(pch);
-                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                    printf("passthru at pwm output %d enabled\r\n", index);
+                if(mode == 2 && index == 255)
+                {
+                    printf("passthru on all pwm outputs enabled\r\n");
                 }
-                else {
-                    printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                    return;
+                else{
+                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                        printf("passthru at pwm output %d enabled\r\n", index);
+                    }
+                    else {
+                        printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                        return;
+                    }
                 }
                 break;
         }
