@@ -55,6 +55,7 @@ typedef uint32_t timCNT_t;
 #endif
 
 typedef enum {
+    TIM_USE_ANY   = 0x0,
     TIM_USE_PPM   = 0x1,
     TIM_USE_PWM   = 0x2,
     TIM_USE_MOTOR = 0x4,
