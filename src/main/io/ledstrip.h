@@ -18,7 +18,7 @@
 #pragma once
 
 #include "common/color.h"
-#include "drivers/io.h"
+#include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16

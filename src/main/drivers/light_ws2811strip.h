@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "io.h"
+#include "io_types.h"
 
 #define WS2811_LED_STRIP_LENGTH 32
 #define WS2811_BITS_PER_LED 24
