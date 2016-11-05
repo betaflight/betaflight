@@ -5,6 +5,13 @@
   http://www.st.com/software_license_agreement_liberty_v2
 */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/utils.h"
+
 #include "stm32f10x.h"
 #include "rcc.h"
 #include "timer.h"
@@ -29,6 +36,12 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
 #endif
 };
+
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return 1;
+}
 
 /**
   * @brief  Selects the TIM Output Compare Mode.

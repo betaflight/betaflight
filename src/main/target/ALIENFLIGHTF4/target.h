@@ -19,6 +19,9 @@
 #define TARGET_BOARD_IDENTIFIER "AFF4"
 #define TARGET_CONFIG
 
+#define USE_HARDWARE_REVISION_DETECTION
+#define HW_PIN                  PC13
+
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #define USBD_PRODUCT_STRING "AlienFlight F4"
@@ -27,6 +30,7 @@
 #define LED1                    PD2
 
 #define BEEPER                  PC13
+#define BEEPER_INVERTED
 
 #define INVERTER                PC15
 #define INVERTER_USART          USART2
@@ -34,7 +38,6 @@
 // MPU interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -118,6 +121,9 @@
 
 #define SERIAL_PORT_COUNT       4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
@@ -144,12 +150,6 @@
 // LED strip configuration using RC5 pin.
 //#define LED_STRIP
 
-//#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-//#define WS2811_PIN                    PB15 // TIM8_CH3
-//#define WS2811_TIMER                  TIM8
-//#define WS2811_DMA_CHANNEL            DMA1_Channel3
-//#define WS2811_IRQ                    DMA1_Channel3_IRQn
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN                PA3
@@ -163,8 +163,7 @@
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        (FEATURE_MOTOR_STOP | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

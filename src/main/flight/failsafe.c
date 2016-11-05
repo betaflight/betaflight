@@ -20,19 +20,22 @@
 
 #include <platform.h>
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
-#include "rx/rx.h"
 #include "drivers/system.h"
-#include "io/beeper.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "config/runtime_config.h"
-#include "config/config.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "flight/failsafe.h"
+
+#include "io/beeper.h"
+#include "io/motors.h"
+
+#include "rx/rx.h"
 
 /*
  * Usage:

@@ -161,7 +161,7 @@ bool mpu6000SpiDetect(void)
 #ifdef MPU6000_CS_PIN
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
 #endif
-    IOInit(mpuSpi6000CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpuSpi6000CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
@@ -179,7 +179,6 @@ bool mpu6000SpiDetect(void)
             return false;
         }
     } while (attemptsRemaining--);
-
 
     mpu6000ReadRegister(MPU_RA_PRODUCT_ID, 1, &in);
 
@@ -205,8 +204,8 @@ bool mpu6000SpiDetect(void)
     return false;
 }
 
-static void mpu6000AccAndGyroInit(void) {
-
+static void mpu6000AccAndGyroInit(void)
+{
     if (mpuSpi6000InitDone) {
         return;
     }
@@ -243,7 +242,6 @@ static void mpu6000AccAndGyroInit(void) {
     // Accel +/- 8 G Full Scale
     mpu6000WriteRegister(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delayMicroseconds(15);
-
 
     mpu6000WriteRegister(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR
     delayMicroseconds(15);

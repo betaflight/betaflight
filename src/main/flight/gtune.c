@@ -38,12 +38,12 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/config.h"
 #include "blackbox/blackbox.h"
 
-#include "io/rc_controls.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "config/runtime_config.h"
 
 extern uint16_t cycleTime;
 extern uint8_t motorCount;

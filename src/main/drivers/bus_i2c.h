@@ -21,8 +21,8 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
-#include "drivers/io.h"
-#include "drivers/rcc.h"
+#include "io_types.h"
+#include "rcc_types.h"
 
 #ifndef I2C_DEVICE
 #define I2C_DEVICE I2CINVALID
@@ -33,7 +33,8 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
-    I2CDEV_MAX = I2CDEV_3,
+    I2CDEV_4,
+    I2CDEV_MAX = I2CDEV_4,
 } I2CDevice;
 
 typedef struct i2cDevice_s {
@@ -45,6 +46,9 @@ typedef struct i2cDevice_s {
 #if !defined(STM32F303xC)
     uint8_t ev_irq;
     uint8_t er_irq;
+#endif
+#if defined(STM32F7)
+    uint8_t af;
 #endif
 } i2cDevice_t;
 

@@ -18,6 +18,7 @@
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "BJF4"
 #define TARGET_CONFIG
+#define TARGET_VALIDATECONFIG
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -27,7 +28,6 @@
 #define HW_PIN                  PB2
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
-#define USE_EXTI
 
 #define LED0                    PB6
 #define LED1                    PB5
@@ -41,11 +41,11 @@
 #define INVERTER_USART          USART6
 
 // MPU6500 interrupt
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define USE_EXTI
+#define MPU_INT_EXTI            PC5
 #define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
-//#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-#define MPU_INT_EXTI PC5
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
 #define MPU6500_CS_PIN          PC4
 #define MPU6500_SPI_INSTANCE    SPI1
 
@@ -112,6 +112,9 @@
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       5
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define SOFTSERIAL_1_TIMER      TIM3
 #define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
 #define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
@@ -141,23 +144,16 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
 #define LED_STRIP
-// LED Strip can run off Pin 6 (PB1) of the ESC outputs.
-#define WS2811_PIN                      PB1
-#define WS2811_TIMER                    TIM3
-#define WS2811_TIMER_CHANNEL            TIM_Channel_4
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
-#define WS2811_DMA_CHANNEL              DMA_Channel_5
-#define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
-
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART6
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -171,4 +167,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
-

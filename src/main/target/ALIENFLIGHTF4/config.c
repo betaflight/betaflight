@@ -15,89 +15,73 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
 
-#include "build_config.h"
-
-#include "blackbox/blackbox_io.h"
-
-#include "common/color.h"
 #include "common/axis.h"
-#include "common/filter.h"
 
 #include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
-#include "drivers/pwm_output.h"
-#include "drivers/max7456.h"
-#include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
+#include "fc/rc_controls.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/pid.h"
 
 #include "rx/rx.h"
 
+#include "io/serial.h"
+
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "sensors/sensors.h"
+#include "sensors/compass.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
+
+#include "hardware_revision.h"
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(void) {
-    masterConfig.mag_hardware = MAG_NONE;            // disabled by default
-    masterConfig.rxConfig.spektrum_sat_bind = 5;
-    masterConfig.rxConfig.spektrum_sat_bind_autoreset = 1;
-    masterConfig.motor_pwm_rate = 32000;
-    masterConfig.failsafeConfig.failsafe_delay = 2;
-    masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    masterConfig.gyro_sync_denom = 1;
-    masterConfig.pid_process_denom = 1;
-    currentProfile->pidProfile.P8[ROLL] = 90;
-    currentProfile->pidProfile.I8[ROLL] = 44;
-    currentProfile->pidProfile.D8[ROLL] = 60;
-    currentProfile->pidProfile.P8[PITCH] = 90;
-    currentProfile->pidProfile.I8[PITCH] = 44;
-    currentProfile->pidProfile.D8[PITCH] = 60;
+void targetConfiguration(master_t *config)
+{
+    config->mag_hardware = MAG_NONE;            // disabled by default
+    if (hardwareRevision == AFF4_REV_1) {
+        config->rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
+        config->rxConfig.spektrum_sat_bind = 5;
+        config->rxConfig.spektrum_sat_bind_autoreset = 1;
+    } else {
+        config->rxConfig.serialrx_provider = SERIALRX_SBUS;
+        config->rxConfig.sbus_inversion = 0;
+        config->serialConfig.portConfigs[SERIAL_PORT_USART2].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        config->telemetryConfig.telemetry_inversion = 0;
+        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
+        config->batteryConfig.currentMeterOffset = 2500;
+        config->batteryConfig.currentMeterScale = -667;
+    }
+    config->motorConfig.motorPwmRate = 32000;
+    config->gyro_sync_denom = 1;
+    config->pid_process_denom = 1;
+    config->profile[0].pidProfile.P8[ROLL] = 53;
+    config->profile[0].pidProfile.I8[ROLL] = 45;
+    config->profile[0].pidProfile.D8[ROLL] = 52;
+    config->profile[0].pidProfile.P8[PITCH] = 53;
+    config->profile[0].pidProfile.I8[PITCH] = 45;
+    config->profile[0].pidProfile.D8[PITCH] = 52;
+    config->profile[0].pidProfile.P8[YAW] = 64;
+    config->profile[0].pidProfile.D8[YAW] = 18;
 
-    masterConfig.customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
-    masterConfig.customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
-    masterConfig.customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
-    masterConfig.customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
-    masterConfig.customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
-    masterConfig.customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
-    masterConfig.customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    masterConfig.customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
+    config->customMotorMixer[0] = (motorMixer_t){ 1.0f, -0.414178f,  1.0f, -1.0f };    // REAR_R
+    config->customMotorMixer[1] = (motorMixer_t){ 1.0f, -0.414178f, -1.0f,  1.0f };    // FRONT_R
+    config->customMotorMixer[2] = (motorMixer_t){ 1.0f,  0.414178f,  1.0f,  1.0f };    // REAR_L
+    config->customMotorMixer[3] = (motorMixer_t){ 1.0f,  0.414178f, -1.0f, -1.0f };    // FRONT_L
+    config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
+    config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
+    config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
+    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }

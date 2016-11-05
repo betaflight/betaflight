@@ -23,16 +23,20 @@
 #ifdef LED_STRIP
 
 #include "common/color.h"
-#include "drivers/light_ws2811strip.h"
+#include "light_ws2811strip.h"
 #include "nvic.h"
 #include "io.h"
 #include "dma.h"
+#include "rcc.h"
 #include "timer.h"
 
 static IO_t ws2811IO = IO_NONE;
 bool ws2811Initialised = false;
+static DMA_Channel_TypeDef *dmaChannel = NULL;
+static TIM_TypeDef *timer = NULL;
 
-static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor) {
+static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
+{
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
         ws2811LedDataTransferInProgress = 0;
         DMA_Cmd(descriptor->channel, DISABLE);
@@ -40,32 +44,38 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor) {
     }
 }
 
-void ws2811LedStripHardwareInit(void)
+void ws2811LedStripHardwareInit(ioTag_t ioTag)
 {
+    if (!ioTag) {
+        return;
+    }
+
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_OCInitTypeDef  TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    uint16_t prescalerValue;
+    const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
+    timer = timerHardware->tim;
 
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
+    if (timerHardware->dmaChannel == NULL) {
+        return;
+    }
 
-    ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
-/* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    ws2811IO = IOGetByTag(ioTag);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
 
-    RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
+    RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     /* Compute the prescaler value */
-    prescalerValue = (uint16_t) (SystemCoreClock / 24000000) - 1;
+    uint16_t prescalerValue = (uint16_t) (SystemCoreClock / WS2811_TIMER_HZ) - 1;
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = 29; // 800kHz
+    TIM_TimeBaseStructure.TIM_Period = WS2811_TIMER_PERIOD; // 800kHz
     TIM_TimeBaseStructure.TIM_Prescaler = prescalerValue;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+    TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCStructInit(&TIM_OCInitStructure);
@@ -73,20 +83,20 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_Pulse = 0;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OC1Init(TIM3, &TIM_OCInitStructure);
-    TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
+    TIM_OC1Init(timer, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
 
-    TIM_CtrlPWMOutputs(TIM3, ENABLE);
+    TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
-    /* DMA clock enable */
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
+    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
-    /* DMA1 Channel6 Config */
-    DMA_DeInit(DMA1_Channel6);
+    dmaChannel = timerHardware->dmaChannel;
+    DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&TIM3->CCR1;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)ledStripDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_BufferSize = WS2811_DMA_BUFFER_SIZE;
@@ -98,17 +108,14 @@ void ws2811LedStripHardwareInit(void)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(DMA1_Channel6, &DMA_InitStructure);
+    DMA_Init(dmaChannel, &DMA_InitStructure);
 
     /* TIM3 CC1 DMA Request enable */
-    TIM_DMACmd(TIM3, TIM_DMA_CC1, ENABLE);
+    TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
-    DMA_ITConfig(DMA1_Channel6, DMA_IT_TC, ENABLE);
+    DMA_ITConfig(dmaChannel, DMA_IT_TC, ENABLE);
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
-    ws2811UpdateStrip();
 }
 
 void ws2811LedStripDMAEnable(void)
@@ -116,10 +123,10 @@ void ws2811LedStripDMAEnable(void)
     if (!ws2811Initialised)
         return;
 
-    DMA_SetCurrDataCounter(DMA1_Channel6, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
-    TIM_SetCounter(TIM3, 0);
-    TIM_Cmd(TIM3, ENABLE);
-    DMA_Cmd(DMA1_Channel6, ENABLE);
+    DMA_SetCurrDataCounter(dmaChannel, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
+    TIM_SetCounter(timer, 0);
+    TIM_Cmd(timer, ENABLE);
+    DMA_Cmd(dmaChannel, ENABLE);
 }
 
 #endif

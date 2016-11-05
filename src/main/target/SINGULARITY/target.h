@@ -25,8 +25,6 @@
 
 #define BEEPER                  PC15
 
-#define USABLE_TIMER_CHANNEL_COUNT 10
-
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
@@ -48,6 +46,9 @@
 #define USE_UART3          // Solder Pads - TX (PB10) RX (PB11)
 #define USE_SOFTSERIAL1     // Telemetry
 #define SERIAL_PORT_COUNT 5
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -87,19 +88,11 @@
 
 #define LED_STRIP
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define SPEKTRUM_BIND
 // USART2, PA15
@@ -115,5 +108,6 @@
 // !!TODO - check the following line is correct
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(16) |TIM_N(17))
 

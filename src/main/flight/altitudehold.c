@@ -23,30 +23,24 @@
 
 
 #include "platform.h"
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/sonar_hcsr04.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/sonar.h"
 
 #include "rx/rx.h"
 
-#include "io/rc_controls.h"
-#include "io/escservo.h"
+#include "fc/rc_controls.h"
+#include "io/motors.h"
 
-#include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 int32_t setVelocity = 0;
 uint8_t velocityControl = 0;
@@ -59,19 +53,19 @@ int32_t vario = 0;                      // variometer in cm/s
 static barometerConfig_t *barometerConfig;
 static pidProfile_t *pidProfile;
 static rcControlsConfig_t *rcControlsConfig;
-static escAndServoConfig_t *escAndServoConfig;
+static motorConfig_t *motorConfig;
 
 void configureAltitudeHold(
         pidProfile_t *initialPidProfile,
         barometerConfig_t *intialBarometerConfig,
         rcControlsConfig_t *initialRcControlsConfig,
-        escAndServoConfig_t *initialEscAndServoConfig
+        motorConfig_t *initialMotorConfig
 )
 {
     pidProfile = initialPidProfile;
     barometerConfig = intialBarometerConfig;
     rcControlsConfig = initialRcControlsConfig;
-    escAndServoConfig = initialEscAndServoConfig;
+    motorConfig = initialMotorConfig;
 }
 
 #if defined(BARO) || defined(SONAR)
@@ -99,7 +93,7 @@ static void applyMultirotorAltHold(void)
                 AltHold = EstAlt;
                 isAltHoldChanged = 0;
             }
-            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+            rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorConfig->minthrottle, motorConfig->maxthrottle);
         }
     } else {
         // slow alt changes, mostly used for aerial photography
@@ -113,7 +107,7 @@ static void applyMultirotorAltHold(void)
             velocityControl = 0;
             isAltHoldChanged = 0;
         }
-        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, escAndServoConfig->minthrottle, escAndServoConfig->maxthrottle);
+        rcCommand[THROTTLE] = constrain(initialThrottleHold + altHoldThrottleAdjustment, motorConfig->minthrottle, motorConfig->maxthrottle);
     }
 }
 

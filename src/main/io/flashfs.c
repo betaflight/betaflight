@@ -33,8 +33,10 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "drivers/flash.h"
 #include "drivers/flash_m25p16.h"
-#include "flashfs.h"
+
+#include "io/flashfs.h"
 
 static uint8_t flashWriteBuffer[FLASHFS_WRITE_BUFFER_SIZE];
 

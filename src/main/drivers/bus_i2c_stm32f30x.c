@@ -20,18 +20,19 @@
 
 #include <platform.h>
 
-#include "gpio.h"
 #include "system.h"
-#include "drivers/io_impl.h"
+#include "io.h"
+#include "io_impl.h"
+#include "rcc.h"
 
 #include "bus_i2c.h"
 
 #ifndef SOFT_I2C
 
 #if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
 #else
-#define IOCFG_I2C IOCFG_AF_OD
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 #endif
 
 #define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.
@@ -82,17 +83,17 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-  
+
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
     RCC_ClockCmd(i2c->rcc, ENABLE);
     RCC_I2CCLKConfig(I2Cx == I2C2 ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
 
-    IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
     IOConfigGPIOAF(scl, IOCFG_I2C, GPIO_AF_4);
 
-    IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
     IOConfigGPIOAF(sda, IOCFG_I2C, GPIO_AF_4);
 
     I2C_InitTypeDef i2cInit = {
@@ -108,7 +109,7 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
- 
+
     I2C_Cmd(I2Cx, ENABLE);
 }
 

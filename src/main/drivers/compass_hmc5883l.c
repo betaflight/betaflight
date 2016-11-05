@@ -24,7 +24,7 @@
 
 #ifdef USE_MAG_HMC5883
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -38,8 +38,6 @@
 
 #include "sensor.h"
 #include "compass.h"
-
-#include "sensors/sensors.h"
 
 #include "compass_hmc5883l.h"
 
@@ -171,12 +169,11 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 
 bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
 {
-    bool ack = false;
-    uint8_t sig = 0;
-
     hmc5883Config = hmc5883ConfigToUse;
 
-    ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+    uint8_t sig = 0;
+    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+    
     if (!ack || sig != 'H')
         return false;
 

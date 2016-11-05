@@ -22,9 +22,10 @@
 
 #ifdef USE_RTC6705
 
-#include "drivers/bus_spi.h"
-#include "drivers/system.h"
-#include "drivers/light_led.h"
+#include "bus_spi.h"
+#include "io.h"
+#include "system.h"
+#include "light_led.h"
 
 #include "vtx_soft_spi_rtc6705.h"
 
@@ -58,13 +59,13 @@ void rtc6705_soft_spi_init(void)
     rtc6705LePin   = IOGetByTag(IO_TAG(RTC6705_SPILE_PIN));
     rtc6705ClkPin  = IOGetByTag(IO_TAG(RTC6705_SPICLK_PIN));
 
-    IOInit(rtc6705DataPin, OWNER_TX, RESOURCE_SPI_MOSI, 0);
+    IOInit(rtc6705DataPin, OWNER_SPI_MOSI, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705DataPin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705LePin, OWNER_TX, RESOURCE_SPI_CS, 0);
+    IOInit(rtc6705LePin, OWNER_SPI_CS, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705LePin, IOCFG_OUT_PP);
 
-    IOInit(rtc6705ClkPin, OWNER_TX, RESOURCE_SPI_SCK, 0);
+    IOInit(rtc6705ClkPin, OWNER_SPI_SCK, RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(rtc6705ClkPin, IOCFG_OUT_PP);
 }
 

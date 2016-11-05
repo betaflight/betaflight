@@ -23,18 +23,17 @@
 #include <math.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"
 
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
@@ -43,7 +42,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gps.h"
-#include "io/rc_controls.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
@@ -52,9 +50,6 @@
 
 #include "rx/rx.h"
 
-
-#include "config/config.h"
-#include "config/runtime_config.h"
 
 extern int16_t magHold;
 

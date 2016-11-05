@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "io_types.h"
 
 #define TRANSPONDER_BITS_PER_BYTE 10 // start + 8 data + stop
 #define TRANSPONDER_DATA_LENGTH 6
@@ -29,10 +30,10 @@
 #define BIT_TOGGLE_1 78 // (156 / 2)
 #define BIT_TOGGLE_0 0
 
-void transponderIrInit(void);
+void transponderIrInit();
 void transponderIrDisable(void);
 
-void transponderIrHardwareInit(void);
+void transponderIrHardwareInit(ioTag_t ioTag);
 void transponderIrDMAEnable(void);
 
 void transponderIrWaitForTransmitComplete(void);

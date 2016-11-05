@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "drivers/accgyro.h"
+#include "common/axis.h"
+
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
@@ -27,6 +30,7 @@ typedef enum {
     GYRO_MPU6000,
     GYRO_MPU6500,
     GYRO_MPU9250,
+    GYRO_ICM20689,
     GYRO_FAKE,
     GYRO_MAX = GYRO_FAKE
 } gyroSensor_e;
@@ -40,7 +44,13 @@ typedef struct gyroConfig_s {
     uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
 } gyroConfig_t;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz, uint16_t gyro_soft_notch_hz, uint16_t gyro_soft_notch_cutoff, uint8_t gyro_soft_lpf_type);
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
+                   uint8_t gyro_soft_lpf_hz,
+                   uint16_t gyro_soft_notch_hz_1,
+                   uint16_t gyro_soft_notch_cutoff_1,
+                   uint16_t gyro_soft_notch_hz_2,
+                   uint16_t gyro_soft_notch_cutoff_2,
+                   uint8_t gyro_soft_lpf_type);
 void gyroSetCalibrationCycles(void);
 void gyroInit(void);
 void gyroUpdate(void);

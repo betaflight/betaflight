@@ -22,6 +22,7 @@ void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 
 uint32_t micros(void);
+uint32_t microsISR(void);
 uint32_t millis(void);
 
 typedef enum {
@@ -48,22 +49,9 @@ void enableGPIOPowerUsageAndNoiseReductions(void);
 // current crystal frequency - 8 or 12MHz
 
 extern uint32_t hse_value;
+extern uint32_t cachedRccCsrValue;
 
 typedef void extiCallbackHandlerFunc(void);
 
-typedef struct extiCallbackHandlerConfig_s {
-    IRQn_Type irqn;
-    extiCallbackHandlerFunc* fn;
-} extiCallbackHandlerConfig_t;
-
-#ifndef EXTI_CALLBACK_HANDLER_COUNT
-#define EXTI_CALLBACK_HANDLER_COUNT 1
-#endif
-
-extern extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
-
-void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
-void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
-
-extern uint32_t cachedRccCsrValue;
+void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn);
 

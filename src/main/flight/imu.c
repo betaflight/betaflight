@@ -23,16 +23,14 @@
 
 #include "common/maths.h"
 
-#include "build_config.h"
 #include "platform.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -47,7 +45,8 @@
 
 #include "io/gps.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
@@ -372,7 +371,7 @@ static bool isMagnetometerHealthy(void)
     return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
 }
 
-static void imuCalculateEstimatedAttitude(void)
+static void imuCalculateEstimatedAttitude(uint32_t currentTime)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
@@ -380,7 +379,6 @@ static void imuCalculateEstimatedAttitude(void)
     bool useMag = false;
     bool useYaw = false;
 
-    uint32_t currentTime = micros();
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
 
@@ -418,10 +416,10 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateAttitude(void)
+void imuUpdateAttitude(uint32_t currentTime)
 {
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
-        imuCalculateEstimatedAttitude();
+        imuCalculateEstimatedAttitude(currentTime);
     } else {
         accSmooth[X] = 0;
         accSmooth[Y] = 0;
