@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/color.h"
+#include "drivers/io.h"
 
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
@@ -135,6 +136,15 @@ typedef struct ledCounts_s {
     uint8_t ringSeqLen;
 } ledCounts_t;
 
+typedef struct ledStripConfig_s {
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
+    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    rc_alias_e ledstrip_aux_channel;
+    ioTag_t ioTag;
+} ledStripConfig_t;
 
 ledConfig_t *ledConfigs;
 hsvColor_t *colors;
@@ -166,7 +176,7 @@ bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
+void ledStripInit(ledStripConfig_t *ledStripConfig);
 void ledStripEnable(void);
 void ledStripUpdate(uint32_t currentTime);
 

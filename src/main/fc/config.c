@@ -42,6 +42,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/light_ws2811strip.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -237,6 +238,26 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->acc_align = ALIGN_DEFAULT;
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
+
+#ifdef USE_LEDSTRIP
+void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
+{
+    applyDefaultColors(ledStripConfig->colors);
+    applyDefaultLedStripConfig(ledStripConfig->ledConfigs);
+    applyDefaultModeColors(ledStripConfig->modeColors);
+    applyDefaultSpecialColors(&(ledStripConfig->specialColors));
+    ledStripConfig->ledstrip_visual_beeper = 0;
+    ledStripConfig->ledstrip_aux_channel = THROTTLE;
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_LED) {
+            ledStripConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+    ledStripConfig->ioTag = IO_TAG_NONE;
+}
+#endif
 
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
@@ -597,6 +618,10 @@ void createDefaultConfig(master_t *config)
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
 
+#ifdef USE_LEDSTRIP
+    resetLedStripConfig(&config->ledStripConfig);
+#endif
+
 #ifdef GPS
     // gps/nav stuff
     config->gpsConfig.provider = GPS_NMEA;
@@ -665,15 +690,6 @@ void createDefaultConfig(master_t *config)
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         config->customMotorMixer[i].throttle = 0.0f;
     }
-
-#ifdef LED_STRIP
-    applyDefaultColors(config->colors);
-    applyDefaultLedStripConfig(config->ledConfigs);
-    applyDefaultModeColors(config->modeColors);
-    applyDefaultSpecialColors(&(config->specialColors));
-    config->ledstrip_visual_beeper = 0;
-    config->ledstrip_aux_channel = THROTTLE;
-#endif
 
 #ifdef VTX
     config->vtx_band = 4;    //Fatshark/Airwaves
