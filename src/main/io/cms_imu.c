@@ -194,14 +194,14 @@ static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
 OSD_Entry cmsx_menuRcEntries[] =
 {
     {"--- RC PREV ---", OME_Label, NULL, NULL, 0},
-    {"ROLL", OME_Poll_INT16, NULL, &entryRcRoll, 0},
-    {"PITCH", OME_Poll_INT16, NULL, &entryRcPitch, 0},
-    {"THR", OME_Poll_INT16, NULL, &entryRcThr, 0},
-    {"YAW", OME_Poll_INT16, NULL, &entryRcYaw, 0},
-    {"AUX1", OME_Poll_INT16, NULL, &entryRcAux1, 0},
-    {"AUX2", OME_Poll_INT16, NULL, &entryRcAux2, 0},
-    {"AUX3", OME_Poll_INT16, NULL, &entryRcAux3, 0},
-    {"AUX4", OME_Poll_INT16, NULL, &entryRcAux4, 0},
+    {"ROLL", OME_INT16, NULL, &entryRcRoll, DYNAMIC},
+    {"PITCH", OME_INT16, NULL, &entryRcPitch, DYNAMIC},
+    {"THR", OME_INT16, NULL, &entryRcThr, DYNAMIC},
+    {"YAW", OME_INT16, NULL, &entryRcYaw, DYNAMIC},
+    {"AUX1", OME_INT16, NULL, &entryRcAux1, DYNAMIC},
+    {"AUX2", OME_INT16, NULL, &entryRcAux2, DYNAMIC},
+    {"AUX3", OME_INT16, NULL, &entryRcAux3, DYNAMIC},
+    {"AUX4", OME_INT16, NULL, &entryRcAux4, DYNAMIC},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

@@ -120,7 +120,8 @@ static cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
     return cmsDeviceInitFunc[cmsCurrentDevice];
 }
 
-#define CMS_UPDATE_INTERVAL 50 // msec
+#define CMS_UPDATE_INTERVAL  50   // Interval of key scans (msec)
+#define CMS_POLL_INTERVAL   100   // Interval of polling dynamic values (msec)
 
 static void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 {
@@ -261,7 +262,7 @@ static void cmsPadToSize(char *buf, int size)
     buf[size] = 0;
 }
 
-static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool drawPolled)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
 {
     char buff[10];
     int cnt = 0;
@@ -351,6 +352,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, 
             CLR_PRINTVALUE(p);
         }
         break;
+#if 0
     case OME_Poll_INT16:
         if (p->data && drawPolled) {
             OSD_UINT16_t *ptr = p->data;
@@ -360,6 +362,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, 
             // PRINTVALUE not cleared on purpose
         }
         break;
+#endif
     case OME_FLOAT:
         if (IS_PRINTVALUE(p) && p->data) {
             OSD_FLOAT_t *ptr = p->data;
@@ -387,19 +390,25 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, 
 
 static void cmsDrawMenu(displayPort_t *pDisplay)
 {
+    if (!pageTop)
+        return;
+
     uint8_t i;
     OSD_Entry *p;
     uint8_t top = (pDisplay->rows - maxRow) / 2 - 1;
 
     // Polled (dynamic) value display denominator.
-    // XXX Need to denom based on absolute time
-    static uint8_t pollDenom = 0;
-    bool drawPolled = (++pollDenom % 8 == 0);
+
+    bool drawPolled = false;
+    static uint32_t lastPolled = 0;
+    uint32_t now = millis(); // Argh...
+
+    if (now > lastPolled + CMS_POLL_INTERVAL) {
+        drawPolled = true;
+        lastPolled = now;
+    }
 
     uint32_t room = displayTxBytesFree(pDisplay);
-
-    if (!pageTop)
-        return;
 
     if (pDisplay->cleared) {
         for (p = pageTop, i= 0; p->type != OME_END; p++, i++) {
@@ -415,6 +424,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay)
         }
 
         pDisplay->cleared = false;
+    } else if (drawPolled) {
+        for (p = pageTop ; p <= pageTop + maxRow ; p++) {
+            if (IS_DYNAMIC(p))
+                SET_PRINTVALUE(p);
+        }
     }
 
     // Cursor manipulation
@@ -454,7 +468,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay)
 
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i, drawPolled);
+            room -= cmsDrawMenuEntry(pDisplay, p, top + i);
             if (room < 30)
                 return;
         }
@@ -505,6 +519,8 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
 
 static long cmsMenuBack(displayPort_t *pDisplay)
 {
+    // Let onExit function decide whether to allow exit or not.
+
     if (currentMenu->onExit && currentMenu->onExit(pageTop + cursorRow) < 0)
         return -1;
 
@@ -513,13 +529,19 @@ static long cmsMenuBack(displayPort_t *pDisplay)
         menuStackIdx--;
         currentMenu = menuStack[menuStackIdx];
         cursorRow = menuStackHistory[menuStackIdx];
+
+        // cursorRow is absolute offset of a focused entry when stacked.
+        // Convert it back to page and relative offset.
+
         pageTop = currentMenu->entries; // Temporary for cmsUpdateMaxRow()
         cmsUpdateMaxRow(pDisplay);
+
         if (cursorRow > maxRow) {
+            // Cursor was in the second page.
             pageTopAlt = currentMenu->entries;
             pageTop = pageTopAlt + maxRow + 1;
             cursorRow -= (maxRow + 1);
-            cmsUpdateMaxRow(pDisplay);
+            cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
         }
     }
 
@@ -758,7 +780,6 @@ static uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
             break;
         case OME_String:
             break;
-        case OME_Poll_INT16:
         case OME_Label:
         case OME_END:
             break;

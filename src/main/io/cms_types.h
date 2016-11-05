@@ -20,7 +20,6 @@ typedef enum
     OME_UINT8,
     OME_UINT16,
     OME_INT16,
-    OME_Poll_INT16,
     OME_String,
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
     //wlasciwosci elementow
@@ -46,6 +45,7 @@ typedef struct
 // Bits in flags
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
 #define PRINT_LABEL    0x02  // Text label should be printed
+#define DYNAMIC        0x04  // Value should be updated dynamically
 
 #define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
 #define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
@@ -55,13 +55,16 @@ typedef struct
 #define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
 #define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
 
+#define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
+
+
 typedef long (*CMSMenuFuncPtr)(void);
 
 /*
 onExit function is called with self:
 (1) Pointer to an OSD_Entry when cmsMenuBack() was called.
     Point to an OSD_Entry with type == OME_Back if BACK was selected.
-(2) 0 if called from menu exit (forced exit).
+(2) NULL if called from menu exit (forced exit at top level).
 */
 
 typedef long (*CMSMenuOnExitPtr)(OSD_Entry *self);
