@@ -86,10 +86,9 @@ void cmsx_FeatureWriteback(void);
 #define CMS_MAX_DEVICE 4
 #endif
 
-cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
-int cmsDeviceCount;
-int cmsCurrentDevice = -1;
-int cmsLastDevice = -1;
+static cmsDeviceInitFuncPtr cmsDeviceInitFunc[CMS_MAX_DEVICE];
+static int cmsDeviceCount;
+static int cmsCurrentDevice = -1;
 
 bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
 {
@@ -101,7 +100,7 @@ bool cmsDeviceRegister(cmsDeviceInitFuncPtr func)
     return true;
 }
 
-cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
+static cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
@@ -112,7 +111,7 @@ cmsDeviceInitFuncPtr cmsDeviceSelectCurrent(void)
     return cmsDeviceInitFunc[cmsCurrentDevice];
 }
 
-cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
+static cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 {
     if (cmsDeviceCount == 0)
         return NULL;
@@ -124,7 +123,7 @@ cmsDeviceInitFuncPtr cmsDeviceSelectNext(void)
 
 #define CMS_UPDATE_INTERVAL 50 // msec
 
-void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
+static void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 {
     cmsDeviceInitFunc(pDisp);
 }
@@ -150,23 +149,23 @@ void cmsScreenInit(displayPort_t *pDisp, cmsDeviceInitFuncPtr cmsDeviceInitFunc)
 #define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
 #define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
 
-displayPort_t currentDisplay;
+static displayPort_t currentDisplay;
 
-bool cmsInMenu = false;
+static bool cmsInMenu = false;
 
 OSD_Entry menuMain[];
 
 // XXX Does menu backing support backing into second page???
 
-OSD_Entry *menuStack[10];        // Stack to save menu transition
-uint8_t menuStackHistory[10];    // cursorRow in a stacked menu
-uint8_t menuStackIdx = 0;
+static OSD_Entry *menuStack[10];        // Stack to save menu transition
+static uint8_t menuStackHistory[10];    // cursorRow in a stacked menu
+static uint8_t menuStackIdx = 0;
 
-OSD_Entry *currentMenu;          // Points to top entry of the current page
-OSD_Entry *nextPage;             // Only 2 pages are allowed (for now)
-uint8_t maxRow;                  // Max row in a page
+static OSD_Entry *currentMenu;          // Points to top entry of the current page
+static OSD_Entry *nextPage;             // Only 2 pages are allowed (for now)
+static uint8_t maxRow;                  // Max row in a page
 
-int8_t cursorRow;
+static int8_t cursorRow;
 
 // Stick/key detection
 
@@ -185,7 +184,7 @@ int8_t cursorRow;
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-void cmsUpdateMaxRow(displayPort_t *instance)
+static void cmsUpdateMaxRow(displayPort_t *instance)
 {
     OSD_Entry *ptr;
 
@@ -242,7 +241,7 @@ void cmsPadToSize(char *buf, int size)
     buf[size] = 0;
 }
 
-int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool drawPolled)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool drawPolled)
 {
     char buff[10];
     int cnt = 0;
@@ -360,7 +359,7 @@ int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row, bool dr
     return cnt;
 }
 
-void cmsDrawMenu(displayPort_t *pDisplay)
+static void cmsDrawMenu(displayPort_t *pDisplay)
 {
     uint8_t i;
     OSD_Entry *p;
@@ -464,7 +463,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-long cmsMenuBack(displayPort_t *pDisplay)
+static long cmsMenuBack(displayPort_t *pDisplay)
 {
     // becasue pids and rates may be stored in profiles we need some thicks to manipulate it
     // hack to save pid profile
@@ -487,7 +486,7 @@ long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-void cmsMenuOpen(void)
+static void cmsMenuOpen(void)
 {
     cmsDeviceInitFuncPtr initfunc;
 
@@ -541,7 +540,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
+static uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
     uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
@@ -714,7 +713,7 @@ uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
+static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
 {
     static int16_t rcDelay = BUTTON_TIME;
     static uint32_t lastCalled = 0;
@@ -808,7 +807,7 @@ static char infoTargetName[] = __TARGET__;
 
 #include "msp/msp_protocol.h" // XXX for FC identification... not available elsewhere
 
-OSD_Entry menuInfo[] = {
+static OSD_Entry menuInfo[] = {
     { "--- INFO ---", OME_Label, NULL, NULL, 0 },
     { "FWID", OME_String, NULL, BETAFLIGHT_IDENTIFIER, 0 },
     { "FWVER", OME_String, NULL, FC_VERSION_STRING, 0 },
@@ -830,7 +829,7 @@ void cmsx_InfoInit(void)
 
 // Features
 
-OSD_Entry menuFeatures[] =
+static OSD_Entry menuFeatures[] =
 {
     {"--- FEATURES ---", OME_Label, NULL, NULL, 0},
     {"BLACKBOX", OME_Submenu, cmsMenuChange, cmsx_menuBlackbox, 0},
