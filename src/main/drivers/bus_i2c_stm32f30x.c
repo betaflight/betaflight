@@ -20,18 +20,19 @@
 
 #include <platform.h>
 
-#include "gpio.h"
 #include "system.h"
-#include "drivers/io_impl.h"
+#include "io.h"
+#include "io_impl.h"
+#include "rcc.h"
 
 #include "bus_i2c.h"
 
 #ifndef SOFT_I2C
 
 #if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
 #else
-#define IOCFG_I2C IOCFG_AF_OD
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 #endif
 
 #define I2C_HIGHSPEED_TIMING  0x00500E30  // 1000 Khz, 72Mhz Clock, Analog Filter Delay ON, Setup 40, Hold 4.

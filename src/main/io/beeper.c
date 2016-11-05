@@ -20,11 +20,9 @@
 #include "stdlib.h"
 
 #include <platform.h>
-#include "build_config.h"
 
-#include "io/rc_controls.h"
+#include "common/utils.h"
 
-#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
@@ -37,8 +35,10 @@
 #include "io/gps.h"
 #endif
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
+#include "config/feature.h"
 
 #include "io/beeper.h"
 
@@ -135,7 +135,7 @@ static uint32_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
-static void beeperProcessCommand(void);
+static void beeperProcessCommand(uint32_t currentTime);
 
 typedef struct beeperTableEntry_s {
     uint8_t mode;
@@ -280,7 +280,7 @@ void beeperGpsStatus(void)
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
  */
-void beeperUpdate(void)
+void beeperUpdate(uint32_t currentTime)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
@@ -300,8 +300,7 @@ void beeperUpdate(void)
         return;
     }
 
-    uint32_t now = millis();
-    if (beeperNextToggleTime > now) {
+    if (beeperNextToggleTime > currentTime) {
         return;
     }
 
@@ -329,13 +328,13 @@ void beeperUpdate(void)
         }
     }
 
-    beeperProcessCommand();
+    beeperProcessCommand(currentTime);
 }
 
 /*
  * Calculates array position when next to change beeper state is due.
  */
-static void beeperProcessCommand(void)
+static void beeperProcessCommand(uint32_t currentTime)
 {
     if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
         beeperPos = 0;
@@ -343,7 +342,7 @@ static void beeperProcessCommand(void)
         beeperSilence();
     } else {
         // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = millis() + 10 * currentBeeperEntry->sequence[beeperPos];
+        beeperNextToggleTime = currentTime + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
         beeperPos++;
     }
 }
@@ -390,7 +389,8 @@ int beeperTableEntryCount(void)
 /*
  * Returns true if the beeper is on, false otherwise
  */
-bool isBeeperOn(void) {
+bool isBeeperOn(void)
+{
     return beeperIsOn;
 }
 
@@ -400,7 +400,7 @@ bool isBeeperOn(void) {
 void beeper(beeperMode_e mode) {UNUSED(mode);}
 void beeperSilence(void) {}
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(void) {}
+void beeperUpdate(uint32_t currentTime) {UNUSED(currentTime);}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}

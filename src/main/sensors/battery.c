@@ -19,7 +19,8 @@
 #include "stdint.h"
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/filter.h"
@@ -27,15 +28,18 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
+#include "config/feature.h"
 
 #include "sensors/battery.h"
 
-#include "io/rc_controls.h"
+#include "fc/rc_controls.h"
 #include "io/beeper.h"
 
-#define VBATT_PRESENT_THRESHOLD_MV    10
+#include "rx/rx.h"
+
 #define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
@@ -86,7 +90,7 @@ void updateBattery(void)
     updateBatteryVoltage();
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
+    if (batteryState == BATTERY_NOT_PRESENT && vbat > batteryConfig->batterynotpresentlevel )
     {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
@@ -106,8 +110,8 @@ void updateBattery(void)
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD_MV */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= VBATT_PRESENT_THRESHOLD_MV)
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD */
+    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= batteryConfig->batterynotpresentlevel && !ARMING_FLAG(ARMED))
     {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
@@ -210,15 +214,12 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
 }
 
-fix12_t calculateVbatPidCompensation(void) {
-    fix12_t batteryScaler;
+float calculateVbatPidCompensation(void) {
+    float batteryScaler =  1.0f;
     if (feature(FEATURE_VBAT) && batteryCellCount > 1) {
-        uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
-        batteryScaler = qConstruct(maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage));
-    } else {
-        batteryScaler = Q12;
+        // Up to 33% PID gain. Should be fine for 4,2to 3,3 difference
+        batteryScaler =  constrainf((( (float)batteryConfig->vbatmaxcellvoltage * batteryCellCount ) / (float) vbat), 1.0f, 1.33f);
     }
-
     return batteryScaler;
 }
 

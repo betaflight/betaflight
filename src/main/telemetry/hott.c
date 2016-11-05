@@ -60,17 +60,16 @@
 
 #ifdef TELEMETRY
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
 #include "drivers/system.h"
 
-#include "drivers/serial.h"
 #include "io/serial.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -490,7 +489,7 @@ void checkHoTTTelemetryState(void)
         freeHoTTTelemetryPort();
 }
 
-void handleHoTTTelemetry(void)
+void handleHoTTTelemetry(uint32_t currentTime)
 {
     static uint32_t serialTimer;
 
@@ -498,27 +497,25 @@ void handleHoTTTelemetry(void)
         return;
     }
 
-    uint32_t now = micros();
-
-    if (shouldPrepareHoTTMessages(now)) {
+    if (shouldPrepareHoTTMessages(currentTime)) {
         hottPrepareMessages();
-        lastMessagesPreparedAt = now;
+        lastMessagesPreparedAt = currentTime;
     }
 
     if (shouldCheckForHoTTRequest()) {
-        hottCheckSerialData(now);
+        hottCheckSerialData(currentTime);
     }
 
     if (!hottMsg)
         return;
 
     if (hottIsSending) {
-        if(now - serialTimer < HOTT_TX_DELAY_US) {
+        if(currentTime - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }
     hottSendTelemetryData();
-    serialTimer = now;
+    serialTimer = currentTime;
 }
 
 #endif

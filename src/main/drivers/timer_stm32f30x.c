@@ -5,23 +5,35 @@
   http://www.st.com/software_license_agreement_liberty_v2
 */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "platform.h"
+
+#include "common/utils.h"
+
 #include "stm32f30x.h"
 #include "rcc.h"
 #include "timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1),  GPIO_AF_6  },
-    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2),  GPIO_AF_1  },
-    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3),  GPIO_AF_2  },
-    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4),  GPIO_AF_10 },
-    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6),  0          },
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7),  0          },
-    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8),  GPIO_AF_5  },
-    { .TIMx = TIM15, .rcc = RCC_APB2(TIM15), GPIO_AF_9  },
-    { .TIMx = TIM16, .rcc = RCC_APB2(TIM16), GPIO_AF_1  },
-    { .TIMx = TIM17, .rcc = RCC_APB2(TIM17), GPIO_AF_1  },
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+    { .TIMx = TIM8,  .rcc = RCC_APB2(TIM8)  },
+    { .TIMx = TIM15, .rcc = RCC_APB2(TIM15) },
+    { .TIMx = TIM16, .rcc = RCC_APB2(TIM16) },
+    { .TIMx = TIM17, .rcc = RCC_APB2(TIM17) },
 };
 
+uint8_t timerClockDivisor(TIM_TypeDef *tim)
+{
+    UNUSED(tim);
+    return 1;
+}
 
 /**
   * @brief  Selects the TIM Output Compare Mode.

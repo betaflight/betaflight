@@ -26,7 +26,7 @@
 #include "nvic.h"
 
 #include "common/color.h"
-#include "drivers/light_ws2811strip.h"
+#include "light_ws2811strip.h"
 #include "dma.h"
 #include "rcc.h"
 #include "timer.h"
@@ -36,6 +36,7 @@
 #define WS2811_TIMER                    TIM16
 #define WS2811_DMA_CHANNEL              DMA1_Channel3
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 #endif
 
 static IO_t ws2811IO = IO_NONE;
@@ -62,7 +63,7 @@ void ws2811LedStripHardwareInit(void)
     ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerGPIOAF(WS2811_TIMER));
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), WS2811_TIMER_GPIO_AF);
 
     RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
 

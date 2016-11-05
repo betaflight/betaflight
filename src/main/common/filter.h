@@ -15,7 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define DELTA_MAX_SAMPLES 12
+#ifdef STM32F10X
+#define MAX_FIR_DENOISE_WINDOW_SIZE 60
+#else
+#define MAX_FIR_DENOISE_WINDOW_SIZE 120
+#endif
 
 typedef struct pt1Filter_s {
     float state;
@@ -29,15 +33,35 @@ typedef struct biquadFilter_s {
     float d1, d2;
 } biquadFilter_t;
 
+typedef struct firFilterDenoise_s{
+    int filledCount;
+    int targetCount;
+    int index;
+    float movingSum;
+    float state[MAX_FIR_DENOISE_WINDOW_SIZE];
+} firFilterDenoise_t;
+
 typedef enum {
     FILTER_PT1 = 0,
     FILTER_BIQUAD,
+    FILTER_FIR
 } filterType_e;
 
 typedef enum {
     FILTER_LPF,
     FILTER_NOTCH
 } biquadFilterType_e;
+
+typedef struct firFilter_s {
+    float *buf;
+    const float *coeffs;
+    float movingSum;
+    uint8_t index;
+    uint8_t count;
+    uint8_t bufLength;
+    uint8_t coeffsLength;
+} firFilter_t;
+
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
@@ -48,6 +72,15 @@ void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT);
 float pt1FilterApply(pt1Filter_t *filter, float input);
 float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT);
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]);
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]);
+void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs);
+void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength);
+void firFilterUpdate(firFilter_t *filter, float input);
+void firFilterUpdateAverage(firFilter_t *filter, float input);
+float firFilterApply(const firFilter_t *filter);
+float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count);
+float firFilterCalcMovingAverage(const firFilter_t *filter);
+float firFilterLastInput(const firFilter_t *filter);
+
+void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime);
+float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input);
 

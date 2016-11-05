@@ -35,15 +35,15 @@
 #define VM1_REG   0x01
 
 // video mode register 0 bits
-#define VIDEO_BUFFER_DISABLE 0x01
-#define MAX7456_RESET 0x02
-#define VERTICAL_SYNC_NEXT_VSYNC 0x04
-#define OSD_ENABLE 0x08
-#define SYNC_MODE_AUTO 0x00
-#define SYNC_MODE_INTERNAL 0x30
-#define SYNC_MODE_EXTERNAL 0x20
-#define VIDEO_MODE_PAL 0x40
-#define VIDEO_MODE_NTSC 0x00
+#define VIDEO_BUFFER_DISABLE        0x01
+#define MAX7456_RESET               0x02
+#define VERTICAL_SYNC_NEXT_VSYNC    0x04
+#define OSD_ENABLE                  0x08
+#define SYNC_MODE_AUTO              0x00
+#define SYNC_MODE_INTERNAL          0x30
+#define SYNC_MODE_EXTERNAL          0x20
+#define VIDEO_MODE_PAL              0x40
+#define VIDEO_MODE_NTSC             0x00
 
 // video mode register 1 bits
 
@@ -142,19 +142,18 @@
 
 enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
 
-extern uint16_t max_screen_size;
+extern uint16_t maxScreenSize;
+
+void    max7456Init(uint8_t system);
+void    max7456DrawScreen(void);
+void    max7456WriteNvm(uint8_t char_address, uint8_t *font_data);
+uint8_t max7456GetRowsCount(void);
+void    max7456Write(uint8_t x, uint8_t y, char *buff);
+void    max7456WriteChar(uint8_t x, uint8_t y, uint8_t c);
+void    max7456ClearScreen(void);
+void    max7456RefreshAll(void);
+uint8_t* max7456GetScreenBuffer(void);
 
 #ifdef MAX7456_DMA_CHANNEL_TX
-    #define MAX7456_CHAR_TYPE           uint16_t
-    #define MAX7456_CHAR(X)             (MAX7456ADD_DMDI | ((X) << 8))
-#else
-    #define MAX7456_CHAR_TYPE           char
-    #define MAX7456_CHAR(X)             (X)
-#endif
-
-void max7456_init(uint8_t system);
-void max7456_draw_screen(void);
-void max7456_write_string(const char *string, int16_t address);
-void max7456_write_nvm(uint8_t char_address, uint8_t *font_data);
-MAX7456_CHAR_TYPE* max7456_get_screen_buffer(void);
-
+bool max7456DmaInProgres(void);
+#endif // MAX7456_DMA_CHANNEL_TX

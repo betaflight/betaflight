@@ -20,19 +20,19 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#ifdef SERIAL_RX
+
+#include "build/debug.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/system.h"
-
 #include "drivers/light_led.h"
 
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
@@ -48,18 +48,26 @@
 #define SPEKTRUM_1024_CHANNEL_COUNT 7
 
 #define SPEK_FRAME_SIZE 16
+#define SPEKTRUM_NEEDED_FRAME_INTERVAL 5000
 
 #define SPEKTRUM_BAUDRATE 115200
+
+#define SPEKTRUM_MAX_FADE_PER_SEC 40
+#define SPEKTRUM_FADE_REPORTS_PER_SEC 2
 
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
 
-static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
+// Variables used for calculating a signal strength from satellite fade.
+//  This is time-variant and computed every second based on the fade
+//  count over the last second.
+static uint32_t spek_fade_last_sec = 0; // Stores the timestamp of the last second.
+static uint16_t spek_fade_last_sec_count = 0; // Stores the fade count at the last second.
+static uint8_t rssi_channel; // Stores the RX RSSI channel.
 
-static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
+static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 
@@ -70,63 +78,19 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
-bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    rxRuntimeConfigPtr = rxRuntimeConfig;
-
-    switch (rxConfig->serialrx_provider) {
-        case SERIALRX_SPEKTRUM2048:
-            // 11 bit frames
-            spek_chan_shift = 3;
-            spek_chan_mask = 0x07;
-            spekHiRes = true;
-            rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
-            break;
-        case SERIALRX_SPEKTRUM1024:
-            // 10 bit frames
-            spek_chan_shift = 2;
-            spek_chan_mask = 0x03;
-            spekHiRes = false;
-            rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
-            break;
-    }
-
-    if (callback)
-        *callback = spektrumReadRawRC;
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = spektrumPort;
-    }
-#endif
-
-    return spektrumPort != NULL;
-}
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
-    uint32_t spekTime;
-    static uint32_t spekTimeLast, spekTimeInterval;
-    static uint8_t spekFramePosition;
+    uint32_t spekTime, spekTimeInterval;
+    static uint32_t spekTimeLast = 0;
+    static uint8_t spekFramePosition = 0;
 
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-    if (spekTimeInterval > 5000) {
+
+    if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {
         spekFramePosition = 0;
     }
 
@@ -145,24 +109,52 @@ static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 uint8_t spektrumFrameStatus(void)
 {
     uint8_t b;
+    uint16_t fade;
+    uint32_t current_secs;
 
     if (!rcFrameComplete) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
-
+    
     rcFrameComplete = false;
 
+    // Fetch the fade count
+    fade = (spekFrame[0] << 8) + spekFrame[1];
+    current_secs = micros() / 1000 / (1000 / SPEKTRUM_FADE_REPORTS_PER_SEC);
+    
+    if (spek_fade_last_sec == 0) {
+        // This is the first frame status received.
+        spek_fade_last_sec_count = fade;
+        spek_fade_last_sec = current_secs;
+    } else if(spek_fade_last_sec != current_secs) {
+        // If the difference is > 1, then we missed several seconds worth of frames and 
+        // should just throw out the fade calc (as it's likely a full signal loss).
+        if((current_secs - spek_fade_last_sec) == 1) {
+            if(rssi_channel != 0) {
+                if (spekHiRes)
+                    spekChannelData[rssi_channel] = 2048 - ((fade - spek_fade_last_sec_count) * 2048 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
+                else
+                    spekChannelData[rssi_channel] = 1024 - ((fade - spek_fade_last_sec_count) * 1024 / (SPEKTRUM_MAX_FADE_PER_SEC / SPEKTRUM_FADE_REPORTS_PER_SEC));
+            }
+        }
+        spek_fade_last_sec_count = fade;
+        spek_fade_last_sec = current_secs;
+    }
+        
+        
     for (b = 3; b < SPEK_FRAME_SIZE; b += 2) {
         uint8_t spekChannel = 0x0F & (spekFrame[b - 1] >> spek_chan_shift);
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
-            spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+            if(rssi_channel != 0 && spekChannel != rssi_channel) {
+                spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
+            }
         }
     }
 
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
-static uint16_t spektrumReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
 
@@ -253,4 +245,59 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
+#endif // SPEKTRUM_BIND
+
+bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    rxRuntimeConfigPtr = rxRuntimeConfig;
+
+    switch (rxConfig->serialrx_provider) {
+    case SERIALRX_SPEKTRUM2048:
+        // 11 bit frames
+        spek_chan_shift = 3;
+        spek_chan_mask = 0x07;
+        spekHiRes = true;
+        rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 11000;
+        break;
+    case SERIALRX_SPEKTRUM1024:
+        // 10 bit frames
+        spek_chan_shift = 2;
+        spek_chan_mask = 0x03;
+        spekHiRes = false;
+        rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 22000;
+        break;
+    }
+
+    rxRuntimeConfig->rcReadRawFunc = spektrumReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = spektrumFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
 #endif
+
+    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = spektrumPort;
+    }
+#endif
+
+    rssi_channel = rxConfig->rssi_channel - 1; // -1 because rxConfig->rssi_channel is 1-based and rssi_channel is 0-based.
+    if (rssi_channel >= rxRuntimeConfig->channelCount) {
+        rssi_channel = 0;
+    }
+    
+    return spektrumPort != NULL;
+}
+#endif // SERIAL_RX
+

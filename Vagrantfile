@@ -19,8 +19,18 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     apt-get remove -y binutils-arm-none-eabi gcc-arm-none-eabi
-    add-apt-repository ppa:terry.guo/gcc-arm-embedded
+    add-apt-repository ppa:team-gcc-arm-embedded/ppa
     apt-get update
-    apt-get install -y git gcc-arm-none-eabi=4.9.3.2015q3-1trusty1
+    apt-get install -y git ccache gcc-arm-embedded=5-2016q2-1~trusty1
   SHELL
 end
+
+# Usage
+# On windows start a command shell in the project root directory, where the "Vagrantfile" exists.
+# "vagrant up"     to start the VM. First time it takes a while.....
+# "vagrant ssh"    to log into your VM.
+# "cd /vagrant"    Here are the windows project directory mounted with all your files.
+# "make all"       Start working, building all targets for example.
+# "exit"           when done
+# vagrant halt     to stop your VM
+# vagrant --help   for more....

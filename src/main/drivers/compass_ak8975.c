@@ -24,16 +24,13 @@
 
 #ifdef USE_MAG_AK8975
 
-#include "build_config.h"
-
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "system.h"
 #include "gpio.h"
 #include "bus_i2c.h"
-
-#include "sensors/sensors.h"
 
 #include "sensor.h"
 #include "compass.h"

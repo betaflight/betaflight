@@ -21,15 +21,16 @@
 #include <string.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
 #include "nvic.h"
 
 #include "system.h"
-#include "gpio.h"
+#include "io.h"
 #include "exti.h"
 #include "bus_i2c.h"
 
@@ -40,6 +41,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6000.h"
 #include "accgyro_spi_mpu6500.h"
+#include "accgyro_spi_icm20689.h"
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
 
@@ -139,6 +141,16 @@ static bool detectSPISensorsAndUpdateDetectionResult(void)
         mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         mpuConfiguration.read = mpu6500ReadRegister;
         mpuConfiguration.write = mpu6500WriteRegister;
+        return true;
+    }
+#endif
+
+#ifdef USE_GYRO_SPI_ICM20689
+    if (icm20689SpiDetect()) {
+        mpuDetectionResult.sensor = ICM_20689_SPI;
+        mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
+        mpuConfiguration.read = icm20689ReadRegister;
+        mpuConfiguration.write = icm20689WriteRegister;
         return true;
     }
 #endif
@@ -244,6 +256,12 @@ void mpuIntExtiInit(void)
     }
 #endif
 
+#if defined (STM32F7)
+    IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);
+    EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+#else
+
     IOInit(mpuIntIO, OWNER_MPU, RESOURCE_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
@@ -251,7 +269,8 @@ void mpuIntExtiInit(void)
     EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(mpuIntIO, true);
 #endif
-
+#endif
+    
     mpuExtiInitDone = true;
 }
 

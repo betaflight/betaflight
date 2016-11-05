@@ -237,8 +237,8 @@ static uartDevice_t* uartHardwareMap[] = {
 void uartIrqHandler(uartPort_t *s)
 {
     if (!s->rxDMAStream && (USART_GetITStatus(s->USARTx, USART_IT_RXNE) == SET)) {
-        if (s->port.callback) {
-            s->port.callback(s->USARTx->DR);
+        if (s->port.rxCallback) {
+            s->port.rxCallback(s->USARTx->DR);
         } else {
             s->port.rxBuffer[s->port.rxBufferHead] = s->USARTx->DR;
             s->port.rxBufferHead = (s->port.rxBufferHead + 1) % s->port.rxBufferSize;

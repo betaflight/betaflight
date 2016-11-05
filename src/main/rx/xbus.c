@@ -21,10 +21,10 @@
 
 #include "platform.h"
 
+#ifdef SERIAL_RX
+
 #include "drivers/system.h"
 
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
 #ifdef TELEMETRY
@@ -84,65 +84,6 @@ static uint8_t xBusProvider;
 // Use max values for ram areas
 static volatile uint8_t xBusFrame[XBUS_RJ01_FRAME_SIZE];
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
-
-static void xBusDataReceive(uint16_t c);
-static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool xBusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    uint32_t baudRate;
-
-    switch (rxConfig->serialrx_provider) {
-        case SERIALRX_XBUS_MODE_B:
-            rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
-            xBusFrameReceived = false;
-            xBusDataIncoming = false;
-            xBusFramePosition = 0;
-            baudRate = XBUS_BAUDRATE;
-            xBusFrameLength = XBUS_FRAME_SIZE;
-            xBusChannelCount = XBUS_CHANNEL_COUNT;
-            xBusProvider = SERIALRX_XBUS_MODE_B;
-            break;
-        case SERIALRX_XBUS_MODE_B_RJ01:
-            rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
-            xBusFrameReceived = false;
-            xBusDataIncoming = false;
-            xBusFramePosition = 0;
-            baudRate = XBUS_RJ01_BAUDRATE;
-            xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
-            xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
-            xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
-            break;
-        default:
-            return false;
-            break;
-    }
-
-    if (callback) {
-        *callback = xBusReadRawRC;
-    }
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = xBusPort;
-    }
-#endif
-
-    return xBusPort != NULL;
-}
 
 // The xbus mode B CRC calculations
 static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
@@ -311,15 +252,15 @@ static void xBusDataReceive(uint16_t c)
 uint8_t xBusFrameStatus(void)
 {
     if (!xBusFrameReceived) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     xBusFrameReceived = false;
 
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
-static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     uint16_t data;
 
@@ -332,3 +273,61 @@ static uint16_t xBusReadRawRC(rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 
     return data;
 }
+
+bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    uint32_t baudRate;
+
+    switch (rxConfig->serialrx_provider) {
+    case SERIALRX_XBUS_MODE_B:
+        rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
+        xBusFrameReceived = false;
+        xBusDataIncoming = false;
+        xBusFramePosition = 0;
+        baudRate = XBUS_BAUDRATE;
+        xBusFrameLength = XBUS_FRAME_SIZE;
+        xBusChannelCount = XBUS_CHANNEL_COUNT;
+        xBusProvider = SERIALRX_XBUS_MODE_B;
+        break;
+    case SERIALRX_XBUS_MODE_B_RJ01:
+        rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
+        xBusFrameReceived = false;
+        xBusDataIncoming = false;
+        xBusFramePosition = 0;
+        baudRate = XBUS_RJ01_BAUDRATE;
+        xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
+        xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
+        xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
+        break;
+    default:
+        return false;
+        break;
+    }
+
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFunc = xBusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = xBusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
+    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = xBusPort;
+    }
+#endif
+
+    return xBusPort != NULL;
+}
+#endif

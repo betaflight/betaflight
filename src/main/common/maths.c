@@ -99,6 +99,13 @@ float acos_approx(float x)
 }
 #endif
 
+float powerf(float base, int exp) {
+    float result = base;
+    for (int count = 1; count < exp; count++) result *= base;
+
+    return result;
+}
+
 int32_t applyDeadband(int32_t value, int32_t deadband)
 {
     if (ABS(value) < deadband) {
@@ -329,3 +336,30 @@ int16_t qMultiply(fix12_t q, int16_t input) {
 fix12_t  qConstruct(int16_t num, int16_t den) {
     return (num << 12) / den;
 }
+
+uint16_t crc16_ccitt(uint16_t crc, unsigned char a)
+{
+    crc ^= (uint16_t)a << 8;
+    for (int ii = 0; ii < 8; ++ii) {
+        if (crc & 0x8000) {
+            crc = (crc << 1) ^ 0x1021;
+        } else {
+            crc = crc << 1;
+        }
+    }
+    return crc;
+}
+
+uint8_t crc8_dvb_s2(uint8_t crc, unsigned char a)
+{
+    crc ^= a;
+    for (int ii = 0; ii < 8; ++ii) {
+        if (crc & 0x80) {
+            crc = (crc << 1) ^ 0xD5;
+        } else {
+            crc = crc << 1;
+        }
+    }
+    return crc;
+}
+

@@ -24,23 +24,23 @@
 /* STM32F4 specific settings that apply to all F4 targets */
 #ifdef STM32F4
 
-#define MAX_AUX_CHANNELS 99
-#define TASK_GYROPID_DESIRED_PERIOD 125
-#define SCHEDULER_DELAY_LIMIT 10
-#define USE_SLOW_SERIAL_CLI
-#define I2C3_OVERCLOCK true
+#define MAX_AUX_CHANNELS                99
+#define TASK_GYROPID_DESIRED_PERIOD     125
+#define SCHEDULER_DELAY_LIMIT           10
+#define I2C3_OVERCLOCK                  true
 
 #else /* when not an F4 */
 
-#define MAX_AUX_CHANNELS 6
-#define TASK_GYROPID_DESIRED_PERIOD 1000
-#define SCHEDULER_DELAY_LIMIT 100
+#define MAX_AUX_CHANNELS                6
+#define TASK_GYROPID_DESIRED_PERIOD     1000
+#define SCHEDULER_DELAY_LIMIT           100
 
 #endif
 
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
+#define USE_UART1_TX_DMA
 
 #endif
 
@@ -55,7 +55,8 @@
 #endif
 
 #if (FLASH_SIZE > 128)
-#define DISPLAY
+#define USE_DASHBOARD
+#define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_RX_MSP

@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "io.h"
-#include "rcc.h"
+#include "io_types.h"
+#include "rcc_types.h"
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(STM32F3)
 #define ADC_TAG_MAP_COUNT 39
@@ -34,7 +34,7 @@ typedef enum ADCDevice {
 #if defined(STM32F3)
     ADCDEV_2,
     ADCDEV_MAX = ADCDEV_2,
-#elif defined(STM32F4)
+#elif defined(STM32F4) || defined(STM32F7)
     ADCDEV_2,
     ADCDEV_3,
     ADCDEV_MAX = ADCDEV_3,
@@ -52,7 +52,7 @@ typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
     rccPeriphTag_t rccDMA;
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef* DMAy_Streamx;
     uint32_t channel;
 #else

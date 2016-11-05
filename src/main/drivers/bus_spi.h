@@ -17,15 +17,19 @@
 
 #pragma once
 
-#include <stdint.h>
-#include "io.h"
-#include "rcc.h"
+#include "io_types.h"
+#include "rcc_types.h"
 
 #if defined(STM32F4) || defined(STM32F3)
 #define SPI_IO_AF_CFG      IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
 #define SPI_IO_AF_SCK_CFG  IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN)
 #define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_Mode_AF,  GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP)
 #define SPI_IO_CS_CFG      IO_CONFIG(GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL)
+#elif defined(STM32F7)
+#define SPI_IO_AF_CFG      IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
+#define SPI_IO_AF_SCK_CFG  IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLDOWN)
+#define SPI_IO_AF_MISO_CFG IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP)
+#define SPI_IO_CS_CFG      IO_CONFIG(GPIO_MODE_OUTPUT_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_NOPULL)
 #elif defined(STM32F1)
 #define SPI_IO_AF_SCK_CFG     IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
 #define SPI_IO_AF_MOSI_CFG    IO_CONFIG(GPIO_Mode_AF_PP,       GPIO_Speed_50MHz)
@@ -43,6 +47,11 @@ typedef enum {
     SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz
     SPI_CLOCK_FAST          = 4,   //21.00000 MHz
     SPI_CLOCK_ULTRAFAST     = 2,   //42.00000 MHz
+#elif defined(STM32F7)
+    SPI_CLOCK_SLOW          = 256, //00.42188 MHz
+    SPI_CLOCK_STANDARD      = 16,  //06.57500 MHz
+    SPI_CLOCK_FAST          = 4,   //27.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2,   //54.00000 MHz
 #else
     SPI_CLOCK_SLOW          = 128, //00.56250 MHz
     SPI_CLOCK_STANDARD      = 4,   //09.00000 MHz
@@ -56,7 +65,8 @@ typedef enum SPIDevice {
     SPIDEV_1   = 0,
     SPIDEV_2,
     SPIDEV_3,
-    SPIDEV_MAX = SPIDEV_3,
+    SPIDEV_4,
+    SPIDEV_MAX = SPIDEV_4,
 } SPIDevice;
 
 typedef struct SPIDevice_s {
@@ -68,7 +78,7 @@ typedef struct SPIDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     volatile uint16_t errorCount;
-    bool sdcard;
+    bool leadingEdge;
 } spiDevice_t;
 
 bool spiInit(SPIDevice device);
@@ -80,4 +90,9 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
 
 uint16_t spiGetErrorCounter(SPI_TypeDef *instance);
 void spiResetErrorCounter(SPI_TypeDef *instance);
+SPIDevice spiDeviceByInstance(SPI_TypeDef *instance);
 
+#if defined(USE_HAL_DRIVER)
+SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance);
+DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size);
+#endif

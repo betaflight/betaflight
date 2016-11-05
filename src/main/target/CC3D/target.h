@@ -60,20 +60,25 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 // External I2C BARO
-#define BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
-#define USE_BARO_BMP280
+//#define BARO
+//#define USE_BARO_MS5611
+//#define USE_BARO_BMP085
+//#define USE_BARO_BMP280
 
 // External I2C MAG
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
+
+#ifdef CC3D_OPBL
+#define SERIAL_PORT_COUNT       3
+#else
 #define USE_SOFTSERIAL1
 #define SERIAL_PORT_COUNT       4
+#endif
 
 #ifdef USE_UART1_RX_DMA
 #undef USE_UART1_RX_DMA
@@ -91,11 +96,11 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define LED_STRIP
-#define WS2811_PIN                      PB4
-#define WS2811_TIMER                    TIM3
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+//#define LED_STRIP
+//#define WS2811_PIN                      PB4
+//#define WS2811_TIMER                    TIM3
+//#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
+//#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
@@ -103,20 +108,20 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SONAR
-#define SONAR_ECHO_PIN          PB0
-#define SONAR_TRIGGER_PIN       PB5
+//#define SONAR
+//#define SONAR_ECHO_PIN          PB0
+//#define SONAR_TRIGGER_PIN       PB5
 
 #undef GPS
+#define CLI_MINIMAL_VERBOSITY
+#undef MAG
 
 #ifdef CC3D_OPBL
-//#undef LED_STRIP
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_PID_FLOAT
 #undef BARO
-#undef MAG
 #undef SONAR
 #undef LED_STRIP
+#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

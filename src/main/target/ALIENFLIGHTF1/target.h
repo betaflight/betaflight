@@ -18,6 +18,7 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
+#define TARGET_CONFIG
 
 #define LED0                    PB3
 #define LED1                    PB4
@@ -25,10 +26,9 @@
 #define BEEPER                  PA12
 
 #define USE_EXTI
-#define MAG_INT_EXTI PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
+#define MAG_INT_EXTI            PC14
 #define USE_MPU_DATA_READY_SIGNAL
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 #define GYRO
 #define USE_GYRO_MPU6050
@@ -63,6 +63,7 @@
 #define WS2811_PIN                      PA6
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_2
 
 #undef GPS
 
@@ -70,8 +71,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
-// alternative defaults for AlienFlight F1 target
-#define TARGET_CONFIG
+#define HARDWARE_BIND_PLUG
+// Hardware bind plug at PB5 (Pin 41)
+#define BINDPLUG_PIN            PB5
 
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
@@ -80,14 +82,12 @@
 #define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
-#define HARDWARE_BIND_PLUG
-// Hardware bind plug at PB5 (Pin 41)
-#define BINDPLUG_PIN            PB5
-
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         ( BIT(13) | BIT(14) | BIT(15) )
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )

@@ -20,27 +20,30 @@
 #include <math.h>
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/system.h"
 
-#include "sensors/sensors.h"
-#include "io/beeper.h"
-#include "sensors/boardalignment.h"
-#include "config/config.h"
+#include "fc/config.h"
 
+#include "io/beeper.h"
+
+#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
+#include "sensors/boardalignment.h"
+
+#include "config/feature.h"
+
 
 int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
-uint32_t accTargetLooptime;
+uint32_t accSamplingInterval;
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
@@ -51,9 +54,33 @@ extern bool AccInflightCalibrationActive;
 
 static flightDynamicsTrims_t *accelerationTrims;
 
-static float accLpfCutHz = 0;
+static uint16_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
-static bool accFilterInitialised = false;
+
+void accInit(uint32_t gyroSamplingInverval)
+{
+    // set the acc sampling interval according to the gyro sampling interval
+    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+    case 500:
+    case 375:
+    case 250:
+    case 125:
+        accSamplingInterval = 1000;
+        break;
+    case 1000:
+    default:
+#ifdef STM32F10X
+        accSamplingInterval = 1000;
+#else
+        accSamplingInterval = 1000;
+#endif
+    }
+    if (accLpfCutHz) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accSamplingInterval);
+        }
+    }
+}
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
@@ -166,7 +193,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
     }
 }
 
-static void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
+static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
     accSmooth[X] -= accelerationTrims->raw[X];
     accSmooth[Y] -= accelerationTrims->raw[Y];
@@ -187,19 +214,8 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     if (accLpfCutHz) {
-        if (!accFilterInitialised) {
-            if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
-                }
-                accFilterInitialised = true;
-            }
-        }
-
-        if (accFilterInitialised) {
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
-            }
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
         }
     }
 
@@ -221,7 +237,12 @@ void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
     accelerationTrims = accelerationTrimsToUse;
 }
 
-void setAccelerationFilter(float initialAccLpfCutHz)
+void setAccelerationFilter(uint16_t initialAccLpfCutHz)
 {
     accLpfCutHz = initialAccLpfCutHz;
+    if (accSamplingInterval) {
+        for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accSamplingInterval);
+        }
+    }
 }

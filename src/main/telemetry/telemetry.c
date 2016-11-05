@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -22,17 +23,17 @@
 
 #ifdef TELEMETRY
 
-#include "drivers/gpio.h"
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
+
 #include "io/serial.h"
 
-#include "rx/rx.h"
-#include "io/rc_controls.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
@@ -40,6 +41,8 @@
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
 #include "telemetry/jetiexbus.h"
+#include "telemetry/mavlink.h"
+#include "rx/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -55,6 +58,10 @@ void telemetryInit(void)
     initSmartPortTelemetry(telemetryConfig);
     initLtmTelemetry(telemetryConfig);
     initJetiExBusTelemetry(telemetryConfig);
+
+#if defined(TELEMETRY_MAVLINK)
+    initMAVLinkTelemetry();
+#endif
 
     telemetryCheckState();
 }
@@ -73,7 +80,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
-bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
     return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK;
 }
@@ -87,15 +94,23 @@ void telemetryCheckState(void)
     checkSmartPortTelemetryState();
     checkLtmTelemetryState();
     checkJetiExBusTelemetryState();
+
+#if defined(TELEMETRY_MAVLINK)
+    checkMAVLinkTelemetryState();
+#endif
 }
 
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
-    handleHoTTTelemetry();
+    handleHoTTTelemetry(currentTime);
     handleSmartPortTelemetry();
     handleLtmTelemetry();
     handleJetiExBusTelemetry();
+
+#if defined(TELEMETRY_MAVLINK)
+    handleMAVLinkTelemetry();
+#endif
 }
 
 #endif

@@ -19,13 +19,16 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "system.h"
 
 #include "adc.h"
 #include "adc_impl.h"
+
+#include "common/utils.h"
 
 //#define DEBUG_ADC_CHANNELS
 

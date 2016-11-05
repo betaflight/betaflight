@@ -23,15 +23,15 @@
 
 #include <platform.h>
 
-#include <build_config.h>
+#include <build/build_config.h>
 
 #include "drivers/transponder_ir.h"
 #include "drivers/system.h"
-
 #include "drivers/usb_io.h"
 
+#include "fc/config.h"
+
 #include "io/transponder_ir.h"
-#include "config/config.h"
 
 static bool transponderInitialised = false;
 static bool transponderRepeat = false;
@@ -42,7 +42,7 @@ static uint32_t nextUpdateAt = 0;
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
 
-void updateTransponder(void)
+void transponderUpdate(uint32_t currentTime)
 {
     static uint32_t jitterIndex = 0;
 
@@ -50,9 +50,7 @@ void updateTransponder(void)
         return;
     }
 
-    uint32_t now = micros();
-
-    bool updateNow = (int32_t)(now - nextUpdateAt) >= 0L;
+    const bool updateNow = (int32_t)(currentTime - nextUpdateAt) >= 0L;
     if (!updateNow) {
         return;
     }
@@ -63,12 +61,12 @@ void updateTransponder(void)
         jitterIndex = 0;
     }
 
-    nextUpdateAt = now + 4500 + jitter;
+    nextUpdateAt = currentTime + 4500 + jitter;
 
 #ifdef REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
     // reduce current draw when USB cable is plugged in by decreasing the transponder transmit rate.
     if (usbCableIsInserted()) {
-        nextUpdateAt = now + (1000 * 1000) / 10; // 10 hz.
+        nextUpdateAt = currentTime + (1000 * 1000) / 10; // 10 hz.
     }
 #endif
 

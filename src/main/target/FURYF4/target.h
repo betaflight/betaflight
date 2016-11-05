@@ -34,14 +34,20 @@
 // MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
 #define USE_MPU_DATA_READY_SIGNAL
+
+#define ICM20689_CS_PIN          PA4
+#define ICM20689_SPI_INSTANCE    SPI1
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
+
+#define GYRO
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_ICM20689_ALIGN      CW180_DEG
 
 #define USE_GYRO_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW180_DEG
@@ -51,6 +57,13 @@
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW180_DEG
+
+#define ACC
+#define USE_ACC_SPI_ICM20689
+#define ACC_ICM20689_ALIGN       CW180_DEG
+
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
 
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -101,8 +114,6 @@
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 
-#define USABLE_TIMER_CHANNEL_COUNT 5
-
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
 #define VBUS_SENSING_ENABLED
@@ -147,12 +158,22 @@
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN            PC1
-#define RSSI_ADC_GPIO_PIN       PC2
+#define RSSI_ADC_PIN            PC2
 #define CURRENT_METER_ADC_PIN   PC3
 
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
+
+#define LED_STRIP
+#define WS2811_PIN                      PA0
+#define WS2811_TIMER                    TIM5
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream2
+#define WS2811_DMA_IT                   DMA_IT_TCIF2
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_TIMER_CHANNEL            TIM_Channel_1
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -162,10 +183,13 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define USE_DSHOT
+
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         (BIT(2))
 
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(9))
+#define USABLE_TIMER_CHANNEL_COUNT 5
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(8) )
 

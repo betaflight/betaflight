@@ -26,9 +26,15 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
+#define USE_DSHOT
+
 #define LED0                    PB5
-#define LED1                    PB4
+// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
+//#define LED1                    PB4
+
 #define BEEPER                  PB4
+#define BEEPER_INVERTED
+
 #define INVERTER                PC0 // PC0 used as inverter select GPIO
 #define INVERTER_USART          USART1
 
@@ -47,7 +53,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -87,6 +92,9 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -103,11 +111,22 @@
 #define USE_ADC
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-#define RSSI_ADC_GPIO_PIN       PA0
+//#define RSSI_ADC_PIN            PA0
 
+#define LED_STRIP
+// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
+#define WS2811_PIN                      PA1 
+#define WS2811_TIMER                    TIM5
+#define WS2811_TIMER_CHANNEL            TIM_Channel_2
+#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
+#define WS2811_DMA_STREAM               DMA1_Stream4
+#define WS2811_DMA_CHANNEL              DMA_Channel_6
+#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
+#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
+#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define SENSORS_SET (SENSOR_ACC)
-
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
