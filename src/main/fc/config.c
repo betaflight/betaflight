@@ -239,7 +239,7 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
-#ifdef USE_LEDSTRIP
+#ifdef LED_STRIP
 void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
 {
     applyDefaultColors(ledStripConfig->colors);
@@ -618,7 +618,7 @@ void createDefaultConfig(master_t *config)
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
 
-#ifdef USE_LEDSTRIP
+#ifdef LED_STRIP
     resetLedStripConfig(&config->ledStripConfig);
 #endif
 
