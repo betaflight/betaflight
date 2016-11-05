@@ -46,11 +46,12 @@
 #define BEEPER_INVERTED
 #else
 #define LED1                    PB4
+// Leave beeper here but with none as io - so disabled unless mapped.
 #define BEEPER                  NONE
 #endif
 
-
-#define INVERTER                PC0 // PC0 used as inverter select GPIO
+// PC0 used as inverter select GPIO
+#define INVERTER                PC0 
 #define INVERTER_USART          USART1
 
 #define MPU6000_CS_PIN          PA4
@@ -168,7 +169,12 @@
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
 
+#ifdef REVOLT
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 12
+#endif
+
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )
