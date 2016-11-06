@@ -460,7 +460,7 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#ifdef USE_MSP_OSD
+#ifdef USE_MSP_DISPLAYPORT
     if (feature(FEATURE_MSP_OSD)) {
         cmsDisplayPortRegister(displayPortMspInit());
     }

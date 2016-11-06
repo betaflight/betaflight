@@ -97,8 +97,8 @@
 #define CMS
 #define CMS_MAX_DEVICE 4
 
-// Use external OSD to run CMS
-#define USE_MSP_OSD
+// Use external display to run CMS
+#define USE_MSP_DISPLAYPORT
 
 // USE I2C OLED display to run CMS
 #define OLEDCMS

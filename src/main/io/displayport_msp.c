@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef USE_MSP_OSD
+#ifdef USE_MSP_DISPLAYPORT
 
 #include "common/utils.h"
 
@@ -116,4 +116,4 @@ displayPort_t *displayPortMspInit(void)
     resync(&mspDisplayPort);
     return &mspDisplayPort;
 }
-#endif // USE_MSP_OSD
+#endif // USE_MSP_DISPLAYPORT
