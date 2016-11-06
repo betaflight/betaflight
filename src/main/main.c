@@ -29,8 +29,9 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
-#include "drivers/nvic.h"
+#include "cms/cms.h"
 
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
@@ -74,8 +75,6 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
-#include "io/cms.h"
-
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -89,7 +88,7 @@
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
-#include "io/canvas.h"
+#include "io/displayport_msp.h"
 #include "io/vtx.h"
 
 #include "scheduler/scheduler.h"
@@ -461,9 +460,9 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#ifdef CANVAS
-    if (feature(FEATURE_CANVAS)) {
-        cmsDisplayPortRegister(canvasInit());
+#ifdef USE_MSP_DISPLAYPORT
+    if (feature(FEATURE_MSP_OSD)) {
+        cmsDisplayPortRegister(displayPortMspInit());
     }
 #endif
 

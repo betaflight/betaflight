@@ -29,29 +29,29 @@
 #include "drivers/display.h"
 #include "drivers/max7456.h"
 
-displayPort_t osd7456DisplayPort; // Referenced from osd.c
+displayPort_t max7456DisplayPort; // Referenced from osd.c
 
 extern uint16_t refreshTimeout;
 
-static int osdMenuOpen(displayPort_t *displayPort)
+static int grab(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     osdResetAlarms();
-    displayPort->isOpen = true;
+    displayPort->isGrabbed = true;
     refreshTimeout = 0;
 
     return 0;
 }
 
-static int osdMenuClose(displayPort_t *displayPort)
+static int release(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    displayPort->isOpen = false;
+    displayPort->isGrabbed = false;
 
     return 0;
 }
 
-static int osdClearScreen(displayPort_t *displayPort)
+static int clearScreen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456ClearScreen();
@@ -59,7 +59,7 @@ static int osdClearScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int osdWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
+static int write(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     max7456Write(x, y, s);
@@ -67,7 +67,7 @@ static int osdWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char
     return 0;
 }
 
-static void osdResync(displayPort_t *displayPort)
+static void resync(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     max7456RefreshAll();
@@ -75,33 +75,33 @@ static void osdResync(displayPort_t *displayPort)
     displayPort->cols = 30;
 }
 
-static int osdHeartbeat(displayPort_t *displayPort)
+static int heartbeat(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;
 }
 
-static uint32_t osdTxBytesFree(const displayPort_t *displayPort)
+static uint32_t txBytesFree(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return UINT32_MAX;
 }
 
-static displayPortVTable_t osdVTable = {
-    .open = osdMenuOpen,
-    .close = osdMenuClose,
-    .clear = osdClearScreen,
-    .write = osdWrite,
-    .heartbeat = osdHeartbeat,
-    .resync = osdResync,
-    .txBytesFree = osdTxBytesFree,
+static displayPortVTable_t max7456VTable = {
+    .grab = grab,
+    .release = release,
+    .clear = clearScreen,
+    .write = write,
+    .heartbeat = heartbeat,
+    .resync = resync,
+    .txBytesFree = txBytesFree,
 };
 
-displayPort_t *osd7456DisplayPortInit(void)
+displayPort_t *max7456DisplayPortInit(void)
 {
-    osd7456DisplayPort.vTable = &osdVTable;
-    osd7456DisplayPort.isOpen = false;
-    osdResync(&osd7456DisplayPort);
-    return &osd7456DisplayPort;
+    max7456DisplayPort.vTable = &max7456VTable;
+    max7456DisplayPort.isGrabbed = false;
+    resync(&max7456DisplayPort);
+    return &max7456DisplayPort;
 }
 #endif // OSD

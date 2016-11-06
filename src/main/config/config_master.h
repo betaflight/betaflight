@@ -21,6 +21,8 @@
 
 #include "config/config_profile.h"
 
+#include "cms/cms.h"
+
 #include "drivers/pwm_rx.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
@@ -38,7 +40,6 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
-#include "io/cms.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/vtx.h"

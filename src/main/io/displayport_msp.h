@@ -18,4 +18,4 @@
 #pragma once
 
 struct displayPort_s;
-struct displayPort_s *canvasInit(void);
+struct displayPort_s *displayPortMspInit(void);

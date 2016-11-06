@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
@@ -41,7 +43,6 @@
 #include "flight/altitudehold.h"
 
 #include "io/beeper.h"
-#include "io/cms.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"

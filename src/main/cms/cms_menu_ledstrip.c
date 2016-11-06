@@ -32,9 +32,9 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_blackbox.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_ledstrip.h"
 
 #ifdef LED_STRIP
 

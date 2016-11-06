@@ -30,15 +30,18 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
 
+#include "build/version.h"
 #include "build/debug.h"
 
-#include "drivers/system.h"
+#include "cms/cms.h"
+#include "cms/cms_menu_builtin.h"
+#include "cms/cms_types.h"
 
 #include "common/typeconversion.h"
+
+#include "drivers/system.h"
 
 // For 'ARM' related
 #include "fc/config.h"
@@ -52,12 +55,6 @@
 
 // For VISIBLE* (Actually, included by config_master.h)
 #include "io/osd.h"
-
-#include "io/cms.h"
-#include "io/cms_types.h"
-
-// Menu contents
-#include "io/cms_builtin.h"
 
 // DisplayPort management
 
@@ -528,13 +525,13 @@ static void cmsMenuOpen(void)
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
         if (pNextDisplay != pCurrentDisplay) {
-            displayClose(pCurrentDisplay);
+            displayRelease(pCurrentDisplay);
             pCurrentDisplay = pNextDisplay;
         } else {
             return;
         }
     }
-    displayOpen(pCurrentDisplay);
+    displayGrab(pCurrentDisplay); // grab the display for use by the CMS
     cmsMenuChange(pCurrentDisplay, currentMenu);
 }
 
@@ -578,7 +575,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
 
     cmsInMenu = false;
 
-    displayClose(pDisplay);
+    displayRelease(pDisplay);
     currentMenu = NULL;
 
     if (ptr)

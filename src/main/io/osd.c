@@ -35,14 +35,16 @@
 
 #include "common/utils.h"
 
+#include "drivers/display.h"
 #include "drivers/system.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_osd.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_osd.h"
+
+#include "io/displayport_max7456.h"
 #include "io/flashfs.h"
 #include "io/osd.h"
-#include "io/osd_max7456.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -119,7 +121,7 @@ void osdDrawElements(void)
         ;
 #endif
 #ifdef CMS
-    else if (sensors(SENSOR_ACC) || displayIsOpen(osd7456DisplayPort))
+    else if (sensors(SENSOR_ACC) || displayIsGrabbed(osd7456DisplayPort))
 #else
     else if (sensors(SENSOR_ACC))
 #endif
@@ -142,7 +144,7 @@ void osdDrawElements(void)
 
 #ifdef GPS
 #ifdef CMS
-    if (sensors(SENSOR_GPS) || displayIsOpen(osd7456DisplayPort))
+    if (sensors(SENSOR_GPS) || displayIsGrabbed(osd7456DisplayPort))
 #else
     if (sensors(SENSOR_GPS))
 #endif
@@ -416,7 +418,7 @@ void osdInit(void)
 
     refreshTimeout = 4 * REFRESH_1S;
 
-    osd7456DisplayPort = osd7456DisplayPortInit();
+    osd7456DisplayPort = max7456DisplayPortInit();
 #ifdef CMS
     cmsDisplayPortRegister(osd7456DisplayPort);
 #endif
@@ -595,7 +597,7 @@ void updateOsd(uint32_t currentTime)
 
 #ifdef CMS
     // do not allow ARM if we are in menu
-    if (displayIsOpen(osd7456DisplayPort)) {
+    if (displayIsGrabbed(osd7456DisplayPort)) {
         DISABLE_ARMING_FLAG(OK_TO_ARM);
     }
 #endif
@@ -644,7 +646,7 @@ void osdUpdate(uint32_t currentTime)
     blinkState = (millis() / 200) % 2;
 
 #ifdef CMS
-    if (!displayIsOpen(osd7456DisplayPort)) {
+    if (!displayIsGrabbed(osd7456DisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
 #ifdef OSD_CALLS_CMS

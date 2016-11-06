@@ -25,17 +25,17 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
+
+#include "build/version.h"
 
 #include "drivers/system.h"
 
 //#include "common/typeconversion.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_imu.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_imu.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
