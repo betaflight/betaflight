@@ -36,41 +36,19 @@
 #include "config/parameter_group_ids.h"
 #endif
 
-#include "build/build_config.h"
-
-#include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/maths.h"
 #include "common/streambuf.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/timer.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
-
-#include "sensors/sensors.h"
-#include "sensors/acceleration.h"
-#include "sensors/gyro.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
 #include "sensors/battery.h"
 
 #include "io/gps.h"
 #include "io/serial.h"
 
-#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/failsafe.h"
 
 #include "rx/rx.h"
 #include "rx/crsf.h"
