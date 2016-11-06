@@ -84,10 +84,10 @@ void IOHi(IO_t io);
 void IOLo(IO_t io);
 void IOToggle(IO_t io);
 
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index);
+void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index);
 void IORelease(IO_t io);  // unimplemented
-resourceOwner_t IOGetOwner(IO_t io);
-resourceType_t IOGetResources(IO_t io);
+resourceOwner_e IOGetOwner(IO_t io);
+resourceType_e IOGetResources(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);

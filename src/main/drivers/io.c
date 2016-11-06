@@ -231,7 +231,7 @@ void IOToggle(IO_t io)
 }
 
 // claim IO pin, set owner and resources
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index)
+void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index)
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
@@ -245,13 +245,13 @@ void IORelease(IO_t io)
     ioRec->owner = OWNER_FREE;
 }
 
-resourceOwner_t IOGetOwner(IO_t io)
+resourceOwner_e IOGetOwner(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->owner;
 }
 
-resourceType_t IOGetResource(IO_t io)
+resourceType_e IOGetResource(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->resource;
