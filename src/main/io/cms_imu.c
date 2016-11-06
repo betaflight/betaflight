@@ -31,34 +31,39 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-static OSD_UINT8_t entryPidProfile = {&masterConfig.current_profile_index, 0, MAX_PROFILE_COUNT, 1};
-
+//
+// PID
+//
+static uint8_t pidProfileIndex;
 static uint8_t tempPid[4][3];
 
-static OSD_UINT8_t entryRollP = {&tempPid[PIDROLL][0], 10, 150, 1};
-static OSD_UINT8_t entryRollI = {&tempPid[PIDROLL][1], 1, 150, 1};
-static OSD_UINT8_t entryRollD = {&tempPid[PIDROLL][2], 0, 150, 1};
+static long cmsx_menuImu_onEnter(void)
+{
+    pidProfileIndex = masterConfig.current_profile_index + 1;
 
-static OSD_UINT8_t entryPitchP = {&tempPid[PIDPITCH][0], 10, 150, 1};
-static OSD_UINT8_t entryPitchI = {&tempPid[PIDPITCH][1], 1, 150, 1};
-static OSD_UINT8_t entryPitchD = {&tempPid[PIDPITCH][2], 0, 150, 1};
+    return 0;
+}
 
-static OSD_UINT8_t entryYawP = {&tempPid[PIDYAW][0], 10, 150, 1};
-static OSD_UINT8_t entryYawI = {&tempPid[PIDYAW][1], 1, 150, 1};
-static OSD_UINT8_t entryYawD = {&tempPid[PIDYAW][2], 0, 150, 1};
+static long cmsx_menuImu_onExit(OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.current_profile_index = pidProfileIndex - 1;
+
+    return 0;
+}
 
 static long cmsx_PidRead(void)
 {
-    uint8_t i;
 
-    for (i = 0; i < 3; i++) {
-        tempPid[i][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i];
-        tempPid[i][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i];
-        tempPid[i][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i];
+    for (uint8_t i = 0; i < 3; i++) {
+        tempPid[i][0] = masterConfig.profile[pidProfileIndex].pidProfile.P8[i];
+        tempPid[i][1] = masterConfig.profile[pidProfileIndex].pidProfile.I8[i];
+        tempPid[i][2] = masterConfig.profile[pidProfileIndex].pidProfile.D8[i];
     }
-    tempPid[3][0] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL];
-    tempPid[3][1] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL];
-    tempPid[3][2] = masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL];
+    tempPid[3][0] = masterConfig.profile[pidProfileIndex].pidProfile.P8[PIDLEVEL];
+    tempPid[3][1] = masterConfig.profile[pidProfileIndex].pidProfile.I8[PIDLEVEL];
+    tempPid[3][2] = masterConfig.profile[pidProfileIndex].pidProfile.D8[PIDLEVEL];
 
     return 0;
 }
@@ -67,42 +72,41 @@ static long cmsx_PidWriteback(OSD_Entry *self)
 {
     UNUSED(self);
 
-    uint8_t i;
-
-    for (i = 0; i < 3; i++) {
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[i] = tempPid[i][0];
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[i] = tempPid[i][1];
-        masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[i] = tempPid[i][2];
+    for (uint8_t i = 0; i < 3; i++) {
+        masterConfig.profile[pidProfileIndex].pidProfile.P8[i] = tempPid[i][0];
+        masterConfig.profile[pidProfileIndex].pidProfile.I8[i] = tempPid[i][1];
+        masterConfig.profile[pidProfileIndex].pidProfile.D8[i] = tempPid[i][2];
     }
 
-    masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
-    masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
-    masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+    masterConfig.profile[pidProfileIndex].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+    masterConfig.profile[pidProfileIndex].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+    masterConfig.profile[pidProfileIndex].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
 
     return 0;
 }
 
 static OSD_Entry cmsx_menuPidEntries[] =
 {
-    {"--- PID ---", OME_Label, NULL, NULL, 0},
-    {"ROLL P", OME_UINT8, NULL, &entryRollP, 0},
-    {"ROLL I", OME_UINT8, NULL, &entryRollI, 0},
-    {"ROLL D", OME_UINT8, NULL, &entryRollD, 0},
+    { "-- PID --", OME_Label, NULL, NULL, 0},
 
-    {"PITCH P", OME_UINT8, NULL, &entryPitchP, 0},
-    {"PITCH I", OME_UINT8, NULL, &entryPitchI, 0},
-    {"PITCH D", OME_UINT8, NULL, &entryPitchD, 0},
+    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  10, 150, 1 }, 0 },
+    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],   1, 150, 1 }, 0 },
+    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][2],   0, 150, 1 }, 0 },
 
-    {"YAW P", OME_UINT8, NULL, &entryYawP, 0},
-    {"YAW I", OME_UINT8, NULL, &entryYawI, 0},
-    {"YAW D", OME_UINT8, NULL, &entryYawD, 0},
+    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][0], 10, 150, 1 }, 0 },
+    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][1],  1, 150, 1 }, 0 },
+    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][2],  0, 150, 1 }, 0 },
 
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][0],   10, 150, 1 }, 0 },
+    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][1],    1, 150, 1 }, 0 },
+    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][2],    0, 150, 1 }, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
 };
 
 static CMS_Menu cmsx_menuPid = {
-    "MENUPID",
+    "XPID",
     OME_MENU,
     cmsx_PidRead,
     cmsx_PidWriteback,
@@ -114,18 +118,6 @@ static CMS_Menu cmsx_menuPid = {
 // Rate & Expo
 //
 static controlRateConfig_t rateProfile;
-
-static OSD_FLOAT_t entryRollRate = {&rateProfile.rates[0], 0, 250, 1, 10};
-static OSD_FLOAT_t entryPitchRate = {&rateProfile.rates[1], 0, 250, 1, 10};
-static OSD_FLOAT_t entryYawRate = {&rateProfile.rates[2], 0, 250, 1, 10};
-static OSD_FLOAT_t entryRcRate = {&rateProfile.rcRate8, 0, 200, 1, 10};
-static OSD_FLOAT_t entryRcYawRate = {&rateProfile.rcYawRate8, 0, 200, 1, 10};
-static OSD_FLOAT_t entryRcExpo = {&rateProfile.rcExpo8, 0, 100, 1, 10};
-static OSD_FLOAT_t entryRcExpoYaw = {&rateProfile.rcYawExpo8, 0, 100, 1, 10};
-static OSD_FLOAT_t extryTpaEntry = {&rateProfile.dynThrPID, 0, 70, 1, 10};
-static OSD_UINT16_t entryTpaBreak = {&rateProfile.tpa_breakpoint, 1100, 1800, 10};
-static OSD_FLOAT_t entryPSetpoint = {&masterConfig.profile[0].pidProfile.setpointRelaxRatio, 0, 100, 1, 10};
-static OSD_FLOAT_t entryDSetpoint = {&masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10};
 
 static long cmsx_RateExpoRead(void)
 {
@@ -153,24 +145,29 @@ static long cmsx_menuRcConfirmBack(OSD_Entry *self)
 
 static OSD_Entry cmsx_menuRateExpoEntries[] =
 {
-    {"--- RATE&EXPO ---", OME_Label, NULL, NULL, 0},
-    {"RC RATE", OME_FLOAT, NULL, &entryRcYawRate, 0},
-    {"RC YAW RATE", OME_FLOAT, NULL, &entryRcRate, 0},
-    {"ROLL SUPER", OME_FLOAT, NULL, &entryRollRate, 0},
-    {"PITCH SUPER", OME_FLOAT, NULL, &entryPitchRate, 0},
-    {"YAW SUPER", OME_FLOAT, NULL, &entryYawRate, 0},
-    {"RC EXPO", OME_FLOAT, NULL, &entryRcExpo, 0},
-    {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw, 0},
-    {"THR PID ATT", OME_FLOAT, NULL, &extryTpaEntry, 0},
-    {"TPA BRKPT", OME_UINT16, NULL, &entryTpaBreak, 0},
-    {"D SETPT", OME_FLOAT, NULL, &entryDSetpoint, 0},
-    {"D SETPT TRN", OME_FLOAT, NULL, &entryPSetpoint, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    { "-- RATE&EXPO --", OME_Label, NULL, NULL, 0 },
+
+    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 200, 1, 10 }, 0 },
+    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 200, 1, 10 }, 0 },
+
+    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[0],   0, 250, 1, 10 }, 0 },
+    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[1],   0, 250, 1, 10 }, 0 },
+    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[2],   0, 250, 1, 10 }, 0 },
+
+    { "RC EXPO",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo8,    0, 100, 1, 10 }, 0 },
+    { "RC YAW EXP",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawExpo8, 0, 100, 1, 10 }, 0 },
+
+    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,  0, 70, 1, 10}, 0 },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1100, 1800, 10}, 0 },
+    { "D SETPT WT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
+    { "SETPT RLX",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
 };
 
 CMS_Menu cmsx_menuRateExpo = {
-    "MENURTEX",
+    "MENURATE",
     OME_MENU,
     cmsx_RateExpoRead,
     cmsx_RateExpoWriteback,
@@ -182,32 +179,26 @@ CMS_Menu cmsx_menuRateExpo = {
 //
 // RC preview
 //
-static OSD_INT16_t entryRcRoll = {&rcData[ROLL], 1, 2500, 0};
-static OSD_INT16_t entryRcPitch = {&rcData[PITCH], 1, 2500, 0};
-static OSD_INT16_t entryRcThr = {&rcData[THROTTLE], 1, 2500, 0};
-static OSD_INT16_t entryRcYaw = {&rcData[YAW], 1, 2500, 0};
-static OSD_INT16_t entryRcAux1 = {&rcData[AUX1], 1, 2500, 0};
-static OSD_INT16_t entryRcAux2 = {&rcData[AUX2], 1, 2500, 0};
-static OSD_INT16_t entryRcAux3 = {&rcData[AUX3], 1, 2500, 0};
-static OSD_INT16_t entryRcAux4 = {&rcData[AUX4], 1, 2500, 0};
-
 static OSD_Entry cmsx_menuRcEntries[] =
 {
-    {"--- RC PREV ---", OME_Label, NULL, NULL, 0},
-    {"ROLL", OME_INT16, NULL, &entryRcRoll, DYNAMIC},
-    {"PITCH", OME_INT16, NULL, &entryRcPitch, DYNAMIC},
-    {"THR", OME_INT16, NULL, &entryRcThr, DYNAMIC},
-    {"YAW", OME_INT16, NULL, &entryRcYaw, DYNAMIC},
-    {"AUX1", OME_INT16, NULL, &entryRcAux1, DYNAMIC},
-    {"AUX2", OME_INT16, NULL, &entryRcAux2, DYNAMIC},
-    {"AUX3", OME_INT16, NULL, &entryRcAux3, DYNAMIC},
-    {"AUX4", OME_INT16, NULL, &entryRcAux4, DYNAMIC},
-    {"BACK", OME_Back, NULL, NULL, 0},
+    { "-- RC PREV --", OME_Label, NULL, NULL, 0},
+
+    { "ROLL",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[ROLL],     1, 2500, 0 }, DYNAMIC },
+    { "PITCH", OME_INT16, NULL, &(OSD_INT16_t){ &rcData[PITCH],    1, 2500, 0 }, DYNAMIC },
+    { "THR",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[THROTTLE], 1, 2500, 0 }, DYNAMIC },
+    { "YAW",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[YAW],      1, 2500, 0 }, DYNAMIC },
+
+    { "AUX1",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX1],     1, 2500, 0 }, DYNAMIC },
+    { "AUX2",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX2],     1, 2500, 0 }, DYNAMIC },
+    { "AUX3",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX3],     1, 2500, 0 }, DYNAMIC },
+    { "AUX4",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX4],     1, 2500, 0 }, DYNAMIC },
+
+    { "BACK",  OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
 
-CMS_Menu cmsx_menuRc = {
-    "MENURC",
+CMS_Menu cmsx_menuRcPreview = {
+    "XRCPREV",
     OME_MENU,
     NULL,
     cmsx_menuRcConfirmBack,
@@ -219,30 +210,24 @@ CMS_Menu cmsx_menuRc = {
 //
 // Misc
 //
-static OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
-static OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
-static OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
-static OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
-static OSD_UINT16_t entryYawPLimit = {&masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5};
-static OSD_UINT8_t entryVbatScale = {&masterConfig.batteryConfig.vbatscale, 1, 250, 1};
-static OSD_UINT8_t entryVbatMaxCell = {&masterConfig.batteryConfig.vbatmaxcellvoltage, 10, 50, 1};
-
 static OSD_Entry menuImuMiscEntries[]=
 {
-    {"--- MISC ---", OME_Label, NULL, NULL, 0},
-    {"GYRO LPF", OME_UINT8, NULL, &entryGyroSoftLpfHz, 0},
-    {"DTERM LPF", OME_UINT16, NULL, &entryDtermLpf, 0},
-    {"YAW LPF", OME_UINT16, NULL, &entryYawLpf, 0},
-    {"YAW P LIM", OME_UINT16, NULL, &entryYawPLimit, 0},
-    {"MIN THR", OME_UINT16, NULL, &entryMinThrottle, 0},
-    {"VBAT SCALE", OME_UINT8, NULL, &entryVbatScale, 0},
-    {"VBAT CLMAX", OME_UINT8, NULL, &entryVbatMaxCell, 0},
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    { "-- MISC --", OME_Label, NULL, NULL, 0 },
+
+    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.gyro_soft_lpf_hz,                    0, 255, 1 }, 0 },
+    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.dterm_lpf_hz,  0, 500, 5 }, 0 },
+    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_lpf_hz,    0, 500, 5 }, 0 },
+    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5 }, 0 },
+    { "MIN THR",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.motorConfig.minthrottle,        1020, 1300, 10 }, 0 },
+    { "VBAT SCALE", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatscale,             1, 250, 1 }, 0 },
+    { "VBAT CLMAX", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatmaxcellvoltage,   10,  50, 1 }, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0},
+    { NULL, OME_END, NULL, NULL, 0}
 };
 
 CMS_Menu menuImuMisc = {
-    "MENUIMU",
+    "XIMUMISC",
     OME_MENU,
     NULL,
     NULL,
@@ -252,21 +237,23 @@ CMS_Menu menuImuMisc = {
 
 static OSD_Entry cmsx_menuImuEntries[] =
 {
-    {"--- CFG.IMU ---", OME_Label, NULL, NULL, 0},
-    {"PID PROF", OME_UINT8, NULL, &entryPidProfile, 0},
-    {"PID", OME_Submenu, cmsMenuChange, &cmsx_menuPid, 0},
-    {"RATE&RXPO", OME_Submenu, cmsMenuChange, &cmsx_menuRateExpo, 0},
-    {"RC PREV", OME_Submenu, cmsMenuChange, &cmsx_menuRc, 0},
-    {"MISC", OME_Submenu, cmsMenuChange, &menuImuMisc, 0},
+    { "-- IMU --", OME_Label, NULL, NULL, 0},
+
+    {"PID PROF",  OME_UINT8,   NULL,          &(OSD_UINT8_t){ &pidProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
+    {"PID",       OME_Submenu, cmsMenuChange, &cmsx_menuPid,       0},
+    {"RATE&RXPO", OME_Submenu, cmsMenuChange, &cmsx_menuRateExpo,  0},
+    {"RC PREV",   OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
+    {"MISC",      OME_Submenu, cmsMenuChange, &menuImuMisc,        0},
+
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
 
 CMS_Menu cmsx_menuImu = {
-    "MENUIMU",
+    "XIMU",
     OME_MENU,
-    NULL,
-    NULL,
+    cmsx_menuImu_onEnter,
+    cmsx_menuImu_onExit,
     NULL,
     cmsx_menuImuEntries,
 };

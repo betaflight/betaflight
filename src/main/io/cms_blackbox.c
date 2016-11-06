@@ -69,18 +69,18 @@ static long cmsx_Blackbox_FeatureWriteback(void)
     return 0;
 }
 
-static OSD_UINT8_t entryBlackboxRateDenom = {&masterConfig.blackbox_rate_denom,1,32,1};
-
 static OSD_Entry cmsx_menuBlackboxEntries[] =
 {
-    {"--- BLACKBOX ---", OME_Label, NULL, NULL, 0},
-    {"ENABLED", OME_Bool, NULL, &cmsx_FeatureBlackbox, 0},
-    {"RATE DENOM", OME_UINT8, NULL, &entryBlackboxRateDenom, 0},
+    { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
+    { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                      0 },
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &masterConfig.blackbox_rate_denom,1,32,1 }, 0 },
+
 #ifdef USE_FLASHFS
-    {"ERASE FLASH", OME_Submenu, cmsx_EraseFlash, NULL, 0},
+    { "ERASE FLASH", OME_Submenu, cmsx_EraseFlash, NULL,                                                       0 },
 #endif // USE_FLASHFS
-    {"BACK", OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
 };
 
 CMS_Menu cmsx_menuBlackbox = {
