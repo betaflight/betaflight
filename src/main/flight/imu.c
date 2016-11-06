@@ -509,6 +509,7 @@ static void imuUpdateMeasuredAcceleration(void)
 #ifdef ASYNC_GYRO_PROCESSING
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = imuAccumulatedAcc[axis] / imuAccumulatedAccCount;
+        imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
         imuAccumulatedAcc[axis] = 0;
     }
     imuAccumulatedAccCount = 0;;
