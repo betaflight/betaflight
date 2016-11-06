@@ -64,11 +64,11 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
         return;
     }
 
-    ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
+    ws2811IO = IOGetByTag(ioTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
     IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
 
-    RCC_ClockCmd(timerRCC(WS2811_TIMER), ENABLE);
+    RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     /* Compute the prescaler value */
     uint16_t prescalerValue = (uint16_t) (SystemCoreClock / WS2811_TIMER_HZ) - 1;

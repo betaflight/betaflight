@@ -85,12 +85,6 @@
 #define VBAT_ADC_PIN            PA4
 
 #define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_CHANNEL              DMA1_Channel6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_2
 
 #define GPS
 
