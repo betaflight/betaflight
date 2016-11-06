@@ -23,7 +23,7 @@
 #include "bus_i2c.h"
 #include "system.h"
 
-#include "display_ug2864hsweg01.h"
+#include "oled_ug2864hsweg01.h"
 
 #ifndef OLED_I2C_INSTANCE
 #define OLED_I2C_INSTANCE I2CDEV_1
