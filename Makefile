@@ -551,7 +551,7 @@ HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
             common/colorconversion.c \
-            drivers/display_ug2864hsweg01.c \
+            drivers/oled_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
