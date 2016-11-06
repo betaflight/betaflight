@@ -68,30 +68,44 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 6, DMA2_ST6_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
-
-void dmaInit(void)
+static void enableDmaClock(uint32_t rcc)
 {
-    // TODO: Do we need this?
+    do {
+        __IO uint32_t tmpreg;
+        SET_BIT(RCC->AHB1ENR, rcc);
+        /* Delay after an RCC peripheral clock enabling */
+        tmpreg = READ_BIT(RCC->AHB1ENR, rcc);
+        UNUSED(tmpreg);
+    } while(0);
 }
 
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
+void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    enableDmaClock(dmaDescriptors[identifier].rcc);
+    dmaDescriptors[identifier].owner = owner;
+    dmaDescriptors[identifier].resourceIndex = resourceIndex;
+}
+
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
 {
     //clock
     //RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
-
-    do {
-        __IO uint32_t tmpreg;
-        SET_BIT(RCC->AHB1ENR, dmaDescriptors[identifier].rcc);
-        /* Delay after an RCC peripheral clock enabling */
-        tmpreg = READ_BIT(RCC->AHB1ENR, dmaDescriptors[identifier].rcc);
-        UNUSED(tmpreg);
-    } while(0);
+    enableDmaClock(dmaDescriptors[identifier].rcc);
 
     dmaDescriptors[identifier].irqHandlerCallback = callback;
     dmaDescriptors[identifier].userParam = userParam;
 
-
     HAL_NVIC_SetPriority(dmaDescriptors[identifier].irqN, NVIC_PRIORITY_BASE(priority), NVIC_PRIORITY_SUB(priority));
     HAL_NVIC_EnableIRQ(dmaDescriptors[identifier].irqN);
+}
+
+resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].owner;
+}
+
+uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].resourceIndex;    
 }
 

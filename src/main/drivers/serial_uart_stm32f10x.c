@@ -138,6 +138,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     }
 
     // DMA TX Interrupt
+    dmaInit(DMA1_CH4_HANDLER, OWNER_TX, 1);
     dmaSetHandler(DMA1_CH4_HANDLER, uart_tx_dma_IRQHandler, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
 
 #ifndef USE_UART1_RX_DMA

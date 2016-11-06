@@ -18,25 +18,26 @@
 #include <stdint.h>
 
 #include <platform.h>
-#include "drivers/io.h"
+#include "drivers/io.h" 
 
 #include "drivers/timer.h"
 #include "drivers/dma.h"
+#include "drivers/timer_def.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM16, IO_TAG(PB8),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      TIM_USE_PPM, 0, GPIO_AF_1, NULL, 0 }, 
-    { TIM17, IO_TAG(PB9),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, 0, GPIO_AF_1, NULL, 0 }, 
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER }, 
-    { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_4, DMA2_Channel3, DMA2_CH3_HANDLER }, 
-    { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_4, DMA2_Channel5, DMA2_CH5_HANDLER }, 
-    { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_4, DMA2_Channel1, DMA2_CH1_HANDLER }, 
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM3,  IO_TAG(PA4),  TIM_Channel_2, TIM3_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM4,  IO_TAG(PD12), TIM_Channel_1, TIM4_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM4,  IO_TAG(PD13), TIM_Channel_2, TIM4_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM4,  IO_TAG(PD14), TIM_Channel_3, TIM4_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM4,  IO_TAG(PD15), TIM_Channel_4, TIM4_IRQn,               0, 0, GPIO_AF_2, NULL, 0 }, 
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               0, 0, GPIO_AF_1, NULL, 0 }, 
-    { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,               0, 0, GPIO_AF_1, NULL, 0 }  
+    DEF_TIM(TIM16, CH1, PB8,  TIM_USE_PPM,   TIMER_OUTPUT_NONE), 
+    DEF_TIM(TIM17, CH1, PB9,  TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED),
+    DEF_TIM(TIM8,  CH1, PC6,  TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED),
+    DEF_TIM(TIM8,  CH2, PC7,  TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED),
+    DEF_TIM(TIM8,  CH3, PC8,  TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED),
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM3,  CH2, PA4,  TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM4,  CH1, PD12, TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM4,  CH2, PD13, TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM4,  CH3, PD14, TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM4,  CH4, PD15, TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_NONE,  TIMER_OUTPUT_NONE),
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_NONE,  TIMER_OUTPUT_NONE),
 };
 

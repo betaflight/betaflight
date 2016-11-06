@@ -96,12 +96,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-//#define LED_STRIP
-//#define WS2811_PIN                      PB4
-//#define WS2811_TIMER                    TIM3
-//#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-//#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PIN   PB11

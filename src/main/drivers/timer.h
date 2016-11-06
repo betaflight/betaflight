@@ -55,6 +55,7 @@ typedef uint32_t timCNT_t;
 #endif
 
 typedef enum {
+    TIM_USE_NONE  = 0x0,
     TIM_USE_ANY   = 0x0,
     TIM_USE_PPM   = 0x1,
     TIM_USE_PWM   = 0x2,
@@ -81,13 +82,13 @@ typedef struct timerOvrHandlerRec_s {
 typedef struct timerDef_s {
     TIM_TypeDef *TIMx;
     rccPeriphTag_t rcc;
+    uint8_t inputIrq;
 } timerDef_t;
 
 typedef struct timerHardware_s {
     TIM_TypeDef *tim;
     ioTag_t tag;
     uint8_t channel;
-    uint8_t irq;
     timerUsageFlag_e usageFlags;
     uint8_t output;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
@@ -105,7 +106,7 @@ typedef struct timerHardware_s {
 } timerHardware_t;
 
 typedef enum {
-    TIMER_INPUT_ENABLED    = 0x00,
+    TIMER_OUTPUT_NONE      = 0x00,
     TIMER_OUTPUT_ENABLED   = 0x01,
     TIMER_OUTPUT_INVERTED  = 0x02,
     TIMER_OUTPUT_N_CHANNEL = 0x04
@@ -167,7 +168,7 @@ void timerChITConfigDualLo(const timerHardware_t* timHw, FunctionalState newStat
 void timerChITConfig(const timerHardware_t* timHw, FunctionalState newState);
 void timerChClearCCFlag(const timerHardware_t* timHw);
 
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority);
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq);
 
 void timerInit(void);
 void timerStart(void);
@@ -178,6 +179,7 @@ uint8_t timerClockDivisor(TIM_TypeDef *tim);
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
+uint8_t timerInputIrq(TIM_TypeDef *tim);
 
 const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag);
 
@@ -190,3 +192,5 @@ void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload);
 
 volatile timCCR_t *timerCCR(TIM_TypeDef *tim, uint8_t channel);
 uint16_t timerDmaSource(uint8_t channel);
+
+

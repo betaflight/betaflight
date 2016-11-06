@@ -23,11 +23,11 @@
 
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn, TIM_USE_PPM,   1, GPIO_AF_1},
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM4_IRQn, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM2 - PC6
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM4_IRQn, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM3 - PC7
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PMW4 - PC8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM5 - PC9
+    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_PPM,   1, GPIO_AF_1},
+    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM2 - PC6
+    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM3 - PC7
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PMW4 - PC8
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_2}, // PWM5 - PC9
 };
 
 

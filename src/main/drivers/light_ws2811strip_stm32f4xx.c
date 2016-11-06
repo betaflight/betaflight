@@ -138,6 +138,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(stream));
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
     const hsvColor_t hsv_white = { 0, 255, 255 };
