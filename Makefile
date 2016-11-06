@@ -45,10 +45,15 @@ export AT := @
 ifndef V
 export V0    :=
 export V1    := $(AT)
+export V00   :=
 else ifeq ($(V), 0)
 export V0    := $(AT)
 export V1    := $(AT)
+export V00   := "> /dev/null"
 else ifeq ($(V), 1)
+export V0    :=
+export V1    :=
+export V00   :=
 endif
 
 ###############################################################################
@@ -820,18 +825,18 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
+	$(V1) echo "%% $(notdir $<)" "$(V00)"
 	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
+	$(V1) echo "%% $(notdir $<)" "$(V00)"
 	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
+	$(V1) echo "%% $(notdir $<)" "$(V00)"
 	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 ## sample            : Build all sample (travis) targets
