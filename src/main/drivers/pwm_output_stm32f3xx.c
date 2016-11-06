@@ -172,7 +172,6 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
         TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
-
     TIM_OCInitStructure.TIM_Pulse = 0;
 
     timerOCInit(timer, timerHardware->channel, &TIM_OCInitStructure);

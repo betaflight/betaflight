@@ -305,7 +305,7 @@ static const char * const LED_COLOR_NAMES[] = {
 void getLedColor(void)
 {
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
-        const ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
+        const ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[ledIndex];
 
         int fn = ledGetFunction(ledConfig);
 
@@ -321,7 +321,7 @@ void applyLedColor(void * ptr)
 {
     UNUSED(ptr);
     for (int ledIndex = 0; ledIndex < LED_MAX_STRIP_LENGTH; ledIndex++) {
-        ledConfig_t *ledConfig = &masterConfig.ledConfigs[ledIndex];
+        ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[ledIndex];
         if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR)
             *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), ledColor, ledGetDirection(ledConfig), ledGetFunction(ledConfig), ledGetOverlay(ledConfig), 0);
     }

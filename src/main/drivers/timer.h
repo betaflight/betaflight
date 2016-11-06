@@ -55,6 +55,7 @@ typedef uint32_t timCNT_t;
 #endif
 
 typedef enum {
+    TIM_USE_ANY   = 0x0,
     TIM_USE_PPM   = 0x1,
     TIM_USE_PWM   = 0x2,
     TIM_USE_MOTOR = 0x4,
@@ -92,11 +93,11 @@ typedef struct timerHardware_s {
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint8_t alternateFunction;
 #endif
-#if defined(USE_DSHOT) 
+#if defined(USE_DSHOT) || defined(LED_STRIP)
 #if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef *dmaStream; 
     uint32_t dmaChannel;
-#elif defined(STM32F3)
+#elif defined(STM32F3) || defined(STM32F1)
     DMA_Channel_TypeDef *dmaChannel;
 #endif
     uint8_t dmaIrqHandler;
