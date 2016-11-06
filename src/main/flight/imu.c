@@ -574,12 +574,11 @@ void imuUpdateAccelerometer(void)
 #endif
 }
 
-void imuUpdateAttitude(void)
+void imuUpdateAttitude(uint32_t currentTime)
 {
     /* Calculate dT */
     static uint32_t previousIMUUpdateTime;
-    uint32_t currentTime = micros();
-    float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
+    const float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
     previousIMUUpdateTime = currentTime;
 
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {

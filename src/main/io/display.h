@@ -23,7 +23,7 @@ typedef enum {
 
 struct rxConfig_s;
 void displayInit(struct rxConfig_s *intialRxConfig);
-void updateDisplay(void);
+void updateDisplay(uint32_t currentTime);
 
 void displaySetPage(pageId_e newPageId);
 void displaySetNextPageChangeAt(uint32_t futureMicros);

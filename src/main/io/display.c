@@ -370,19 +370,18 @@ void showStatusPage(void)
 
 }
 
-void updateDisplay(void)
+void updateDisplay(uint32_t currentTime)
 {
-    uint32_t now = micros();
     static uint8_t previousArmedState = 0;
 
     bool pageChanging = false;
-    bool updateNow = (int32_t)(now - nextDisplayUpdateAt) >= 0L;
+    bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
 
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = now + DISPLAY_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTime + DISPLAY_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -400,7 +399,7 @@ void updateDisplay(void)
             pageChanging = true;
         }
 
-        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(now - nextPageAt) >= 0L)) {
+        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(currentTime - nextPageAt) >= 0L)) {
             currentPageId = PAGE_STATUS;
             pageChanging = true;
         }
@@ -465,9 +464,10 @@ void displayInit(rxConfig_t *rxConfigToUse)
     rxConfig = rxConfigToUse;
 
     displaySetPage(PAGE_WELCOME);
-    displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
+    const uint32_t now = micros();
+    displaySetNextPageChangeAt(now + 5* MICROSECONDS_IN_A_SECOND);
 
-    updateDisplay();
+    updateDisplay(now);
 }
 
 void displaySetNextPageChangeAt(uint32_t futureMicros)

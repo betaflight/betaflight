@@ -367,7 +367,7 @@ void resumeRxSignal(void)
     failsafeOnRxResume();
 }
 
-void updateRx(uint32_t currentTime)
+bool updateRx(uint32_t currentTime)
 {
     resetRxSignalReceivedFlagIfNeeded(currentTime);
 
@@ -429,10 +429,6 @@ void updateRx(uint32_t currentTime)
         }
     }
 #endif
-}
-
-bool shouldProcessRx(uint32_t currentTime)
-{
     return rxDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
 }
 
