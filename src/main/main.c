@@ -463,7 +463,7 @@ void init(void)
 
 #ifdef CANVAS
     if (feature(FEATURE_CANVAS)) {
-        canvasInit();
+        cmsDisplayPortRegister(canvasInit());
     }
 #endif
 

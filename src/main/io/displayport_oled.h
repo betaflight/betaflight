@@ -17,6 +17,4 @@
 
 #pragma once
 
-void displayPortOledInit(void);
-
-extern displayPort_t oledDisplayPort;
+displayPort_t *displayPortOledInit(void);

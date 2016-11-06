@@ -83,6 +83,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 static bool dashboardPresent = false;
 
 static rxConfig_t *rxConfig;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -588,7 +589,7 @@ void dashboardUpdate(uint32_t currentTime)
     static uint8_t previousArmedState = 0;
 
 #ifdef OLEDCMS
-    if (oledDisplayPort.inCMS) {
+    if (displayIsOpen(displayPort)) {
         return;
     }
 #endif
@@ -704,8 +705,9 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
+    displayPort = displayPortOledInit();
 #if defined(CMS) && defined(OLEDCMS)
-    displayPortOledInit();
+    cmsDisplayPortRegister(displayPort);
 #endif
 
     rxConfig = rxConfigToUse;

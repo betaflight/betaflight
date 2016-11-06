@@ -560,10 +560,19 @@ HIGHEND_SRC = \
             flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
-            io/gps.c \
-            io/ledstrip.c \
+            io/canvas.c \
+            io/cms.c \
+            io/cms_builtin.c \
+            io/cms_imu.c \
+            io/cms_blackbox.c \
+            io/cms_vtx.c \
+            io/cms_ledstrip.c \
             io/displayport_oled.c \
             io/dashboard.c \
+            io/gps.c \
+            io/ledstrip.c \
+            io/osd.c \
+            io/osd_max7456.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \

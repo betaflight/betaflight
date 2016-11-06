@@ -1,4 +1,3 @@
-#define USE_DPRINTF
 /*
  * This file is part of Cleanflight.
  *

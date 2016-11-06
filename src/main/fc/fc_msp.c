@@ -1010,7 +1010,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
 
-        for (i = 0; i < OSD_MAX_ITEMS; i++) {
+        for (i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
         }
 #else
