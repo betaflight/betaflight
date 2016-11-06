@@ -302,20 +302,20 @@ void navPInit(pController_t *p, float _kP);
 
 bool isThrustFacingDownwards(void);
 void updateAltitudeTargetFromClimbRate(float climbRate, navUpdateAltitudeFromRateMode_e mode);
-uint32_t calculateDistanceToDestination(t_fp_vector * destinationPos);
-int32_t calculateBearingToDestination(t_fp_vector * destinationPos);
+uint32_t calculateDistanceToDestination(const t_fp_vector * destinationPos);
+int32_t calculateBearingToDestination(const t_fp_vector * destinationPos);
 void resetLandingDetector(void);
 bool isLandingDetected(void);
 
 navigationFSMStateFlags_t navGetCurrentStateFlags(void);
 
-void setHomePosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
-void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
+void setHomePosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
+void setDesiredPosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask);
 void setDesiredSurfaceOffset(float surfaceOffset);
 void setDesiredPositionToFarAwayTarget(int32_t yaw, int32_t distance, navSetWaypointFlags_t useMask);
 
-bool isWaypointReached(navWaypointPosition_t * waypoint);
-bool isWaypointMissed(navWaypointPosition_t * waypoint);
+bool isWaypointReached(const navWaypointPosition_t * waypoint);
+bool isWaypointMissed(const navWaypointPosition_t * waypoint);
 bool isApproachingLastWaypoint(void);
 float getActiveWaypointSpeed(void);
 

@@ -79,8 +79,8 @@ static void setupAltitudeController(void);
 void resetNavigation(void);
 void resetGCSFlags(void);
 
-static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint);
-static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos);
+static void calcualteAndSetActiveWaypoint(const navWaypoint_t * waypoint);
+static void calcualteAndSetActiveWaypointToLocalPosition(const t_fp_vector * pos);
 void calculateInitialHoldPosition(t_fp_vector * pos);
 void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t distance);
 
@@ -120,7 +120,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navig
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_IN_PROGRESS(navigationFSMState_t previousState);
 
-static navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
+static const navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
     /** Idle state ******************************************************/
     [NAV_STATE_IDLE] = {
         .onEntry = navOnEnteringState_NAV_STATE_IDLE,
@@ -702,7 +702,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navigationFSMState_t previousState)
 {
-    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+    const navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
     resetGCSFlags();
 
@@ -738,7 +738,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_IN_PROGRESS(nav
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_INITIALIZE(navigationFSMState_t previousState)
 {
-    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+    const navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
     resetGCSFlags();
 
@@ -772,7 +772,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_2D_IN_PROGRESS(
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_INITIALIZE(navigationFSMState_t previousState)
 {
-    navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
+    const navigationFSMStateFlags_t prevFlags = navGetStateFlags(previousState);
 
     resetGCSFlags();
 
@@ -1212,7 +1212,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_RTH_LAND(navig
 {
     UNUSED(previousState);
 
-    navigationFSMEvent_t landEvent = navOnEnteringState_NAV_STATE_RTH_3D_LANDING(previousState);
+    const navigationFSMEvent_t landEvent = navOnEnteringState_NAV_STATE_RTH_3D_LANDING(previousState);
     if (landEvent == NAV_FSM_EVENT_SUCCESS) {
         // Landing controller returned success - invoke RTH finishing state and finish the waypoint
         navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(previousState);
@@ -1227,7 +1227,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_NEXT(navigatio
 {
     UNUSED(previousState);
 
-    bool isLastWaypoint = (posControl.waypointList[posControl.activeWaypointIndex].flag == NAV_WP_FLAG_LAST) ||
+    const bool isLastWaypoint = (posControl.waypointList[posControl.activeWaypointIndex].flag == NAV_WP_FLAG_LAST) ||
                           (posControl.activeWaypointIndex >= (posControl.waypointCount - 1));
 
     if (isLastWaypoint) {
@@ -1328,7 +1328,7 @@ static navigationFSMState_t navSetNewFSMState(navigationFSMState_t newState)
 
 static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
 {
-    uint32_t currentMillis = millis();
+    const uint32_t currentMillis = millis();
     navigationFSMState_t previousState;
     static uint32_t lastStateProcessTime = 0;
 
@@ -1436,8 +1436,8 @@ float navPidApply2(float setpoint, float measurement, float dt, pidController_t 
     newDerivative = pid->param.kD * pt1FilterApply4(&pid->dterm_filter_state, newDerivative, NAV_DTERM_CUT_HZ, dt);
 
     /* Pre-calculate output and limit it if actuator is saturating */
-    float outVal = newProportional + pid->integrator + newDerivative;
-    float outValConstrained = constrainf(outVal, outMin, outMax);
+    const float outVal = newProportional + pid->integrator + newDerivative;
+    const float outValConstrained = constrainf(outVal, outMin, outMax);
 
     /* Update I-term */
     pid->integrator += (error * pid->param.kI * dt) + ((outValConstrained - outVal) * pid->param.kT * dt);
@@ -1619,18 +1619,18 @@ void updateActualHeading(int32_t newHeading)
 /*-----------------------------------------------------------
  * Calculates distance and bearing to destination point
  *-----------------------------------------------------------*/
-uint32_t calculateDistanceToDestination(t_fp_vector * destinationPos)
+uint32_t calculateDistanceToDestination(const t_fp_vector * destinationPos)
 {
-    float deltaX = destinationPos->V.X - posControl.actualState.pos.V.X;
-    float deltaY = destinationPos->V.Y - posControl.actualState.pos.V.Y;
+    const float deltaX = destinationPos->V.X - posControl.actualState.pos.V.X;
+    const float deltaY = destinationPos->V.Y - posControl.actualState.pos.V.Y;
 
     return sqrtf(sq(deltaX) + sq(deltaY));
 }
 
-int32_t calculateBearingToDestination(t_fp_vector * destinationPos)
+int32_t calculateBearingToDestination(const t_fp_vector * destinationPos)
 {
-    float deltaX = destinationPos->V.X - posControl.actualState.pos.V.X;
-    float deltaY = destinationPos->V.Y - posControl.actualState.pos.V.Y;
+    const float deltaX = destinationPos->V.X - posControl.actualState.pos.V.X;
+    const float deltaY = destinationPos->V.Y - posControl.actualState.pos.V.Y;
 
     return wrap_36000(RADIANS_TO_CENTIDEGREES(atan2_approx(deltaY, deltaX)));
 }
@@ -1638,7 +1638,7 @@ int32_t calculateBearingToDestination(t_fp_vector * destinationPos)
 /*-----------------------------------------------------------
  * Check if waypoint is/was reached. Assume that waypoint-yaw stores initial bearing
  *-----------------------------------------------------------*/
-bool isWaypointMissed(navWaypointPosition_t * waypoint)
+bool isWaypointMissed(const navWaypointPosition_t * waypoint)
 {
     int32_t bearingError = calculateBearingToDestination(&waypoint->pos) - waypoint->yaw;
     bearingError = wrap_18000(bearingError);
@@ -1646,10 +1646,10 @@ bool isWaypointMissed(navWaypointPosition_t * waypoint)
     return ABS(bearingError) > 10000; // TRUE if we passed the waypoint by 100 degrees
 }
 
-bool isWaypointReached(navWaypointPosition_t * waypoint)
+bool isWaypointReached(const navWaypointPosition_t * waypoint)
 {
     // We consider waypoint reached if within specified radius
-    uint32_t wpDistance = calculateDistanceToDestination(&waypoint->pos);
+    const uint32_t wpDistance = calculateDistanceToDestination(&waypoint->pos);
     return (wpDistance <= posControl.navConfig->general.waypoint_radius);
 }
 
@@ -1695,7 +1695,7 @@ static void updateDesiredRTHAltitude(void)
 /*-----------------------------------------------------------
  * Reset home position to current position
  *-----------------------------------------------------------*/
-void setHomePosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask)
+void setHomePosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask)
 {
     // XY-position
     if ((useMask & NAV_POS_UPDATE_XY) != 0) {
@@ -1789,7 +1789,7 @@ void calculateInitialHoldPosition(t_fp_vector * pos)
 /*-----------------------------------------------------------
  * Set active XYZ-target and desired heading
  *-----------------------------------------------------------*/
-void setDesiredPosition(t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask)
+void setDesiredPosition(const t_fp_vector * pos, int32_t yaw, navSetWaypointFlags_t useMask)
 {
     // XY-position
     if ((useMask & NAV_POS_UPDATE_XY) != 0) {
@@ -2016,7 +2016,7 @@ void getWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
     }
 }
 
-void setWaypoint(uint8_t wpNumber, navWaypoint_t * wpData)
+void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData)
 {
     gpsLocation_t wpLLH;
     navWaypointPosition_t wpPos;
@@ -2075,7 +2075,7 @@ void resetWaypointList(void)
     }
 }
 
-static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos)
+static void calcualteAndSetActiveWaypointToLocalPosition(const t_fp_vector * pos)
 {
     posControl.activeWaypoint.pos = *pos;
 
@@ -2086,7 +2086,7 @@ static void calcualteAndSetActiveWaypointToLocalPosition(t_fp_vector * pos)
     setDesiredPosition(&posControl.activeWaypoint.pos, posControl.activeWaypoint.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
 }
 
-static void calcualteAndSetActiveWaypoint(navWaypoint_t * waypoint)
+static void calcualteAndSetActiveWaypoint(const navWaypoint_t * waypoint)
 {
     gpsLocation_t wpLLH;
     t_fp_vector localPos;
@@ -2188,7 +2188,7 @@ static void processNavigationRCAdjustments(void)
  *-----------------------------------------------------------*/
 void applyWaypointNavigationAndAltitudeHold(void)
 {
-    uint32_t currentTime = micros();
+    const uint32_t currentTime = micros();
 
 #if defined(NAV_BLACKBOX)
     navFlags = 0;
@@ -2244,8 +2244,8 @@ void applyWaypointNavigationAndAltitudeHold(void)
  *-----------------------------------------------------------*/
 void swithNavigationFlightModes(void)
 {
-    flightModeFlags_e enabledNavFlightModes = navGetMappedFlightModes(posControl.navState);
-    flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE | NAV_LAUNCH_MODE) & (~enabledNavFlightModes);
+    const flightModeFlags_e enabledNavFlightModes = navGetMappedFlightModes(posControl.navState);
+    const flightModeFlags_e disabledFlightModes = (NAV_ALTHOLD_MODE | NAV_RTH_MODE | NAV_POSHOLD_MODE | NAV_WP_MODE | NAV_LAUNCH_MODE) & (~enabledNavFlightModes);
     DISABLE_FLIGHT_MODE(disabledFlightModes);
     ENABLE_FLIGHT_MODE(enabledNavFlightModes);
 }
@@ -2355,7 +2355,7 @@ bool navigationRequiresThrottleTiltCompensation(void)
  *-----------------------------------------------------------*/
 bool naivationRequiresAngleMode(void)
 {
-    navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
+    const navigationFSMStateFlags_t currentState = navGetStateFlags(posControl.navState);
     return (currentState & NAV_REQUIRE_ANGLE) || ((currentState & NAV_REQUIRE_ANGLE_FW) && STATE(FIXED_WING));
 }
 
@@ -2489,8 +2489,6 @@ void navigationUsemotorConfig(motorConfig_t * initialmotorConfig)
 
 void navigationUsePIDs(pidProfile_t *initialPidProfile)
 {
-    int axis;
-
     posControl.pidProfile = initialPidProfile;
 
     // Brake time parameter
@@ -2500,7 +2498,7 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
     posControl.posResponseExpo = constrainf((float)posControl.pidProfile->D8[PIDPOS] / 100.0f, 0.0f, 1.0f);
 
     // Initialize position hold P-controller
-    for (axis = 0; axis < 2; axis++) {
+    for (int axis = 0; axis < 2; axis++) {
         navPInit(&posControl.pids.pos[axis], (float)posControl.pidProfile->P8[PIDPOS] / 100.0f);
 
         navPidInit(&posControl.pids.vel[axis], (float)posControl.pidProfile->P8[PIDPOSR] / 100.0f,
@@ -2621,8 +2619,8 @@ static float GPS_scaleLonDown;
 
 static void GPS_distance_cm_bearing(int32_t currentLat1, int32_t currentLon1, int32_t destinationLat2, int32_t destinationLon2, uint32_t *dist, int32_t *bearing)
 {
-    float dLat = destinationLat2 - currentLat1; // difference of latitude in 1/10 000 000 degrees
-    float dLon = (float)(destinationLon2 - currentLon1) * GPS_scaleLonDown;
+    const float dLat = destinationLat2 - currentLat1; // difference of latitude in 1/10 000 000 degrees
+    const float dLon = (float)(destinationLon2 - currentLon1) * GPS_scaleLonDown;
 
     *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
 
