@@ -71,7 +71,7 @@
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define CMS
-#define USE_MSP_OSD
+#define USE_MSP_DISPLAYPORT
 
 //#define PITOT
 //#define USE_PITOT_MS4525
