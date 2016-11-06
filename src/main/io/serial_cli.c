@@ -945,7 +945,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
+    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },

@@ -40,13 +40,11 @@
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
 
-#include "io/cms.h"
-
 #include "io/beeper.h"
+#include "io/cms.h"
 #include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/cms.h"
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"

@@ -9,17 +9,8 @@ TARGET_SRC = \
             drivers/compass_ak8963.c \
             drivers/compass_ak8975.c \
             drivers/compass_hmc5883l.c \
+            drivers/max7456.c \
             drivers/serial_usb_vcp.c \
             drivers/transponder_ir.c \
             drivers/transponder_ir_stm32f30x.c \
-            io/transponder_ir.c \
-            drivers/max7456.c \
-            io/osd.c \
-            io/osd_max7456.c \
-            io/canvas.c \
-            io/cms.c \
-            io/cms_builtin.c \
-            io/cms_imu.c \
-            io/cms_blackbox.c \
-            io/cms_vtx.c \
-            io/cms_ledstrip.c
+            io/transponder_ir.c

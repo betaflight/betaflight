@@ -35,16 +35,25 @@ void displayOpen(displayPort_t *instance)
 {
     instance->vTable->open(instance);
     instance->vTable->clear(instance);
-    instance->inCMS = true;
+    instance->isOpen = true;
 }
 
 void displayClose(displayPort_t *instance)
 {
     instance->vTable->close(instance);
-    instance->inCMS = false;
+    instance->isOpen = false;
 }
 
-int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, char *s)
+bool displayIsOpen(const displayPort_t *instance)
+{
+    if (instance && instance->isOpen) { // can be called before initialised
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
 {
     return instance->vTable->write(instance, x, y, s);
 }
@@ -59,7 +68,7 @@ void displayResync(displayPort_t *instance)
     instance->vTable->resync(instance);
 }
 
-uint16_t displayTxBytesFree(displayPort_t *instance)
+uint16_t displayTxBytesFree(const displayPort_t *instance)
 {
     return instance->vTable->txBytesFree(instance);
 }

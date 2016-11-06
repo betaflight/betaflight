@@ -1,3 +1,20 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -16,20 +33,20 @@ displayPort_t osd7456DisplayPort; // Referenced from osd.c
 
 extern uint16_t refreshTimeout;
 
-static int osdMenuBegin(displayPort_t *displayPort)
+static int osdMenuOpen(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     osdResetAlarms();
-    displayPort->inCMS = true;
+    displayPort->isOpen = true;
     refreshTimeout = 0;
 
     return 0;
 }
 
-static int osdMenuEnd(displayPort_t *displayPort)
+static int osdMenuClose(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    displayPort->inCMS = false;
+    displayPort->isOpen = false;
 
     return 0;
 }
@@ -42,7 +59,7 @@ static int osdClearScreen(displayPort_t *displayPort)
     return 0;
 }
 
-static int osdWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, char *s)
+static int osdWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     max7456Write(x, y, s);
@@ -64,27 +81,27 @@ static int osdHeartbeat(displayPort_t *displayPort)
     return 0;
 }
 
-static uint32_t osdTxBytesFree(displayPort_t *displayPort)
+static uint32_t osdTxBytesFree(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return UINT32_MAX;
 }
 
 static displayPortVTable_t osdVTable = {
-    osdMenuBegin,
-    osdMenuEnd,
-    osdClearScreen,
-    osdWrite,
-    osdHeartbeat,
-    osdResync,
-    osdTxBytesFree,
+    .open = osdMenuOpen,
+    .close = osdMenuClose,
+    .clear = osdClearScreen,
+    .write = osdWrite,
+    .heartbeat = osdHeartbeat,
+    .resync = osdResync,
+    .txBytesFree = osdTxBytesFree,
 };
 
-void osd7456DisplayPortInit(void)
+displayPort_t *osd7456DisplayPortInit(void)
 {
     osd7456DisplayPort.vTable = &osdVTable;
-    osd7456DisplayPort.inCMS = false;
+    osd7456DisplayPort.isOpen = false;
     osdResync(&osd7456DisplayPort);
-    cmsDisplayPortRegister(&osd7456DisplayPort);
+    return &osd7456DisplayPort;
 }
 #endif // OSD

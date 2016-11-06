@@ -74,14 +74,24 @@ bool blinkState = true;
 //extern uint8_t RSSI; // TODO: not used?
 
 static uint16_t flyTime = 0;
-uint8_t statRssi;
+static uint8_t statRssi;
 
-statistic_t stats;
+typedef struct statistic_s {
+    int16_t max_speed;
+    int16_t min_voltage; // /10
+    int16_t max_current; // /10
+    int16_t min_rssi;
+    int16_t max_altitude;
+} statistic_t;
+
+static statistic_t stats;
 
 uint16_t refreshTimeout = 0;
 #define REFRESH_1S    12
 
-uint8_t armState;
+static uint8_t armState;
+
+static displayPort_t *osd7456DisplayPort;
 
 // OSD forwards
 
@@ -109,7 +119,7 @@ void osdDrawElements(void)
         ;
 #endif
 #ifdef CMS
-    else if (sensors(SENSOR_ACC) || osd7456DisplayPort.inCMS)
+    else if (sensors(SENSOR_ACC) || displayIsOpen(osd7456DisplayPort))
 #else
     else if (sensors(SENSOR_ACC))
 #endif
@@ -132,7 +142,7 @@ void osdDrawElements(void)
 
 #ifdef GPS
 #ifdef CMS
-    if (sensors(SENSOR_GPS) || osd7456DisplayPort.inCMS)
+    if (sensors(SENSOR_GPS) || displayIsOpen(osd7456DisplayPort))
 #else
     if (sensors(SENSOR_GPS))
 #endif
@@ -406,8 +416,9 @@ void osdInit(void)
 
     refreshTimeout = 4 * REFRESH_1S;
 
+    osd7456DisplayPort = osd7456DisplayPortInit();
 #ifdef CMS
-    osd7456DisplayPortInit();
+    cmsDisplayPortRegister(osd7456DisplayPort);
 #endif
 }
 
@@ -584,8 +595,9 @@ void updateOsd(uint32_t currentTime)
 
 #ifdef CMS
     // do not allow ARM if we are in menu
-    if (osd7456DisplayPort.inCMS)
+    if (displayIsOpen(osd7456DisplayPort)) {
         DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
 #endif
 }
 
@@ -632,7 +644,7 @@ void osdUpdate(uint32_t currentTime)
     blinkState = (millis() / 200) % 2;
 
 #ifdef CMS
-    if (!osd7456DisplayPort.inCMS) {
+    if (!displayIsOpen(osd7456DisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
 #ifdef OSD_CALLS_CMS

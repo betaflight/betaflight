@@ -20,18 +20,12 @@
 
 #include "platform.h"
 
-#ifdef OLEDCMS
-
 #include "common/utils.h"
 
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
 
-#include "io/cms.h"
-#include "io/displayport_oled.h"
-
-// Exported
-displayPort_t oledDisplayPort;
+static displayPort_t oledDisplayPort;
 
 static int oledOpen(displayPort_t *displayPort)
 {
@@ -52,7 +46,7 @@ static int oledClear(displayPort_t *displayPort)
     return 0;
 }
 
-static int oledWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, char *s)
+static int oledWrite(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     i2c_OLED_set_xy(x, y);
@@ -71,7 +65,7 @@ static void oledResync(displayPort_t *displayPort)
     UNUSED(displayPort);
 }
 
-static uint32_t oledTxBytesFree(displayPort_t *displayPort)
+static uint32_t oledTxBytesFree(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return UINT32_MAX;
@@ -87,13 +81,11 @@ static const displayPortVTable_t oledVTable = {
     .txBytesFree = oledTxBytesFree
 };
 
-void displayPortOledInit()
+displayPort_t *displayPortOledInit(void)
 {
     oledDisplayPort.vTable = &oledVTable;
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    oledDisplayPort.inCMS = false;
-
-    cmsDisplayPortRegister(&oledDisplayPort);
+    oledDisplayPort.isOpen = false;
+    return &oledDisplayPort;
 }
-#endif // OLEDCMS
