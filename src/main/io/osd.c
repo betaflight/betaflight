@@ -108,7 +108,11 @@ void osdDrawElements(void)
     if (false)
         ;
 #endif
+#ifdef CMS
     else if (sensors(SENSOR_ACC) || osd7456DisplayPort.inCMS)
+#else
+    else if (sensors(SENSOR_ACC))
+#endif
     {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
         osdDrawSingleElement(OSD_CROSSHAIRS);
@@ -127,7 +131,12 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ALTITUDE);
 
 #ifdef GPS
-    if (sensors(SENSOR_GPS) || osd7456DisplayPort.inCMS) {
+#ifdef CMS
+    if (sensors(SENSOR_GPS) || osd7456DisplayPort.inCMS)
+#else
+    if (sensors(SENSOR_GPS))
+#endif
+    {
         osdDrawSingleElement(OSD_GPS_SATS);
         osdDrawSingleElement(OSD_GPS_SPEED);
     }
@@ -573,9 +582,11 @@ void updateOsd(uint32_t currentTime)
     else // rest of time redraw screen 10 chars per idle to don't lock the main idle
         max7456DrawScreen();
 
+#ifdef CMS
     // do not allow ARM if we are in menu
     if (osd7456DisplayPort.inCMS)
         DISABLE_ARMING_FLAG(OK_TO_ARM);
+#endif
 }
 
 void osdUpdate(uint32_t currentTime)
@@ -620,6 +631,7 @@ void osdUpdate(uint32_t currentTime)
 
     blinkState = (millis() / 200) % 2;
 
+#ifdef CMS
     if (!osd7456DisplayPort.inCMS) {
         osdUpdateAlarms();
         osdDrawElements();
@@ -628,6 +640,7 @@ void osdUpdate(uint32_t currentTime)
         cmsUpdate(currentTime);
 #endif
     }
+#endif
 }
 
 #ifdef EDIT_ELEMENT_SUPPORT
