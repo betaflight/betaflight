@@ -3849,7 +3849,7 @@ static void cliResource(char *cmdline)
             }
         }
         
-        cliPrintf("Currently active DMA:\r\n");
+        cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
             const char* owner;
             owner = ownerNames[dmaGetOwner(i)];
