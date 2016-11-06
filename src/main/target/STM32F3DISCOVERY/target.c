@@ -24,7 +24,7 @@
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM16, IO_TAG(PB8),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      TIM_USE_PPM, 0, GPIO_AF_1, NULL, 0 }, 
+    { TIM16, IO_TAG(PB8),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      TIM_USE_PPM | TIM_USE_LED, 0, GPIO_AF_1, DMA1_Channel3, DMA1_CH3_HANDLER }, 
     { TIM17, IO_TAG(PB9),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, 0, GPIO_AF_1, NULL, 0 }, 
     { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER }, 
     { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,            TIM_USE_MOTOR, 1, GPIO_AF_4, DMA2_Channel3, DMA2_CH3_HANDLER }, 

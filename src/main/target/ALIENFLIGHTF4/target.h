@@ -147,12 +147,6 @@
 // LED strip configuration using RC5 pin.
 //#define LED_STRIP
 
-//#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-//#define WS2811_PIN                    PB15 // TIM8_CH3
-//#define WS2811_TIMER                  TIM8
-//#define WS2811_DMA_CHANNEL            DMA1_Channel3
-//#define WS2811_IRQ                    DMA1_Channel3_IRQn
-
 #define SPEKTRUM_BIND
 // USART2, PA3
 #define BIND_PIN                PA3

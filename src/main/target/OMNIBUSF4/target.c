@@ -35,6 +35,6 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM3, DMA1_Stream2, DMA_Channel_5, DMA1_ST2_HANDLER }, // S2_OUT
     { TIM2,  IO_TAG(PA3),  TIM_Channel_4, TIM2_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM2, DMA1_Stream6, DMA_Channel_3, DMA1_ST6_HANDLER }, // S4_OUT
     { TIM2,  IO_TAG(PA2),  TIM_Channel_3, TIM2_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM2, DMA1_Stream1, DMA_Channel_3, DMA1_ST1_HANDLER }, // S4_OUT
-    { TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,           TIM_USE_MOTOR, 1, GPIO_AF_TIM5,  NULL, 0, 0 }, // S5_OUT - GPIO_PartialRemap_TIM3
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,        TIM_USE_MOTOR, 1, GPIO_AF_TIM1,  NULL, 0, 0 }, // S6_OUT
+    { TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,           TIM_USE_MOTOR | TIM_USE_LED, 1, GPIO_AF_TIM5, DMA1_Stream4, DMA_Channel_6, DMA1_ST4_HANDLER }, // S5_OUT - GPIO_PartialRemap_TIM3
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,        TIM_USE_MOTOR, 1, GPIO_AF_TIM1, NULL, 0, 0 }, // S6_OUT
 };
