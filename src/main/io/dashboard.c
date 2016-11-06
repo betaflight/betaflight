@@ -34,6 +34,8 @@
 #include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
 
+#include "cms/cms.h"
+
 #include "common/printf.h"
 #include "common/maths.h"
 #include "common/axis.h"
@@ -53,7 +55,6 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
-#include "io/cms.h"
 #include "io/displayport_oled.h"
 
 #ifdef GPS
@@ -589,7 +590,7 @@ void dashboardUpdate(uint32_t currentTime)
     static uint8_t previousArmedState = 0;
 
 #ifdef OLEDCMS
-    if (displayIsOpen(displayPort)) {
+    if (displayIsGrabbed(displayPort)) {
         return;
     }
 #endif

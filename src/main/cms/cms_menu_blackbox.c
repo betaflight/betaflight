@@ -32,13 +32,13 @@
 
 #include "drivers/system.h"
 
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_blackbox.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_blackbox.h"
 
 #include "io/flashfs.h"
 

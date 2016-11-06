@@ -26,6 +26,8 @@
 
 #include "blackbox/blackbox_io.h"
 
+#include "cms/cms.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -64,7 +66,6 @@
 #include "io/servos.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
-#include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 

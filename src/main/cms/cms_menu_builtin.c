@@ -26,25 +26,23 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
+
+#include "build/version.h"
 
 #include "drivers/system.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_imu.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_builtin.h"
 
 // Sub menus
 
-#include "io/cms_imu.h"
-#include "io/cms_blackbox.h"
-#include "io/cms_vtx.h"
-#ifdef OSD
-#include "io/cms_osd.h"
-#endif
-#include "io/cms_ledstrip.h"
+#include "cms/cms_menu_imu.h"
+#include "cms/cms_menu_blackbox.h"
+#include "cms/cms_menu_vtx.h"
+#include "cms/cms_menu_osd.h"
+#include "cms/cms_menu_ledstrip.h"
 
 
 // Info

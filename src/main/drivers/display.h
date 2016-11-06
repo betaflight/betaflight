@@ -26,12 +26,12 @@ typedef struct displayPort_s {
     // CMS state
     bool cleared;
     int8_t cursorRow;
-    bool isOpen;
+    bool isGrabbed;
 } displayPort_t;
 
 typedef struct displayPortVTable_s {
-    int (*open)(displayPort_t *displayPort);
-    int (*close)(displayPort_t *displayPort);
+    int (*grab)(displayPort_t *displayPort);
+    int (*release)(displayPort_t *displayPort);
     int (*clear)(displayPort_t *displayPort);
     int (*write)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
     int (*heartbeat)(displayPort_t *displayPort);
@@ -39,9 +39,9 @@ typedef struct displayPortVTable_s {
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
 } displayPortVTable_t;
 
-void displayOpen(displayPort_t *instance);
-void displayClose(displayPort_t *instance);
-bool displayIsOpen(const displayPort_t *instance);
+void displayGrab(displayPort_t *instance);
+void displayRelease(displayPort_t *instance);
+bool displayIsGrabbed(const displayPort_t *instance);
 void displayClear(displayPort_t *instance);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
 void displayHeartbeat(displayPort_t *instance);

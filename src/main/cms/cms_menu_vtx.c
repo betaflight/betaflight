@@ -23,9 +23,9 @@
 
 #include "build/version.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-#include "io/cms_vtx.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_vtx.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"

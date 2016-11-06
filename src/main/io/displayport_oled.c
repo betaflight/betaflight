@@ -27,13 +27,13 @@
 
 static displayPort_t oledDisplayPort;
 
-static int oledOpen(displayPort_t *displayPort)
+static int oledGrab(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;
 }
 
-static int oledClose(displayPort_t *displayPort)
+static int oledRelease(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;
@@ -72,8 +72,8 @@ static uint32_t oledTxBytesFree(const displayPort_t *displayPort)
 }
 
 static const displayPortVTable_t oledVTable = {
-    .open = oledOpen,
-    .close = oledClose,
+    .grab = oledGrab,
+    .release = oledRelease,
     .clear = oledClear,
     .write = oledWrite,
     .heartbeat = oledHeartbeat,
@@ -86,6 +86,6 @@ displayPort_t *displayPortOledInit(void)
     oledDisplayPort.vTable = &oledVTable;
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    oledDisplayPort.isOpen = false;
+    oledDisplayPort.isGrabbed = false;
     return &oledDisplayPort;
 }

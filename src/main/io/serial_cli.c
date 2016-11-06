@@ -35,6 +35,8 @@ uint8_t cliMode = 0;
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -70,7 +72,6 @@ uint8_t cliMode = 0;
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 
@@ -228,7 +229,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    " ", "VTX", "RX_SPI", "SOFTSPI", "CANVAS", NULL
+    " ", "VTX", "RX_SPI", "SOFTSPI", "MSP_OSD", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e

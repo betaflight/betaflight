@@ -31,22 +31,22 @@ void displayClear(displayPort_t *instance)
     instance->cursorRow = -1;
 }
 
-void displayOpen(displayPort_t *instance)
+void displayGrab(displayPort_t *instance)
 {
-    instance->vTable->open(instance);
+    instance->vTable->grab(instance);
     instance->vTable->clear(instance);
-    instance->isOpen = true;
+    instance->isGrabbed = true;
 }
 
-void displayClose(displayPort_t *instance)
+void displayRelease(displayPort_t *instance)
 {
-    instance->vTable->close(instance);
-    instance->isOpen = false;
+    instance->vTable->release(instance);
+    instance->isGrabbed = false;
 }
 
-bool displayIsOpen(const displayPort_t *instance)
+bool displayIsGrabbed(const displayPort_t *instance)
 {
-    if (instance && instance->isOpen) { // can be called before initialised
+    if (instance && instance->isGrabbed) { // can be called before initialised
         return true;
     } else {
         return false;
