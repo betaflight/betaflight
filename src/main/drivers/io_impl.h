@@ -11,8 +11,8 @@ typedef struct ioDef_s {
 typedef struct ioRec_s {
     GPIO_TypeDef *gpio;
     uint16_t pin;
-    resourceOwner_t owner;
-    resourceType_t resource;
+    resourceOwner_e owner;
+    resourceType_e resource;
     uint8_t index;
 } ioRec_t;
 

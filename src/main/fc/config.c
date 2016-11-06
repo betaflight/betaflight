@@ -892,64 +892,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (featureConfigured(FEATURE_SOFTSERIAL) && (
-            0
-#ifdef USE_SOFTSERIAL1
-            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
-#endif
-#ifdef USE_SOFTSERIAL2
-            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
-#endif
-    )) {
-        // led strip needs the same timer as softserial
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-
-#if defined(NAZE) && defined(SONAR)
-    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
-        featureClear(FEATURE_CURRENT_METER);
-    }
-#endif
-
-#if defined(OLIMEXINO) && defined(SONAR)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
-        featureClear(FEATURE_CURRENT_METER);
-    }
-#endif
-
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
-        featureClear(FEATURE_DASHBOARD);
-    }
-#endif
-
-/*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
-    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-*/
-
-#if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
-    // shared pin
-    if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
-        featureClear(FEATURE_SONAR);
-        featureClear(FEATURE_SOFTSERIAL);
-        featureClear(FEATURE_RSSI_ADC);
-    }
-#endif
-
-#if defined(COLIBRI_RACE)
-    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
-        featureClear(FEATURE_RX_PARALLEL_PWM);
-        featureClear(FEATURE_RX_MSP);
-        featureSet(FEATURE_RX_PPM);
-    }
-#endif
-
     useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;

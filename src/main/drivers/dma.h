@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "resource.h"
+
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
 
@@ -41,7 +43,8 @@ typedef enum {
     DMA2_ST5_HANDLER,
     DMA2_ST6_HANDLER,
     DMA2_ST7_HANDLER,
-} dmaHandlerIdentifier_e;
+    DMA_MAX_DESCRIPTORS
+} dmaIdentifier_e;
 
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
@@ -51,9 +54,15 @@ typedef struct dmaChannelDescriptor_s {
     IRQn_Type                   irqN;
     uint32_t                    rcc;
     uint32_t                    userParam;
+    resourceOwner_e             owner;
+    uint8_t                     resourceIndex; 
 } dmaChannelDescriptor_t;
 
-#define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .stream = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
+#define DMA_MOD_VALUE     8
+#define DMA_OUTPUT_INDEX  0
+#define DMA_OUTPUT_STRING "DMA%d Stream %d:"
+
+#define DEFINE_DMA_CHANNEL(d, s, f, i, r) {.dma = d, .stream = s, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0, .owner = 0, .resourceIndex = 0 }
 #define DEFINE_DMA_IRQ_HANDLER(d, s, i) void DMA ## d ## _Stream ## s ## _IRQHandler(void) {\
                                                                 if (dmaDescriptors[i].irqHandlerCallback)\
                                                                     dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
@@ -61,7 +70,6 @@ typedef struct dmaChannelDescriptor_s {
 
 #define DMA_CLEAR_FLAG(d, flag) if(d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
 #define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
-
 
 #define DMA_IT_TCIF                         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF                         ((uint32_t)0x00000010)
@@ -79,12 +87,15 @@ typedef enum {
     DMA1_CH5_HANDLER,
     DMA1_CH6_HANDLER,
     DMA1_CH7_HANDLER,
+#if defined(STM32F3) || defined(STM32F10X_CL)    
     DMA2_CH1_HANDLER,
     DMA2_CH2_HANDLER,
     DMA2_CH3_HANDLER,
     DMA2_CH4_HANDLER,
     DMA2_CH5_HANDLER,
-} dmaHandlerIdentifier_e;
+#endif
+    DMA_MAX_DESCRIPTORS
+} dmaIdentifier_e;
 
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
@@ -94,9 +105,16 @@ typedef struct dmaChannelDescriptor_s {
     IRQn_Type                   irqN;
     uint32_t                    rcc;
     uint32_t                    userParam;
+    resourceOwner_e             owner;
+    uint8_t                     resourceIndex;
 } dmaChannelDescriptor_t;
 
-#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .channel = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0}
+
+#define DMA_MOD_VALUE     7
+#define DMA_OUTPUT_INDEX  0
+#define DMA_OUTPUT_STRING "DMA%d Channel %d:"
+
+#define DEFINE_DMA_CHANNEL(d, c, f, i, r) {.dma = d, .channel = c, .irqHandlerCallback = NULL, .flagsShift = f, .irqN = i, .rcc = r, .userParam = 0, .owner = 0, .resourceIndex = 0 }
 #define DEFINE_DMA_IRQ_HANDLER(d, c, i) void DMA ## d ## _Channel ## c ## _IRQHandler(void) {\
                                                                         if (dmaDescriptors[i].irqHandlerCallback)\
                                                                             dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
@@ -111,6 +129,9 @@ typedef struct dmaChannelDescriptor_s {
 
 #endif
 
-void dmaInit(void);
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
+void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex);
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam);
 
+resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier);
+uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier);
+                                                                            

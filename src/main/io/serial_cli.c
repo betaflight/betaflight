@@ -55,6 +55,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/dma.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -3834,7 +3835,7 @@ static void cliResource(char *cmdline)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
 #endif
-        for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
@@ -3846,6 +3847,20 @@ static void cliResource(char *cmdline)
             } else {
                 cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
             }
+        }
+        
+        cliPrintf("Currently active DMA:\r\n");
+        for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+            const char* owner;
+            owner = ownerNames[dmaGetOwner(i)];
+            
+            cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, i % DMA_MOD_VALUE);
+            uint8_t resourceIndex = dmaGetResourceIndex(i);
+            if (resourceIndex > 0) {
+                cliPrintf(" %s%d\r\n", owner, resourceIndex);
+            } else {
+                cliPrintf(" %s\r\n", owner);
+            }            
         }
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");

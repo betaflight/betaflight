@@ -271,6 +271,7 @@ void max7456Init(uint8_t video_system)
     videoSignalCfg = video_system;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
+    dmaInit(MAX7456_DMA_IRQ_HANDLER_ID, OWNER_MAX7456, 0);
     dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);
 #endif
     //real init will be made letter when driver idle detect

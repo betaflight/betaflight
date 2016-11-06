@@ -122,16 +122,6 @@
 #define SENSORS_SET             (SENSOR_ACC)
 
 #define LED_STRIP
-#define WS2811_PIN                      PB7 // Shared UART1
-#define WS2811_TIMER                    TIM4
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST3_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream3
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF3
-#define WS2811_DMA_IT                   DMA_IT_TCIF3
-#define WS2811_DMA_CHANNEL              DMA_Channel_2
-#define WS2811_DMA_IRQ                  DMA1_Stream3_IRQn
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM4
 
 // alternative defaults for Colibri/Gemini target
 #define TARGET_CONFIG

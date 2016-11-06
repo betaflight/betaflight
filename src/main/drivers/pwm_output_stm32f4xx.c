@@ -198,6 +198,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(timerHardware->dmaStream));
     
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, motorIndex);
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 

@@ -65,7 +65,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
     "SONAR_TRIGGER", "SONAR_ECHO", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI" 
+    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI", "MAX7456"
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
@@ -231,7 +231,7 @@ void IOToggle(IO_t io)
 }
 
 // claim IO pin, set owner and resources
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index)
+void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index)
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
@@ -245,13 +245,13 @@ void IORelease(IO_t io)
     ioRec->owner = OWNER_FREE;
 }
 
-resourceOwner_t IOGetOwner(IO_t io)
+resourceOwner_e IOGetOwner(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->owner;
 }
 
-resourceType_t IOGetResource(IO_t io)
+resourceType_e IOGetResource(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->resource;
