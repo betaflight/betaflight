@@ -140,7 +140,7 @@ static int8_t cursorRow;
 
 #ifdef CMS_MENU_DEBUG // For external menu content creators
 
-static char menuErrLabel[21 + 1] = "RAMDOM DATA";
+static char menuErrLabel[21 + 1] = "RANDOM DATA";
 
 static OSD_Entry menuErrEntries[] = {
     { "BROKEN MENU", OME_Label, NULL, NULL, 0 },
