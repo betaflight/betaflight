@@ -32,8 +32,9 @@
 
 #ifdef CMS
 
-#include "build/version.h"
+#include "build/build_config.h"
 #include "build/debug.h"
+#include "build/version.h"
 
 #include "cms/cms.h"
 #include "cms/cms_menu_builtin.h"
@@ -124,7 +125,7 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 
 static bool cmsInMenu = false;
 
-static CMS_Menu *currentMenu;    // Points to top entry of the current page
+STATIC_UNIT_TESTED CMS_Menu *currentMenu;    // Points to top entry of the current page
 
 // XXX Does menu backing support backing into second page???
 
@@ -481,7 +482,7 @@ long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-static long cmsMenuBack(displayPort_t *pDisplay)
+STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
 {
     // Let onExit function decide whether to allow exit or not.
 
@@ -512,7 +513,7 @@ static long cmsMenuBack(displayPort_t *pDisplay)
     return 0;
 }
 
-static void cmsMenuOpen(void)
+STATIC_UNIT_TESTED void cmsMenuOpen(void)
 {
     if (!cmsInMenu) {
         // New open
@@ -587,7 +588,7 @@ long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
     return 0;
 }
 
-static uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
+STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
     uint16_t res = BUTTON_TIME;
     OSD_Entry *p;
@@ -845,6 +846,8 @@ void cmsHandler(uint32_t currentTime)
 // Can it be done with the current main()?
 void cmsInit(void)
 {
+    cmsDeviceCount = 0;
+    cmsCurrentDevice = -1;
 }
 
 #endif // CMS

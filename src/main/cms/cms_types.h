@@ -55,7 +55,7 @@ typedef enum
 
 typedef struct
 {
-    char *text;
+    const char *text;
     OSD_MenuElement type;
     CMSEntryFuncPtr func;
     void *data;
@@ -92,7 +92,7 @@ typedef long (*CMSMenuOnExitPtr)(OSD_Entry *self);
 typedef struct
 {
     // These two are debug aids for menu content creators.
-    char *GUARD_text;
+    const char *GUARD_text;
     OSD_MenuElement GUARD_type;
 
     CMSMenuFuncPtr onEnter;
