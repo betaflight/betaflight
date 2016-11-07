@@ -50,6 +50,7 @@ typedef struct sonarIOConfig_s {
 } sonarIOConfig_t;
 
 typedef struct drv_pwm_config_s {
+    bool enablePWMOutput;
     bool useParallelPWM;
     bool usePPM;
     bool useSerialRx;

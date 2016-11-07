@@ -72,6 +72,7 @@ typedef enum {
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_PWM_SERVO_DRIVER = 1 << 27,
+    FEATURE_PWM_OUTPUT_ENABLE = 1 << 28,
 } features_e;
 
 typedef enum {
