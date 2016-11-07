@@ -23,18 +23,18 @@
 #include "drivers/timer.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,    TIM_USE_PWM | TIM_USE_PPM,   0, GPIO_AF_TIM2 },  // PPM
-    { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S2_IN
-    { TIM3, IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S3_IN
-    { TIM3, IO_TAG(PA7),  TIM_Channel_2, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S4_IN
-    { TIM3, IO_TAG(PA6),  TIM_Channel_1, TIM3_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S5_IN
-    { TIM2, IO_TAG(PA5),  TIM_Channel_1, TIM2_IRQn,    TIM_USE_PWM,   0, GPIO_AF_TIM2 },  // S6_IN
-    { TIM1, IO_TAG(PA10), TIM_Channel_3, TIM1_CC_IRQn, TIM_USE_MOTOR, 1, GPIO_AF_TIM1 },  // S1_OUT
-    { TIM2, IO_TAG(PB3),  TIM_Channel_2, TIM2_IRQn,    TIM_USE_MOTOR, 1, GPIO_AF_TIM2 },  // S2_OUT
-    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,    TIM_USE_MOTOR, 1, GPIO_AF_TIM4 },  // S3_OUT
-    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    TIM_USE_MOTOR, 1, GPIO_AF_TIM4 },  // S4_OUT
-    { TIM5, IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,    TIM_USE_MOTOR | TIM_USE_LED, 1, GPIO_AF_TIM5 },  // S5_OUT
-    { TIM5, IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,    TIM_USE_MOTOR, 1, GPIO_AF_TIM5 },  // S6_OUT
+    { TIM2, IO_TAG(PB10), TIM_Channel_3, TIM_USE_PWM | TIM_USE_PPM,   0, GPIO_AF_TIM2 },  // PPM
+    { TIM3, IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S2_IN
+    { TIM3, IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S3_IN
+    { TIM3, IO_TAG(PA7),  TIM_Channel_2, TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S4_IN
+    { TIM3, IO_TAG(PA6),  TIM_Channel_1, TIM_USE_PWM,   0, GPIO_AF_TIM3 },  // S5_IN
+    { TIM2, IO_TAG(PA5),  TIM_Channel_1, TIM_USE_PWM,   0, GPIO_AF_TIM2 },  // S6_IN
+    { TIM1, IO_TAG(PA10), TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_TIM1 },  // S1_OUT
+    { TIM2, IO_TAG(PB3),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_TIM2 },  // S2_OUT
+    { TIM4, IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_TIM4 },  // S3_OUT
+    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_TIM4 },  // S4_OUT
+    { TIM5, IO_TAG(PA0),  TIM_Channel_1, TIM_USE_MOTOR | TIM_USE_LED, 1, GPIO_AF_TIM5 },  // S5_OUT
+    { TIM5, IO_TAG(PA1),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_TIM5 },  // S6_OUT
 };
 
 
