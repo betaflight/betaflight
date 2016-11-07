@@ -66,6 +66,11 @@ sudo: false
 git:
   depth: 5
 
+addons:
+  apt:
+    packages:
+      - build-essential
+
 # We use cpp for unit tests, and c for the main project.
 language: cpp
 compiler: clang
@@ -76,7 +81,8 @@ install:
 before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
-cache: 
+cache:
+  apt: true
   ccache: true
   directories:
   - downloads
