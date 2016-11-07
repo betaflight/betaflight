@@ -69,8 +69,6 @@ git:
 addons:
   apt:
     packages:
-      - build-essential
-      - zlib1g-dev
       - libc6-i386
 
 # We use cpp for unit tests, and c for the main project.
@@ -84,7 +82,6 @@ before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --versio
 script: ./.travis.sh
 
 cache: 
-  apt: true
   ccache: true
   directories:
   - downloads
