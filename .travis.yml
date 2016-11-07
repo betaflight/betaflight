@@ -72,9 +72,6 @@ addons:
       - libc6-i386
       - zlib1g-dev
       - libssl-dev
-      - wkhtmltopdf
-      - libxml2-dev
-      - libxslt-dev
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
