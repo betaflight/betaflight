@@ -46,11 +46,8 @@ void displayRelease(displayPort_t *instance)
 
 bool displayIsGrabbed(const displayPort_t *instance)
 {
-    if (instance && instance->isGrabbed) { // can be called before initialised
-        return true;
-    } else {
-        return false;
-    }
+    // can be called before initialised
+    return (instance && instance->isGrabbed);
 }
 
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
