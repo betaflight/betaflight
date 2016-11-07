@@ -50,12 +50,14 @@
 //
 // PID
 //
-static uint8_t pidProfileIndex;
+static uint8_t tmpProfileIndex;
+static uint8_t profileIndex;
 static uint8_t tempPid[4][3];
 
 static long cmsx_menuImu_onEnter(void)
 {
-    pidProfileIndex = masterConfig.current_profile_index + 1;
+    profileIndex = masterConfig.current_profile_index;
+    tmpProfileIndex = profileIndex + 1;
 
     return 0;
 }
@@ -64,7 +66,7 @@ static long cmsx_menuImu_onExit(OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.current_profile_index = pidProfileIndex - 1;
+    masterConfig.current_profile_index = tmpProfileIndex - 1;
 
     return 0;
 }
@@ -73,13 +75,13 @@ static long cmsx_PidRead(void)
 {
 
     for (uint8_t i = 0; i < 3; i++) {
-        tempPid[i][0] = masterConfig.profile[pidProfileIndex].pidProfile.P8[i];
-        tempPid[i][1] = masterConfig.profile[pidProfileIndex].pidProfile.I8[i];
-        tempPid[i][2] = masterConfig.profile[pidProfileIndex].pidProfile.D8[i];
+        tempPid[i][0] = masterConfig.profile[profileIndex].pidProfile.P8[i];
+        tempPid[i][1] = masterConfig.profile[profileIndex].pidProfile.I8[i];
+        tempPid[i][2] = masterConfig.profile[profileIndex].pidProfile.D8[i];
     }
-    tempPid[3][0] = masterConfig.profile[pidProfileIndex].pidProfile.P8[PIDLEVEL];
-    tempPid[3][1] = masterConfig.profile[pidProfileIndex].pidProfile.I8[PIDLEVEL];
-    tempPid[3][2] = masterConfig.profile[pidProfileIndex].pidProfile.D8[PIDLEVEL];
+    tempPid[3][0] = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
+    tempPid[3][1] = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
+    tempPid[3][2] = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
 
     return 0;
 }
@@ -89,14 +91,14 @@ static long cmsx_PidWriteback(OSD_Entry *self)
     UNUSED(self);
 
     for (uint8_t i = 0; i < 3; i++) {
-        masterConfig.profile[pidProfileIndex].pidProfile.P8[i] = tempPid[i][0];
-        masterConfig.profile[pidProfileIndex].pidProfile.I8[i] = tempPid[i][1];
-        masterConfig.profile[pidProfileIndex].pidProfile.D8[i] = tempPid[i][2];
+        masterConfig.profile[profileIndex].pidProfile.P8[i] = tempPid[i][0];
+        masterConfig.profile[profileIndex].pidProfile.I8[i] = tempPid[i][1];
+        masterConfig.profile[profileIndex].pidProfile.D8[i] = tempPid[i][2];
     }
 
-    masterConfig.profile[pidProfileIndex].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
-    masterConfig.profile[pidProfileIndex].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
-    masterConfig.profile[pidProfileIndex].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
+    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
+    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
+    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
 
     return 0;
 }
@@ -255,7 +257,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   NULL,          &(OSD_UINT8_t){ &pidProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
+    {"PID PROF",  OME_UINT8,   NULL,          &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
     {"PID",       OME_Submenu, cmsMenuChange, &cmsx_menuPid,       0},
     {"RATE&RXPO", OME_Submenu, cmsMenuChange, &cmsx_menuRateExpo,  0},
     {"RC PREV",   OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
