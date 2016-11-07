@@ -460,10 +460,8 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#ifdef USE_MSP_DISPLAYPORT
-    if (feature(FEATURE_MSP_DISPLAYPORT)) {
-        cmsDisplayPortRegister(displayPortMspInit());
-    }
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef USE_CLI
