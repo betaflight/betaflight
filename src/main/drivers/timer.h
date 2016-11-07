@@ -88,7 +88,6 @@ typedef struct timerHardware_s {
     TIM_TypeDef *tim;
     ioTag_t tag;
     uint8_t channel;
-    uint8_t irq;
     timerUsageFlag_e usageFlags;
     uint8_t output;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
