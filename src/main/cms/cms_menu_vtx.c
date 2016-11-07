@@ -38,20 +38,24 @@
 static bool featureRead = false;
 static uint8_t cmsx_featureVtx = 0, cmsx_vtxBand, cmsx_vtxChannel;
 
-static void cmsx_Vtx_FeatureRead(void)
+static long cmsx_Vtx_FeatureRead(void)
 {
     if (!featureRead) {
         cmsx_featureVtx = feature(FEATURE_VTX) ? 1 : 0;
         featureRead = true;
     }
+
+    return 0;
 }
 
-static void cmsx_Vtx_FeatureWriteback(void)
+static long cmsx_Vtx_FeatureWriteback(void)
 {
     if (cmsx_featureVtx)
         featureSet(FEATURE_VTX);
     else
         featureClear(FEATURE_VTX);
+
+    return 0;
 }
 
 static const char * const vtxBandNames[] = {
@@ -90,6 +94,23 @@ static void cmsx_Vtx_ConfigWriteback(void)
 #endif // USE_RTC6705
 }
 
+static long cmsx_Vtx_onEnter(void)
+{
+    cmsx_Vtx_FeatureRead();
+    cmsx_Vtx_ConfigRead(); 
+
+    return 0;
+}
+
+static long cmsx_Vtx_onExit(OSD_Entry *self)
+{
+    UNUSED(self);
+
+    cmsx_Vtx_ConfigWriteback();
+
+    return 0;
+}
+
 #ifdef VTX
 static OSD_UINT8_t entryVtxMode =  {&masterConfig.vtx_mode, 0, 2, 1};
 static OSD_UINT16_t entryVtxMhz =  {&masterConfig.vtx_mhz, 5600, 5950, 1};
@@ -115,9 +136,9 @@ static OSD_Entry cmsx_menuVtxEntries[] =
 CMS_Menu cmsx_menuVtx = {
     "MENUVTX",
     OME_MENU,
-    NULL,
-    NULL,
-    NULL,
+    cmsx_Vtx_onEnter,
+    cmsx_Vtx_onExit,
+    cmsx_Vtx_FeatureWriteback,
     cmsx_menuVtxEntries,
 };
 

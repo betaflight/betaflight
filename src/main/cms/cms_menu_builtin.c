@@ -112,7 +112,7 @@ static CMS_Menu menuFeatures = {
 
 static OSD_Entry menuMainEntries[] =
 {
-    {"--- MAIN MENU ---", OME_Label, NULL, NULL, 0},
+    {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
     {"CFG&IMU", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
     {"FEATURES", OME_Submenu, cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
