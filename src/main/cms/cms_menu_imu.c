@@ -107,17 +107,17 @@ static OSD_Entry cmsx_menuPidEntries[] =
 {
     { "-- PID --", OME_Label, NULL, NULL, 0},
 
-    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  10, 150, 1 }, 0 },
-    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],   1, 150, 1 }, 0 },
-    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][2],   0, 150, 1 }, 0 },
+    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  0, 200, 1 }, 0 },
+    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],  0, 200, 1 }, 0 },
+    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][2],  0, 200, 1 }, 0 },
 
-    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][0], 10, 150, 1 }, 0 },
-    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][1],  1, 150, 1 }, 0 },
-    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][2],  0, 150, 1 }, 0 },
+    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][0], 0, 200, 1 }, 0 },
+    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][1], 0, 200, 1 }, 0 },
+    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][2], 0, 200, 1 }, 0 },
 
-    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][0],   10, 150, 1 }, 0 },
-    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][1],    1, 150, 1 }, 0 },
-    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][2],    0, 150, 1 }, 0 },
+    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][0],   0, 200, 1 }, 0 },
+    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][1],   0, 200, 1 }, 0 },
+    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][2],   0, 200, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -165,18 +165,18 @@ static OSD_Entry cmsx_menuRateExpoEntries[] =
 {
     { "-- RATE&EXPO --", OME_Label, NULL, NULL, 0 },
 
-    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 200, 1, 10 }, 0 },
-    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 200, 1, 10 }, 0 },
+    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
+    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
 
-    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[0],   0, 250, 1, 10 }, 0 },
-    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[1],   0, 250, 1, 10 }, 0 },
-    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[2],   0, 250, 1, 10 }, 0 },
+    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[0],   0, 100, 1, 10 }, 0 },
+    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[1],   0, 100, 1, 10 }, 0 },
+    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[2],   0, 100, 1, 10 }, 0 },
 
     { "RC EXPO",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo8,    0, 100, 1, 10 }, 0 },
     { "RC YAW EXP",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawExpo8, 0, 100, 1, 10 }, 0 },
 
-    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,  0, 70, 1, 10}, 0 },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1100, 1800, 10}, 0 },
+    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,  0, 100, 1, 10}, 0 },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
     { "D SETPT WT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
     { "SETPT RLX",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
 
@@ -233,10 +233,10 @@ static OSD_Entry menuImuMiscEntries[]=
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
     { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.gyro_soft_lpf_hz,                    0, 255, 1 }, 0 },
-    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.dterm_lpf_hz,  0, 500, 5 }, 0 },
-    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_lpf_hz,    0, 500, 5 }, 0 },
-    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 5 }, 0 },
-    { "MIN THR",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.motorConfig.minthrottle,        1020, 1300, 10 }, 0 },
+    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.dterm_lpf_hz,  0, 500, 1 }, 0 },
+    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_lpf_hz,    0, 500, 1 }, 0 },
+    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 1 }, 0 },
+    { "MIN THR",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.motorConfig.minthrottle,         1000, 2000, 1 }, 0 },
     { "VBAT SCALE", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatscale,             1, 250, 1 }, 0 },
     { "VBAT CLMAX", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatmaxcellvoltage,   10,  50, 1 }, 0 },
 
