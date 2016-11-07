@@ -93,7 +93,7 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
     { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &masterConfig.blackbox_rate_denom,1,32,1 }, 0 },
 
 #ifdef USE_FLASHFS
-    { "ERASE FLASH", OME_Submenu, cmsx_EraseFlash, NULL,                                                       0 },
+    { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                       0 },
 #endif // USE_FLASHFS
 
     { "BACK", OME_Back, NULL, NULL, 0 },

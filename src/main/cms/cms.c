@@ -246,6 +246,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
         }
         break;
     case OME_Submenu:
+    case OME_Funcall:
         if (IS_PRINTVALUE(p))  {
             cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay), row, ">");
             CLR_PRINTVALUE(p);
@@ -639,6 +640,7 @@ static uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
     switch (p->type) {
         case OME_Submenu:
+        case OME_Funcall:
         case OME_OSD_Exit:
             if (p->func && key == KEY_RIGHT) {
                 p->func(pDisplay, p->data);

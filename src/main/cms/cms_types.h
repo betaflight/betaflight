@@ -32,6 +32,7 @@ typedef enum
     OME_Back,
     OME_OSD_Exit,
     OME_Submenu,
+    OME_Funcall,
     OME_Bool,
     OME_INT8,
     OME_UINT8,
