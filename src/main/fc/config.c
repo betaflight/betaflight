@@ -892,21 +892,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (featureConfigured(FEATURE_SOFTSERIAL) && (
-            0
-#ifdef USE_SOFTSERIAL1
-            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
-#endif
-#ifdef USE_SOFTSERIAL2
-            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
-#endif
-    )) {
-        // led strip needs the same timer as softserial
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-
 #if defined(NAZE) && defined(SONAR)
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
@@ -924,13 +909,6 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_DASHBOARD);
     }
 #endif
-
-/*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
-    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-*/
 
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
     // shared pin

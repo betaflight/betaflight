@@ -34,7 +34,7 @@ typedef enum {
     OWNER_SOFTSPI,
     OWNER_RX_SPI,
     OWNER_TOTAL_COUNT
-} resourceOwner_t;
+} resourceOwner_e;
 
 extern const char * const ownerNames[OWNER_TOTAL_COUNT];
 
@@ -51,6 +51,6 @@ typedef enum {
     RESOURCE_ADC_BATTERY, RESOURCE_ADC_RSSI, RESOURCE_ADC_EXTERNAL1, RESOURCE_ADC_CURRENT,
     RESOURCE_RX_CE,
     RESOURCE_TOTAL_COUNT
-} resourceType_t;
+} resourceType_e;
 
 extern const char * const resourceNames[RESOURCE_TOTAL_COUNT];
