@@ -116,7 +116,6 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // SCL PB8 - SDA PB9
-#define USE_I2C_PULLUP
 
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
