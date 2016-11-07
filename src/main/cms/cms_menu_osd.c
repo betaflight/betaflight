@@ -31,7 +31,7 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#ifdef CMS
+#if defined(OSD) && defined(CMS)
 
 OSD_UINT8_t entryAlarmRssi = {&masterConfig.osdProfile.rssi_alarm, 5, 90, 5};
 OSD_UINT16_t entryAlarmCapacity = {&masterConfig.osdProfile.cap_alarm, 50, 30000, 50};
