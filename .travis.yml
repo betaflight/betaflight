@@ -63,15 +63,8 @@ env:
 # use new docker environment
 sudo: false
 
-addons:
-  apt:
-    packages:
-      - build-essential
-      - git
-      - ccache
-      - libc6-i386
-      - zlib1g-dev
-      - libssl-dev
+git:
+  depth: 5
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
@@ -84,7 +77,6 @@ before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --versio
 script: ./.travis.sh
 
 cache: 
-  apt: true
   ccache: true
   directories:
   - downloads
