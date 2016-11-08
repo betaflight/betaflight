@@ -50,7 +50,7 @@ elif [ $PUBLISHMETA ] ; then
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "recent_commits=${RECENT_COMMITS}" ${PUBLISH_URL} || true
 	fi
 
-else
+elif [ $TARGET ] ; then
 	if [ $PUBLISH_URL ] ; then
 		make -j2 $MAKEFILE
 		if   [ -f ${TARGET_FILE}.bin ] ; then
@@ -67,4 +67,7 @@ else
 	else
 		make -j2 $MAKEFILE
 	fi
+else
+# No target specified, build all with very low verbosity.
+    make V=0 all
 fi
