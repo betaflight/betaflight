@@ -452,9 +452,10 @@ void mixTable(pidProfile_t *pidProfile)
     throttle = constrainf((throttle - rxConfig->mincheck) / rcCommandThrottleRange, 0.0f, 1.0f);
     throttleRange = motorOutputMax - motorOutputMin;
 
+    float scaledAxisPIDf[3];
     // Limit the PIDsum
     for (int axis = 0; axis < 3; axis++)
-        axisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+        scaledAxisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
 
     // Calculate voltage compensation
     if (batteryConfig && pidProfile->vbatPidCompensation) vbatCompensationFactor = calculateVbatPidCompensation();
@@ -462,9 +463,9 @@ void mixTable(pidProfile_t *pidProfile)
     // Find roll/pitch/yaw desired output
     for (i = 0; i < motorCount; i++) {
         motorMix[i] =
-            axisPIDf[PITCH] * currentMixer[i].pitch +
-            axisPIDf[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_motor_direction * axisPIDf[YAW] * currentMixer[i].yaw;
+            scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
+            scaledAxisPIDf[ROLL] * currentMixer[i].roll +
+            -mixerConfig->yaw_motor_direction * scaledAxisPIDf[YAW] * currentMixer[i].yaw;
 
         if (vbatCompensationFactor > 1.0f) motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
 
