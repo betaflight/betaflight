@@ -6,6 +6,7 @@
 
 #include "fc/config.h"
 #include "config/feature.h"
+#include "config/config_master.h"
 
 #include "common/utils.h"
 
@@ -13,6 +14,8 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "io/serial.h"
+
+#include "flight/mixer.h"
 
 #include "sensors/battery.h"
 
@@ -52,12 +55,15 @@ typedef enum {
 } escTlmFrameState_t;
 
 typedef enum {
+    ESC_TLM_TRIGGER_WAIT = 0,
     ESC_TLM_TRIGGER_READY = 1 << 0,     // 1
     ESC_TLM_TRIGGER_PENDING = 1 << 1,   // 2
 } escTlmTriggerState_t;
 
 #define ESC_TLM_BAUDRATE 115200
 #define ESC_TLM_BUFFSIZE 10
+#define ESC_BOOTTIME 2000               // 2 seconds
+#define ESC_REQUEST_TIMEOUT 3000        // 3 seconds
 
 static bool tlmFrameDone = false;
 static bool firstCycleComplete = false;
@@ -65,10 +71,11 @@ static uint8_t tlm[ESC_TLM_BUFFSIZE] = { 0, };
 static uint8_t tlmFramePosition = 0;
 static serialPort_t *escTelemetryPort = NULL;
 static esc_telemetry_t escTelemetryData[4];
+static uint32_t escTriggerTimestamp = -1;
 
 static uint8_t escTelemetryMotor = 99;      // motor index 0 - 3
 static bool escTelemetryEnabled = false;
-static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
+static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_WAIT;
 
 static void escTelemetryDataReceive(uint16_t c);
 static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
@@ -81,22 +88,23 @@ bool isEscTelemetryEnabled(void)
 
 bool escTelemetrySendTrigger(uint8_t index)
 {
-    // wait 10 seconds before requesting telemetry (let the ESC boot first)
-    if (millis() < 10000) return false;
-
-    debug[1] = escTelemetryTriggerState;
-
     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
     {
+        if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < millis())
+        {
+            // ESC did not repond in time, resend telemetry request
+            escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
+        }
         return false;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
+
+    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
     {
-        debug[0] = ((escTelemetryMotor+1)*10);
+        debug[0] = escTelemetryMotor+1;
 
         if (escTelemetryMotor == index) {
-            debug[0] = ((escTelemetryMotor+1)*10)+1;
             escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
+            escTriggerTimestamp = millis();
             return true;
         }
     }
@@ -118,8 +126,6 @@ bool escTelemetryInit(void)
 
     if (escTelemetryPort) {
         escTelemetryEnabled = true;
-        escTelemetryMotor = 0;
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
     }
 
     return escTelemetryPort != NULL;
@@ -132,18 +138,14 @@ void freeEscTelemetryPort(void)
     escTelemetryEnabled = false;
 }
 
-// void handleEscTelemetry(void)
-// {
-//     while (serialRxBytesWaiting(escTelemetryPort) > 0) {
-//         uint8_t c = serialRead(escTelemetryPort);
-//         escTelemetryDataReceive(c);
-//     }
-//
-// }
-
 // Receive ISR callback
 static void escTelemetryDataReceive(uint16_t c)
 {
+    // KISS ESC sends some data during startup, ignore this for now (maybe future use)
+    // startup data could be firmware version and serialnumber
+
+    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT) return;
+
     tlm[tlmFramePosition] = (uint8_t)c;
 
     debug[2]++;
@@ -173,10 +175,12 @@ uint8_t escTelemetryFrameStatus(void)
 
     if (chksum == tlmsum) {
         escTelemetryData[escTelemetryMotor].temperature = tlm[0];
-        escTelemetryData[escTelemetryMotor].voltage = tlm[1] + (tlm[2] << 8);
-        escTelemetryData[escTelemetryMotor].current = tlm[3] + (tlm[4] << 8);
-        escTelemetryData[escTelemetryMotor].consumption = tlm[5] + (tlm[6] << 8);
-        escTelemetryData[escTelemetryMotor].rpm = tlm[7] + (tlm[8] << 8);
+        escTelemetryData[escTelemetryMotor].voltage = tlm[1] << 8 | tlm[2];
+        escTelemetryData[escTelemetryMotor].current = tlm[3] << 8 | tlm[4];
+        escTelemetryData[escTelemetryMotor].consumption = tlm[5] << 8 | tlm[6];
+        escTelemetryData[escTelemetryMotor].rpm = tlm[7] << 8 | tlm[8];
+
+        debug[3] = escTelemetryData[escTelemetryMotor].voltage;
 
         frameStatus = ESC_TLM_FRAME_COMPLETE;
     }
@@ -188,25 +192,38 @@ void escTelemetryProcess(uint32_t currentTime)
 {
     UNUSED(currentTime);
 
+    debug[1] = escTelemetryTriggerState;
+
     if (!escTelemetryEnabled) {
         return;
     }
 
-    // handleEscTelemetry();
+    // Wait period of time before requesting telemetry (let the system boot first)
+    if (millis() < ESC_BOOTTIME)
+    {
+        return;
+    }
+    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT)
+    {
+        // Ready for starting requesting telemetry
+        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
+        escTelemetryMotor = 0;
+    }
 
+    // Get received frame status
     uint8_t state = escTelemetryFrameStatus();
-
-    debug[3] = state;
 
     if (state == ESC_TLM_FRAME_COMPLETE)
     {
-        // Wait until all ESC's are processed
+        uint8_t motorCount = mixers[masterConfig.mixerMode].motorCount;
+
+        // Wait until all ESCs are processed
         if (firstCycleComplete)
         {
             uint8_t i;
             amperage = 0;
             mAhDrawn = 0;
-            for (i = 0; i < 4; i++)
+            for (i = 0; i < motorCount; i++)
             {
                 amperage = amperage + escTelemetryData[i].current;
                 mAhDrawn = mAhDrawn + escTelemetryData[i].consumption;
@@ -214,7 +231,7 @@ void escTelemetryProcess(uint32_t currentTime)
         }
 
         escTelemetryMotor++;
-        if (escTelemetryMotor >= 4) {           // TODO: nr of motors from configuration
+        if (escTelemetryMotor > motorCount-1) {
             escTelemetryMotor = 0;
             firstCycleComplete = true;
         }

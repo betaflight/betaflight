@@ -34,8 +34,6 @@
 
 #include "telemetry/esc_telemetry.h"
 
-#include "build/debug.h"
-
 #ifdef USE_DSHOT
 
 #define MAX_DMA_TIMERS 8
