@@ -102,7 +102,7 @@ static long cmsx_Vtx_onEnter(void)
     return 0;
 }
 
-static long cmsx_Vtx_onExit(OSD_Entry *self)
+static long cmsx_Vtx_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -134,12 +134,12 @@ static OSD_Entry cmsx_menuVtxEntries[] =
 };
 
 CMS_Menu cmsx_menuVtx = {
-    "MENUVTX",
-    OME_MENU,
-    cmsx_Vtx_onEnter,
-    cmsx_Vtx_onExit,
-    cmsx_Vtx_FeatureWriteback,
-    cmsx_menuVtxEntries,
+    .GUARD_text = "MENUVTX",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_Vtx_onEnter,
+    .onExit= cmsx_Vtx_onExit,
+    .onGlobalExit = cmsx_Vtx_FeatureWriteback,
+    .entries = cmsx_menuVtxEntries
 };
 
 #endif // VTX || USE_RTC6705

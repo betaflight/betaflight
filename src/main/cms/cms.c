@@ -125,11 +125,11 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 
 static bool cmsInMenu = false;
 
-STATIC_UNIT_TESTED CMS_Menu *currentMenu;    // Points to top entry of the current page
+STATIC_UNIT_TESTED const CMS_Menu *currentMenu;    // Points to top entry of the current page
 
 // XXX Does menu backing support backing into second page???
 
-static CMS_Menu *menuStack[10];  // Stack to save menu transition
+static const CMS_Menu *menuStack[10];  // Stack to save menu transition
 static uint8_t menuStackHistory[10];// cursorRow in a stacked menu
 static uint8_t menuStackIdx = 0;
 
@@ -179,14 +179,15 @@ static CMS_Menu menuErr = {
 
 static void cmsUpdateMaxRow(displayPort_t *instance)
 {
-    OSD_Entry *ptr;
-
     maxRow = 0;
-    for (ptr = pageTop; ptr->type != OME_END; ptr++)
-        maxRow++;
 
-    if (maxRow > MAX_MENU_ITEMS(instance))
+    for (const OSD_Entry *ptr = pageTop; ptr->type != OME_END; ptr++) {
+        maxRow++;
+    }
+
+    if (maxRow > MAX_MENU_ITEMS(instance)) {
         maxRow = MAX_MENU_ITEMS(instance);
+    }
 
     maxRow--;
 }
@@ -446,7 +447,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     }
 }
 
-long cmsMenuChange(displayPort_t *pDisplay, void *ptr)
+long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
     CMS_Menu *pMenu = (CMS_Menu *)ptr;
 
@@ -544,13 +545,11 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
     cmsMenuChange(pCurrentDisplay, currentMenu);
 }
 
-static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
+static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 {
-    OSD_Entry *p;
-
     debug[0]++;
 
-    for (p = pMenu->entries; p->type != OME_END ; p++) {
+    for (const OSD_Entry *p = pMenu->entries; p->type != OME_END ; p++) {
         if (p->type == OME_Submenu) {
             cmsTraverseGlobalExit(p->data);
         }
@@ -562,7 +561,7 @@ static void cmsTraverseGlobalExit(CMS_Menu *pMenu)
     }
 }
 
-long cmsMenuExit(displayPort_t *pDisplay, void *ptr)
+long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 {
     if (ptr) {
         displayClear(pDisplay);

@@ -43,7 +43,7 @@
 #include "io/flashfs.h"
 
 #ifdef USE_FLASHFS
-static long cmsx_EraseFlash(displayPort_t *pDisplay, void *ptr)
+static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
@@ -101,11 +101,11 @@ static OSD_Entry cmsx_menuBlackboxEntries[] =
 };
 
 CMS_Menu cmsx_menuBlackbox = {
-    "MENUBB",
-    OME_MENU,
-    cmsx_Blackbox_FeatureRead,
-    NULL,
-    cmsx_Blackbox_FeatureWriteback,
-    cmsx_menuBlackboxEntries,
+    .GUARD_text = "MENUBB",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_Blackbox_FeatureRead,
+    .onExit = NULL,
+    .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
+    .entries = cmsx_menuBlackboxEntries
 };
 #endif

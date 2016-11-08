@@ -71,12 +71,12 @@ static OSD_Entry cmsx_menuLedstripEntries[] =
 };
 
 CMS_Menu cmsx_menuLedstrip = {
-    "MENULED",
-    OME_MENU,
-    cmsx_Ledstrip_FeatureRead,
-    NULL,
-    cmsx_Ledstrip_FeatureWriteback,
-    cmsx_menuLedstripEntries,
+    .GUARD_text = "MENULED",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_Ledstrip_FeatureRead,
+    .onExit = NULL,
+    .onGlobalExit = cmsx_Ledstrip_FeatureWriteback,
+    .entries = cmsx_menuLedstripEntries
 };
 #endif // LED_STRIP
 #endif // CMS

@@ -64,7 +64,7 @@ static long cmsx_menuImu_onEnter(void)
     return 0;
 }
 
-static long cmsx_menuImu_onExit(OSD_Entry *self)
+static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -97,7 +97,7 @@ static long cmsx_PidOnEnter(void)
 }
 
 
-static long cmsx_PidWriteback(OSD_Entry *self)
+static long cmsx_PidWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -135,12 +135,12 @@ static OSD_Entry cmsx_menuPidEntries[] =
 };
 
 static CMS_Menu cmsx_menuPid = {
-    "XPID",
-    OME_MENU,
-    cmsx_PidOnEnter,
-    cmsx_PidWriteback,
-    NULL,
-    cmsx_menuPidEntries,
+    .GUARD_text = "XPID",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_PidOnEnter,
+    .onExit = cmsx_PidWriteback,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuPidEntries
 };
 
 //
@@ -155,7 +155,7 @@ static long cmsx_RateExpoRead(void)
     return 0;
 }
 
-static long cmsx_RateExpoWriteback(OSD_Entry *self)
+static long cmsx_RateExpoWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
@@ -164,7 +164,7 @@ static long cmsx_RateExpoWriteback(OSD_Entry *self)
     return 0;
 }
 
-static long cmsx_menuRcConfirmBack(OSD_Entry *self)
+static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
 {
     if (self && self->type == OME_Back)
         return 0;
@@ -196,12 +196,12 @@ static OSD_Entry cmsx_menuRateExpoEntries[] =
 };
 
 CMS_Menu cmsx_menuRateExpo = {
-    "MENURATE",
-    OME_MENU,
-    cmsx_RateExpoRead,
-    cmsx_RateExpoWriteback,
-    NULL,
-    cmsx_menuRateExpoEntries,
+    .GUARD_text = "MENURATE",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_RateExpoRead,
+    .onExit = cmsx_RateExpoWriteback,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuRateExpoEntries
 };
 
 
@@ -227,12 +227,12 @@ static OSD_Entry cmsx_menuRcEntries[] =
 };
 
 CMS_Menu cmsx_menuRcPreview = {
-    "XRCPREV",
-    OME_MENU,
-    NULL,
-    cmsx_menuRcConfirmBack,
-    NULL,
-    cmsx_menuRcEntries,
+    .GUARD_text = "XRCPREV",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = cmsx_menuRcConfirmBack,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuRcEntries
 };
 
 
@@ -256,15 +256,15 @@ static OSD_Entry menuImuMiscEntries[]=
 };
 
 CMS_Menu menuImuMisc = {
-    "XIMUMISC",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuImuMiscEntries,
+    .GUARD_text = "XIMUMISC",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menuImuMiscEntries
 };
 
-static long onProfileChange(displayPort_t *pDisplay, void *ptr)
+static long onProfileChange(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(pDisplay);
     UNUSED(ptr);

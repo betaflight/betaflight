@@ -75,12 +75,12 @@ static OSD_Entry menuInfoEntries[] = {
 };
 
 static CMS_Menu menuInfo = {
-    "MENUINFO",
-    OME_MENU,
-    cmsx_InfoInit,
-    NULL,
-    NULL,
-    menuInfoEntries,
+    .GUARD_text = "MENUINFO",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_InfoInit,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menuInfoEntries
 };
 
 // Features
@@ -100,12 +100,12 @@ static OSD_Entry menuFeaturesEntries[] =
 };
 
 static CMS_Menu menuFeatures = {
-    "MENUFEATURES",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuFeaturesEntries,
+    .GUARD_text = "MENUFEATURES",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menuFeaturesEntries,
 };
 
 // Main
@@ -129,11 +129,11 @@ static OSD_Entry menuMainEntries[] =
 };
 
 CMS_Menu menuMain = {
-    "MENUMAIN",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuMainEntries,
+    .GUARD_text = "MENUMAIN",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menuMainEntries,
 };
 #endif
