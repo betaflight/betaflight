@@ -266,7 +266,7 @@ static void taskTransponder(uint32_t currentTime)
 static void taskUpdateOsd(uint32_t currentTime)
 {
     if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
+        osdUpdate(currentTime);
     }
 }
 #endif
