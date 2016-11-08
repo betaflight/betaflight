@@ -332,8 +332,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 #ifdef CMS
-    // XXX Should check FEATURE
-    setTaskEnabled(TASK_CMS, true);
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 }
 
