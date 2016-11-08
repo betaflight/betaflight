@@ -266,7 +266,7 @@ static void taskTransponder(uint32_t currentTime)
 static void taskUpdateOsd(uint32_t currentTime)
 {
     if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
+        osdUpdate(currentTime);
     }
 }
 #endif
@@ -332,8 +332,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 #ifdef CMS
-    // XXX Should check FEATURE
-    setTaskEnabled(TASK_CMS, true);
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 }
 

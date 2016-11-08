@@ -589,7 +589,7 @@ void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
-#ifdef OLEDCMS
+#ifdef CMS
     if (displayIsGrabbed(displayPort)) {
         return;
     }
@@ -707,7 +707,7 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
     delay(200);
 
     displayPort = displayPortOledInit();
-#if defined(CMS) && defined(OLEDCMS)
+#if defined(CMS)
     cmsDisplayPortRegister(displayPort);
 #endif
 

@@ -97,11 +97,8 @@
 #define CMS
 #define CMS_MAX_DEVICE 4
 
-// Use external display to run CMS
+// Use external display connected by MSP to run CMS
 #define USE_MSP_DISPLAYPORT
-
-// USE I2C OLED display to run CMS
-#define OLEDCMS
 
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk

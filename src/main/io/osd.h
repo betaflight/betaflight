@@ -17,6 +17,12 @@
 
 #pragma once
 
+#define VISIBLE_FLAG  0x0800
+#define BLINK_FLAG    0x0400
+#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
+#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
+
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
@@ -57,18 +63,7 @@ typedef struct osd_profile_s {
     osd_unit_e units;
 } osd_profile_t;
 
-void updateOsd(uint32_t currentTime);
 void osdInit(void);
-void resetOsdConfig(osd_profile_t *osdProfile);
+void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
-
-// Character coordinate and attributes
-
-#define OSD_POS(x,y)  (x | (y << 5))
-#define OSD_X(x)      (x & 0x001F)
-#define OSD_Y(x)      ((x >> 5) & 0x001F)
-#define VISIBLE_FLAG  0x0800
-#define BLINK_FLAG    0x0400
-#define VISIBLE(x)    (x & VISIBLE_FLAG)
-#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
-#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
+void osdUpdate(uint32_t currentTime);
