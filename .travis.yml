@@ -78,8 +78,12 @@ install:
 before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
-cache: apt
-
+cache: 
+  apt: true
+  directories:
+  - downloads
+  - tools
+    
 #notifications:
 #  irc: "chat.freenode.net#cleanflight"
 #  use_notice: true
