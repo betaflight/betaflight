@@ -33,85 +33,82 @@
     CONCAT(EXPAND(DEF_TIM_DMACHAN_ ## tim ## _ ## chan), _HANDLER)\
     }
 
-#define DEF_TIM_CHAN(chan) DEF_CHAN_ ## chan 
-#define DEF_TIM_OUTPUT(chan, out) ( DEF_CHAN_ ## chan ## _OUTPUT | out )
-
-#define DEF_DMA_TYPE(tim, chan) CONCAT(EXPAND(DEF_TIM_DMACHAN_ ## tim ## _ ## chan), _TYPE)
-#define DEF_DMA_HANDLER(tim, chan) CONCAT(EXPAND(DEF_TIM_DMACHAN_ ## tim ## _ ## chan), _HANDLER)
+#define DEF_DMA_CHANNEL(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL)
+#define DEF_DMA_HANDLER(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)
 
 /* add the DMA mappings here */
-#define DEF_TIM_DMACHAN_TIM1_CH1    DMA1_CH2
-#define DEF_TIM_DMACHAN_TIM1_CH2    DMA1_CH3
-#define DEF_TIM_DMACHAN_TIM1_CH4    DMA1_CH4
-#define DEF_TIM_DMACHAN_TIM1_TRIG   DMA1_CH4
-#define DEF_TIM_DMACHAN_TIM1_COM    DMA1_CH4
-#define DEF_TIM_DMACHAN_TIM1_UP     DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM1_CH3    DMA1_CH6
+#define DEF_TIM_DMA__TIM1_CH1    DMA1_CH2
+#define DEF_TIM_DMA__TIM1_CH2    DMA1_CH3
+#define DEF_TIM_DMA__TIM1_CH4    DMA1_CH4
+#define DEF_TIM_DMA__TIM1_TRIG   DMA1_CH4
+#define DEF_TIM_DMA__TIM1_COM    DMA1_CH4
+#define DEF_TIM_DMA__TIM1_UP     DMA1_CH5
+#define DEF_TIM_DMA__TIM1_CH3    DMA1_CH6
 
-#define DEF_TIM_DMACHAN_TIM2_CH3    DMA1_CH1
-#define DEF_TIM_DMACHAN_TIM2_UP     DMA1_CH2
-#define DEF_TIM_DMACHAN_TIM2_CH1    DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM2_CH2    DMA1_CH7
-#define DEF_TIM_DMACHAN_TIM2_CH4    DMA1_CH7
+#define DEF_TIM_DMA__TIM2_CH3    DMA1_CH1
+#define DEF_TIM_DMA__TIM2_UP     DMA1_CH2
+#define DEF_TIM_DMA__TIM2_CH1    DMA1_CH5
+#define DEF_TIM_DMA__TIM2_CH2    DMA1_CH7
+#define DEF_TIM_DMA__TIM2_CH4    DMA1_CH7
 
-#define DEF_TIM_DMACHAN_TIM3_CH2    DMA_NONE
-#define DEF_TIM_DMACHAN_TIM3_CH3    DMA1_CH2
-#define DEF_TIM_DMACHAN_TIM3_CH4    DMA1_CH3
-#define DEF_TIM_DMACHAN_TIM3_UP     DMA1_CH3
-#define DEF_TIM_DMACHAN_TIM3_CH1    DMA1_CH6
-#define DEF_TIM_DMACHAN_TIM3_TRIG   DMA1_CH6
+#define DEF_TIM_DMA__TIM3_CH2    DMA_NONE
+#define DEF_TIM_DMA__TIM3_CH3    DMA1_CH2
+#define DEF_TIM_DMA__TIM3_CH4    DMA1_CH3
+#define DEF_TIM_DMA__TIM3_UP     DMA1_CH3
+#define DEF_TIM_DMA__TIM3_CH1    DMA1_CH6
+#define DEF_TIM_DMA__TIM3_TRIG   DMA1_CH6
 
-#define DEF_TIM_DMACHAN_TIM4_CH1    DMA1_CH1
-#define DEF_TIM_DMACHAN_TIM4_CH2    DMA1_CH4
-#define DEF_TIM_DMACHAN_TIM4_CH3    DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM4_UP     DMA1_CH7
-#define DEF_TIM_DMACHAN_TIM4_CH4    DMA_NONE
+#define DEF_TIM_DMA__TIM4_CH1    DMA1_CH1
+#define DEF_TIM_DMA__TIM4_CH2    DMA1_CH4
+#define DEF_TIM_DMA__TIM4_CH3    DMA1_CH5
+#define DEF_TIM_DMA__TIM4_UP     DMA1_CH7
+#define DEF_TIM_DMA__TIM4_CH4    DMA_NONE
 
-#define DEF_TIM_DMACHAN_TIM15_CH1   DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM15_CH2   DMA_NONE
-#define DEF_TIM_DMACHAN_TIM15_UP    DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM15_TRIG  DMA1_CH5
-#define DEF_TIM_DMACHAN_TIM15_COM   DMA1_CH5
+#define DEF_TIM_DMA__TIM15_CH1   DMA1_CH5
+#define DEF_TIM_DMA__TIM15_CH2   DMA_NONE
+#define DEF_TIM_DMA__TIM15_UP    DMA1_CH5
+#define DEF_TIM_DMA__TIM15_TRIG  DMA1_CH5
+#define DEF_TIM_DMA__TIM15_COM   DMA1_CH5
 
 #ifdef DMA_TIMER16_REMAP 
-#define DEF_TIM_DMACHAN_TIM16_CH1   DMA1_CH6
-#define DEF_TIM_DMACHAN_TIM16_UP    DMA1_CH6
+#define DEF_TIM_DMA__TIM16_CH1   DMA1_CH6
+#define DEF_TIM_DMA__TIM16_UP    DMA1_CH6
 #else
-#define DEF_TIM_DMACHAN_TIM16_CH1   DMA1_CH3
-#define DEF_TIM_DMACHAN_TIM16_UP    DMA1_CH3
+#define DEF_TIM_DMA__TIM16_CH1   DMA1_CH3
+#define DEF_TIM_DMA__TIM16_UP    DMA1_CH3
 #endif 
 
 #ifdef DMA_TIMER17_REMAP 
-#define DEF_TIM_DMACHAN_TIM17_CH1   DMA1_CH7
-#define DEF_TIM_DMACHAN_TIM17_UP    DMA1_CH7
+#define DEF_TIM_DMA__TIM17_CH1   DMA1_CH7
+#define DEF_TIM_DMA__TIM17_UP    DMA1_CH7
 #else
-#define DEF_TIM_DMACHAN_TIM17_CH1   DMA1_CH1
-#define DEF_TIM_DMACHAN_TIM17_UP    DMA1_CH1
+#define DEF_TIM_DMA__TIM17_CH1   DMA1_CH1
+#define DEF_TIM_DMA__TIM17_UP    DMA1_CH1
 #endif 
 
-#define DEF_TIM_DMACHAN_TIM8_CH3    DMA2_CH1
-#define DEF_TIM_DMACHAN_TIM8_UP     DMA2_CH1
-#define DEF_TIM_DMACHAN_TIM8_CH4    DMA2_CH2
-#define DEF_TIM_DMACHAN_TIM8_TRIG   DMA2_CH2
-#define DEF_TIM_DMACHAN_TIM8_COM    DMA2_CH2
-#define DEF_TIM_DMACHAN_TIM8_CH1    DMA2_CH3
-#define DEF_TIM_DMACHAN_TIM8_CH2    DMA2_CH5
+#define DEF_TIM_DMA__TIM8_CH3    DMA2_CH1
+#define DEF_TIM_DMA__TIM8_UP     DMA2_CH1
+#define DEF_TIM_DMA__TIM8_CH4    DMA2_CH2
+#define DEF_TIM_DMA__TIM8_TRIG   DMA2_CH2
+#define DEF_TIM_DMA__TIM8_COM    DMA2_CH2
+#define DEF_TIM_DMA__TIM8_CH1    DMA2_CH3
+#define DEF_TIM_DMA__TIM8_CH2    DMA2_CH5
 
 
-#define DMA1_CH1_TYPE DMA1_Channel1
-#define DMA1_CH2_TYPE DMA1_Channel2
-#define DMA1_CH3_TYPE DMA1_Channel3
-#define DMA1_CH4_TYPE DMA1_Channel4
-#define DMA1_CH5_TYPE DMA1_Channel5
-#define DMA1_CH6_TYPE DMA1_Channel6
-#define DMA1_CH7_TYPE DMA1_Channel7
-#define DMA2_CH1_TYPE DMA2_Channel1
-#define DMA2_CH2_TYPE DMA2_Channel2
-#define DMA2_CH3_TYPE DMA2_Channel3
-#define DMA2_CH4_TYPE DMA2_Channel4
-#define DMA2_CH5_TYPE DMA2_Channel5
-#define DMA2_CH6_TYPE DMA2_Channel6
-#define DMA2_CH7_TYPE DMA2_Channel7
+#define DMA1_CH1_CHANNEL         DMA1_Channel1
+#define DMA1_CH2_CHANNEL         DMA1_Channel2
+#define DMA1_CH3_CHANNEL         DMA1_Channel3
+#define DMA1_CH4_CHANNEL         DMA1_Channel4
+#define DMA1_CH5_CHANNEL         DMA1_Channel5
+#define DMA1_CH6_CHANNEL         DMA1_Channel6
+#define DMA1_CH7_CHANNEL         DMA1_Channel7
+#define DMA2_CH1_CHANNEL         DMA2_Channel1
+#define DMA2_CH2_CHANNEL         DMA2_Channel2
+#define DMA2_CH3_CHANNEL         DMA2_Channel3
+#define DMA2_CH4_CHANNEL         DMA2_Channel4
+#define DMA2_CH5_CHANNEL         DMA2_Channel5
+#define DMA2_CH6_CHANNEL         DMA2_Channel6
+#define DMA2_CH7_CHANNEL         DMA2_Channel7
 
 #define GPIO_AF(p, t) CONCAT(GPIO_AF__, p, _, t)
 
@@ -212,12 +209,12 @@
 #define GPIO_AF__PD6_TIM2_CH4     GPIO_AF_2
 #define GPIO_AF__PD7_TIM2_CH3     GPIO_AF_2
 
-#define GPIO_AF__PD12_TIM4_CH1     GPIO_AF_2
-#define GPIO_AF__PD13_TIM4_CH2     GPIO_AF_2
-#define GPIO_AF__PD14_TIM4_CH3     GPIO_AF_2
-#define GPIO_AF__PD15_TIM4_CH4     GPIO_AF_2
+#define GPIO_AF__PD12_TIM4_CH1    GPIO_AF_2
+#define GPIO_AF__PD13_TIM4_CH2    GPIO_AF_2
+#define GPIO_AF__PD14_TIM4_CH3    GPIO_AF_2
+#define GPIO_AF__PD15_TIM4_CH4    GPIO_AF_2
 
-#define GPIO_AF__PD1_TIM8_CH4      GPIO_AF_4
+#define GPIO_AF__PD1_TIM8_CH4     GPIO_AF_4
 
 #elif defined(STM32F4)
 
@@ -228,114 +225,121 @@
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
     EXPAND(GPIO_AF_## tim),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## _ ## tim ## _ ## chan), _TYPE),\
-    EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## _ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## _ ## tim ## _ ## chan), _HANDLER)\
+    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM),\
+    EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan),\
+    CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)\
     }
+
+#define DEF_DMA_CHANNEL(tim, chan, dmaopt) EXPAND(DEF_TIM_DMA_CHN_ ## dmaopt ## __ ## tim ## _ ## chan)
+#define DEF_DMA_STREAM(tim, chan, dmaopt) CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _STREAM)
+#define DEF_DMA_HANDLER(tim, chan, dmaopt) CONCAT(EXPAND(DEF_TIM_DMA_STR_ ## dmaopt ## __ ## tim ## _ ## chan), _HANDLER)
 
 /* F4 Stream Mappings */
 
-#define DEF_TIM_DMA_STR_0_TIM1_CH1    DMA2_ST6
-#define DEF_TIM_DMA_STR_1_TIM1_CH1    DMA2_ST1
-#define DEF_TIM_DMA_STR_2_TIM1_CH1    DMA2_ST3
-#define DEF_TIM_DMA_STR_0_TIM1_CH2    DMA2_ST6
-#define DEF_TIM_DMA_STR_1_TIM1_CH2    DMA2_ST2
-#define DEF_TIM_DMA_STR_0_TIM1_CH3    DMA2_ST6
-#define DEF_TIM_DMA_STR_1_TIM1_CH3    DMA2_ST6
-#define DEF_TIM_DMA_STR_0_TIM1_CH4    DMA2_ST4
+#define DEF_TIM_DMA_STR_0__TIM1_CH1    DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH1    DMA2_ST1
+#define DEF_TIM_DMA_STR_2__TIM1_CH1    DMA2_ST3
+#define DEF_TIM_DMA_STR_0__TIM1_CH2    DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM1_CH3    DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH3    DMA2_ST6
+#define DEF_TIM_DMA_STR_0__TIM1_CH4    DMA2_ST4
 
-#define DEF_TIM_DMA_STR_0_TIM2_CH1    DMA1_ST5
-#define DEF_TIM_DMA_STR_0_TIM2_CH2    DMA1_ST6
-#define DEF_TIM_DMA_STR_0_TIM2_CH3    DMA1_ST1 
-#define DEF_TIM_DMA_STR_0_TIM2_CH4    DMA1_ST7
-#define DEF_TIM_DMA_STR_1_TIM2_CH4    DMA1_ST6
+#define DEF_TIM_DMA_STR_0__TIM2_CH1    DMA1_ST5
+#define DEF_TIM_DMA_STR_0__TIM2_CH2    DMA1_ST6
+#define DEF_TIM_DMA_STR_0__TIM2_CH3    DMA1_ST1 
+#define DEF_TIM_DMA_STR_0__TIM2_CH4    DMA1_ST7
+#define DEF_TIM_DMA_STR_1__TIM2_CH4    DMA1_ST6
 
-#define DEF_TIM_DMA_STR_0_TIM3_CH1    DMA1_ST4 
-#define DEF_TIM_DMA_STR_0_TIM3_CH2    DMA1_ST5
-#define DEF_TIM_DMA_STR_0_TIM3_CH3    DMA1_ST7
-#define DEF_TIM_DMA_STR_0_TIM3_CH4    DMA1_ST2
+#define DEF_TIM_DMA_STR_0__TIM3_CH1    DMA1_ST4 
+#define DEF_TIM_DMA_STR_0__TIM3_CH2    DMA1_ST5
+#define DEF_TIM_DMA_STR_0__TIM3_CH3    DMA1_ST7
+#define DEF_TIM_DMA_STR_0__TIM3_CH4    DMA1_ST2
 
-#define DEF_TIM_DMA_STR_0_TIM4_CH1    DMA1_ST0
-#define DEF_TIM_DMA_STR_0_TIM4_CH2    DMA1_ST4
-#define DEF_TIM_DMA_STR_0_TIM4_CH3    DMA1_ST7
-#define DEF_TIM_DMA_STR_0_TIM4_CH4    DMA1_ST3
+#define DEF_TIM_DMA_STR_0__TIM4_CH1    DMA1_ST0
+#define DEF_TIM_DMA_STR_0__TIM4_CH2    DMA1_ST4
+#define DEF_TIM_DMA_STR_0__TIM4_CH3    DMA1_ST7
+#define DEF_TIM_DMA_STR_0__TIM4_CH4    DMA1_ST3
 
-#define DEF_TIM_DMA_STR_0_TIM5_CH1    DMA1_ST2
-#define DEF_TIM_DMA_STR_0_TIM5_CH2    DMA1_ST4
-#define DEF_TIM_DMA_STR_0_TIM5_CH3    DMA1_ST0
-#define DEF_TIM_DMA_STR_0_TIM5_CH4    DMA1_ST1
-#define DEF_TIM_DMA_STR_1_TIM5_CH4    DMA1_ST3
+#define DEF_TIM_DMA_STR_0__TIM5_CH1    DMA1_ST2
+#define DEF_TIM_DMA_STR_0__TIM5_CH2    DMA1_ST4
+#define DEF_TIM_DMA_STR_0__TIM5_CH3    DMA1_ST0
+#define DEF_TIM_DMA_STR_0__TIM5_CH4    DMA1_ST1
+#define DEF_TIM_DMA_STR_1__TIM5_CH4    DMA1_ST3
 
-#define DEF_TIM_DMA_STR_0_TIM8_CH1    DMA2_ST2
-#define DEF_TIM_DMA_STR_1_TIM8_CH1    DMA2_ST2
-#define DEF_TIM_DMA_STR_0_TIM8_CH2    DMA2_ST3
-#define DEF_TIM_DMA_STR_1_TIM8_CH2    DMA2_ST2
-#define DEF_TIM_DMA_STR_0_TIM8_CH3    DMA2_ST2
-#define DEF_TIM_DMA_STR_0_TIM8_CH4    DMA2_ST7
+#define DEF_TIM_DMA_STR_0__TIM8_CH1    DMA2_ST2
+#define DEF_TIM_DMA_STR_1__TIM8_CH1    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH2    DMA2_ST3
+#define DEF_TIM_DMA_STR_1__TIM8_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH3    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH4    DMA2_ST7
 
 /* F4 Channel Mappings */
 
-#define DEF_TIM_DMA_CHN_0_TIM1_CH1    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1_TIM1_CH1    DMA_Channel_6
-#define DEF_TIM_DMA_CHN_2_TIM1_CH1    DMA_Channel_6
-#define DEF_TIM_DMA_CHN_0_TIM1_CH2    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1_TIM1_CH2    DMA_Channel_6
-#define DEF_TIM_DMA_CHN_0_TIM1_CH3    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1_TIM1_CH3    DMA_Channel_6
-#define DEF_TIM_DMA_CHN_0_TIM1_CH4    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH1    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH1    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_2__TIM1_CH1    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH2    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH2    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH3    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH3    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH4    DMA_Channel_6
 
-#define DEF_TIM_DMA_CHN_0_TIM2_CH1    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0_TIM2_CH2    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0_TIM2_CH3    DMA_Channel_3 
-#define DEF_TIM_DMA_CHN_0_TIM2_CH4    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_1_TIM2_CH4    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM2_CH1    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM2_CH2    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM2_CH3    DMA_Channel_3 
+#define DEF_TIM_DMA_CHN_0__TIM2_CH4    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_1__TIM2_CH4    DMA_Channel_3
 
-#define DEF_TIM_DMA_CHN_0_TIM3_CH1    DMA_Channel_5 
-#define DEF_TIM_DMA_CHN_0_TIM3_CH2    DMA_Channel_5
-#define DEF_TIM_DMA_CHN_0_TIM3_CH3    DMA_Channel_5
-#define DEF_TIM_DMA_CHN_0_TIM3_CH4    DMA_Channel_5
+#define DEF_TIM_DMA_CHN_0__TIM3_CH1    DMA_Channel_5 
+#define DEF_TIM_DMA_CHN_0__TIM3_CH2    DMA_Channel_5
+#define DEF_TIM_DMA_CHN_0__TIM3_CH3    DMA_Channel_5
+#define DEF_TIM_DMA_CHN_0__TIM3_CH4    DMA_Channel_5
 
-#define DEF_TIM_DMA_CHN_0_TIM4_CH1    DMA_Channel_2
-#define DEF_TIM_DMA_CHN_0_TIM4_CH2    DMA_Channel_2
-#define DEF_TIM_DMA_CHN_0_TIM4_CH3    DMA_Channel_2
-#define DEF_TIM_DMA_CHN_0_TIM4_CH4    DMA_Channel_2
+#define DEF_TIM_DMA_CHN_0__TIM4_CH1    DMA_Channel_2
+#define DEF_TIM_DMA_CHN_0__TIM4_CH2    DMA_Channel_2
+#define DEF_TIM_DMA_CHN_0__TIM4_CH3    DMA_Channel_2
+#define DEF_TIM_DMA_CHN_0__TIM4_CH4    DMA_Channel_2
 
-#define DEF_TIM_DMA_CHN_0_TIM5_CH1    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0_TIM5_CH2    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0_TIM5_CH3    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0_TIM5_CH4    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_1_TIM5_CH4    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM5_CH1    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM5_CH2    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM5_CH3    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM5_CH4    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_1__TIM5_CH4    DMA_Channel_3
 
-#define DEF_TIM_DMA_CHN_0_TIM8_CH1    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1_TIM8_CH1    DMA_Channel_7
-#define DEF_TIM_DMA_CHN_0_TIM8_CH2    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1_TIM8_CH2    DMA_Channel_7
-#define DEF_TIM_DMA_CHN_0_TIM8_CH3    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_0_TIM8_CH4    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH1    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH1    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH2    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH2    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH3    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_0__TIM8_CH4    DMA_Channel_7
 
-#define DMA1_ST0_TYPE               DMA1_Stream0
-#define DMA1_ST1_TYPE               DMA1_Stream1
-#define DMA1_ST2_TYPE               DMA1_Stream2
-#define DMA1_ST3_TYPE               DMA1_Stream3
-#define DMA1_ST4_TYPE               DMA1_Stream4
-#define DMA1_ST5_TYPE               DMA1_Stream5
-#define DMA1_ST6_TYPE               DMA1_Stream6
-#define DMA1_ST7_TYPE               DMA1_Stream7
-#define DMA2_ST0_TYPE               DMA2_Stream0
-#define DMA2_ST1_TYPE               DMA2_Stream1
-#define DMA2_ST2_TYPE               DMA2_Stream2
-#define DMA2_ST3_TYPE               DMA2_Stream3
-#define DMA2_ST4_TYPE               DMA2_Stream4
-#define DMA2_ST5_TYPE               DMA2_Stream5
-#define DMA2_ST6_TYPE               DMA2_Stream6
-#define DMA2_ST7_TYPE               DMA2_Stream7
+#define DMA1_ST0_STREAM                DMA1_Stream0
+#define DMA1_ST1_STREAM                DMA1_Stream1
+#define DMA1_ST2_STREAM                DMA1_Stream2
+#define DMA1_ST3_STREAM                DMA1_Stream3
+#define DMA1_ST4_STREAM                DMA1_Stream4
+#define DMA1_ST5_STREAM                DMA1_Stream5
+#define DMA1_ST6_STREAM                DMA1_Stream6
+#define DMA1_ST7_STREAM                DMA1_Stream7
+#define DMA2_ST0_STREAM                DMA2_Stream0
+#define DMA2_ST1_STREAM                DMA2_Stream1
+#define DMA2_ST2_STREAM                DMA2_Stream2
+#define DMA2_ST3_STREAM                DMA2_Stream3
+#define DMA2_ST4_STREAM                DMA2_Stream4
+#define DMA2_ST5_STREAM                DMA2_Stream5
+#define DMA2_ST6_STREAM                DMA2_Stream6
+#define DMA2_ST7_STREAM                DMA2_Stream7
 
 #endif
 
 /**** Common Defines across all targets ****/
 
-#define NONE                 0
-#define DMA_NONE_TYPE        NULL
+#define DEF_TIM_CHAN(chan) DEF_CHAN_ ## chan 
+#define DEF_TIM_OUTPUT(chan, out) ( DEF_CHAN_ ## chan ## _OUTPUT | out )
+
+#define DMA_NONE_CHANNEL     NULL
+#define DMA_NONE_STREAM      NULL
 #define DMA_NONE_HANDLER     0
 
 #define DEF_CHAN_CH1         TIM_Channel_1
