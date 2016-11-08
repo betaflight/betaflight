@@ -264,15 +264,25 @@ CMS_Menu menuImuMisc = {
     menuImuMiscEntries,
 };
 
+static long onProfileChange(displayPort_t *pDisplay, void *ptr)
+{
+    UNUSED(pDisplay);
+    UNUSED(ptr);
+
+    masterConfig.current_profile_index = tmpProfileIndex - 1;
+
+    return 0;
+}
+
 static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   NULL,          &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
-    {"PID",       OME_Submenu, cmsMenuChange, &cmsx_menuPid,       0},
-    {"RATE&RXPO", OME_Submenu, cmsMenuChange, &cmsx_menuRateExpo,  0},
-    {"RC PREV",   OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
-    {"MISC",      OME_Submenu, cmsMenuChange, &menuImuMisc,        0},
+    {"PID PROF",  OME_UINT8,   onProfileChange, &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
+    {"PID",       OME_Submenu, cmsMenuChange,   &cmsx_menuPid,       0},
+    {"RATE&RXPO", OME_Submenu, cmsMenuChange,   &cmsx_menuRateExpo,  0},
+    {"RC PREV",   OME_Submenu, cmsMenuChange,   &cmsx_menuRcPreview, 0},
+    {"MISC",      OME_Submenu, cmsMenuChange,   &menuImuMisc,        0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}

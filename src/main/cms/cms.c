@@ -698,6 +698,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                         *ptr->val -= ptr->step;
                 }
                 SET_PRINTVALUE(p);
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
             }
             break;
         case OME_TAB:
@@ -729,6 +732,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                         *ptr->val -= ptr->step;
                 }
                 SET_PRINTVALUE(p);
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
             }
             break;
         case OME_UINT16:
@@ -743,6 +749,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                         *ptr->val -= ptr->step;
                 }
                 SET_PRINTVALUE(p);
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
             }
             break;
         case OME_INT16:
@@ -757,6 +766,9 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                         *ptr->val -= ptr->step;
                 }
                 SET_PRINTVALUE(p);
+                if (p->func) {
+                    p->func(pDisplay, p);
+                }
             }
             break;
         case OME_String:
