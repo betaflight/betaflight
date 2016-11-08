@@ -22,8 +22,6 @@
 
 #pragma once
 
-typedef long (*CMSEntryFuncPtr)(displayPort_t *, void *);
-
 //type of elements
 
 typedef enum
@@ -53,11 +51,13 @@ typedef enum
     OME_MAX = OME_MENU
 } OSD_MenuElement;
 
+typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
+
 typedef struct
 {
     const char *text;
-    OSD_MenuElement type;
-    CMSEntryFuncPtr func;
+    const OSD_MenuElement type;
+    const CMSEntryFuncPtr func;
     void *data;
     uint8_t flags;
 } OSD_Entry;
@@ -87,17 +87,17 @@ onExit function is called with self:
 (2) NULL if called from menu exit (forced exit at top level).
 */
 
-typedef long (*CMSMenuOnExitPtr)(OSD_Entry *self);
+typedef long (*CMSMenuOnExitPtr)(const OSD_Entry *self);
 
 typedef struct
 {
     // These two are debug aids for menu content creators.
     const char *GUARD_text;
-    OSD_MenuElement GUARD_type;
+    const OSD_MenuElement GUARD_type;
 
-    CMSMenuFuncPtr onEnter;
-    CMSMenuOnExitPtr onExit;
-    CMSMenuFuncPtr onGlobalExit;
+    const CMSMenuFuncPtr onEnter;
+    const CMSMenuOnExitPtr onExit;
+    const CMSMenuFuncPtr onGlobalExit;
     OSD_Entry *entries;
 } CMS_Menu;
 

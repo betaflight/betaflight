@@ -50,12 +50,12 @@ OSD_Entry cmsx_menuAlarmsEntries[] =
 };
 
 CMS_Menu cmsx_menuAlarms = {
-    "MENUALARMS",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    cmsx_menuAlarmsEntries,
+    .GUARD_text = "MENUALARMS",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuAlarmsEntries,
 };
 
 OSD_Entry menuOsdActiveElemsEntries[] =
@@ -85,12 +85,12 @@ OSD_Entry menuOsdActiveElemsEntries[] =
 };
 
 CMS_Menu menuOsdActiveElems = {
-    "MENUOSDACT",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    menuOsdActiveElemsEntries,
+    .GUARD_text = "MENUOSDACT",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menuOsdActiveElemsEntries
 };
 
 OSD_Entry cmsx_menuOsdLayoutEntries[] =
@@ -102,12 +102,11 @@ OSD_Entry cmsx_menuOsdLayoutEntries[] =
 };
 
 CMS_Menu cmsx_menuOsdLayout = {
-    "MENULAYOUT",
-    OME_MENU,
-    NULL,
-    NULL,
-    NULL,
-    cmsx_menuOsdLayoutEntries,
+    .GUARD_text = "MENULAYOUT",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuOsdLayoutEntries
 };
-
 #endif // CMS
