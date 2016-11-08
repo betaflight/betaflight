@@ -100,8 +100,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
     return cmsDisplayPorts[cmsCurrentDevice];
 }
 
-#define CMS_UPDATE_INTERVAL  50   // Interval of key scans (msec)
-#define CMS_POLL_INTERVAL   100   // Interval of polling dynamic values (msec)
+#define CMS_UPDATE_INTERVAL_US  50000   // Interval of key scans (microsec)
+#define CMS_POLL_INTERVAL_US   100000   // Interval of polling dynamic values (microsec)
 
 // XXX LEFT_MENU_COLUMN and RIGHT_MENU_COLUMN must be adjusted
 // dynamically depending on size of the active output device,
@@ -358,7 +358,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     return cnt;
 }
 
-static void cmsDrawMenu(displayPort_t *pDisplay)
+static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 {
     if (!pageTop)
         return;
@@ -370,12 +370,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay)
     // Polled (dynamic) value display denominator.
 
     bool drawPolled = false;
-    static uint32_t lastPolled = 0;
-    uint32_t now = millis(); // Argh...
+    static uint32_t lastPolledUs = 0;
 
-    if (now > lastPolled + CMS_POLL_INTERVAL) {
+    if (currentTimeUs > lastPolledUs + CMS_POLL_INTERVAL_US) {
         drawPolled = true;
-        lastPolled = now;
+        lastPolledUs = currentTimeUs;
     }
 
     uint32_t room = displayTxBytesFree(pDisplay);
@@ -772,68 +771,69 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-static void cmsUpdate(displayPort_t *pDisplay, uint32_t currentTime)
+static void cmsUpdate(uint32_t currentTimeUs)
 {
-    static int16_t rcDelay = BUTTON_TIME;
-    static uint32_t lastCalled = 0;
-    static uint32_t lastCmsHeartBeat = 0;
+    static int16_t rcDelayMs = BUTTON_TIME;
+    static uint32_t lastCalledMs = 0;
+    static uint32_t lastCmsHeartBeatMs = 0;
 
-    uint8_t key = 0;
+    const uint32_t currentTimeMs = currentTimeUs / 1000;
 
     if (!cmsInMenu) {
         // Detect menu invocation
         if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
             cmsMenuOpen();
-            rcDelay = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
+            rcDelayMs = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
         }
     } else {
-        if (rcDelay > 0) {
-            rcDelay -= (currentTime - lastCalled);
+        uint8_t key = 0;
+        if (rcDelayMs > 0) {
+            rcDelayMs -= (currentTimeMs - lastCalledMs);
         }
         else if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
             // Double enter = display switching
             cmsMenuOpen();
-            rcDelay = BUTTON_PAUSE;
+            rcDelayMs = BUTTON_PAUSE;
         }
         else if (IS_HI(PITCH)) {
             key = KEY_UP;
-            rcDelay = BUTTON_TIME;
+            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_LO(PITCH)) {
             key = KEY_DOWN;
-            rcDelay = BUTTON_TIME;
+            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_LO(ROLL)) {
             key = KEY_LEFT;
-            rcDelay = BUTTON_TIME;
+            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_HI(ROLL)) {
             key = KEY_RIGHT;
-            rcDelay = BUTTON_TIME;
+            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_HI(YAW) || IS_LO(YAW))
         {
             key = KEY_ESC;
-            rcDelay = BUTTON_TIME;
+            rcDelayMs = BUTTON_TIME;
         }
 
         //lastCalled = currentTime;
 
         if (key) {
-            rcDelay = cmsHandleKey(pCurrentDisplay, key);
+            rcDelayMs = cmsHandleKey(pCurrentDisplay, key);
             return;
         }
 
-        cmsDrawMenu(pDisplay);
+        cmsDrawMenu(pCurrentDisplay, currentTimeUs);
 
-        if (currentTime > lastCmsHeartBeat + 500) {
+        if (currentTimeMs > lastCmsHeartBeatMs + 500) {
             // Heart beat for external CMS display device @ 500msec
             // (Timeout @ 1000msec)
             displayHeartbeat(pCurrentDisplay);
-            lastCmsHeartBeat = currentTime;
+            lastCmsHeartBeatMs = currentTimeMs;
         }
     }
-    lastCalled = currentTime;
+    lastCalledMs = currentTimeMs;
 }
 
 void cmsHandler(uint32_t currentTime)
@@ -842,11 +842,10 @@ void cmsHandler(uint32_t currentTime)
         return;
 
     static uint32_t lastCalled = 0;
-    const uint32_t now = currentTime / 1000;
 
-    if (now - lastCalled >= CMS_UPDATE_INTERVAL) {
-        cmsUpdate(pCurrentDisplay, now);
-        lastCalled = now;
+    if (currentTime >= lastCalled + CMS_UPDATE_INTERVAL_US) {
+        lastCalled = currentTime;
+        cmsUpdate(currentTime);
     }
 }
 
