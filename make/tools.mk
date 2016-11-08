@@ -25,36 +25,47 @@ ARM_SDK_URL_BASE  := https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update
 
 # source: https://launchpad.net/gcc-arm-embedded/5.0/
 ifdef LINUX
-  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-linux.tar.bz2
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-linux.tar.bz2
 endif
 
 ifdef MACOSX
-  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-mac.tar.bz2
 endif
 
 ifdef WINDOWS
-  arm_sdk_install: ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
+  ARM_SDK_URL  := $(ARM_SDK_URL_BASE)-win32.zip
 endif
 
-arm_sdk_install: ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
-# order-only prereq on directory existance:
-arm_sdk_install: | $(DL_DIR) $(TOOLS_DIR)
-arm_sdk_install: arm_sdk_clean
-ifneq ($(OSFAMILY), windows)
-        # download the source only if it's newer than what we already have
-	$(V1) curl -L -k -o "$(DL_DIR)/$(ARM_SDK_FILE)" "$(ARM_SDK_URL)"
+ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
 
+SDK_INSTALL_MARKER := $(ARM_SDK_DIR)/bin/arm-none-eabi-gcc-$(GCC_REQUIRED_VERSION)
+
+# order-only prereq on directory existance:
+arm_sdk_install: | $(TOOLS_DIR)
+
+arm_sdk_install: arm_sdk_download $(SDK_INSTALL_MARKER)
+
+$(SDK_INSTALL_MARKER):
+ifneq ($(OSFAMILY), windows)
         # binary only release so just extract it
 	$(V1) tar -C $(TOOLS_DIR) -xjf "$(DL_DIR)/$(ARM_SDK_FILE)"
 else
-	$(V1) curl -L -k -o "$(DL_DIR)/$(ARM_SDK_FILE)" "$(ARM_SDK_URL)"
 	$(V1) unzip -q -d $(ARM_SDK_DIR) "$(DL_DIR)/$(ARM_SDK_FILE)"
 endif
+
+.PHONY: arm_sdk_download
+arm_sdk_download: | $(DL_DIR)
+arm_sdk_download: $(DL_DIR)/$(ARM_SDK_FILE)
+$(DL_DIR)/$(ARM_SDK_FILE):
+        # download the source only if it's newer than what we already have
+	$(V1) curl -L -k -o "$(DL_DIR)/$(ARM_SDK_FILE)" -z "$(DL_DIR)/$(ARM_SDK_FILE)" "$(ARM_SDK_URL)"
+
 
 ## arm_sdk_clean     : Uninstall Arm SDK
 .PHONY: arm_sdk_clean
 arm_sdk_clean:
 	$(V1) [ ! -d "$(ARM_SDK_DIR)" ] || $(RM) -r $(ARM_SDK_DIR)
+	$(V1) [ ! -d "$(DL_DIR)" ] || $(RM) -r $(DL_DIR)
 
 .PHONY: openocd_win_install
 
