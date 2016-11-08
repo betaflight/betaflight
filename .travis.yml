@@ -3,14 +3,15 @@ env:
 #  - PUBLISHMETA=True
 #  - PUBLISHDOCS=True
 #  - TARGET=AFROMINI
-#  - TARGET=BEEBRAIN
 #  - TARGET=AIORACERF3
 #  - TARGET=AIR32
+#  - TARGET=AIRBOTF4
 #  - TARGET=AIRHEROF3
 #  - TARGET=ALIENFLIGHTF1
 #  - TARGET=ALIENFLIGHTF3
 #  - TARGET=ALIENFLIGHTF4
 #  - TARGET=ANYFCF7
+#  - TARGET=BEEBRAIN
 #  - TARGET=BETAFLIGHTF3
 #  - TARGET=BLUEJAYF4
 #  - TARGET=CC3D
@@ -24,9 +25,12 @@ env:
 #  - TARGET=F4BY
 #  - TARGET=FURYF3
 #  - TARGET=FURYF4
+#  - TARGET=FURYF7
+#  - TARGET=IMPULSERCF3
 #  - TARGET=IRCFUSIONF3
 #  - TARGET=ISHAPEDF3
 #  - TARGET=KISSFC
+#  - TARGET=LUXV2_RACE
 #  - TARGET=LUX_RACE
 #  - TARGET=MICROSCISKY
 #  - TARGET=MOTOLAB
@@ -35,38 +39,36 @@ env:
 #  - TARGET=OMNIBUSF4
 #  - TARGET=PIKOBLX
 #  - TARGET=RACEBASE
+#  - TARGET=RCEXPLORERF3
 #  - TARGET=REVO
+#  - TARGET=REVOLT
 #  - TARGET=REVONANO
 #  - TARGET=REVO_OPBL
 #  - TARGET=RMDO
 #  - TARGET=SINGULARITY
 #  - TARGET=SIRINFPV
+#  - TARGET=SOULF4
 #  - TARGET=SPARKY
 #  - TARGET=SPARKY2
-#  - TARGET=SPARKY_OPBL
 #  - TARGET=SPRACINGF3
 #  - TARGET=SPRACINGF3EVO
 #  - TARGET=SPRACINGF3MINI
 #  - TARGET=STM32F3DISCOVERY
 #  - TARGET=VRRACE
 #  - TARGET=X_RACERSPI
+#  - TARGET=YUPIF4
 #  - TARGET=ZCOREF3
-#  - TARGET=RCEXPLORERF3
 
 # use new docker environment
 sudo: false
 
+git:
+  depth: 5
+
 addons:
   apt:
     packages:
-      - build-essential
-      - git
       - libc6-i386
-      - zlib1g-dev
-      - libssl-dev
-      - wkhtmltopdf
-      - libxml2-dev
-      - libxslt-dev
 
 # We use cpp for unit tests, and c for the main project.
 language: cpp
@@ -78,8 +80,11 @@ install:
 before_script: tools/gcc-arm-none-eabi-5_4-2016q3/bin/arm-none-eabi-gcc --version
 script: ./.travis.sh
 
-cache: apt
-
+cache: 
+  directories:
+  - downloads
+  - tools
+    
 #notifications:
 #  irc: "chat.freenode.net#cleanflight"
 #  use_notice: true
