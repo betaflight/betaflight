@@ -333,8 +333,14 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             CLR_PRINTVALUE(p);
         }
         break;
-    case OME_OSD_Exit:
     case OME_Label:
+        if (IS_PRINTVALUE(p) && p->data) {
+            // A label with optional string, immediately following text
+            cnt = displayWrite(pDisplay, LEFT_MENU_COLUMN + 2 + strlen(p->text), row, p->data);
+            CLR_PRINTVALUE(p);
+        }
+        break;
+    case OME_OSD_Exit:
     case OME_END:
     case OME_Back:
         break;
@@ -417,7 +423,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay)
     // Print text labels
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
-            room -= displayWrite(pDisplay, LEFT_MENU_COLUMN + 2, i + top, p->text);
+            uint8_t coloff = LEFT_MENU_COLUMN;
+            coloff += (p->type == OME_Label) ? 1 : 2;
+            room -= displayWrite(pDisplay, coloff, i + top, p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;

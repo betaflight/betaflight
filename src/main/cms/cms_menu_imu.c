@@ -52,12 +52,14 @@
 //
 static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
+static char profileIndexString[] = " PROF n";
 static uint8_t tempPid[4][3];
 
 static long cmsx_menuImu_onEnter(void)
 {
     profileIndex = masterConfig.current_profile_index;
     tmpProfileIndex = profileIndex + 1;
+    profileIndexString[6] = '0' + tmpProfileIndex;
 
     return 0;
 }
@@ -86,6 +88,15 @@ static long cmsx_PidRead(void)
     return 0;
 }
 
+static long cmsx_PidOnEnter(void)
+{
+    profileIndexString[6] = '0' + tmpProfileIndex;
+    cmsx_PidRead();
+
+    return 0;
+}
+
+
 static long cmsx_PidWriteback(OSD_Entry *self)
 {
     UNUSED(self);
@@ -105,7 +116,7 @@ static long cmsx_PidWriteback(OSD_Entry *self)
 
 static OSD_Entry cmsx_menuPidEntries[] =
 {
-    { "-- PID --", OME_Label, NULL, NULL, 0},
+    { "-- PID --", OME_Label, NULL, profileIndexString, 0},
 
     { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  0, 200, 1 }, 0 },
     { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],  0, 200, 1 }, 0 },
@@ -126,7 +137,7 @@ static OSD_Entry cmsx_menuPidEntries[] =
 static CMS_Menu cmsx_menuPid = {
     "XPID",
     OME_MENU,
-    cmsx_PidRead,
+    cmsx_PidOnEnter,
     cmsx_PidWriteback,
     NULL,
     cmsx_menuPidEntries,
