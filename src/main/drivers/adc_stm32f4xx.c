@@ -25,6 +25,7 @@
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
+#include "dma.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -37,8 +38,8 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 }, 
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 } 
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 }, 
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 } 
 };
 
 /* note these could be packed up for saving space */
@@ -140,8 +141,9 @@ void adcInit(drv_adc_config_t *init)
         adcConfig[i].enabled = true;
     }
 
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
     RCC_ClockCmd(adc.rccADC, ENABLE);
+
+    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, RESOURCE_INDEX(device));
 
     DMA_DeInit(adc.DMAy_Streamx);
 

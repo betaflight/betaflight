@@ -173,9 +173,13 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
+
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, motorIndex);
+    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
     
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
+
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_Channel = timerHardware->dmaChannel;
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
@@ -197,8 +201,6 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_ITConfig(stream, DMA_IT_TC, ENABLE);
     DMA_ClearITPendingBit(stream, dmaFlag_IT_TCIF(timerHardware->dmaStream));
-    
-    dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 }
 
 #endif
