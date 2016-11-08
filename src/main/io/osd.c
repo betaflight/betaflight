@@ -608,13 +608,6 @@ void osdUpdate(uint32_t currentTime)
     static uint8_t lastSec = 0;
     uint8_t sec;
 
-#ifdef OSD_CALLS_CMS
-    // detect enter to menu
-    if (IS_MID(THROTTLE) && IS_HI(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
-        cmsOpenMenu();
-    }
-#endif
-
     // detect arm/disarm
     if (armState != ARMING_FLAG(ARMED)) {
         if (ARMING_FLAG(ARMED))
