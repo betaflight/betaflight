@@ -332,7 +332,11 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 #ifdef CMS
+#ifdef USE_MSP_DISPLAYPORT
+    setTaskEnabled(TASK_CMS, true);
+#else
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+#endif
 #endif
 }
 
