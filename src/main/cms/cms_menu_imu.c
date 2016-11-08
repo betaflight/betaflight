@@ -52,14 +52,21 @@
 //
 static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
-static char profileIndexString[] = " PROF n";
+static char profileIndexString[] = " p";
 static uint8_t tempPid[4][3];
+
+static uint8_t tmpRateProfileIndex;
+static uint8_t rateProfileIndex;
+static char rateProfileIndexString[] = " p-r";
+static controlRateConfig_t rateProfile;
 
 static long cmsx_menuImu_onEnter(void)
 {
     profileIndex = masterConfig.current_profile_index;
     tmpProfileIndex = profileIndex + 1;
-    profileIndexString[6] = '0' + tmpProfileIndex;
+
+    rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+    tmpRateProfileIndex = rateProfileIndex + 1;
 
     return 0;
 }
@@ -68,7 +75,28 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.current_profile_index = tmpProfileIndex - 1;
+    masterConfig.current_profile_index = profileIndex;
+    masterConfig.profile[profileIndex].activeRateProfile = rateProfileIndex;
+
+    return 0;
+}
+
+static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *ptr)
+{
+    UNUSED(displayPort);
+    UNUSED(ptr);
+
+    profileIndex = tmpProfileIndex - 1;
+
+    return 0;
+}
+
+static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void *ptr)
+{
+    UNUSED(displayPort);
+    UNUSED(ptr);
+
+    rateProfileIndex = tmpRateProfileIndex - 1;
 
     return 0;
 }
@@ -90,12 +118,11 @@ static long cmsx_PidRead(void)
 
 static long cmsx_PidOnEnter(void)
 {
-    profileIndexString[6] = '0' + tmpProfileIndex;
+    profileIndexString[1] = '0' + tmpProfileIndex;
     cmsx_PidRead();
 
     return 0;
 }
-
 
 static long cmsx_PidWriteback(const OSD_Entry *self)
 {
@@ -146,35 +173,35 @@ static CMS_Menu cmsx_menuPid = {
 //
 // Rate & Expo
 //
-static controlRateConfig_t rateProfile;
 
-static long cmsx_RateExpoRead(void)
+static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, &masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, &masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], sizeof(controlRateConfig_t));
 
     return 0;
 }
 
-static long cmsx_RateExpoWriteback(const OSD_Entry *self)
+static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile], &rateProfile, sizeof(controlRateConfig_t));
+    memcpy(&masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }
 
-static long cmsx_menuRcConfirmBack(const OSD_Entry *self)
+static long cmsx_RateProfileOnEnter(void)
 {
-    if (self && self->type == OME_Back)
-        return 0;
-    else
-        return -1;
+    rateProfileIndexString[1] = '0' + tmpProfileIndex;
+    rateProfileIndexString[3] = '0' + tmpRateProfileIndex;
+    cmsx_RateProfileRead();
+
+    return 0;
 }
 
-static OSD_Entry cmsx_menuRateExpoEntries[] =
+static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
-    { "-- RATE&EXPO --", OME_Label, NULL, NULL, 0 },
+    { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
     { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
     { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
@@ -195,105 +222,115 @@ static OSD_Entry cmsx_menuRateExpoEntries[] =
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-CMS_Menu cmsx_menuRateExpo = {
+CMS_Menu cmsx_menuRateProfile = {
     .GUARD_text = "MENURATE",
     .GUARD_type = OME_MENU,
-    .onEnter = cmsx_RateExpoRead,
-    .onExit = cmsx_RateExpoWriteback,
+    .onEnter = cmsx_RateProfileOnEnter,
+    .onExit = cmsx_RateProfileWriteback,
     .onGlobalExit = NULL,
-    .entries = cmsx_menuRateExpoEntries
+    .entries = cmsx_menuRateProfileEntries
 };
 
-
-//
-// RC preview
-//
-static OSD_Entry cmsx_menuRcEntries[] =
+static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
-    { "-- RC PREV --", OME_Label, NULL, NULL, 0},
+    { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
-    { "ROLL",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[ROLL],     1, 2500, 0 }, DYNAMIC },
-    { "PITCH", OME_INT16, NULL, &(OSD_INT16_t){ &rcData[PITCH],    1, 2500, 0 }, DYNAMIC },
-    { "THR",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[THROTTLE], 1, 2500, 0 }, DYNAMIC },
-    { "YAW",   OME_INT16, NULL, &(OSD_INT16_t){ &rcData[YAW],      1, 2500, 0 }, DYNAMIC },
+    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &masterConfig.gyro_soft_lpf_hz,         0, 255, 1 }, 0 },
+    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
+    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
+    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
+    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
 
-    { "AUX1",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX1],     1, 2500, 0 }, DYNAMIC },
-    { "AUX2",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX2],     1, 2500, 0 }, DYNAMIC },
-    { "AUX3",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX3],     1, 2500, 0 }, DYNAMIC },
-    { "AUX4",  OME_INT16, NULL, &(OSD_INT16_t){ &rcData[AUX4],     1, 2500, 0 }, DYNAMIC },
-
-    { "BACK",  OME_Back, NULL, NULL, 0},
-    {NULL, OME_END, NULL, NULL, 0}
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
 };
 
-CMS_Menu cmsx_menuRcPreview = {
-    .GUARD_text = "XRCPREV",
-    .GUARD_type = OME_MENU,
-    .onEnter = NULL,
-    .onExit = cmsx_menuRcConfirmBack,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuRcEntries
-};
-
-
-//
-// Misc
-//
-static OSD_Entry menuImuMiscEntries[]=
-{
-    { "-- MISC --", OME_Label, NULL, NULL, 0 },
-
-    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.gyro_soft_lpf_hz,                    0, 255, 1 }, 0 },
-    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.dterm_lpf_hz,  0, 500, 1 }, 0 },
-    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_lpf_hz,    0, 500, 1 }, 0 },
-    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.profile[0].pidProfile.yaw_p_limit, 100, 500, 1 }, 0 },
-    { "MIN THR",    OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.motorConfig.minthrottle,         1000, 2000, 1 }, 0 },
-    { "VBAT SCALE", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatscale,             1, 250, 1 }, 0 },
-    { "VBAT CLMAX", OME_UINT8,  NULL, &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatmaxcellvoltage,   10,  50, 1 }, 0 },
-
-    { "BACK", OME_Back, NULL, NULL, 0},
-    { NULL, OME_END, NULL, NULL, 0}
-};
-
-CMS_Menu menuImuMisc = {
-    .GUARD_text = "XIMUMISC",
+static CMS_Menu cmsx_menuFilterGlobal = {
+    .GUARD_text = "XFLTGLB",
     .GUARD_type = OME_MENU,
     .onEnter = NULL,
     .onExit = NULL,
     .onGlobalExit = NULL,
-    .entries = menuImuMiscEntries
+    .entries = cmsx_menuFilterGlobalEntries,
 };
 
-static long onProfileChange(displayPort_t *pDisplay, const void *ptr)
-{
-    UNUSED(pDisplay);
-    UNUSED(ptr);
+static uint16_t cmsx_dterm_lpf_hz;
+static uint16_t cmsx_dterm_notch_hz;
+static uint16_t cmsx_dterm_notch_cutoff;
+static uint16_t cmsx_yaw_lpf_hz;
+static uint16_t cmsx_yaw_p_limit;
 
-    masterConfig.current_profile_index = tmpProfileIndex - 1;
+static long cmsx_FilterPerProfileRead(void)
+{
+    cmsx_dterm_lpf_hz =       masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz;
+    cmsx_dterm_notch_hz =     masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz;
+    cmsx_dterm_notch_cutoff = masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff;
+    cmsx_yaw_lpf_hz =         masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
+    cmsx_yaw_p_limit =        masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
 
     return 0;
 }
+
+static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz =       cmsx_dterm_lpf_hz;
+    masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz =     cmsx_dterm_notch_hz;
+    masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
+    masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz =         cmsx_yaw_lpf_hz;
+    masterConfig.profile[profileIndex].pidProfile.yaw_p_limit =        cmsx_yaw_p_limit;
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
+{
+    { "-- FILTER PP  --", OME_Label, NULL, NULL, 0 },
+
+    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf_hz,         0, 500, 1 }, 0 },
+    { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
+    { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
+    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lpf_hz,           0, 500, 1 }, 0 },
+    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_p_limit,        100, 500, 1 }, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuFilterPerProfile = {
+    .GUARD_text = "XFLTPP",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_FilterPerProfileRead,
+    .onExit = cmsx_FilterPerProfileWriteback,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuFilterPerProfileEntries,
+};
 
 static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   onProfileChange, &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
-    {"PID",       OME_Submenu, cmsMenuChange,   &cmsx_menuPid,       0},
-    {"RATE&RXPO", OME_Submenu, cmsMenuChange,   &cmsx_menuRateExpo,  0},
-    {"RC PREV",   OME_Submenu, cmsMenuChange,   &cmsx_menuRcPreview, 0},
-    {"MISC",      OME_Submenu, cmsMenuChange,   &menuImuMisc,        0},
+    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
+    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,       0},
+
+    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_RATEPROFILES, 1}, 0},
+    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,  0},
+
+    {"FLT PP",    OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile, 0},
+
+    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal, 0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
 
 CMS_Menu cmsx_menuImu = {
-    "XIMU",
-    OME_MENU,
-    cmsx_menuImu_onEnter,
-    cmsx_menuImu_onExit,
-    NULL,
-    cmsx_menuImuEntries,
+    .GUARD_text = "XIMU",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_menuImu_onEnter,
+    .onExit = cmsx_menuImu_onExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuImuEntries,
 };
 #endif // CMS

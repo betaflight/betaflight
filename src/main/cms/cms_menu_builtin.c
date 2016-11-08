@@ -43,6 +43,7 @@
 #include "cms/cms_menu_vtx.h"
 #include "cms/cms_menu_osd.h"
 #include "cms/cms_menu_ledstrip.h"
+#include "cms/cms_menu_misc.h"
 
 
 // Info
@@ -112,19 +113,22 @@ static CMS_Menu menuFeatures = {
 
 static OSD_Entry menuMainEntries[] =
 {
-    {"-- MAIN MENU --", OME_Label, NULL, NULL, 0},
-    {"CFG&IMU", OME_Submenu, cmsMenuChange, &cmsx_menuImu, 0},
-    {"FEATURES", OME_Submenu, cmsMenuChange, &menuFeatures, 0},
+    {"-- MAIN --",  OME_Label, NULL, NULL, 0},
+
+    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
+    {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
-    {"SCR LAYOUT", OME_Submenu, cmsMenuChange, &cmsx_menuOsdLayout, 0},
-    {"ALARMS", OME_Submenu, cmsMenuChange, &cmsx_menuAlarms, 0},
+    {"SCR LAYOUT",  OME_Submenu,  cmsMenuChange, &cmsx_menuOsdLayout, 0},
+    {"ALARMS",      OME_Submenu,  cmsMenuChange, &cmsx_menuAlarms, 0},
 #endif
-    {"FC&FW INFO", OME_Submenu, cmsMenuChange, &menuInfo, 0},
-    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit, (void*)1, 0},
-    {"EXIT", OME_OSD_Exit, cmsMenuExit, (void*)0, 0},
+    {"FC&FW INFO",  OME_Submenu,  cmsMenuChange, &menuInfo, 0},
+    {"MISC",        OME_Submenu,  cmsMenuChange, &cmsx_menuMisc, 0},
+    {"SAVE&REBOOT", OME_OSD_Exit, cmsMenuExit,   (void*)1, 0},
+    {"EXIT",        OME_OSD_Exit, cmsMenuExit,   (void*)0, 0},
 #ifdef CMS_MENU_DEBUG
-    {"ERR SAMPLE", OME_Submenu, cmsMenuChange, &menuInfoEntries[0], 0},
+    {"ERR SAMPLE",  OME_Submenu,  cmsMenuChange, &menuInfoEntries[0], 0},
 #endif
+
     {NULL,OME_END, NULL, NULL, 0}
 };
 
