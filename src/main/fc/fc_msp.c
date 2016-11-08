@@ -1083,7 +1083,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
     #endif
         sbufWriteU16(dst, masterConfig.mixerConfig.yaw_jump_prevention_limit);
         sbufWriteU8(dst, masterConfig.gyro_lpf);
-        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, currentProfile->pidProfile.acc_soft_lpf_hz);
         sbufWriteU8(dst, 0); //reserved
         sbufWriteU8(dst, 0); //reserved
         sbufWriteU8(dst, 0); //reserved
@@ -1433,7 +1433,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         #endif
             masterConfig.mixerConfig.yaw_jump_prevention_limit = sbufReadU16(src);
             masterConfig.gyro_lpf = sbufReadU8(src);
-            sbufReadU8(src); //reserved
+            currentProfile->pidProfile.acc_soft_lpf_hz = sbufReadU8(src);
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
