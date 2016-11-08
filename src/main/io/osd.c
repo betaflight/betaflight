@@ -453,47 +453,54 @@ int32_t osdGetAltitude(int32_t alt)
 
 void osdUpdateAlarms(void)
 {
+    osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
+
+    // This is overdone?
+    // uint16_t *itemPos = masterConfig.osdProfile.item_pos;
+
     int32_t alt = osdGetAltitude(BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
-    if (statRssi < masterConfig.osdProfile.rssi_alarm)
-        masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
+    if (statRssi < pOsdProfile->rssi_alarm)
+        pOsdProfile->item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
     if (vbat <= (batteryWarningVoltage - 1))
-        masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
 
     if (STATE(GPS_FIX) == 0)
-        masterConfig.osdProfile.item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
 
-    if (flyTime / 60 >= masterConfig.osdProfile.time_alarm && ARMING_FLAG(ARMED))
-        masterConfig.osdProfile.item_pos[OSD_FLYTIME] |= BLINK_FLAG;
+    if (flyTime / 60 >= pOsdProfile->time_alarm && ARMING_FLAG(ARMED))
+        pOsdProfile->item_pos[OSD_FLYTIME] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
 
-    if (mAhDrawn >= masterConfig.osdProfile.cap_alarm)
-        masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
+    if (mAhDrawn >= pOsdProfile->cap_alarm)
+        pOsdProfile->item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 
-    if (alt >= masterConfig.osdProfile.alt_alarm)
-        masterConfig.osdProfile.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+    if (alt >= pOsdProfile->alt_alarm)
+        pOsdProfile->item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
     else
-        masterConfig.osdProfile.item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+        pOsdProfile->item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
 }
 
 void osdResetAlarms(void)
 {
-    masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
-    masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
-    masterConfig.osdProfile.item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
-    masterConfig.osdProfile.item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
-    masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+    osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
+
+    pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+    pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+    pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+    pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 }
 
 void osdResetStats(void)
