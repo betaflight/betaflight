@@ -85,11 +85,6 @@ static void taskUpdateAccelerometer(uint32_t currentTime)
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
 }
 
-static void taskUpdateAttitude(uint32_t currentTime)
-{
-    imuUpdateAttitude(currentTime);
-}
-
 static void taskHandleSerial(uint32_t currentTime)
 {
     UNUSED(currentTime);
@@ -102,13 +97,6 @@ static void taskHandleSerial(uint32_t currentTime)
 #endif
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
-
-#ifdef BEEPER
-static void taskUpdateBeeper(uint32_t currentTime)
-{
-    beeperUpdate(currentTime);          //call periodic beeper handler
-}
-#endif
 
 static void taskUpdateBattery(uint32_t currentTime)
 {
@@ -131,12 +119,6 @@ static void taskUpdateBattery(uint32_t currentTime)
             updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
         }
     }
-}
-
-static bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
-{
-    UNUSED(currentDeltaTime);
-    return rxUpdate(currentTime);
 }
 
 static void taskUpdateRxMain(uint32_t currentTime)
@@ -163,18 +145,6 @@ static void taskUpdateRxMain(uint32_t currentTime)
 #endif
 }
 
-#ifdef GPS
-static void taskProcessGPS(uint32_t currentTime)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsUdate() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsUpdate(currentTime);
-    }
-}
-#endif
-
 #ifdef MAG
 static void taskUpdateCompass(uint32_t currentTime)
 {
@@ -198,17 +168,6 @@ static void taskUpdateBaro(uint32_t currentTime)
 }
 #endif
 
-#ifdef SONAR
-static void taskUpdateSonar(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_SONAR)) {
-        sonarUpdate();
-    }
-}
-#endif
-
 #if defined(BARO) || defined(SONAR)
 static void taskCalculateAltitude(uint32_t currentTime)
 {
@@ -224,15 +183,6 @@ static void taskCalculateAltitude(uint32_t currentTime)
     }}
 #endif
 
-#ifdef USE_DASHBOARD
-static void taskUpdateDashboard(uint32_t currentTime)
-{
-    if (feature(FEATURE_DASHBOARD)) {
-        dashboardUpdate(currentTime);
-    }
-}
-#endif
-
 #ifdef TELEMETRY
 static void taskTelemetry(uint32_t currentTime)
 {
@@ -240,33 +190,6 @@ static void taskTelemetry(uint32_t currentTime)
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
         telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    }
-}
-#endif
-
-#ifdef LED_STRIP
-static void taskLedStrip(uint32_t currentTime)
-{
-    if (feature(FEATURE_LED_STRIP)) {
-        ledStripUpdate(currentTime);
-    }
-}
-#endif
-
-#ifdef TRANSPONDER
-static void taskTransponder(uint32_t currentTime)
-{
-    if (feature(FEATURE_TRANSPONDER)) {
-        transponderUpdate(currentTime);
-    }
-}
-#endif
-
-#ifdef OSD
-static void taskUpdateOsd(uint32_t currentTime)
-{
-    if (feature(FEATURE_OSD)) {
-        osdUpdate(currentTime);
     }
 }
 #endif
@@ -365,14 +288,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_ATTITUDE] = {
         .taskName = "ATTITUDE",
-        .taskFunc = taskUpdateAttitude,
+        .taskFunc = imuUpdateAttitude,
         .desiredPeriod = 1000000 / 100,
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_RX] = {
         .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
+        .checkFunc = rxUpdateCheck,
         .taskFunc = taskUpdateRxMain,
         .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
@@ -395,7 +318,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
+        .taskFunc = beeperUpdate,
         .desiredPeriod = 1000000 / 100,     // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -404,7 +327,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef GPS
     [TASK_GPS] = {
         .taskName = "GPS",
-        .taskFunc = taskProcessGPS,
+        .taskFunc = gpsUpdate,
         .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
@@ -431,8 +354,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef SONAR
     [TASK_SONAR] = {
         .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
+        .taskFunc = sonarUpdate,
+        .desiredPeriod = 70000,             // 70ms required so that SONAR pulses do not interfer with each other
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -449,7 +372,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef TRANSPONDER
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
-        .taskFunc = taskTransponder,
+        .taskFunc = transponderUpdate,
         .desiredPeriod = 1000000 / 250,         // 250 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -458,7 +381,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
-        .taskFunc = taskUpdateDashboard,
+        .taskFunc = dashboardUpdate,
         .desiredPeriod = 1000000 / 10,
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -466,7 +389,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef OSD
     [TASK_OSD] = {
         .taskName = "OSD",
-        .taskFunc = taskUpdateOsd,
+        .taskFunc = osdUpdate,
         .desiredPeriod = 1000000 / 60,          // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -483,7 +406,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef LED_STRIP
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
-        .taskFunc = taskLedStrip,
+        .taskFunc = ledStripUpdate,
         .desiredPeriod = 1000000 / 100,         // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
