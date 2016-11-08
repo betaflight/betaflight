@@ -325,8 +325,10 @@ void resumeRxSignal(void)
     failsafeOnRxResume();
 }
 
-bool rxUpdate(uint32_t currentTime)
+bool rxUpdateCheck(uint32_t currentTime, uint32_t currentDeltaTime)
 {
+    UNUSED(currentDeltaTime);
+
     resetRxSignalReceivedFlagIfNeeded(currentTime);
 
     if (isRxDataDriven()) {
