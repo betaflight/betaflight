@@ -37,13 +37,16 @@ uint32_t serialGetBaudRate(serialPort_t *instance)
 
 void serialWrite(serialPort_t *instance, uint8_t ch)
 {
-    instance->vTable->serialWrite(instance, ch);
+    while (!serialTxBytesFree(instance)) {
+    };
+
+	instance->vTable->serialWrite(instance, ch);
 }
 
 
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count)
 {
-    if (instance->vTable->writeBuf) {
+    if (false && instance->vTable->writeBuf) {
         instance->vTable->writeBuf(instance, data, count);
     } else {
         for (const uint8_t *p = data; count > 0; count--, p++) {
