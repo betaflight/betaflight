@@ -21,6 +21,8 @@
 
 #include "config/config_profile.h"
 
+#include "cms/cms.h"
+
 #include "drivers/pwm_rx.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"

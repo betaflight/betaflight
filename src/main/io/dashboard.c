@@ -23,13 +23,18 @@
 
 #ifdef USE_DASHBOARD
 
+#include "common/utils.h"
+
 #include "build/version.h"
 #include "build/debug.h"
 
 #include "build/build_config.h"
 
 #include "drivers/system.h"
+#include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+
+#include "cms/cms.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -49,6 +54,8 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
+
+#include "io/displayport_oled.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -77,6 +84,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 static bool dashboardPresent = false;
 
 static rxConfig_t *rxConfig;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -581,6 +589,12 @@ void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
+#ifdef CMS
+    if (displayIsGrabbed(displayPort)) {
+        return;
+    }
+#endif
+
     const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
         return;
@@ -692,6 +706,11 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
+    displayPort = displayPortOledInit();
+#if defined(CMS)
+    cmsDisplayPortRegister(displayPort);
+#endif
+
     rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
@@ -728,5 +747,4 @@ void dashboardDisablePageCycling(void)
 {
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
-
-#endif
+#endif // USE_DASHBOARD

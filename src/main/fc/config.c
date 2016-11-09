@@ -26,6 +26,8 @@
 
 #include "blackbox/blackbox_io.h"
 
+#include "cms/cms.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -496,7 +498,7 @@ void createDefaultConfig(master_t *config)
 
 #ifdef OSD
     intFeatureSet(FEATURE_OSD, config);
-    resetOsdConfig(&config->osdProfile);
+    osdResetConfig(&config->osdProfile);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER

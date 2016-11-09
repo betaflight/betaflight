@@ -33,6 +33,7 @@ typedef enum {
     OWNER_TX,
     OWNER_SOFTSPI,
     OWNER_RX_SPI,
+    OWNER_MAX7456,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 

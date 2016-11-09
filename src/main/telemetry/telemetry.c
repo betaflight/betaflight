@@ -23,6 +23,8 @@
 
 #ifdef TELEMETRY
 
+#include "common/utils.h"
+
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
@@ -42,7 +44,6 @@
 #include "telemetry/ltm.h"
 #include "telemetry/jetiexbus.h"
 #include "telemetry/mavlink.h"
-#include "rx/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -53,13 +54,22 @@ void telemetryUseConfig(telemetryConfig_t *telemetryConfigToUse)
 
 void telemetryInit(void)
 {
+#ifdef TELEMETRY_FRSKY
     initFrSkyTelemetry(telemetryConfig);
+#endif
+#ifdef TELEMETRY_HOTT
     initHoTTTelemetry(telemetryConfig);
+#endif
+#ifdef TELEMETRY_SMARTPORT
     initSmartPortTelemetry(telemetryConfig);
+#endif
+#ifdef TELEMETRY_LTM
     initLtmTelemetry(telemetryConfig);
+#endif
+#ifdef TELEMETRY_JETIEXBUS
     initJetiExBusTelemetry(telemetryConfig);
-
-#if defined(TELEMETRY_MAVLINK)
+#endif
+#ifdef TELEMETRY_MAVLINK
     initMAVLinkTelemetry();
 #endif
 
@@ -89,26 +99,49 @@ serialPort_t *telemetrySharedPort = NULL;
 
 void telemetryCheckState(void)
 {
+#ifdef TELEMETRY_FRSKY
     checkFrSkyTelemetryState();
+#endif
+#ifdef TELEMETRY_HOTT
     checkHoTTTelemetryState();
+#endif
+#ifdef TELEMETRY_SMARTPORT
     checkSmartPortTelemetryState();
+#endif
+#ifdef TELEMETRY_LTM
     checkLtmTelemetryState();
+#endif
+#ifdef TELEMETRY_JETIEXBUS
     checkJetiExBusTelemetryState();
-
-#if defined(TELEMETRY_MAVLINK)
+#endif
+#ifdef TELEMETRY_MAVLINK
     checkMAVLinkTelemetryState();
 #endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
+#ifdef TELEMETRY_FRSKY
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+#else
+    UNUSED(rxConfig);
+    UNUSED(deadband3d_throttle);
+#endif
+#ifdef TELEMETRY_HOTT
     handleHoTTTelemetry(currentTime);
+#else
+    UNUSED(currentTime);
+#endif
+#ifdef TELEMETRY_SMARTPORT
     handleSmartPortTelemetry();
+#endif
+#ifdef TELEMETRY_LTM
     handleLtmTelemetry();
+#endif
+#ifdef TELEMETRY_JETIEXBUS
     handleJetiExBusTelemetry();
-
-#if defined(TELEMETRY_MAVLINK)
+#endif
+#ifdef TELEMETRY_MAVLINK
     handleMAVLinkTelemetry();
 #endif
 }
