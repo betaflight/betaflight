@@ -34,7 +34,6 @@
 #include "common/streambuf.h"
 
 #include "drivers/system.h"
-
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/pwm_mapping.h"
@@ -48,7 +47,6 @@
 
 #include "io/motors.h"
 #include "io/servos.h"
-
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -57,8 +55,9 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_4way.h"
 
-#include "msp/msp_protocol.h"
 #include "msp/msp.h"
+#include "msp/msp_protocol.h"
+#include "msp/msp_serial.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -163,7 +162,7 @@ typedef enum {
     MSP_SDCARD_STATE_FATAL       = 1,
     MSP_SDCARD_STATE_CARD_INIT   = 2,
     MSP_SDCARD_STATE_FS_INIT     = 3,
-    MSP_SDCARD_STATE_READY       = 4,
+    MSP_SDCARD_STATE_READY       = 4
 } mspSDCardState_e;
 
 typedef enum {
@@ -176,7 +175,7 @@ typedef enum {
 } mspFlashfsFlags_e;
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-void msp4WayIfFn(serialPort_t *serialPort)
+static void msp4WayIfFn(serialPort_t *serialPort)
 {
     // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
     // bootloader mode before try to connect any ESC
@@ -199,7 +198,7 @@ static void mspRebootFn(serialPort_t *serialPort)
     systemReset();
 
     // control should never return here.
-    while(1) ;
+    while (true) ;
 }
 
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
@@ -456,17 +455,8 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint8_t s
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
  */
-static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
-#if !defined(NAV) && !defined(USE_FLASHFS)
-    UNUSED(src);
-#endif
-
-#ifdef NAV
-    int8_t msp_wp_no;
-    navWaypoint_t msp_wp;
-#endif
-
     switch (cmdMSP) {
     case MSP_API_VERSION:
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
@@ -774,19 +764,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         //sbufWriteU16(dst,  (int16_t)(target_bearing/100));
         sbufWriteU16(dst, getMagHoldHeading());
         break;
-    case MSP_WP:
-        msp_wp_no = sbufReadU8(src);    // get the wp number
-        getWaypoint(msp_wp_no, &msp_wp);
-        sbufWriteU8(dst, msp_wp_no);   // wp_no
-        sbufWriteU8(dst, msp_wp.action);  // action (WAYPOINT)
-        sbufWriteU32(dst, msp_wp.lat);    // lat
-        sbufWriteU32(dst, msp_wp.lon);    // lon
-        sbufWriteU32(dst, msp_wp.alt);    // altitude (cm)
-        sbufWriteU16(dst, msp_wp.p1);     // P1
-        sbufWriteU16(dst, msp_wp.p2);     // P2
-        sbufWriteU16(dst, msp_wp.p3);     // P3
-        sbufWriteU8(dst, msp_wp.flag);    // flags
-        break;
 #endif
 
     case MSP_GPSSVINFO:
@@ -960,14 +937,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         serializeDataflashSummaryReply(dst);
         break;
 
-#ifdef USE_FLASHFS
-    case MSP_DATAFLASH_READ:
-        {
-            const uint32_t readAddress = sbufReadU32(src);
-            serializeDataflashReadReply(dst, readAddress, 128);
-        }
-        break;
-#endif
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
             sbufWriteU8(dst, 1); //Blackbox supported
@@ -1103,6 +1072,33 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
     }
     return true;
 }
+
+#ifdef NAV
+static void mspFcWpCommand(sbuf_t *dst, sbuf_t *src)
+{
+    navWaypoint_t msp_wp;
+
+    const uint8_t msp_wp_no = sbufReadU8(src);    // get the wp number
+    getWaypoint(msp_wp_no, &msp_wp);
+    sbufWriteU8(dst, msp_wp_no);   // wp_no
+    sbufWriteU8(dst, msp_wp.action);  // action (WAYPOINT)
+    sbufWriteU32(dst, msp_wp.lat);    // lat
+    sbufWriteU32(dst, msp_wp.lon);    // lon
+    sbufWriteU32(dst, msp_wp.alt);    // altitude (cm)
+    sbufWriteU16(dst, msp_wp.p1);     // P1
+    sbufWriteU16(dst, msp_wp.p2);     // P2
+    sbufWriteU16(dst, msp_wp.p3);     // P3
+    sbufWriteU8(dst, msp_wp.flag);    // flags
+}
+#endif
+
+#ifdef USE_FLASHFS
+static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
+{
+    const uint32_t readAddress = sbufReadU32(src);
+    serializeDataflashReadReply(dst, readAddress, 128);
+}
+#endif
 
 static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
@@ -1700,8 +1696,18 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
     // initialize reply by default
     reply->cmd = cmd->cmd;
 
-    if (mspFcProcessOutCommand(cmdMSP, dst, src, mspPostProcessFn)) {
+    if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef NAV
+    } else if (cmdMSP == MSP_WP) {
+        mspFcWpCommand(dst, src);
+        ret = MSP_RESULT_ACK;
+#endif
+#ifdef USE_FLASHFS
+    } else if (cmdMSP == MSP_DATAFLASH_READ) {
+        mspFcDataFlashReadCommand(dst, src);
+        ret = MSP_RESULT_ACK;
+#endif
     } else {
         ret = mspFcProcessInCommand(cmdMSP, src);
     }
@@ -1712,8 +1718,7 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 /*
  * Return a pointer to the process command function
  */
-mspProcessCommandFnPtr mspFcInit(void)
+void mspFcInit(void)
 {
     initActiveBoxIds();
-    return mspFcProcessCommand;
 }
