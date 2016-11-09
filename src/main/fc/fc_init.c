@@ -78,7 +78,7 @@
 #include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial_cli.h"
@@ -444,9 +444,9 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-        displayInit(&masterConfig.rxConfig);
+#ifdef DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardInit(&masterConfig.rxConfig);
     }
 #endif
 

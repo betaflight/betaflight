@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef DISPLAY
+#ifdef DASHBOARD
 
 #include "build/version.h"
 #include "build/build_config.h"
@@ -62,19 +62,19 @@
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "display.h"
+#include "dashboard.h"
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
 #define MICROSECONDS_IN_A_SECOND (1000 * 1000)
 
-#define DISPLAY_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
+#define DASHBOARD_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 
 static uint32_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
-static rxConfig_t *rxConfig;
+static const rxConfig_t *rxConfig;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -83,7 +83,7 @@ static char lineBuffer[SCREEN_CHARACTER_COLUMN_COUNT + 1];
 #define HALF_SCREEN_CHARACTER_COLUMN_COUNT (SCREEN_CHARACTER_COLUMN_COUNT / 2)
 #define IS_SCREEN_CHARACTER_COLUMN_COUNT_ODD (SCREEN_CHARACTER_COLUMN_COUNT & 1)
 
-#if defined(DISPLAY_ARMED_BITMAP)
+#if defined(DASHBOARD_ARMED_BITMAP)
 static uint8_t armedBitmapRLE [] = { 128, 32,
     '\x00','\x00','\x87','\xc0','\xe0','\xf8','\xfc','\xfc', // 0x0008
     '\x02','\x7e','\x3e','\x1f','\x0f','\x0f','\x06','\xcf', // 0x0010
@@ -133,15 +133,17 @@ static uint32_t nextPageAt;
 static bool forcePageChange;
 static pageId_e currentPageId;
 
-void resetDisplay(void) {
+static void resetDisplay(void)
+{
     displayPresent = ug2864hsweg01InitI2C();
 }
 
-void LCDprint(uint8_t i) {
+static void LCDprint(uint8_t i)
+{
    i2c_OLED_send_char(i);
 }
 
-void padLineBufferToChar(uint8_t toChar)
+static void padLineBufferToChar(uint8_t toChar)
 {
     uint8_t length = strlen(lineBuffer);
     while (length < toChar - 1) {
@@ -150,19 +152,19 @@ void padLineBufferToChar(uint8_t toChar)
     lineBuffer[length] = 0;
 }
 
-void padLineBuffer(void)
+static void padLineBuffer(void)
 {
     padLineBufferToChar(sizeof(lineBuffer));
 }
 
-void padHalfLineBuffer(void)
+static void padHalfLineBuffer(void)
 {
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
     padLineBufferToChar(halfLineIndex);
 }
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
-void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
+static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
     uint8_t i, j;
 
     if (percent > 100)
@@ -180,7 +182,7 @@ void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
         LCDprint(154); // empty
 }
 
-void updateTicker(void)
+static void updateTicker(void)
 {
     static uint8_t tickerIndex = 0;
     i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 1, 0);
@@ -189,7 +191,7 @@ void updateTicker(void)
     tickerIndex = tickerIndex % TICKER_CHARACTER_COUNT;
 }
 
-void updateRxStatus(void)
+static void updateRxStatus(void)
 {
     i2c_OLED_set_xy(SCREEN_CHARACTER_COLUMN_COUNT - 2, 0);
     char rxStatus = '!';
@@ -201,7 +203,7 @@ void updateRxStatus(void)
     i2c_OLED_send_char(rxStatus);
 }
 
-void updateFailsafeStatus(void)
+static void updateFailsafeStatus(void)
 {
     char failsafeIndicator = '?';
     switch (failsafePhase()) {
@@ -233,9 +235,9 @@ void updateFailsafeStatus(void)
     i2c_OLED_send_char(failsafeIndicator);
 }
 
-void showTitle(void)
+static void showTitle(void)
 {
-#if defined(DISPLAY_ARMED_BITMAP)
+#if defined(DASHBOARD_ARMED_BITMAP)
     if (currentPageId != PAGE_ARMED) {
         i2c_OLED_set_line(0);
         i2c_OLED_send_string(pageTitles[currentPageId]);
@@ -246,7 +248,7 @@ void showTitle(void)
 #endif
 }
 
-void showWelcomePage(void)
+static void showWelcomePage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -258,9 +260,9 @@ void showWelcomePage(void)
     i2c_OLED_send_string(targetName);
 }
 
-#if defined(DISPLAY_ARMED_BITMAP)
+#if defined(DASHBOARD_ARMED_BITMAP)
 // RLE compressed bitmaps must be 128 width with vertical data orientation, and size included in file.
-void bitmapDecompressAndShow(uint8_t *bitmap)
+static void bitmapDecompressAndShow(uint8_t *bitmap)
 {
     uint8_t data = 0, count = 0;
     uint16_t i;
@@ -287,7 +289,7 @@ void bitmapDecompressAndShow(uint8_t *bitmap)
     }
 }
 
-void showArmedPage(void)
+static void showArmedPage(void)
 {
     i2c_OLED_set_line(2);
     bitmapDecompressAndShow(armedBitmapRLE);
@@ -298,7 +300,7 @@ void showArmedPage(void)
 }
 #endif
 
-void showStatusPage(void)
+static void showStatusPage(void)
 {
     uint8_t rowIndex = PAGE_TITLE_LINE_COUNT;
 
@@ -370,7 +372,7 @@ void showStatusPage(void)
 
 }
 
-void updateDisplay(uint32_t currentTime)
+void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
@@ -381,7 +383,7 @@ void updateDisplay(uint32_t currentTime)
         return;
     }
 
-    nextDisplayUpdateAt = currentTime + DISPLAY_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTime + DASHBOARD_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -449,13 +451,13 @@ void updateDisplay(uint32_t currentTime)
     }
 }
 
-void displaySetPage(pageId_e newPageId)
+void dashboardSetPage(pageId_e newPageId)
 {
     currentPageId = newPageId;
     forcePageChange = true;
 }
 
-void displayInit(rxConfig_t *rxConfigToUse)
+void dashboardInit(const rxConfig_t *rxConfigToUse)
 {
     delay(200);
     resetDisplay();
@@ -463,14 +465,14 @@ void displayInit(rxConfig_t *rxConfigToUse)
 
     rxConfig = rxConfigToUse;
 
-    displaySetPage(PAGE_WELCOME);
+    dashboardSetPage(PAGE_WELCOME);
     const uint32_t now = micros();
-    displaySetNextPageChangeAt(now + 5* MICROSECONDS_IN_A_SECOND);
+    dashboardSetNextPageChangeAt(now + 5 * MICROSECONDS_IN_A_SECOND);
 
-    updateDisplay(now);
+    dashboardUpdate(now);
 }
 
-void displaySetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(uint32_t futureMicros)
 {
     nextPageAt = futureMicros;
 }

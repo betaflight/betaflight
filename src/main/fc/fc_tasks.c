@@ -39,7 +39,7 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
@@ -179,11 +179,11 @@ void taskUpdateSonar(uint32_t currentTime)
 }
 #endif
 
-#ifdef DISPLAY
-void taskUpdateDisplay(uint32_t currentTime)
+#ifdef DASHBOARD
+void taskDashboardUpdate(uint32_t currentTime)
 {
-    if (feature(FEATURE_DISPLAY)) {
-        updateDisplay(currentTime);
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardUpdate(currentTime);
     }
 }
 #endif
@@ -350,10 +350,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef DISPLAY
-    [TASK_DISPLAY] = {
-        .taskName = "DISPLAY",
-        .taskFunc = taskUpdateDisplay,
+#ifdef DASHBOARD
+    [TASK_DASHBOARD] = {
+        .taskName = "DASHBOARD",
+        .taskFunc = taskDashboardUpdate,
         .desiredPeriod = 1000000 / 10,
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -444,8 +444,8 @@ void fcTasksInit(void)
 #ifdef SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
 #endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#ifdef DASHBOARD
+    setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
