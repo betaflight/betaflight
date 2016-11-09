@@ -491,7 +491,8 @@ void init(void)
 
     imuInit();
 
-    mspSerialInit(mspFcInit());
+    mspFcInit();
+    mspSerialInit();
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
     cmsDisplayPortRegister(displayPortMspInit());
