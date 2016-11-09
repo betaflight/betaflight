@@ -32,13 +32,14 @@
 #include "adc_impl.h"
 #include "io.h"
 #include "rcc.h"
+#include "dma.h"
 
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE   ADC1
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB(DMA1), .DMAy_Channelx = DMA1_Channel1 } 
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .DMAy_Channelx = DMA1_Channel1 } 
 };
 
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
@@ -131,7 +132,8 @@ void adcInit(drv_adc_config_t *init)
 
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    RCC_ClockCmd(adc.rccDMA, ENABLE);
+
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, RESOURCE_INDEX(device));
 
     DMA_DeInit(adc.DMAy_Channelx);
     DMA_InitTypeDef DMA_InitStructure;

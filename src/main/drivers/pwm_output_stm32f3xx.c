@@ -173,6 +173,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Channel_TypeDef *channel = timerHardware->dmaChannel;
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, motorIndex);
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
         
     DMA_Cmd(channel, DISABLE);

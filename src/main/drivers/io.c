@@ -82,7 +82,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
     "SONAR_TRIGGER", "SONAR_ECHO", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI" 
+    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI", "MAX7456"
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
