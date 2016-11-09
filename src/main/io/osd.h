@@ -17,7 +17,11 @@
 
 #pragma once
 
-#include <stdint.h>
+#define VISIBLE_FLAG  0x0800
+#define BLINK_FLAG    0x0400
+#define VISIBLE(x)    (x & VISIBLE_FLAG)
+#define BLINK(x)      ((x & BLINK_FLAG) && blinkState)
+#define BLINK_OFF(x)  (x & ~BLINK_FLAG)
 
 typedef enum {
     OSD_RSSI_VALUE,
@@ -36,16 +40,16 @@ typedef enum {
     OSD_GPS_SPEED,
     OSD_GPS_SATS,
     OSD_ALTITUDE,
-    OSD_MAX_ITEMS, // MUST BE LAST
-} osd_items_t;
+    OSD_ITEM_COUNT // MUST BE LAST
+} osd_items_e;
 
 typedef enum {
     OSD_UNIT_IMPERIAL,
     OSD_UNIT_METRIC
-} osd_unit_t;
+} osd_unit_e;
 
-typedef struct {
-    uint16_t item_pos[OSD_MAX_ITEMS];
+typedef struct osd_profile_s {
+    uint16_t item_pos[OSD_ITEM_COUNT];
 
     // Alarms
     uint8_t rssi_alarm;
@@ -54,17 +58,12 @@ typedef struct {
     uint16_t alt_alarm;
 
     uint8_t video_system;
-    osd_unit_t units;
+    uint8_t row_shiftdown;
+
+    osd_unit_e units;
 } osd_profile_t;
 
-typedef struct {
-    int16_t max_speed;
-    int16_t min_voltage; // /10
-    int16_t max_current; // /10
-    int16_t min_rssi;
-    int16_t max_altitude;
-} statistic_t;
-
-void updateOsd(uint32_t currentTime);
 void osdInit(void);
-void resetOsdConfig(osd_profile_t *osdProfile);
+void osdResetConfig(osd_profile_t *osdProfile);
+void osdResetAlarms(void);
+void osdUpdate(uint32_t currentTime);

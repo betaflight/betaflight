@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
@@ -264,7 +266,7 @@ static void taskTransponder(uint32_t currentTime)
 static void taskUpdateOsd(uint32_t currentTime)
 {
     if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
+        osdUpdate(currentTime);
     }
 }
 #endif
@@ -328,6 +330,13 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef CMS
+#ifdef USE_MSP_DISPLAYPORT
+    setTaskEnabled(TASK_CMS, true);
+#else
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+#endif
 #endif
 }
 
@@ -486,6 +495,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };

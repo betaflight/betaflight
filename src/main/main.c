@@ -29,8 +29,9 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
-#include "drivers/nvic.h"
+#include "cms/cms.h"
 
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
@@ -87,6 +88,7 @@
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/displayport_msp.h"
 #include "io/vtx.h"
 
 #include "scheduler/scheduler.h"
@@ -395,6 +397,10 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+#ifdef CMS
+    cmsInit();
+#endif
+
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit(&masterConfig.rxConfig);
@@ -453,6 +459,10 @@ void init(void)
 
     mspFcInit();
     mspSerialInit();
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

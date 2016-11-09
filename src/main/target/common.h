@@ -55,7 +55,9 @@
 #endif
 
 #if (FLASH_SIZE > 128)
+#define CMS
 #define USE_DASHBOARD
+#define USE_MSP_DISPLAYPORT
 #define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP

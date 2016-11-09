@@ -91,10 +91,20 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+#define USE_DASHBOARD
+
+// Configuratoin Menu System
+#define CMS
+#define CMS_MAX_DEVICE 4
+
+// Use external display connected by MSP to run CMS
+#define USE_MSP_DISPLAYPORT
+
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 // include the osd code
 #define OSD
+
 // include the max7456 driver
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1

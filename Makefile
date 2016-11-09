@@ -491,6 +491,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/display.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \
@@ -556,6 +557,14 @@ COMMON_SRC = \
 HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
+            cms/cms_menu_vtx.c \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
@@ -565,9 +574,13 @@ HIGHEND_SRC = \
             flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
             io/gps.c \
             io/ledstrip.c \
-            io/dashboard.c \
+            io/osd.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \

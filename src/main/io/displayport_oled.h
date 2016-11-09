@@ -17,36 +17,4 @@
 
 #pragma once
 
-#define CMS
-#define CMS_MAX_DEVICE 4
-#define MAG
-#define BARO
-#define GPS
-#define DISPLAY
-#define TELEMETRY
-#define LED_STRIP
-#define USE_SERVOS
-#define TRANSPONDER
-#define USE_VCP
-#define USE_UART1
-#define USE_UART2
-#define USE_UART3
-#define USE_UART4
-#define USE_UART5
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-
-#define SERIAL_PORT_COUNT 8
-
-#define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 6
-
-#define TARGET_BOARD_IDENTIFIER "TEST"
-
-#define LED_STRIP_TIMER 1
-#define SOFTSERIAL_1_TIMER 2
-#define SOFTSERIAL_2_TIMER 3
-
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-
+displayPort_t *displayPortOledInit(void);
