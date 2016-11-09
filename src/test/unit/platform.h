@@ -52,6 +52,11 @@ typedef struct
     void *test;
 } GPIO_TypeDef;
 
+typedef struct
+{
+    void* test;
+} TIM_TypeDef;
+
 typedef struct {
     void* test;
 } DMA_Channel_TypeDef;
