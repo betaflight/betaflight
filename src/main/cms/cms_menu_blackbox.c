@@ -26,9 +26,10 @@
 
 #include "platform.h"
 
-#include "build/version.h"
-
 #ifdef CMS
+
+#include "build/version.h"
+#include "build/build_config.h"
 
 #include "drivers/system.h"
 

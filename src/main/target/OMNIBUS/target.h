@@ -220,5 +220,5 @@
 //#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
 //#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
-//#define USE_MSP_DISPLAYPORT
+#define USE_MSP_DISPLAYPORT
 #define CMS

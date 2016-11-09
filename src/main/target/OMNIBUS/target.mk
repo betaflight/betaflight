@@ -15,16 +15,4 @@ TARGET_SRC = \
             drivers/light_ws2811strip.c \
             drivers/light_ws2811strip_stm32f30x.c \
             drivers/serial_usb_vcp.c \
-            drivers/max7456.c \
-            drivers/display.c \
-            io/osd.c \
-            io/displayport_max7456.c \
-            io/displayport_msp.c \
-            io/displayport_oled.c \
-            cms/cms.c \
-            cms/cms_menu_blackbox.c \
-            cms/cms_menu_builtin.c \
-            cms/cms_menu_imu.c \
-            cms/cms_menu_ledstrip.c \
-            cms/cms_menu_misc.c \
-            cms/cms_menu_osd.c
+            drivers/max7456.c
