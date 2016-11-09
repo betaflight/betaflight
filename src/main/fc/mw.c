@@ -48,7 +48,7 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gimbal.h"

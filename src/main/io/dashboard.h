@@ -22,8 +22,8 @@ typedef enum {
 } pageId_e;
 
 struct rxConfig_s;
-void displayInit(struct rxConfig_s *intialRxConfig);
-void updateDisplay(uint32_t currentTime);
+void dashboardInit(const struct rxConfig_s *intialRxConfig);
+void dashboardUpdate(uint32_t currentTime);
 
-void displaySetPage(pageId_e newPageId);
-void displaySetNextPageChangeAt(uint32_t futureMicros);
+void dashboardSetPage(pageId_e newPageId);
+void dashboardSetNextPageChangeAt(uint32_t futureMicros);

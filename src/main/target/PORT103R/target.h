@@ -85,8 +85,6 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8 // PWM5 (PB8) - 5v tolerant
 #define SONAR_ECHO_PIN_PWM      PB9 // PWM6 (PB9) - 5v tolerant
 
-#define DISPLAY
-
 #define USE_UART1
 #define USE_UART2
 #define USE_SOFTSERIAL1
@@ -113,7 +111,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define DISPLAY
+#define DASHBOARD
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
