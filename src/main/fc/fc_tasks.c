@@ -64,6 +64,7 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -269,6 +270,15 @@ static void taskUpdateOsd(uint32_t currentTime)
 }
 #endif
 
+#ifdef ESC_TELEMETRY
+static void taskEscTelemetry(uint32_t currentTime)
+{
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryProcess(currentTime);
+     }
+ }
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -328,6 +338,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef ESC_TELEMETRY
+    setTaskEnabled(TASK_ESC_TELEMETRY, true); //feature(FEATURE_ESC_TELEMETRY)); // TODO: replace true for feature
 #endif
 }
 
@@ -487,5 +500,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
     },
+#endif
+
+#ifdef ESC_TELEMETRY
+    [TASK_ESC_TELEMETRY] = {
+        .taskName = "ESC_TELEMETRY",
+        .taskFunc = taskEscTelemetry,
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    }
 #endif
 };

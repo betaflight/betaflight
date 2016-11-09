@@ -108,6 +108,8 @@
 #undef USE_UART1_TX_DMA
 #endif
 
+#define ESC_TELEMETRY
+
 #define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
@@ -129,4 +131,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-

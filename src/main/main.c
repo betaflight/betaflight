@@ -102,6 +102,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -282,7 +283,7 @@ void init(void)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);        
+        pwmRxInit(&masterConfig.pwmConfig);
     }
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
@@ -492,6 +493,12 @@ void init(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
+#endif
+
+#ifdef ESC_TELEMETRY
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryInit();
     }
 #endif
 
