@@ -185,17 +185,17 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-#ifdef GPS_notyet
+#ifdef GPS
         case OSD_GPS_SATS:
         {
             buff[0] = 0x1f;
-            sprintf(buff + 1, "%d", GPS_numSat);
+            sprintf(buff + 1, "%d", gpsSol.numSat);
             break;
         }
 
         case OSD_GPS_SPEED:
         {
-            sprintf(buff, "%d", GPS_speed * 36 / 1000);
+            sprintf(buff, "%d", gpsSol.groundSpeed * 36 / 1000);
             break;
         }
 #endif // GPS
@@ -425,7 +425,7 @@ void osdResetConfig(osd_profile_t *osdProfile)
 
 void osdInit(void)
 {
-    char x, string_buffer[30];
+    char string_buffer[30];
 
     armState = ARMING_FLAG(ARMED);
 
@@ -434,15 +434,19 @@ void osdInit(void)
     max7456ClearScreen();
 
     // display logo and help
-    x = 160;
+#ifdef notdef
+    // Logo is disabled.
+    // May be a smaller one; probably needs more symbols than BF does.
+    char x = 160;
     for (int i = 1; i < 5; i++) {
         for (int j = 3; j < 27; j++) {
             if (x != 255)
                 max7456WriteChar(j, i, x++);
         }
     }
+#endif
 
-    sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
+    sprintf(string_buffer, "INAV VERSION: %s", FC_VERSION_STRING);
     max7456Write(5, 6, string_buffer);
 #ifdef CMS
     max7456Write(7, 7,  CMS_STARTUP_HELP_TEXT1);
