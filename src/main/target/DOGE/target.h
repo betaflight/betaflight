@@ -124,6 +124,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define LED_STRIP
+#define USE_DSHOT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

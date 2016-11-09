@@ -102,6 +102,7 @@
 #define RSSI_ADC_PIN            PB2
 
 #define LED_STRIP
+#define USE_DSHOT
 
 #define SPEKTRUM_BIND
 // USART2, PB4
