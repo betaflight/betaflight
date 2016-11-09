@@ -81,6 +81,12 @@ typedef enum {
 #ifdef STACK_CHECK
     TASK_STACK_CHECK,
 #endif
+#ifdef OSD
+    TASK_OSD,
+#endif
+#ifdef CMS
+    TASK_CMS,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

@@ -52,6 +52,7 @@
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
+#include "io/osd.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -462,6 +463,11 @@ static void resetConf(void)
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
+#endif
+
+#ifdef OSD
+    featureSet(FEATURE_OSD);
+    osdResetConfig(&masterConfig.osdProfile);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER

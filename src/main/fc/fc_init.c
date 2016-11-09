@@ -33,6 +33,8 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "cms/cms.h"
+
 #include "drivers/logging.h"
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
@@ -82,6 +84,8 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial_cli.h"
+#include "io/osd.h"
+#include "io/displayport_msp.h"
 
 #include "msp/msp_serial.h"
 
@@ -444,9 +448,19 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
-#ifdef DISPLAY
+#ifdef CMS
+    cmsInit();
+#endif
+
+#ifdef USE_DISPLAY
     if (feature(FEATURE_DISPLAY)) {
         displayInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
     }
 #endif
 
@@ -478,6 +492,10 @@ void init(void)
     imuInit();
 
     mspSerialInit(mspFcInit());
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);

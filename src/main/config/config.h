@@ -27,6 +27,7 @@
 #endif
 #define MAX_CONTROL_RATE_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
+#define MAX_NAME_LENGTH 16
 
 #define ACC_TASK_FREQUENCY_DEFAULT 500
 #define ACC_TASK_FREQUENCY_MIN 100
@@ -73,6 +74,7 @@ typedef enum {
     FEATURE_SOFTSPI = 1 << 26,
     FEATURE_PWM_SERVO_DRIVER = 1 << 27,
     FEATURE_PWM_OUTPUT_ENABLE = 1 << 28,
+    FEATURE_OSD = 1 << 29,
 } features_e;
 
 typedef enum {
