@@ -174,7 +174,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
 
-    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, motorIndex);
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
     
     DMA_Cmd(stream, DISABLE);
