@@ -46,6 +46,9 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USE_DSHOT
+#define REMAP_TIM17_DMA
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

@@ -19,16 +19,18 @@
 
 #include <platform.h>
 #include "drivers/io.h"
+
 #include "drivers/timer.h"
+#include "drivers/timer_def.h"
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PA15), TIM_Channel_1, TIM_USE_PPM,   0, GPIO_AF_1, NULL, 0}, // PPM/SERIAL RX
-    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM_USE_MOTOR, 0, GPIO_AF_2, NULL, 0}, // PWM1
-    { TIM3,  IO_TAG(PB5),  TIM_Channel_2, TIM_USE_MOTOR, 0, GPIO_AF_2, NULL, 0}, // PWM2
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM_USE_MOTOR, 0, GPIO_AF_2, NULL, 0}, // PWM3
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM_USE_MOTOR, 0, GPIO_AF_2, NULL, 0}, // PWM4
-    { TIM16, IO_TAG(PB8),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0}, // PWM5
-    { TIM17, IO_TAG(PB9),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0}, // PWM6
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_LED,   1, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER}, // LED_STRIP
+    DEF_TIM(TIM2, CH1,PA15, TIM_USE_PPM,                 TIMER_INPUT_ENABLED), // PPM IN
+    DEF_TIM(TIM8,CH2N, PB4, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM1
+    DEF_TIM(TIM17,CH1, PB5, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM2
+    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM3
+    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM4
+    DEF_TIM(TIM16,CH1, PB8, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM5
+    DEF_TIM(TIM17,CH1, PB9, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM6
+    DEF_TIM(TIM1, CH1, PA8, TIM_USE_LED,                 TIMER_OUTPUT_ENABLED), // LED_STRIP
 };
