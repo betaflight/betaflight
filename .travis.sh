@@ -8,7 +8,6 @@ TARGET_FILE=obj/betaflight_${TARGET}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:=$USER/undefined}
 BUILDNAME=${BUILDNAME:=travis}
 TRAVIS_BUILD_NUMBER=${TRAVIS_BUILD_NUMBER:=undefined}
-MAKEFILE="-f Makefile"
 
 CURL_BASEOPTS=(
 	"--retry" "10"
@@ -22,12 +21,8 @@ CURL_PUB_BASEOPTS=(
 	"--form" "github_repo=${TRAVIS_REPO_SLUG}"
 	"--form" "build_name=${BUILDNAME}" )
 
-# A hacky way of running the unit tests at the same time as the normal builds.
-if [ $RUNTESTS ] ; then
-	cd ./src/test && make test
-
 # A hacky way of building the docs at the same time as the normal builds.
-elif [ $PUBLISHDOCS ] ; then
+if [ $PUBLISHDOCS ] ; then
 	if [ $PUBLISH_URL ] ; then
 
 		# Patch Gimli to fix underscores_inside_words
@@ -51,8 +46,8 @@ elif [ $PUBLISHMETA ] ; then
 	fi
 
 elif [ $TARGET ] ; then
+    make $TARGET
 	if [ $PUBLISH_URL ] ; then
-		make -j2 $MAKEFILE
 		if   [ -f ${TARGET_FILE}.bin ] ; then
 			TARGET_FILE=${TARGET_FILE}.bin
 		elif [ -f ${TARGET_FILE}.hex ] ; then
@@ -64,10 +59,9 @@ elif [ $TARGET ] ; then
 
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
-	else
-		make -j2 $MAKEFILE
 	fi
-else
-# No target specified, build all with very low verbosity.
+elif [ $GOAL ] ; then
+    make V=0 $GOAL
+else 
     make V=0 all
 fi
