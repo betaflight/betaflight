@@ -53,7 +53,7 @@
 static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
 static char profileIndexString[] = " p";
-static uint8_t tempPid[4][3];
+static uint8_t tempPid[3][3];
 
 static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
@@ -109,9 +109,6 @@ static long cmsx_PidRead(void)
         tempPid[i][1] = masterConfig.profile[profileIndex].pidProfile.I8[i];
         tempPid[i][2] = masterConfig.profile[profileIndex].pidProfile.D8[i];
     }
-    tempPid[3][0] = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
-    tempPid[3][1] = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
-    tempPid[3][2] = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
 
     return 0;
 }
@@ -133,10 +130,6 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
         masterConfig.profile[profileIndex].pidProfile.I8[i] = tempPid[i][1];
         masterConfig.profile[profileIndex].pidProfile.D8[i] = tempPid[i][2];
     }
-
-    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = tempPid[3][0];
-    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = tempPid[3][1];
-    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL] = tempPid[3][2];
 
     return 0;
 }
@@ -215,20 +208,74 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 
     { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,  0, 100, 1, 10}, 0 },
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
-    { "D SETPT WT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
-    { "SETPT RLX",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &masterConfig.profile[0].pidProfile.setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-CMS_Menu cmsx_menuRateProfile = {
+static CMS_Menu cmsx_menuRateProfile = {
     .GUARD_text = "MENURATE",
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_RateProfileOnEnter,
     .onExit = cmsx_RateProfileWriteback,
     .onGlobalExit = NULL,
     .entries = cmsx_menuRateProfileEntries
+};
+
+static uint8_t cmsx_dtermSetpointWeight;
+static uint8_t cmsx_setpointRelaxRatio;
+static uint8_t cmsx_angleStrength;
+static uint8_t cmsx_horizonStrength;
+static uint8_t cmsx_horizonTransition;
+
+static long cmsx_profileOtherOnEnter(void)
+{
+    profileIndexString[1] = '0' + tmpProfileIndex;
+
+    cmsx_dtermSetpointWeight = masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight;
+    cmsx_setpointRelaxRatio  = masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio;
+
+    cmsx_angleStrength =     masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
+    cmsx_horizonStrength =   masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
+    cmsx_horizonTransition = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
+
+    return 0;
+}
+
+static long cmsx_profileOtherOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
+    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio = cmsx_setpointRelaxRatio;
+
+    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = cmsx_angleStrength;
+    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = cmsx_horizonStrength;
+    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL] = cmsx_horizonTransition;
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuProfileOtherEntries[] = {
+    { "-- OTHER PP --", OME_Label, NULL, profileIndexString, 0 },
+
+    { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
+    { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
+    { "ANGLE STR",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_angleStrength,       0, 200, 1 }    , 0 },
+    { "HORZN STR",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_horizonStrength,     0, 200, 1 }    , 0 },
+    { "HORZN TRS",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_horizonTransition,   0, 200, 1 }    , 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuProfileOther = {
+    .GUARD_text = "XPROFOTHER",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_profileOtherOnEnter,
+    .onExit = cmsx_profileOtherOnExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuProfileOtherEntries,
 };
 
 static OSD_Entry cmsx_menuFilterGlobalEntries[] =
@@ -311,15 +358,16 @@ static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- IMU --", OME_Label, NULL, NULL, 0},
 
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
-    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,       0},
+    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
+    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
+    {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
 
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_RATEPROFILES, 1}, 0},
-    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,  0},
+    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
-    {"FLT PP",    OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile, 0},
+    {"FLT PP",    OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
-    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal, 0},
+    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
