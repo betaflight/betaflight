@@ -70,7 +70,7 @@
 #define SONAR_TRIGGER_PIN_PWM   PB8
 #define SONAR_ECHO_PIN_PWM      PB9
 
-#define DASHBOARD
+#define USE_DASHBOARD
 
 #define USE_UART1
 #define USE_UART2

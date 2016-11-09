@@ -66,7 +66,7 @@ typedef enum {
 #ifdef SONAR
     TASK_SONAR,
 #endif
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     TASK_DASHBOARD,
 #endif
 #ifdef TELEMETRY

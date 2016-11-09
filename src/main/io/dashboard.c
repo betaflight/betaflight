@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
 
 #include "build/version.h"
 #include "build/build_config.h"
@@ -30,10 +30,24 @@
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
 
+//#include "cms/cms.h"
+
 #include "common/printf.h"
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/typeconversion.h"
+
+#include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+#include "flight/navigation_rewrite.h"
+
+#include "io/dashboard.h"
+//#include "io/displayport_oled.h"
+#include "io/gps.h"
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -44,25 +58,9 @@
 
 #include "rx/rx.h"
 
-#include "fc/rc_controls.h"
-
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-
-#ifdef GPS
-#include "io/gps.h"
-#include "flight/navigation_rewrite.h"
-#endif
-
-#include "fc/runtime_config.h"
-
-
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "dashboard.h"
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
@@ -75,6 +73,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
 static const rxConfig_t *rxConfig;
+//static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -376,6 +375,12 @@ void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
+#ifdef CMS
+    if (displayIsGrabbed(displayPort)) {
+        return;
+    }
+#endif
+
     bool pageChanging = false;
     bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
 
@@ -459,11 +464,16 @@ void dashboardSetPage(pageId_e newPageId)
 
 void dashboardInit(const rxConfig_t *rxConfigToUse)
 {
+    rxConfig = rxConfigToUse;
+
     delay(200);
     resetDisplay();
     delay(200);
 
-    rxConfig = rxConfigToUse;
+//    displayPort = displayPortOledInit();
+#if defined(CMS)
+    cmsDisplayPortRegister(displayPort);
+#endif
 
     dashboardSetPage(PAGE_WELCOME);
     const uint32_t now = micros();
