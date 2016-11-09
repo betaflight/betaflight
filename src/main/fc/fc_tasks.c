@@ -33,6 +33,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 
+#include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
@@ -79,9 +80,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
+// VBAT monitoring interval (in microseconds) - 1s
 #define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
+// IBat monitoring interval (in microseconds) - 6 default looptimes
 #define IBATINTERVAL (6 * 3500)
 
 void taskHandleSerial(uint32_t currentTime)
@@ -94,7 +95,7 @@ void taskHandleSerial(uint32_t currentTime)
         return;
     }
 #endif
-    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA);
+    mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
 void taskUpdateBeeper(uint32_t currentTime)

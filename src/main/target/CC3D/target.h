@@ -183,6 +183,7 @@
 #else
 #define TARGET_MOTOR_COUNT 4
 #define DISABLE_UNCOMMON_MIXERS
+#undef BLACKBOX
 #endif //OPBL
 
 

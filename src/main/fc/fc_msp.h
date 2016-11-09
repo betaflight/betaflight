@@ -15,7 +15,9 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include "msp/msp.h"
 
-mspProcessCommandFnPtr mspFcInit(void);
-
+void mspFcInit(void);
+mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn);
