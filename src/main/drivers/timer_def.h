@@ -70,7 +70,7 @@
 #define DEF_TIM_DMA__TIM15_TRIG  DMA1_CH5
 #define DEF_TIM_DMA__TIM15_COM   DMA1_CH5
 
-#ifdef DMA_TIMER16_REMAP 
+#ifdef REMAP_TIM16_DMA 
 #define DEF_TIM_DMA__TIM16_CH1   DMA1_CH6
 #define DEF_TIM_DMA__TIM16_UP    DMA1_CH6
 #else
@@ -78,7 +78,7 @@
 #define DEF_TIM_DMA__TIM16_UP    DMA1_CH3
 #endif 
 
-#ifdef DMA_TIMER17_REMAP 
+#ifdef REMAP_TIM17_DMA 
 #define DEF_TIM_DMA__TIM17_CH1   DMA1_CH7
 #define DEF_TIM_DMA__TIM17_UP    DMA1_CH7
 #else
