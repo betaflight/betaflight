@@ -1,9 +1,13 @@
-# Board - Flip32 F4 and Airbot F4
+# Board -  Airbot F4 / Flip32 F4 / Generic F4 Flight Controller from Banggood and Aliexpress
+
+![Airbot F4](https://quadmeup.com/wp-content/uploads/2016/10/Flip32-F4-Flight-Controller-pinout.jpg)
+
+> This target supports both MPU6000 and MPU6500 versions of this board
 
 ## Features
 
 * STM32F405 CPU
-* Integrated Accelerometer/Gyro MPU6000 via SPI bus
+* Integrated Accelerometer/Gyro MPU6000 or MPU6500 via SPI bus
 * 6 motor outputs
 * 3 UART ports (UART1, UART3, UART6)
 * External I2C bus, pins shared with UART3, can not be used simultaneously
