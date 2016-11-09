@@ -274,6 +274,20 @@
 #define DEF_TIM_DMA_STR_0__TIM8_CH3    DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM8_CH4    DMA2_ST7
 
+#define DEF_TIM_DMA_STR_0__TIM9_CH1    DMA_NONE
+#define DEF_TIM_DMA_STR_0__TIM9_CH2    DMA_NONE
+
+#define DEF_TIM_DMA_STR_0__TIM10_CH1   DMA_NONE
+
+#define DEF_TIM_DMA_STR_0__TIM11_CH1   DMA_NONE
+
+#define DEF_TIM_DMA_STR_0__TIM12_CH1   DMA_NONE
+#define DEF_TIM_DMA_STR_0__TIM12_CH2   DMA_NONE
+
+#define DEF_TIM_DMA_STR_0__TIM13_CH1   DMA_NONE
+
+#define DEF_TIM_DMA_STR_0__TIM14_CH1   DMA_NONE
+
 /* F4 Channel Mappings */
 
 #define DEF_TIM_DMA_CHN_0__TIM1_CH1    DMA_Channel_0
@@ -314,6 +328,20 @@
 #define DEF_TIM_DMA_CHN_0__TIM8_CH3    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_0__TIM8_CH4    DMA_Channel_7
 
+#define DEF_TIM_DMA_CHN_0__TIM9_CH1    0
+#define DEF_TIM_DMA_CHN_0__TIM9_CH2    0
+
+#define DEF_TIM_DMA_CHN_0__TIM10_CH1   0
+
+#define DEF_TIM_DMA_CHN_0__TIM11_CH1   0
+
+#define DEF_TIM_DMA_CHN_0__TIM12_CH1   0
+#define DEF_TIM_DMA_CHN_0__TIM12_CH2   0
+
+#define DEF_TIM_DMA_CHN_0__TIM13_CH1   0
+
+#define DEF_TIM_DMA_CHN_0__TIM14_CH1   0
+
 #define DMA1_ST0_STREAM                DMA1_Stream0
 #define DMA1_ST1_STREAM                DMA1_Stream1
 #define DMA1_ST2_STREAM                DMA1_Stream2
@@ -334,12 +362,13 @@
 #endif
 
 /**** Common Defines across all targets ****/
+#define DMA_NONE_CHANNEL     NULL
+#define DMA_NONE_STREAM      NULL
+
 
 #define DEF_TIM_CHAN(chan) DEF_CHAN_ ## chan 
 #define DEF_TIM_OUTPUT(chan, out) ( DEF_CHAN_ ## chan ## _OUTPUT | out )
 
-#define DMA_NONE_CHANNEL     NULL
-#define DMA_NONE_STREAM      NULL
 #define DMA_NONE_HANDLER     0
 
 #define DEF_CHAN_CH1         TIM_Channel_1

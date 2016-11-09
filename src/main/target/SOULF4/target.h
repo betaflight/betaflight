@@ -104,6 +104,7 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 
 #define LED_STRIP
+#define USE_DSHOT
 
 #define SPEKTRUM_BIND
 // USART3,

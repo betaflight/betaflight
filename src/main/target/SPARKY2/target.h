@@ -32,9 +32,10 @@
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
 
-
 #define INVERTER                PC6
 #define INVERTER_USART          USART6
+
+#define USE_DSHOT
 
 // MPU9250 interrupt
 #define USE_EXTI
