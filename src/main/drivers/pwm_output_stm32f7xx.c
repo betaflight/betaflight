@@ -57,6 +57,11 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
 {
+
+    if (!pwmMotorsEnabled) {
+        return;
+    }
+
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
     uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
@@ -87,6 +92,10 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
     
+    if (!pwmMotorsEnabled) {
+        return;
+    }
+
     for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
         //TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         //TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
