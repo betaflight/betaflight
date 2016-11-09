@@ -24,7 +24,7 @@
 #define GPS_PROTO_UBLOX
 #define GPS_PROTO_I2C_NAV
 #define GPS_PROTO_NAZA
-#define DASHBOARD
+#define USE_DASHBOARD
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT

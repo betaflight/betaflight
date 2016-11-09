@@ -180,7 +180,7 @@ void taskUpdateSonar(uint32_t currentTime)
 }
 #endif
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
 void taskDashboardUpdate(uint32_t currentTime)
 {
     if (feature(FEATURE_DASHBOARD)) {
@@ -351,7 +351,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
         .taskFunc = taskDashboardUpdate,
@@ -445,7 +445,7 @@ void fcTasksInit(void)
 #ifdef SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
 #endif
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef TELEMETRY

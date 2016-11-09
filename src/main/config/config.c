@@ -938,7 +938,7 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DASHBOARD) && defined(USE_UART3)
+#if defined(CC3D) && defined(USE_DASHBOARD) && defined(USE_UART3)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
         featureClear(FEATURE_DASHBOARD);
     }
