@@ -448,13 +448,19 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+<<<<<<< HEAD
 #ifdef CMS
     cmsInit();
 #endif
 
+#ifdef USE_DISPLAY
+    if (feature(FEATURE_DISPLAY)) {
+        displayInit(&masterConfig.rxConfig);
+=======
 #ifdef DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit(&masterConfig.rxConfig);
+>>>>>>> inav/development
     }
 #endif
 

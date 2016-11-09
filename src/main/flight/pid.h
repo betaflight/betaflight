@@ -33,6 +33,8 @@
 
 #define AXIS_ACCEL_MIN_LIMIT    50
 
+#define MAG_HOLD_ERROR_LPF_FREQ 2
+
 typedef enum {
     PIDROLL,
     PIDPITCH,

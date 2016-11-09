@@ -474,7 +474,7 @@ HIGHEND_SRC = \
             io/gps_naza.c \
             io/gps_i2cnav.c \
             io/ledstrip.c \
-            io/display.c \
+            io/dashboard.c \
             sensors/rangefinder.c \
             sensors/barometer.c \
             telemetry/telemetry.c \

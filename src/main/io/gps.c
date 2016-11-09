@@ -41,7 +41,6 @@
 #include "sensors/compass.h"
 
 #include "io/serial.h"
-#include "io/display.h"
 #include "io/gps.h"
 #include "io/gps_private.h"
 
