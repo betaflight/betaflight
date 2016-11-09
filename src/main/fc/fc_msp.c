@@ -1021,6 +1021,64 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, sbuf_t *src, msp
         sbufWriteU8(dst, masterConfig.gyroSync);
         break;
 
+    case MSP_FILTER_CONFIG :
+        sbufWriteU8(dst, currentProfile->pidProfile.gyro_soft_lpf_hz);
+        sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
+        sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
+        sbufWriteU16(dst, 1); //masterConfig.gyro_soft_notch_hz_1
+        sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_1
+        sbufWriteU16(dst, 1); //BF: currentProfile->pidProfile.dterm_notch_hz
+        sbufWriteU16(dst, 1); //currentProfile->pidProfile.dterm_notch_cutoff
+        sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_hz_2
+        sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_2
+        break;
+
+    case MSP_PID_ADVANCED:
+        sbufWriteU16(dst, currentProfile->pidProfile.rollPitchItermIgnoreRate);
+        sbufWriteU16(dst, currentProfile->pidProfile.yawItermIgnoreRate);
+        sbufWriteU16(dst, currentProfile->pidProfile.yaw_p_limit);
+        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.deltaMethod
+        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.vbatPidCompensation
+        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.setpointRelaxRatio
+        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.dtermSetpointWeight
+        sbufWriteU8(dst, 0); // reserved
+        sbufWriteU8(dst, 0); // reserved
+        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.itermThrottleGain
+
+        /*
+         * To keep compatibility on MSP level with Betaflight, axis axisAccelerationLimitYaw
+         * limit will be sent and received in [dps / 1000]
+         */
+        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitRollPitch / 1000, 0, 65535));
+        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitYaw / 1000, 0, 65535));
+        break;
+
+    case MSP_INAV_PID:
+    #ifdef ASYNC_GYRO_PROCESSING
+        sbufWriteU8(dst, masterConfig.asyncMode);
+        sbufWriteU16(dst, masterConfig.accTaskFrequency);
+        sbufWriteU16(dst, masterConfig.attitudeTaskFrequency);
+    #else
+        sbufWriteU8(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+    #endif
+    #ifdef MAG
+        sbufWriteU8(dst, currentProfile->pidProfile.mag_hold_rate_limit);
+        sbufWriteU8(dst, MAG_HOLD_ERROR_LPF_FREQ);
+    #else
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, 0);
+    #endif
+        sbufWriteU16(dst, masterConfig.mixerConfig.yaw_jump_prevention_limit);
+        sbufWriteU8(dst, masterConfig.gyro_lpf);
+        sbufWriteU8(dst, currentProfile->pidProfile.acc_soft_lpf_hz);
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        sbufWriteU8(dst, 0); //reserved
+        break;
+
     case MSP_REBOOT:
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
@@ -1308,6 +1366,67 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
         masterConfig.servoConfig.servoPwmRate = sbufReadU16(src);
         masterConfig.gyroSync = sbufReadU8(src);
+        break;
+
+    case MSP_SET_FILTER_CONFIG :
+        currentProfile->pidProfile.gyro_soft_lpf_hz = sbufReadU8(src);
+        currentProfile->pidProfile.dterm_lpf_hz = constrain(sbufReadU16(src), 0, 255);
+        currentProfile->pidProfile.yaw_lpf_hz = constrain(sbufReadU16(src), 0, 255);
+
+        //BF: masterConfig.gyro_soft_notch_hz_1 = read16();
+        //BF: masterConfig.gyro_soft_notch_cutoff_1 = read16();
+        //BF: currentProfile->pidProfile.dterm_notch_hz = read16();
+        //BF: currentProfile->pidProfile.dterm_notch_cutoff = read16();
+        //BF: masterConfig.gyro_soft_notch_hz_2 = read16();
+        //BF: masterConfig.gyro_soft_notch_cutoff_2 = read16();
+        break;
+
+    case MSP_SET_PID_ADVANCED:
+
+        currentProfile->pidProfile.rollPitchItermIgnoreRate = sbufReadU16(src);
+        currentProfile->pidProfile.yawItermIgnoreRate = sbufReadU16(src);
+        currentProfile->pidProfile.yaw_p_limit = sbufReadU16(src);
+
+        sbufReadU8(src); //BF: currentProfile->pidProfile.deltaMethod
+        sbufReadU8(src); //BF: currentProfile->pidProfile.vbatPidCompensation
+        sbufReadU8(src); //BF: currentProfile->pidProfile.setpointRelaxRatio
+        sbufReadU8(src); //BF: currentProfile->pidProfile.dtermSetpointWeight
+        sbufReadU8(src); // reserved
+        sbufReadU8(src); // reserved
+        sbufReadU8(src); //BF: currentProfile->pidProfile.itermThrottleGain
+
+        /*
+         * To keep compatibility on MSP level with Betaflight, axis axisAccelerationLimitYaw
+         * limit will be sent and received in [dps / 1000]
+         */
+        currentProfile->pidProfile.axisAccelerationLimitRollPitch = sbufReadU16(src) * 1000;
+        currentProfile->pidProfile.axisAccelerationLimitYaw = sbufReadU16(src) * 1000;
+        break;
+
+    case MSP_SET_INAV_PID:
+        #ifdef ASYNC_GYRO_PROCESSING
+            masterConfig.asyncMode = sbufReadU8(src);
+            masterConfig.accTaskFrequency = sbufReadU16(src);
+            masterConfig.attitudeTaskFrequency = sbufReadU16(src);
+        #else
+            sbufReadU8(src);
+            sbufReadU16(src);
+            sbufReadU16(src);
+        #endif
+        #ifdef MAG
+            currentProfile->pidProfile.mag_hold_rate_limit = sbufReadU8(src);
+            sbufReadU8(src); //MAG_HOLD_ERROR_LPF_FREQ
+        #else
+            sbufReadU8(src);
+            sbufReadU8(src);
+        #endif
+            masterConfig.mixerConfig.yaw_jump_prevention_limit = sbufReadU16(src);
+            masterConfig.gyro_lpf = sbufReadU8(src);
+            currentProfile->pidProfile.acc_soft_lpf_hz = sbufReadU8(src);
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
+            sbufReadU8(src); //reserved
         break;
 
     case MSP_RESET_CONF:
