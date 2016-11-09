@@ -148,6 +148,10 @@ void init(void)
 
     printfSupportInit();
 
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    detectHardwareRevision();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -163,10 +167,6 @@ void init(void)
     IOInitGlobal();
 
     debugMode = masterConfig.debug_mode;
-
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
