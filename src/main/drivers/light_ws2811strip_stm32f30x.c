@@ -97,10 +97,9 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
-    dmaChannel = timerHardware->dmaChannel;
-
     /* configure DMA */
     /* DMA1 Channel Config */
+    dmaChannel = timerHardware->dmaChannel;
     DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);

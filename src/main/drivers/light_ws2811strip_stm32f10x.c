@@ -90,6 +90,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* configure DMA */
     /* DMA1 Channel6 Config */
+    dmaChannel = timerHardware->dmaChannel;
     DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);
