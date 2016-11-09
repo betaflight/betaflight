@@ -111,7 +111,7 @@
 #define RSSI_ADC_PIN            PA1
 #define EXTERNAL1_ADC_PIN       PA5
 
-#define DASHBOARD
+#define USE_DASHBOARD
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

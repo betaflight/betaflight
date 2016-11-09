@@ -83,9 +83,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
+// VBAT monitoring interval (in microseconds) - 1s
 #define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
+// IBat monitoring interval (in microseconds) - 6 default looptimes
 #define IBATINTERVAL (6 * 3500)
 
 void taskHandleSerial(uint32_t currentTime)
@@ -183,7 +183,7 @@ void taskUpdateSonar(uint32_t currentTime)
 }
 #endif
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
 void taskDashboardUpdate(uint32_t currentTime)
 {
     if (feature(FEATURE_DASHBOARD)) {
@@ -363,7 +363,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
         .taskFunc = taskDashboardUpdate,
@@ -475,7 +475,7 @@ void fcTasksInit(void)
 #ifdef SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));
 #endif
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef TELEMETRY

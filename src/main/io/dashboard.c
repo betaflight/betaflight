@@ -22,7 +22,7 @@
 
 #include "platform.h"
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
 
 #include "build/version.h"
 #include "build/build_config.h"
@@ -37,6 +37,21 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
+#include "fc/runtime_config.h"
+#include "fc/rc_controls.h"
+
+#include "flight/pid.h"
+#include "flight/imu.h"
+#include "flight/failsafe.h"
+#include "flight/navigation_rewrite.h"
+
+#include "io/dashboard.h"
+#include "io/displayport_oled.h"
+
+#ifdef GPS
+#include "io/gps.h"
+#endif
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
@@ -46,27 +61,9 @@
 
 #include "rx/rx.h"
 
-#include "fc/rc_controls.h"
-
-
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-
-#include "io/displayport_oled.h"
-
-#ifdef GPS
-#include "io/gps.h"
-#include "flight/navigation_rewrite.h"
-#endif
-
-#include "fc/runtime_config.h"
-
-
 #include "config/config.h"
 #include "config/feature.h"
 
-#include "dashboard.h"
 
 controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 
@@ -470,6 +467,8 @@ void dashboardSetPage(pageId_e newPageId)
 
 void dashboardInit(const rxConfig_t *rxConfigToUse)
 {
+    rxConfig = rxConfigToUse;
+
     delay(200);
     resetDisplay();
     delay(200);

@@ -452,7 +452,7 @@ void init(void)
     cmsInit();
 #endif
 
-#ifdef DASHBOARD
+#ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit(&masterConfig.rxConfig);
     }
