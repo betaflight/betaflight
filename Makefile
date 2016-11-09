@@ -740,7 +740,7 @@ endif
 
 # Tool names
 CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CROSS_CXX   := $(CROSS_CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
 SIZE        := $(ARM_SDK_PREFIX)size
 
