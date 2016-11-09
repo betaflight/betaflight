@@ -72,7 +72,7 @@ static OSD_UINT8_t entryVtxChannel =  {&cmsx_vtxChannel, 1, 8, 1};
 static void cmsx_Vtx_ConfigRead(void)
 {
 #ifdef VTX
-    cmsx_vtxBand = masterConfig.vtxBand;
+    cmsx_vtxBand = masterConfig.vtx_band;
     cmsx_vtxChannel = masterConfig.vtx_channel + 1;
 #endif // VTX
 
@@ -85,7 +85,7 @@ static void cmsx_Vtx_ConfigRead(void)
 static void cmsx_Vtx_ConfigWriteback(void)
 {
 #ifdef VTX
-    masterConfig.vtxBand = cmsx_vtxBand;
+    masterConfig.vtx_band = cmsx_vtxBand;
     masterConfig.vtx_channel = cmsx_vtxChannel - 1;
 #endif // VTX
 
