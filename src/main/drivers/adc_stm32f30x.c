@@ -40,7 +40,11 @@
 
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 }, 
+#ifdef ADC24_DMA_REMAP
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 } 
+#else
     { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 } 
+#endif
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -134,6 +138,9 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
+#ifdef ADC24_DMA_REMAP
+    SYSCFG_DMAChannelRemapConfig(SYSCFG_DMARemap_ADC2ADC4, ENABLE);
+#endif
     adcDevice_t adc = adcHardware[device];
 
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {

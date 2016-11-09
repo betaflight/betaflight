@@ -113,6 +113,7 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define ADC24_DMA_REMAP // moves ADC2 DMA from DMA2ch1 to DMA2ch3.
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 
