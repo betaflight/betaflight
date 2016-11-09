@@ -29,8 +29,8 @@
     flags,\
     (DEF_CHAN_ ## chan ## _OUTPUT | out),\
     EXPAND(GPIO_AF__ ## pin ## _ ## tim ## _ ## chan),\
-    CONCAT(EXPAND(DEF_TIM_DMACHAN_ ## tim ## _ ## chan), _TYPE),\
-    CONCAT(EXPAND(DEF_TIM_DMACHAN_ ## tim ## _ ## chan), _HANDLER)\
+    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
+    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
     }
 
 #define DEF_DMA_CHANNEL(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL)

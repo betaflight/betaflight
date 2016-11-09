@@ -22,7 +22,7 @@
 #include "drivers/timer.h"
 #include "drivers/dma.h"
 
-#include "drivers/tim_def.h"
+#include "drivers/timer_def.h"
 
 /*
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = { 
