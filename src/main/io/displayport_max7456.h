@@ -17,4 +17,4 @@
 
 #pragma once
 
-displayPort_t *max7456DisplayPortInit(void);
+displayPort_t *max7456DisplayPortInit(uint8_t videoSystem);

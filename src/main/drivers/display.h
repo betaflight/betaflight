@@ -32,8 +32,12 @@ typedef struct displayPort_s {
 typedef struct displayPortVTable_s {
     int (*grab)(displayPort_t *displayPort);
     int (*release)(displayPort_t *displayPort);
-    int (*clear)(displayPort_t *displayPort);
+    int (*clearScreen)(displayPort_t *displayPort);
+    int (*drawScreen)(displayPort_t *displayPort);
+    int (*screenSize)(const displayPort_t *displayPort);
     int (*write)(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *text);
+    int (*writeChar)(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c);
+    bool (*isTransferInProgress)(const displayPort_t *displayPort);
     int (*heartbeat)(displayPort_t *displayPort);
     void (*resync)(displayPort_t *displayPort);
     uint32_t (*txBytesFree)(const displayPort_t *displayPort);
@@ -42,8 +46,12 @@ typedef struct displayPortVTable_s {
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
 bool displayIsGrabbed(const displayPort_t *instance);
-void displayClear(displayPort_t *instance);
+void displayClearScreen(displayPort_t *instance);
+void displayDrawScreen(displayPort_t *instance);
+int displayScreenSize(const displayPort_t *instance);
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s);
+int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c);
+bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);

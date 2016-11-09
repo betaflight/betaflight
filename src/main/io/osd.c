@@ -31,10 +31,13 @@
 
 #ifdef OSD
 
+#include "build/debug.h"
 #include "build/version.h"
 
+#include "common/printf.h"
 #include "common/utils.h"
 
+#include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
 #include "drivers/system.h"
 
@@ -42,8 +45,8 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_osd.h"
 
-#include "io/displayport_max7456.h"
 #include "io/flashfs.h"
+#include "io/displayport_max7456.h"
 #include "io/osd.h"
 
 #include "fc/config.h"
@@ -58,12 +61,7 @@
 #include "hardware_revision.h"
 #endif
 
-#include "drivers/max7456.h"
-#include "drivers/max7456_symbols.h"
-
-#include "common/printf.h"
-
-#include "build/debug.h"
+#define VIDEO_BUFFER_CHARS_PAL    480
 
 // Character coordinate and attributes
 
@@ -99,7 +97,7 @@ uint16_t refreshTimeout = 0;
 
 static uint8_t armState;
 
-static displayPort_t *osd7456DisplayPort;
+static displayPort_t *osdDisplayPort;
 
 
 #define AH_MAX_PITCH 200 // Specify maximum AHI pitch value displayed. Default 200 = 20.0 degrees
@@ -227,7 +225,7 @@ static void osdDrawSingleElement(uint8_t item)
             else if (FLIGHT_MODE(HORIZON_MODE))
                 p = "HOR";
 
-            max7456Write(elemPosX, elemPosY, p);
+            displayWrite(osdDisplayPort, elemPosX, elemPosY, p);
             return;
         }
 
@@ -265,8 +263,9 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_CROSSHAIRS:
             elemPosX = 14 - 1; // Offset for 1 char to the left
             elemPosY = 6;
-            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
+            }
             buff[0] = SYM_AH_CENTER_LINE;
             buff[1] = SYM_AH_CENTER;
             buff[2] = SYM_AH_CENTER_LINE_RIGHT;
@@ -281,8 +280,9 @@ static void osdDrawSingleElement(uint8_t item)
             int rollAngle = attitude.values.roll;
             int pitchAngle = attitude.values.pitch;
 
-            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
+            }
 
             if (pitchAngle > AH_MAX_PITCH)
                 pitchAngle = AH_MAX_PITCH;
@@ -301,7 +301,7 @@ static void osdDrawSingleElement(uint8_t item)
                 y -= pitchAngle;
                 // y += 41; // == 4 * 9 + 5
                 if (y >= 0 && y <= 81) {
-                    max7456WriteChar(elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
+                    displayWriteChar(osdDisplayPort, elemPosX + x, elemPosY + (y / 9), (SYM_AH_BAR9_0 + (y % 9)));
                 }
             }
 
@@ -315,20 +315,21 @@ static void osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6;
 
-            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+            if (displayScreenSize(osdDisplayPort) == VIDEO_BUFFER_CHARS_PAL) {
                 ++elemPosY;
+            }
 
             // Draw AH sides
             int8_t hudwidth = AH_SIDEBAR_WIDTH_POS;
             int8_t hudheight = AH_SIDEBAR_HEIGHT_POS;
             for (int8_t y = -hudheight; y <= hudheight; y++) {
-                max7456WriteChar(elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
-                max7456WriteChar(elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                displayWriteChar(osdDisplayPort, elemPosX - hudwidth, elemPosY + y, SYM_AH_DECORATION);
+                displayWriteChar(osdDisplayPort, elemPosX + hudwidth, elemPosY + y, SYM_AH_DECORATION);
             }
 
             // AH level indicators
-            max7456WriteChar(elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
-            max7456WriteChar(elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
+            displayWriteChar(osdDisplayPort, elemPosX - hudwidth + 1, elemPosY, SYM_AH_LEFT);
+            displayWriteChar(osdDisplayPort, elemPosX + hudwidth - 1, elemPosY, SYM_AH_RIGHT);
 
             return;
         }
@@ -337,12 +338,12 @@ static void osdDrawSingleElement(uint8_t item)
             return;
     }
 
-    max7456Write(elemPosX, elemPosY, buff);
+    displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
 }
 
 void osdDrawElements(void)
 {
-    max7456ClearScreen();
+    displayClearScreen(osdDisplayPort);
 
 #if 0
     if (currentElement)
@@ -352,7 +353,7 @@ void osdDrawElements(void)
         ;
 #endif
 #ifdef CMS
-    else if (sensors(SENSOR_ACC) || displayIsGrabbed(osd7456DisplayPort))
+    else if (sensors(SENSOR_ACC) || displayIsGrabbed(osdDisplayPort))
 #else
     else if (sensors(SENSOR_ACC))
 #endif
@@ -375,7 +376,7 @@ void osdDrawElements(void)
 
 #ifdef GPS
 #ifdef CMS
-    if (sensors(SENSOR_GPS) || displayIsGrabbed(osd7456DisplayPort))
+    if (sensors(SENSOR_GPS) || displayIsGrabbed(osdDisplayPort))
 #else
     if (sensors(SENSOR_GPS))
 #endif
@@ -412,7 +413,10 @@ void osdResetConfig(osd_profile_t *osdProfile)
 
 void osdInit(void)
 {
-    char x, string_buffer[30];
+    osdDisplayPort = max7456DisplayPortInit(masterConfig.osdProfile.video_system);
+#ifdef CMS
+    cmsDisplayPortRegister(osdDisplayPort);
+#endif
 
     armState = ARMING_FLAG(ARMED);
 
@@ -421,33 +425,29 @@ void osdInit(void)
 
     max7456Init(&masterConfig.vcdProfile);
 
-    max7456ClearScreen();
+    displayClearScreen(osdDisplayPort);
 
     // display logo and help
-    x = 160;
+    char x = 160;
     for (int i = 1; i < 5; i++) {
         for (int j = 3; j < 27; j++) {
             if (x != 255)
-                max7456WriteChar(j, i, x++);
+                displayWriteChar(osdDisplayPort, j, i, x++);
         }
     }
 
+    char string_buffer[30];
     sprintf(string_buffer, "BF VERSION: %s", FC_VERSION_STRING);
-    max7456Write(5, 6, string_buffer);
+    displayWrite(osdDisplayPort, 5, 6, string_buffer);
 #ifdef CMS
-    max7456Write(7, 7,  CMS_STARTUP_HELP_TEXT1);
-    max7456Write(11, 8, CMS_STARTUP_HELP_TEXT2);
-    max7456Write(11, 9, CMS_STARTUP_HELP_TEXT3);
+    displayWrite(osdDisplayPort, 7, 7,  CMS_STARTUP_HELP_TEXT1);
+    displayWrite(osdDisplayPort, 11, 8, CMS_STARTUP_HELP_TEXT2);
+    displayWrite(osdDisplayPort, 11, 9, CMS_STARTUP_HELP_TEXT3);
 #endif
 
-    max7456RefreshAll();
+    displayResync(osdDisplayPort);
 
     refreshTimeout = 4 * REFRESH_1S;
-
-    osd7456DisplayPort = max7456DisplayPortInit();
-#ifdef CMS
-    cmsDisplayPortRegister(osd7456DisplayPort);
-#endif
 }
 
 void osdUpdateAlarms(void)
@@ -539,40 +539,40 @@ static void osdShowStats(void)
     uint8_t top = 2;
     char buff[10];
 
-    max7456ClearScreen();
-    max7456Write(2, top++, "  --- STATS ---");
+    displayClearScreen(osdDisplayPort);
+    displayWrite(osdDisplayPort, 2, top++, "  --- STATS ---");
 
     if (STATE(GPS_FIX)) {
-        max7456Write(2, top, "MAX SPEED        :");
+        displayWrite(osdDisplayPort, 2, top, "MAX SPEED        :");
         itoa(stats.max_speed, buff, 10);
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
     }
 
-    max7456Write(2, top, "MIN BATTERY      :");
+    displayWrite(osdDisplayPort, 2, top, "MIN BATTERY      :");
     sprintf(buff, "%d.%1dV", stats.min_voltage / 10, stats.min_voltage % 10);
-    max7456Write(22, top++, buff);
+    displayWrite(osdDisplayPort, 22, top++, buff);
 
-    max7456Write(2, top, "MIN RSSI         :");
+    displayWrite(osdDisplayPort, 2, top, "MIN RSSI         :");
     itoa(stats.min_rssi, buff, 10);
     strcat(buff, "%");
-    max7456Write(22, top++, buff);
+    displayWrite(osdDisplayPort, 22, top++, buff);
 
     if (feature(FEATURE_CURRENT_METER)) {
-        max7456Write(2, top, "MAX CURRENT      :");
+        displayWrite(osdDisplayPort, 2, top, "MAX CURRENT      :");
         itoa(stats.max_current, buff, 10);
         strcat(buff, "A");
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
 
-        max7456Write(2, top, "USED MAH         :");
+        displayWrite(osdDisplayPort, 2, top, "USED MAH         :");
         itoa(mAhDrawn, buff, 10);
         strcat(buff, "\x07");
-        max7456Write(22, top++, buff);
+        displayWrite(osdDisplayPort, 22, top++, buff);
     }
 
-    max7456Write(2, top, "MAX ALTITUDE     :");
+    displayWrite(osdDisplayPort, 2, top, "MAX ALTITUDE     :");
     int32_t alt = osdGetAltitude(stats.max_altitude);
     sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
-    max7456Write(22, top++, buff);
+    displayWrite(osdDisplayPort, 22, top++, buff);
 
     refreshTimeout = 60 * REFRESH_1S;
 }
@@ -580,8 +580,8 @@ static void osdShowStats(void)
 // called when motors armed
 static void osdArmMotors(void)
 {
-    max7456ClearScreen();
-    max7456Write(12, 7, "ARMED");
+    displayClearScreen(osdDisplayPort);
+    displayWrite(osdDisplayPort, 12, 7, "ARMED");
     refreshTimeout = REFRESH_1S / 2;
     osdResetStats();
 }
@@ -615,14 +615,14 @@ static void osdRefresh(uint32_t currentTime)
             refreshTimeout = 1;
         refreshTimeout--;
         if (!refreshTimeout)
-            max7456ClearScreen();
+            displayClearScreen(osdDisplayPort);
         return;
     }
 
     blinkState = (currentTime / 200000) % 2;
 
 #ifdef CMS
-    if (!displayIsGrabbed(osd7456DisplayPort)) {
+    if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
 #ifdef OSD_CALLS_CMS
@@ -641,23 +641,23 @@ void osdUpdate(uint32_t currentTime)
     static uint32_t counter = 0;
 #ifdef MAX7456_DMA_CHANNEL_TX
     // don't touch buffers if DMA transaction is in progress
-    if (max7456DmaInProgres())
+    if (displayIsTransferInProgress(osdDisplayPort)) {
         return;
+    }
 #endif // MAX7456_DMA_CHANNEL_TX
 
     // redraw values in buffer
-    if (counter++ % 5 == 0)
+    if (counter++ % 5 == 0) {
         osdRefresh(currentTime);
-    else // rest of time redraw screen 10 chars per idle to don't lock the main idle
-        max7456DrawScreen();
+    } else { // rest of time redraw screen 10 chars per idle to don't lock the main idle
+        displayDrawScreen(osdDisplayPort);
+    }
 
 #ifdef CMS
     // do not allow ARM if we are in menu
-    if (displayIsGrabbed(osd7456DisplayPort)) {
+    if (displayIsGrabbed(osdDisplayPort)) {
         DISABLE_ARMING_FLAG(OK_TO_ARM);
     }
 #endif
 }
-
-
 #endif // OSD

@@ -87,7 +87,7 @@ static uint32_t displayPortTestTxBytesFree(const displayPort_t *displayPort)
 static const displayPortVTable_t testDisplayPortVTable = {
     .grab = displayPortTestGrab,
     .release = displayPortTestRelease,
-    .clear = displayPortTestClear,
+    .clearScreen = displayPortTestClear,
     .write = displayPortTestWrite,
     .heartbeat = displayPortTestHeartbeat,
     .resync = displayPortTestResync,

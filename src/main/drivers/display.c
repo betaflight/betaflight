@@ -24,17 +24,27 @@
 
 #include "display.h"
 
-void displayClear(displayPort_t *instance)
+void displayClearScreen(displayPort_t *instance)
 {
-    instance->vTable->clear(instance);
+    instance->vTable->clearScreen(instance);
     instance->cleared = true;
     instance->cursorRow = -1;
+}
+
+void displayDrawScreen(displayPort_t *instance)
+{
+    instance->vTable->drawScreen(instance);
+}
+
+int displayScreenSize(const displayPort_t *instance)
+{
+    return instance->vTable->screenSize(instance);
 }
 
 void displayGrab(displayPort_t *instance)
 {
     instance->vTable->grab(instance);
-    instance->vTable->clear(instance);
+    instance->vTable->clearScreen(instance);
     instance->isGrabbed = true;
 }
 
@@ -53,6 +63,16 @@ bool displayIsGrabbed(const displayPort_t *instance)
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
 {
     return instance->vTable->write(instance, x, y, s);
+}
+
+int displayWriteChar(displayPort_t *instance, uint8_t x, uint8_t y, uint8_t c)
+{
+    return instance->vTable->writeChar(instance, x, y, c);
+}
+
+bool displayIsTransferInProgress(const displayPort_t *instance)
+{
+    return instance->vTable->isTransferInProgress(instance);
 }
 
 void displayHeartbeat(displayPort_t *instance)
