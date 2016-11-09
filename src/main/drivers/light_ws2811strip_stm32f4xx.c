@@ -33,9 +33,6 @@
 #include "timer_stm32f4xx.h"
 #include "io.h"
 
-#define WS2811_TIMER_HZ                 84000000
-#define WS2811_TIMER_PERIOD             104
-
 static IO_t ws2811IO = IO_NONE;
 bool ws2811Initialised = false;
 static DMA_Stream_TypeDef *stream = NULL;
@@ -141,10 +138,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
-    const hsvColor_t hsv_white = { 0, 255, 255 };
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
-    ws2811UpdateStrip();
 }
 
 void ws2811LedStripDMAEnable(void)

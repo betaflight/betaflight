@@ -31,9 +31,6 @@
 #include "rcc.h"
 #include "timer.h"
 
-#define WS2811_TIMER_HZ                 24000000
-#define WS2811_TIMER_PERIOD             29
-
 static IO_t ws2811IO = IO_NONE;
 bool ws2811Initialised = false;
 static DMA_Channel_TypeDef *dmaChannel = NULL;
@@ -100,10 +97,9 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
-    dmaChannel = timerHardware->dmaChannel;
-
     /* configure DMA */
     /* DMA1 Channel Config */
+    dmaChannel = timerHardware->dmaChannel;
     DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);
@@ -128,10 +124,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
-    ws2811UpdateStrip();
 }
 
 void ws2811LedStripDMAEnable(void)

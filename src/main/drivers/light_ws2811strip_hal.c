@@ -132,9 +132,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
         return;
     }
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
 }
 
 
@@ -146,9 +144,9 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
 
-    if(  HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
+    if (HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
     {
-      /* Starting PWM generation Error */
+        /* Starting PWM generation Error */
         ws2811LedDataTransferInProgress = 0;
         return;
     }
