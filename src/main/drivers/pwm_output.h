@@ -64,7 +64,7 @@ typedef struct {
     const timerHardware_t *timerHardware;
     uint16_t value;
     uint16_t timerDmaSource;
-    bool requestTelemetry;
+    volatile bool requestTelemetry;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #else
@@ -76,19 +76,17 @@ typedef struct {
 #endif
 } motorDmaOutput_t;
 
-motorDmaOutput_t *getDmaMotor(uint8_t index);
+motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 
 struct timerHardware_s;
 typedef void(*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 typedef void(*pwmCompleteWriteFuncPtr)(uint8_t motorCount);   // function pointer used after motors are written
-typedef void(*pwmRequestTelemetryPtr)(uint8_t index); // function pointer used to request telemetry flag
 
 typedef struct {
     volatile timCCR_t *ccr;
     TIM_TypeDef *tim;
     uint16_t period;
     pwmWriteFuncPtr pwmWritePtr;
-    pwmRequestTelemetryPtr pwmRequestTelemetryPtr;
     bool enabled;
     IO_t io;
 } pwmOutputPort_t;
@@ -102,7 +100,6 @@ void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIn
 void pwmWriteDigital(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);
-void pwmRequestTelemetry(uint8_t index);
 #endif
 
 void pwmWriteMotor(uint8_t index, uint16_t value);

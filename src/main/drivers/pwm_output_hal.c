@@ -118,7 +118,6 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
     if (index < MAX_SUPPORTED_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
-        if (motors[index].pwmRequestTelemetryPtr)) motors[index].pwmRequestTelemetryPtr(index);
         motors[index].pwmWritePtr(index, value);
     }
 }
@@ -232,7 +231,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 #ifdef USE_DSHOT
         if (isDigital) {
             pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
-            motors[motorIndex].pwmRequestTelemetryPtr = pwmRequestTelemetry;
             motors[motorIndex].pwmWritePtr = pwmWriteDigital;
             motors[motorIndex].enabled = true;
             continue;

@@ -496,7 +496,7 @@ void init(void)
     }
 #endif
 
-#ifdef ESC_TELEMETRY
+#ifdef USE_ESC_TELEMETRY
     if (feature(FEATURE_ESC_TELEMETRY)) {
         escTelemetryInit();
     }

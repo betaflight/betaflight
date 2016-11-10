@@ -108,7 +108,7 @@
 #undef USE_UART1_TX_DMA
 #endif
 
-#define ESC_TELEMETRY
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
 

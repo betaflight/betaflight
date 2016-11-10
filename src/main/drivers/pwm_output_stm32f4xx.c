@@ -45,7 +45,7 @@ static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
-motorDmaOutput_t *getDmaMotor(uint8_t index)
+motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
 {
     return &dmaMotors[index];
 }

@@ -270,7 +270,7 @@ static void taskUpdateOsd(uint32_t currentTime)
 }
 #endif
 
-#ifdef ESC_TELEMETRY
+#ifdef USE_ESC_TELEMETRY
 static void taskEscTelemetry(uint32_t currentTime)
 {
     if (feature(FEATURE_ESC_TELEMETRY)) {
@@ -339,7 +339,7 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-#ifdef ESC_TELEMETRY
+#ifdef USE_ESC_TELEMETRY
     setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
 #endif
 }
@@ -502,7 +502,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef ESC_TELEMETRY
+#ifdef USE_ESC_TELEMETRY
     [TASK_ESC_TELEMETRY] = {
         .taskName = "ESC_TELEMETRY",
         .taskFunc = taskEscTelemetry,

@@ -85,7 +85,7 @@ typedef enum {
 #ifdef USE_BST
     TASK_BST_MASTER_PROCESS,
 #endif
-#ifdef ESC_TELEMETRY
+#ifdef USE_ESC_TELEMETRY
     TASK_ESC_TELEMETRY,
 #endif
 

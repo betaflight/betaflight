@@ -122,25 +122,6 @@ uint16_t getEscTelemetryConsumption(void)
     return escConsumption;
 }
 
-void pwmRequestTelemetry(uint8_t index)
-{
-    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
-    {
-        return;
-    }
-
-    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
-    {
-        if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
-
-        if (escTelemetryMotor == index) {
-            escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-            motorDmaOutput_t * const motor = getDmaMotor(index);
-            motor->requestTelemetry = true;
-        }
-    }
-}
-
 bool escTelemetryInit(void)
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_ESC);
@@ -148,7 +129,7 @@ bool escTelemetryInit(void)
         return false;
     }
 
-    portOptions_t options = (SERIAL_NOT_INVERTED); //SERIAL_INVERTED
+    portOptions_t options = (SERIAL_NOT_INVERTED);
 
     // Initialize serial port
     escTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escTelemetryDataReceive, ESC_TLM_BAUDRATE, MODE_RX, options);
@@ -235,6 +216,14 @@ void escTelemetryProcess(uint32_t currentTime)
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
         escTelemetryMotor = 0;
         escTriggerTimestamp = millis();
+    }
+    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
+    {
+        if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
+
+        motorDmaOutput_t * const motor = getMotorDmaOutput(escTelemetryMotor);
+        motor->requestTelemetry = true;
+        escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
     }
 
     if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < millis())
