@@ -14,6 +14,7 @@
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
 #include "drivers/pwm_output.h"
+
 #include "io/serial.h"
 
 #include "flight/mixer.h"
@@ -77,7 +78,7 @@ typedef enum {
 
 #define ESC_TLM_BAUDRATE 115200
 #define ESC_TLM_BUFFSIZE 10
-#define ESC_BOOTTIME 3000               // 3 seconds
+#define ESC_BOOTTIME 5000               // 5 seconds
 #define ESC_REQUEST_TIMEOUT 1000        // 1 seconds
 
 static bool tlmFrameDone = false;
@@ -88,7 +89,7 @@ static serialPort_t *escTelemetryPort = NULL;
 static esc_telemetry_t escTelemetryData[4];
 static uint32_t escTriggerTimestamp = -1;
 
-static uint8_t escTelemetryMotor = 99;      // motor index 0 - 3
+static uint8_t escTelemetryMotor = 0;      // motor index 0 - 3
 static bool escTelemetryEnabled = false;
 static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_WAIT;
 
@@ -100,8 +101,6 @@ static void escTelemetryDataReceive(uint16_t c);
 static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen);
 static void selectNextMotor(void);
-
-static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
 bool isEscTelemetryActive(void)
 {
@@ -136,31 +135,11 @@ void pwmRequestTelemetry(uint8_t index)
 
         if (escTelemetryMotor == index) {
             escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-            motorDmaOutput_t * const motor = &dmaMotors[index];
+            motorDmaOutput_t * const motor = getDmaMotor(index);
             motor->requestTelemetry = true;
         }
     }
 }
-
-// bool escTelemetrySendTrigger(uint8_t index)
-// {
-//     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
-//     {
-//         return false;
-//     }
-//
-//     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
-//     {
-//         if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
-//
-//         if (escTelemetryMotor == index) {
-//             escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-//             return true;
-//         }
-//     }
-//
-//     return false;
-// }
 
 bool escTelemetryInit(void)
 {

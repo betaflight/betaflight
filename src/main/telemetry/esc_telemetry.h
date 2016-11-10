@@ -1,7 +1,5 @@
 #pragma once
 
-#define ESC_TRIGGER_NONE 99
-
 uint8_t escTelemetryFrameStatus(void);
 bool escTelemetryInit(void);
 bool isEscTelemetryActive(void);
