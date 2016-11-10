@@ -57,24 +57,18 @@
 static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
 static char profileIndexString[] = " p";
-static uint8_t tempPid[3][3];
 
-#ifdef NOT_YET
 static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
-static char rateProfileIndexString[] = " p-r";
-static controlRateConfig_t rateProfile;
-#endif
+static char rateProfileIndexString[] = " r";
 
 static long cmsx_menuImu_onEnter(void)
 {
     profileIndex = masterConfig.current_profile_index;
     tmpProfileIndex = profileIndex + 1;
 
-#ifdef NOT_YET
-    rateProfileIndex = masterConfig.profile[profileIndex].activeRateProfile;
+    rateProfileIndex = getCurrentControlRateProfile();
     tmpRateProfileIndex = rateProfileIndex + 1;
-#endif
 
     return 0;
 }
@@ -84,9 +78,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
     UNUSED(self);
 
     masterConfig.current_profile_index = profileIndex;
-#ifdef NOT_YET
-    masterConfig.profile[profileIndex].activeRateProfile = rateProfileIndex;
-#endif
+    changeControlRateProfile(rateProfileIndex); // XXX setControlRateProfile???
 
     return 0;
 }
@@ -101,7 +93,6 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
     return 0;
 }
 
-#ifdef NOT_YET
 static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void *ptr)
 {
     UNUSED(displayPort);
@@ -111,7 +102,8 @@ static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void
 
     return 0;
 }
-#endif
+
+static uint8_t tempPid[3][3];
 
 static long cmsx_PidRead(void)
 {
@@ -175,14 +167,14 @@ static CMS_Menu cmsx_menuPid = {
     .entries = cmsx_menuPidEntries
 };
 
-#ifdef NOT_YET
 //
 // Rate & Expo
 //
+static controlRateConfig_t rateProfile;
 
 static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, &masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
 
     return 0;
 }
@@ -191,15 +183,14 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    memcpy(&masterConfig.profile[profileIndex].controlRateProfile[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
+    memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }
 
 static long cmsx_RateProfileOnEnter(void)
 {
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
-    rateProfileIndexString[3] = '0' + tmpRateProfileIndex;
+    rateProfileIndexString[1] = '0' + tmpRateProfileIndex;
     cmsx_RateProfileRead();
 
     return 0;
@@ -209,17 +200,22 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
+#if 0
     { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
     { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
+#endif
 
-    { "ROLL SUPER",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[0],   0, 100, 1, 10 }, 0 },
-    { "PITCH SUPER", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[1],   0, 100, 1, 10 }, 0 },
-    { "YAW SUPER",   OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rates[2],   0, 100, 1, 10 }, 0 },
+    { "ROLL RATE",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_ROLL],   CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
+    { "PITCH RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_PITCH],   CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
+    { "YAW RATE",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_YAW],   CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX, 1 }, 0 },
 
-    { "RC EXPO",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcExpo8,    0, 100, 1, 10 }, 0 },
-    { "RC YAW EXP",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawExpo8, 0, 100, 1, 10 }, 0 },
+    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rcExpo8,    0, 100, 1 }, 0 },
+    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rcYawExpo8, 0, 100, 1 }, 0 },
 
-    { "THRPID ATT",  OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.dynThrPID,  0, 100, 1, 10}, 0 },
+    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,    0, 100, 1 }, 0 },
+    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,   0, 100, 1 }, 0 },
+
+    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.dynThrPID,  0, 100, 1 }, 0 },
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
@@ -235,6 +231,7 @@ static CMS_Menu cmsx_menuRateProfile = {
     .entries = cmsx_menuRateProfileEntries
 };
 
+#ifdef NOT_YET
 static uint8_t cmsx_dtermSetpointWeight;
 static uint8_t cmsx_setpointRelaxRatio;
 static uint8_t cmsx_angleStrength;
@@ -375,14 +372,13 @@ static OSD_Entry cmsx_menuImuEntries[] =
     // Profile dependent
     {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
+    // Profile & rate profile dependent
+    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
+    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
+
 #ifdef NOT_YET
     {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
     {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
-
-    // Profile & rate profile dependent
-    {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_RATEPROFILES, 1}, 0},
-    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
-
     // Profile independent
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 #endif

@@ -36,6 +36,9 @@ static int oledGrab(displayPort_t *displayPort)
 static int oledRelease(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
+
+    i2c_OLED_clear_display_quick();
+
     return 0;
 }
 
