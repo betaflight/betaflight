@@ -25,6 +25,8 @@
 #include "timer.h"
 #include "pwm_output.h"
 
+#include "telemetry/esc_telemetry.h"
+
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
@@ -103,6 +105,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
     if (index < MAX_SUPPORTED_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
+        if (motors[index].pwmRequestTelemetryPtr) motors[index].pwmRequestTelemetryPtr(index);
         motors[index].pwmWritePtr(index, value);
     }
 }
@@ -160,7 +163,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     pwmWriteFuncPtr pwmWritePtr;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
     bool isDigital = false;
-    
+
     switch (motorConfig->motorPwmProtocol) {
     default:
     case PWM_TYPE_ONESHOT125:
@@ -200,16 +203,16 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     if (!useUnsyncedPwm && !isDigital) {
         pwmCompleteWritePtr = pwmCompleteOneshotMotorUpdate;
     }
-        
+
     for (int motorIndex = 0; motorIndex < MAX_SUPPORTED_MOTORS && motorIndex < motorCount; motorIndex++) {
         const ioTag_t tag = motorConfig->ioTags[motorIndex];
-        
+
         if (!tag) {
             break;
         }
 
         const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_ANY);
-        
+
         if (timerHardware == NULL) {
             /* flag failure and disable ability to arm */
             break;
@@ -219,15 +222,16 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         if (isDigital) {
             pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
             motors[motorIndex].pwmWritePtr = pwmWriteDigital;
+            motors[motorIndex].pwmRequestTelemetryPtr = pwmRequestTelemetry;
             motors[motorIndex].enabled = true;
             continue;
         }
 #endif
         motors[motorIndex].io = IOGetByTag(tag);
-        
+
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_OUTPUT, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
-        
+
         motors[motorIndex].pwmWritePtr = pwmWritePtr;
         if (useUnsyncedPwm) {
             const uint32_t hz = timerMhzCounter * 1000000;
@@ -239,7 +243,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     }
 }
 
-bool pwmIsSynced(void) 
+bool pwmIsSynced(void)
 {
     return pwmCompleteWritePtr != NULL;
 }
@@ -261,23 +265,23 @@ void servoInit(const servoConfig_t *servoConfig)
 {
     for (uint8_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
         const ioTag_t tag = servoConfig->ioTags[servoIndex];
-        
+
         if (!tag) {
             break;
         }
-        
+
         servos[servoIndex].io = IOGetByTag(tag);
-        
+
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_OUTPUT, RESOURCE_INDEX(servoIndex));
         IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
-        
+
         const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_ANY);
-        
+
         if (timer == NULL) {
             /* flag failure and disable ability to arm */
             break;
         }
-        
+
         pwmOutConfig(&servos[servoIndex], timer, PWM_TIMER_MHZ, 1000000 / servoConfig->servoPwmRate, servoConfig->servoCenterPulse);
         servos[servoIndex].enabled = true;
     }

@@ -13,6 +13,7 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+#include "drivers/pwm_output.h"
 #include "io/serial.h"
 
 #include "flight/mixer.h"
@@ -100,6 +101,8 @@ static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen);
 static void selectNextMotor(void);
 
+static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
+
 bool isEscTelemetryActive(void)
 {
     return escTelemetryEnabled;
@@ -120,11 +123,11 @@ uint16_t getEscTelemetryConsumption(void)
     return escConsumption;
 }
 
-bool escTelemetrySendTrigger(uint8_t index)
+void pwmRequestTelemetry(uint8_t index)
 {
     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
     {
-        return false;
+        return;
     }
 
     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
@@ -133,12 +136,31 @@ bool escTelemetrySendTrigger(uint8_t index)
 
         if (escTelemetryMotor == index) {
             escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
-            return true;
+            motorDmaOutput_t * const motor = &dmaMotors[index];
+            motor->requestTelemetry = true;
         }
     }
-
-    return false;
 }
+
+// bool escTelemetrySendTrigger(uint8_t index)
+// {
+//     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_PENDING)
+//     {
+//         return false;
+//     }
+//
+//     if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
+//     {
+//         if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
+//
+//         if (escTelemetryMotor == index) {
+//             escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
+//             return true;
+//         }
+//     }
+//
+//     return false;
+// }
 
 bool escTelemetryInit(void)
 {

@@ -28,11 +28,7 @@
 #include "system.h"
 #include "rcc.h"
 
-#include "config/feature.h"
-
 #include "fc/config.h"
-
-#include "telemetry/esc_telemetry.h"
 
 #ifdef USE_DSHOT
 
@@ -65,15 +61,8 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 {
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
-
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        uint8_t tlmIndex = getEscTelemetryTriggerMotorIndex();
-        if (tlmIndex != ESC_TRIGGER_NONE && tlmIndex == index) {
-            // Set motor to trigger for ESC Telemetry
-            packet = (value << 1) | 1;
-        }
-    }
+    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
 
     // compute checksum
     int csum = 0;
