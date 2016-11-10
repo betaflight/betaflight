@@ -67,7 +67,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     uint16_t packet = (value << 1) | 0;
 
-    if (true) { //feature(FEATURE_ESC_TELEMETRY)) { //TODO: check for feature
+    if (feature(FEATURE_ESC_TELEMETRY)) {
         if (escTelemetrySendTrigger(index)) {
             // Set motor to trigger for ESC Telemetry
             packet = (value << 1) | 1;

@@ -388,6 +388,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
+    batteryConfig->batteryMeterType = BATTERY_SENSOR_ADC;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -560,14 +561,14 @@ void createDefaultConfig(master_t *config)
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
-#ifdef BEEPER 
+#ifdef BEEPER
     resetBeeperConfig(&config->beeperConfig);
 #endif
 
 #ifdef SONAR
     resetSonarConfig(&config->sonarConfig);
 #endif
-    
+
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -730,7 +731,7 @@ void createDefaultConfig(master_t *config)
     targetConfiguration(config);
 #endif
 
-   
+
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));

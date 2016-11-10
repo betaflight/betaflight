@@ -35,6 +35,8 @@
 
 #include "sensors/battery.h"
 
+#include "telemetry/esc_telemetry.h"
+
 #include "fc/rc_controls.h"
 #include "io/beeper.h"
 
@@ -65,20 +67,25 @@ static uint16_t batteryAdcToVoltage(uint16_t src)
 
 static void updateBatteryVoltage(void)
 {
-    static biquadFilter_t vbatFilter;
-    static bool vbatFilterIsInitialised;
-
-    // store the battery voltage with some other recent battery voltage readings
-    uint16_t vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
-
-    if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
-
-    if (!vbatFilterIsInitialised) {
-        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
-        vbatFilterIsInitialised = true;
+    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
+        vbat = getEscTelemetryVbat();
     }
-    vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
-    vbat = batteryAdcToVoltage(vbatSample);
+    else {
+        static biquadFilter_t vbatFilter;
+        static bool vbatFilterIsInitialised;
+
+        // store the battery voltage with some other recent battery voltage readings
+        uint16_t vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
+
+        if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
+
+        if (!vbatFilterIsInitialised) {
+            biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
+            vbatFilterIsInitialised = true;
+        }
+        vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
+        vbat = batteryAdcToVoltage(vbatSample);
+    }
 
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
@@ -208,10 +215,18 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
         case CURRENT_SENSOR_NONE:
             amperage = 0;
             break;
+        case CURRENT_SENSOR_ESC:
+            amperage = getEscTelemetryCurrent();
+            break;
     }
 
-    mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
-    mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC) {
+        mAhDrawn = getEscTelemetryConsumption();
+    }
+    else {
+        mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+        mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    }
 }
 
 float calculateVbatPidCompensation(void) {

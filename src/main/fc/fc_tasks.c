@@ -340,7 +340,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 #ifdef ESC_TELEMETRY
-    setTaskEnabled(TASK_ESC_TELEMETRY, true); //feature(FEATURE_ESC_TELEMETRY)); // TODO: replace true for feature
+    setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
 #endif
 }
 
