@@ -91,10 +91,20 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
+#define USE_DASHBOARD
+
+// Configuratoin Menu System
+#define CMS
+#define CMS_MAX_DEVICE 4
+
+// Use external display connected by MSP to run CMS
+#define USE_MSP_DISPLAYPORT
+
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 // include the osd code
 #define OSD
+
 // include the max7456 driver
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
@@ -127,9 +137,13 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-// Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
+#define USE_DSHOT
+
+// DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
+#ifndef USE_DSHOT
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+#endif
 
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
@@ -143,16 +157,7 @@
 //#define RSSI_ADC_PIN                PB1
 //#define ADC_INSTANCE                ADC3
 
-#define USE_DSHOT
-
 #define LED_STRIP
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -196,5 +201,5 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7 // PPM + 6 Outputs (2 shared with UART3)
+#define USABLE_TIMER_CHANNEL_COUNT 8 // PPM + 6 Outputs (2 shared with UART3)
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15))

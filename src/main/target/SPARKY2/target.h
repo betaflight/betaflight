@@ -32,9 +32,10 @@
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
 
-
 #define INVERTER                PC6
 #define INVERTER_USART          USART6
+
+#define USE_DSHOT
 
 // MPU9250 interrupt
 #define USE_EXTI
@@ -117,9 +118,6 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 #define CURRENT_METER_ADC_PIN   PC2
-
-#define LED_STRIP
-#define LED_STRIP_TIMER         TIM5
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL

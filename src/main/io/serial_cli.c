@@ -35,6 +35,8 @@ uint8_t cliMode = 0;
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -50,6 +52,7 @@ uint8_t cliMode = 0;
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
@@ -147,7 +150,8 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
+static void printResource(uint8_t dumpMask, master_t *defaultConfig);
 static void cliResource(char *cmdline);
 #endif
 #ifdef GPS
@@ -202,6 +206,7 @@ typedef enum {
     DUMP_ALL = (1 << 3),
     DO_DIFF = (1 << 4),
     SHOW_DEFAULTS = (1 << 5),
+    HIDE_UNUSED = (1 << 6),
 } dumpFlags_e;
 
 static const char* const emptyName = "-";
@@ -236,7 +241,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -330,7 +335,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -933,7 +938,7 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #endif
 #ifdef LED_STRIP
-    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.ledStripConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef USE_RTC6705
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
@@ -942,6 +947,7 @@ const clivalue_t valueTable[] = {
 
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
+    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
@@ -1240,12 +1246,12 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
     serialConfig_t *serialConfigDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
-	serialConfig = &masterConfig.serialConfig;
+    serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-	serialConfigDefault = &defaultConfig->serialConfig;
-	equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+    serialConfigDefault = &defaultConfig->serialConfig;
+    equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
             && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
             && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
             && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
@@ -1703,8 +1709,8 @@ static void printLed(uint8_t dumpMask, master_t *defaultConfig)
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-        ledConfig = masterConfig.ledConfigs[i];
-        ledConfigDefault = defaultConfig->ledConfigs[i];
+        ledConfig = masterConfig.ledStripConfig.ledConfigs[i];
+        ledConfigDefault = defaultConfig->ledStripConfig.ledConfigs[i];
         equalsDefault = ledConfig == ledConfigDefault;
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
@@ -1741,8 +1747,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
     hsvColor_t *colorDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-        color = &masterConfig.colors[i];
-        colorDefault = &defaultConfig->colors[i];
+        color = &masterConfig.ledStripConfig.colors[i];
+        colorDefault = &defaultConfig->ledStripConfig.colors[i];
         equalsDefault = color->h == colorDefault->h
             && color->s == colorDefault->s
             && color->v == colorDefault->v;
@@ -1787,21 +1793,26 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
-            int colorIndex = masterConfig.modeColors[i].color[j];
-            int colorIndexDefault = defaultConfig->modeColors[i].color[j];
+            int colorIndex = masterConfig.ledStripConfig.modeColors[i].color[j];
+            int colorIndexDefault = defaultConfig->ledStripConfig.modeColors[i].color[j];
             const char *format = "mode_color %u %u %u\r\n";
             cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
             cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
         }
     }
 
+    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-        int colorIndex = masterConfig.specialColors.color[j];
-        int colorIndexDefault = defaultConfig->specialColors.color[j];
-        const char *format = "mode_color %u %u %u\r\n";
+        int colorIndex = masterConfig.ledStripConfig.specialColors.color[j];
+        int colorIndexDefault = defaultConfig->ledStripConfig.specialColors.color[j];
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
+
+    int ledStripAuxChannel = masterConfig.ledStripConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultConfig->ledStripConfig.ledstrip_aux_channel;
+    cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
+    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
@@ -1954,11 +1965,11 @@ static void cliServo(char *cmdline)
 static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
-		servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
-		servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+        servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
+        servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
         if (customServoMixer.rate == 0) {
             break;
-		}
+        }
 
         bool equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
             && customServoMixer.inputSource == customServoMixerDefault.inputSource
@@ -1968,7 +1979,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
             && customServoMixer.max == customServoMixerDefault.max
             && customServoMixer.box == customServoMixerDefault.box;
 
-		const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
+        const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
             customServoMixerDefault.targetChannel,
@@ -1991,7 +2002,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-	cliPrint("\r\n");
+    cliPrint("\r\n");
 
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -2019,7 +2030,7 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-		printServoMix(DUMP_MASTER, NULL);
+        printServoMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
@@ -2364,7 +2375,7 @@ static void cliVtx(char *cmdline)
 static void printName(uint8_t dumpMask)
 {
     bool equalsDefault = strlen(masterConfig.name) == 0;
-	cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
 }
 
 static void cliName(char *cmdline)
@@ -2592,7 +2603,7 @@ static void cliMap(char *cmdline)
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Map: ");
-	uint32_t i;
+    uint32_t i;
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
@@ -2737,6 +2748,11 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrint("\r\n# name\r\n");
 #endif
         printName(dumpMask);
+
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrint("\r\n# resources\r\n");
+#endif
+        printResource(dumpMask, &defaultConfig);
 
 #ifndef USE_QUAD_MIXER_ONLY
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -2988,12 +3004,18 @@ static void cliEscPassthrough(char *cmdline)
                 break;
             case 1:
                 index = atoi(pch);
-                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                    printf("passthru at pwm output %d enabled\r\n", index);
+                if(mode == 2 && index == 255)
+                {
+                    printf("passthru on all pwm outputs enabled\r\n");
                 }
-                else {
-                    printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                    return;
+                else{
+                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                        printf("passthru at pwm output %d enabled\r\n", index);
+                    }
+                    else {
+                        printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                        return;
+                    }
                 }
                 break;
         }
@@ -3095,11 +3117,11 @@ static void cliMotor(char *cmdline)
             cliShowArgumentRangeError("value", 1000, 2000);
             return;
         } else {
-            motor_disarmed[motor_index] = motor_value;
+            motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
         }
     }
 
-    cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+    cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
 static void cliPlaySound(char *cmdline)
@@ -3601,7 +3623,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
+    cliPrintf("# %s/%s %s %s / %s (%s)\r\n",
+        FC_FIRMWARE_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -3720,7 +3743,7 @@ void cliProcess(void)
     }
 }
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
 
 typedef struct {
     const uint8_t owner;
@@ -3730,30 +3753,92 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
-    { OWNER_BEEPER, &masterConfig.beeperConfig.ioTag, 0 },
+    { OWNER_BEEPER,        &masterConfig.beeperConfig.ioTag, 0 },
 #endif 
-    { OWNER_MOTOR, &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_MOTOR,         &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
-    { OWNER_SERVO, &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
+    { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif 
 #ifndef SKIP_RX_PWM_PPM
-    { OWNER_PPMINPUT, &masterConfig.ppmConfig.ioTag, 0 },
-    { OWNER_PWMINPUT, &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
+    { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
+    { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif 
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
-    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+    { OWNER_SONAR_ECHO,    &masterConfig.sonarConfig.echoTag,    0 },
+#endif
+#ifdef LED_STRIP
+    { OWNER_LED_STRIP,     &masterConfig.ledStripConfig.ioTag,   0 },
 #endif
 };
 
+static void printResource(uint8_t dumpMask, master_t *defaultConfig)
+{
+    for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
+        const char* owner;
+        owner = ownerNames[resourceTable[i].owner];
+
+        if (resourceTable[i].maxIndex > 0) {
+            for (int index = 0; index < resourceTable[i].maxIndex; index++) {
+                ioTag_t ioPtr = *(resourceTable[i].ptr + index);
+                ioTag_t ioPtrDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+
+                IO_t io = IOGetByTag(ioPtr);
+                IO_t ioDefault = IOGetByTag(ioPtrDefault);
+                bool equalsDefault = io == ioDefault;
+                const char *format = "resource %s %d %c%02d\r\n";
+                const char *formatUnassigned = "resource %s %d NONE\r\n";
+                if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                    cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                } else {
+                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+                }
+                if (DEFIO_TAG_ISEMPTY(io)) {
+                    if (!(dumpMask & HIDE_UNUSED)) {
+                        cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                    }
+                } else {
+                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                }
+            }
+        } else {
+            ioTag_t ioPtr = *resourceTable[i].ptr;
+            ioTag_t ioPtrDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+
+            IO_t io = IOGetByTag(ioPtr);
+            IO_t ioDefault = IOGetByTag(ioPtrDefault);
+            bool equalsDefault = io == ioDefault;
+            const char *format = "resource %s %c%02d\r\n";
+            const char *formatUnassigned = "resource %s NONE\r\n";
+            if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+            } else {
+                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+            }
+            if (DEFIO_TAG_ISEMPTY(io)) {
+                if (!(dumpMask & HIDE_UNUSED)) {
+                    cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+                }
+            } else {
+                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+            }
+        }
+    }
+}
+
 static void cliResource(char *cmdline)
 {
-    int len;
-    len = strlen(cmdline);
+    int len = strlen(cmdline);
 
     if (len == 0) {
-        cliPrintf("IO:\r\n----------------------\r\n");
-        for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
+
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
+#endif
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
@@ -3766,34 +3851,25 @@ static void cliResource(char *cmdline)
                 cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
             }
         }
-        cliPrintf("\r\nUse: 'resource list' to see how to change resources.\r\n");
-        return;
-    } else if (strncasecmp(cmdline, "list", len) == 0) {
-        for (uint8_t i = 0; i < ARRAYLEN(resourceTable); i++) {
-            const char* owner;
-            owner = ownerNames[resourceTable[i].owner];
 
-            if (resourceTable[i].maxIndex > 0) {
-                for (int index = 0; index < resourceTable[i].maxIndex; index++) {
-                    
-                    if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr + index))) {
-                        continue;
-                    }
-                    
-                    IO_t io = IOGetByTag(*(resourceTable[i].ptr + index));
-                    if (!io) {
-                        continue;
-                    }
-                    cliPrintf("resource %s %d %c%02d\r\n", owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
-                }
+        cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
+        for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+            const char* owner;
+            owner = ownerNames[dmaGetOwner(i)];
+            
+            cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
+            uint8_t resourceIndex = dmaGetResourceIndex(i);
+            if (resourceIndex > 0) {
+                cliPrintf(" %s%d\r\n", owner, resourceIndex);
             } else {
-                if (DEFIO_TAG_ISEMPTY(*(resourceTable[i].ptr))) {
-                    continue;
-                }
-                IO_t io = IOGetByTag(*resourceTable[i].ptr);
-                cliPrintf("resource %s %c%02d\r\n", owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
-            }
+                cliPrintf(" %s\r\n", owner);
+            }            
         }
+
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
+#endif
+
         return;
     }
 
@@ -3834,7 +3910,11 @@ static void cliResource(char *cmdline)
             cliPrintf("Resource is freed!");
             return;
         } else {
-            uint8_t port = (*pch)-'A';
+            uint8_t port = (*pch) - 'A';
+            if (port >= 8) {
+                port = (*pch) - 'a';
+            }
+
             if (port < 8) {
                 pch++;
                 pin = atoi(pch);
@@ -3859,7 +3939,9 @@ static void cliResource(char *cmdline)
 void cliDfu(char *cmdLine)
 {
     UNUSED(cmdLine);
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nRestarting in DFU mode");
+#endif
     cliRebootEx(true);
 }
 

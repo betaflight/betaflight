@@ -199,9 +199,19 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
             return timerDefinitions[i].rcc;
+        }
+    }
+    return 0;
+}
+
+uint8_t timerInputIrq(TIM_TypeDef *tim)
+{
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].inputIrq;
         }
     }
     return 0;
@@ -239,9 +249,11 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 {
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     TIM_Cmd(timerHardwarePtr->tim, ENABLE);
-    timerNVICConfigure(timerHardwarePtr->irq);
+
+    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
-    switch(timerHardwarePtr->irq) {
+    switch(irq) {
 #if defined(STM32F10X)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_IRQn);
@@ -271,7 +283,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     unsigned channel = timHw - timerHardware;
     if(channel >= USABLE_TIMER_CHANNEL_COUNT)
@@ -288,7 +300,7 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
 
         NVIC_InitTypeDef NVIC_InitStructure;
 
-        NVIC_InitStructure.NVIC_IRQChannel = timHw->irq;
+        NVIC_InitStructure.NVIC_IRQChannel = irq;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(irqPriority);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(irqPriority);
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -686,14 +698,14 @@ void timerInit(void)
 #endif
 
     /* enable the timer peripherals */
-    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
     }
 
 #if defined(STM32F3) || defined(STM32F4)
-    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
 
@@ -755,14 +767,11 @@ void timerForceOverflow(TIM_TypeDef *tim)
     }
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag)
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
-    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
-            if (flag && (timerHardware[i].output & flag) == flag) {
-                return &timerHardware[i];
-            } else if (!flag && timerHardware[i].output == flag) { 
-                // TODO: shift flag by one so not to be 0
+            if (timerHardware[i].usageFlags & flag || flag == 0) {
                 return &timerHardware[i];
             }
         }
@@ -813,6 +822,7 @@ volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
     return (volatile timCCR_t*)((volatile char*)&tim->CCR1 + channel);
 }
 
+#ifndef USE_HAL_DRIVER
 uint16_t timerDmaSource(uint8_t channel)
 {
     switch (channel) {
@@ -827,3 +837,4 @@ uint16_t timerDmaSource(uint8_t channel)
     }
     return 0;
 }
+#endif

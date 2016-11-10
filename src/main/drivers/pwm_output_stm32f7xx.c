@@ -145,6 +145,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         motor->TimHandle.Instance = timerHardware->tim;
         motor->TimHandle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;;
         motor->TimHandle.Init.Period = MOTOR_BITLENGTH;
+        motor->TimHandle.Init.RepetitionCounter = 0;
         motor->TimHandle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
         motor->TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
         if(HAL_TIM_PWM_Init(&motor->TimHandle) != HAL_OK)
@@ -175,23 +176,20 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
 
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
-    
 
-    static DMA_HandleTypeDef  hdma_tim;
-    
     /* Set the parameters to be configured */
-    hdma_tim.Init.Channel  = timerHardware->dmaChannel;
-    hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD ;
-    hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
-    hdma_tim.Init.Mode = DMA_NORMAL;
-    hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
-    hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-    hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
-    hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    motor->hdma_tim.Init.Channel  = timerHardware->dmaChannel;
+    motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
+    motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
+    motor->hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    motor->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    motor->hdma_tim.Init.Mode = DMA_NORMAL;
+    motor->hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
+    motor->hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    motor->hdma_tim.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    motor->hdma_tim.Init.MemBurst = DMA_MBURST_SINGLE;
+    motor->hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
     if(timerHardware->dmaStream == NULL)
@@ -199,11 +197,12 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         /* Initialization Error */
         return;
     }
-    hdma_tim.Instance = timerHardware->dmaStream;
+    motor->hdma_tim.Instance = timerHardware->dmaStream;
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], hdma_tim);
+    __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     /* Initialize TIMx DMA handle */
@@ -219,7 +218,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     TIM_OCInitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-    TIM_OCInitStructure.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
+    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     TIM_OCInitStructure.Pulse = 0;
 

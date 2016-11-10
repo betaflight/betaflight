@@ -38,18 +38,16 @@
 #define MPU_INT_EXTI            PC4
 
 //MPU6500
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
+#define ICM20689_CS_PIN          PA4
+#define ICM20689_SPI_INSTANCE    SPI1
 
 #define ACC
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW90_DEG
+#define USE_ACC_SPI_ICM20689
+#define ACC_ICM20689_ALIGN       CW90_DEG
 
 #define GYRO
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW90_DEG
+#define USE_GYRO_SPI_ICM20689
+#define GYRO_ICM20689_ALIGN      CW90_DEG
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN        PA8
@@ -127,16 +125,6 @@
 
 
 #define LED_STRIP
-// LED Strip can run off Pin 6 (PB1)
-#define WS2811_PIN                      PB1
-#define WS2811_TIMER                    TIM3
-#define WS2811_TIMER_CHANNEL            TIM_Channel_4
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_CHANNEL              DMA_Channel_5
-#define WS2811_DMA_IRQ                  DMA1_Stream2_IRQn
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM3
-
 
 // Default configuration
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

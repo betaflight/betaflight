@@ -21,6 +21,8 @@
 
 #include "config/config_profile.h"
 
+#include "cms/cms.h"
+
 #include "drivers/pwm_rx.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
@@ -161,11 +163,7 @@ typedef struct master_s {
 #endif
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
-    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
-    specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    ledStripConfig_t ledStripConfig;
 #endif
 
 #ifdef TRANSPONDER

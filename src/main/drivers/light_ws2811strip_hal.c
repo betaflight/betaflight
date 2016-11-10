@@ -31,26 +31,15 @@
 #include "rcc.h"
 #include "timer.h"
 
-#if !defined(WS2811_PIN)
-#define WS2811_PIN                      PA0
-#define WS2811_TIMER                    TIM5
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST2_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream2
-#define WS2811_DMA_IT                   DMA_IT_TCIF2
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_TIMER_CHANNEL            TIM_Channel_1
-#define WS2811_TIMER_GPIO_AF            GPIO_AF2_TIM5
-#endif
-
 static IO_t ws2811IO = IO_NONE;
-static uint16_t timDMASource = 0;
 bool ws2811Initialised = false;
 
 static TIM_HandleTypeDef TimHandle;
+static uint16_t timerChannel = 0;
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-    if(htim->Instance==WS2811_TIMER)
+    if(htim->Instance == TimHandle.Instance)
     {
         //HAL_TIM_PWM_Stop_DMA(&TimHandle,WS2811_TIMER_CHANNEL);
         ws2811LedDataTransferInProgress = 0;
@@ -62,9 +51,20 @@ void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
     HAL_DMA_IRQHandler(TimHandle.hdma[descriptor->userParam]);
 }
 
-void ws2811LedStripHardwareInit(void)
+void ws2811LedStripHardwareInit(ioTag_t ioTag)
 {
-    TimHandle.Instance = WS2811_TIMER;
+    if (!ioTag) {
+        return;
+    }
+
+    const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
+    TIM_TypeDef *timer = timerHardware->tim;
+    timerChannel = timerHardware->channel;
+
+    if (timerHardware->dmaStream == NULL) {
+        return;
+    }
+    TimHandle.Instance = timer;
 
     TimHandle.Init.Prescaler = 1;
     TimHandle.Init.Period = 135; // 800kHz
@@ -78,16 +78,14 @@ void ws2811LedStripHardwareInit(void)
 
     static DMA_HandleTypeDef  hdma_tim;
 
-    ws2811IO = IOGetByTag(IO_TAG(WS2811_PIN));
-    /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
+    ws2811IO = IOGetByTag(ioTag);
     IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), WS2811_TIMER_GPIO_AF);
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
-    
     /* Set the parameters to be configured */
-    hdma_tim.Init.Channel  = WS2811_DMA_CHANNEL;
+    hdma_tim.Init.Channel  = timerHardware->dmaChannel;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
@@ -101,35 +99,18 @@ void ws2811LedStripHardwareInit(void)
     hdma_tim.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     /* Set hdma_tim instance */
-    hdma_tim.Instance = WS2811_DMA_STREAM;
+    hdma_tim.Instance = timerHardware->dmaStream;
 
-    uint32_t channelAddress = 0;
-    switch (WS2811_TIMER_CHANNEL) {
-        case TIM_CHANNEL_1:
-            timDMASource = TIM_DMA_ID_CC1;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR1);
-            break;
-        case TIM_CHANNEL_2:
-            timDMASource = TIM_DMA_ID_CC2;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR2);
-            break;
-        case TIM_CHANNEL_3:
-            timDMASource = TIM_DMA_ID_CC3;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR3);
-            break;
-        case TIM_CHANNEL_4:
-            timDMASource = TIM_DMA_ID_CC4;
-            channelAddress = (uint32_t)(&WS2811_TIMER->CCR4);
-            break;
-    }
+    uint16_t dmaSource = timerDmaSource(timerChannel);
 
     /* Link hdma_tim to hdma[x] (channelx) */
-    __HAL_LINKDMA(&TimHandle, hdma[timDMASource], hdma_tim);
+    __HAL_LINKDMA(&TimHandle, hdma[dmaSource], hdma_tim);
 
-    dmaSetHandler(WS2811_DMA_HANDLER_IDENTIFER, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, timDMASource);
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
+    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaSource);
 
     /* Initialize TIMx DMA handle */
-    if(HAL_DMA_Init(TimHandle.hdma[timDMASource]) != HAL_OK)
+    if(HAL_DMA_Init(TimHandle.hdma[dmaSource]) != HAL_OK)
     {
         /* Initialization Error */
         return;
@@ -145,15 +126,13 @@ void ws2811LedStripHardwareInit(void)
     TIM_OCInitStructure.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
 
-    if(HAL_TIM_PWM_ConfigChannel(&TimHandle, &TIM_OCInitStructure, WS2811_TIMER_CHANNEL) != HAL_OK)
+    if(HAL_TIM_PWM_ConfigChannel(&TimHandle, &TIM_OCInitStructure, timerChannel) != HAL_OK)
     {
         /* Configuration Error */
         return;
     }
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
 }
 
 
@@ -165,9 +144,9 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
 
-    if(  HAL_TIM_PWM_Start_DMA(&TimHandle, WS2811_TIMER_CHANNEL, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
+    if (HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
     {
-      /* Starting PWM generation Error */
+        /* Starting PWM generation Error */
         ws2811LedDataTransferInProgress = 0;
         return;
     }

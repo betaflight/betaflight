@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define CMS
+#define CMS_MAX_DEVICE 4
 #define MAG
 #define BARO
 #define GPS

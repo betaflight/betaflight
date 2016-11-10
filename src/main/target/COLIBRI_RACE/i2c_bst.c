@@ -28,8 +28,10 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
+#include "fc/config.h"
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "io/motors.h"
 #include "io/servos.h"
@@ -40,7 +42,8 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-#include "telemetry/telemetry.h"
+#include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -51,17 +54,14 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
-
-#include "fc/config.h"
-#include "fc/mw.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
@@ -935,7 +935,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #ifdef LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &masterConfig.colors[i];
+                hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
                 bstWrite16(color->h);
                 bstWrite8(color->s);
                 bstWrite8(color->v);
@@ -944,7 +944,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_LED_STRIP_CONFIG:
             for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+                ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
                 bstWrite32(*ledConfig);
             }
             break;
@@ -1141,7 +1141,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
@@ -1367,7 +1367,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
                i = bstRead8();
-               hsvColor_t *color = &masterConfig.colors[i];
+               hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
                color->h = bstRead16();
                color->s = bstRead8();
                color->v = bstRead8();
@@ -1380,7 +1380,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                    break;
                }
-               ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+               ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
                *ledConfig = bstRead32();
                reevaluateLedConfig();
            }

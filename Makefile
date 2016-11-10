@@ -45,10 +45,16 @@ export AT := @
 ifndef V
 export V0    :=
 export V1    := $(AT)
+export STDOUT   :=
 else ifeq ($(V), 0)
 export V0    := $(AT)
 export V1    := $(AT)
+export STDOUT:= "> /dev/null"
+export MAKE  := $(MAKE) --no-print-directory
 else ifeq ($(V), 1)
+export V0    :=
+export V1    :=
+export STDOUT   :=
 endif
 
 ###############################################################################
@@ -156,6 +162,10 @@ CFLAGS               += -DDEBUG_HARDFAULTS
 STM32F30x_COMMON_SRC  = startup_stm32f3_debug_hardfault_handler.S
 else
 STM32F30x_COMMON_SRC  = startup_stm32f30x_md_gcc.S
+endif
+
+ifeq ($(DEBUG_HARDFAULTS),F7)
+CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
 REVISION = $(shell git log -1 --format="%h")
@@ -364,7 +374,7 @@ endif
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant -Wdouble-promotion
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
-DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT -DDEBUG_HARDFAULTS
+DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
 else
 $(error Unknown MCU for F7 target)
@@ -481,6 +491,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/display.c \
             drivers/exti.c \
             drivers/gyro_sync.c \
             drivers/io.c \
@@ -546,6 +557,14 @@ COMMON_SRC = \
 HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
+            cms/cms_menu_vtx.c \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/light_ws2811strip.c \
@@ -555,9 +574,13 @@ HIGHEND_SRC = \
             flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
             io/gps.c \
             io/ledstrip.c \
-            io/display.c \
+            io/osd.c \
             sensors/sonar.c \
             sensors/barometer.c \
             telemetry/telemetry.c \
@@ -650,7 +673,7 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
-            drivers/serial_uart_hal.c 
+            drivers/serial_uart_hal.c
 
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
@@ -716,8 +739,8 @@ CCACHE :=
 endif
 
 # Tool names
-CC          := $(CCACHE) $(ARM_SDK_PREFIX)gcc
-CPP         := $(CCACHE) $(ARM_SDK_PREFIX)g++
+CROSS_CC    := $(CCACHE) $(ARM_SDK_PREFIX)gcc
+CROSS_CXX   := $(CCACHE) $(ARM_SDK_PREFIX)g++
 OBJCOPY     := $(ARM_SDK_PREFIX)objcopy
 SIZE        := $(ARM_SDK_PREFIX)size
 
@@ -809,26 +832,26 @@ $(TARGET_BIN): $(TARGET_ELF)
 	$(V0) $(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
-	$(V1) echo LD $(notdir $@)
-	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+	$(V1) echo Linking $(TARGET)
+	$(V1) $(CROSS_CC) -o $@ $^ $(LDFLAGS)
 	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
-	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
+	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
+	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo %% $(notdir $<)
-	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
+	$(V1) $(CROSS_CC) -c -o $@ $(ASFLAGS) $<
 
 ## sample            : Build all sample (travis) targets
 sample: $(SAMPLE_TARGETS)
@@ -940,7 +963,7 @@ targets:
 ## test              : run the cleanflight test suite
 ## junittest         : run the cleanflight test suite, producing Junit XML result files.
 test junittest:
-	$(V0) cd src/test && $(MAKE) $@  || true
+	$(V0) cd src/test && $(MAKE) $@
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile

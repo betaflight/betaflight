@@ -14,26 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
- //Target code By Hector "Hectech FPV" Hind
+ //Target code By BorisB and Hector "Hectech FPV" Hind
 
 #include <stdint.h>
 
 #include <platform.h>
 #include "drivers/io.h"
+
 #include "drivers/timer.h"
+#include "drivers/timer_def.h"
+#include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM3,  IO_TAG(PB7),  TIM_Channel_4, TIM3_IRQn,               0, IOCFG_AF_PP, GPIO_AF_1 }, // RC_CH1 - PA0  - *TIM2_CH1
-
-    { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM1 - PA6  - TIM3_CH1, TIM8_BKIN, TIM1_BKIN, *TIM16_CH1
-    { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM2 - PA7  - TIM3_CH2, *TIM17_CH1, TIM1_CH1N, TIM8_CH1
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM3 - PB8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // PWM4 - PB9
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM5 - PA1
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM2_IRQn,               1, IOCFG_AF_PP, GPIO_AF_1 }, // PWM6 - PA0
-    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 }, // PWM7 - PA2
-    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 }, // PWM8 - PA3
-
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_6 }, // GPIO_TIMER / LED_STRIP
+    DEF_TIM(TIM4, CH2, PB7, TIM_USE_PPM,                 TIMER_INPUT_ENABLED), // PPM IN
+    DEF_TIM(TIM16,CH1, PA6, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM1
+    DEF_TIM(TIM1, CH1N,PA7, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED | TIMER_OUTPUT_INVERTED), // PWM2
+    DEF_TIM(TIM8, CH2, PB8, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM3
+    DEF_TIM(TIM17,CH1, PB9, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM4
+    DEF_TIM(TIM3, CH3, PB0, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM5
+    DEF_TIM(TIM3, CH4, PB1, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM6
+    DEF_TIM(TIM2, CH1, PA0, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM7
+    DEF_TIM(TIM15,CH1, PA2, TIM_USE_MOTOR,               TIMER_OUTPUT_ENABLED), // PWM8
+    DEF_TIM(TIM1, CH1, PA8, TIM_USE_MOTOR | TIM_USE_LED, TIMER_OUTPUT_ENABLED), // LED_STRIP --requires resource remap with dshot (remap to motor 5??)--
 };
-

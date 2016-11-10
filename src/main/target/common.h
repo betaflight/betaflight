@@ -40,6 +40,7 @@
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
+#define USE_UART1_TX_DMA
 
 #endif
 
@@ -50,11 +51,19 @@
 #define BLACKBOX
 #define GPS
 #define TELEMETRY
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_IBUS
+#define TELEMETRY_LTM
+#define TELEMETRY_SMARTPORT
 #define USE_SERVOS
 #endif
 
 #if (FLASH_SIZE > 128)
-#define DISPLAY
+#define CMS
+#define USE_DASHBOARD
+#define USE_MSP_DISPLAYPORT
+#define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #else
 #define SKIP_CLI_COMMAND_HELP

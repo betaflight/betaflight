@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
@@ -41,7 +43,7 @@
 #include "flight/altitudehold.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
@@ -222,11 +224,11 @@ static void taskCalculateAltitude(uint32_t currentTime)
     }}
 #endif
 
-#ifdef DISPLAY
-static void taskUpdateDisplay(uint32_t currentTime)
+#ifdef USE_DASHBOARD
+static void taskUpdateDashboard(uint32_t currentTime)
 {
-    if (feature(FEATURE_DISPLAY)) {
-        displayUpdate(currentTime);
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardUpdate(currentTime);
     }
 }
 #endif
@@ -264,7 +266,7 @@ static void taskTransponder(uint32_t currentTime)
 static void taskUpdateOsd(uint32_t currentTime)
 {
     if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
+        osdUpdate(currentTime);
     }
 }
 #endif
@@ -307,8 +309,8 @@ void fcTasksInit(void)
 #if defined(BARO) || defined(SONAR)
     setTaskEnabled(TASK_ALTITUDE, sensors(SENSOR_BARO) || sensors(SENSOR_SONAR));
 #endif
-#ifdef DISPLAY
-    setTaskEnabled(TASK_DISPLAY, feature(FEATURE_DISPLAY));
+#ifdef USE_DASHBOARD
+    setTaskEnabled(TASK_DASHBOARD, feature(FEATURE_DASHBOARD));
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
@@ -328,6 +330,13 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef CMS
+#ifdef USE_MSP_DISPLAYPORT
+    setTaskEnabled(TASK_CMS, true);
+#else
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+#endif
 #endif
 }
 
@@ -446,10 +455,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef DISPLAY
-    [TASK_DISPLAY] = {
-        .taskName = "DISPLAY",
-        .taskFunc = taskUpdateDisplay,
+#ifdef USE_DASHBOARD
+    [TASK_DASHBOARD] = {
+        .taskName = "DASHBOARD",
+        .taskFunc = taskUpdateDashboard,
         .desiredPeriod = 1000000 / 10,
         .staticPriority = TASK_PRIORITY_LOW,
     },
@@ -486,6 +495,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };

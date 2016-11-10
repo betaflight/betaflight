@@ -46,6 +46,9 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USE_DSHOT
+#define REMAP_TIM17_DMA
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -80,15 +83,6 @@
 #define VBAT_ADC_PIN            PA2
 
 #define LED_STRIP
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 

@@ -208,9 +208,19 @@ static inline uint8_t lookupChannelIndex(const uint16_t channel)
 
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
 {
-    for (uint8_t i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
         if (timerDefinitions[i].TIMx == tim) {
             return timerDefinitions[i].rcc;
+        }
+    }
+    return 0;
+}
+
+uint8_t timerInputIrq(TIM_TypeDef *tim)
+{
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].inputIrq;
         }
     }
     return 0;
@@ -285,9 +295,11 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     HAL_TIM_Base_Start(&timerHandle[timerIndex].Handle);
-    timerNVICConfigure(timerHardwarePtr->irq);
+
+    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
-    switch(timerHardwarePtr->irq) {
+    switch(irq) {
 
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
@@ -300,7 +312,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -320,8 +332,8 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         HAL_TIM_Base_Start(&timerHandle[timerIndex].Handle);
 
 
-        HAL_NVIC_SetPriority(timHw->irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
-        HAL_NVIC_EnableIRQ(timHw->irq);
+        HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
+        HAL_NVIC_EnableIRQ(irq);
 
         timerInfo[timer].priority = irqPriority;
     }
@@ -787,14 +799,14 @@ void timerInit(void)
 #endif
 
     /* enable the timer peripherals */
-    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         RCC_ClockCmd(timerRCC(timerHardware[i].tim), ENABLE);
     }
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
-    for (uint8_t timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
+    for (int timerIndex = 0; timerIndex < USABLE_TIMER_CHANNEL_COUNT; timerIndex++) {
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), timerHardwarePtr->ioMode, timerHardwarePtr->alternateFunction);
+        IOConfigGPIOAF(IOGetByTag(timerHardwarePtr->tag), IOCFG_AF_PP, timerHardwarePtr->alternateFunction);
     }
 #endif
 
@@ -856,17 +868,29 @@ void timerForceOverflow(TIM_TypeDef *tim)
     }
 }
 
-const timerHardware_t *timerGetByTag(ioTag_t tag, timerFlag_e flag)
+const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
-    for (uint8_t i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
-            if (flag && (timerHardware[i].output & flag) == flag) {
+            if (timerHardware[i].output & flag) {
                 return &timerHardware[i];
-            } else if (!flag && timerHardware[i].output == flag) { 
-                // TODO: shift flag by one so not to be 0
-                return &timerHardware[i];
-            }
+            } 
         }
     }
     return NULL;
+}
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+        case TIM_CHANNEL_1:
+            return TIM_DMA_ID_CC1;
+        case TIM_CHANNEL_2:
+            return TIM_DMA_ID_CC2;
+        case TIM_CHANNEL_3:
+            return TIM_DMA_ID_CC3;
+        case TIM_CHANNEL_4:
+            return TIM_DMA_ID_CC4;
+    }
+    return 0;
 }

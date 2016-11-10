@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "io.h"
 #include "timer.h"
 #include "pwm_output.h"
@@ -84,7 +86,7 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
     
-    for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
+    for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
     }
@@ -119,26 +121,28 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     if (configureTimer) {
         TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;    
-    
+        TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
 
-	    uint32_t hz;
-	    switch (pwmProtocolType) {
-	        case(PWM_TYPE_DSHOT600):
-		        hz = MOTOR_DSHOT600_MHZ * 1000000;
-		        break;
-	        case(PWM_TYPE_DSHOT300):
-		        hz = MOTOR_DSHOT300_MHZ * 1000000;
-		        break;
-	        default:
-	        case(PWM_TYPE_DSHOT150):
-		        hz = MOTOR_DSHOT150_MHZ * 1000000;
-	    }
+        uint32_t hz;
+        switch (pwmProtocolType) {
+            case(PWM_TYPE_DSHOT600):
+                hz = MOTOR_DSHOT600_MHZ * 1000000;
+                break;
+            case(PWM_TYPE_DSHOT300):
+                hz = MOTOR_DSHOT300_MHZ * 1000000;
+                break;
+            default:
+            case(PWM_TYPE_DSHOT150):
+                hz = MOTOR_DSHOT150_MHZ * 1000000;
+        }
 
         TIM_TimeBaseStructure.TIM_Prescaler = (uint16_t)((SystemCoreClock / timerClockDivisor(timer) / hz) - 1);
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+        TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
         TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
         TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
     }
@@ -146,19 +150,13 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
-        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
         TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_Low;
-        TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
+        TIM_OCInitStructure.TIM_OCNPolarity = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_Low : TIM_OCNPolarity_High;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
-        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
-        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Set;
-        TIM_OCInitStructure.TIM_OCPolarity = TIM_OCNPolarity_High;
-        TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_High;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+        TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
     TIM_OCInitStructure.TIM_Pulse = 0;
 
@@ -177,6 +175,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Channel_TypeDef *channel = timerHardware->dmaChannel;
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
         
     DMA_Cmd(channel, DISABLE);

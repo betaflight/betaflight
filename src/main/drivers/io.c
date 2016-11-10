@@ -1,4 +1,21 @@
-#include "common/utils.h"
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+ #include "common/utils.h"
 
 #include "io.h"
 #include "io_impl.h"
@@ -65,7 +82,7 @@ const struct ioPortDef_s ioPortDefs[] = {
 const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
     "SONAR_TRIGGER", "SONAR_ECHO", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI" 
+    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI", "MAX7456"
 };
 
 const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
@@ -231,7 +248,7 @@ void IOToggle(IO_t io)
 }
 
 // claim IO pin, set owner and resources
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index)
+void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index)
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
@@ -245,13 +262,13 @@ void IORelease(IO_t io)
     ioRec->owner = OWNER_FREE;
 }
 
-resourceOwner_t IOGetOwner(IO_t io)
+resourceOwner_e IOGetOwner(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->owner;
 }
 
-resourceType_t IOGetResource(IO_t io)
+resourceType_e IOGetResource(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->resource;

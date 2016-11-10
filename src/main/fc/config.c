@@ -26,6 +26,8 @@
 
 #include "blackbox/blackbox_io.h"
 
+#include "cms/cms.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -42,6 +44,7 @@
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/light_ws2811strip.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -238,11 +241,39 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
+#ifdef LED_STRIP
+void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
+{
+    applyDefaultColors(ledStripConfig->colors);
+    applyDefaultLedStripConfig(ledStripConfig->ledConfigs);
+    applyDefaultModeColors(ledStripConfig->modeColors);
+    applyDefaultSpecialColors(&(ledStripConfig->specialColors));
+    ledStripConfig->ledstrip_visual_beeper = 0;
+    ledStripConfig->ledstrip_aux_channel = THROTTLE;
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_LED) {
+            ledStripConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+    ledStripConfig->ioTag = IO_TAG_NONE;
+}
+#endif
+
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
     servoConfig->servoCenterPulse = 1500;
     servoConfig->servoPwmRate = 50;
+
+    int servoIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && servoIndex < MAX_SUPPORTED_SERVOS; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_SERVO) {
+            servoConfig->ioTags[servoIndex] = timerHardware[i].tag;
+            servoIndex++;
+        }
+    }
 }
 #endif
 
@@ -262,9 +293,9 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->mincommand = 1000;
     motorConfig->digitalIdleOffset = 40;
 
-    uint8_t motorIndex = 0;
-    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && i < MAX_SUPPORTED_MOTORS; i++) {
-        if ((timerHardware[i].output & TIMER_OUTPUT_ENABLED) == TIMER_OUTPUT_ENABLED) {
+    int motorIndex = 0;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && motorIndex < MAX_SUPPORTED_MOTORS; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_MOTOR) {
             motorConfig->ioTags[motorIndex] = timerHardware[i].tag;
             motorIndex++;
         }
@@ -304,7 +335,7 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
     ppmConfig->ioTag = IO_TAG(PPM_PIN);
 #else
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
-        if ((timerHardware[i].output == TIMER_INPUT_ENABLED)) {
+        if (timerHardware[i].usageFlags & TIM_USE_PPM) {
             ppmConfig->ioTag = timerHardware[i].tag;
             return;
         }
@@ -316,9 +347,9 @@ void resetPpmConfig(ppmConfig_t *ppmConfig)
 
 void resetPwmConfig(pwmConfig_t *pwmConfig)
 {
-    uint8_t inputIndex = 0;
+    int inputIndex = 0;
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT && inputIndex < PWM_INPUT_PORT_COUNT; i++) {
-        if ((timerHardware[i].output == TIMER_INPUT_ENABLED)) {
+        if (timerHardware[i].usageFlags & TIM_USE_PWM) {
             pwmConfig->ioTags[inputIndex] = timerHardware[i].tag;
             inputIndex++;
         }
@@ -467,7 +498,7 @@ void createDefaultConfig(master_t *config)
 
 #ifdef OSD
     intFeatureSet(FEATURE_OSD, config);
-    resetOsdConfig(&config->osdProfile);
+    osdResetConfig(&config->osdProfile);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
@@ -589,6 +620,10 @@ void createDefaultConfig(master_t *config)
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
 
+#ifdef LED_STRIP
+    resetLedStripConfig(&config->ledStripConfig);
+#endif
+
 #ifdef GPS
     // gps/nav stuff
     config->gpsConfig.provider = GPS_NMEA;
@@ -657,14 +692,6 @@ void createDefaultConfig(master_t *config)
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         config->customMotorMixer[i].throttle = 0.0f;
     }
-
-#ifdef LED_STRIP
-    applyDefaultColors(config->colors);
-    applyDefaultLedStripConfig(config->ledConfigs);
-    applyDefaultModeColors(config->modeColors);
-    applyDefaultSpecialColors(&(config->specialColors));
-    config->ledstrip_visual_beeper = 0;
-#endif
 
 #ifdef VTX
     config->vtx_band = 4;    //Fatshark/Airwaves
@@ -867,21 +894,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (featureConfigured(FEATURE_SOFTSERIAL) && (
-            0
-#ifdef USE_SOFTSERIAL1
-            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
-#endif
-#ifdef USE_SOFTSERIAL2
-            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
-#endif
-    )) {
-        // led strip needs the same timer as softserial
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-
 #if defined(NAZE) && defined(SONAR)
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
@@ -895,17 +907,10 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
-        featureClear(FEATURE_DISPLAY);
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
+        featureClear(FEATURE_DASHBOARD);
     }
 #endif
-
-/*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
-    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-*/
 
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
     // shared pin

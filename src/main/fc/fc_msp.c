@@ -62,9 +62,7 @@
 #include "io/flashfs.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/osd.h"
 #include "io/serial_4way.h"
-#include "io/vtx.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -648,10 +646,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
                 sbufWriteU16(dst, 0);
                 continue;
             }
-            if (isMotorProtocolDshot())
-                sbufWriteU16(dst, constrain((motor[i] / 2) + 1000, 1000, 2000)); // This is to get it working in the configurator
-            else
-                sbufWriteU16(dst, motor[i]);
+
+            sbufWriteU16(dst, convertMotorToExternal(motor[i]));
         }
         break;
     case MSP_RC:
@@ -934,7 +930,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.colors[i];
+            hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -943,7 +939,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_LED_STRIP_CONFIG:
         for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
         }
         break;
@@ -953,15 +949,20 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, masterConfig.modeColors[i].color[j]);
+                sbufWriteU8(dst, masterConfig.ledStripConfig.modeColors[i].color[j]);
             }
         }
 
         for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_MODE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, masterConfig.specialColors.color[j]);
+            sbufWriteU8(dst, masterConfig.ledStripConfig.specialColors.color[j]);
         }
+
+        sbufWriteU8(dst, LED_AUX_CHANNEL);
+        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, masterConfig.ledStripConfig.ledstrip_aux_channel);
+
         break;
 #endif
 
@@ -1009,7 +1010,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
 
-        for (i = 0; i < OSD_MAX_ITEMS; i++) {
+        for (i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
         }
 #else
@@ -1320,8 +1321,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.batteryConfig.vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
         break;
     case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-            motor_disarmed[i] = sbufReadU16(src);
+        for (i = 0; i < 8; i++) { // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
+            motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
+        }
         break;
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
@@ -1652,7 +1654,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
         for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.colors[i];
+            hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -1666,7 +1668,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
                 break;
             }
-            ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
         }

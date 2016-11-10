@@ -71,11 +71,6 @@
 #define I2C_DEVICE (I2CDEV_2)
 
 #define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_2
 
 #define SPEKTRUM_BIND
 // USART2, PA3
@@ -91,7 +86,6 @@
 #undef GPS
 #undef USE_SERVOS
 #define USE_QUAD_MIXER_ONLY
-#define DISPLAY
 
 
 // IO - assuming all IOs on 48pin package

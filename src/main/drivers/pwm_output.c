@@ -42,17 +42,18 @@ static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8
     TIM_OCInitTypeDef TIM_OCInitStructure;
 
     TIM_OCStructInit(&TIM_OCInitStructure);
-    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    
     if (output & TIMER_OUTPUT_N_CHANNEL) {
-        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Disable;
         TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+        TIM_OCInitStructure.TIM_OCNPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCNPolarity_High : TIM_OCNPolarity_Low;
     } else {
         TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+        TIM_OCInitStructure.TIM_OCPolarity =  (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     }
     TIM_OCInitStructure.TIM_Pulse = value;
-    TIM_OCInitStructure.TIM_OCPolarity = (output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_High : TIM_OCPolarity_Low;
-    TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
 
     timerOCInit(tim, channel, &TIM_OCInitStructure);
     timerOCPreloadConfig(tim, channel, TIM_OCPreload_Enable);
@@ -156,7 +157,7 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
-    uint32_t timerMhzCounter;
+    uint32_t timerMhzCounter = 0;
     pwmWriteFuncPtr pwmWritePtr;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
     bool isDigital = false;
@@ -208,7 +209,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
             break;
         }
 
-        const timerHardware_t *timerHardware = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_ANY);
         
         if (timerHardware == NULL) {
             /* flag failure and disable ability to arm */
@@ -271,7 +272,7 @@ void servoInit(const servoConfig_t *servoConfig)
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_OUTPUT, RESOURCE_INDEX(servoIndex));
         IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
         
-        const timerHardware_t *timer = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_ANY);
         
         if (timer == NULL) {
             /* flag failure and disable ability to arm */

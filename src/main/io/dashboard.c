@@ -21,7 +21,9 @@
 
 #include "platform.h"
 
-#ifdef DISPLAY
+#ifdef USE_DASHBOARD
+
+#include "common/utils.h"
 
 #include "build/version.h"
 #include "build/debug.h"
@@ -29,7 +31,10 @@
 #include "build/build_config.h"
 
 #include "drivers/system.h"
+#include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+
+#include "cms/cms.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -50,6 +55,8 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
+#include "io/displayport_oled.h"
+
 #ifdef GPS
 #include "io/gps.h"
 #include "flight/navigation.h"
@@ -58,7 +65,7 @@
 #include "config/feature.h"
 #include "config/config_profile.h"
 
-#include "io/display.h"
+#include "io/dashboard.h"
 
 #include "rx/rx.h"
 
@@ -74,9 +81,10 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 
 static uint32_t nextDisplayUpdateAt = 0;
-static bool displayPresent = false;
+static bool dashboardPresent = false;
 
 static rxConfig_t *rxConfig;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -98,7 +106,7 @@ static const char* const pageTitles[] = {
 #ifdef GPS
     ,"GPS"
 #endif
-#ifdef ENABLE_DEBUG_OLED_PAGE
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     ,"DEBUG"
 #endif
 };
@@ -116,7 +124,7 @@ const pageId_e cyclePageIds[] = {
 #ifndef SKIP_TASK_STATISTICS
     ,PAGE_TASKS
 #endif
-#ifdef ENABLE_DEBUG_OLED_PAGE
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
     ,PAGE_DEBUG,
 #endif
 };
@@ -144,7 +152,7 @@ typedef struct pageState_s {
 static pageState_t pageState;
 
 void resetDisplay(void) {
-    displayPresent = ug2864hsweg01InitI2C();
+    dashboardPresent = ug2864hsweg01InitI2C();
 }
 
 void LCDprint(uint8_t i) {
@@ -562,7 +570,7 @@ void showTasksPage(void)
 }
 #endif
 
-#ifdef ENABLE_DEBUG_OLED_PAGE
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
 
 void showDebugPage(void)
 {
@@ -577,9 +585,15 @@ void showDebugPage(void)
 }
 #endif
 
-void displayUpdate(uint32_t currentTime)
+void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
+
+#ifdef CMS
+    if (displayIsGrabbed(displayPort)) {
+        return;
+    }
+#endif
 
     const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
@@ -623,13 +637,13 @@ void displayUpdate(uint32_t currentTime)
         // user to power off/on the display or connect it while powered.
         resetDisplay();
 
-        if (!displayPresent) {
+        if (!dashboardPresent) {
             return;
         }
         handlePageChange();
     }
 
-    if (!displayPresent) {
+    if (!dashboardPresent) {
         return;
     }
 
@@ -666,7 +680,7 @@ void displayUpdate(uint32_t currentTime)
             }
             break;
 #endif
-#ifdef ENABLE_DEBUG_OLED_PAGE
+#ifdef ENABLE_DEBUG_DASHBOARD_PAGE
         case PAGE_DEBUG:
             showDebugPage();
             break;
@@ -680,53 +694,57 @@ void displayUpdate(uint32_t currentTime)
 
 }
 
-void displaySetPage(pageId_e pageId)
+void dashboardSetPage(pageId_e pageId)
 {
     pageState.pageId = pageId;
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void displayInit(rxConfig_t *rxConfigToUse)
+void dashboardInit(rxConfig_t *rxConfigToUse)
 {
     delay(200);
     resetDisplay();
     delay(200);
 
+    displayPort = displayPortOledInit();
+#if defined(CMS)
+    cmsDisplayPortRegister(displayPort);
+#endif
+
     rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
-    displaySetPage(PAGE_WELCOME);
+    dashboardSetPage(PAGE_WELCOME);
 
-    displayUpdate(micros());
+    dashboardUpdate(micros());
 
-    displaySetNextPageChangeAt(micros() + (1000 * 1000 * 5));
+    dashboardSetNextPageChangeAt(micros() + (1000 * 1000 * 5));
 }
 
-void displayShowFixedPage(pageId_e pageId)
+void dashboardShowFixedPage(pageId_e pageId)
 {
-    displaySetPage(pageId);
-    displayDisablePageCycling();
+    dashboardSetPage(pageId);
+    dashboardDisablePageCycling();
 }
 
-void displaySetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(uint32_t futureMicros)
 {
     pageState.nextPageAt = futureMicros;
 }
 
-void displayEnablePageCycling(void)
+void dashboardEnablePageCycling(void)
 {
     pageState.pageFlags |= PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
 
-void displayResetPageCycling(void)
+void dashboardResetPageCycling(void)
 {
     pageState.cycleIndex = CYCLE_PAGE_ID_COUNT - 1; // start at first page
 
 }
 
-void displayDisablePageCycling(void)
+void dashboardDisablePageCycling(void)
 {
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
-
-#endif
+#endif // USE_DASHBOARD

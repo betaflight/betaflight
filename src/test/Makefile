@@ -110,6 +110,14 @@ $(OBJECT_DIR)/common/maths.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/maths.c -o $@
 
+$(OBJECT_DIR)/common/typeconversion.o : \
+	$(USER_DIR)/common/typeconversion.c \
+	$(USER_DIR)/common/typeconversion.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/common/typeconversion.c -o $@
+
 $(OBJECT_DIR)/common/filter.o : \
 	$(USER_DIR)/common/filter.c \
 	$(USER_DIR)/common/filter.h \
@@ -569,6 +577,39 @@ $(OBJECT_DIR)/alignsensor_unittest : \
 	$(OBJECT_DIR)/common/maths.o \
 	$(OBJECT_DIR)/sensors/boardalignment.o \
 	$(OBJECT_DIR)/alignsensor_unittest.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
+
+$(OBJECT_DIR)/drivers/display.o : \
+	$(USER_DIR)/drivers/display.c \
+	$(USER_DIR)/drivers/display.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/drivers/display.c -o $@
+
+$(OBJECT_DIR)/cms/cms.o : \
+	$(USER_DIR)/cms/cms.c \
+	$(USER_DIR)/cms/cms.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/cms/cms.c -o $@
+
+$(OBJECT_DIR)/cms_unittest.o : \
+	$(TEST_DIR)/cms_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/cms_unittest.cc -o $@
+
+$(OBJECT_DIR)/cms_unittest : \
+	$(OBJECT_DIR)/cms_unittest.o \
+	$(OBJECT_DIR)/common/typeconversion.o \
+	$(OBJECT_DIR)/drivers/display.o \
+	$(OBJECT_DIR)/cms/cms.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

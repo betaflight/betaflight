@@ -1,4 +1,21 @@
-#pragma once
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+ #pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -84,10 +101,10 @@ void IOHi(IO_t io);
 void IOLo(IO_t io);
 void IOToggle(IO_t io);
 
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index);
+void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index);
 void IORelease(IO_t io);  // unimplemented
-resourceOwner_t IOGetOwner(IO_t io);
-resourceType_t IOGetResources(IO_t io);
+resourceOwner_e IOGetOwner(IO_t io);
+resourceType_e IOGetResources(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);

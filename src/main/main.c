@@ -29,8 +29,9 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
-#include "drivers/nvic.h"
+#include "cms/cms.h"
 
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
@@ -82,11 +83,12 @@
 #include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/displayport_msp.h"
 #include "io/vtx.h"
 
 #include "scheduler/scheduler.h"
@@ -232,10 +234,6 @@ void init(void)
     delay(100);
 
     timerInit();  // timer must be initialized before any channel is allocated
-
-#if !defined(USE_HAL_DRIVER)
-    dmaInit();
-#endif
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
@@ -395,9 +393,13 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
-        displayInit(&masterConfig.rxConfig);
+#ifdef CMS
+    cmsInit();
+#endif
+
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
+        dashboardInit(&masterConfig.rxConfig);
     }
 #endif
 
@@ -454,6 +456,10 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
+
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
 #endif
@@ -482,7 +488,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
+    ledStripInit(&masterConfig.ledStripConfig);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -585,13 +591,13 @@ void init(void)
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
         batteryInit(&masterConfig.batteryConfig);
 
-#ifdef DISPLAY
-    if (feature(FEATURE_DISPLAY)) {
+#ifdef USE_DASHBOARD
+    if (feature(FEATURE_DASHBOARD)) {
 #ifdef USE_OLED_GPS_DEBUG_PAGE_ONLY
-        displayShowFixedPage(PAGE_GPS);
+        dashboardShowFixedPage(PAGE_GPS);
 #else
-        displayResetPageCycling();
-        displayEnablePageCycling();
+        dashboardResetPageCycling();
+        dashboardEnablePageCycling();
 #endif
     }
 #endif
