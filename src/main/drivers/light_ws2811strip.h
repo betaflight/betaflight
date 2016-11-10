@@ -67,7 +67,7 @@ void setStripColors(const hsvColor_t *colors);
 
 bool isWS2811LedStripReady(void);
 
-#if defined(STM32F1)
+#if defined(STM32F1) || defined(STM32F3)
 extern uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #else
 extern uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
