@@ -80,9 +80,11 @@ static long cmsx_menuImu_onEnter(void)
 {
     profileIndex = masterConfig.current_profile_index;
     tmpProfileIndex = profileIndex + 1;
+    profileIndexString[1] = '0' + tmpProfileIndex;
 
     rateProfileIndex = getCurrentControlRateProfile();
     tmpRateProfileIndex = rateProfileIndex + 1;
+    rateProfileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }
@@ -179,215 +181,6 @@ static CMS_Menu cmsx_menuPid = {
     .onGlobalExit = NULL,
     .entries = cmsx_menuPidEntries
 };
-
-//
-// Rate & Expo
-//
-static controlRateConfig_t rateProfile;
-static uint16_t cmsx_rateRoll;
-static uint16_t cmsx_ratePitch;
-static uint16_t cmsx_rateYaw;
-
-static long cmsx_RateProfileRead(void)
-{
-    memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
-
-    cmsx_rateRoll  = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_ROLL]);
-    cmsx_ratePitch = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_PITCH]);
-    cmsx_rateYaw   = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_YAW]);
-
-    return 0;
-}
-
-static long cmsx_RateProfileWriteback(const OSD_Entry *self)
-{
-    UNUSED(self);
-
-    rateProfile.rates[FD_ROLL]  = DEGREES_TO_DECADEGREES(cmsx_rateRoll);
-    rateProfile.rates[FD_PITCH] = DEGREES_TO_DECADEGREES(cmsx_ratePitch);
-    rateProfile.rates[FD_YAW]   = DEGREES_TO_DECADEGREES(cmsx_rateYaw);
-
-    memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
-
-    return 0;
-}
-
-static long cmsx_RateProfileOnEnter(void)
-{
-    rateProfileIndexString[1] = '0' + tmpRateProfileIndex;
-    cmsx_RateProfileRead();
-
-    return 0;
-}
-
-static OSD_Entry cmsx_menuRateProfileEntries[] =
-{
-    { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
-
-#if 0
-    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
-    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
-#endif
-
-    { "ROLL RATE",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateRoll,  (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DECADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DECADEGREE), DEGREES_PER_DECADEGREE }, 0 },
-    { "PITCH RATE",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_ratePitch, (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DECADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DECADEGREE), DEGREES_PER_DECADEGREE }, 0 },
-    { "YAW RATE",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateYaw,   (CONTROL_RATE_CONFIG_YAW_RATE_MIN * DEGREES_PER_DECADEGREE),        (CONTROL_RATE_CONFIG_YAW_RATE_MAX * DEGREES_PER_DECADEGREE),        DEGREES_PER_DECADEGREE }, 0 },
-
-    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcExpo8,    0, 100, 1 },     0 },
-    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcYawExpo8, 0, 100, 1 },     0 },
-
-    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrMid8,    0, 100, 1 },     0 },
-    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrExpo8,   0, 100, 1 },     0 },
-
-    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.dynThrPID,  0, 100, 1 },     0 },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
-
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu cmsx_menuRateProfile = {
-    .GUARD_text = "MENURATE",
-    .GUARD_type = OME_MENU,
-    .onEnter = cmsx_RateProfileOnEnter,
-    .onExit = cmsx_RateProfileWriteback,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuRateProfileEntries
-};
-
-#ifdef NOT_YET
-static uint8_t cmsx_dtermSetpointWeight;
-static uint8_t cmsx_setpointRelaxRatio;
-static uint8_t cmsx_angleStrength;
-static uint8_t cmsx_horizonStrength;
-static uint8_t cmsx_horizonTransition;
-
-static long cmsx_profileOtherOnEnter(void)
-{
-    profileIndexString[1] = '0' + tmpProfileIndex;
-
-    cmsx_dtermSetpointWeight = masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight;
-    cmsx_setpointRelaxRatio  = masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio;
-
-    cmsx_angleStrength       = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
-    cmsx_horizonStrength     = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
-    cmsx_horizonTransition   = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
-
-    return 0;
-}
-
-static long cmsx_profileOtherOnExit(const OSD_Entry *self)
-{
-    UNUSED(self);
-
-    masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
-    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio  = cmsx_setpointRelaxRatio;
-
-    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL]        = cmsx_angleStrength;
-    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL]        = cmsx_horizonStrength;
-    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL]        = cmsx_horizonTransition;
-
-    return 0;
-}
-
-static OSD_Entry cmsx_menuProfileOtherEntries[] = {
-    { "-- OTHER PP --", OME_Label, NULL, profileIndexString, 0 },
-
-    { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
-    { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
-    { "ANGLE STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_angleStrength,       0, 200, 1 }    , 0 },
-    { "HORZN STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonStrength,     0, 200, 1 }    , 0 },
-    { "HORZN TRS",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonTransition,   0, 200, 1 }    , 0 },
-
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu cmsx_menuProfileOther = {
-    .GUARD_text = "XPROFOTHER",
-    .GUARD_type = OME_MENU,
-    .onEnter = cmsx_profileOtherOnEnter,
-    .onExit = cmsx_profileOtherOnExit,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuProfileOtherEntries,
-};
-
-static OSD_Entry cmsx_menuFilterGlobalEntries[] =
-{
-    { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
-
-    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t){ &masterConfig.gyro_soft_lpf_hz,          0, 255, 1 }, 0 },
-    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
-    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
-    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
-    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
-
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu cmsx_menuFilterGlobal = {
-    .GUARD_text = "XFLTGLB",
-    .GUARD_type = OME_MENU,
-    .onEnter = NULL,
-    .onExit = NULL,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuFilterGlobalEntries,
-};
-
-static uint16_t cmsx_dterm_lpf_hz;
-static uint16_t cmsx_dterm_notch_hz;
-static uint16_t cmsx_dterm_notch_cutoff;
-static uint16_t cmsx_yaw_lpf_hz;
-static uint16_t cmsx_yaw_p_limit;
-
-static long cmsx_FilterPerProfileRead(void)
-{
-    cmsx_dterm_lpf_hz =       masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz;
-    cmsx_dterm_notch_hz =     masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz;
-    cmsx_dterm_notch_cutoff = masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff;
-    cmsx_yaw_lpf_hz =         masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
-    cmsx_yaw_p_limit =        masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
-
-    return 0;
-}
-
-static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
-{
-    UNUSED(self);
-
-    masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz =       cmsx_dterm_lpf_hz;
-    masterConfig.profile[profileIndex].pidProfile.dterm_notch_hz =     cmsx_dterm_notch_hz;
-    masterConfig.profile[profileIndex].pidProfile.dterm_notch_cutoff = cmsx_dterm_notch_cutoff;
-    masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz =         cmsx_yaw_lpf_hz;
-    masterConfig.profile[profileIndex].pidProfile.yaw_p_limit =        cmsx_yaw_p_limit;
-
-    return 0;
-}
-
-static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
-{
-    { "-- FILTER PP  --", OME_Label, NULL, NULL, 0 },
-
-    { "DTERM LPF",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_lpf_hz,         0, 500, 1 }, 0 },
-    { "DTERM NF",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_hz,       0, 500, 1 }, 0 },
-    { "DTERM NFCO", OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_dterm_notch_cutoff,   0, 500, 1 }, 0 },
-    { "YAW LPF",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_lpf_hz,           0, 500, 1 }, 0 },
-    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_p_limit,        100, 500, 1 }, 0 },
-
-    { "BACK", OME_Back, NULL, NULL, 0 },
-    { NULL, OME_END, NULL, NULL, 0 }
-};
-
-static CMS_Menu cmsx_menuFilterPerProfile = {
-    .GUARD_text = "XFLTPP",
-    .GUARD_type = OME_MENU,
-    .onEnter = cmsx_FilterPerProfileRead,
-    .onExit = cmsx_FilterPerProfileWriteback,
-    .onGlobalExit = NULL,
-    .entries = cmsx_menuFilterPerProfileEntries,
-};
-#endif // NOT_YET
 
 static uint8_t cmsx_pidAlt[3];
 static uint8_t cmsx_pidVel[3];
@@ -486,6 +279,244 @@ static CMS_Menu cmsx_menuPidGpsnav = {
     .entries = cmsx_menuPidGpsnavEntries,
 };
 
+//
+// Rate & Expo
+//
+static controlRateConfig_t rateProfile;
+static uint16_t cmsx_rateRoll;
+static uint16_t cmsx_ratePitch;
+static uint16_t cmsx_rateYaw;
+
+static long cmsx_RateProfileRead(void)
+{
+    memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
+
+    cmsx_rateRoll  = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_ROLL]);
+    cmsx_ratePitch = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_PITCH]);
+    cmsx_rateYaw   = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_YAW]);
+
+    return 0;
+}
+
+static long cmsx_RateProfileWriteback(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    rateProfile.rates[FD_ROLL]  = DEGREES_TO_DEKADEGREES(cmsx_rateRoll);
+    rateProfile.rates[FD_PITCH] = DEGREES_TO_DEKADEGREES(cmsx_ratePitch);
+    rateProfile.rates[FD_YAW]   = DEGREES_TO_DEKADEGREES(cmsx_rateYaw);
+
+    memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
+
+    return 0;
+}
+
+static long cmsx_RateProfileOnEnter(void)
+{
+    rateProfileIndexString[1] = '0' + tmpRateProfileIndex;
+    cmsx_RateProfileRead();
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuRateProfileEntries[] =
+{
+    { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
+
+#if 0
+    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
+    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
+#endif
+
+    { "ROLL RATE",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateRoll,  (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DEKADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DEKADEGREE), DEGREES_PER_DEKADEGREE }, 0 },
+    { "PITCH RATE",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_ratePitch, (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DEKADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DEKADEGREE), DEGREES_PER_DEKADEGREE }, 0 },
+    { "YAW RATE",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateYaw,   (CONTROL_RATE_CONFIG_YAW_RATE_MIN * DEGREES_PER_DEKADEGREE),        (CONTROL_RATE_CONFIG_YAW_RATE_MAX * DEGREES_PER_DEKADEGREE),        DEGREES_PER_DEKADEGREE }, 0 },
+
+    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcExpo8,    0, 100, 1 },     0 },
+    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcYawExpo8, 0, 100, 1 },     0 },
+
+    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrMid8,    0, 100, 1 },     0 },
+    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrExpo8,   0, 100, 1 },     0 },
+
+    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.dynThrPID,  0, 100, 1 },     0 },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuRateProfile = {
+    .GUARD_text = "MENURATE",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_RateProfileOnEnter,
+    .onExit = cmsx_RateProfileWriteback,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuRateProfileEntries
+};
+
+#ifdef NOT_YET
+static uint8_t cmsx_dtermSetpointWeight;
+static uint8_t cmsx_setpointRelaxRatio;
+static uint8_t cmsx_angleStrength;
+static uint8_t cmsx_horizonStrength;
+static uint8_t cmsx_horizonTransition;
+
+static long cmsx_profileOtherOnEnter(void)
+{
+    profileIndexString[1] = '0' + tmpProfileIndex;
+
+    cmsx_dtermSetpointWeight = masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight;
+    cmsx_setpointRelaxRatio  = masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio;
+
+    cmsx_angleStrength       = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
+    cmsx_horizonStrength     = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
+    cmsx_horizonTransition   = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
+
+    return 0;
+}
+
+static long cmsx_profileOtherOnExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
+    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio  = cmsx_setpointRelaxRatio;
+
+    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL]        = cmsx_angleStrength;
+    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL]        = cmsx_horizonStrength;
+    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL]        = cmsx_horizonTransition;
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuProfileOtherEntries[] = {
+    { "-- OTHER PP --", OME_Label, NULL, profileIndexString, 0 },
+
+    { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
+    { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
+    { "ANGLE STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_angleStrength,       0, 200, 1 }    , 0 },
+    { "HORZN STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonStrength,     0, 200, 1 }    , 0 },
+    { "HORZN TRS",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonTransition,   0, 200, 1 }    , 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuProfileOther = {
+    .GUARD_text = "XPROFOTHER",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_profileOtherOnEnter,
+    .onExit = cmsx_profileOtherOnExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuProfileOtherEntries,
+};
+#endif // NOT_YET
+
+//
+// Per profile filters
+//
+static uint8_t cmsx_dterm_lpf_hz;
+static uint8_t cmsx_gyroSoftLpf;
+static uint16_t cmsx_yaw_p_limit;
+static uint8_t cmsx_yaw_lpf_hz;
+
+static long cmsx_FilterPerProfileRead(void)
+{
+    cmsx_dterm_lpf_hz = masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz;
+    cmsx_gyroSoftLpf  = masterConfig.profile[profileIndex].pidProfile.gyro_soft_lpf_hz;
+    cmsx_yaw_p_limit  = masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
+    cmsx_yaw_lpf_hz   = masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
+
+    return 0;
+}
+
+static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz     = cmsx_dterm_lpf_hz;
+    masterConfig.profile[profileIndex].pidProfile.gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
+    masterConfig.profile[profileIndex].pidProfile.yaw_p_limit      = cmsx_yaw_p_limit;
+    masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz       = cmsx_yaw_lpf_hz;
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuFilterPerProfileEntries[] =
+{
+    { "-- FILTER PP  --", OME_Label, NULL, profileIndexString, 0 },
+
+    { "DTERM LPF",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &cmsx_dterm_lpf_hz,   0, 200, 1 }, 0 },
+    { "GYRO SLPF",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &cmsx_gyroSoftLpf,    0, 200, 1 }, 0 },
+    { "YAW P LIM",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_yaw_p_limit, 100, 500, 1 }, 0 },
+    { "YAW LPF",    OME_UINT8,  NULL, &(OSD_UINT8_t){ &cmsx_yaw_lpf_hz,     0, 200, 1 }, 0 },
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+static CMS_Menu cmsx_menuFilterPerProfile = {
+    .GUARD_text = "XFLTPP",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_FilterPerProfileRead,
+    .onExit = cmsx_FilterPerProfileWriteback,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuFilterPerProfileEntries,
+};
+
+static uint8_t cmsx_gyroSync; // Global
+static uint8_t cmsx_gyroSyncDenom; // Global
+static uint8_t cmsx_gyroLpf; // Global
+
+static long cmsx_menuGyro_onEnter(void)
+{
+    cmsx_gyroSync =  masterConfig.gyroSync;
+    cmsx_gyroSyncDenom = masterConfig.gyroSyncDenominator;
+    cmsx_gyroLpf = masterConfig.gyro_lpf;
+
+    return 0;
+}
+
+static long cmsx_menuGyro_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    masterConfig.gyroSync = cmsx_gyroSync;
+    masterConfig.gyroSyncDenominator = cmsx_gyroSyncDenom;
+    masterConfig.gyro_lpf = cmsx_gyroLpf;
+
+    return 0;
+}
+
+static const char *cmsx_gyroLpfNames[] = {
+    "10 ", "20 ", "42 ", "98 ", "188", "256"
+};
+
+static const char *cmsx_gyroSyncNames[] = {
+    "OFF", "ON "
+};
+
+static OSD_Entry cmsx_menuGyroEntries[] =
+{
+    { "-- GYRO --", OME_Label, NULL, profileIndexString, 0},
+
+    { "GYRO SYNC",  OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_gyroSync, 1, cmsx_gyroSyncNames}, 0 },
+    { "GYRO DENOM", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_gyroSyncDenom, 1, 32, 1 }, 0 },
+    { "GYRO LPF",   OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_gyroLpf, 5, cmsx_gyroLpfNames}, 0 },
+
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+static CMS_Menu cmsx_menuGyro = {
+    .GUARD_text = "XGYRO",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_menuGyro_onEnter,
+    .onExit = cmsx_menuGyro_onExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuGyroEntries,
+};
+
 static OSD_Entry cmsx_menuImuEntries[] =
 {
     { "-- PID TUNING --", OME_Label, NULL, NULL, 0},
@@ -495,14 +526,15 @@ static OSD_Entry cmsx_menuImuEntries[] =
     {"PID",        OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
     {"PID ALTMAG", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidAltMag,                                           0},
     {"PID GPSNAV", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidGpsnav,                                           0},
+    {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
     // Profile & rate profile dependent
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
+    {"GYRO",      OME_Submenu, cmsMenuChange,                 &cmsx_menuGyro, 0},
 
 #ifdef NOT_YET
     {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
-    {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
     // Profile independent
     {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 #endif
