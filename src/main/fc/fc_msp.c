@@ -85,6 +85,7 @@
 #include "telemetry/telemetry.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/failsafe.h"
@@ -100,9 +101,6 @@
 #include "hardware_revision.h"
 #endif
 
-
-#include "io/serial_4way.h"
-
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
 
@@ -110,7 +108,7 @@ static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; //
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 
 typedef struct box_e {
-    const uint8_t boxId;         // see boxId_e
+    const uint8_t boxId;            // see boxId_e
     const char *boxName;            // GUI-readable box name
     const uint8_t permanentId;      //
 } box_t;
@@ -176,6 +174,9 @@ typedef enum {
     MSP_SDCARD_STATE_READY       = 4
 } mspSDCardState_e;
 
+typedef enum {
+    MSP_SDCARD_FLAG_SUPPORTTED   = 1,
+} mspSDCardFlags_e;
 
 #define RATEPROFILE_MASK (1 << 7)
 
@@ -205,8 +206,9 @@ static void mspRebootFn(serialPort_t *serialPort)
 static void serializeNames(sbuf_t *dst, const char *s)
 {
     const char *c;
-    for (c = s; *c; c++)
+    for (c = s; *c; c++) {
         sbufWriteU8(dst, *c);
+    }
 }
 
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
@@ -237,16 +239,15 @@ static const box_t *findBoxByPermenantId(uint8_t permenantId)
 
 static void serializeBoxNamesReply(sbuf_t *dst)
 {
-    int i, activeBoxId, j, flag = 1, count = 0, len;
-    const box_t *box;
+    int activeBoxId, flag = 1, count = 0, len;
 
 reset:
     // in first run of the loop, we grab total size of junk to be sent
     // then come back and actually send it
-    for (i = 0; i < activeBoxIdCount; i++) {
+    for (int i = 0; i < activeBoxIdCount; i++) {
         activeBoxId = activeBoxIds[i];
 
-        box = findBoxByActiveBoxId(activeBoxId);
+        const box_t *box = findBoxByActiveBoxId(activeBoxId);
         if (!box) {
             continue;
         }
@@ -255,8 +256,9 @@ reset:
         if (flag) {
             count += len;
         } else {
-            for (j = 0; j < len; j++)
+            for (int j = 0; j < len; j++) {
                 sbufWriteU8(dst, box->boxName[j]);
+            }
         }
     }
 
@@ -275,7 +277,7 @@ void initActiveBoxIds(void)
     activeBoxIds[activeBoxIdCount++] = BOXARM;
 
     if (!feature(FEATURE_AIRMODE)) {
-	activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+        activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
     }
 
     if (sensors(SENSOR_ACC)) {
@@ -331,7 +333,7 @@ void initActiveBoxIds(void)
     activeBoxIds[activeBoxIdCount++] = BOXFPVANGLEMIX;
 
     if (feature(FEATURE_3D)) {
-    	activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
+        activeBoxIds[activeBoxIdCount++] = BOX3DDISABLESWITCH;
     }
 
     if (feature(FEATURE_SERVO_TILT)) {
@@ -343,7 +345,7 @@ void initActiveBoxIds(void)
     }
 
     if (feature(FEATURE_OSD)) {
-	activeBoxIds[activeBoxIdCount++] = BOXOSD;
+        activeBoxIds[activeBoxIdCount++] = BOXOSD;
     }
 
 #ifdef TELEMETRY
@@ -369,13 +371,10 @@ void initActiveBoxIds(void)
 
 static uint32_t packFlightModeFlags(void)
 {
-    uint32_t i, junk, tmp;
-
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix
     // It would be preferable to setting the enabled bits based on BOXINDEX.
-    junk = 0;
-    tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
+    const uint32_t tmp = IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)) << BOXANGLE |
         IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)) << BOXHORIZON |
         IS_ENABLED(FLIGHT_MODE(BARO_MODE)) << BOXBARO |
         IS_ENABLED(FLIGHT_MODE(MAG_MODE)) << BOXMAG |
@@ -402,19 +401,20 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX)) << BOXFPVANGLEMIX;
 
-    for (i = 0; i < activeBoxIdCount; i++) {
-        int flag = (tmp & (1 << activeBoxIds[i]));
-        if (flag)
-            junk |= 1 << i;
+    uint32_t ret = 0;
+    for (int i = 0; i < activeBoxIdCount; i++) {
+        const uint32_t flag = (tmp & (1 << activeBoxIds[i]));
+        if (flag) {
+            ret |= 1 << i;
+        }
     }
-
-    return junk;
+    return ret;
 }
 
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_SDCARD
-    uint8_t flags = 1 /* SD card supported */ ;
+    uint8_t flags = MSP_SDCARD_FLAG_SUPPORTTED;
     uint8_t state = 0;
 
     sbufWriteU8(dst, flags);
@@ -517,8 +517,6 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, const uin
  */
 static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFnPtr *mspPostProcessFn)
 {
-    uint32_t i;
-
     switch (cmdMSP) {
     case MSP_API_VERSION:
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
@@ -527,7 +525,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FC_VARIANT:
-        for (i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
+        for (int i = 0; i < FLIGHT_CONTROLLER_IDENTIFIER_LENGTH; i++) {
             sbufWriteU8(dst, flightControllerIdentifier[i]);
         }
         break;
@@ -539,7 +537,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BOARD_INFO:
-        for (i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
+        for (int i = 0; i < BOARD_IDENTIFIER_LENGTH; i++) {
             sbufWriteU8(dst, boardIdentifier[i]);
         }
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -550,14 +548,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BUILD_INFO:
-        for (i = 0; i < BUILD_DATE_LENGTH; i++) {
+        for (int i = 0; i < BUILD_DATE_LENGTH; i++) {
             sbufWriteU8(dst, buildDate[i]);
         }
-        for (i = 0; i < BUILD_TIME_LENGTH; i++) {
+        for (int i = 0; i < BUILD_TIME_LENGTH; i++) {
             sbufWriteU8(dst, buildTime[i]);
         }
-
-        for (i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
+        for (int i = 0; i < GIT_SHORT_REVISION_LENGTH; i++) {
             sbufWriteU8(dst, shortGitRevision[i]);
         }
         break;
@@ -588,7 +585,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_NAME:
         {
             const unsigned int nameLen = strlen(masterConfig.name);
-            for (i = 0; i < nameLen; i++) {
+            for (int i = 0; i < nameLen; i++) {
                 sbufWriteU8(dst, masterConfig.name[i]);
             }
         }
@@ -610,20 +607,24 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         {
             // Hack scale due to choice of units for sensor data in multiwii
             const uint8_t scale = (acc.acc_1G > 512) ? 4 : 1;
-            for (i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, accSmooth[i] / scale);
-            for (i = 0; i < 3; i++)
+            }
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, gyroADC[i]);
-            for (i = 0; i < 3; i++)
+            }
+            for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, magADC[i]);
+            }
         }
         break;
+
 #ifdef USE_SERVOS
     case MSP_SERVO:
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
         break;
     case MSP_SERVO_CONFIGURATIONS:
-        for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             sbufWriteU16(dst, masterConfig.servoConf[i].min);
             sbufWriteU16(dst, masterConfig.servoConf[i].max);
             sbufWriteU16(dst, masterConfig.servoConf[i].middle);
@@ -635,7 +636,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
     case MSP_SERVO_MIX_RULES:
-        for (i = 0; i < MAX_SERVO_RULES; i++) {
+        for (int i = 0; i < MAX_SERVO_RULES; i++) {
             sbufWriteU8(dst, masterConfig.customServoMixer[i].targetChannel);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].inputSource);
             sbufWriteU8(dst, masterConfig.customServoMixer[i].rate);
@@ -659,8 +660,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_RC:
-        for (i = 0; i < rxRuntimeConfig.channelCount; i++)
+        for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
             sbufWriteU16(dst, rcData[i]);
+        }
         break;
 
     case MSP_ATTITUDE:
@@ -708,7 +710,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_RC_TUNING:
         sbufWriteU8(dst, currentControlRateProfile->rcRate8);
         sbufWriteU8(dst, currentControlRateProfile->rcExpo8);
-        for (i = 0 ; i < 3; i++) {
+        for (int i = 0 ; i < 3; i++) {
             sbufWriteU8(dst, currentControlRateProfile->rates[i]); // R,P,Y see flight_dynamics_index_t
         }
         sbufWriteU8(dst, currentControlRateProfile->dynThrPID);
@@ -720,7 +722,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_PID:
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
             sbufWriteU8(dst, currentProfile->pidProfile.P8[i]);
             sbufWriteU8(dst, currentProfile->pidProfile.I8[i]);
             sbufWriteU8(dst, currentProfile->pidProfile.D8[i]);
@@ -736,7 +738,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_MODE_RANGES:
-        for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
+        for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
             modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             sbufWriteU8(dst, box->permanentId);
@@ -747,7 +749,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ADJUSTMENT_RANGES:
-        for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
+        for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
             adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
@@ -763,7 +765,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BOXIDS:
-        for (i = 0; i < activeBoxIdCount; i++) {
+        for (int i = 0; i < activeBoxIdCount; i++) {
             const box_t *box = findBoxByActiveBoxId(activeBoxIds[i]);
             if (!box) {
                 continue;
@@ -804,8 +806,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MOTOR_PINS:
         // FIXME This is hardcoded and should not be.
-        for (i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++) {
             sbufWriteU8(dst, i + 1);
+        }
         break;
 
 #ifdef GPS
@@ -827,7 +830,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_GPSSVINFO:
         sbufWriteU8(dst, GPS_numCh);
-           for (i = 0; i < GPS_numCh; i++){
+           for (int i = 0; i < GPS_numCh; i++) {
                sbufWriteU8(dst, GPS_svinfo_chn[i]);
                sbufWriteU8(dst, GPS_svinfo_svid[i]);
                sbufWriteU8(dst, GPS_svinfo_quality[i]);
@@ -840,8 +843,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         // output some useful QA statistics
         // debug[x] = ((hse_value / 1000000) * 1000) + (SystemCoreClock / 1000000);         // XX0YY [crystal clock : core clock]
 
-        for (i = 0; i < DEBUG16_VALUE_COUNT; i++)
+        for (int i = 0; i < DEBUG16_VALUE_COUNT; i++) {
             sbufWriteU16(dst, debug[i]);      // 4 variables are here for general monitoring purpose
+        }
         break;
 
     // Additional commands that are not compatible with MultiWii
@@ -910,7 +914,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_RXFAIL_CONFIG:
-        for (i = 0; i < rxRuntimeConfig.channelCount; i++) {
+        for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
             sbufWriteU8(dst, masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
             sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
         }
@@ -921,8 +925,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_RX_MAP:
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
+        for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             sbufWriteU8(dst, masterConfig.rxConfig.rcmap[i]);
+        }
         break;
 
     case MSP_BF_CONFIG:
@@ -941,7 +946,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_CF_SERIAL_CONFIG:
-        for (i = 0; i < SERIAL_PORT_COUNT; i++) {
+        for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
             if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
                 continue;
             };
@@ -956,7 +961,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
-        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
@@ -965,7 +970,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_LED_STRIP_CONFIG:
-        for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
+        for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
             ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
         }
@@ -1017,7 +1022,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
         sbufWriteU8(dst, 1); //Transponder supported
-        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
+        for (int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             sbufWriteU8(dst, masterConfig.transponderData[i]);
         }
 #else
@@ -1035,8 +1040,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
-
-        for (i = 0; i < OSD_ITEM_COUNT; i++) {
+        for (int i = 0; i < OSD_ITEM_COUNT; i++) {
             sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
         }
 #else
@@ -1045,7 +1049,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BF_BUILD_INFO:
-        for (i = 0; i < 11; i++) {
+        for (int i = 0; i < 11; i++) {
             sbufWriteU8(dst, buildDate[i]); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
         }
         sbufWriteU32(dst, 0); // future exp
@@ -1228,11 +1232,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
             } else {
                 uint16_t frame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-                for (i = 0; i < channelCount; i++) {
+                for (int i = 0; i < channelCount; i++) {
                     frame[i] = sbufReadU16(src);
                 }
-
                 rxMspFrameReceive(frame, channelCount);
             }
         }
@@ -1255,7 +1257,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_PID:
-        for (i = 0; i < PID_ITEM_COUNT; i++) {
+        for (int i = 0; i < PID_ITEM_COUNT; i++) {
             currentProfile->pidProfile.P8[i] = sbufReadU8(src);
             currentProfile->pidProfile.I8[i] = sbufReadU8(src);
             currentProfile->pidProfile.D8[i] = sbufReadU8(src);
@@ -1307,7 +1309,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize >= 10) {
             currentControlRateProfile->rcRate8 = sbufReadU8(src);
             currentControlRateProfile->rcExpo8 = sbufReadU8(src);
-            for (i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) {
                 value = sbufReadU8(src);
                 currentControlRateProfile->rates[i] = MIN(value, i == FD_YAW ? CONTROL_RATE_CONFIG_YAW_RATE_MAX : CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             }
@@ -1360,7 +1362,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MOTOR:
-        for (i = 0; i < 8; i++) { // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
+        for (int i = 0; i < 8; i++) { // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
             motor_disarmed[i] = convertExternalToMotor(sbufReadU16(src));
         }
         break;
@@ -1520,14 +1522,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             return MSP_RESULT_ERROR;
             break;
         }
-
-        for (i = 0; i < sizeof(masterConfig.transponderData); i++) {
+        for (int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             masterConfig.transponderData[i] = sbufReadU8(src);
         }
-
         transponderUpdateData(masterConfig.transponderData);
         break;
 #endif
+
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
         addr = sbufReadU8(src);
@@ -1547,7 +1548,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
     case MSP_OSD_CHAR_WRITE:
         addr = sbufReadU8(src);
-        for (i = 0; i < 54; i++) {
+        for (int i = 0; i < 54; i++) {
             font_data[i] = sbufReadU8(src);
         }
         max7456WriteNvm(addr, font_data);
@@ -1688,7 +1689,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RX_MAP:
-        for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
+        for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
             masterConfig.rxConfig.rcmap[i] = sbufReadU8(src);
         }
         break;
@@ -1745,7 +1746,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
-        for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
+        for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
@@ -1780,7 +1781,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_NAME:
         memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
-        for (i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
+        for (int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
             masterConfig.name[i] = sbufReadU8(src);
         }
         break;
