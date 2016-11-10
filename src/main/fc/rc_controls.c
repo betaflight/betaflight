@@ -174,8 +174,9 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             }
         } else {
             // Disarming via ARM BOX
-
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
+            // Don't disarm via switch if failsafe is active or receiver doesn't receive data - we can't trust receiver
+            // and can't afford to risk disarming in the air
+            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive() && !failsafeIsReceivingRxData()) {
                 if (disarm_kill_switch) {
                     mwDisarm();
                 } else if (throttleStatus == THROTTLE_LOW) {
