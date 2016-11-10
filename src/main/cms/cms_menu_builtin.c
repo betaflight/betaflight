@@ -115,7 +115,7 @@ static OSD_Entry menuMainEntries[] =
 {
     {"-- MAIN --",  OME_Label, NULL, NULL, 0},
 
-    {"PROFILE",     OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
+    {"PID TUNING",  OME_Submenu,  cmsMenuChange, &cmsx_menuImu, 0},
     {"FEATURES",    OME_Submenu,  cmsMenuChange, &menuFeatures, 0},
 #ifdef OSD
     {"SCR LAYOUT",  OME_Submenu,  cmsMenuChange, &cmsx_menuOsdLayout, 0},

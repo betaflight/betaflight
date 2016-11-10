@@ -62,6 +62,20 @@ static uint8_t tmpRateProfileIndex;
 static uint8_t rateProfileIndex;
 static char rateProfileIndexString[] = " r";
 
+static void cmsx_ReadPidToArray(uint8_t *dst, int pidIndex)
+{
+    dst[0] = masterConfig.profile[profileIndex].pidProfile.P8[pidIndex];
+    dst[1] = masterConfig.profile[profileIndex].pidProfile.I8[pidIndex];
+    dst[2] = masterConfig.profile[profileIndex].pidProfile.D8[pidIndex];
+}
+
+static void cmsx_WritebackPidFromArray(uint8_t *src, int pidIndex)
+{
+    masterConfig.profile[profileIndex].pidProfile.P8[pidIndex] = src[0];
+    masterConfig.profile[profileIndex].pidProfile.I8[pidIndex] = src[1];
+    masterConfig.profile[profileIndex].pidProfile.D8[pidIndex] = src[2];
+}
+
 static long cmsx_menuImu_onEnter(void)
 {
     profileIndex = masterConfig.current_profile_index;
@@ -89,6 +103,7 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
     UNUSED(ptr);
 
     profileIndex = tmpProfileIndex - 1;
+    profileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }
@@ -99,20 +114,20 @@ static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void
     UNUSED(ptr);
 
     rateProfileIndex = tmpRateProfileIndex - 1;
+    rateProfileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }
 
-static uint8_t tempPid[3][3];
+static uint8_t cmsx_pidRoll[3];
+static uint8_t cmsx_pidPitch[3];
+static uint8_t cmsx_pidYaw[3];
 
 static long cmsx_PidRead(void)
 {
-
-    for (uint8_t i = 0; i < 3; i++) {
-        tempPid[i][0] = masterConfig.profile[profileIndex].pidProfile.P8[i];
-        tempPid[i][1] = masterConfig.profile[profileIndex].pidProfile.I8[i];
-        tempPid[i][2] = masterConfig.profile[profileIndex].pidProfile.D8[i];
-    }
+    cmsx_ReadPidToArray(cmsx_pidRoll, PIDROLL);
+    cmsx_ReadPidToArray(cmsx_pidPitch, PIDPITCH);
+    cmsx_ReadPidToArray(cmsx_pidYaw, PIDYAW);
 
     return 0;
 }
@@ -129,11 +144,9 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    for (uint8_t i = 0; i < 3; i++) {
-        masterConfig.profile[profileIndex].pidProfile.P8[i] = tempPid[i][0];
-        masterConfig.profile[profileIndex].pidProfile.I8[i] = tempPid[i][1];
-        masterConfig.profile[profileIndex].pidProfile.D8[i] = tempPid[i][2];
-    }
+    cmsx_WritebackPidFromArray(cmsx_pidRoll, PIDROLL);
+    cmsx_WritebackPidFromArray(cmsx_pidPitch, PIDPITCH);
+    cmsx_WritebackPidFromArray(cmsx_pidYaw, PIDYAW);
 
     return 0;
 }
@@ -142,17 +155,17 @@ static OSD_Entry cmsx_menuPidEntries[] =
 {
     { "-- PID --", OME_Label, NULL, profileIndexString, 0},
 
-    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][0],  0, 200, 1 }, 0 },
-    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][1],  0, 200, 1 }, 0 },
-    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDROLL][2],  0, 200, 1 }, 0 },
+    { "ROLL  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidRoll[0],  0, 200, 1 }, 0 },
+    { "ROLL  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidRoll[1],  0, 200, 1 }, 0 },
+    { "ROLL  D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidRoll[2],  0, 200, 1 }, 0 },
 
-    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][0], 0, 200, 1 }, 0 },
-    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][1], 0, 200, 1 }, 0 },
-    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDPITCH][2], 0, 200, 1 }, 0 },
+    { "PITCH P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPitch[0], 0, 200, 1 }, 0 },
+    { "PITCH I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPitch[1], 0, 200, 1 }, 0 },
+    { "PITCH D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPitch[2], 0, 200, 1 }, 0 },
 
-    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][0],   0, 200, 1 }, 0 },
-    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][1],   0, 200, 1 }, 0 },
-    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &tempPid[PIDYAW][2],   0, 200, 1 }, 0 },
+    { "YAW   P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidYaw[0],   0, 200, 1 }, 0 },
+    { "YAW   I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidYaw[1],   0, 200, 1 }, 0 },
+    { "YAW   D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidYaw[2],   0, 200, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -205,8 +218,8 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
     { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
 #endif
 
-    { "ROLL RATE",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_ROLL],   CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
-    { "PITCH RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_PITCH],   CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
+    { "ROLL RATE",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_ROLL],  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
+    { "PITCH RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_PITCH], CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
     { "YAW RATE",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_YAW],   CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX, 1 }, 0 },
 
     { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rcExpo8,    0, 100, 1 }, 0 },
@@ -365,13 +378,113 @@ static CMS_Menu cmsx_menuFilterPerProfile = {
 };
 #endif // NOT_YET
 
+static uint8_t cmsx_pidAlt[3];
+static uint8_t cmsx_pidVel[3];
+static uint8_t cmsx_pidMag[3];
+
+static long cmsx_menuPidAltMag_onEnter(void)
+{
+    cmsx_ReadPidToArray(cmsx_pidAlt, PIDALT);
+    cmsx_ReadPidToArray(cmsx_pidVel, PIDVEL);
+    cmsx_pidMag[0] = masterConfig.profile[profileIndex].pidProfile.P8[PIDMAG];
+
+    return 0;
+}
+
+static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    cmsx_WritebackPidFromArray(cmsx_pidAlt, PIDALT);
+    cmsx_WritebackPidFromArray(cmsx_pidVel, PIDVEL);
+    masterConfig.profile[profileIndex].pidProfile.P8[PIDMAG] = cmsx_pidMag[0];
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuPidAltMagEntries[] = {
+    { "-- ALT&MAG --", OME_Label, NULL, profileIndexString, 0},
+
+    { "ALT P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidAlt[0], 0, 255, 1 }, 0 },
+    { "ALT I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidAlt[1], 0, 255, 1 }, 0 },
+    { "ALT D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidAlt[2], 0, 255, 1 }, 0 },
+    { "VEL P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVel[0], 0, 255, 1 }, 0 },
+    { "VEL I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVel[1], 0, 255, 1 }, 0 },
+    { "VEL D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVel[2], 0, 255, 1 }, 0 },
+    { "MAG P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidMag[0], 0, 255, 1 }, 0 },
+
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+static CMS_Menu cmsx_menuPidAltMag = {
+    .GUARD_text = "XALTMAG",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_menuPidAltMag_onEnter,
+    .onExit = cmsx_menuPidAltMag_onExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuPidAltMagEntries,
+};
+
+static uint8_t cmsx_pidPos[3];
+static uint8_t cmsx_pidPosR[3];
+static uint8_t cmsx_pidNavR[3];
+
+static long cmsx_menuPidGpsnav_onEnter(void)
+{
+    cmsx_ReadPidToArray(cmsx_pidPos, PIDPOS);
+    cmsx_ReadPidToArray(cmsx_pidPosR, PIDPOSR);
+    cmsx_ReadPidToArray(cmsx_pidNavR, PIDNAVR);
+
+    return 0;
+}
+
+static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
+{
+    UNUSED(self);
+
+    cmsx_WritebackPidFromArray(cmsx_pidPos, PIDPOS);
+    cmsx_WritebackPidFromArray(cmsx_pidPosR, PIDPOSR);
+    cmsx_WritebackPidFromArray(cmsx_pidNavR, PIDNAVR);
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuPidGpsnavEntries[] = {
+    { "-- GPSNAV --", OME_Label, NULL, profileIndexString, 0},
+
+    { "POS  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPos[0],  0, 255, 1 }, 0 },
+    { "POS  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPos[1],  0, 255, 1 }, 0 },
+    { "POSR P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosR[0], 0, 255, 1 }, 0 },
+    { "POSR I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosR[1], 0, 255, 1 }, 0 },
+    { "POSR D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosR[2], 0, 255, 1 }, 0 },
+    { "NAVR P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidNavR[0], 0, 255, 1 }, 0 },
+    { "NAVR I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidNavR[1], 0, 255, 1 }, 0 },
+    { "NAVR D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidNavR[2], 0, 255, 1 }, 0 },
+
+    {"BACK", OME_Back, NULL, NULL, 0},
+    {NULL, OME_END, NULL, NULL, 0}
+};
+
+static CMS_Menu cmsx_menuPidGpsnav = {
+    .GUARD_text = "XGPSNAV",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_menuPidGpsnav_onEnter,
+    .onExit = cmsx_menuPidGpsnav_onExit,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuPidGpsnavEntries,
+};
+
 static OSD_Entry cmsx_menuImuEntries[] =
 {
-    { "-- IMU --", OME_Label, NULL, NULL, 0},
+    { "-- PID TUNING --", OME_Label, NULL, NULL, 0},
 
     // Profile dependent
-    {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
-    {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
+    {"PID PROF",   OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
+    {"PID",        OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
+    {"PID ALTMAG", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidAltMag,                                           0},
+    {"PID GPSNAV", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidGpsnav,                                           0},
+
     // Profile & rate profile dependent
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
