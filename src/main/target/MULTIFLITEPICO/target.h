@@ -80,12 +80,14 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-//#define SOFTSERIAL_1_TIMER      TIM3
-//#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-//#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-//#define SOFTSERIAL_2_TIMER TIM3
-//#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-//#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+/*
+#define SOFTSERIAL_1_TIMER      TIM3
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+#define SOFTSERIAL_2_TIMER TIM3
+#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
+#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+*/
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -104,17 +106,14 @@
 #define RSSI_ADC_PIN            PB2
 
 #define USE_DSHOT
+#define REMAP_TIM17_DMA
+
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
 
 #define LED_STRIP
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 //#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
@@ -131,6 +130,7 @@
 
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PA13
+
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
@@ -142,3 +142,10 @@
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
 
+#define USE_DASHBOARD
+
+// Configuratoin Menu System
+#define CMS
+
+// Use external display connected by MSP to run CMS
+#define USE_MSP_DISPLAYPORT
