@@ -83,44 +83,33 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
 
-#define VBATTERY_STABLE_DELAY 40
+#define VBAT_STABLE_MAX_DELTA 2
 
 void updateBattery(void)
 {
+    uint16_t vbatPreviousADC = vbatLatestADC;
     updateBatteryVoltage();
+    uint16_t vbatMeasured = batteryAdcToVoltage(vbatLatestADC);
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT) {
-        if (!ARMING_FLAG(ARMED)) {
-            /* wait for VBatt to stabilise then we can calc number of cells
-            (using the filtered value takes a long time to ramp up)
-            We only do this on the ground so don't care if we do block, not
-            worse than original code anyway*/
-            delay(VBATTERY_STABLE_DELAY);
-            updateBatteryVoltage();
-        }
-
-        if (vbat > batteryConfig->batterynotpresentlevel || ARMING_FLAG(ARMED)) {
+    if (batteryState == BATTERY_NOT_PRESENT && (ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA))) {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
-            batteryState = BATTERY_OK;
+        batteryState = BATTERY_OK;
 
-            unsigned cells = (batteryAdcToVoltage(vbatLatestADC) / batteryConfig->vbatmaxcellvoltage) + 1;
-            if (cells > 8) {
-                // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
-                cells = 8;
-            }
-            batteryCellCount = cells;
-            batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
-            batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
+        unsigned cells = (vbatMeasured / batteryConfig->vbatmaxcellvoltage) + 1;
+        if (cells > 8) {
+            // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
+            cells = 8;
         }
+        batteryCellCount = cells;
+        batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
+        batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig->batterynotpresentlevel */
-    } else {
-        if (vbat <= batteryConfig->batterynotpresentlevel && !ARMING_FLAG(ARMED)) {
-            batteryState = BATTERY_NOT_PRESENT;
-            batteryCellCount = 0;
-            batteryWarningVoltage = 0;
-            batteryCriticalVoltage = 0;
-        }
+    } else if (batteryState != BATTERY_NOT_PRESENT && (!ARMING_FLAG(ARMED) || (vbat <= batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA))) {
+        batteryState = BATTERY_NOT_PRESENT;
+        batteryCellCount = 0;
+        batteryWarningVoltage = 0;
+        batteryCriticalVoltage = 0;
     }
 
     switch(batteryState)
