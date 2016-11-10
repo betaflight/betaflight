@@ -121,7 +121,7 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
             (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
-        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, index);
+        IOInit(tx, OWNER_SERIAL_TX, index);
         IOConfigGPIOAF(tx, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
@@ -129,12 +129,12 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if (mode & MODE_TX) {
-            IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TX, index);
+            IOInit(tx, OWNER_SERIAL_TX, index);
             IOConfigGPIOAF(tx, ioCfg, af);
         }
 
         if (mode & MODE_RX) {
-            IOInit(rx, OWNER_SERIAL, RESOURCE_UART_RX, index);
+            IOInit(rx, OWNER_SERIAL_RX, index);
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }

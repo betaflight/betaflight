@@ -68,7 +68,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     ws2811IO = IOGetByTag(ioTag);
     /* GPIOA Configuration: TIM5 Channel 1 as alternate function push-pull */
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     // Stop timer

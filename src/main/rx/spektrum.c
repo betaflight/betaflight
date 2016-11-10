@@ -176,7 +176,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
 #ifdef HARDWARE_BIND_PLUG
     BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(BindPlug, OWNER_RX, RESOURCE_INPUT, 0);
+    IOInit(BindPlug, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPlug, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
@@ -208,7 +208,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     LED1_ON;
 
     BindPin = IOGetByTag(IO_TAG(BIND_PIN));
-    IOInit(BindPin, OWNER_RX, RESOURCE_OUTPUT, 0);
+    IOInit(BindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
     // RX line, set high

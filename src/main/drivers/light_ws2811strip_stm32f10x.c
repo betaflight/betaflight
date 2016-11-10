@@ -62,7 +62,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     }
 
     ws2811IO = IOGetByTag(ioTag);
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIO(ws2811IO, IO_CONFIG(GPIO_Speed_50MHz, GPIO_Mode_AF_PP));
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);

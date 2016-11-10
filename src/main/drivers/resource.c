@@ -15,41 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "resource.h"
 
-#include "platform.h"
-#include "io.h"
-#include "system.h"
+const char * const ownerNames[OWNER_TOTAL_COUNT] = {
+    "FREE", "PWM", "PPM", "MOTOR", "SERVO", "LED", 
+    "ADC", "ADC_BATT", "ADC_CURR", "ADC_EXT", "ADC_RSSI",
+    "SERIAL_TX", "SERIAL_RX",  
+    "DEBUG", "TIMER",
+    "SONAR_TRIGGER", "SONAR_ECHO", 
+    "SYSTEM", 
+    "SPI_SCK", "SPI_MISO", "SPI_MOSI", 
+    "I2C_SDA", "I2C_SCL",
+    "SDCARD_CS", "FLASH_CS", "BARO_CS", "MPU_CS", "OSD_CS", "RX_SPI_CS", "SPI_CS",
+    "MPU_EXTI", "BARO_EXTI",
+    "USB", "USB_DETECT", "BEEPER", "OSD", "SDCARD_DETECT",
+    "RX_BIND",
+    "INVERTER", "LED_STRIP", 
+};
 
-static IO_t usbDetectPin = IO_NONE;
-
-void usbCableDetectDeinit(void)
-{
-#ifdef USB_DETECT_PIN
-    IOInit(usbDetectPin, OWNER_FREE, 0);
-    IOConfigGPIO(usbDetectPin, IOCFG_IN_FLOATING);
-    usbDetectPin = IO_NONE;
-#endif
-}
-
-void usbCableDetectInit(void)
-{
-#ifdef USB_DETECT_PIN
-    usbDetectPin = IOGetByTag(IO_TAG(USB_DETECT_PIN));
-
-    IOInit(usbDetectPin, OWNER_USB_DETECT, 0);
-    IOConfigGPIO(usbDetectPin, IOCFG_OUT_PP);
-#endif
-}
-
-bool usbCableIsInserted(void)
-{
-    bool result = false;
-
-#ifdef USB_DETECT_PIN
-    result = IORead(usbDetectPin) != 0;
-#endif
-
-    return result;
-}

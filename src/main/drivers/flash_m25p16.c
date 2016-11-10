@@ -224,7 +224,7 @@ bool m25p16_init(ioTag_t csTag)
         return false;
 #endif
     }
-    IOInit(m25p16CsPin, OWNER_FLASH, RESOURCE_SPI_CS, 0);
+    IOInit(m25p16CsPin, OWNER_FLASH_CS, 0);
     IOConfigGPIO(m25p16CsPin, SPI_IO_CS_CFG);
 
     DISABLE_M25P16;

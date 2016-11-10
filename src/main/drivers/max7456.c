@@ -260,7 +260,7 @@ void max7456Init(uint8_t video_system)
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
 #endif
-    IOInit(max7456CsPin, OWNER_OSD, RESOURCE_SPI_CS, 0);
+    IOInit(max7456CsPin, OWNER_OSD_CS, 0);
     IOConfigGPIO(max7456CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MAX7456_SPI_INSTANCE, SPI_CLOCK_STANDARD);

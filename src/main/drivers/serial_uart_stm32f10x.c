@@ -110,7 +110,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->USARTx = USART1;
 
 #ifdef USE_UART1_RX_DMA
-    dmaInit(DMA1_CH5_HANDLER, OWNER_SERIAL, 1);
+    dmaInit(DMA1_CH5_HANDLER, OWNER_SERIAL_RX, 1);
     s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 #endif
@@ -122,22 +122,22 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     // UART1_TX    PA9
     // UART1_RX    PA10
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL, RESOURCE_UART_TXRX, 1);
+        IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_TX, 1);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL, RESOURCE_UART_TX, 1);
+            IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_TX, 1);
             IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), IOCFG_AF_PP);
         }
 
         if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(PA10)), OWNER_SERIAL, RESOURCE_UART_RX, 1);
+            IOInit(IOGetByTag(IO_TAG(PA10)), OWNER_SERIAL_RX, 1);
             IOConfigGPIO(IOGetByTag(IO_TAG(PA10)), IOCFG_IPU);
         }
     }
 
     // DMA TX Interrupt
-    dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL, 1);
+    dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL_TX, 1);
     dmaSetHandler(DMA1_CH4_HANDLER, uart_tx_dma_IRQHandler, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
 
 #ifndef USE_UART1_RX_DMA
@@ -193,16 +193,16 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     // UART2_TX    PA2
     // UART2_RX    PA3
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL, RESOURCE_UART_TXRX, 2);
+        IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_TX, 2);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL, RESOURCE_UART_TX, 2);
+            IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_TX, 2);
             IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), IOCFG_AF_PP);
         }
 
         if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(PA3)), OWNER_SERIAL, RESOURCE_UART_RX, 2);
+            IOInit(IOGetByTag(IO_TAG(PA3)), OWNER_SERIAL_RX, 2);
             IOConfigGPIO(IOGetByTag(IO_TAG(PA3)), IOCFG_IPU);
         }
     }
@@ -255,16 +255,16 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TXRX, 3);
+        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, 3);
         IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
-            IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TX, 3);
+            IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, 3);
             IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), IOCFG_AF_PP);
         }
 
         if (mode & MODE_RX) {
-            IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL, RESOURCE_UART_RX, 3);
+            IOInit(IOGetByTag(IO_TAG(UART3_RX_PIN)), OWNER_SERIAL_RX, 3);
             IOConfigGPIO(IOGetByTag(IO_TAG(UART3_RX_PIN)), IOCFG_IPU);
         }
     }

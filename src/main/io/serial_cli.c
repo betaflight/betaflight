@@ -3842,13 +3842,10 @@ static void cliResource(char *cmdline)
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
-            const char* resource;
-            resource = resourceNames[ioRecs[i].resource];
-
             if (ioRecs[i].index > 0) {
-                cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+                cliPrintf("%c%02d: %s %d\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index);
             } else {
-                cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+                cliPrintf("%c%02d: %s \r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             }
         }
 
@@ -3860,7 +3857,7 @@ static void cliResource(char *cmdline)
             cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
             uint8_t resourceIndex = dmaGetResourceIndex(i);
             if (resourceIndex > 0) {
-                cliPrintf(" %s%d\r\n", owner, resourceIndex);
+                cliPrintf(" %s %d\r\n", owner, resourceIndex);
             } else {
                 cliPrintf(" %s\r\n", owner);
             }            

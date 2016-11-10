@@ -131,7 +131,7 @@ void adcInit(drv_adc_config_t *init)
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY + i, 0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
@@ -141,7 +141,7 @@ void adcInit(drv_adc_config_t *init)
 
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, RESOURCE_INDEX(device));
+    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC_BATT + i, 0);
 
     ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
     ADCHandle.Init.ContinuousConvMode    = ENABLE;

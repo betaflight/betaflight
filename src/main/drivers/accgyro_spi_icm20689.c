@@ -70,7 +70,7 @@ static void icm20689SpiInit(void)
     }
 
     icmSpi20689CsPin = IOGetByTag(IO_TAG(ICM20689_CS_PIN));
-    IOInit(icmSpi20689CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(icmSpi20689CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(icmSpi20689CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);

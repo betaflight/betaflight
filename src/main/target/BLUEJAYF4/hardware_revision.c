@@ -42,11 +42,11 @@ uint8_t hardwareRevision = UNKNOWN;
 void detectHardwareRevision(void)
 {
     IO_t pin1 = IOGetByTag(IO_TAG(PB12));
-    IOInit(pin1, OWNER_SYSTEM, RESOURCE_INPUT, 1);
+    IOInit(pin1, OWNER_SYSTEM, 1);
     IOConfigGPIO(pin1, IOCFG_IPU);
 
     IO_t pin2 = IOGetByTag(IO_TAG(PB13));
-    IOInit(pin2, OWNER_SYSTEM, RESOURCE_INPUT, 2);
+    IOInit(pin2, OWNER_SYSTEM, 2);
     IOConfigGPIO(pin2, IOCFG_IPU);
 
     // Check hardware revision
@@ -76,7 +76,7 @@ void detectHardwareRevision(void)
         HI or LO in configuration.
     */
     IO_t uart1invert = IOGetByTag(IO_TAG(PC9));
-    IOInit(uart1invert, OWNER_INVERTER, RESOURCE_OUTPUT, 2);
+    IOInit(uart1invert, OWNER_INVERTER, 2);
     IOConfigGPIO(uart1invert, IOCFG_AF_PP);
     IOLo(uart1invert);    
 }
@@ -93,7 +93,7 @@ void updateHardwareRevision(void)
     if (m25p16_init(IO_TAG(PB3))) {
         hardwareRevision = BJF4_REV1;
     } else {
-        IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, RESOURCE_NONE, 0);
+        IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, 0);
     }
 }
 

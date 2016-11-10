@@ -128,7 +128,7 @@ void sdcardInsertionDetectDeinit(void)
 {
 #ifdef SDCARD_DETECT_PIN
     sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
-    IOInit(sdCardDetectPin, OWNER_FREE, RESOURCE_NONE, 0);
+    IOInit(sdCardDetectPin, OWNER_FREE, 0);
     IOConfigGPIO(sdCardDetectPin, IOCFG_IN_FLOATING);
 #endif
 }
@@ -137,7 +137,7 @@ void sdcardInsertionDetectInit(void)
 {
 #ifdef SDCARD_DETECT_PIN
     sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
-    IOInit(sdCardDetectPin, OWNER_SDCARD, RESOURCE_INPUT, 0);
+    IOInit(sdCardDetectPin, OWNER_SDCARD_DETECT, 0);
     IOConfigGPIO(sdCardDetectPin, IOCFG_IPU);
 #endif
 }
@@ -558,7 +558,7 @@ void sdcard_init(bool useDMA)
 
 #ifdef SDCARD_SPI_CS_PIN
     sdCardCsPin = IOGetByTag(IO_TAG(SDCARD_SPI_CS_PIN));
-    IOInit(sdCardCsPin, OWNER_SDCARD, RESOURCE_SPI_CS, 0);
+    IOInit(sdCardCsPin, OWNER_SDCARD_CS, 0);
     IOConfigGPIO(sdCardCsPin, SPI_IO_CS_CFG);
 #endif // SDCARD_SPI_CS_PIN
 
