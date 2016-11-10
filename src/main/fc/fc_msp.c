@@ -584,7 +584,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_NAME:
         {
-            const unsigned int nameLen = strlen(masterConfig.name);
+            const int nameLen = strlen(masterConfig.name);
             for (int i = 0; i < nameLen; i++) {
                 sbufWriteU8(dst, masterConfig.name[i]);
             }
@@ -1022,7 +1022,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_TRANSPONDER_CONFIG:
 #ifdef TRANSPONDER
         sbufWriteU8(dst, 1); //Transponder supported
-        for (int i = 0; i < sizeof(masterConfig.transponderData); i++) {
+        for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             sbufWriteU8(dst, masterConfig.transponderData[i]);
         }
 #else
@@ -1522,7 +1522,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             return MSP_RESULT_ERROR;
             break;
         }
-        for (int i = 0; i < sizeof(masterConfig.transponderData); i++) {
+        for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             masterConfig.transponderData[i] = sbufReadU8(src);
         }
         transponderUpdateData(masterConfig.transponderData);
@@ -1781,7 +1781,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_NAME:
         memset(masterConfig.name, 0, ARRAYLEN(masterConfig.name));
-        for (int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
+        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
             masterConfig.name[i] = sbufReadU8(src);
         }
         break;
