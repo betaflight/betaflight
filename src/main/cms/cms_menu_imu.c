@@ -184,10 +184,17 @@ static CMS_Menu cmsx_menuPid = {
 // Rate & Expo
 //
 static controlRateConfig_t rateProfile;
+static uint16_t cmsx_rateRoll;
+static uint16_t cmsx_ratePitch;
+static uint16_t cmsx_rateYaw;
 
 static long cmsx_RateProfileRead(void)
 {
     memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
+
+    cmsx_rateRoll =  rateProfile.rates[FD_ROLL] * 10;
+    cmsx_ratePitch = rateProfile.rates[FD_PITCH] * 10;
+    cmsx_rateYaw =   rateProfile.rates[FD_YAW] * 10;
 
     return 0;
 }
@@ -195,6 +202,10 @@ static long cmsx_RateProfileRead(void)
 static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
+
+    rateProfile.rates[FD_ROLL] = cmsx_rateRoll / 10;
+    rateProfile.rates[FD_PITCH]  = cmsx_ratePitch / 10;
+    rateProfile.rates[FD_YAW] = cmsx_rateYaw / 10;
 
     memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
 
@@ -214,22 +225,22 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
 #if 0
-    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
-    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t) { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
+    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
+    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
 #endif
 
-    { "ROLL RATE",   OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_ROLL],  CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
-    { "PITCH RATE",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_PITCH], CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX, 1 }, 0 },
-    { "YAW RATE",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rates[FD_YAW],   CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX, 1 }, 0 },
+    { "ROLL RATE",   OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_rateRoll,  (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * 10), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * 10), 10 }, 0 },
+    { "PITCH RATE",  OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_ratePitch, (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * 10), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * 10), 10 }, 0 },
+    { "YAW RATE",    OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_rateYaw,   (CONTROL_RATE_CONFIG_YAW_RATE_MIN * 10),        (CONTROL_RATE_CONFIG_YAW_RATE_MAX * 10),        10 }, 0 },
 
-    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rcExpo8,    0, 100, 1 }, 0 },
-    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.rcYawExpo8, 0, 100, 1 }, 0 },
+    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.rcExpo8,    0, 100, 1 }, 0 },
+    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.rcYawExpo8, 0, 100, 1 }, 0 },
 
-    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrMid8,    0, 100, 1 }, 0 },
-    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.thrExpo8,   0, 100, 1 }, 0 },
+    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.thrMid8,    0, 100, 1 }, 0 },
+    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.thrExpo8,   0, 100, 1 }, 0 },
 
-    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t) { &rateProfile.dynThrPID,  0, 100, 1 }, 0 },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
+    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.dynThrPID,  0, 100, 1 }, 0 },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t) { &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
