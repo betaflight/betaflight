@@ -192,9 +192,9 @@ static long cmsx_RateProfileRead(void)
 {
     memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
 
-    cmsx_rateRoll =  rateProfile.rates[FD_ROLL] * 10;
-    cmsx_ratePitch = rateProfile.rates[FD_PITCH] * 10;
-    cmsx_rateYaw =   rateProfile.rates[FD_YAW] * 10;
+    cmsx_rateRoll  = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_ROLL]);
+    cmsx_ratePitch = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_PITCH]);
+    cmsx_rateYaw   = DECADEGREES_TO_DEGREES(rateProfile.rates[FD_YAW]);
 
     return 0;
 }
@@ -203,9 +203,9 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    rateProfile.rates[FD_ROLL] = cmsx_rateRoll / 10;
-    rateProfile.rates[FD_PITCH]  = cmsx_ratePitch / 10;
-    rateProfile.rates[FD_YAW] = cmsx_rateYaw / 10;
+    rateProfile.rates[FD_ROLL]  = DEGREES_TO_DECADEGREES(cmsx_rateRoll);
+    rateProfile.rates[FD_PITCH] = DEGREES_TO_DECADEGREES(cmsx_ratePitch);
+    rateProfile.rates[FD_YAW]   = DEGREES_TO_DECADEGREES(cmsx_rateYaw);
 
     memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
 
@@ -225,22 +225,22 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
 #if 0
-    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
-    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t)  { &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
+    { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
+    { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
 #endif
 
-    { "ROLL RATE",   OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_rateRoll,  (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * 10), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * 10), 10 }, 0 },
-    { "PITCH RATE",  OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_ratePitch, (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * 10), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * 10), 10 }, 0 },
-    { "YAW RATE",    OME_UINT16, NULL, &(OSD_UINT16_t) { &cmsx_rateYaw,   (CONTROL_RATE_CONFIG_YAW_RATE_MIN * 10),        (CONTROL_RATE_CONFIG_YAW_RATE_MAX * 10),        10 }, 0 },
+    { "ROLL RATE",   OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateRoll,  (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DECADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DECADEGREE), DEGREES_PER_DECADEGREE }, 0 },
+    { "PITCH RATE",  OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_ratePitch, (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN * DEGREES_PER_DECADEGREE), (CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX * DEGREES_PER_DECADEGREE), DEGREES_PER_DECADEGREE }, 0 },
+    { "YAW RATE",    OME_UINT16, NULL, &(OSD_UINT16_t){ &cmsx_rateYaw,   (CONTROL_RATE_CONFIG_YAW_RATE_MIN * DEGREES_PER_DECADEGREE),        (CONTROL_RATE_CONFIG_YAW_RATE_MAX * DEGREES_PER_DECADEGREE),        DEGREES_PER_DECADEGREE }, 0 },
 
-    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.rcExpo8,    0, 100, 1 }, 0 },
-    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.rcYawExpo8, 0, 100, 1 }, 0 },
+    { "RC EXPO",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcExpo8,    0, 100, 1 },     0 },
+    { "RC YAW EXP",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.rcYawExpo8, 0, 100, 1 },     0 },
 
-    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.thrMid8,    0, 100, 1 }, 0 },
-    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.thrExpo8,   0, 100, 1 }, 0 },
+    { "THR MID",     OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrMid8,    0, 100, 1 },     0 },
+    { "THR EXPO",    OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.thrExpo8,   0, 100, 1 },     0 },
 
-    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t)  { &rateProfile.dynThrPID,  0, 100, 1 }, 0 },
-    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t) { &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
+    { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.dynThrPID,  0, 100, 1 },     0 },
+    { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -269,9 +269,9 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_dtermSetpointWeight = masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight;
     cmsx_setpointRelaxRatio  = masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio;
 
-    cmsx_angleStrength =     masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
-    cmsx_horizonStrength =   masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
-    cmsx_horizonTransition = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
+    cmsx_angleStrength       = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
+    cmsx_horizonStrength     = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
+    cmsx_horizonTransition   = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
 
     return 0;
 }
@@ -281,11 +281,11 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     UNUSED(self);
 
     masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
-    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio = cmsx_setpointRelaxRatio;
+    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio  = cmsx_setpointRelaxRatio;
 
-    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = cmsx_angleStrength;
-    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = cmsx_horizonStrength;
-    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL] = cmsx_horizonTransition;
+    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL]        = cmsx_angleStrength;
+    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL]        = cmsx_horizonStrength;
+    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL]        = cmsx_horizonTransition;
 
     return 0;
 }
@@ -293,11 +293,11 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 static OSD_Entry cmsx_menuProfileOtherEntries[] = {
     { "-- OTHER PP --", OME_Label, NULL, profileIndexString, 0 },
 
-    { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
-    { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t) { &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
-    { "ANGLE STR",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_angleStrength,       0, 200, 1 }    , 0 },
-    { "HORZN STR",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_horizonStrength,     0, 200, 1 }    , 0 },
-    { "HORZN TRS",   OME_UINT8, NULL, &(OSD_UINT8_t) { &cmsx_horizonTransition,   0, 200, 1 }    , 0 },
+    { "D SETPT WT",  OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_dtermSetpointWeight, 0, 255, 1, 10 }, 0 },
+    { "SETPT TRS",   OME_FLOAT, NULL, &(OSD_FLOAT_t){ &cmsx_setpointRelaxRatio,  0, 100, 1, 10 }, 0 },
+    { "ANGLE STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_angleStrength,       0, 200, 1 }    , 0 },
+    { "HORZN STR",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonStrength,     0, 200, 1 }    , 0 },
+    { "HORZN TRS",   OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_horizonTransition,   0, 200, 1 }    , 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -316,11 +316,11 @@ static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
-    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &masterConfig.gyro_soft_lpf_hz,         0, 255, 1 }, 0 },
-    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
-    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
-    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
-    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
+    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t){ &masterConfig.gyro_soft_lpf_hz,          0, 255, 1 }, 0 },
+    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
+    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
+    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
+    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t){ &masterConfig.gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
