@@ -103,7 +103,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 {
 #ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT)) {
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
@@ -112,7 +112,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 #endif
 
     static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {

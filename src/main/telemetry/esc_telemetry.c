@@ -58,11 +58,11 @@ set debug_mode = DEBUG_ESC_TELEMETRY in cli
 
 typedef struct {
     bool skipped;
-    uint8_t temperature;
-    uint16_t voltage;
-    uint16_t current;
-    uint16_t consumption;
-    uint16_t rpm;
+    int16_t temperature;
+    int16_t voltage;
+    int16_t current;
+    int16_t consumption;
+    int16_t rpm;
 } esc_telemetry_t;
 
 typedef enum {
@@ -93,9 +93,9 @@ static uint8_t escTelemetryMotor = 0;      // motor index 0 - 3
 static bool escTelemetryEnabled = false;
 static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_WAIT;
 
-static uint16_t escVbat = 0;
-static uint16_t escCurrent = 0;
-static uint16_t escConsumption = 0;
+static int16_t escVbat = 0;
+static int16_t escCurrent = 0;
+static int16_t escConsumption = 0;
 
 static void escTelemetryDataReceive(uint16_t c);
 static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
@@ -107,17 +107,17 @@ bool isEscTelemetryActive(void)
     return escTelemetryEnabled;
 }
 
-uint16_t getEscTelemetryVbat(void)
+int16_t getEscTelemetryVbat(void)
 {
     return escVbat / 10;
 }
 
-uint16_t getEscTelemetryCurrent(void)
+int16_t getEscTelemetryCurrent(void)
 {
     return escCurrent;
 }
 
-uint16_t getEscTelemetryConsumption(void)
+int16_t getEscTelemetryConsumption(void)
 {
     return escConsumption;
 }
@@ -199,7 +199,7 @@ uint8_t escTelemetryFrameStatus(void)
 
 void escTelemetryProcess(uint32_t currentTime)
 {
-    UNUSED(currentTime);
+    uint32_t currentTimeMs = currentTime / 1000;
 
     if (!escTelemetryEnabled) {
         return;
@@ -215,7 +215,7 @@ void escTelemetryProcess(uint32_t currentTime)
         // Ready for starting requesting telemetry
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
         escTelemetryMotor = 0;
-        escTriggerTimestamp = millis();
+        escTriggerTimestamp = currentTimeMs;
     }
     else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
     {
@@ -226,7 +226,7 @@ void escTelemetryProcess(uint32_t currentTime)
         escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
     }
 
-    if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < millis())
+    if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs)
     {
         // ESC did not repond in time, skip to next motor
         escTelemetryData[escTelemetryMotor].skipped = true;
@@ -244,10 +244,10 @@ void escTelemetryProcess(uint32_t currentTime)
         // Wait until all ESCs are processed
         if (firstCycleComplete)
         {
-            uint8_t i;
+            int i;
             escCurrent = 0;
             escConsumption = 0;
-            for (i = 0; i < 4; i++)             // Motor count for Dshot limited to 4
+            for (i = 0; i < MAX_DSHOT_MOTORS; i++)             // Motor count for Dshot limited to 4
             {
                 if (!escTelemetryData[i].skipped)
                 {
@@ -269,7 +269,7 @@ void escTelemetryProcess(uint32_t currentTime)
 static void selectNextMotor(void)
 {
     escTelemetryMotor++;
-    if (escTelemetryMotor >= 4) {           // Motor count for Dshot limited to 4
+    if (escTelemetryMotor >= MAX_DSHOT_MOTORS) {           // Motor count for Dshot limited to 4
         escTelemetryMotor = 0;
         firstCycleComplete = true;
     }
@@ -280,19 +280,17 @@ static void selectNextMotor(void)
 
 static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
 {
-    uint8_t crc_u, i;
-
-    crc_u = crc;
+    uint8_t crc_u = crc;
     crc_u ^= crc_seed;
 
-    for ( i=0; i<8; i++) crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 );
+    for (int i=0; i<8; i++) crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 );
 
     return (crc_u);
 }
 
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 {
-    uint8_t crc = 0, i;
-    for( i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc);
+    uint8_t crc = 0;
+    for(int i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc);
     return (crc);
 }
