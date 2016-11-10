@@ -104,6 +104,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -488,6 +489,12 @@ void init(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
+#endif
+
+#ifdef USE_ESC_TELEMETRY
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryInit();
     }
 #endif
 
