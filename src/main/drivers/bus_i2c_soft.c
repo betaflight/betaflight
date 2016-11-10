@@ -68,7 +68,7 @@ static bool I2C_Start(void)
     if (SDA_read) {
         return false;
     }
-    SDA_L;
+    SCL_L;
     I2C_delay();
     return true;
 }
