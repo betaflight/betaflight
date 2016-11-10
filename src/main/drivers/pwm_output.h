@@ -52,8 +52,10 @@ typedef enum {
 #define PWM_BRUSHED_TIMER_MHZ 24
 #endif
 
-#ifdef USE_DSHOT
+#if defined(USE_DSHOT)
 #define MAX_DSHOT_MOTORS      4
+#else
+#define MAX_DSHOT_MOTORS      0
 #endif
 
 #define MOTOR_DMA_BUFFER_SIZE 18 /* resolution + frame reset (2us) */

@@ -56,6 +56,8 @@ set debug_mode = DEBUG_ESC_TELEMETRY in cli
 3: current
 */
 
+#ifdef USE_DSHOT
+
 typedef struct {
     bool skipped;
     int16_t temperature;
@@ -269,7 +271,7 @@ void escTelemetryProcess(uint32_t currentTime)
 static void selectNextMotor(void)
 {
     escTelemetryMotor++;
-    if (escTelemetryMotor >= MAX_DSHOT_MOTORS) {           // Motor count for Dshot limited to 4
+    if (escTelemetryMotor > MAX_DSHOT_MOTORS-1) {           // Motor count for Dshot limited to 4
         escTelemetryMotor = 0;
         firstCycleComplete = true;
     }
@@ -294,3 +296,5 @@ static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
     for(int i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc);
     return (crc);
 }
+
+#endif
