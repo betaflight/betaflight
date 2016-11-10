@@ -141,7 +141,7 @@ void adcInit(drv_adc_config_t *init)
 
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
-    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC_BATT + i, 0);
+    dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
     ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
     ADCHandle.Init.ContinuousConvMode    = ENABLE;
