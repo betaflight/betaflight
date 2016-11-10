@@ -120,6 +120,7 @@ void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 
 void pwmDisableMotors(void)
 {
+    pwmShutdownPulsesForAllMotors(MAX_SUPPORTED_MOTORS);
     pwmMotorsEnabled = false;
 }
 
@@ -216,6 +217,8 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
             break;
         }
 
+        motors[motorIndex].io = IOGetByTag(tag);
+
 #ifdef USE_DSHOT
         if (isDigital) {
             pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
@@ -224,7 +227,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
             continue;
         }
 #endif
-        motors[motorIndex].io = IOGetByTag(tag);
         
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_OUTPUT, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
