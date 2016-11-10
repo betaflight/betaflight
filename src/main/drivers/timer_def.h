@@ -223,6 +223,10 @@
 
 #elif defined(STM32F4)
 
+#define DMA_OPT_FIRST     0
+#define DMA_OPT_SECOND    0
+#define DMA_OPT_THIRD     0
+
 #define DEF_TIM(tim, chan, pin, flags, out, dmaopt) {\
     tim,\
     IO_TAG(pin),\
@@ -244,10 +248,17 @@
 #define DEF_TIM_DMA_STR_0__TIM1_CH1    DMA2_ST6
 #define DEF_TIM_DMA_STR_1__TIM1_CH1    DMA2_ST1
 #define DEF_TIM_DMA_STR_2__TIM1_CH1    DMA2_ST3
+#define DEF_TIM_DMA_STR_0__TIM1_CH1N   DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH1N   DMA2_ST1
+#define DEF_TIM_DMA_STR_2__TIM1_CH1N   DMA2_ST3
 #define DEF_TIM_DMA_STR_0__TIM1_CH2    DMA2_ST6
 #define DEF_TIM_DMA_STR_1__TIM1_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM1_CH2N   DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH2N   DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM1_CH3    DMA2_ST6
 #define DEF_TIM_DMA_STR_1__TIM1_CH3    DMA2_ST6
+#define DEF_TIM_DMA_STR_0__TIM1_CH3N   DMA2_ST6
+#define DEF_TIM_DMA_STR_1__TIM1_CH3N   DMA2_ST6
 #define DEF_TIM_DMA_STR_0__TIM1_CH4    DMA2_ST4
 
 #define DEF_TIM_DMA_STR_0__TIM2_CH1    DMA1_ST5
@@ -274,10 +285,16 @@
 
 #define DEF_TIM_DMA_STR_0__TIM8_CH1    DMA2_ST2
 #define DEF_TIM_DMA_STR_1__TIM8_CH1    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH1N   DMA2_ST2
+#define DEF_TIM_DMA_STR_1__TIM8_CH1N   DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM8_CH2    DMA2_ST3
 #define DEF_TIM_DMA_STR_1__TIM8_CH2    DMA2_ST2
+#define DEF_TIM_DMA_STR_0__TIM8_CH2N   DMA2_ST3
+#define DEF_TIM_DMA_STR_1__TIM8_CH2N   DMA2_ST2
 #define DEF_TIM_DMA_STR_0__TIM8_CH3    DMA2_ST2
 #define DEF_TIM_DMA_STR_1__TIM8_CH3    DMA2_ST4
+#define DEF_TIM_DMA_STR_0__TIM8_CH3N   DMA2_ST2
+#define DEF_TIM_DMA_STR_1__TIM8_CH3N   DMA2_ST4
 #define DEF_TIM_DMA_STR_0__TIM8_CH4    DMA2_ST7
 
 #define DEF_TIM_DMA_STR_0__TIM9_CH1    DMA_NONE
@@ -299,10 +316,17 @@
 #define DEF_TIM_DMA_CHN_0__TIM1_CH1    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM1_CH1    DMA_Channel_6
 #define DEF_TIM_DMA_CHN_2__TIM1_CH1    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH1N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH1N   DMA_Channel_6
+#define DEF_TIM_DMA_CHN_2__TIM1_CH1N   DMA_Channel_6
 #define DEF_TIM_DMA_CHN_0__TIM1_CH2    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM1_CH2    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH2N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH2N   DMA_Channel_6
 #define DEF_TIM_DMA_CHN_0__TIM1_CH3    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM1_CH3    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM1_CH3N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM1_CH3N   DMA_Channel_6
 #define DEF_TIM_DMA_CHN_0__TIM1_CH4    DMA_Channel_6
 
 #define DEF_TIM_DMA_CHN_0__TIM2_CH1    DMA_Channel_3
@@ -329,10 +353,16 @@
 
 #define DEF_TIM_DMA_CHN_0__TIM8_CH1    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM8_CH1    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH1N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH1N   DMA_Channel_7
 #define DEF_TIM_DMA_CHN_0__TIM8_CH2    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM8_CH2    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH2N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH2N   DMA_Channel_7
 #define DEF_TIM_DMA_CHN_0__TIM8_CH3    DMA_Channel_0
-#define DEF_TIM_DMA_CHN_1__TIM8_CH3    DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH3    DMA_Channel_7
+#define DEF_TIM_DMA_CHN_0__TIM8_CH3N   DMA_Channel_0
+#define DEF_TIM_DMA_CHN_1__TIM8_CH3N   DMA_Channel_7
 #define DEF_TIM_DMA_CHN_0__TIM8_CH4    DMA_Channel_7
 
 #define DEF_TIM_DMA_CHN_0__TIM9_CH1    0
