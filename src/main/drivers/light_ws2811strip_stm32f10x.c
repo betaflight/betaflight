@@ -89,7 +89,9 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
-    /* DMA1 Channel6 Config */
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
+    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
+
     dmaChannel = timerHardware->dmaChannel;
     DMA_DeInit(dmaChannel);
 
@@ -112,9 +114,6 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
     DMA_ITConfig(dmaChannel, DMA_IT_TC, ENABLE);
-
-    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
-    dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, 0);
 
     ws2811Initialised = true;
 }
