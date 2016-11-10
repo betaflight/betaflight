@@ -488,28 +488,28 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
     return 0;
 }
 
-static const char *cmsx_gyroLpfNames[] = {
-    "10 ", "20 ", "42 ", "98 ", "188", "256"
-};
-
 static const char *cmsx_gyroSyncNames[] = {
     "OFF", "ON "
 };
 
+static const char *cmsx_gyroLpfNames[] = {
+    "10 ", "20 ", "42 ", "98 ", "188", "256"
+};
+
 static OSD_Entry cmsx_menuGyroEntries[] =
 {
-    { "-- GYRO --", OME_Label, NULL, profileIndexString, 0},
+    { "-- GYRO GLB --", OME_Label, NULL, profileIndexString, 0},
 
     { "GYRO SYNC",  OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_gyroSync, 1, cmsx_gyroSyncNames}, 0 },
-    { "GYRO DENOM", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_gyroSyncDenom, 1, 32, 1 }, 0 },
-    { "GYRO LPF",   OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_gyroLpf, 5, cmsx_gyroLpfNames}, 0 },
+    { "GYRO DENOM", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_gyroSyncDenom, 1, 32, 1 },      0 },
+    { "GYRO LPF",   OME_TAB,   NULL, &(OSD_TAB_t){ &cmsx_gyroLpf, 5, cmsx_gyroLpfNames},   0 },
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
 
 static CMS_Menu cmsx_menuGyro = {
-    .GUARD_text = "XGYRO",
+    .GUARD_text = "XGYROGLB",
     .GUARD_type = OME_MENU,
     .onEnter = cmsx_menuGyro_onEnter,
     .onExit = cmsx_menuGyro_onExit,
@@ -522,21 +522,23 @@ static OSD_Entry cmsx_menuImuEntries[] =
     { "-- PID TUNING --", OME_Label, NULL, NULL, 0},
 
     // Profile dependent
-    {"PID PROF",   OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
-    {"PID",        OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
-    {"PID ALTMAG", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidAltMag,                                           0},
-    {"PID GPSNAV", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidGpsnav,                                           0},
-    {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
+    {"PID PROF",   OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1}, 0},
+    {"PID",        OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                              0},
+    {"PID ALTMAG", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidAltMag,                                        0},
+    {"PID GPSNAV", OME_Submenu, cmsMenuChange,                 &cmsx_menuPidGpsnav,                                        0},
+    {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                  0},
 
-    // Profile & rate profile dependent
+    // Rate profile dependent
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_CONTROL_RATE_PROFILE_COUNT, 1}, 0},
-    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
-    {"GYRO",      OME_Submenu, cmsMenuChange,                 &cmsx_menuGyro, 0},
+    {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                       0},
+
+    // Global
+    {"GYRO GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuGyro,                                              0},
 
 #ifdef NOT_YET
-    {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
+    {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                      0},
     // Profile independent
-    {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+    {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                      0},
 #endif
 
     {"BACK", OME_Back, NULL, NULL, 0},
