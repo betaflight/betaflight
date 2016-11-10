@@ -17,9 +17,9 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FLF4"
+#define TARGET_BOARD_IDENTIFIER "ABF4"
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-#define USBD_PRODUCT_STRING     "Flip32 F4 / Airbot F4"
+#define USBD_PRODUCT_STRING     "Airbot F4 / Flip32 F4"
 
 #define LED0                    PB5
 
