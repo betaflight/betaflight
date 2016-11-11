@@ -345,11 +345,11 @@
 #define DEF_TIM_DMA_CHN_0__TIM4_CH3    DMA_Channel_2
 #define DEF_TIM_DMA_CHN_0__TIM4_CH4    DMA_Channel_2
 
-#define DEF_TIM_DMA_CHN_0__TIM5_CH1    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0__TIM5_CH2    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0__TIM5_CH3    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0__TIM5_CH4    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_1__TIM5_CH4    DMA_Channel_3
+#define DEF_TIM_DMA_CHN_0__TIM5_CH1    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM5_CH2    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM5_CH3    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_0__TIM5_CH4    DMA_Channel_6
+#define DEF_TIM_DMA_CHN_1__TIM5_CH4    DMA_Channel_6
 
 #define DEF_TIM_DMA_CHN_0__TIM8_CH1    DMA_Channel_0
 #define DEF_TIM_DMA_CHN_1__TIM8_CH1    DMA_Channel_7
