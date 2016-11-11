@@ -22,31 +22,31 @@
 #define WS2811_LED_STRIP_LENGTH    32
 #define WS2811_BITS_PER_LED        24
 // for 50us delay
-#define WS2811_DELAY_BUFFER_LENGTH 42 
+#define WS2811_DELAY_BUFFER_LENGTH 42
 
 #define WS2811_DATA_BUFFER_SIZE (WS2811_BITS_PER_LED * WS2811_LED_STRIP_LENGTH)
 // number of bytes needed is #LEDs * 24 bytes + 42 trailing bytes)
-#define WS2811_DMA_BUFFER_SIZE  (WS2811_DATA_BUFFER_SIZE + WS2811_DELAY_BUFFER_LENGTH)   
+#define WS2811_DMA_BUFFER_SIZE  (WS2811_DATA_BUFFER_SIZE + WS2811_DELAY_BUFFER_LENGTH)
 
 #if defined(STM32F40_41xxx)
 #define WS2811_TIMER_HZ        84000000
 #define WS2811_TIMER_PERIOD    104
 // timer compare value for logical 1
-#define BIT_COMPARE_1          67 
+#define BIT_COMPARE_1          67
 // timer compare value for logical 0
-#define BIT_COMPARE_0          33  
+#define BIT_COMPARE_0          33
 #elif defined(STM32F7)
 // timer compare value for logical 1
-#define BIT_COMPARE_1          76 
+#define BIT_COMPARE_1          76
 // timer compare value for logical 0
-#define BIT_COMPARE_0          38  
+#define BIT_COMPARE_0          38
 #else
 #define WS2811_TIMER_HZ        24000000
 #define WS2811_TIMER_PERIOD    29
 // timer compare value for logical 1
-#define BIT_COMPARE_1          17 
+#define BIT_COMPARE_1          17
 // timer compare value for logical 0
-#define BIT_COMPARE_0          9  
+#define BIT_COMPARE_0          9
 #endif
 
 void ws2811LedStripInit(ioTag_t ioTag);

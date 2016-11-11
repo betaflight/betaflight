@@ -83,7 +83,7 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-  
+
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
@@ -109,7 +109,7 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
- 
+
     I2C_Cmd(I2Cx, ENABLE);
 }
 

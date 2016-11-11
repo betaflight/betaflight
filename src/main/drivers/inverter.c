@@ -20,14 +20,14 @@
 
 #include "platform.h"
 
-#ifdef INVERTER 
+#ifdef INVERTER
 
 #include "io.h"
 #include "io_impl.h"
 
 #include "inverter.h"
 
-/* 
+/*
     TODO: move this to support multiple inverters on different UARTs etc
     possibly move to put it in the UART driver itself.
 */
