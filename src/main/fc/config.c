@@ -724,7 +724,10 @@ void createDefaultConfig(master_t *config)
 
 #ifdef SERIALRX_UART
     if (featureConfigured(FEATURE_RX_SERIAL)) {
-        config->serialConfig.portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+        int serialIndex = findSerialPortIndexByIdentifier(SERIALRX_UART);
+        if (serialIndex >= 0) {
+            config->serialConfig.portConfigs[serialIndex].functionMask = FUNCTION_RX_SERIAL;
+        }
     }
 #endif
 
