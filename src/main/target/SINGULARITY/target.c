@@ -21,18 +21,19 @@
 #include "drivers/io.h"
 
 #include "drivers/timer.h"
+#include "drivers/timer_def.h"
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PA15), TIM_Channel_1, TIM_USE_PWM | TIM_USE_PPM, 0, GPIO_AF_1, NULL, 0 }, // PPM/SERIAL RX
-    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM_USE_PWM,   0, GPIO_AF_2, NULL, 0 }, // PWM1
-    { TIM3,  IO_TAG(PB5),  TIM_Channel_2, TIM_USE_PWM,   0, GPIO_AF_2, NULL, 0 }, // PWM2
-    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM_USE_PWM,   0, GPIO_AF_2, NULL, 0 }, // PWM3
-    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM_USE_PWM,   0, GPIO_AF_2, NULL, 0 }, // PWM4
-    { TIM16, IO_TAG(PB8),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 }, // PWM5
-    { TIM17, IO_TAG(PB9),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 }, // PWM6
-    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_9, NULL, 0 }, // SOFTSERIAL1 RX (NC)
-    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_9, NULL, 0 }, // SOFTSERIAL1 TX
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_MOTOR | TIM_USE_LED, 1, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER }, // LED_STRIP
+    DEF_TIM(TIM2,  CH1, PA15, TIM_USE_PWM | TIM_USE_PPM,   0), // PPM/SERIAL RX
+    DEF_TIM(TIM3,  CH1, PB4,  TIM_USE_PWM,                 0), // PWM1
+    DEF_TIM(TIM3,  CH2, PB5,  TIM_USE_PWM,                 0), // PWM2
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_PWM,                 0), // PWM3
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_PWM,                 0), // PWM4
+    DEF_TIM(TIM16, CH1, PB8,  TIM_USE_MOTOR,               1), // PWM5
+    DEF_TIM(TIM17, CH1, PB9,  TIM_USE_MOTOR,               1), // PWM6
+    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_MOTOR,               1), // SOFTSERIAL1 RX (NC)
+    DEF_TIM(TIM15, CH2, PA3,  TIM_USE_MOTOR,               1), // SOFTSERIAL1 TX
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_MOTOR | TIM_USE_LED, 1), // LED_STRIP
 };
 

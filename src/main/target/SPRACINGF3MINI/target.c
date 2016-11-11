@@ -21,32 +21,29 @@
 #include "drivers/io.h"
 
 #include "drivers/timer.h"
+#include "drivers/timer_def.h"
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // PPM Pad
 #ifdef SPRACINGF3MINI_MKII_REVA
-    { TIM3,  IO_TAG(PB5),  TIM_Channel_2, TIM_USE_PPM, 0, GPIO_AF_2, NULL, 0 }, // PPM - PB5
+    DEF_TIM(TIM3, CH2, PB5, TIM_USE_PPM, 0), // PPM - PB5
     // PB4 / TIM3 CH1 is connected to USBPresent
 #else
-    { TIM3,  IO_TAG(PB4),  TIM_Channel_1, TIM_USE_PPM, 0, GPIO_AF_2, NULL, 0 }, // PPM - PB4
+    DEF_TIM(TIM3, CH1, PB4, TIM_USE_PPM, 0), // PPM - PB4
     // PB5 / TIM3 CH2 is connected to USBPresent
 #endif
 
-    { TIM16, IO_TAG(PA6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 },  // PWM1 - PA6
-    { TIM17, IO_TAG(PA7),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 },  // PWM2 - PA7
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 },  // PWM3 - PB8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 },  // PWM4 - PB9
-    { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_9, NULL, 0 },  // PWM5 - PA2
-    { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_9, NULL, 0 },  // PWM6 - PA3
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 },  // PWM7 - PA0
-    { TIM2,  IO_TAG(PA1),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_1, NULL, 0 },  // PWM8 - PA1
-
-    // UART3 RX/TX
-    { TIM2,  IO_TAG(PB10), TIM_Channel_3, 0, 1, GPIO_AF_1, NULL, 0 }, // PWM9  - PB10 - TIM2_CH3 / UART3_TX (AF7)
-    { TIM2,  IO_TAG(PB11), TIM_Channel_4, 0, 1, GPIO_AF_1, NULL, 0 }, // PWM10 - PB11 - TIM2_CH4 / UART3_RX (AF7)
-
-    // LED Strip Pad
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_LED, 1, GPIO_AF_6, DMA1_Channel2, DMA1_CH2_HANDLER },  // GPIO_TIMER / LED_STRIP
+    DEF_TIM(TIM16, CH1, PA6,  TIM_USE_MOTOR, 1),  // PWM1 - PA6
+    DEF_TIM(TIM17, CH1, PA7,  TIM_USE_MOTOR, 1),  // PWM2 - PA7
+    DEF_TIM(TIM4,  CH3, PB8,  TIM_USE_MOTOR, 1),  // PWM3 - PB8
+    DEF_TIM(TIM4,  CH4, PB9,  TIM_USE_MOTOR, 1),  // PWM4 - PB9
+    DEF_TIM(TIM15, CH1, PA2,  TIM_USE_MOTOR, 1),  // PWM5 - PA2
+    DEF_TIM(TIM15, CH2, PA3,  TIM_USE_MOTOR, 1),  // PWM6 - PA3
+    DEF_TIM(TIM2,  CH1, PA0,  TIM_USE_MOTOR, 1),  // PWM7 - PA0
+    DEF_TIM(TIM2,  CH2, PA1,  TIM_USE_MOTOR, 1),  // PWM8 - PA1
+    DEF_TIM(TIM2,  CH3, PB10, TIM_USE_NONE,  1),  // PWM9  - PB10 - TIM2_CH3 / UART3_TX (AF7)
+    DEF_TIM(TIM2,  CH4, PB11, TIM_USE_NONE,  1),  // PWM10 - PB11 - TIM2_CH4 / UART3_RX (AF7)
+    DEF_TIM(TIM1,  CH1, PA8,  TIM_USE_LED,   1),  // GPIO_TIMER / LED_STRIP
 };
 

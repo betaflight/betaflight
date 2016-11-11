@@ -19,14 +19,16 @@
 
 #include <platform.h>
 #include "drivers/io.h"
+
 #include "drivers/timer.h"
+#include "drivers/timer_def.h"
 #include "drivers/dma.h"
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM2,  IO_TAG(PA0),  TIM_Channel_1, TIM_USE_PPM,   1, GPIO_AF_1, NULL, 0 },
-    { TIM4,  IO_TAG(PB6),  TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 }, // PWM2 - PC6
-    { TIM4,  IO_TAG(PB7),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 }, // PWM3 - PC7
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 }, // PMW4 - PC8
-    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_2, NULL, 0 }, // PWM5 - PC9
-    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM_USE_LED,   1, GPIO_AF_2, DMA1_Channel2, DMA1_CH2_HANDLER }, // PWM5 - PC9
+    DEF_TIM(TIM2, CH1, PA0, TIM_USE_PPM,   1 ),
+    DEF_TIM(TIM4, CH1, PB6, TIM_USE_MOTOR, 1 ), // PWM2 - PC6
+    DEF_TIM(TIM4, CH2, PB7, TIM_USE_MOTOR, 1 ), // PWM3 - PC7
+    DEF_TIM(TIM4, CH3, PB8, TIM_USE_MOTOR, 1 ), // PMW4 - PC8
+    DEF_TIM(TIM4, CH4, PB9, TIM_USE_MOTOR, 1 ), // PWM5 - PC9
+    DEF_TIM(TIM1, CH1, PA8, TIM_USE_LED,   1 ), // PWM5 - PC9
 };
