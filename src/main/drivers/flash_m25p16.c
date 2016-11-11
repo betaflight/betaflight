@@ -49,6 +49,7 @@
 #define JEDEC_ID_MACRONIX_MX25L6406E   0xC22017
 #define JEDEC_ID_MICRON_N25Q128        0x20ba18
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
+#define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
 
 #define DISABLE_M25P16       IOHi(m25p16CsPin)
 #define ENABLE_M25P16        IOLo(m25p16CsPin)
@@ -177,6 +178,10 @@ static bool m25p16_readIdentification()
         case JEDEC_ID_MICRON_N25Q128:
         case JEDEC_ID_WINBOND_W25Q128:
             geometry.sectors = 256;
+            geometry.pagesPerSector = 256;
+        break;
+        case JEDEC_ID_MACRONIX_MX25L25635E:
+            geometry.sectors = 512;
             geometry.pagesPerSector = 256;
         break;
         default:
