@@ -634,7 +634,7 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                if (feature(FEATURE_VBAT)) {
+                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig->frsky_vfas_cell_voltage) {
                         vfasVoltage = vbat / batteryCellCount;
@@ -807,7 +807,7 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (feature(FEATURE_VBAT)) {
+                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     smartPortSendPackage(id, vbat * 10 / batteryCellCount ); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
