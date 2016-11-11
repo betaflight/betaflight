@@ -144,6 +144,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
+    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
 
@@ -166,6 +167,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     // perform actions
     if (!isUsingSticksToArm) {
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            rcDisarmTicks = 0;
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -176,12 +178,18 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             // Disarming via ARM BOX
             // Don't disarm via switch if failsafe is active or receiver doesn't receive data - we can't trust receiver
             // and can't afford to risk disarming in the air
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive() && !failsafeIsReceivingRxData()) {
-                if (disarm_kill_switch) {
-                    mwDisarm();
-                } else if (throttleStatus == THROTTLE_LOW) {
-                    mwDisarm();
+            if (ARMING_FLAG(ARMED) && !(IS_RC_MODE_ACTIVE(BOXFAILSAFE) && feature(FEATURE_FAILSAFE)) && rxIsReceivingSignal() && !failsafeIsActive()) {
+                rcDisarmTicks++;
+                if (rcDisarmTicks > 3) {    // Wait for at least 3 RX ticks (60ms @ 50Hz RX)
+                    if (disarm_kill_switch) {
+                        mwDisarm();
+                    } else if (throttleStatus == THROTTLE_LOW) {
+                        mwDisarm();
+                    }
                 }
+            }
+            else {
+                rcDisarmTicks = 0;
             }
         }
     }
