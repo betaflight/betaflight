@@ -88,7 +88,7 @@ static bool firstCycleComplete = false;
 static uint8_t tlm[ESC_TLM_BUFFSIZE] = { 0, };
 static uint8_t tlmFramePosition = 0;
 static serialPort_t *escTelemetryPort = NULL;
-static esc_telemetry_t escTelemetryData[4];
+static esc_telemetry_t escTelemetryData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
 
 static uint8_t escTelemetryMotor = 0;      // motor index 0 - 3
@@ -208,19 +208,16 @@ void escTelemetryProcess(uint32_t currentTime)
     }
 
     // Wait period of time before requesting telemetry (let the system boot first)
-    if (millis() < ESC_BOOTTIME)
-    {
+    if (millis() < ESC_BOOTTIME) {
         return;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT)
-    {
+    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT) {
         // Ready for starting requesting telemetry
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
         escTelemetryMotor = 0;
         escTriggerTimestamp = currentTimeMs;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY)
-    {
+    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY) {
         if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
 
         motorDmaOutput_t * const motor = getMotorDmaOutput(escTelemetryMotor);
@@ -228,8 +225,7 @@ void escTelemetryProcess(uint32_t currentTime)
         escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
     }
 
-    if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs)
-    {
+    if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs) {
         // ESC did not repond in time, skip to next motor
         escTelemetryData[escTelemetryMotor].skipped = true;
         selectNextMotor();
@@ -241,18 +237,15 @@ void escTelemetryProcess(uint32_t currentTime)
     // Get received frame status
     uint8_t state = escTelemetryFrameStatus();
 
-    if (state == ESC_TLM_FRAME_COMPLETE)
-    {
+    if (state == ESC_TLM_FRAME_COMPLETE) {
         // Wait until all ESCs are processed
-        if (firstCycleComplete)
-        {
-            int i;
+        if (firstCycleComplete) {
             escCurrent = 0;
             escConsumption = 0;
-            for (i = 0; i < MAX_DSHOT_MOTORS; i++)             // Motor count for Dshot limited to 4
-            {
-                if (!escTelemetryData[i].skipped)
-                {
+            pwmOutputPort_t *motors = pwmGetMotors();
+
+            for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+                if (!escTelemetryData[i].skipped && motors[i].enabled) {
                     escVbat = escVbat == 0 ? escTelemetryData[i].voltage : (escVbat + escTelemetryData[i].voltage) / 2;
                     escCurrent = escCurrent + escTelemetryData[i].current;
                     escConsumption = escConsumption + escTelemetryData[i].consumption;
@@ -271,7 +264,7 @@ void escTelemetryProcess(uint32_t currentTime)
 static void selectNextMotor(void)
 {
     escTelemetryMotor++;
-    if (escTelemetryMotor > MAX_DSHOT_MOTORS-1) {           // Motor count for Dshot limited to 4
+    if (escTelemetryMotor >= MAX_SUPPORTED_MOTORS || !(pwmGetMotors()[escTelemetryMotor].enabled)) {
         escTelemetryMotor = 0;
         firstCycleComplete = true;
     }
@@ -285,7 +278,9 @@ static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
     uint8_t crc_u = crc;
     crc_u ^= crc_seed;
 
-    for (int i=0; i<8; i++) crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 );
+    for (int i=0; i<8; i++) {
+        crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 );
+    }
 
     return (crc_u);
 }
