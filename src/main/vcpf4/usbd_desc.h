@@ -30,7 +30,7 @@
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
   */
- 
+
 /** @defgroup USB_DESC
   * @brief general defines for the usb device library file
   * @{
@@ -95,9 +95,9 @@ uint8_t *     USBD_USR_ConfigStrDescriptor( uint8_t speed , uint16_t *length);
 uint8_t *     USBD_USR_InterfaceStrDescriptor( uint8_t speed , uint16_t *length);
 
 #ifdef USB_SUPPORT_USER_STRING_DESC
-uint8_t *     USBD_USR_USRStringDesc (uint8_t speed, uint8_t idx , uint16_t *length); 
-#endif /* USB_SUPPORT_USER_STRING_DESC */ 
- 
+uint8_t *     USBD_USR_USRStringDesc (uint8_t speed, uint8_t idx , uint16_t *length);
+#endif /* USB_SUPPORT_USER_STRING_DESC */
+
 /**
   * @}
   */

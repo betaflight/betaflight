@@ -25,7 +25,7 @@
 #include "drivers/timer_def.h"
 
 /*
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = { 
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM8, IO_TAG(PC7), TIM_Channel_2, TIM_USE_PPM,                 0, GPIO_AF_TIM8, NULL,         0,             0  }, // PPM IN
     { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM_USE_MOTOR,               1, GPIO_AF_TIM5, DMA1_Stream2, DMA_Channel_6, DMA1_ST2_HANDLER }, // S1_OUT
     { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM_USE_MOTOR,               1, GPIO_AF_TIM5, DMA1_Stream4, DMA_Channel_6, DMA1_ST4_HANDLER }, // S2_OUT
@@ -36,7 +36,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 };
 */
 
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = { 
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     DEF_TIM(TIM8, CH2, PC7, TIM_USE_PPM,                 0, 0 ), // PPM IN
     DEF_TIM(TIM5, CH1, PA0, TIM_USE_MOTOR,               0, 0 ), // S1_OUT
     DEF_TIM(TIM5, CH2, PA1, TIM_USE_MOTOR,               0, 0 ), // S2_OUT

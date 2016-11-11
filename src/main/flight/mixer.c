@@ -355,7 +355,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 void mixerConfigureOutput(void)
 {
     syncMotorOutputWithPidLoop = pwmIsSynced();
-    
+
     motorCount = QUAD_MOTOR_COUNT;
 
     for (uint8_t i = 0; i < motorCount; i++) {

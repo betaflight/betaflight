@@ -153,7 +153,7 @@ typedef struct master_s {
     ppmConfig_t ppmConfig;
     pwmConfig_t pwmConfig;
 #endif
-    
+
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
 #endif
@@ -207,10 +207,10 @@ typedef struct master_s {
     char name[MAX_NAME_LENGTH + 1];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
-    uint8_t chk;                            // XOR checksum 
-    /* 
+    uint8_t chk;                            // XOR checksum
+    /*
         do not add properties after the CHK
-        as it is assumed to exist at length-1 
+        as it is assumed to exist at length-1
     */
 } master_t;
 

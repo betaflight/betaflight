@@ -280,7 +280,7 @@ void init(void)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);        
+        pwmRxInit(&masterConfig.pwmConfig);
     }
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif

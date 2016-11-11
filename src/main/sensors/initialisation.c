@@ -256,7 +256,7 @@ bool detectGyro(void)
         }
 #endif
         ; // fallthrough
-        
+
         case GYRO_ICM20689:
 #ifdef USE_GYRO_SPI_ICM20689
             if (icm20689SpiGyroDetect(&gyro))

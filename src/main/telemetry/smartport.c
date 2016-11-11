@@ -385,7 +385,7 @@ static void processMspPacket(mspPacket_t* packet)
     if (mspFcProcessCommand(packet, &smartPortMspReply, NULL) == MSP_RESULT_ERROR) {
         sbufWriteU8(&smartPortMspReply.buf, SMARTPORT_MSP_ERROR);
     }
-    
+
     // change streambuf direction
     sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
     smartPortMspReplyPending = true;
@@ -420,7 +420,7 @@ bool smartPortSendMspReply()
     uint8_t packet[SMARTPORT_PAYLOAD_SIZE];
     uint8_t* p = packet;
     uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-    
+
     sbuf_t* txBuf = &smartPortMspReply.buf;
 
     // detect first reply packet
@@ -496,11 +496,11 @@ void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
     static uint8_t lastSeq = 0;
     static uint8_t checksum = 0;
     static mspPacket_t cmd;
-    
+
     // re-assemble MSP frame & forward to MSP port when complete
     uint8_t* p = ((uint8_t*)sp_frame) + SMARTPORT_PAYLOAD_OFFSET;
     uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-    
+
     uint8_t head = *p++;
     uint8_t seq = head & SMARTPORT_MSP_SEQ_MASK;
     uint8_t version = (head & SMARTPORT_MSP_VER_MASK) >> SMARTPORT_MSP_VER_SHIFT;
@@ -594,7 +594,7 @@ void handleSmartPortTelemetry(void)
             handleSmartPortMspFrame(&smartPortRxBuffer);
         }
     }
-    
+
     while (smartPortHasRequest) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
@@ -607,7 +607,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-        
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -627,7 +627,7 @@ void handleSmartPortTelemetry(void)
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     //convert to knots: 1cm/s = 0.0194384449 knots
                     //Speed should be sent in knots/1000 (GPS speed is in cm/s)
-                    uint32_t tmpui = GPS_speed * 1944 / 100; 
+                    uint32_t tmpui = GPS_speed * 1944 / 100;
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
                 }

@@ -17,7 +17,7 @@
 
 //
 // CMS things for blackbox and flashfs.
-// 
+//
 
 #include <stdbool.h>
 #include <stdint.h>

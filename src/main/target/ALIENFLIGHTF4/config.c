@@ -41,7 +41,7 @@
 
 
 // alternative defaults settings for AlienFlight targets
-void targetConfiguration(master_t *config) 
+void targetConfiguration(master_t *config)
 {
     config->mag_hardware = MAG_NONE;            // disabled by default
     config->rxConfig.spektrum_sat_bind = 5;
