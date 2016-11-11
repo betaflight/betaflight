@@ -118,11 +118,11 @@ void adcInit(drv_adc_config_t *init)
 
     const adcDevice_t adc = adcHardware[device];
 
-    for (int  i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i, 0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = configuredAdcChannels++;
@@ -133,7 +133,7 @@ void adcInit(drv_adc_config_t *init)
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, RESOURCE_INDEX(device));
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Channelx);
     DMA_InitTypeDef DMA_InitStructure;

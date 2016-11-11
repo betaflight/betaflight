@@ -41,7 +41,7 @@ static IO_t HWDetectPin = IO_NONE;
 void detectHardwareRevision(void)
 {
     HWDetectPin = IOGetByTag(IO_TAG(HW_PIN));
-    IOInit(HWDetectPin, OWNER_SYSTEM, RESOURCE_INPUT, 0);
+    IOInit(HWDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPin, IOCFG_IPU);
 
     // Check hardware revision

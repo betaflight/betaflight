@@ -1,7 +1,21 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #pragma once
-
-#define RESOURCE_INDEX(x) (x + 1)
 
 typedef enum {
     OWNER_FREE = 0,
@@ -9,49 +23,45 @@ typedef enum {
     OWNER_PPMINPUT,
     OWNER_MOTOR,
     OWNER_SERVO,
-    OWNER_SOFTSERIAL,
+    OWNER_LED,
     OWNER_ADC,
-    OWNER_SERIAL,
+    OWNER_ADC_BATT,
+    OWNER_ADC_CURR,
+    OWNER_ADC_EXT,
+    OWNER_ADC_RSSI,
+    OWNER_SERIAL_TX,
+    OWNER_SERIAL_RX,
     OWNER_PINDEBUG,
     OWNER_TIMER,
     OWNER_SONAR_TRIGGER,
     OWNER_SONAR_ECHO,
     OWNER_SYSTEM,
-    OWNER_SPI,
-    OWNER_I2C,
-    OWNER_SDCARD,
-    OWNER_FLASH,
+    OWNER_SPI_SCK,
+    OWNER_SPI_MISO,
+    OWNER_SPI_MOSI,
+    OWNER_I2C_SCL,
+    OWNER_I2C_SDA,
+    OWNER_SDCARD_CS,
+    OWNER_FLASH_CS,
+    OWNER_BARO_CS,
+    OWNER_MPU_CS,
+    OWNER_OSD_CS,
+    OWNER_RX_SPI_CS,
+    OWNER_SPI_CS,
+    OWNER_MPU_EXTI,
+    OWNER_BARO_EXTI,
     OWNER_USB,
+    OWNER_USB_DETECT,
     OWNER_BEEPER,
     OWNER_OSD,
-    OWNER_BARO,
-    OWNER_MPU,
+    OWNER_SDCARD_DETECT,
+    OWNER_RX_BIND,
     OWNER_INVERTER,
     OWNER_LED_STRIP,
-    OWNER_LED,
-    OWNER_RX,
-    OWNER_TX,
-    OWNER_SOFTSPI,
-    OWNER_RX_SPI,
-    OWNER_MAX7456,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
 extern const char * const ownerNames[OWNER_TOTAL_COUNT];
 
-// Currently TIMER should be shared resource (softserial dualtimer and timerqueue needs to allocate timer channel, but pin can be used for other function)
-// with mode switching (shared serial ports, ...) this will need some improvement
-typedef enum {
-    RESOURCE_NONE       = 0,
-    RESOURCE_INPUT, RESOURCE_OUTPUT, RESOURCE_IO,
-    RESOURCE_TIMER,
-    RESOURCE_UART_TX, RESOURCE_UART_RX, RESOURCE_UART_TXRX,
-    RESOURCE_EXTI,
-    RESOURCE_I2C_SCL, RESOURCE_I2C_SDA,
-    RESOURCE_SPI_SCK, RESOURCE_SPI_MOSI, RESOURCE_SPI_MISO, RESOURCE_SPI_CS,
-    RESOURCE_ADC_BATTERY, RESOURCE_ADC_RSSI, RESOURCE_ADC_EXTERNAL1, RESOURCE_ADC_CURRENT,
-    RESOURCE_RX_CE,
-    RESOURCE_TOTAL_COUNT
-} resourceType_e;
-
-extern const char * const resourceNames[RESOURCE_TOTAL_COUNT];
+#define RESOURCE_INDEX(x) (x + 1)
+#define RESOURCE_SOFT_OFFSET    10

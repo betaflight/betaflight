@@ -79,7 +79,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     static DMA_HandleTypeDef  hdma_tim;
 
     ws2811IO = IOGetByTag(ioTag);
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();

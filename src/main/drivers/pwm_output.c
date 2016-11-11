@@ -228,7 +228,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         }
 #endif
         
-        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_OUTPUT, RESOURCE_INDEX(motorIndex));
+        IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
         
         motors[motorIndex].pwmWritePtr = pwmWritePtr;
@@ -271,7 +271,7 @@ void servoInit(const servoConfig_t *servoConfig)
         
         servos[servoIndex].io = IOGetByTag(tag);
         
-        IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_OUTPUT, RESOURCE_INDEX(servoIndex));
+        IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_INDEX(servoIndex));
         IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
         
         const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_ANY);

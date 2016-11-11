@@ -65,7 +65,7 @@ void bmp280SpiInit(void)
     }
 
     bmp280CsPin = IOGetByTag(IO_TAG(BMP280_CS_PIN));
-    IOInit(bmp280CsPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
+    IOInit(bmp280CsPin, OWNER_BARO_CS, 0);
     IOConfigGPIO(bmp280CsPin, IOCFG_OUT_PP);
 
     DISABLE_BMP280;

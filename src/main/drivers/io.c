@@ -77,19 +77,7 @@ const struct ioPortDef_s ioPortDefs[] = {
     { RCC_AHB1(GPIOE) },
     { RCC_AHB1(GPIOF) },
 };
-# endif
-
-const char * const ownerNames[OWNER_TOTAL_COUNT] = {
-    "FREE", "PWM", "PPM", "MOTOR", "SERVO", "SOFTSERIAL", "ADC", "SERIAL", "DEBUG", "TIMER",
-    "SONAR_TRIGGER", "SONAR_ECHO", "SYSTEM", "SPI", "I2C", "SDCARD", "FLASH", "USB", "BEEPER", "OSD",
-    "BARO", "MPU", "INVERTER", "LED_STRIP", "LED", "RX", "TX", "SOFT_SPI", "RX_SPI", "MAX7456"
-};
-
-const char * const resourceNames[RESOURCE_TOTAL_COUNT] = {
-    "", // NONE
-    "IN", "OUT", "IN / OUT", "TIMER","UART TX","UART RX","UART TX/RX","EXTI","SCL",
-    "SDA", "SCK","MOSI","MISO","CS","BATTERY","RSSI","EXT","CURRENT"
-};
+#endif
 
 ioRec_t* IO_Rec(IO_t io)
 {
@@ -248,11 +236,10 @@ void IOToggle(IO_t io)
 }
 
 // claim IO pin, set owner and resources
-void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index)
+void IOInit(IO_t io, resourceOwner_e owner, uint8_t index)
 {
     ioRec_t *ioRec = IO_Rec(io);
     ioRec->owner = owner;
-    ioRec->resource = resource;
     ioRec->index = index;
 }
 
@@ -266,12 +253,6 @@ resourceOwner_e IOGetOwner(IO_t io)
 {
     ioRec_t *ioRec = IO_Rec(io);
     return ioRec->owner;
-}
-
-resourceType_e IOGetResource(IO_t io)
-{
-    ioRec_t *ioRec = IO_Rec(io);
-    return ioRec->resource;
 }
 
 #if defined(STM32F1)

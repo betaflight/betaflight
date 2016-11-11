@@ -36,7 +36,7 @@ static IO_t pin = IO_NONE;
 void initInverter(void)
 {
     pin = IOGetByTag(IO_TAG(INVERTER));
-    IOInit(pin, OWNER_INVERTER, RESOURCE_OUTPUT, 1);
+    IOInit(pin, OWNER_INVERTER, 1);
     IOConfigGPIO(pin, IOCFG_OUT_PP);
 
     inverterSet(false);

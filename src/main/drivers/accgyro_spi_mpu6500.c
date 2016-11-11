@@ -68,7 +68,7 @@ static void mpu6500SpiInit(void)
     }
 
     mpuSpi6500CsPin = IOGetByTag(IO_TAG(MPU6500_CS_PIN));
-    IOInit(mpuSpi6500CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpuSpi6500CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6500CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);

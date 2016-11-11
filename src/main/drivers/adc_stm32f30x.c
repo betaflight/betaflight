@@ -147,7 +147,7 @@ void adcInit(drv_adc_config_t *init)
         if (!adcConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC, RESOURCE_ADC_BATTERY+i,0);
+        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i,0);
         IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AN, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL));
         adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
         adcConfig[i].dmaIndex = adcChannelCount++;
@@ -158,7 +158,7 @@ void adcInit(drv_adc_config_t *init)
     RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
-    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, RESOURCE_INDEX(device));
+    dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
 
     DMA_DeInit(adc.DMAy_Channelx);
 

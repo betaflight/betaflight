@@ -407,7 +407,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
         port->timerHardware = timer;
 
         IO_t io = IOGetByTag(pwmConfig->ioTags[channel]);
-        IOInit(io, OWNER_PWMINPUT, RESOURCE_INPUT, RESOURCE_INDEX(channel));
+        IOInit(io, OWNER_PWMINPUT, RESOURCE_INDEX(channel));
         IOConfigGPIO(io, IOCFG_IPD);
 
 #if defined(USE_HAL_DRIVER)
@@ -471,7 +471,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
     port->timerHardware = timer;
 
     IO_t io = IOGetByTag(ppmConfig->ioTag);
-    IOInit(io, OWNER_PPMINPUT, RESOURCE_INPUT, 0);
+    IOInit(io, OWNER_PPMINPUT, 0);
     IOConfigGPIO(io, IOCFG_IPD);
 
 #if defined(USE_HAL_DRIVER)
