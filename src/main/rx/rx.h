@@ -53,19 +53,16 @@ typedef enum {
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
     SERIALRX_IBUS = 7,
     SERIALRX_JETIEXBUS = 8,
-    SERIALRX_PROVIDER_MAX = SERIALRX_JETIEXBUS
+    SERIALRX_PROVIDER_COUNT,
+    SERIALRX_PROVIDER_MAX = SERIALRX_PROVIDER_COUNT - 1
 } SerialRXType;
 
-#define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
-
-#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT 12
-#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT 8
-#define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
+#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
+#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT  8
+#define MAX_SUPPORTED_RC_CHANNEL_COUNT              18
 
 #define NON_AUX_CHANNEL_COUNT 4
 #define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
-
-
 
 #if MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT > MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
 #define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT
@@ -142,14 +139,14 @@ typedef struct rxConfig_s {
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
 struct rxRuntimeConfig_s;
-typedef uint16_t (*rcReadRawDataPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
-typedef uint8_t (*rcFrameStatusPtr)(void);
+typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
+typedef uint8_t (*rcFrameStatusFnPtr)(void);
 
 typedef struct rxRuntimeConfig_s {
     uint8_t          channelCount; // number of RC channels as reported by current input driver
     uint16_t         rxRefreshRate;
-    rcReadRawDataPtr rcReadRawFunc;
-    rcFrameStatusPtr rcFrameStatusFunc;
+    rcReadRawDataFnPtr rcReadRawFn;
+    rcFrameStatusFnPtr rcFrameStatusFn;
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
@@ -157,7 +154,7 @@ extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only need
 struct modeActivationCondition_s;
 void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(const rxConfig_t *rxConfigToUse);
-bool rxUpdate(uint32_t currentTime);
+bool rxUpdateCheck(uint32_t currentTime, uint32_t currentDeltaTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);

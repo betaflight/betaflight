@@ -17,5 +17,4 @@
 
 #pragma once
 
-uint8_t sbusFrameStatus(void);
 bool sbusInit(const rxConfig_t *initialRxConfig, rxRuntimeConfig_t *rxRuntimeConfig);

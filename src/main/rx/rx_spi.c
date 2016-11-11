@@ -140,8 +140,8 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFunc = rxSpiReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = rxSpiFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
 
     return ret;
 }

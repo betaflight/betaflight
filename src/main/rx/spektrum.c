@@ -106,7 +106,7 @@ static void spektrumDataReceive(uint16_t c)
 
 static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 
-uint8_t spektrumFrameStatus(void)
+static uint8_t spektrumFrameStatus(void)
 {
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
@@ -265,8 +265,8 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         break;
     }
 
-    rxRuntimeConfig->rcReadRawFunc = spektrumReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = spektrumFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

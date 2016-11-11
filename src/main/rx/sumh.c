@@ -80,7 +80,7 @@ static void sumhDataReceive(uint16_t c)
     }
 }
 
-uint8_t sumhFrameStatus(void)
+static uint8_t sumhFrameStatus(void)
 {
     uint8_t channelIndex;
 
@@ -119,8 +119,8 @@ bool sumhInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = SUMH_MAX_CHANNEL_COUNT;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFunc = sumhReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = sumhFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = sumhReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sumhFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
