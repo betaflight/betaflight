@@ -527,8 +527,8 @@ static const char * const lookupTableSuperExpoYaw[] = {
 };
 
 static const char * const lookupTablePwmProtocol[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED", 
-#ifdef USE_DSHOT 
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
+#ifdef USE_DSHOT
     "DSHOT600", "DSHOT300", "DSHOT150"
 #endif
 };
@@ -3754,15 +3754,15 @@ typedef struct {
 const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
     { OWNER_BEEPER,        &masterConfig.beeperConfig.ioTag, 0 },
-#endif 
+#endif
     { OWNER_MOTOR,         &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
     { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
-#endif 
+#endif
 #ifndef SKIP_RX_PWM_PPM
     { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
     { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
-#endif 
+#endif
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
     { OWNER_SONAR_ECHO,    &masterConfig.sonarConfig.echoTag,    0 },
@@ -3853,14 +3853,14 @@ static void cliResource(char *cmdline)
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
             const char* owner;
             owner = ownerNames[dmaGetOwner(i)];
-            
+
             cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
             uint8_t resourceIndex = dmaGetResourceIndex(i);
             if (resourceIndex > 0) {
                 cliPrintf(" %s %d\r\n", owner, resourceIndex);
             } else {
                 cliPrintf(" %s\r\n", owner);
-            }            
+            }
         }
 
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -3874,14 +3874,14 @@ static void cliResource(char *cmdline)
     int index = 0;
     char *pch = NULL;
     char *saveptr;
-    
+
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
             cliPrint("Invalid resource\r\n");
             return;
         }
-        
+
         if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
             break;
         }
@@ -3890,7 +3890,7 @@ static void cliResource(char *cmdline)
     if (resourceTable[resourceIndex].maxIndex > 0) {
         pch = strtok_r(NULL, " ", &saveptr);
         index = atoi(pch);
-        
+
         if (index <= 0 || index > resourceTable[resourceIndex].maxIndex) {
             cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
             return;
@@ -3899,7 +3899,7 @@ static void cliResource(char *cmdline)
 
     pch = strtok_r(NULL, " ", &saveptr);
     ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
-    
+
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
         if (strcasecmp(pch, "NONE") == 0) {
@@ -3916,7 +3916,7 @@ static void cliResource(char *cmdline)
                 pch++;
                 pin = atoi(pch);
                 if (pin < 16) {
-                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin))); 
+                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
                     if (rec) {
                         *tag = DEFIO_TAG_MAKE(port, pin);
                         cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
@@ -3928,7 +3928,7 @@ static void cliResource(char *cmdline)
             }
         }
     }
-    
+
     cliShowParseError();
 }
 #endif

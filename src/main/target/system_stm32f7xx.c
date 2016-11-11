@@ -192,7 +192,7 @@
       {
         while(1) { ; }
       }
-    
+
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2
                                   |RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART6
                                   |RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5
@@ -216,7 +216,7 @@
 
     // Activating the timerprescalers while the APBx prescalers are 1/2/4 will connect the TIMxCLK to HCLK which has been configured to 216MHz
     __HAL_RCC_TIMCLKPRESCALER(RCC_TIMPRES_ACTIVATED);
-    
+
     SystemCoreClockUpdate();
   }
 
@@ -266,7 +266,7 @@ void SystemInit(void)
 #else
   SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
-  
+
   /* Enable I-Cache */
   //SCB_EnableICache();
 
@@ -275,7 +275,7 @@ void SystemInit(void)
 
   /* Configure the system clock to 216 MHz */
   SystemClock_Config();
-  
+
   //if(SystemCoreClock != 260000000)
   {
       //while(1)
@@ -283,7 +283,7 @@ void SystemInit(void)
           // There is a mismatch between the configured clock and the expected clock in portable.h
       }
   }
-  
+
 
 }
 

@@ -97,7 +97,7 @@ static void cmsx_Vtx_ConfigWriteback(void)
 static long cmsx_Vtx_onEnter(void)
 {
     cmsx_Vtx_FeatureRead();
-    cmsx_Vtx_ConfigRead(); 
+    cmsx_Vtx_ConfigRead();
 
     return 0;
 }

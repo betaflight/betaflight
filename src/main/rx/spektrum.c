@@ -123,7 +123,7 @@ uint8_t spektrumFrameStatus(void)
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
     } else if(spek_fade_last_sec != current_secs) {
-        // If the difference is > 1, then we missed several seconds worth of frames and 
+        // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
         if((current_secs - spek_fade_last_sec) == 1) {
             if(rssi_channel != 0) {
@@ -291,7 +291,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     if (rssi_channel >= rxRuntimeConfig->channelCount) {
         rssi_channel = 0;
     }
-    
+
     return spektrumPort != NULL;
 }
 #endif // SERIAL_RX
