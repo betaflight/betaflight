@@ -688,12 +688,6 @@ void subTaskMainSubprocesses(void)
         gyro.temperature(&telemTemperature1);
     }
 
-#ifdef MAG
-        if (sensors(SENSOR_MAG)) {
-            updateMagHold();
-        }
-#endif
-
 #ifdef GTUNE
         updateGtuneState();
 #endif
@@ -710,6 +704,13 @@ void subTaskMainSubprocesses(void)
             }
         }
 #endif
+
+#ifdef MAG
+        if (sensors(SENSOR_MAG)) {
+            updateMagHold();
+        }
+#endif
+
 
     // If we're armed, at minimum throttle, and we do arming via the
     // sticks, do not process yaw input from the rx.  We do this so the
