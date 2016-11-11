@@ -545,8 +545,8 @@ void processRx(uint32_t currentTime)
     if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP)
         && !STATE(FIXED_WING)
-		&& !feature(FEATURE_3D)
-		&& !isAirmodeActive()
+        && !feature(FEATURE_3D)
+        && !isAirmodeActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
