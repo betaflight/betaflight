@@ -204,7 +204,7 @@ bool mpu6000SpiDetect(void)
     return false;
 }
 
-static void mpu6000AccAndGyroInit(void) 
+static void mpu6000AccAndGyroInit(void)
 {
     if (mpuSpi6000InitDone) {
         return;

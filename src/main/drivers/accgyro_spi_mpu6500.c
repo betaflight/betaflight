@@ -84,9 +84,9 @@ bool mpu6500SpiDetect(void)
 
     mpu6500ReadRegister(MPU_RA_WHO_AM_I, 1, &tmp);
 
-    if (tmp == MPU6500_WHO_AM_I_CONST || 
-        tmp == MPU9250_WHO_AM_I_CONST || 
-        tmp == ICM20608G_WHO_AM_I_CONST || 
+    if (tmp == MPU6500_WHO_AM_I_CONST ||
+        tmp == MPU9250_WHO_AM_I_CONST ||
+        tmp == ICM20608G_WHO_AM_I_CONST ||
         tmp == ICM20602_WHO_AM_I_CONST) {
         return true;
     }
@@ -103,13 +103,13 @@ void mpu6500SpiGyroInit(uint8_t lpf)
 {
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_SLOW);
     delayMicroseconds(1);
-    
+
     mpu6500GyroInit(lpf);
-    
+
     // Disable Primary I2C Interface
     mpu6500WriteRegister(MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
     delay(100);
-    
+
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_FAST);
     delayMicroseconds(1);
 }

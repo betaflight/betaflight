@@ -270,7 +270,7 @@ void mpuIntExtiInit(void)
     EXTIEnable(mpuIntIO, true);
 #endif
 #endif
-    
+
     mpuExtiInitDone = true;
 }
 

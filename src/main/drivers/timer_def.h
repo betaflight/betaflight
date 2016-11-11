@@ -73,21 +73,21 @@
 #define DEF_TIM_DMA__TIM15_COM   DMA1_CH5
 #define DEF_TIM_DMA__TIM15_CH1N  DMA1_CH5
 
-#ifdef REMAP_TIM16_DMA 
+#ifdef REMAP_TIM16_DMA
 #define DEF_TIM_DMA__TIM16_CH1   DMA1_CH6
 #define DEF_TIM_DMA__TIM16_UP    DMA1_CH6
 #else
 #define DEF_TIM_DMA__TIM16_CH1   DMA1_CH3
 #define DEF_TIM_DMA__TIM16_UP    DMA1_CH3
-#endif 
+#endif
 
-#ifdef REMAP_TIM17_DMA 
+#ifdef REMAP_TIM17_DMA
 #define DEF_TIM_DMA__TIM17_CH1   DMA1_CH7
 #define DEF_TIM_DMA__TIM17_UP    DMA1_CH7
 #else
 #define DEF_TIM_DMA__TIM17_CH1   DMA1_CH1
 #define DEF_TIM_DMA__TIM17_UP    DMA1_CH1
-#endif 
+#endif
 
 #define DEF_TIM_DMA__TIM8_CH3    DMA2_CH1
 #define DEF_TIM_DMA__TIM8_UP     DMA2_CH1
@@ -134,9 +134,9 @@
 #define GPIO_AF__PA15_TIM8_CH1    GPIO_AF_2
 
 #define GPIO_AF__PA7_TIM8_CH1N    GPIO_AF_4
- 
+
 #define GPIO_AF__PA14_TIM4_CH2    GPIO_AF_5
- 
+
 #define GPIO_AF__PA7_TIM1_CH1N    GPIO_AF_6
 #define GPIO_AF__PA8_TIM1_CH1     GPIO_AF_6
 #define GPIO_AF__PA9_TIM1_CH2     GPIO_AF_6
@@ -165,7 +165,7 @@
 #define GPIO_AF__PB11_TIM2_CH4    GPIO_AF_1
 #define GPIO_AF__PB14_TIM15_CH1   GPIO_AF_1
 #define GPIO_AF__PB15_TIM15_CH2   GPIO_AF_1
- 
+
 #define GPIO_AF__PB0_TIM3_CH3     GPIO_AF_2
 #define GPIO_AF__PB1_TIM3_CH4     GPIO_AF_2
 #define GPIO_AF__PB4_TIM3_CH1     GPIO_AF_2
@@ -175,35 +175,35 @@
 #define GPIO_AF__PB8_TIM4_CH3     GPIO_AF_2
 #define GPIO_AF__PB9_TIM4_CH4     GPIO_AF_2
 #define GPIO_AF__PB15_TIM15_CH1N  GPIO_AF_2
- 
+
 #define GPIO_AF__PB0_TIM8_CH2N    GPIO_AF_4
 #define GPIO_AF__PB1_TIM8_CH3N    GPIO_AF_4
 #define GPIO_AF__PB3_TIM8_CH1N    GPIO_AF_4
 #define GPIO_AF__PB4_TIM8_CH2N    GPIO_AF_4
 #define GPIO_AF__PB15_TIM1_CH3N   GPIO_AF_4
- 
+
 #define GPIO_AF__PB6_TIM8_CH1     GPIO_AF_5
- 
+
 #define GPIO_AF__PB0_TIM1_CH2N    GPIO_AF_6
 #define GPIO_AF__PB1_TIM1_CH3N    GPIO_AF_6
 #define GPIO_AF__PB13_TIM1_CH1N   GPIO_AF_6
 #define GPIO_AF__PB14_TIM1_CH2N   GPIO_AF_6
- 
+
 #define GPIO_AF__PB5_TIM17_CH1    GPIO_AF_10
 #define GPIO_AF__PB7_TIM3_CH4     GPIO_AF_10
 #define GPIO_AF__PB8_TIM8_CH2     GPIO_AF_10
 #define GPIO_AF__PB9_TIM8_CH3     GPIO_AF_10
- 
+
 #define GPIO_AF__PC6_TIM3_CH1     GPIO_AF_2
 #define GPIO_AF__PC7_TIM3_CH2     GPIO_AF_2
 #define GPIO_AF__PC8_TIM3_CH3     GPIO_AF_2
 #define GPIO_AF__PC9_TIM3_CH4     GPIO_AF_2
- 
+
 #define GPIO_AF__PC6_TIM8_CH1     GPIO_AF_4
 #define GPIO_AF__PC7_TIM8_CH2     GPIO_AF_4
 #define GPIO_AF__PC8_TIM8_CH3     GPIO_AF_4
 #define GPIO_AF__PC9_TIM8_CH4     GPIO_AF_4
- 
+
 #define GPIO_AF__PC10_TIM8_CH1N   GPIO_AF_4
 #define GPIO_AF__PC11_TIM8_CH2N   GPIO_AF_4
 #define GPIO_AF__PC12_TIM8_CH3N   GPIO_AF_4
@@ -252,11 +252,11 @@
 
 #define DEF_TIM_DMA_STR_0__TIM2_CH1    DMA1_ST5
 #define DEF_TIM_DMA_STR_0__TIM2_CH2    DMA1_ST6
-#define DEF_TIM_DMA_STR_0__TIM2_CH3    DMA1_ST1 
+#define DEF_TIM_DMA_STR_0__TIM2_CH3    DMA1_ST1
 #define DEF_TIM_DMA_STR_0__TIM2_CH4    DMA1_ST7
 #define DEF_TIM_DMA_STR_1__TIM2_CH4    DMA1_ST6
 
-#define DEF_TIM_DMA_STR_0__TIM3_CH1    DMA1_ST4 
+#define DEF_TIM_DMA_STR_0__TIM3_CH1    DMA1_ST4
 #define DEF_TIM_DMA_STR_0__TIM3_CH2    DMA1_ST5
 #define DEF_TIM_DMA_STR_0__TIM3_CH3    DMA1_ST7
 #define DEF_TIM_DMA_STR_0__TIM3_CH4    DMA1_ST2
@@ -306,11 +306,11 @@
 
 #define DEF_TIM_DMA_CHN_0__TIM2_CH1    DMA_Channel_3
 #define DEF_TIM_DMA_CHN_0__TIM2_CH2    DMA_Channel_3
-#define DEF_TIM_DMA_CHN_0__TIM2_CH3    DMA_Channel_3 
+#define DEF_TIM_DMA_CHN_0__TIM2_CH3    DMA_Channel_3
 #define DEF_TIM_DMA_CHN_0__TIM2_CH4    DMA_Channel_3
 #define DEF_TIM_DMA_CHN_1__TIM2_CH4    DMA_Channel_3
 
-#define DEF_TIM_DMA_CHN_0__TIM3_CH1    DMA_Channel_5 
+#define DEF_TIM_DMA_CHN_0__TIM3_CH1    DMA_Channel_5
 #define DEF_TIM_DMA_CHN_0__TIM3_CH2    DMA_Channel_5
 #define DEF_TIM_DMA_CHN_0__TIM3_CH3    DMA_Channel_5
 #define DEF_TIM_DMA_CHN_0__TIM3_CH4    DMA_Channel_5
@@ -371,7 +371,7 @@
 #define DMA_NONE_STREAM      NULL
 
 
-#define DEF_TIM_CHAN(chan) DEF_CHAN_ ## chan 
+#define DEF_TIM_CHAN(chan) DEF_CHAN_ ## chan
 #define DEF_TIM_OUTPUT(chan, out) ( DEF_CHAN_ ## chan ## _OUTPUT | out )
 
 #define DMA_NONE_HANDLER     0
@@ -384,8 +384,8 @@
 #define DEF_CHAN_CH2N        TIM_Channel_2
 #define DEF_CHAN_CH3N        TIM_Channel_3
 #define DEF_CHAN_CH4N        TIM_Channel_4
-    
-#define DEF_CHAN_CH1_OUTPUT  TIMER_OUTPUT_NONE 
+
+#define DEF_CHAN_CH1_OUTPUT  TIMER_OUTPUT_NONE
 #define DEF_CHAN_CH2_OUTPUT  TIMER_OUTPUT_NONE
 #define DEF_CHAN_CH3_OUTPUT  TIMER_OUTPUT_NONE
 #define DEF_CHAN_CH4_OUTPUT  TIMER_OUTPUT_NONE

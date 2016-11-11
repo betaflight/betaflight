@@ -72,7 +72,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* Compute the prescaler value */
     uint16_t prescalerValue = (uint16_t) (SystemCoreClock / WS2811_TIMER_HZ) - 1;
-    
+
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = WS2811_TIMER_PERIOD; // 800kHz

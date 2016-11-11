@@ -39,11 +39,11 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 }, 
+    { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
 #ifdef ADC24_DMA_REMAP
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 } 
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 }
 #else
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 } 
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 }
 #endif
 };
 

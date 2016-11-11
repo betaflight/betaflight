@@ -815,7 +815,7 @@ void timerOCPreloadConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t preload)
         break;
     }
 }
-#endif 
+#endif
 
 volatile timCCR_t* timerCCR(TIM_TypeDef *tim, uint8_t channel)
 {

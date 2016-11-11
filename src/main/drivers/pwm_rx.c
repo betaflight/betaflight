@@ -349,7 +349,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
     if(Handle == NULL) return;
-    
+
     TIM_IC_InitTypeDef TIM_ICInitStructure;
 
     TIM_ICInitStructure.ICPolarity = polarity;
@@ -390,16 +390,16 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 void pwmRxInit(const pwmConfig_t *pwmConfig)
 {
     for (int channel = 0; channel < PWM_INPUT_PORT_COUNT; channel++) {
-        
+
         pwmInputPort_t *port = &pwmInputPorts[channel];
 
         const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel], TIM_USE_PWM);
-        
+
         if (!timer) {
             /* TODO: maybe fail here if not enough channels? */
             continue;
         }
-        
+
         port->state = 0;
         port->missedEvents = 0;
         port->channel = channel;
@@ -433,7 +433,7 @@ void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer, uint8_t pwmProtocol)
         if (!motors[motorIndex].enabled || motors[motorIndex].tim != pwmTimer) {
             continue;
         }
-        
+
         switch (pwmProtocol)
         {
         case PWM_TYPE_ONESHOT125:
@@ -464,9 +464,9 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
         /* TODO: fail here? */
         return;
     }
-    
+
     ppmAvoidPWMTimerClash(timer->tim, pwmProtocol);
-    
+
     port->mode = INPUT_MODE_PPM;
     port->timerHardware = timer;
 

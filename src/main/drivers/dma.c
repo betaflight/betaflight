@@ -93,7 +93,7 @@ resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
 
 uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
 {
-    return dmaDescriptors[identifier].resourceIndex;    
+    return dmaDescriptors[identifier].resourceIndex;
 }
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
@@ -103,5 +103,5 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Channel_TypeDef* channel)
             return i;
         }
     }
-    return 0;    
+    return 0;
 }
