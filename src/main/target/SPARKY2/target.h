@@ -22,7 +22,7 @@
 
 #define USBD_PRODUCT_STRING "Sparky 2.0"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
+    #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0                    PB5

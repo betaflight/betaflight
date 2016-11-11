@@ -29,7 +29,7 @@
 #define BEEPER                  PC9
 
 #define INVERTER                PB15
-#define INVERTER_USART 	        USART6
+#define INVERTER_USART          USART6
 
 
 // MPU6500 interrupt
@@ -97,7 +97,7 @@
 #define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN 	        PA7
+#define SPI1_MOSI_PIN             PA7
 
 /*
 #define USE_SPI_DEVICE_2 //Free
