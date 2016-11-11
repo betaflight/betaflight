@@ -590,7 +590,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
-			telemetry/esc_telemetry.c \
+            telemetry/esc_telemetry.c \
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
