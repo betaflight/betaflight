@@ -2265,11 +2265,9 @@ static void cliFlashRead(char *cmdline)
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
         while (length > 0) {
-            int bytesRead;
+            int bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
 
-            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
-
-            for (uint32_t i = 0; i < bytesRead; i++) {
+            for (int i = 0; i < bytesRead; i++) {
                 cliWrite(buffer[i]);
             }
 
