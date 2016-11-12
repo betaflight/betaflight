@@ -490,6 +490,31 @@ $(OBJECT_DIR)/rx_rx_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/rx/crsf.o : \
+	$(USER_DIR)/rx/crsf.c \
+	$(USER_DIR)/rx/crsf.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/crsf.c -o $@
+
+$(OBJECT_DIR)/rx_crsf_unittest.o : \
+	$(TEST_DIR)/rx_crsf_unittest.cc \
+	$(USER_DIR)/rx/crsf.h \
+	$(USER_DIR)/rx/crsf.c \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_crsf_unittest.cc -o $@
+
+$(OBJECT_DIR)/rx_crsf_unittest : \
+	$(OBJECT_DIR)/rx/crsf.o \
+	$(OBJECT_DIR)/rx_crsf_unittest.o \
+	$(OBJECT_DIR)/common/maths.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 $(OBJECT_DIR)/telemetry/crsf.o : \
 	$(USER_DIR)/telemetry/crsf.c \
 	$(USER_DIR)/telemetry/crsf.h \
@@ -517,39 +542,6 @@ $(OBJECT_DIR)/telemetry_crsf_unittest : \
 	$(OBJECT_DIR)/common/streambuf.o \
 	$(OBJECT_DIR)/flight/gps_conversion.o \
 	$(OBJECT_DIR)/fc/runtime_config.o \
-	$(OBJECT_DIR)/gtest_main.a
-
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
-
-$(OBJECT_DIR)/rx/crsf.o : \
-	$(USER_DIR)/rx/crsf.c \
-	$(USER_DIR)/rx/crsf.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/rx/crsf.c -o $@
-
-$(OBJECT_DIR)/telemetry/crsf.o : \
-	$(USER_DIR)/telemetry/crsf.c \
-	$(USER_DIR)/telemetry/crsf.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/telemetry/crsf.c -o $@
-
-$(OBJECT_DIR)/rx_crsf_unittest.o : \
-	$(TEST_DIR)/rx_crsf_unittest.cc \
-	$(USER_DIR)/rx/crsf.h \
-	$(USER_DIR)/rx/crsf.c \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/rx_crsf_unittest.cc -o $@
-
-$(OBJECT_DIR)/rx_crsf_unittest : \
-	$(OBJECT_DIR)/rx/crsf.o \
-	$(OBJECT_DIR)/common/maths.o \
-	$(OBJECT_DIR)/rx_crsf_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@

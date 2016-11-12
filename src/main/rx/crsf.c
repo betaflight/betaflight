@@ -37,6 +37,7 @@
 #include "fc/fc_debug.h"
 #endif
 
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/utils.h"
@@ -54,14 +55,13 @@
 
 #define CRSF_TIME_NEEDED_PER_FRAME_US 1500 //!! this needs checking
 
-#define CRSF_MAX_CHANNEL        16
-
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
 
-static bool crsfFrameDone = false;
+STATIC_UNIT_TESTED bool crsfFrameDone = false;
+STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
 
-static uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
+STATIC_UNIT_TESTED uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
 /*
 Structure
@@ -101,19 +101,6 @@ struct crsfPayloadRcChannelsPacked_s {
 
 typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
-typedef union crsfFrameDef_s {
-    uint8_t deviceAddress;
-    uint8_t frameLength;
-    uint8_t type;
-    uint8_t payload[CRSF_PAYLOAD_SIZE_MAX + 1]; // +1 for CRC at end of payload
-} crsfFrameDef_t;
-
-typedef union crsfFrame_u {
-    uint8_t bytes[CRSF_FRAME_SIZE_MAX];
-    crsfFrameDef_t frame;
-} crsfFrame_t;
-
-static crsfFrame_t crsfFrame;
 
 // Receive ISR callback, called back from serial port
 static void crsfDataReceive(uint16_t c)
@@ -123,7 +110,9 @@ static void crsfDataReceive(uint16_t c)
     const uint32_t now = micros();
 
     const int32_t crsfFrameTime = now - crsfFrameStartAt;
-    DEBUG_SET(DEBUG_CRSF, 2, crsfFrameTime);
+#ifdef DEBUG_CRSF_PACKETS
+        debug[2] = crsfFrameTime;
+#endif
 
     if (crsfFrameTime > (long)(CRSF_TIME_NEEDED_PER_FRAME_US + 500)) {
         crsfFramePosition = 0;
@@ -146,6 +135,7 @@ uint8_t crsfFrameStatus(void)
     if (crsfFrameDone) {
         crsfFrameDone = false;
         if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+            crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
             // unpack the RC channels
             const crsfPayloadRcChannelsPacked_t* rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;
             crsfChannelData[0] = rcChannels->chan0;

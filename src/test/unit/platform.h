@@ -65,6 +65,11 @@ uint8_t DMA_GetFlagStatus(void *);
 void DMA_Cmd(DMA_Channel_TypeDef*, FunctionalState );
 void DMA_ClearFlag(uint32_t);
 
+typedef struct
+{
+    void* test;
+} USART_TypeDef;
+
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 

@@ -23,6 +23,7 @@
 #define BARO
 #define GPS
 #define DISPLAY
+#define SERIAL_RX
 #define TELEMETRY
 #define LED_STRIP
 #define USE_SERVOS
