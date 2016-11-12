@@ -36,6 +36,7 @@
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -156,4 +157,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // PPM, 8 PWM, UART3 RX/TX, LED Strip
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
-

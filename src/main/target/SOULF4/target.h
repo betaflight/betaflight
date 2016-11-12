@@ -105,6 +105,7 @@
 
 #define LED_STRIP
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define SPEKTRUM_BIND
 // USART3,

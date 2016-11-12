@@ -47,6 +47,7 @@
 #define USE_FLASH_M25P16
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 #define REMAP_TIM17_DMA
 
 #define USE_VCP
@@ -105,4 +106,3 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) |TIM_N(17))
-
