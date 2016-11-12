@@ -219,11 +219,11 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
         case CURRENT_SENSOR_NONE:
             amperage = 0;
             break;
-        #ifdef USE_ESC_TELEMETRY
         case CURRENT_SENSOR_ESC:
+            #ifdef USE_ESC_TELEMETRY
             amperage = getEscTelemetryCurrent();
+            #endif
             break;
-        #endif
     }
 
     #ifdef USE_ESC_TELEMETRY
