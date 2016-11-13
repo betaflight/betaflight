@@ -50,19 +50,19 @@ void taskStackCheck(void)
     const char * const stackCurrent = (char *)&stackLowMem;
 
     char *p;
-	for (p = stackLowMem; p < stackCurrent; ++p) {
-		if (*p != STACK_FILL_CHAR) {
-			break;
-		}
-	}
+    for (p = stackLowMem; p < stackCurrent; ++p) {
+        if (*p != STACK_FILL_CHAR) {
+            break;
+        }
+    }
 
     _Used_Stack_Size = (uint32_t)stackHighMem - (uint32_t)p;
 
 #ifdef DEBUG_STACK
-	debug[0] = (uint32_t)stackHighMem & 0xffff;
-	debug[1] = (uint32_t)stackLowMem & 0xffff;
-	debug[2] = (uint32_t)stackCurrent & 0xffff;
-	debug[3] = (uint32_t)p & 0xffff;
+    debug[0] = (uint32_t)stackHighMem & 0xffff;
+    debug[1] = (uint32_t)stackLowMem & 0xffff;
+    debug[2] = (uint32_t)stackCurrent & 0xffff;
+    debug[3] = (uint32_t)p & 0xffff;
 #endif
 }
 
