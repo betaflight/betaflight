@@ -148,6 +148,15 @@ void init(void)
 
     printfSupportInit();
 
+    systemInit();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    detectHardwareRevision();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -155,18 +164,9 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-    systemInit();
-
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
-
     debugMode = masterConfig.debug_mode;
-
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();

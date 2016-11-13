@@ -2,13 +2,18 @@
 
 AlienWii is now AlienFlight. This targets supports various variants of brushed and brushless flight controllers. The designs for them are released partially for public use at:
 
-http://www.alienflight.com
+http://www.alienflightng.com
 
-All published designs are flight tested by various people. The intention here is to make these flight controllers available and enable skilled users or RC vendors to build this designs.
+The legacy designs are available at:
+
+https://github.com/MJ666/Flight-Controllers
+
+All published designs are flight tested by various people. The intention here is to make these flight controllers available and enable skilled users and in some cases RC vendors to build this designs.
 
 Some variants of the AlienFlight controllers will be available for purchase from:
 
 http://www.microfpv.eu
+https://micro-motor-warehouse.com
 
 Here are the general hardware specifications for this boards:
 
@@ -32,7 +37,9 @@ Here are the general hardware specifications for this boards:
 - 3.3V buck-boost power converter (all new versions)
 - 5V buck-boost power converter for FPV (some versions)
 - brushless versions are designed for 3S operation and also have an 5V power output
-- battery monitoring with an LED for buzzer functionality (for some ALIENFLIGHTF3 and F4 variants only)
+- battery monitoring with an LED or buzzer output (for some ALIENFLIGHTF3 and F4 variants only, F4 V2 has also current monitoring)
+- SDCard Reader for balk box monitoring (F4 V2 versions)
+- Integrated OpenSky (FRSky compatible) receiver with FRSky hub telemetry (F4 V2 versions)
 
 (*) Spektrum Compatible DSM2 satellites are supported out of the box. DSMX sat will work with DSM2 protocol with default settings (DSM2, 11bit, 11ms is preset). This is chosen for maximum compatibility. For optimal connection it is recommended to adjust settings to match the capabilities of your transmitter and satellite receiver. If possible it is recommended to use the DSMX protocol since it is known as more reliable. Also to make use of additional channels you should adjust the following two parameters with the Cleanflight Configurator.
 
