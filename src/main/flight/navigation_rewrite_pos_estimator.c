@@ -278,7 +278,7 @@ void onNewGPSData(void)
 #if defined(NAV_AUTO_MAG_DECLINATION)
         /* Automatic magnetic declination calculation - do this once */
         static bool magDeclinationSet = false;
-        if (posControl.navConfig->estimation.automatic_mag_declination && !magDeclinationSet) {
+        if (posControl.navConfig->estimation.automatic_mag_declination && !magDeclinationSet && (gpsSol.numSat >= posControl.navConfig->estimation.gps_min_sats)) {
             magneticDeclination = geoCalculateMagDeclination(&newLLH) * 10.0f; // heading is in 0.1deg units
             magDeclinationSet = true;
         }
@@ -287,6 +287,15 @@ void onNewGPSData(void)
         /* Process position update if GPS origin is already set, or precision is good enough */
         // FIXME: use HDOP here
         if ((posControl.gpsOrigin.valid) || (gpsSol.numSat >= posControl.navConfig->estimation.gps_min_sats)) {
+            /* Set GPS origin or reset the origin altitude - keep initial pre-arming altitude at zero */
+            if (!posControl.gpsOrigin.valid) {
+                geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_SET);
+            }
+            else if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(WAS_EVER_ARMED)) {
+                /* If we were never armed - keep altitude at zero */
+                geoSetOrigin(&posControl.gpsOrigin, &newLLH, GEO_ORIGIN_RESET_ALTITUDE);
+            }
+
             /* Convert LLH position to local coordinates */
             geoConvertGeodeticToLocal(&posControl.gpsOrigin, &newLLH, & posEstimator.gps.pos, GEO_ALT_ABSOLUTE);
 
@@ -363,9 +372,16 @@ static void updateBaroTopic(uint32_t currentTime)
     static navigationTimer_t baroUpdateTimer;
 
     if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTime)) {
+        static float initialBaroAltitudeOffset = 0.0f;
         float newBaroAlt = baroCalculateAltitude();
+
+        /* If we were never armed - keep altitude at zero */
+        if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(WAS_EVER_ARMED)) {
+            initialBaroAltitudeOffset = newBaroAlt;
+        }
+
         if (sensors(SENSOR_BARO) && isBaroCalibrationComplete()) {
-            posEstimator.baro.alt = newBaroAlt;
+            posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
             posEstimator.baro.epv = posControl.navConfig->estimation.baro_epv;
             posEstimator.baro.lastUpdateTime = currentTime;
         }
@@ -613,7 +629,8 @@ static void updateEstimatedTopic(uint32_t currentTime)
     if (isBaroValid) {
         /* If we are going to use GPS Z-position - calculate and apply barometer offset */
         if (useGpsZPos) {
-            posEstimator.est.baroOffset += ((posEstimator.baro.alt - posEstimator.gps.pos.V.Z) - posEstimator.est.baroOffset) * posControl.navConfig->estimation.w_z_gps_p;
+            const float currentGpsBaroAltitudeOffset = posEstimator.baro.alt - posEstimator.gps.pos.V.Z;
+            posEstimator.est.baroOffset += (currentGpsBaroAltitudeOffset - posEstimator.est.baroOffset) * posControl.navConfig->estimation.w_z_gps_p;
             posEstimator.baro.alt -= posEstimator.est.baroOffset;
         }
 
