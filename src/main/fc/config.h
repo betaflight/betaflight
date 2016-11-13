@@ -51,7 +51,7 @@ typedef enum {
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
     FEATURE_TRANSPONDER = 1 << 21,
     FEATURE_AIRMODE = 1 << 22,
-    //FEATURE_SUPEREXPO_RATES = 1 << 23,
+    FEATURE_SDCARD = 1 << 23,
     FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
@@ -86,4 +86,6 @@ bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
 struct master_s;
+
 void targetConfiguration(struct master_s *config);
+void targetValidateConfiguration(struct master_s *config);

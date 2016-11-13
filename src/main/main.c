@@ -373,21 +373,11 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    drv_adc_config_t adc_params;
-
-    adc_params.enableVBat = feature(FEATURE_VBAT);
-    adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
-    adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
-    adc_params.enableExternal1 = false;
-#ifdef OLIMEXINO
-    adc_params.enableExternal1 = true;
-#endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
-#endif
-
-    adcInit(&adc_params);
+    /* these can be removed from features! */
+    masterConfig.adcConfig.vbat.enabled = feature(FEATURE_VBAT);
+    masterConfig.adcConfig.currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    masterConfig.adcConfig.rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcInit(&masterConfig.adcConfig);
 #endif
 
 
@@ -527,28 +517,11 @@ void init(void)
 #endif
 
 #ifdef USE_SDCARD
-    bool sdcardUseDMA = false;
-
-    sdcardInsertionDetectInit();
-
-#ifdef SDCARD_DMA_CHANNEL_TX
-
-#if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
-    // Ensure the SPI Tx DMA doesn't overlap with the led strip
-#if defined(STM32F4) || defined(STM32F7)
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
-#else
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
-#endif
-#else
-    sdcardUseDMA = true;
-#endif
-
-#endif
-
-    sdcard_init(sdcardUseDMA);
-
-    afatfs_init();
+    if (feature(FEATURE_SDCARD)) {
+        sdcardInsertionDetectInit();
+        sdcard_init(masterConfig.sdcardConfig.useDma);
+        afatfs_init();
+    }
 #endif
 
     if (masterConfig.gyro_lpf > 0 && masterConfig.gyro_lpf < 7) {

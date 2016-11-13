@@ -45,6 +45,7 @@
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/light_ws2811strip.h"
+#include "drivers/sdcard.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -101,17 +102,11 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 #endif
 
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
-
-
-void intFeatureClearAll(master_t *config);
-void intFeatureSet(uint32_t mask, master_t *config);
-void intFeatureClear(uint32_t mask, master_t *config);
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -314,6 +309,44 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 }
 #endif
 
+#ifdef USE_SDCARD
+void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
+{
+#if defined(SDCARD_DMA_CHANNEL_TX)
+    sdcardConfig->useDma = true;
+#else
+    sdcardConfig->useDma = false;
+#endif
+}
+#endif
+
+#ifdef USE_ADC
+void resetAdcConfig(adcConfig_t *adcConfig)
+{
+#ifdef VBAT_ADC_PIN
+    adcConfig->vbat.enabled = true;
+    adcConfig->vbat.ioTag = IO_TAG(VBAT_ADC_PIN);
+#endif
+
+#ifdef EXTERNAL1_ADC_PIN
+    adcConfig->external1.enabled = true;
+    adcConfig->external1.ioTag = IO_TAG(EXTERNAL1_ADC_PIN);
+#endif
+
+#ifdef CURRENT_METER_ADC_PIN
+    adcConfig->currentMeter.enabled = true;
+    adcConfig->currentMeter.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
+#endif
+
+#ifdef RSSI_ADC_PIN
+    adcConfig->rssi.enabled = true;
+    adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
+#endif
+
+}
+#endif
+
+
 #ifdef BEEPER
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
@@ -490,30 +523,32 @@ void createDefaultConfig(master_t *config)
     // Clear all configuration
     memset(config, 0, sizeof(master_t));
 
-    intFeatureClearAll(config);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , config);
+    uint32_t *featuresPtr = &config->enabledFeatures;
+
+    intFeatureClearAll(featuresPtr);
+    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
 #ifdef DEFAULT_FEATURES
-    intFeatureSet(DEFAULT_FEATURES, config);
+    intFeatureSet(DEFAULT_FEATURES, featuresPtr);
 #endif
 
 #ifdef OSD
-    intFeatureSet(FEATURE_OSD, config);
+    intFeatureSet(FEATURE_OSD, featuresPtr);
     osdResetConfig(&config->osdProfile);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
-    intFeatureSet(FEATURE_VBAT, config);
+    intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
     config->version = EEPROM_CONF_VERSION;
     config->mixerMode = MIXER_QUADX;
 
     // global settings
-    config->current_profile_index = 0;     // default profile
+    config->current_profile_index = 0;    // default profile
     config->dcm_kp = 2500;                // 1.0 * 10000
-    config->dcm_ki = 0;                    // 0.003 * 10000
+    config->dcm_ki = 0;                   // 0.003 * 10000
     config->gyro_lpf = 0;                 // 256HZ default
 #ifdef STM32F10X
     config->gyro_sync_denom = 8;
@@ -562,12 +597,21 @@ void createDefaultConfig(master_t *config)
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
+#ifdef USE_ADC
+    resetAdcConfig(&config->adcConfig);
+#endif
+
 #ifdef BEEPER
     resetBeeperConfig(&config->beeperConfig);
 #endif
 
 #ifdef SONAR
     resetSonarConfig(&config->sonarConfig);
+#endif
+
+#ifdef USE_SDCARD
+    intFeatureSet(FEATURE_SDCARD, featuresPtr);
+    resetsdcardConfig(&config->sdcardConfig);
 #endif
 
 #ifdef SERIALRX_PROVIDER
@@ -708,10 +752,10 @@ void createDefaultConfig(master_t *config)
 
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, config);
+    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackbox_device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, config);
+    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
     config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
@@ -734,7 +778,6 @@ void createDefaultConfig(master_t *config)
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
-
 
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
@@ -940,6 +983,10 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+    
+#if defined(TARGET_VALIDATECONFIG)
+    targetValidateConfiguration(&masterConfig);
+#endif
 }
 
 void readEEPROMAndNotify(void)

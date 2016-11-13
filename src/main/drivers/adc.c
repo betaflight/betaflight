@@ -33,7 +33,7 @@
 //#define DEBUG_ADC_CHANNELS
 
 #ifdef USE_ADC
-adc_config_t adcConfig[ADC_CHANNEL_COUNT];
+adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag)
@@ -61,7 +61,7 @@ uint16_t adcGetChannel(uint8_t channel)
         debug[3] = adcValues[adcConfig[3].dmaIndex];
     }
 #endif
-    return adcValues[adcConfig[channel].dmaIndex];
+    return adcValues[adcOperatingConfig[channel].dmaIndex];
 }
 
 #else

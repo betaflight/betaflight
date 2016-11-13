@@ -77,40 +77,28 @@ const adcTagMap_t adcTagMap[] = {
 // NAZE rev.5 hardware has PA5 (ADC1_IN5) on breakout pad on bottom of board
 //
 
-void adcInit(drv_adc_config_t *init)
+void adcInit(adcConfig_t *config)
 {
-
-#if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-    UNUSED(init);
-#endif
 
     uint8_t configuredAdcChannels = 0;
 
-    memset(&adcConfig, 0, sizeof(adcConfig));
+    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
-#ifdef VBAT_ADC_PIN
-    if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN);
+    if (config->vbat.enabled) {
+        adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
     }
-#endif
 
-#ifdef RSSI_ADC_PIN
-    if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);
+    if (config->rssi.enabled) {
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
     }
-#endif
 
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN);
+    if (config->external1.enabled) {
+        adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
     }
-#endif
 
-#ifdef CURRENT_METER_ADC_PIN
-    if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);
+    if (config->currentMeter.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
-#endif
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
@@ -118,16 +106,22 @@ void adcInit(drv_adc_config_t *init)
 
     const adcDevice_t adc = adcHardware[device];
 
+    bool adcActive = false;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].tag)
+        if (!adcOperatingConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
-        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
-        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
-        adcConfig[i].dmaIndex = configuredAdcChannels++;
-        adcConfig[i].sampleTime = ADC_SampleTime_239Cycles5;
-        adcConfig[i].enabled = true;
+        adcActive = true;
+        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_Mode_AIN, 0));
+        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+        adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
+        adcOperatingConfig[i].sampleTime = ADC_SampleTime_239Cycles5;
+        adcOperatingConfig[i].enabled = true;
+    }
+    
+    if (!adcActive) {
+        return;
     }
 
     RCC_ADCCLKConfig(RCC_PCLK2_Div8);  // 9MHz from 72MHz APB2 clock(HSE), 8MHz from 64MHz (HSI)
@@ -164,10 +158,10 @@ void adcInit(drv_adc_config_t *init)
 
     uint8_t rank = 1;
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].enabled) {
+        if (!adcOperatingConfig[i].enabled) {
             continue;
         }
-        ADC_RegularChannelConfig(adc.ADCx, adcConfig[i].adcChannel, rank++, adcConfig[i].sampleTime);
+        ADC_RegularChannelConfig(adc.ADCx, adcOperatingConfig[i].adcChannel, rank++, adcOperatingConfig[i].sampleTime);
     }
 
     ADC_DMACmd(adc.ADCx, ENABLE);

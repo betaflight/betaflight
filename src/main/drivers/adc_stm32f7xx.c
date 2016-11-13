@@ -83,7 +83,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
     return ADCINVALID;
 }
 
-void adcInit(drv_adc_config_t *init)
+void adcInit(adcConfig_t *config)
 {
     DMA_HandleTypeDef DmaHandle;
     ADC_HandleTypeDef ADCHandle;
@@ -91,35 +91,23 @@ void adcInit(drv_adc_config_t *init)
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
-    memset(&adcConfig, 0, sizeof(adcConfig));
+    memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
-#if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-    UNUSED(init);
-#endif
-
-#ifdef VBAT_ADC_PIN
-    if (init->enableVBat) {
-        adcConfig[ADC_BATTERY].tag = IO_TAG(VBAT_ADC_PIN); //VBAT_ADC_CHANNEL;
+    if (config->vbat.enabled) {
+        adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
     }
-#endif
 
-#ifdef RSSI_ADC_PIN
-    if (init->enableRSSI) {
-        adcConfig[ADC_RSSI].tag = IO_TAG(RSSI_ADC_PIN);  //RSSI_ADC_CHANNEL;
+    if (config->rssi.enabled) {
+        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
     }
-#endif
 
-#ifdef EXTERNAL1_ADC_PIN
-    if (init->enableExternal1) {
-        adcConfig[ADC_EXTERNAL1].tag = IO_TAG(EXTERNAL1_ADC_PIN); //EXTERNAL1_ADC_CHANNEL;
+    if (config->external1.enabled) {
+        adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
     }
-#endif
 
-#ifdef CURRENT_METER_ADC_PIN
-    if (init->enableCurrentMeter) {
-        adcConfig[ADC_CURRENT].tag = IO_TAG(CURRENT_METER_ADC_PIN);  //CURRENT_METER_ADC_CHANNEL;
+    if (config->currentMeter.enabled) {
+        adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
-#endif
 
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
@@ -127,18 +115,23 @@ void adcInit(drv_adc_config_t *init)
 
     adcDevice_t adc = adcHardware[device];
 
-    for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].tag)
+    bool adcActive = false;
+    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (!adcOperatingConfig[i].tag)
             continue;
 
-        IOInit(IOGetByTag(adcConfig[i].tag), OWNER_ADC_BATT + i, 0);
-        IOConfigGPIO(IOGetByTag(adcConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
-        adcConfig[i].adcChannel = adcChannelByTag(adcConfig[i].tag);
-        adcConfig[i].dmaIndex = configuredAdcChannels++;
-        adcConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
-        adcConfig[i].enabled = true;
+        adcActive = true;
+        IOInit(IOGetByTag(adcOperatingConfig[i].tag), OWNER_ADC_BATT + i, 0);
+        IOConfigGPIO(IOGetByTag(adcOperatingConfig[i].tag), IO_CONFIG(GPIO_MODE_ANALOG, 0, GPIO_NOPULL));
+        adcOperatingConfig[i].adcChannel = adcChannelByTag(adcOperatingConfig[i].tag);
+        adcOperatingConfig[i].dmaIndex = configuredAdcChannels++;
+        adcOperatingConfig[i].sampleTime = ADC_SAMPLETIME_480CYCLES;
+        adcOperatingConfig[i].enabled = true;
     }
 
+    if (!adcActive) {
+        return;
+    }
 
     RCC_ClockCmd(adc.rccADC, ENABLE);
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
@@ -187,13 +180,13 @@ void adcInit(drv_adc_config_t *init)
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        if (!adcConfig[i].enabled) {
+        if (!adcOperatingConfig[i].enabled) {
             continue;
         }
         ADC_ChannelConfTypeDef sConfig;
-        sConfig.Channel      = adcConfig[i].adcChannel;
+        sConfig.Channel      = adcOperatingConfig[i].adcChannel;
         sConfig.Rank         = rank++;
-        sConfig.SamplingTime = adcConfig[i].sampleTime;
+        sConfig.SamplingTime = adcOperatingConfig[i].sampleTime;
         sConfig.Offset       = 0;
 
         /*##-3- Configure ADC regular channel ######################################*/
