@@ -116,8 +116,14 @@
 #define TARGET_IO_PORTC         (BIT(5))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
+#define USE_DSHOT
+
+#if defined(USE_UART3_RX_DMA) && defined(USE_DSHOT)
+#undef USE_UART3_RX_DMA
+#endif
+
 #define USABLE_TIMER_CHANNEL_COUNT 6
-#define USED_TIMERS  (TIM_N(2) | TIM_N(4))
+#define USED_TIMERS  (TIM_N(2) | TIM_N(3)| TIM_N(4) | TIM_N(8) | TIM_N(17))
 
 
 
