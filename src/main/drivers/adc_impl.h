@@ -61,7 +61,7 @@ typedef struct adcDevice_s {
 
 extern const adcDevice_t adcHardware[];
 extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
-extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
+extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);

@@ -45,10 +45,6 @@ void detectHardwareRevision(void)
     IOInit(pin1, OWNER_SYSTEM, 1);
     IOConfigGPIO(pin1, IOCFG_IPU);
 
-    IO_t pin2 = IOGetByTag(IO_TAG(PB13));
-    IOInit(pin2, OWNER_SYSTEM, 2);
-    IOConfigGPIO(pin2, IOCFG_IPU);
-
     // Check hardware revision
     delayMicroseconds(10);  // allow configuration to settle
 
@@ -57,10 +53,17 @@ void detectHardwareRevision(void)
         if only PB12 is tied to GND then it is a Rev3 (full size)
     */
     if (!IORead(pin1)) {
-        if (!IORead(pin2)) {
-            hardwareRevision = BJF4_REV3A;
-        }
         hardwareRevision = BJF4_REV3;
+    } else {
+        IO_t pin2 = IOGetByTag(IO_TAG(PB13));
+        IOInit(pin2, OWNER_SYSTEM, 2);
+        IOConfigGPIO(pin2, IOCFG_OUT_PP);
+
+        IOWrite(pin2, false);
+
+        if (!IORead(pin1)) {
+            hardwareRevision = BJF4_MINI_REV3A;
+        }
     }
 
     if (hardwareRevision == UNKNOWN) {

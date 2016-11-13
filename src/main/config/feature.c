@@ -27,19 +27,19 @@
 
 static uint32_t activeFeaturesLatch = 0;
 
-void intFeatureSet(uint32_t mask, master_t *config)
+void intFeatureSet(uint32_t mask, uint32_t *features)
 {
-    config->enabledFeatures |= mask;
+    *features |= mask;
 }
 
-void intFeatureClear(uint32_t mask, master_t *config)
+void intFeatureClear(uint32_t mask, uint32_t *features)
 {
-    config->enabledFeatures &= ~(mask);
+    *features &= ~(mask);
 }
 
-void intFeatureClearAll(master_t *config)
+void intFeatureClearAll(uint32_t *features)
 {
-    config->enabledFeatures = 0;
+    *features = 0;
 }
 
 void latchActiveFeatures()
@@ -59,17 +59,17 @@ bool feature(uint32_t mask)
 
 void featureSet(uint32_t mask)
 {
-    intFeatureSet(mask, &masterConfig);
+    intFeatureSet(mask, &masterConfig.enabledFeatures);
 }
 
 void featureClear(uint32_t mask)
 {
-    intFeatureClear(mask, &masterConfig);
+    intFeatureClear(mask, &masterConfig.enabledFeatures);
 }
 
 void featureClearAll()
 {
-    intFeatureClearAll(&masterConfig);
+    intFeatureClearAll(&masterConfig.enabledFeatures);
 }
 
 uint32_t featureMask(void)
