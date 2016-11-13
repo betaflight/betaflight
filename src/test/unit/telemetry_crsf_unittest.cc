@@ -53,6 +53,7 @@ extern "C" {
     #include "flight/imu.h"
     #include "flight/gps_conversion.h"
 
+    bool airMode;
 }
 
 #include "unittest_macros.h"
@@ -81,12 +82,14 @@ uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
 
  */
+#define FRAME_HEADER_FOOTER_LEN 4
+
 TEST(TelemetryCrsfTest, TestGPS)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
-    EXPECT_EQ(CRSF_FRAME_GPS_PAYLOAD_SIZE + 4, frameLen);
+    EXPECT_EQ(CRSF_FRAME_GPS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
     EXPECT_EQ(17, frame[1]); // length
     EXPECT_EQ(0x02, frame[2]); // type
@@ -136,7 +139,7 @@ TEST(TelemetryCrsfTest, TestBattery)
     memset(batteryConfig, 0, sizeof(batteryConfig_t));
     vbat = 0; // 0.1V units
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_BATTERY_SENSOR);
-    EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + 4, frameLen);
+    EXPECT_EQ(CRSF_FRAME_BATTERY_SENSOR_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
     EXPECT_EQ(10, frame[1]); // length
     EXPECT_EQ(0x08, frame[2]); // type
@@ -170,7 +173,7 @@ TEST(TelemetryCrsfTest, TestLinkStatistics)
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_LINK_STATISTICS);
-    EXPECT_EQ(CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE + 4, frameLen);
+    EXPECT_EQ(CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
     EXPECT_EQ(12, frame[1]); // length
     EXPECT_EQ(0x14, frame[2]); // type
@@ -185,7 +188,7 @@ TEST(TelemetryCrsfTest, TestAttitude)
     attitude.values.roll = 0;
     attitude.values.yaw = 0;
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_ATTITUDE);
-    EXPECT_EQ(CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + 4, frameLen);
+    EXPECT_EQ(CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
     EXPECT_EQ(8, frame[1]); // length
     EXPECT_EQ(0x1e, frame[2]); // type
@@ -214,20 +217,61 @@ TEST(TelemetryCrsfTest, TestFlightMode)
 {
     uint8_t frame[CRSF_FRAME_SIZE_MAX];
 
+    // nothing set, so ACRO mode
+    airMode = false;
     int frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
-    EXPECT_EQ(6 + 4, frameLen);
-    enableFlightMode(ANGLE_MODE);
-    EXPECT_EQ(1, FLIGHT_MODE(ANGLE_MODE));
+    EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
     EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
-    EXPECT_EQ(8, frame[1]); // length
+    EXPECT_EQ(7, frame[1]); // length
     EXPECT_EQ(0x21, frame[2]); // type
-    EXPECT_EQ('A', frame[3]); // type
-    EXPECT_EQ('n', frame[4]); // type
-    EXPECT_EQ('g', frame[5]); // type
-    EXPECT_EQ('l', frame[6]); // type
-    EXPECT_EQ('e', frame[7]); // type
-    EXPECT_EQ(0, frame[8]); // type
-    EXPECT_EQ(crfsCrc(frame, frameLen), frame[9]);
+    EXPECT_EQ('A', frame[3]);
+    EXPECT_EQ('C', frame[4]);
+    EXPECT_EQ('R', frame[5]);
+    EXPECT_EQ('O', frame[6]);
+    EXPECT_EQ(0, frame[7]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
+
+
+    enableFlightMode(ANGLE_MODE);
+    EXPECT_EQ(ANGLE_MODE, FLIGHT_MODE(ANGLE_MODE));
+    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    EXPECT_EQ(5 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
+    EXPECT_EQ(7, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('S', frame[3]);
+    EXPECT_EQ('T', frame[4]);
+    EXPECT_EQ('A', frame[5]);
+    EXPECT_EQ('B', frame[6]);
+    EXPECT_EQ(0, frame[7]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[8]);
+
+    disableFlightMode(ANGLE_MODE);
+    enableFlightMode(HORIZON_MODE);
+    EXPECT_EQ(HORIZON_MODE, FLIGHT_MODE(HORIZON_MODE));
+    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
+    EXPECT_EQ(6, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('H', frame[3]);
+    EXPECT_EQ('O', frame[4]);
+    EXPECT_EQ('R', frame[5]);
+    EXPECT_EQ(0, frame[6]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[7]);
+
+    disableFlightMode(HORIZON_MODE);
+    airMode = true;
+    frameLen = getCrsfFrame(frame, CRSF_FRAME_FLIGHT_MODE);
+    EXPECT_EQ(4 + FRAME_HEADER_FOOTER_LEN, frameLen);
+    EXPECT_EQ(CRSF_RECEIVER_ADDRESS, frame[0]); // address
+    EXPECT_EQ(6, frame[1]); // length
+    EXPECT_EQ(0x21, frame[2]); // type
+    EXPECT_EQ('A', frame[3]);
+    EXPECT_EQ('I', frame[4]);
+    EXPECT_EQ('R', frame[5]);
+    EXPECT_EQ(0, frame[6]);
+    EXPECT_EQ(crfsCrc(frame, frameLen), frame[7]);
 }
 
 // STUBS
@@ -256,73 +300,25 @@ int32_t mAhDrawn;
 
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
-uint32_t serialRxBytesWaiting(const serialPort_t *instance) {
-    UNUSED(instance);
-    return 0;
-}
+uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
+uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
+uint8_t serialRead(serialPort_t *) {return 0;}
+void serialWrite(serialPort_t *, uint8_t) {}
+void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
+void serialSetMode(serialPort_t *, portMode_t ) {}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
+void closeSerialPort(serialPort_t *) {}
 
-uint32_t serialTxBytesFree(const serialPort_t *instance) {
-    UNUSED(instance);
-    return 0;
-}
+serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
-uint8_t serialRead(serialPort_t *instance) {
-    UNUSED(instance);
-    return 0;
-}
+bool telemetryDetermineEnabledState(portSharing_e) {return true;}
 
-void serialWrite(serialPort_t *instance, uint8_t ch) {
-    UNUSED(instance);
-    UNUSED(ch);
-}
-void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count) {
-    UNUSED(instance);
-    UNUSED(data);
-    UNUSED(count);
-}
-
-void serialSetMode(serialPort_t *instance, portMode_t mode) {
-    UNUSED(instance);
-    UNUSED(mode);
-}
-
-
-serialPort_t *openSerialPort(serialPortIdentifier_e identifier, serialPortFunction_e functionMask, serialReceiveCallbackPtr callback, uint32_t baudRate, portMode_t mode, portOptions_t options) {
-    UNUSED(identifier);
-    UNUSED(functionMask);
-    UNUSED(baudRate);
-    UNUSED(callback);
-    UNUSED(mode);
-    UNUSED(options);
-
-    return NULL;
-}
-
-void closeSerialPort(serialPort_t *serialPort) {
-    UNUSED(serialPort);
-}
-
-serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function) {
-    UNUSED(function);
-
-    return NULL;
-}
-
-bool telemetryDetermineEnabledState(portSharing_e) {
-    return true;
-}
-
-portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
-    return PORTSHARING_NOT_SHARED;
-}
+portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 
 uint8_t batteryCapacityRemainingPercentage(void) {return 67;}
-
 uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}
-
-batteryState_e getBatteryState(void) {
-    return BATTERY_OK;
-}
+batteryState_e getBatteryState(void) {return BATTERY_OK;}
+bool isAirmodeActive(void) {return airMode;}
 
 }
 

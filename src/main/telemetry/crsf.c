@@ -44,6 +44,7 @@
 #include "io/gps.h"
 #include "io/serial.h"
 
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
@@ -102,6 +103,13 @@ static void crsfSerialize32(sbuf_t *dst, uint32_t v)
     crsfSerialize8(dst, (v >> 16));
     crsfSerialize8(dst, (v >> 8));
     crsfSerialize8(dst, (uint8_t)v);
+}
+
+static void crsfSerializeData(sbuf_t *dst, const uint8_t *data, int len)
+{
+    for (int ii = 0; ii< len; ++ii) {
+        crsfSerialize8(dst, data[ii]);
+    }
 }
 
 static void crsfFinalize(sbuf_t *dst)
@@ -268,15 +276,26 @@ char[]      Flight mode ( Null­terminated string )
 void crsfFrameFlightMode(sbuf_t *dst)
 {
     // just do Angle for the moment as a placeholder
-    const char *flightMode = "Angle";
-    // use sbufWrite since CRC does not include frame length
-    sbufWriteU8(dst, strlen(flightMode) + 1 + CRSF_FRAME_LENGTH_TYPE_CRC);
+    // write zero for frame length, since we don't know it yet
+    uint8_t *lengthPtr = sbufPtr(dst);
+    sbufWriteU8(dst, 0);
     crsfSerialize8(dst, CRSF_FRAMETYPE_FLIGHT_MODE);
-    const int len = strlen(flightMode);
-    for (int ii = 0; ii< len; ++ii) {
-        crsfSerialize8(dst, flightMode[ii]);
+
+    const char *flightMode = "ACRO";
+    if (isAirmodeActive()) {
+        flightMode = "AIR";
     }
-    crsfSerialize8(dst, 0);
+    if (FLIGHT_MODE(FAILSAFE_MODE)) {
+        flightMode = "!FS";
+    } else if (FLIGHT_MODE(ANGLE_MODE)) {
+        flightMode = "STAB";
+    } else if (FLIGHT_MODE(HORIZON_MODE)) {
+        flightMode = "HOR";
+    }
+    crsfSerializeData(dst, (const uint8_t*)flightMode, strlen(flightMode));
+    crsfSerialize8(dst, 0); // zero terminator for string
+    // write in the length
+    *lengthPtr = sbufPtr(dst) - lengthPtr;
 }
 
 #define BV(x)  (1 << (x)) // bit value
