@@ -20,7 +20,8 @@
 typedef enum {
     PITOT_DEFAULT = 0,
     PITOT_NONE = 1,
-    PITOT_MS4525 = 2
+    PITOT_MS4525 = 2,
+    PITOT_FAKE = 3,
 } pitotSensor_e;
 
 #define PITOT_SAMPLE_COUNT_MAX   48

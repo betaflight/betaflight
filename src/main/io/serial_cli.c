@@ -237,7 +237,7 @@ static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "PITOT", "GPS", "GPS+MAG", NULL
 };
 
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR)
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
 // sync with gyroSensor_e
 static const char * const gyroNames[] = { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
 // sync with accelerationSensor_e
@@ -249,7 +249,7 @@ static const char * const magNames[] = { "", "None", "HMC5883", "AK8975", "MAG_G
 // sycn with rangefinderType_e
 static const char * const rangefinderNames[] = { "None", "HCSR04", "SRF10"};
 // sync with pitotSensor_e
-static const char * const pitotmeterNames[] = { "Auto", "None", "MS4525"};
+static const char * const pitotmeterNames[] = { "Auto", "None", "MS4525", "FAKE"};
 
 static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames, pitotmeterNames};
 

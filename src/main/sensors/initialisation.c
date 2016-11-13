@@ -59,6 +59,7 @@
 
 #include "drivers/pitotmeter.h"
 #include "drivers/pitotmeter_ms4525.h"
+#include "drivers/pitotmeter_fake.h"
 
 #include "drivers/compass.h"
 #include "drivers/compass_ak8963.h"
@@ -473,6 +474,15 @@ static bool detectPitot()
 #ifdef USE_PITOT_MS4525
             if (ms4525Detect(&pitot)) {
                 pitotHardware = PITOT_MS4525;
+                break;
+            }
+#endif
+            ; // Fallthrough
+
+        case PITOT_FAKE:
+#ifdef USE_PITOT_FAKE
+            if (fakePitotDetect(&pitot)) {
+                pitotHardware = PITOT_FAKE;
                 break;
             }
 #endif
