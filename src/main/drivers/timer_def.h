@@ -20,7 +20,43 @@
 #include <platform.h>
 #include "common/utils.h"
 
-#if defined(STM32F3)
+#if defined(STM32F1)
+
+#define DEF_TIM(tim, chan, pin, flags, out) {\
+    tim,\
+    IO_TAG(pin),\
+    EXPAND(DEF_CHAN_ ## chan),\
+    flags,\
+    (DEF_CHAN_ ## chan ## _OUTPUT | out),\
+    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL),\
+    CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)\
+    }
+
+#define DEF_DMA_CHANNEL(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _CHANNEL)
+#define DEF_DMA_HANDLER(tim, chan) CONCAT(EXPAND(DEF_TIM_DMA__ ## tim ## _ ## chan), _HANDLER)
+
+/* add the DMA mappings here for F1 */
+#define DEF_TIM_DMA__TIM1_CH1    DMA1_CH2
+#define DEF_TIM_DMA__TIM1_CH2    DMA_NONE
+#define DEF_TIM_DMA__TIM1_CH3    DMA1_CH6
+#define DEF_TIM_DMA__TIM1_CH4    DMA1_CH4
+
+#define DEF_TIM_DMA__TIM2_CH1    DMA1_CH5
+#define DEF_TIM_DMA__TIM2_CH2    DMA1_CH7
+#define DEF_TIM_DMA__TIM2_CH3    DMA1_CH1
+#define DEF_TIM_DMA__TIM2_CH4    DMA1_CH7
+
+#define DEF_TIM_DMA__TIM3_CH1    DMA1_CH6
+#define DEF_TIM_DMA__TIM3_CH2    DMA_NONE
+#define DEF_TIM_DMA__TIM3_CH3    DMA1_CH2
+#define DEF_TIM_DMA__TIM3_CH4    DMA1_CH3
+
+#define DEF_TIM_DMA__TIM4_CH1    DMA1_CH1
+#define DEF_TIM_DMA__TIM4_CH2    DMA1_CH4
+#define DEF_TIM_DMA__TIM4_CH3    DMA1_CH5
+#define DEF_TIM_DMA__TIM4_CH4    DMA_NONE
+
+#elif defined(STM32F3)
 
 #define DEF_TIM(tim, chan, pin, flags, out) {\
     tim,\
@@ -100,27 +136,12 @@
 #define DEF_TIM_DMA__TIM8_CH2N   DMA2_CH5
 
 
-#define DMA1_CH1_CHANNEL         DMA1_Channel1
-#define DMA1_CH2_CHANNEL         DMA1_Channel2
-#define DMA1_CH3_CHANNEL         DMA1_Channel3
-#define DMA1_CH4_CHANNEL         DMA1_Channel4
-#define DMA1_CH5_CHANNEL         DMA1_Channel5
-#define DMA1_CH6_CHANNEL         DMA1_Channel6
-#define DMA1_CH7_CHANNEL         DMA1_Channel7
-#define DMA2_CH1_CHANNEL         DMA2_Channel1
-#define DMA2_CH2_CHANNEL         DMA2_Channel2
-#define DMA2_CH3_CHANNEL         DMA2_Channel3
-#define DMA2_CH4_CHANNEL         DMA2_Channel4
-#define DMA2_CH5_CHANNEL         DMA2_Channel5
-#define DMA2_CH6_CHANNEL         DMA2_Channel6
-#define DMA2_CH7_CHANNEL         DMA2_Channel7
-
 #define GPIO_AF(p, t) CONCAT(GPIO_AF__, p, _, t)
 
 #define GPIO_AF__PA0_TIM2_CH1     GPIO_AF_1
 #define GPIO_AF__PA1_TIM2_CH2     GPIO_AF_1
 #define GPIO_AF__PA2_TIM2_CH3     GPIO_AF_1
-#define GPIO_AF__PA3_TIM2_CH3     GPIO_AF_1
+#define GPIO_AF__PA3_TIM2_CH4     GPIO_AF_1
 #define GPIO_AF__PA5_TIM2_CH1     GPIO_AF_1
 #define GPIO_AF__PA6_TIM16_CH1    GPIO_AF_1
 #define GPIO_AF__PA7_TIM17_CH1    GPIO_AF_1
@@ -220,6 +241,9 @@
 #define GPIO_AF__PD15_TIM4_CH4    GPIO_AF_2
 
 #define GPIO_AF__PD1_TIM8_CH4     GPIO_AF_4
+
+#define GPIO_AF__PF9_TIM15_CH1    GPIO_AF_3
+#define GPIO_AF__PF10_TIM15_CH2   GPIO_AF_3
 
 #elif defined(STM32F4)
 
@@ -425,3 +449,18 @@
 #define DEF_CHAN_CH2N_OUTPUT TIMER_OUTPUT_N_CHANNEL
 #define DEF_CHAN_CH3N_OUTPUT TIMER_OUTPUT_N_CHANNEL
 #define DEF_CHAN_CH4N_OUTPUT TIMER_OUTPUT_N_CHANNEL
+
+#define DMA1_CH1_CHANNEL     DMA1_Channel1
+#define DMA1_CH2_CHANNEL     DMA1_Channel2
+#define DMA1_CH3_CHANNEL     DMA1_Channel3
+#define DMA1_CH4_CHANNEL     DMA1_Channel4
+#define DMA1_CH5_CHANNEL     DMA1_Channel5
+#define DMA1_CH6_CHANNEL     DMA1_Channel6
+#define DMA1_CH7_CHANNEL     DMA1_Channel7
+#define DMA2_CH1_CHANNEL     DMA2_Channel1
+#define DMA2_CH2_CHANNEL     DMA2_Channel2
+#define DMA2_CH3_CHANNEL     DMA2_Channel3
+#define DMA2_CH4_CHANNEL     DMA2_Channel4
+#define DMA2_CH5_CHANNEL     DMA2_Channel5
+#define DMA2_CH6_CHANNEL     DMA2_Channel6
+#define DMA2_CH7_CHANNEL     DMA2_Channel7

@@ -20,28 +20,28 @@
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
 
+#ifdef STM32F7
+#define STM_FAST_TARGET
+#endif
 
-// STM32F4 specific settings that apply to all F4 targets
+/****************************
+  STM32 F4 specific settings. 
+****************************/
 #ifdef STM32F4
+#define STM_FAST_TARGET
+#define USE_DSHOT
+#define I2C3_OVERCLOCK true
+#endif
 
-#define MAX_AUX_CHANNELS                99
-#define TASK_GYROPID_DESIRED_PERIOD     125
-#define SCHEDULER_DELAY_LIMIT           10
-#define I2C3_OVERCLOCK                  true
-
-#else // when not an F4
-
-#define MAX_AUX_CHANNELS                6
-#define TASK_GYROPID_DESIRED_PERIOD     1000
-#define SCHEDULER_DELAY_LIMIT           100
-
-#endif // STM32F4
+#ifdef STM32F3
+#define USE_DSHOT
+#endif
 
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
-#endif // STM32F1
+#endif
 
 #define SERIAL_RX
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
@@ -51,6 +51,16 @@
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 #define USE_CLI
+
+#if defined(STM_FAST_TARGET)
+#define MAX_AUX_CHANNELS                99
+#define TASK_GYROPID_DESIRED_PERIOD     125
+#define SCHEDULER_DELAY_LIMIT           10
+#else
+#define MAX_AUX_CHANNELS                6
+#define TASK_GYROPID_DESIRED_PERIOD     1000
+#define SCHEDULER_DELAY_LIMIT           100
+#endif
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX

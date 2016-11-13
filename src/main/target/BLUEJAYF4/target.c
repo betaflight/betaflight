@@ -19,9 +19,9 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/timer.h"
-#include "drivers/dma.h"
 
+#include "drivers/dma.h"
+#include "drivers/timer.h"
 #include "drivers/timer_def.h"
 
 /*
