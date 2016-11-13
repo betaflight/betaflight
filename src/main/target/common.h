@@ -21,7 +21,7 @@
 #define I2C2_OVERCLOCK true
 
 
-/* STM32F4 specific settings that apply to all F4 targets */
+// STM32F4 specific settings that apply to all F4 targets
 #ifdef STM32F4
 
 #define MAX_AUX_CHANNELS                99
@@ -29,22 +29,27 @@
 #define SCHEDULER_DELAY_LIMIT           10
 #define I2C3_OVERCLOCK                  true
 
-#else /* when not an F4 */
+#else // when not an F4
 
 #define MAX_AUX_CHANNELS                6
 #define TASK_GYROPID_DESIRED_PERIOD     1000
 #define SCHEDULER_DELAY_LIMIT           100
 
-#endif
+#endif // STM32F4
 
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
-
-#endif
+#endif // STM32F1
 
 #define SERIAL_RX
+#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
+#define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+#define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#define USE_SERIALRX_SUMD       // Graupner Hott protocol
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+#define USE_SERIALRX_XBUS       // JR
 #define USE_CLI
 
 #if (FLASH_SIZE > 64)
@@ -65,7 +70,8 @@
 #define USE_MSP_DISPLAYPORT
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
+#define USE_RX_MSP
+#define USE_SERIALRX_JETIEXBUS
 #else
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_RX_MSP
 #endif

@@ -108,7 +108,7 @@ static void ibusDataReceive(uint16_t c)
     }
 }
 
-uint8_t ibusFrameStatus(void)
+static uint8_t ibusFrameStatus(void)
 {
     uint8_t i, offset;
     uint8_t frameStatus = RX_FRAME_PENDING;
@@ -153,8 +153,8 @@ bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
 
-    rxRuntimeConfig->rcReadRawFunc = ibusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = ibusFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

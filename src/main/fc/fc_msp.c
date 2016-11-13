@@ -1225,7 +1225,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RAW_RC:
-#ifndef SKIP_RX_MSP
+#ifdef USE_RX_MSP
         {
             uint8_t channelCount = dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
