@@ -47,8 +47,6 @@
 
 #include "hardware_revision.h"
 
-void intFeatureSet(uint32_t mask, master_t *config);
-
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
@@ -62,7 +60,7 @@ void targetConfiguration(master_t *config)
         config->rxConfig.sbus_inversion = 0;
         config->serialConfig.portConfigs[SERIAL_PORT_USART2].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
-        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, config);
+        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
         config->batteryConfig.currentMeterOffset = 2500;
         config->batteryConfig.currentMeterScale = -667;
     }
