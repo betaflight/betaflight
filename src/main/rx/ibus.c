@@ -27,6 +27,8 @@
 
 #include "platform.h"
 
+#ifdef USE_SERIALRX_IBUS
+
 #include "build/build_config.h"
 
 #include "drivers/serial.h"
@@ -37,7 +39,6 @@
 #include "rx/rx.h"
 #include "rx/ibus.h"
 
-#ifdef USE_SERIALRX_IBUS
 
 #define IBUS_MAX_CHANNEL 10
 #define IBUS_BUFFSIZE 32
@@ -51,16 +52,17 @@ static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 static void ibusDataReceive(uint16_t c);
 static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
-bool ibusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
 
-    if (callback)
-        *callback = ibusReadRawRC;
-
     rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
@@ -101,7 +103,7 @@ static void ibusDataReceive(uint16_t c)
 uint8_t ibusFrameStatus(void)
 {
     uint8_t i;
-    uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
+    uint8_t frameStatus = RX_FRAME_PENDING;
     uint16_t chksum, rxsum;
 
     if (!ibusFrameDone) {
@@ -128,7 +130,7 @@ uint8_t ibusFrameStatus(void)
         ibusChannelData[8] = (ibus[19] << 8) + ibus[18];
         ibusChannelData[9] = (ibus[21] << 8) + ibus[20];
 
-        frameStatus = SERIAL_RX_FRAME_COMPLETE;
+        frameStatus = RX_FRAME_COMPLETE;
     }
 
     return frameStatus;
@@ -139,5 +141,4 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
 }
-
-#endif
+#endif // USE_SERIALRX_IBUS

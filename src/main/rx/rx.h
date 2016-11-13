@@ -38,10 +38,10 @@
 #define DEFAULT_SERVO_MAX_ANGLE 90
 
 typedef enum {
-    SERIAL_RX_FRAME_PENDING = 0,
-    SERIAL_RX_FRAME_COMPLETE = (1 << 0),
-    SERIAL_RX_FRAME_FAILSAFE = (1 << 1)
-} serialrxFrameState_t;
+    RX_FRAME_PENDING = 0,
+    RX_FRAME_COMPLETE = (1 << 0),
+    RX_FRAME_FAILSAFE = (1 << 1)
+} rxFrameState_e;
 
 typedef enum {
     SERIALRX_SPEKTRUM1024 = 0,
@@ -135,25 +135,28 @@ typedef struct rxConfig_s {
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
+struct rxRuntimeConfig_s;
+typedef uint16_t (*rcReadRawDataFnPtr)(const struct rxRuntimeConfig_s *rxRuntimeConfig, uint8_t chan); // used by receiver driver to return channel data
+typedef uint8_t (*rcFrameStatusFnPtr)(void);
+
 typedef struct rxRuntimeConfig_s {
     uint8_t channelCount;                  // number of rc channels as reported by current input driver
-    uint8_t auxChannelCount;
+    uint16_t rxRefreshRate;
+    rcReadRawDataFnPtr rcReadRawFn;
+    rcFrameStatusFnPtr rcFrameStatusFn;
 } rxRuntimeConfig_t;
 
-extern rxRuntimeConfig_t rxRuntimeConfig;
-
-typedef uint16_t (*rcReadRawDataPtr)(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);        // used by receiver driver to return channel data
+extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
 struct modeActivationCondition_s;
-void rxInit(rxConfig_t *rxConfig, struct modeActivationCondition_s *modeActivationConditions);
-void useRxConfig(rxConfig_t *rxConfigToUse);
+void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
+void useRxConfig(const rxConfig_t *rxConfigToUse);
 bool updateRx(uint32_t currentTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
-uint8_t serialRxFrameStatus(rxConfig_t *rxConfig);
 
 void updateRSSI(uint32_t currentTime);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
@@ -161,4 +164,4 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChann
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-void initRxRefreshRate(uint16_t *rxRefreshRatePtr);
+uint16_t rxRefreshRate(void);

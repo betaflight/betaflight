@@ -478,11 +478,6 @@ void filterRc(bool isRXDataNew)
     static int16_t factor, rcInterpolationFactor;
     static biquadFilter_t filteredCycleTimeState;
     static bool filterInitialised;
-    uint16_t filteredCycleTime;
-    uint16_t rxRefreshRate;
-
-    // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
@@ -494,9 +489,8 @@ void filterRc(bool isRXDataNew)
         filterInitialised = true;
     }
 
-    filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
-
-    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+    const uint16_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
+    rcInterpolationFactor = rxRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
