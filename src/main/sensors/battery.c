@@ -92,7 +92,7 @@ void updateBattery(void)
     uint16_t vbatMeasured = batteryAdcToVoltage(vbatLatestADC);
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA) {
+    if (batteryState == BATTERY_NOT_PRESENT && (!ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA))) {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
 
