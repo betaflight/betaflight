@@ -80,10 +80,6 @@ const adcTagMap_t adcTagMap[] = {
 void adcInit(adcConfig_t *config)
 {
 
-#if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-    UNUSED(init);
-#endif
-
     uint8_t configuredAdcChannels = 0;
 
     memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));

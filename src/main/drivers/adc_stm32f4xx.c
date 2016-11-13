@@ -93,10 +93,6 @@ void adcInit(adcConfig_t *config)
 
     memset(&adcOperatingConfig, 0, sizeof(adcOperatingConfig));
 
-#if !defined(VBAT_ADC_PIN) && !defined(EXTERNAL1_ADC_PIN) && !defined(RSSI_ADC_PIN) && !defined(CURRENT_METER_ADC_PIN)
-    UNUSED(init);
-#endif
-
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
     }
