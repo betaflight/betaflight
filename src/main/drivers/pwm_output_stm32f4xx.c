@@ -182,6 +182,11 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
 
+    if (stream == NULL) {
+        /* trying to use a non valid stream */
+        return;
+    }
+
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
