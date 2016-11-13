@@ -17,6 +17,12 @@
 
 #pragma once
 
+typedef enum {
+    PITOT_DEFAULT = 0,
+    PITOT_NONE = 1,
+    PITOT_MS4525 = 2
+} pitotSensor_e;
+
 #define PITOT_SAMPLE_COUNT_MAX   48
 
 typedef struct pitotmeterConfig_s {

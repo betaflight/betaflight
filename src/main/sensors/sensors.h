@@ -23,6 +23,7 @@ typedef enum {
     SENSOR_INDEX_BARO,
     SENSOR_INDEX_MAG,
     SENSOR_INDEX_RANGEFINDER,
+    SENSOR_INDEX_PITOT,
     SENSOR_INDEX_COUNT
 } sensorIndex_e;
 
@@ -42,15 +43,16 @@ typedef union flightDynamicsTrims_u {
 #define CALIBRATING_BARO_CYCLES             200 // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
 #define CALIBRATING_PITOT_CYCLES            200
 
+// These bits have to be aligned with sensorIndex_e
 typedef enum {
     SENSOR_GYRO = 1 << 0, // always present
     SENSOR_ACC = 1 << 1,
     SENSOR_BARO = 1 << 2,
     SENSOR_MAG = 1 << 3,
     SENSOR_SONAR = 1 << 4,
-    SENSOR_GPS = 1 << 5,
-    SENSOR_GPSMAG = 1 << 6,
-    SENSOR_PITOT = 1 << 7,
+    SENSOR_PITOT = 1 << 5,
+    SENSOR_GPS = 1 << 6,
+    SENSOR_GPSMAG = 1 << 7,
 } sensors_e;
 
 typedef enum {

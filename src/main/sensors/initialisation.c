@@ -95,7 +95,7 @@ extern mag_t mag;
 extern sensor_align_e gyroAlign;
 extern pitot_t pitot;
 
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
@@ -463,15 +463,36 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 #ifdef PITOT
 static bool detectPitot()
 {
-    // Detect what pressure sensors are available.
+    pitotSensor_e pitotHardware = PITOT_DEFAULT;
+
+    switch (pitotHardware) {
+        case PITOT_DEFAULT:
+            ; // Fallthrough
+
+        case PITOT_MS4525:
 #ifdef USE_PITOT_MS4525
-    if (ms4525Detect(&pitot)) {
-        sensorsSet(SENSOR_PITOT);
-        return true;
-    }
+            if (ms4525Detect(&pitot)) {
+                pitotHardware = PITOT_MS4525;
+                break;
+            }
 #endif
-    sensorsClear(SENSOR_PITOT);
-    return false;
+            ; // Fallthrough
+
+        case PITOT_NONE:
+            pitotHardware = PITOT_NONE;
+            break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_PITOT_DETECTION, BOOT_EVENT_FLAGS_NONE, pitotHardware, 0, 0, 0);
+
+    if (pitotHardware == PITOT_NONE) {
+        sensorsClear(SENSOR_PITOT);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_PITOT] = pitotHardware;
+    sensorsSet(SENSOR_PITOT);
+    return true;
 }
 #endif
 
