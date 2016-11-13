@@ -36,6 +36,7 @@
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"

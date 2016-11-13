@@ -35,6 +35,7 @@
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
@@ -62,6 +63,7 @@
 
 #define INAV_POSITION_PUBLISH_RATE_HZ       50      // Publish position updates at this rate
 #define INAV_BARO_UPDATE_RATE               20
+#define INAV_PITOT_UPDATE_RATE              10
 #define INAV_SONAR_UPDATE_RATE              15      // Sonar is limited to 1/60ms update rate, go lower that that
 
 #define INAV_GPS_TIMEOUT_MS                 1500    // GPS timeout
@@ -95,6 +97,11 @@ typedef struct {
     float       alt;            // Raw barometric altitude (cm)
     float       epv;
 } navPositionEstimatorBARO_t;
+
+typedef struct {
+    uint32_t    lastUpdateTime; // Last update time (us)
+    float       airspeed;            // airspeed (cm/s)
+} navPositionEstimatorPITOT_t;
 
 typedef struct {
     uint32_t    lastUpdateTime; // Last update time (us)
@@ -134,6 +141,7 @@ typedef struct {
     navPositionEstimatorGPS_t   gps;
     navPositionEstimatorBARO_t  baro;
     navPositionEstimatorSONAR_t sonar;
+    navPositionEstimatorPITOT_t pitot;
 
     // IMU data
     navPosisitonEstimatorIMU_t  imu;
@@ -367,6 +375,28 @@ static void updateBaroTopic(uint32_t currentTime)
     }
 }
 #endif
+
+#if defined(PITOT)
+/**
+ * Read Pitot and update airspeed topic
+ *  Function is called at main loop rate, updates happen at reduced rate
+ */
+static void updatePitotTopic(uint32_t currentTime)
+{
+    static navigationTimer_t pitotUpdateTimer;
+
+    if (updateTimer(&pitotUpdateTimer, HZ2US(INAV_PITOT_UPDATE_RATE), currentTime)) {
+        float newTAS = pitotCalculateAirSpeed();
+        if (sensors(SENSOR_PITOT) && isPitotCalibrationComplete()) {
+            posEstimator.pitot.airspeed = newTAS;
+        }
+        else {
+            posEstimator.pitot.airspeed = 0;
+        }
+    }
+}
+#endif
+
 
 #if defined(SONAR)
 /**
@@ -740,6 +770,10 @@ void updatePositionEstimator(void)
     /* Periodic sensor updates */
 #if defined(BARO)
     updateBaroTopic(currentTime);
+#endif
+
+#if defined(PITOT)
+    updatePitotTopic(currentTime);
 #endif
 
 #if defined(SONAR)

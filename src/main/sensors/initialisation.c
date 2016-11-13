@@ -57,6 +57,9 @@
 #include "drivers/barometer_fake.h"
 #include "drivers/barometer_ms5611.h"
 
+#include "drivers/pitotmeter.h"
+#include "drivers/pitotmeter_ms4525.h"
+
 #include "drivers/compass.h"
 #include "drivers/compass_ak8963.h"
 #include "drivers/compass_ak8975.h"
@@ -77,6 +80,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/rangefinder.h"
@@ -89,6 +93,7 @@
 extern baro_t baro;
 extern mag_t mag;
 extern sensor_align_e gyroAlign;
+extern pitot_t pitot;
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
 
@@ -455,6 +460,21 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 }
 #endif // BARO
 
+#ifdef PITOT
+static bool detectPitot()
+{
+    // Detect what pressure sensors are available.
+#ifdef USE_PITOT_MS4525
+    if (ms4525Detect(&pitot)) {
+        sensorsSet(SENSOR_PITOT);
+        return true;
+    }
+#endif
+    sensorsClear(SENSOR_PITOT);
+    return false;
+}
+#endif
+
 #ifdef MAG
 static bool detectMag(magSensor_e magHardwareToUse)
 {
@@ -671,6 +691,10 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     detectBaro(baroHardwareToUse);
 #else
     UNUSED(baroHardwareToUse);
+#endif
+
+#ifdef PITOT
+    detectPitot();
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c

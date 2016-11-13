@@ -477,6 +477,7 @@ HIGHEND_SRC = \
             io/dashboard.c \
             sensors/rangefinder.c \
             sensors/barometer.c \
+            sensors/pitotmeter.c \
             telemetry/telemetry.c \
             telemetry/frsky.c \
             telemetry/hott.c \

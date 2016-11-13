@@ -45,6 +45,7 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
@@ -207,6 +208,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
+#ifdef PITOT
+    {"AirSpeed",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_PITOT},
+#endif
 #ifdef SONAR
     {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
 #endif
@@ -331,6 +335,9 @@ typedef struct blackboxMainState_s {
 
 #ifdef BARO
     int32_t BaroAlt;
+#endif
+#ifdef PITOT
+    int32_t AirSpeed;
 #endif
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
@@ -470,6 +477,13 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return false;
 #endif
 
+        case FLIGHT_LOG_FIELD_CONDITION_PITOT:
+#ifdef PITOT
+            return sensors(SENSOR_PITOT);
+#else
+            return false;
+#endif
+
         case FLIGHT_LOG_FIELD_CONDITION_VBAT:
             return feature(FEATURE_VBAT);
 
@@ -602,6 +616,12 @@ static void writeIntraframe(void)
 #ifdef BARO
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
             blackboxWriteSignedVB(blackboxCurrent->BaroAlt);
+        }
+#endif
+
+#ifdef PITOT
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
+            blackboxWriteSignedVB(blackboxCurrent->AirSpeed);
         }
 #endif
 
@@ -764,6 +784,12 @@ static void writeInterframe(void)
 #ifdef BARO
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO)) {
         deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
+    }
+#endif
+
+#ifdef PITOT
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->AirSpeed - blackboxLast->AirSpeed;
     }
 #endif
 
@@ -1106,6 +1132,10 @@ static void loadMainState(uint32_t currentTime)
 
 #ifdef BARO
     blackboxCurrent->BaroAlt = BaroAlt;
+#endif
+
+#ifdef PITOT
+    blackboxCurrent->AirSpeed = AirSpeed;
 #endif
 
 #ifdef SONAR
