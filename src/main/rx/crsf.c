@@ -183,8 +183,8 @@ bool crsfInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = CRSF_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000; //!!TODO this needs checking
 
-    rxRuntimeConfig->rcReadRawFunc = crsfReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = crsfFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = crsfReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = crsfFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
