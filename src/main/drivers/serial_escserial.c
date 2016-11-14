@@ -32,7 +32,7 @@ typedef enum {
     PROTOCOL_BLHELI = 1,
     PROTOCOL_KISS = 2,
     PROTOCOL_KISSALL = 3,
-	PROTOCOL_CASTLE = 4,
+    PROTOCOL_CASTLE = 4,
 } escProtocol_e;
 
 #if defined(USE_ESCSERIAL)
@@ -335,11 +335,12 @@ serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbac
         }
         setTxSignalEsc(escSerial, ENABLE);
         serialTimerTxConfigBL(escSerial->txTimerHardware, portIndex, baud);
-    } else if(mode == PROTOCOL_CASTLE){
+    }
+    else if(mode == PROTOCOL_CASTLE){
         escSerialOutputPortConfig(escSerial->rxTimerHardware);
         serialTimerTxConfigBL(escSerial->txTimerHardware, portIndex, baud);
         serialTimerRxConfigBL(escSerial->rxTimerHardware, portIndex, options);
-	}
+    }
     return &escSerial->port;
 }
 
@@ -929,15 +930,15 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
 
     uint32_t escBaudrate;
     switch (mode) {
-    case PROTOCOL_KISS:
-        escBaudrate = BAUDRATE_KISS;
-        break;
-    case PROTOCOL_CASTLE:
-        escBaudrate = BAUDRATE_CASTLE;
-        break;
-    default:
-        escBaudrate = BAUDRATE_NORMAL;
-        break;
+        case PROTOCOL_KISS:
+            escBaudrate = BAUDRATE_KISS;
+            break;
+        case PROTOCOL_CASTLE:
+            escBaudrate = BAUDRATE_CASTLE;
+            break;
+        default:
+            escBaudrate = BAUDRATE_NORMAL;
+            break;
     }
 
     if((mode == PROTOCOL_KISS) && (output == 255)){
@@ -999,9 +1000,9 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
             }
             LED1_OFF;
         }
-		if(mode != PROTOCOL_CASTLE){
-        	delay(5);
-		}
+        if(mode != PROTOCOL_CASTLE){
+            delay(5);
+        }
     }
 }
 
