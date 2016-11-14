@@ -205,9 +205,18 @@ pwmOutputConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
+#if defined(LUX_RACE)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(COLIBRI_RACE)
+            // remap PWM6-9 as servos
+            if ((timerIndex >= PWM6 || timerIndex <= PWM9) && timerHardwarePtr->tim == TIM2)
+                type = MAP_TO_SERVO_OUTPUT;
+            // remap PWM10+11 as servos
+            if ((timerIndex == PWM10 || timerIndex == PWM11) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
