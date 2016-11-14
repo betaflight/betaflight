@@ -23,14 +23,16 @@
 
 typedef enum {
     BAUDRATE_NORMAL = 19200,
-    BAUDRATE_KISS   = 38400
+    BAUDRATE_KISS   = 38400,
+    BAUDRATE_CASTLE = 18880,
 } escBaudRate_e;
 
 typedef enum {
     PROTOCOL_SIMONK = 0,
     PROTOCOL_BLHELI = 1,
     PROTOCOL_KISS = 2,
-    PROTOCOL_KISSALL = 3
+    PROTOCOL_KISSALL = 3,
+    PROTOCOL_CASTLE = 4,
 } escProtocol_e;
 
 #if defined(USE_ESCSERIAL)
@@ -117,7 +119,7 @@ static void escSerialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polari
 
 void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
 {
-    if((escSerial->mode = PROTOCOL_KISSALL))
+    if((escSerial->mode == PROTOCOL_KISSALL))
     {
         for (volatile uint8_t i = 0; i < escSerial->outputCount; i++) {
             uint8_t state_temp = state;
@@ -334,6 +336,11 @@ serialPort_t *openEscSerial(escSerialPortIndex_e portIndex, serialReceiveCallbac
         setTxSignalEsc(escSerial, ENABLE);
         serialTimerTxConfigBL(escSerial->txTimerHardware, portIndex, baud);
     }
+    else if(mode == PROTOCOL_CASTLE){
+        escSerialOutputPortConfig(escSerial->rxTimerHardware);
+        serialTimerTxConfigBL(escSerial->txTimerHardware, portIndex, baud);
+        serialTimerRxConfigBL(escSerial->rxTimerHardware, portIndex, options);
+    }
     return &escSerial->port;
 }
 
@@ -485,7 +492,7 @@ void processTxStateBL(escSerial_t *escSerial)
 
 
         //set output
-        if(escSerial->mode==PROTOCOL_BLHELI) {
+        if(escSerial->mode==PROTOCOL_BLHELI || escSerial->mode==PROTOCOL_CASTLE) {
             escSerialOutputPortConfig(escSerial->rxTimerHardware);
         }
         return;
@@ -502,7 +509,7 @@ void processTxStateBL(escSerial_t *escSerial)
 
     escSerial->isTransmittingData = false;
     if (isEscSerialTransmitBufferEmpty((serialPort_t *)escSerial)) {
-        if(escSerial->mode==PROTOCOL_BLHELI)
+        if(escSerial->mode==PROTOCOL_BLHELI || escSerial->mode==PROTOCOL_CASTLE)
         {
             escSerialInputPortConfig(escSerial->rxTimerHardware);
         }
@@ -921,7 +928,18 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
     pwmDisableMotors();
     passPort = escPassthroughPort;
 
-    uint32_t escBaudrate = (mode == PROTOCOL_KISS) ? BAUDRATE_KISS : BAUDRATE_NORMAL;
+    uint32_t escBaudrate;
+    switch (mode) {
+        case PROTOCOL_KISS:
+            escBaudrate = BAUDRATE_KISS;
+            break;
+        case PROTOCOL_CASTLE:
+            escBaudrate = BAUDRATE_CASTLE;
+            break;
+        default:
+            escBaudrate = BAUDRATE_NORMAL;
+            break;
+    }
 
     if((mode == PROTOCOL_KISS) && (output == 255)){
         motor_output = 255;
@@ -982,7 +1000,9 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
             }
             LED1_OFF;
         }
-        delay(5);
+        if(mode != PROTOCOL_CASTLE){
+            delay(5);
+        }
     }
 }
 
