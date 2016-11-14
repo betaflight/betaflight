@@ -28,7 +28,7 @@
 
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config) 
+void targetConfiguration(master_t *config)
 {
     config->motorConfig.maxthrottle = 1980;
     config->batteryConfig.vbatmaxcellvoltage = 45;

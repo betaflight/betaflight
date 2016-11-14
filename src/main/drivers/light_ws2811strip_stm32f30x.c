@@ -63,7 +63,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     }
 
     ws2811IO = IOGetByTag(ioTag);
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
@@ -72,7 +72,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     /* Compute the prescaler value */
     uint16_t prescalerValue = (uint16_t) (SystemCoreClock / WS2811_TIMER_HZ) - 1;
-    
+
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = WS2811_TIMER_PERIOD; // 800kHz

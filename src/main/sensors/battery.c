@@ -43,7 +43,7 @@
 #define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
-uint8_t batteryCellCount = 3;       // cell count
+uint8_t batteryCellCount;
 uint16_t batteryWarningVoltage;
 uint16_t batteryCriticalVoltage;
 
@@ -83,25 +83,20 @@ static void updateBatteryVoltage(void)
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
 
-#define VBATTERY_STABLE_DELAY 40
+#define VBAT_STABLE_MAX_DELTA 2
 
 void updateBattery(void)
 {
+    uint16_t vbatPreviousADC = vbatLatestADC;
     updateBatteryVoltage();
+    uint16_t vbatMeasured = batteryAdcToVoltage(vbatLatestADC);
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > batteryConfig->batterynotpresentlevel )
-    {
+    if (batteryState == BATTERY_NOT_PRESENT && (ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA))) {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
-        /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up)
-        We only do this on the ground so don't care if we do block, not
-        worse than original code anyway*/
-        delay(VBATTERY_STABLE_DELAY);
-        updateBatteryVoltage();
 
-        unsigned cells = (batteryAdcToVoltage(vbatLatestADC) / batteryConfig->vbatmaxcellvoltage) + 1;
+        unsigned cells = (vbatMeasured / batteryConfig->vbatmaxcellvoltage) + 1;
         if (cells > 8) {
             // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
             cells = 8;
@@ -109,10 +104,8 @@ void updateBattery(void)
         batteryCellCount = cells;
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
-    }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= batteryConfig->batterynotpresentlevel && !ARMING_FLAG(ARMED))
-    {
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig->batterynotpresentlevel */
+    } else if (batteryState != BATTERY_NOT_PRESENT && !ARMING_FLAG(ARMED) && vbat <= batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA) {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
@@ -166,7 +159,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
 {
     batteryConfig = initialBatteryConfig;
     batteryState = BATTERY_NOT_PRESENT;
-    batteryCellCount = 1;
+    batteryCellCount = 0;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
 }
@@ -216,7 +209,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
 float calculateVbatPidCompensation(void) {
     float batteryScaler =  1.0f;
-    if (feature(FEATURE_VBAT) && batteryCellCount > 1) {
+    if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
         // Up to 33% PID gain. Should be fine for 4,2to 3,3 difference
         batteryScaler =  constrainf((( (float)batteryConfig->vbatmaxcellvoltage * batteryCellCount ) / (float) vbat), 1.0f, 1.33f);
     }
@@ -225,7 +218,7 @@ float calculateVbatPidCompensation(void) {
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
+    return batteryCellCount > 0 ? constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100) : 0;
 }
 
 uint8_t calculateBatteryCapacityRemainingPercentage(void)

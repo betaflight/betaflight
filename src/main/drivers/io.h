@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -58,7 +58,7 @@
 #define IOCFG_AF_PP_UP       IO_CONFIG(GPIO_MODE_AF_PP,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
 #define IOCFG_AF_OD          IO_CONFIG(GPIO_MODE_AF_OD,     GPIO_SPEED_FREQ_LOW,  GPIO_NOPULL)
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLDOWN)
-#define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,  	GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
+#define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_NOPULL)
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
 
@@ -101,10 +101,9 @@ void IOHi(IO_t io);
 void IOLo(IO_t io);
 void IOToggle(IO_t io);
 
-void IOInit(IO_t io, resourceOwner_e owner, resourceType_e resource, uint8_t index);
+void IOInit(IO_t io, resourceOwner_e owner, uint8_t index);
 void IORelease(IO_t io);  // unimplemented
 resourceOwner_e IOGetOwner(IO_t io);
-resourceType_e IOGetResources(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);

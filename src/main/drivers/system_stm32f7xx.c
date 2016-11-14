@@ -151,9 +151,9 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
-	//SystemClock_Config();
+    //SystemClock_Config();
 
     // Configure NVIC preempt/priority groups
     //NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);

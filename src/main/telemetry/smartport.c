@@ -385,7 +385,7 @@ static void processMspPacket(mspPacket_t* packet)
     if (mspFcProcessCommand(packet, &smartPortMspReply, NULL) == MSP_RESULT_ERROR) {
         sbufWriteU8(&smartPortMspReply.buf, SMARTPORT_MSP_ERROR);
     }
-    
+
     // change streambuf direction
     sbufSwitchToReader(&smartPortMspReply.buf, smartPortMspTxBuffer);
     smartPortMspReplyPending = true;
@@ -420,7 +420,7 @@ bool smartPortSendMspReply()
     uint8_t packet[SMARTPORT_PAYLOAD_SIZE];
     uint8_t* p = packet;
     uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-    
+
     sbuf_t* txBuf = &smartPortMspReply.buf;
 
     // detect first reply packet
@@ -496,11 +496,11 @@ void handleSmartPortMspFrame(smartPortFrame_t* sp_frame)
     static uint8_t lastSeq = 0;
     static uint8_t checksum = 0;
     static mspPacket_t cmd;
-    
+
     // re-assemble MSP frame & forward to MSP port when complete
     uint8_t* p = ((uint8_t*)sp_frame) + SMARTPORT_PAYLOAD_OFFSET;
     uint8_t* end = p + SMARTPORT_PAYLOAD_SIZE;
-    
+
     uint8_t head = *p++;
     uint8_t seq = head & SMARTPORT_MSP_SEQ_MASK;
     uint8_t version = (head & SMARTPORT_MSP_VER_MASK) >> SMARTPORT_MSP_VER_SHIFT;
@@ -594,7 +594,7 @@ void handleSmartPortTelemetry(void)
             handleSmartPortMspFrame(&smartPortRxBuffer);
         }
     }
-    
+
     while (smartPortHasRequest) {
         // Ensure we won't get stuck in the loop if there happens to be nothing available to send in a timely manner - dump the slot if we loop in there for too long.
         if ((millis() - smartPortLastServiceTime) > SMARTPORT_SERVICE_TIMEOUT_MS) {
@@ -607,7 +607,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-        
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -627,14 +627,14 @@ void handleSmartPortTelemetry(void)
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     //convert to knots: 1cm/s = 0.0194384449 knots
                     //Speed should be sent in knots/1000 (GPS speed is in cm/s)
-                    uint32_t tmpui = GPS_speed * 1944 / 100; 
+                    uint32_t tmpui = GPS_speed * 1944 / 100;
                     smartPortSendPackage(id, tmpui);
                     smartPortHasRequest = 0;
                 }
                 break;
 #endif
             case FSSP_DATAID_VFAS       :
-                if (feature(FEATURE_VBAT)) {
+                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     uint16_t vfasVoltage;
                     if (telemetryConfig->frsky_vfas_cell_voltage) {
                         vfasVoltage = vbat / batteryCellCount;
@@ -700,18 +700,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, accSmooth[X] / 44);
-                // unknown input and unknown output unit
-                // we can only show 00.00 format, another digit won't display right on Taranis
-                // dividing by roughly 44 will give acceleration in G units
+                smartPortSendPackage(id, 100 * accSmooth[X] / acc.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, accSmooth[Y] / 44);
+                smartPortSendPackage(id, 100 * accSmooth[Y] / acc.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, accSmooth[Z] / 44);
+                smartPortSendPackage(id, 100 * accSmooth[Z] / acc.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :
@@ -810,7 +807,7 @@ void handleSmartPortTelemetry(void)
                 break;
 #endif
             case FSSP_DATAID_A4         :
-                if (feature(FEATURE_VBAT)) {
+                if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
                     smartPortSendPackage(id, vbat * 10 / batteryCellCount ); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }

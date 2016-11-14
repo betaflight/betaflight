@@ -81,7 +81,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);  
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
     DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
 }
 
@@ -92,10 +92,10 @@ void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
     if (!pwmMotorsEnabled) {
         return;
     }
-    
+
     for (int i = 0; i < dmaMotorTimerCount; i++) {
         TIM_SetCounter(dmaMotorTimers[i].timer, 0);
-        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE); 
+        TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
     }
 }
 
@@ -116,23 +116,23 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
-    
+
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
-    
-    IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
+
+    IOInit(motorIO, OWNER_MOTOR, 0);
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_UP), timerHardware->alternateFunction);
 
     if (configureTimer) {
-        TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;    
+        TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
         TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
 
         RCC_ClockCmd(timerRCC(timer), ENABLE);
         TIM_Cmd(timer, DISABLE);
-        
+
         uint32_t hz;
         switch (pwmProtocolType) {
             case(PWM_TYPE_DSHOT600):
@@ -149,11 +149,11 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / timerClockDivisor(timer) / hz) - 1;
         TIM_TimeBaseStructure.TIM_Period = MOTOR_BITLENGTH;
         TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-        TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;        
+        TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
         TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-        TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);        
+        TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
     }
-    
+
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
@@ -171,20 +171,25 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     timerOCPreloadConfig(timer, timerHardware->channel, TIM_OCPreload_Enable);
     motor->timerDmaSource = timerDmaSource(timerHardware->channel);
     dmaMotorTimers[timerIndex].timerDmaSources |= motor->timerDmaSource;
-    
+
     TIM_CCxCmd(timer, motor->timerHardware->channel, TIM_CCx_Enable);
-    
+
     if (configureTimer) {
         TIM_CtrlPWMOutputs(timer, ENABLE);
-        TIM_ARRPreloadConfig(timer, ENABLE); 
-        TIM_Cmd(timer, ENABLE);       
+        TIM_ARRPreloadConfig(timer, ENABLE);
+        TIM_Cmd(timer, ENABLE);
     }
 
     DMA_Stream_TypeDef *stream = timerHardware->dmaStream;
 
+    if (stream == NULL) {
+        /* trying to use a non valid stream */
+        return;
+    }
+
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
-    
+
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
 

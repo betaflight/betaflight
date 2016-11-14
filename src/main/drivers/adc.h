@@ -35,14 +35,19 @@ typedef struct adc_config_s {
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
     uint8_t sampleTime;
-} adc_config_t;
+} adcOperatingConfig_t;
 
-typedef struct drv_adc_config_s {
-    bool enableVBat;
-    bool enableRSSI;
-    bool enableCurrentMeter;
-    bool enableExternal1;
-} drv_adc_config_t;
+typedef struct adcChannelConfig_t {
+    bool enabled;
+    ioTag_t ioTag;
+} adcChannelConfig_t;
 
-void adcInit(drv_adc_config_t *init);
+typedef struct adcConfig_s {
+    adcChannelConfig_t vbat;
+    adcChannelConfig_t rssi;
+    adcChannelConfig_t currentMeter;
+    adcChannelConfig_t external1;
+} adcConfig_t;
+
+void adcInit(adcConfig_t *config);
 uint16_t adcGetChannel(uint8_t channel);

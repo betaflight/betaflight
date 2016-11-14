@@ -256,8 +256,8 @@ void initEscEndpoints(void) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
         maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
-	    deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
-	    deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
     } else
 #endif
     {
@@ -355,7 +355,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 void mixerConfigureOutput(void)
 {
     syncMotorOutputWithPidLoop = pwmIsSynced();
-    
+
     motorCount = QUAD_MOTOR_COUNT;
 
     for (uint8_t i = 0; i < motorCount; i++) {
@@ -376,9 +376,9 @@ void mixerResetDisarmedMotors(void)
 
 void writeMotors(void)
 {
-	for (uint8_t i = 0; i < motorCount; i++) {
+    for (uint8_t i = 0; i < motorCount; i++) {
         pwmWriteMotor(i, motor[i]);
-	}
+    }
 
     if (syncMotorOutputWithPidLoop) {
         pwmCompleteMotorUpdate(motorCount);

@@ -152,7 +152,7 @@ static void escSerialGPIOConfig(ioTag_t tag, ioConfig_t cfg)
         return;
     }
 
-    IOInit(IOGetByTag(tag), OWNER_MOTOR, RESOURCE_OUTPUT, 0);
+    IOInit(IOGetByTag(tag), OWNER_MOTOR, 0);
     IOConfigGPIO(IOGetByTag(tag), cfg);
 }
 

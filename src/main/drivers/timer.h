@@ -56,6 +56,7 @@ typedef uint32_t timCNT_t;
 
 typedef enum {
     TIM_USE_ANY   = 0x0,
+    TIM_USE_NONE  = 0x0,
     TIM_USE_PPM   = 0x1,
     TIM_USE_PWM   = 0x2,
     TIM_USE_MOTOR = 0x4,
@@ -95,13 +96,13 @@ typedef struct timerHardware_s {
 #endif
 #if defined(USE_DSHOT) || defined(LED_STRIP)
 #if defined(STM32F4) || defined(STM32F7)
-    DMA_Stream_TypeDef *dmaStream; 
+    DMA_Stream_TypeDef *dmaStream;
     uint32_t dmaChannel;
 #elif defined(STM32F3) || defined(STM32F1)
     DMA_Channel_TypeDef *dmaChannel;
 #endif
     uint8_t dmaIrqHandler;
-#endif 
+#endif
 } timerHardware_t;
 
 typedef enum {
@@ -122,7 +123,7 @@ typedef enum {
 #endif
 #elif defined(STM32F3)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
-#elif defined(STM32F411xE) 
+#elif defined(STM32F411xE)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14

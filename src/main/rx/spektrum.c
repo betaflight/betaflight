@@ -106,7 +106,7 @@ static void spektrumDataReceive(uint16_t c)
 
 static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
 
-uint8_t spektrumFrameStatus(void)
+static uint8_t spektrumFrameStatus(void)
 {
     if (!rcFrameComplete) {
         return RX_FRAME_PENDING;
@@ -123,7 +123,7 @@ uint8_t spektrumFrameStatus(void)
         spek_fade_last_sec_count = fade;
         spek_fade_last_sec = current_secs;
     } else if(spek_fade_last_sec != current_secs) {
-        // If the difference is > 1, then we missed several seconds worth of frames and 
+        // If the difference is > 1, then we missed several seconds worth of frames and
         // should just throw out the fade calc (as it's likely a full signal loss).
         if((current_secs - spek_fade_last_sec) == 1) {
             if(rssi_channel != 0) {
@@ -171,7 +171,7 @@ bool spekShouldBind(uint8_t spektrum_sat_bind)
 {
 #ifdef HARDWARE_BIND_PLUG
     BindPlug = IOGetByTag(IO_TAG(BINDPLUG_PIN));
-    IOInit(BindPlug, OWNER_RX, RESOURCE_INPUT, 0);
+    IOInit(BindPlug, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPlug, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
@@ -203,7 +203,7 @@ void spektrumBind(rxConfig_t *rxConfig)
     LED1_ON;
 
     BindPin = IOGetByTag(IO_TAG(BIND_PIN));
-    IOInit(BindPin, OWNER_RX, RESOURCE_OUTPUT, 0);
+    IOInit(BindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
 
     // RX line, set high
@@ -265,8 +265,8 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         break;
     }
 
-    rxRuntimeConfig->rcReadRawFunc = spektrumReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = spektrumFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
@@ -291,7 +291,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     if (rssi_channel >= rxRuntimeConfig->channelCount) {
         rssi_channel = 0;
     }
-    
+
     return spektrumPort != NULL;
 }
 #endif // SERIAL_RX

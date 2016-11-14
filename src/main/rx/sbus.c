@@ -154,7 +154,7 @@ static void sbusDataReceive(uint16_t c)
     }
 }
 
-uint8_t sbusFrameStatus(void)
+static uint8_t sbusFrameStatus(void)
 {
     if (!sbusFrameDone) {
         return RX_FRAME_PENDING;
@@ -222,7 +222,7 @@ static uint16_t sbusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     // Linear fitting values read from OpenTX-ppmus and comparing with values received by X4R
     // http://www.wolframalpha.com/input/?i=linear+fit+%7B173%2C+988%7D%2C+%7B1812%2C+2012%7D%2C+%7B993%2C+1500%7D
-    return (0.625f * sbusChannelData[chan]) + 880;
+    return (5 * sbusChannelData[chan] / 8) + 880;
 }
 
 bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
@@ -234,8 +234,8 @@ bool sbusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = SBUS_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFunc = sbusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = sbusFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = sbusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sbusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

@@ -120,7 +120,7 @@
 
 #define USE_UART1
 #define USE_UART2
-/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */
 //#define USE_UART3
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2

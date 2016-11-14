@@ -496,6 +496,7 @@ COMMON_SRC = \
             drivers/gyro_sync.c \
             drivers/io.c \
             drivers/light_led.c \
+            drivers/resource.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \

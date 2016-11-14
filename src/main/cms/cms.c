@@ -525,7 +525,7 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
 {
     if (!cmsInMenu) {
         // New open
-        pCurrentDisplay = cmsDisplayPortSelectCurrent(); 
+        pCurrentDisplay = cmsDisplayPortSelectCurrent();
         if (!pCurrentDisplay)
             return;
         cmsInMenu = true;

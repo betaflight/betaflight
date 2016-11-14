@@ -84,7 +84,7 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream);
-   
+
 #else
 
 typedef enum {
@@ -95,7 +95,7 @@ typedef enum {
     DMA1_CH5_HANDLER,
     DMA1_CH6_HANDLER,
     DMA1_CH7_HANDLER,
-#if defined(STM32F3) || defined(STM32F10X_CL)    
+#if defined(STM32F3) || defined(STM32F10X_CL)
     DMA2_CH1_HANDLER,
     DMA2_CH2_HANDLER,
     DMA2_CH3_HANDLER,

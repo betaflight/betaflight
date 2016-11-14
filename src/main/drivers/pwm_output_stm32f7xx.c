@@ -91,7 +91,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
-    
+
     if (!pwmMotorsEnabled) {
         return;
     }
@@ -123,21 +123,21 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 {
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
-    
+
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
-    
-    IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
+
+    IOInit(motorIO, OWNER_MOTOR, 0);
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
     if (configureTimer) {
         RCC_ClockCmd(timerRCC(timer), ENABLE);
-        
+
         uint32_t hz;
         switch (pwmProtocolType) {
             case(PWM_TYPE_DSHOT600):
@@ -168,7 +168,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     {
         motor->TimHandle = dmaMotors[timerIndex].TimHandle;
     }
-    
+
     switch (timerHardware->channel) {
         case TIM_CHANNEL_1:
             motor->timerDmaSource = TIM_DMA_ID_CC1;
@@ -220,7 +220,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         /* Initialization Error */
         return;
     }
-    
+
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
     /* PWM1 Mode configuration: Channel1 */

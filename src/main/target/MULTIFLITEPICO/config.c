@@ -42,20 +42,20 @@
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config) {
     config->mag_hardware = MAG_NONE;            // disabled by default
-    
+
     config->batteryConfig.vbatscale = 100;
     config->batteryConfig.vbatresdivval = 15;
     config->batteryConfig.vbatresdivmultiplier = 4;
     config->batteryConfig.vbatmaxcellvoltage = 44;
     config->batteryConfig.vbatmincellvoltage = 32;
     config->batteryConfig.vbatwarningcellvoltage = 33;
-    
+
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    
+
     config->rcControlsConfig.yaw_deadband = 2;
     config->rcControlsConfig.deadband = 2;
-     
+
     config->modeActivationConditions[0].modeId          = BOXANGLE;
     config->modeActivationConditions[0].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
     config->modeActivationConditions[0].range.startStep = CHANNEL_VALUE_TO_STEP(900);
@@ -64,23 +64,23 @@ void targetConfiguration(master_t *config) {
     config->modeActivationConditions[1].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
     config->modeActivationConditions[1].range.startStep = CHANNEL_VALUE_TO_STEP(1425);
     config->modeActivationConditions[1].range.endStep   = CHANNEL_VALUE_TO_STEP(1575);
-    
+
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
-    
+
     config->motorConfig.motorPwmRate = 17000;
-    
+
     config->gyro_sync_denom = 4;
     config->pid_process_denom = 1;
-    
+
     config->profile[0].pidProfile.P8[ROLL] = 70;
     config->profile[0].pidProfile.I8[ROLL] = 62;
     config->profile[0].pidProfile.D8[ROLL] = 19;
     config->profile[0].pidProfile.P8[PITCH] = 70;
     config->profile[0].pidProfile.I8[PITCH] = 62;
     config->profile[0].pidProfile.D8[PITCH] = 19;
-    
+
     config->profile[0].controlRateProfile[0].rcRate8 = 70;
     config->profile[0].pidProfile.I8[PIDLEVEL] = 40;
-    
+
 }

@@ -27,17 +27,18 @@
 #define LED2                    PB5
 
 #define BEEPER                  PC9
+#define BEEPER_INVERTED
 
 #define INVERTER                PB15
-#define INVERTER_USART 	        USART6
+#define INVERTER_USART          USART6
 
 
-// MPU6500 interrupt
+// Gyro interrupt
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI            PC4
 
-//MPU6500
+//ICM 20689
 #define ICM20689_CS_PIN          PA4
 #define ICM20689_SPI_INSTANCE    SPI1
 
@@ -48,6 +49,21 @@
 #define GYRO
 #define USE_GYRO_SPI_ICM20689
 #define GYRO_ICM20689_ALIGN      CW90_DEG
+
+// MPU 6500
+#define MPU6500_CS_PIN          PA4
+#define MPU6500_SPI_INSTANCE    SPI1
+
+#define ACC
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW90_DEG
+
+#define GYRO
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW90_DEG
+
 
 #define USE_VCP
 //#define VBUS_SENSING_PIN        PA8
@@ -97,7 +113,7 @@
 #define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN 	        PA7
+#define SPI1_MOSI_PIN             PA7
 
 /*
 #define USE_SPI_DEVICE_2 //Free
@@ -115,7 +131,6 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // SCL PB8 - SDA PB9
-#define USE_I2C_PULLUP
 
 // ADC inputs
 #define BOARD_HAS_VOLTAGE_DIVIDER
