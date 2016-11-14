@@ -81,17 +81,19 @@ typedef enum {
 #define ESC_TLM_BAUDRATE 115200
 #define ESC_TLM_BUFFSIZE 10
 #define ESC_BOOTTIME 5000               // 5 seconds
-#define ESC_REQUEST_TIMEOUT 1000        // 1 seconds
+#define ESC_REQUEST_TIMEOUT 100         // 100 ms (data transfer takes only 900us)
 
 static bool tlmFrameDone = false;
-static bool firstCycleComplete = false;
 static uint8_t tlm[ESC_TLM_BUFFSIZE] = { 0, };
 static uint8_t tlmFramePosition = 0;
 static serialPort_t *escTelemetryPort = NULL;
 static esc_telemetry_t escTelemetryData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
+static uint32_t escTriggerLastTimestamp = -1;
+static uint8_t enabledMotorCount;
+static uint8_t timeoutRetryCount = 0;
 
-static uint8_t escTelemetryMotor = 0;      // motor index 0 - 3
+static uint8_t escTelemetryMotor = 0;      // motor index
 static bool escTelemetryEnabled = false;
 static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_WAIT;
 
@@ -140,6 +142,12 @@ bool escTelemetryInit(void)
         escTelemetryEnabled = true;
         masterConfig.batteryConfig.currentMeterType = CURRENT_SENSOR_ESC;
         masterConfig.batteryConfig.batteryMeterType = BATTERY_SENSOR_ESC;
+
+        //Determine number of enabled motors
+        enabledMotorCount = 0;
+        while(enabledMotorCount < MAX_SUPPORTED_MOTORS && pwmGetMotors()[enabledMotorCount].enabled) {
+            enabledMotorCount++;
+        }
     }
 
     return escTelemetryPort != NULL;
@@ -216,6 +224,7 @@ void escTelemetryProcess(uint32_t currentTime)
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
         escTelemetryMotor = 0;
         escTriggerTimestamp = currentTimeMs;
+        escTriggerLastTimestamp = escTriggerTimestamp;
     }
     else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY) {
         if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
@@ -226,10 +235,16 @@ void escTelemetryProcess(uint32_t currentTime)
     }
 
     if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs) {
-        // ESC did not repond in time, skip to next motor
-        escTelemetryData[escTelemetryMotor].skipped = true;
-        selectNextMotor();
+        // ESC did not repond in time, retry
+        timeoutRetryCount++;
+        escTriggerTimestamp = currentTimeMs;
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
+
+        if (timeoutRetryCount == 4) {
+            // Not responding after 3 times, skip motor
+            escTelemetryData[escTelemetryMotor].skipped = true;
+            selectNextMotor();
+        }
 
         if (debugMode == DEBUG_ESC_TELEMETRY) debug[1]++;
     }
@@ -239,14 +254,14 @@ void escTelemetryProcess(uint32_t currentTime)
 
     if (state == ESC_TLM_FRAME_COMPLETE) {
         // Wait until all ESCs are processed
-        if (firstCycleComplete) {
+        if (escTelemetryMotor == enabledMotorCount-1) {
             escCurrent = 0;
             escConsumption = 0;
-            pwmOutputPort_t *motors = pwmGetMotors();
+            escVbat = 0;
 
-            for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-                if (!escTelemetryData[i].skipped && motors[i].enabled) {
-                    escVbat = escVbat == 0 ? escTelemetryData[i].voltage : (escVbat + escTelemetryData[i].voltage) / 2;
+            for (int i = 0; i < enabledMotorCount; i++) {
+                if (!escTelemetryData[i].skipped) {
+                    escVbat =  i > 0 ? ((escVbat + escTelemetryData[i].voltage) / 2) : escTelemetryData[i].voltage;
                     escCurrent = escCurrent + escTelemetryData[i].current;
                     escConsumption = escConsumption + escTelemetryData[i].consumption;
                 }
@@ -259,16 +274,25 @@ void escTelemetryProcess(uint32_t currentTime)
         selectNextMotor();
         escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
     }
+
+    if (escTriggerLastTimestamp + 10000 < currentTimeMs) {
+        // ESCs did not respond for 10 seconds
+        // Disable ESC telemetry and fallback to onboard vbat sensor
+        freeEscTelemetryPort();
+        escVbat = 0;
+        escCurrent = 0;
+        escConsumption = 0;
+    }
 }
 
 static void selectNextMotor(void)
 {
     escTelemetryMotor++;
-    if (escTelemetryMotor >= MAX_SUPPORTED_MOTORS || !(pwmGetMotors()[escTelemetryMotor].enabled)) {
+    if (escTelemetryMotor == enabledMotorCount) {
         escTelemetryMotor = 0;
-        firstCycleComplete = true;
     }
     escTriggerTimestamp = millis();
+    escTriggerLastTimestamp = escTriggerTimestamp;
 }
 
 //-- CRC

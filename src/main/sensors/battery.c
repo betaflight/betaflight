@@ -70,10 +70,11 @@ static uint16_t batteryAdcToVoltage(uint16_t src)
 static void updateBatteryVoltage(void)
 {
     #ifdef USE_ESC_TELEMETRY
-    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
+    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
         vbat = getEscTelemetryVbat();
+        return;
     }
-    #else
+    #endif
 
     static biquadFilter_t vbatFilter;
     static bool vbatFilterIsInitialised;
@@ -89,8 +90,6 @@ static void updateBatteryVoltage(void)
     }
     vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
     vbat = batteryAdcToVoltage(vbatSample);
-
-    #endif
 
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
