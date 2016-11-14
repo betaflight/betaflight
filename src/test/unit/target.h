@@ -24,7 +24,24 @@
 #define GPS
 #define DISPLAY
 #define SERIAL_RX
+#define USE_RX_MSP
+#define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
+#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
+#define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+#define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#define USE_SERIALRX_JETIEXBUS
+#define USE_SERIALRX_SUMD       // Graupner Hott protocol
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+#define USE_SERIALRX_XBUS       // JR
 #define TELEMETRY
+#define TELEMETRY_CRSF
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_IBUS
+#define TELEMETRY_JETIEXBUS
+#define TELEMETRY_LTM
+#define TELEMETRY_MAVLINK
+#define TELEMETRY_SMARTPORT
 #define LED_STRIP
 #define USE_SERVOS
 #define TRANSPONDER

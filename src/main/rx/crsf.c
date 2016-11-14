@@ -23,20 +23,6 @@
 
 #ifdef SERIAL_RX
 
-#include "build/version.h"
-
-#if (FC_VERSION_MAJOR == 3) // not a very good way of finding out if this is betaflight or Cleanflight
-#define BETAFLIGHT
-#else
-#define CLEANFLIGHT
-#endif
-
-#ifdef CLEANFLIGHT
-#include "config/parameter_group.h"
-#include "config/parameter_group_ids.h"
-#include "fc/fc_debug.h"
-#endif
-
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -191,7 +177,7 @@ bool crsfInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#if defined(TELEMETRY) && !defined(CLEANFLIGHT)
+#if defined(TELEMETRY) && defined(TELEMETRY_CRSF)
     const bool portShared = telemetryCheckRxPortShared(portConfig);
 #else
     const bool portShared = false;
@@ -199,7 +185,7 @@ bool crsfInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, crsfDataReceive, CRSF_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, CRSF_PORT_OPTIONS);
 
-#if defined(TELEMETRY) && !defined(CLEANFLIGHT)
+#if defined(TELEMETRY) && defined(TELEMETRY_CRSF)
     if (portShared) {
         telemetrySharedPort = serialPort;
     }

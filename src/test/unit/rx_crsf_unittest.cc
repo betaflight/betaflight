@@ -127,18 +127,17 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     crsfFrame.frame.frameLength = 0;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     // 16 11-bit channels packed into 22 bytes of data
-    crsfFrame.frame.payload[0] = 0xFF;
-    crsfFrame.frame.payload[1] = 0xFF;
-    // !!TODO add more test data
-    crsfFrame.frame.payload[2] = 0;
-    crsfFrame.frame.payload[3] = 0;
-    crsfFrame.frame.payload[4] = 0;
-    crsfFrame.frame.payload[5] = 0;
-    crsfFrame.frame.payload[6] = 0;
-    crsfFrame.frame.payload[7] = 0;
-    crsfFrame.frame.payload[8] = 0;
-    crsfFrame.frame.payload[9] = 0;
-    crsfFrame.frame.payload[10] = 0;
+    crsfFrame.frame.payload[0]  = 0xFF; // bits 0-7
+    crsfFrame.frame.payload[1]  = 0xFF; // bits 8-15
+    crsfFrame.frame.payload[2]  = 0x00; // bits 16-23
+    crsfFrame.frame.payload[3]  = 0x00; // bits 24-31
+    crsfFrame.frame.payload[4]  = 0x58; // bits 32-39  0101100.
+    crsfFrame.frame.payload[5]  = 0x01; // bits 40-47  ....0001
+    crsfFrame.frame.payload[6]  = 0x00; // bits 48-55  0.......
+    crsfFrame.frame.payload[7]  = 0xf0; // bits 56-64  11110000
+    crsfFrame.frame.payload[8]  = 0x01; // bits 65-71  ......01
+    crsfFrame.frame.payload[9]  = 0x60; // bits 72-79  011.....
+    crsfFrame.frame.payload[10] = 0xe2; // bits 80-87  11100010
     crsfFrame.frame.payload[11] = 0;
     crsfFrame.frame.payload[12] = 0;
     crsfFrame.frame.payload[13] = 0;
@@ -161,11 +160,11 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     EXPECT_EQ(0x7ff, crsfChannelData[0]);
     EXPECT_EQ(0x1f, crsfChannelData[1]);
     EXPECT_EQ(0, crsfChannelData[2]);
-    EXPECT_EQ(0, crsfChannelData[3]);
+    EXPECT_EQ(172, crsfChannelData[3]);  //  172 = 0x0ac, 0001 0101100, bits 33-43
     EXPECT_EQ(0, crsfChannelData[4]);
-    EXPECT_EQ(0, crsfChannelData[5]);
+    EXPECT_EQ(992, crsfChannelData[5]);  //  992 = 0x3e0, 01 1110000 0, bits 55-65
     EXPECT_EQ(0, crsfChannelData[6]);
-    EXPECT_EQ(0, crsfChannelData[7]);
+    EXPECT_EQ(1811, crsfChannelData[7]); // 1811 = 0x713, 1110 0010 011, bits 77-87
     EXPECT_EQ(0, crsfChannelData[8]);
     EXPECT_EQ(0, crsfChannelData[9]);
     EXPECT_EQ(0, crsfChannelData[10]);
