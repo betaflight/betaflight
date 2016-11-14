@@ -26,6 +26,7 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "common/maths.h"
 #include "common/utils.h"
 
 #include "drivers/system.h"
@@ -121,6 +122,14 @@ uint8_t crsfFrameStatus(void)
     if (crsfFrameDone) {
         crsfFrameDone = false;
         if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+            // CRC includes type and payload of each frame
+            uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
+            for (int ii = 0; ii < CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE; ++ii) {
+                crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
+            }
+            if (crc != crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]) {
+                return RX_FRAME_PENDING;
+            }
             crsfFrame.frame.frameLength = CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC;
             // unpack the RC channels
             const crsfPayloadRcChannelsPacked_t* rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfFrame.frame.payload;

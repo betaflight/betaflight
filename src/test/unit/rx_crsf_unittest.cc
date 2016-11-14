@@ -43,7 +43,7 @@ extern "C" {
 #include "gtest/gtest.h"
 
 // CRC8 implementation with polynom = x^8+x^7+x^6+x^4+x^2+1 (0xD5)
-unsigned char crc8tab[256] = {
+const unsigned char crc8tab[256] = {
     0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
     0x52, 0x87, 0x2D, 0xF8, 0xAC, 0x79, 0xD3, 0x06, 0x7B, 0xAE, 0x04, 0xD1, 0x85, 0x50, 0xFA, 0x2F,
     0xA4, 0x71, 0xDB, 0x0E, 0x5A, 0x8F, 0x25, 0xF0, 0x8D, 0x58, 0xF2, 0x27, 0x73, 0xA6, 0x0C, 0xD9,
@@ -103,16 +103,21 @@ TEST(CrossFireTest, CRC)
 TEST(CrossFireTest, TestCrsfFrameStatus)
 {
     crsfFrameDone = true;
-    crsfFrame.frame.deviceAddress = CRSF_RECEIVER_ADDRESS;
+    crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
     crsfFrame.frame.frameLength = 0;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     memset(crsfFrame.frame.payload, 0, CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE);
+    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
+    for (int ii = 0; ii < CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE; ++ii) {
+        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
+    }
+    crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
 
-    EXPECT_EQ(CRSF_RECEIVER_ADDRESS, crsfFrame.frame.deviceAddress);
+    EXPECT_EQ(CRSF_ADDRESS_CRSF_RECEIVER, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
@@ -120,10 +125,17 @@ TEST(CrossFireTest, TestCrsfFrameStatus)
     }
 }
 
+/*
+ * Frame is of form
+ * <Device address> <Frame length> < Type>  <Payload> < CRC>
+ * So RC channels frame is:
+ * <0x00> <0x18> <0x16>  <22-bytes payload> < CRC>
+ * 26 bytes altogther.
+ */
 TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
 {
     crsfFrameDone = true;
-    crsfFrame.frame.deviceAddress = CRSF_RECEIVER_ADDRESS;
+    crsfFrame.frame.deviceAddress = CRSF_ADDRESS_CRSF_RECEIVER;
     crsfFrame.frame.frameLength = 0;
     crsfFrame.frame.type = CRSF_FRAMETYPE_RC_CHANNELS_PACKED;
     // 16 11-bit channels packed into 22 bytes of data
@@ -149,12 +161,17 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     crsfFrame.frame.payload[19] = 0;
     crsfFrame.frame.payload[20] = 0;
     crsfFrame.frame.payload[21] = 0;
+    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
+    for (int ii = 0; ii < CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE; ++ii) {
+        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
+    }
+    crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE] = crc;
 
     const uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
 
-    EXPECT_EQ(CRSF_RECEIVER_ADDRESS, crsfFrame.frame.deviceAddress);
+    EXPECT_EQ(CRSF_ADDRESS_CRSF_RECEIVER, crsfFrame.frame.deviceAddress);
     EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
     EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
     EXPECT_EQ(0x7ff, crsfChannelData[0]);
@@ -174,6 +191,7 @@ TEST(CrossFireTest, TestCrsfFrameStatusUnpacking)
     EXPECT_EQ(0, crsfChannelData[14]);
     EXPECT_EQ(0, crsfChannelData[15]);
 }
+
 // STUBS
 
 extern "C" {
