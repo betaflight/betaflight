@@ -462,9 +462,9 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 #endif // BARO
 
 #ifdef PITOT
-static bool detectPitot()
+static bool detectPitot(uint8_t pitotHardwareToUse)
 {
-    pitotSensor_e pitotHardware = PITOT_DEFAULT;
+    pitotSensor_e pitotHardware = pitotHardwareToUse;
 
     switch (pitotHardware) {
         case PITOT_DEFAULT:
@@ -679,6 +679,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         uint8_t accHardwareToUse,
         uint8_t magHardwareToUse,
         uint8_t baroHardwareToUse,
+        uint8_t pitotHardwareToUse,
         int16_t magDeclinationFromConfig,
         uint32_t looptime,
         uint8_t gyroLpf,
@@ -725,7 +726,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 #endif
 
 #ifdef PITOT
-    detectPitot();
+    detectPitot(pitotHardwareToUse);
+#else
+    UNUSED(pitotHardwareToUse);
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c

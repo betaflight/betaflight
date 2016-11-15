@@ -463,6 +463,7 @@ void init(void)
             masterConfig.acc_hardware,
             masterConfig.mag_hardware,
             masterConfig.baro_hardware,
+            masterConfig.pitot_hardware,
             currentProfile->mag_declination,
             masterConfig.looptime,
             masterConfig.gyro_lpf,
