@@ -397,15 +397,15 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     int16_t maxThrottleCorrection = posControl.navConfig->fw.max_throttle - posControl.navConfig->fw.cruise_throttle;
 
     // Mix Pitch/Roll/Throttle
-    if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
-        pitchCorrection += posControl.rcAdjustment[PITCH];
-        throttleCorrection += DECIDEGREES_TO_DEGREES(posControl.rcAdjustment[PITCH]) * posControl.navConfig->fw.pitch_to_throttle;
-        throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
-    }
-
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
         pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (posControl.navConfig->fw.roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
+    }
+
+    if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
+        pitchCorrection += posControl.rcAdjustment[PITCH];
+        throttleCorrection += DECIDEGREES_TO_DEGREES(pitchCorrection) * posControl.navConfig->fw.pitch_to_throttle;
+        throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
 
     // Speed controller - only apply in POS mode
