@@ -151,8 +151,11 @@ typedef struct master_s {
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
-#ifndef SKIP_RX_PWM_PPM
+#ifdef USE_PPM
     ppmConfig_t ppmConfig;
+#endif
+    
+#ifdef USE_PWM
     pwmConfig_t pwmConfig;
 #endif
 

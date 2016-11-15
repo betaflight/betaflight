@@ -361,7 +361,7 @@ void resetBeeperConfig(beeperConfig_t *beeperConfig)
 }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 void resetPpmConfig(ppmConfig_t *ppmConfig)
 {
 #ifdef PPM_PIN
@@ -588,7 +588,7 @@ void createDefaultConfig(master_t *config)
 
     resetBatteryConfig(&config->batteryConfig);
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
     resetPwmConfig(&config->pwmConfig);
 #endif
