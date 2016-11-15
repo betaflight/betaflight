@@ -54,6 +54,7 @@ extern "C" {
     #include "flight/gps_conversion.h"
 
     bool airMode;
+    serialPort_t *telemetrySharedPort;
 }
 
 #include "unittest_macros.h"
@@ -300,6 +301,8 @@ int32_t mAhDrawn;
 
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
+uint32_t micros(void) {return 0;}
+
 uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
 uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
 uint8_t serialRead(serialPort_t *) {return 0;}
@@ -312,6 +315,7 @@ void closeSerialPort(serialPort_t *) {}
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e) {return NULL;}
 
 bool telemetryDetermineEnabledState(portSharing_e) {return true;}
+bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return true;}
 
 portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {return PORTSHARING_NOT_SHARED;}
 

@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -50,22 +51,37 @@ STATIC_UNIT_TESTED crsfFrame_t crsfFrame;
 
 STATIC_UNIT_TESTED uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
 
+static serialPort_t *serialPort;
+static uint32_t crsfFrameStartAt = 0;
+static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
+static uint8_t telemetryBufLen = 0;
+
+
 /*
-Structure
-400kbaud
-Inverted None
-8 Bit
-1 Stop bit None
-Big endian
+ * CRSF protocol
+ *
+ * CRSF protocol uses a single wire half duplex uart connection.
+ * The master sends one frame every 4ms and the slave replies between two frames from the master.
+ *
+ * 420000 baud
+ * not inverted
+ * 8 Bit
+ * 1 Stop bit
+ * Big endian
+ * 420000 bit/s = 46667 byte/s (including stop bit) = 21.43us per byte
+ * Assume a max payload of 32 bytes (needs confirming with TBS), so max frame size of 36 bytes
+ * A 36 byte frame can be transmitted in 771 microseconds.
+ *
+ * Every frame has the structure:
+ * <Device address> <Frame length> < Type> <Payload> < CRC>
+ *
+ * Device address: (uint8_t)
+ * Frame length:   length in  bytes including Type (uint8_t)
+ * Type:           (uint8_t)
+ * CRC:            (uint8_t)
+ *
+ */
 
-Every frame has the structure:
-<Device address> <Frame length> < Type> <Payload> < CRC>
-
-Device address: (uint8_t)
-Frame length:   length in  bytes including Type (uint8_t)
-Type:           (uint8_t)
-CRC:            (uint8_t)
-*/
 struct crsfPayloadRcChannelsPacked_s {
     // 176 bits of data (11 bits per channel * 16 channels) = 22 bytes.
     unsigned int chan0 : 11;
@@ -93,15 +109,15 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
 {
     static uint8_t crsfFramePosition = 0;
-    static uint32_t crsfFrameStartAt = 0;
     const uint32_t now = micros();
 
-    const int32_t crsfFrameTime = now - crsfFrameStartAt;
 #ifdef DEBUG_CRSF_PACKETS
-    debug[2] = crsfFrameTime;
+    debug[2] = now - crsfFrameStartAt;
 #endif
 
-    if (crsfFrameTime > (long)(CRSF_TIME_NEEDED_PER_FRAME_US + 500)) {
+    if (now > crsfFrameStartAt + CRSF_TIME_NEEDED_PER_FRAME_US) {
+        // We've received a character after max time needed to complete a frame,
+        // so this must be the start of a new frame.
         crsfFramePosition = 0;
     }
 
@@ -126,7 +142,6 @@ STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
         crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
     }
     return crc;
-
 }
 
 STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
@@ -178,7 +193,28 @@ STATIC_UNIT_TESTED uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConf
     return (0.62477120195241f * crsfChannelData[chan]) + 881;
 }
 
-bool crsfInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+void crsfRxWriteTelemetryData(const void *data, int len)
+{
+    len = MIN(len, (int)sizeof(telemetryBuf));
+    memcpy(telemetryBuf, data, len);
+    telemetryBufLen = len;
+}
+
+void crsfRxSendTelemetryData(void)
+{
+    // if there is telemetry data to write
+    if (telemetryBufLen > 0) {
+        // check that we are not currently receiving data
+        const uint32_t now = micros();
+        if (now > crsfFrameStartAt + CRSF_TIME_NEEDED_PER_FRAME_US) {
+            // any incoming frames will be complete, so it is OK to write to shared serial port
+            serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+            telemetryBufLen = 0; // reset telemetry buffer
+        }
+    }
+}
+
+bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
         crsfChannelData[ii] = (16 * rxConfig->midrc) / 10 - 1408;
@@ -201,7 +237,7 @@ bool crsfInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     const bool portShared = false;
 #endif
 
-    serialPort_t *serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, crsfDataReceive, CRSF_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, CRSF_PORT_OPTIONS);
+    serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, crsfDataReceive, CRSF_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, CRSF_PORT_OPTIONS);
 
 #if defined(TELEMETRY) && defined(TELEMETRY_CRSF)
     if (portShared) {

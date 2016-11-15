@@ -191,7 +191,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
 #ifdef USE_SERIALRX_CRSF
     case SERIALRX_CRSF:
-        enabled = crsfInit(rxConfig, rxRuntimeConfig);
+        enabled = crsfRxInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
     default:

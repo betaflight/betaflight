@@ -251,7 +251,7 @@ TEST(CrossFireTest, TestCapturedData)
 }
 
 
-TEST(CrossFireTest, TestcrsfDataReceive)
+TEST(CrossFireTest, TestCrsfDataReceive)
 {
     crsfFrameDone = false;
     const uint8_t *pData = capturedData;
@@ -275,11 +275,9 @@ extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
 uint32_t micros(void) {return dummyTimeUs;}
-serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t)
-{
-    return NULL;
-}
+serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t) {return NULL;}
 serialPortConfig_t *findSerialPortConfig(serialPortFunction_e ) {return NULL;}
+void serialWriteBuf(serialPort_t *, const uint8_t *, int) {}
 bool telemetryCheckRxPortShared(const serialPortConfig_t *) {return false;}
 serialPort_t *telemetrySharedPort = NULL;
 }

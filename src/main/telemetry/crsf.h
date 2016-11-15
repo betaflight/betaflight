@@ -30,11 +30,8 @@ typedef enum {
 } crsfFrameType_e;
 
 void initCrsfTelemetry(void);
-void handleCrsfTelemetry(uint32_t currentTime);
 bool checkCrsfTelemetryState(void);
-
-void freeCrsfTelemetryPort(void);
-void configureCrsfTelemetryPort(void);
+void handleCrsfTelemetry(uint32_t currentTime);
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 

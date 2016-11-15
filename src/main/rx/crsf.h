@@ -73,6 +73,10 @@ typedef union crsfFrame_u {
     crsfFrameDef_t frame;
 } crsfFrame_t;
 
+
+void crsfRxWriteTelemetryData(const void *data, int len);
+void crsfRxSendTelemetryData(void);
+
 struct rxConfig_s;
 struct rxRuntimeConfig_s;
-bool crsfInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
+bool crsfRxInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);

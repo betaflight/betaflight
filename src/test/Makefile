@@ -536,6 +536,7 @@ $(OBJECT_DIR)/telemetry_crsf_unittest.o : \
 	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/telemetry_crsf_unittest.cc -o $@
 
 $(OBJECT_DIR)/telemetry_crsf_unittest : \
+	$(OBJECT_DIR)/rx/crsf.o \
 	$(OBJECT_DIR)/telemetry/crsf.o \
 	$(OBJECT_DIR)/telemetry_crsf_unittest.o \
 	$(OBJECT_DIR)/common/maths.o \

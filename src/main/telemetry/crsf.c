@@ -116,7 +116,8 @@ static void crsfFinalize(sbuf_t *dst)
 {
     sbufWriteU8(dst, crsfCrc);
     sbufSwitchToReader(dst, crsfFrame);
-    serialWriteBuf(serialPort, sbufPtr(dst), sbufBytesRemaining(dst));
+    // write the telemetry frame to the receiver.
+    crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
 }
 
 static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
@@ -129,6 +130,7 @@ static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
     }
     return frameSize;
 }
+
 /*
 CRSF frame has the structure:
 <Device address> <Frame length> <Type> <Payload> <CRC>
@@ -349,35 +351,14 @@ static void processCrsf(void)
     crsfScheduleIndex = (crsfScheduleIndex + 1) % CRSF_SCHEDULE_COUNT;
 }
 
-void handleCrsfTelemetry(uint32_t currentTime)
-{
-    static uint32_t crsfLastCycleTime;
-    if (!crsfTelemetryEnabled) {
-        return;
-    }
-    if (!serialPort) {
-        return;
-    }
-    if ((currentTime - crsfLastCycleTime) >= CRSF_CYCLETIME_US) {
-        processCrsf();
-        crsfLastCycleTime = currentTime;
-    }
-}
-
-void freeCrsfTelemetryPort(void)
+static void freeCrsfTelemetryPort(void)
 {
     closeSerialPort(serialPort);
     serialPort = NULL;
     crsfTelemetryEnabled = false;
 }
 
-void initCrsfTelemetry(void)
-{
-    serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_CRSF);
-    portSharing = determinePortSharing(serialPortConfig, FUNCTION_TELEMETRY_CRSF);
-}
-
-void configureCrsfTelemetryPort(void)
+static void configureCrsfTelemetryPort(void)
 {
     if (!serialPortConfig) {
         return;
@@ -387,6 +368,12 @@ void configureCrsfTelemetryPort(void)
         return;
     }
     crsfTelemetryEnabled = true;
+}
+
+void initCrsfTelemetry(void)
+{
+    serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_CRSF);
+    portSharing = determinePortSharing(serialPortConfig, FUNCTION_TELEMETRY_CRSF);
 }
 
 bool checkCrsfTelemetryState(void)
@@ -409,6 +396,29 @@ bool checkCrsfTelemetryState(void)
             freeCrsfTelemetryPort();
         }
         return true;
+    }
+}
+
+/*
+ * Called periodically by the scheduler
+ */
+void handleCrsfTelemetry(uint32_t currentTime)
+{
+    static uint32_t crsfLastCycleTime;
+
+    if (!crsfTelemetryEnabled) {
+        return;
+    }
+    if (!serialPort) {
+        return;
+    }
+
+    // give the receiver a change to send any outstanding telemetry data.
+    crsfRxSendTelemetryData();
+
+    if (currentTime >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
+        crsfLastCycleTime = currentTime;
+        processCrsf();
     }
 }
 
