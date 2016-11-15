@@ -46,7 +46,12 @@
 #define BARO
 #define USE_BARO_BMP280
 
-#ifndef RMDO
+#ifdef RMDO
+
+#undef USE_GPS
+
+#else
+
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
@@ -58,8 +63,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 #define MAG_INT_EXTI            PC14
-#else
-#undef USE_GPS
+
 #endif
 
 #define USE_FLASHFS
