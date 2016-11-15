@@ -49,29 +49,6 @@
 static bool ibusFrameDone = false;
 static uint32_t ibusChannelData[IBUS_MAX_CHANNEL];
 
-static void ibusDataReceive(uint16_t c);
-static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    UNUSED(rxConfig);
-
-    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
-    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
-
-    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
-
-    return ibusPort != NULL;
-}
-
 static uint8_t ibus[IBUS_BUFFSIZE] = { 0, };
 
 // Receive ISR callback
@@ -140,5 +117,25 @@ static uint16_t ibusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
 {
     UNUSED(rxRuntimeConfig);
     return ibusChannelData[chan];
+}
+
+bool ibusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = IBUS_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 20000; // TODO - Verify speed
+
+    rxRuntimeConfig->rcReadRawFn = ibusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = ibusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    serialPort_t *ibusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, ibusDataReceive, IBUS_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+
+    return ibusPort != NULL;
 }
 #endif // USE_SERIALRX_IBUS
