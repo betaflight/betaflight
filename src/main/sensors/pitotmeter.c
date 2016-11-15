@@ -149,4 +149,9 @@ int32_t pitotCalculateAirSpeed(void)
     return pitot.airSpeed;
 }
 
+bool isPitotmeterHealthy(void)
+{
+    return true;
+}
+
 #endif /* PITOT */

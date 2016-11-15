@@ -518,6 +518,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, getHwBarometerStatus());
         sbufWriteU8(dst, getHwGPSStatus());
         sbufWriteU8(dst, getHwRangefinderStatus());
+        sbufWriteU8(dst, getHwPitotmeterStatus());
         sbufWriteU8(dst, HW_SENSOR_NONE);                   // Optical flow
         break;
 

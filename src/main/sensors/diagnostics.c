@@ -21,6 +21,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/rangefinder.h"
+#include "sensors/pitotmeter.h"
 
 extern uint8_t requestedSensors[SENSOR_INDEX_COUNT];
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
@@ -113,7 +114,7 @@ hardwareSensorStatus_e getHwRangefinderStatus(void)
 {
 #if defined(SONAR)
     if (detectedSensors[SENSOR_INDEX_RANGEFINDER] != RANGEFINDER_NONE) {
-        if (isRangefinderHealthy())
+        if (isRangefinderHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -122,6 +123,32 @@ hardwareSensorStatus_e getHwRangefinderStatus(void)
     }
     else {
         if (requestedSensors[SENSOR_INDEX_RANGEFINDER] != RANGEFINDER_NONE) {
+            // Selected but not detected
+            return HW_SENSOR_UNAVAILABLE;
+        }
+        else {
+            // Not selected and not detected
+            return HW_SENSOR_NONE;
+        }
+    }
+#else
+    return HW_SENSOR_NONE;
+#endif
+}
+
+hardwareSensorStatus_e getHwPitotmeterStatus(void)
+{
+#if defined(PITOT)
+    if (detectedSensors[SENSOR_INDEX_PITOT] != PITOT_NONE) {
+        if (isPitotmeterHealthy()) {
+            return HW_SENSOR_OK;
+        }
+        else {
+            return HW_SENSOR_UNHEALTHY;
+        }
+    }
+    else {
+        if (requestedSensors[SENSOR_INDEX_PITOT] != PITOT_NONE) {
             // Selected but not detected
             return HW_SENSOR_UNAVAILABLE;
         }
@@ -168,6 +195,7 @@ bool isHardwareHealthy(void)
     const hardwareSensorStatus_e baroStatus = getHwBarometerStatus();
     const hardwareSensorStatus_e magStatus = getHwCompassStatus();
     const hardwareSensorStatus_e rangefinderStatus = getHwRangefinderStatus();
+    const hardwareSensorStatus_e pitotStatus = getHwPitotmeterStatus();
     const hardwareSensorStatus_e gpsStatus = getHwGPSStatus();
 
     // Sensor is considered failing if it's either unavailable (selected but not detected) or unhealthy (returning invalid readings)
@@ -184,6 +212,9 @@ bool isHardwareHealthy(void)
         return false;
 
     if (rangefinderStatus == HW_SENSOR_UNAVAILABLE || rangefinderStatus == HW_SENSOR_UNHEALTHY)
+        return false;
+
+    if (pitotStatus == HW_SENSOR_UNAVAILABLE || pitotStatus == HW_SENSOR_UNHEALTHY)
         return false;
 
     if (gpsStatus == HW_SENSOR_UNAVAILABLE || gpsStatus == HW_SENSOR_UNHEALTHY)

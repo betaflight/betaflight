@@ -18,6 +18,7 @@ hardwareSensorStatus_e getHwCompassStatus(void);
 hardwareSensorStatus_e getHwBarometerStatus(void);
 hardwareSensorStatus_e getHwGPSStatus(void);
 hardwareSensorStatus_e getHwRangefinderStatus(void);
+hardwareSensorStatus_e getHwPitotmeterStatus(void);
 
 bool isHardwareHealthy(void);
 

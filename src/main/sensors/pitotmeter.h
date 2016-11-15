@@ -50,4 +50,5 @@ void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t pitotUpdate(void);
 bool isPitotReady(void);
 int32_t pitotCalculateAirSpeed(void);
+bool isPitotmeterHealthy(void);
 #endif

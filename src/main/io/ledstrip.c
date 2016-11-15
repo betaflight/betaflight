@@ -44,6 +44,7 @@
 #include "fc/runtime_config.h"
 
 #include "sensors/acceleration.h"
+#include "sensors/diagnostics.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
