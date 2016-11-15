@@ -34,6 +34,7 @@ extern "C" {
     #include "rx/rx.h"
     #include "rx/crsf.h"
 
+    void crsfDataReceive(uint16_t c);
     uint8_t crsfFrameCRC(void);
     uint8_t crsfFrameStatus(void);
     uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
@@ -41,6 +42,8 @@ extern "C" {
     extern bool crsfFrameDone;
     extern crsfFrame_t crsfFrame;
     extern uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
+
+    uint32_t dummyTimeUs;
 }
 
 #include "unittest_macros.h"
@@ -209,7 +212,7 @@ TEST(CrossFireTest, TestCapturedData)
     const crsfRcChannelsFrame_t *framePtr = (const crsfRcChannelsFrame_t*)capturedData;
     crsfFrame = *(const crsfFrame_t*)framePtr;
     crsfFrameDone = true;
-     uint8_t status = crsfFrameStatus();
+    uint8_t status = crsfFrameStatus();
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
     EXPECT_EQ(false, crsfFrameDone);
     EXPECT_EQ(RX_FRAME_COMPLETE, status);
@@ -246,12 +249,32 @@ TEST(CrossFireTest, TestCapturedData)
     crc = crsfFrameCRC();
     EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
 }
+
+
+TEST(CrossFireTest, TestcrsfDataReceive)
+{
+    crsfFrameDone = false;
+    const uint8_t *pData = capturedData;
+    for (unsigned int ii = 0; ii < sizeof(crsfRcChannelsFrame_t); ++ii) {
+        crsfDataReceive(*pData++);
+    }
+    EXPECT_EQ(true, crsfFrameDone);
+    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, crsfFrame.frame.deviceAddress);
+    EXPECT_EQ(CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC, crsfFrame.frame.frameLength);
+    EXPECT_EQ(CRSF_FRAMETYPE_RC_CHANNELS_PACKED, crsfFrame.frame.type);
+    uint8_t crc = crsfFrameCRC();
+    for (int ii = 0; ii < CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE; ++ii) {
+        EXPECT_EQ(capturedData[ii + 3], crsfFrame.frame.payload[ii]);
+    }
+    EXPECT_EQ(crc, crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]);
+}
+
 // STUBS
 
 extern "C" {
 
 int16_t debug[DEBUG16_VALUE_COUNT];
-uint32_t micros(void) {return 0;}
+uint32_t micros(void) {return dummyTimeUs;}
 serialPort_t *openSerialPort(serialPortIdentifier_e, serialPortFunction_e, serialReceiveCallbackPtr, uint32_t, portMode_t, portOptions_t)
 {
     return NULL;

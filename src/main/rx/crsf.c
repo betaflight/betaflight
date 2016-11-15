@@ -90,7 +90,7 @@ typedef struct crsfPayloadRcChannelsPacked_s crsfPayloadRcChannelsPacked_t;
 
 
 // Receive ISR callback, called back from serial port
-static void crsfDataReceive(uint16_t c)
+STATIC_UNIT_TESTED void crsfDataReceive(uint16_t c)
 {
     static uint8_t crsfFramePosition = 0;
     static uint32_t crsfFrameStartAt = 0;
@@ -98,7 +98,7 @@ static void crsfDataReceive(uint16_t c)
 
     const int32_t crsfFrameTime = now - crsfFrameStartAt;
 #ifdef DEBUG_CRSF_PACKETS
-        debug[2] = crsfFrameTime;
+    debug[2] = crsfFrameTime;
 #endif
 
     if (crsfFrameTime > (long)(CRSF_TIME_NEEDED_PER_FRAME_US + 500)) {
@@ -109,11 +109,12 @@ static void crsfDataReceive(uint16_t c)
         crsfFrameStartAt = now;
     }
     // assume frame is 5 bytes long until we have received the frame length
-    const int frameLength = crsfFramePosition < 3 ? 5 : crsfFrame.frame.frameLength;
+    // full frame length includes the length of the address and framelength fields
+    const int fullFrameLength = crsfFramePosition < 3 ? 5 : crsfFrame.frame.frameLength + CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH;
 
-    if (crsfFramePosition < frameLength) {
+    if (crsfFramePosition < fullFrameLength) {
         crsfFrame.bytes[crsfFramePosition++] = (uint8_t)c;
-        crsfFrameDone = crsfFramePosition < frameLength ? false : true;
+        crsfFrameDone = crsfFramePosition < fullFrameLength ? false : true;
     }
 }
 

@@ -37,6 +37,8 @@ enum {
     CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE = 10,
     CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE = 22, // 11 bits per channel * 16 channels = 22 bytes.
     CRSF_FRAME_ATTITUDE_PAYLOAD_SIZE = 6,
+    CRSF_FRAME_LENGTH_ADDRESS = 1, // length of ADDRESS field
+    CRSF_FRAME_LENGTH_FRAMELENGTH = 1, // length of FRAMELENGTH field
     CRSF_FRAME_LENGTH_TYPE = 1, // length of TYPE field
     CRSF_FRAME_LENGTH_CRC = 1, // length of CRC field
     CRSF_FRAME_LENGTH_TYPE_CRC = 2 // length of TYPE and CRC fields combined
