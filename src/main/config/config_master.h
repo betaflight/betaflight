@@ -113,6 +113,7 @@ typedef struct master_s {
 
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     uint8_t baro_hardware;                  // Barometer hardware to use
+    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
 
     flightDynamicsTrims_t accZero;          // Accelerometer offset
     flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G

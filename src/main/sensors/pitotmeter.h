@@ -24,6 +24,7 @@ typedef enum {
     PITOT_FAKE = 3,
 } pitotSensor_e;
 
+#define PITOT_MAX  PITOT_FAKE
 #define PITOT_SAMPLE_COUNT_MAX   48
 
 typedef struct pitotmeterConfig_s {
