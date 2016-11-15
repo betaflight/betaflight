@@ -4,6 +4,7 @@
 bool smartAudioInit();
 void smartAudioProcess(uint32_t);
 
+#if 0
 #ifdef CMS
 
 uint16_t smartAudioSmartbaud;
@@ -12,8 +13,6 @@ uint16_t saerr_badpre;
 uint16_t saerr_badlen;
 uint16_t saerr_crcerr;
 uint16_t saerr_oooresp;
-
-char smartAudioStatusString[31];
 
 uint8_t smartAudioOpModel;
 uint8_t smartAudioStatus;
@@ -32,4 +31,5 @@ long smartAudioConfigureChanByGvar(displayPort_t *, const void *self);
 long smartAudioConfigurePowerByGvar(displayPort_t *, const void *self);
 long smartAudioSetTxModeByGvar(displayPort_t *, const void *self);
 
+#endif
 #endif

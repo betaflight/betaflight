@@ -744,10 +744,6 @@ void createDefaultConfig(master_t *config)
     config->vtx_mhz = 5740;  //F0
 #endif
 
-#ifdef VTX_SMARTAUDIO
-    config->vtx_smartaudio_opmodel = 1; // PIT
-#endif
-
 #ifdef TRANSPONDER
     static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
 

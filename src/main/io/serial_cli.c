@@ -932,10 +932,6 @@ const clivalue_t valueTable[] = {
     { "vtx_mhz",                    VAR_UINT16 | MASTER_VALUE,  &masterConfig.vtx_mhz, .config.minmax = { 5600, 5950 } },
 #endif
 
-#ifdef VTX_SMARTAUDIO
-    { "vtx_smartaudio_opmodel",     VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_smartaudio_opmodel, .config.minmax = { 0, 1 } },
-#endif
-
 #ifdef MAG
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], .config.minmax = { -32768,  32767 } },
     { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Y], .config.minmax = { -32768,  32767 } },

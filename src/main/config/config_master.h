@@ -204,10 +204,6 @@ typedef struct master_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
 #endif
 
-#ifdef VTX_SMARTAUDIO
-    uint8_t vtx_smartaudio_opmodel; // 0=FREE, 1=PIT
-#endif
-
 #ifdef BLACKBOX
     uint8_t blackbox_rate_num;
     uint8_t blackbox_rate_denom;
