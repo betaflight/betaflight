@@ -63,6 +63,9 @@ typedef enum {
 #ifdef BARO
     TASK_BARO,
 #endif
+#ifdef PITOT
+    TASK_PITOT,
+#endif
 #ifdef SONAR
     TASK_SONAR,
 #endif

@@ -55,7 +55,8 @@ static const char *     eventDescription[BOOT_EVENT_CODE_COUNT] = {
     [BOOT_EVENT_HMC5883L_READ_FAILED]       = "HMC5883L_READ_FAILED",
     [BOOT_EVENT_HMC5883L_SATURATION]        = "HMC5883L_SATURATION",
     [BOOT_EVENT_TIMER_CH_SKIPPED]           = "TIMER_CHANNEL_SKIPPED",
-    [BOOT_EVENT_TIMER_CH_MAPPED]            = "TIMER_CHANNEL_MAPPED"
+    [BOOT_EVENT_TIMER_CH_MAPPED]            = "TIMER_CHANNEL_MAPPED",
+    [BOOT_EVENT_PITOT_DETECTION]            = "PITOT_DETECTION",
 };
 
 const char * getBootlogEventDescription(bootLogEventCode_e eventCode)

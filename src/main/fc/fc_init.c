@@ -402,6 +402,9 @@ void init(void)
     }
 #else
     i2cInit(I2C_DEVICE);
+#if defined(I2C_DEVICE_EXT)
+    i2cInit(I2C_DEVICE_EXT);
+#endif
 #endif
 #endif
 
@@ -570,6 +573,9 @@ void init(void)
     gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
+#ifdef PITOT
+    pitotSetCalibrationCycles(CALIBRATING_PITOT_CYCLES);
 #endif
 
     // start all timers

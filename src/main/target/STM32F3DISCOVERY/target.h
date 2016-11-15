@@ -85,6 +85,10 @@
 #define USE_MAG_HMC5883
 #define USE_MAG_MAG3110
 
+#define PITOT
+#define USE_PITOT_MS4525
+#define PITOT_I2C_INSTANCE I2C_DEVICE
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2

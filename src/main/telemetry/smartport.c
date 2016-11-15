@@ -31,6 +31,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
@@ -86,6 +87,7 @@ enum
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
+    FSSP_DATAID_ASPD       = 0x0A00 ,
 };
 
 const uint16_t frSkyDataIdTable[] = {
@@ -110,6 +112,7 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_T1        ,
     FSSP_DATAID_T2        ,
     FSSP_DATAID_GPS_ALT   ,
+    FSSP_DATAID_ASPD      ,
     0
 };
 
@@ -439,6 +442,14 @@ void handleSmartPortTelemetry(void)
             case FSSP_DATAID_GPS_ALT    :
                 if (sensors(SENSOR_GPS) && STATE(GPS_FIX)) {
                     smartPortSendPackage(id, gpsSol.llh.alt); // cm
+                    smartPortHasRequest = 0;
+                }
+                break;
+#endif
+#ifdef PITOT
+            case FSSP_DATAID_ASPD    :
+                if (sensors(SENSOR_PITOT)) {
+                    smartPortSendPackage(id, AirSpeed*0.194384449f); // cm/s to knots*10
                     smartPortHasRequest = 0;
                 }
                 break;

@@ -42,6 +42,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -240,6 +241,13 @@ void validateNavConfig(navConfig_t * navConfig)
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->use_median_filtering = 1;
+}
+
+void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
+{
+    pitotmeterConfig->use_median_filtering = 1;
+    pitotmeterConfig->pitot_noise_lpf = 0.6f;
+    pitotmeterConfig->pitot_scale = 1.00f;
 }
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
@@ -576,6 +584,7 @@ static void resetConf(void)
     currentProfile->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 
     resetBarometerConfig(&masterConfig.barometerConfig);
+    resetPitotmeterConfig(&masterConfig.pitotmeterConfig);
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -801,6 +810,9 @@ void activateConfig(void)
 
 #ifdef BARO
     useBarometerConfig(&masterConfig.barometerConfig);
+#endif
+#ifdef PITOT
+    usePitotmeterConfig(&masterConfig.pitotmeterConfig);
 #endif
 }
 
