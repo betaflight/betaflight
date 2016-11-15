@@ -35,6 +35,7 @@ extern "C" {
     #include "rx/crsf.h"
 
     uint8_t crsfFrameCRC(void);
+    uint8_t crsfFrameStatus(void);
     uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
 
     extern bool crsfFrameDone;
