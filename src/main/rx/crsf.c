@@ -117,16 +117,24 @@ static void crsfDataReceive(uint16_t c)
     }
 }
 
-uint8_t crsfFrameStatus(void)
+STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
+{
+    // CRC includes type and payload
+    uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
+    for (int ii = 0; ii < crsfFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
+        crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
+    }
+    return crc;
+
+}
+
+STATIC_UNIT_TESTED uint8_t crsfFrameStatus(void)
 {
     if (crsfFrameDone) {
         crsfFrameDone = false;
         if (crsfFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
             // CRC includes type and payload of each frame
-            uint8_t crc = crc8_dvb_s2(0, crsfFrame.frame.type);
-            for (int ii = 0; ii < CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE; ++ii) {
-                crc = crc8_dvb_s2(crc, crsfFrame.frame.payload[ii]);
-            }
+            const uint8_t crc = crsfFrameCRC();
             if (crc != crsfFrame.frame.payload[CRSF_FRAME_RC_CHANNELS_PAYLOAD_SIZE]) {
                 return RX_FRAME_PENDING;
             }
@@ -155,7 +163,7 @@ uint8_t crsfFrameStatus(void)
     return RX_FRAME_PENDING;
 }
 
-static uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
+STATIC_UNIT_TESTED uint16_t crsfReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
 {
     UNUSED(rxRuntimeConfig);
     /* conversion from RC value to PWM
