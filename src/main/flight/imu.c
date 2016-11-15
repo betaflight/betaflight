@@ -425,7 +425,12 @@ static int imuCalculateAccelerometerConfidence(void)
 
 static void imuCalculateEstimatedAttitude(float dT)
 {
-    const bool canUseMAG = sensors(SENSOR_MAG) && isMagnetometerHealthy();
+#if defined(MAG)
+    const bool canUseMAG = sensors(SENSOR_MAG) && isCompassHealthy();
+#else
+    const bool canUseMAG = false;
+#endif
+
     const int accWeight = imuCalculateAccelerometerConfidence();
 
     float courseOverGround = 0;
