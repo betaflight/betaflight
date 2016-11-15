@@ -58,3 +58,4 @@ union flightDynamicsTrims_u;
 void setAccelerationZero(union flightDynamicsTrims_u * accZeroToUse);
 void setAccelerationGain(union flightDynamicsTrims_u * accGainToUse);
 void setAccelerationFilter(uint8_t initialAccLpfCutHz);
+bool isAccelerometerHealthy(void);

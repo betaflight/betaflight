@@ -7,12 +7,12 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "flight/navigation_rewrite.h"
-
 #include "config/config.h"
 #include "config/feature.h"
 
 #include "fc/runtime_config.h"
+
+#include "io/gps.h"
 
 #include "sensors/sensors.h"
 #include "sensors/diagnostics.h"
@@ -33,8 +33,9 @@ hardwareSensorStatus_e getHwGyroStatus(void)
 
 hardwareSensorStatus_e getHwAccelerometerStatus(void)
 {
+#if defined(ACC)
     if (detectedSensors[SENSOR_INDEX_ACC] != ACC_NONE) {
-        if (true) { // isAccelerometerHealthy()
+        if (isAccelerometerHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -51,6 +52,9 @@ hardwareSensorStatus_e getHwAccelerometerStatus(void)
             return HW_SENSOR_NONE;
         }
     }
+#else
+    return HW_SENSOR_NONE;
+#endif
 }
 
 hardwareSensorStatus_e getHwCompassStatus(void)
@@ -81,8 +85,9 @@ hardwareSensorStatus_e getHwCompassStatus(void)
 
 hardwareSensorStatus_e getHwBarometerStatus(void)
 {
+#if defined(BARO)
     if (detectedSensors[SENSOR_INDEX_BARO] != BARO_NONE) {
-        if (true) { // isBarometerHealthy()
+        if (isBarometerHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -99,12 +104,16 @@ hardwareSensorStatus_e getHwBarometerStatus(void)
             return HW_SENSOR_NONE;
         }
     }
+#else
+    return HW_SENSOR_NONE;
+#endif
 }
 
 hardwareSensorStatus_e getHwRangefinderStatus(void)
 {
+#if defined(SONAR)
     if (detectedSensors[SENSOR_INDEX_RANGEFINDER] != RANGEFINDER_NONE) {
-        if (true) { // isBarometerHealthy()
+        if (isRangefinderHealthy())
             return HW_SENSOR_OK;
         }
         else {
@@ -121,12 +130,16 @@ hardwareSensorStatus_e getHwRangefinderStatus(void)
             return HW_SENSOR_NONE;
         }
     }
+#else
+    return HW_SENSOR_NONE;
+#endif
 }
 
 hardwareSensorStatus_e getHwGPSStatus(void)
 {
+#if defined(GPS)
     if (sensors(SENSOR_GPS)) {
-        if (true) { // isGPSHealthy()
+        if (isGPSHealthy()) {
             return HW_SENSOR_OK;
         }
         else {
@@ -143,6 +156,9 @@ hardwareSensorStatus_e getHwGPSStatus(void)
             return HW_SENSOR_NONE;
         }
     }
+#else
+    return HW_SENSOR_NONE;
+#endif
 }
 
 bool isHardwareHealthy(void)

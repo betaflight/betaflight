@@ -224,3 +224,8 @@ void setAccelerationFilter(uint8_t initialAccLpfCutHz)
         }
     }
 }
+
+bool isAccelerometerHealthy(void)
+{
+    return true;
+}

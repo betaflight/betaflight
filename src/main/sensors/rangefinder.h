@@ -43,4 +43,4 @@ rangefinderType_e rangefinderDetect(void);
 void rangefinderInit(rangefinderType_e rangefinderType);
 void rangefinderUpdate(void);
 int32_t rangefinderRead(void);
-
+bool isRangefinderHealthy(void);
