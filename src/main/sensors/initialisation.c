@@ -90,6 +90,7 @@
 #include "hardware_revision.h"
 #endif
 
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_DEFAULT, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
@@ -238,6 +239,8 @@ static bool detectAcc(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 retry:
     dev->accAlign = ALIGN_DEFAULT;
 
+    requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
+
     switch (accHardwareToUse) {
         case ACC_DEFAULT:
             ; // fallthrough
@@ -381,6 +384,7 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
     baroSensor_e baroHardware = baroHardwareToUse;
+    requestedSensors[SENSOR_INDEX_BARO] = baroHardwareToUse;
 
 #ifdef USE_BARO_BMP085
 
@@ -504,6 +508,7 @@ static bool detectPitot(pitotDev_t *dev, uint8_t pitotHardwareToUse)
 static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware = MAG_NONE;
+    requestedSensors[SENSOR_INDEX_MAG] = magHardwareToUse;
 
 #ifdef USE_MAG_HMC5883
     const hmc5883Config_t *hmc5883Config = 0;
@@ -646,6 +651,7 @@ static rangefinderType_e detectRangefinder(void)
 
     addBootlogEvent6(BOOT_EVENT_RANGEFINDER_DETECTION, BOOT_EVENT_FLAGS_NONE, rangefinderType, 0, 0, 0);
 
+    requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;   // FIXME: Make rangefinder type selectable from CLI
     detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;
 
     if (rangefinderType != RANGEFINDER_NONE) {

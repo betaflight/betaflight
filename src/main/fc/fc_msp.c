@@ -67,6 +67,7 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
+#include "sensors/diagnostics.h"
 #include "sensors/battery.h"
 #include "sensors/rangefinder.h"
 #include "sensors/acceleration.h"
@@ -508,6 +509,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, hilToSIM.pidCommand[THROTTLE]);
         break;
 #endif
+
+    case MSP_SENSOR_STATUS:
+        sbufWriteU8(dst, isHardwareHealthy() ? 1 : 0);
+        sbufWriteU8(dst, getHwGyroStatus());
+        sbufWriteU8(dst, getHwAccelerometerStatus());
+        sbufWriteU8(dst, getHwCompassStatus());
+        sbufWriteU8(dst, getHwBarometerStatus());
+        sbufWriteU8(dst, getHwGPSStatus());
+        sbufWriteU8(dst, getHwRangefinderStatus());
+        sbufWriteU8(dst, HW_SENSOR_NONE);                   // Optical flow
+        break;
 
     case MSP_STATUS_EX:
         sbufWriteU16(dst, cycleTime);

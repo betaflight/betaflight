@@ -20,7 +20,8 @@
 #include <stdint.h>
 
 typedef enum {
-    RANGEFINDER_NONE = 0,
+    RANGEFINDER_DEFAULT = 0,
+    RANGEFINDER_NONE = 1,
     RANGEFINDER_HCSR04,
     RANGEFINDER_SRF10
 } rangefinderType_e;
