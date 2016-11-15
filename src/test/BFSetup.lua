@@ -255,6 +255,8 @@ local MSP_SET_RC_TUNING = 204
 local MSP_PID_ADVANCED     = 94
 local MSP_SET_PID_ADVANCED = 95
 
+local MSP_EEPROM_WRITE = 250
+
 local REQ_TIMEOUT = 80 -- 800ms request timeout
 
 --local PAGE_REFRESH = 1
@@ -317,12 +319,19 @@ local SetupPages = {
 
 local currentPage = 1
 local currentLine = 1
+local saveTS = 0
+local saveRetries = 0
 
-local function saveSettings()
+local function saveSettings(new)
    local page = SetupPages[currentPage]
    if page.values then
       mspSendRequest(page.write,page.values)
-      gState = PAGE_SAVING
+      saveTS = getTime()
+      if gState == PAGE_SAVING then
+         saveRetries = saveRetries + 1
+      else
+         gState = PAGE_SAVING
+      end
    end
 end
 
@@ -331,6 +340,8 @@ local function invalidatePages()
       local page = SetupPages[i]
       page.values = nil
    end
+   gState = PAGE_DISPLAY
+   saveTS = 0
 end
 
 local menuList = {
@@ -344,7 +355,6 @@ local menuList = {
 
 local telemetryScreenActive = false
 local menuActive = false
---local editingValue = false
 
 local function processMspReply(cmd,rx_buf)
 
@@ -356,8 +366,14 @@ local function processMspReply(cmd,rx_buf)
 
    -- ignore replies to write requests for now
    if cmd == page.write then
+      mspSendRequest(MSP_EEPROM_WRITE,{})
+      return
+   end
+
+   if cmd == MSP_EEPROM_WRITE then
       gState = PAGE_DISPLAY
       page.values = nil
+      saveTS = 0
       return
    end
    
@@ -365,9 +381,11 @@ local function processMspReply(cmd,rx_buf)
       return
    end
 
-   page.values = {}
-   for i=1,#(rx_buf) do
-      page.values[i] = rx_buf[i]
+   if #(rx_buf) > 0 then
+      page.values = {}
+      for i=1,#(rx_buf) do
+         page.values[i] = rx_buf[i]
+      end
    end
 end
    
@@ -414,10 +432,6 @@ local function drawScreen(page,page_locked)
 
    local screen_title = page.title
 
-   if page_locked then
-      screen_title = screen_title .. " (...)"
-   end
-   
    lcd.drawScreenTitle('Betaflight setup: '..screen_title,currentPage,#(SetupPages))
 
    for i=1,#(page.text) do
@@ -495,22 +509,31 @@ end
 
 local EVT_MENU_LONG = bit32.bor(bit32.band(EVT_MENU_BREAK,0x1f),0x80)
 
-local bgCounter = 0
+local lastRunTS = 0
 
 local function run(event)
 
    local now = getTime()
 
-   if not telemetryScreenActive then
-      telemetryScreenActive = true
+   -- if lastRunTS old than 500ms
+   if lastRunTS + 50 < now then
       invalidatePages()
    end
+   lastRunTS = now
 
+   -- TODO: implement retry + retry counter
+   if (gState == PAGE_SAVING) and (saveTS + 150 < now) then
+      if saveRetries < 2 then
+         saveSettings()
+      else
+         -- two retries and still no success
+         gState = PAGE_DISPLAY
+         saveTS = 0
+      end
+   end
+   
    if #(mspTxBuf) > 0 then
       mspProcessTxQ()
-      --if (gState == PAGE_SAVING) and (#(mspTxBuf) == 0) then
-      --   gState = PAGE_REFRESH
-      --end
    end
 
    -- navigation
@@ -574,11 +597,9 @@ local function run(event)
    if getValue("RSSI") == 0 then
       -- No!
       lcd.drawText(70,55,"No telemetry",BLINK)
+      invalidatePages()
    end
 
-   --lcd.drawNumber(10,56,mspRequestsSent)
-   --lcd.drawNumber(30,56,mspTxPk)
-   
    if gState == MENU_DISP then
       drawMenu()
    elseif gState == PAGE_SAVING then
@@ -591,9 +612,4 @@ local function run(event)
    return 0
 end
 
-local function background()
---   telemetryScreenActive = false
---   bgCounter = bgCounter + 1
-end
-
-return {run=run,background=background}
+return {run=run}
