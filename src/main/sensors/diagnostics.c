@@ -55,6 +55,7 @@ hardwareSensorStatus_e getHwAccelerometerStatus(void)
 
 hardwareSensorStatus_e getHwCompassStatus(void)
 {
+#if defined(MAG)
     if (detectedSensors[SENSOR_INDEX_MAG] != MAG_NONE) {
         if (isCompassHealthy()) {
             return HW_SENSOR_OK;
@@ -73,6 +74,9 @@ hardwareSensorStatus_e getHwCompassStatus(void)
             return HW_SENSOR_NONE;
         }
     }
+#else
+    return HW_SENSOR_NONE;
+#endif
 }
 
 hardwareSensorStatus_e getHwBarometerStatus(void)
