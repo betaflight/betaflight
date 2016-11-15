@@ -80,7 +80,7 @@ static void crsfInitializeFrame(sbuf_t *dst)
     dst->ptr = crsfFrame;
     dst->end = ARRAYEND(crsfFrame);
 
-    sbufWriteU8(dst, CRSF_ADDRESS_CRSF_RECEIVER);
+    sbufWriteU8(dst, CRSF_ADDRESS_BROADCAST);
 }
 
 static void crsfSerialize8(sbuf_t *dst, uint8_t v)
