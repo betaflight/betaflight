@@ -391,16 +391,25 @@ void configureCrsfTelemetryPort(void)
 
 bool checkCrsfTelemetryState(void)
 {
-    const bool newTelemetryEnabled = telemetryDetermineEnabledState(portSharing);
-    if (newTelemetryEnabled == crsfTelemetryEnabled) {
+    if (serialPortConfig && telemetryCheckRxPortShared(serialPortConfig)) {
+        if (!crsfTelemetryEnabled && telemetrySharedPort != NULL) {
+            serialPort = telemetrySharedPort;
+            crsfTelemetryEnabled = true;
+            return true;
+        }
         return false;
-    }
-    if (newTelemetryEnabled) {
-        configureCrsfTelemetryPort();
     } else {
-        freeCrsfTelemetryPort();
+        const bool newTelemetryEnabled = telemetryDetermineEnabledState(portSharing);
+        if (newTelemetryEnabled == crsfTelemetryEnabled) {
+            return false;
+        }
+        if (newTelemetryEnabled) {
+            configureCrsfTelemetryPort();
+        } else {
+            freeCrsfTelemetryPort();
+        }
+        return true;
     }
-    return true;
 }
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
