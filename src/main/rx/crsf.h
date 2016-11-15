@@ -71,7 +71,6 @@ typedef union crsfFrame_u {
     crsfFrameDef_t frame;
 } crsfFrame_t;
 
-uint8_t crsfFrameStatus(void);
 struct rxConfig_s;
 struct rxRuntimeConfig_s;
 bool crsfInit(const struct rxConfig_s *initialRxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig);
