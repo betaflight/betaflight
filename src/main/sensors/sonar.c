@@ -26,11 +26,11 @@
 #include "build/build_config.h"
 
 #include "common/maths.h"
-#include "common/axis.h"
-
-#include "fc/runtime_config.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
+
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -88,8 +88,9 @@ static int32_t applySonarMedianFilter(int32_t newSonarReading)
         return newSonarReading;
 }
 
-void sonarUpdate(void)
+void sonarUpdate(uint32_t currentTime)
 {
+    UNUSED(currentTime);
     hcsr04_start_reading();
 }
 

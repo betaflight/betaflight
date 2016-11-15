@@ -71,7 +71,7 @@
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 #define CMS
-#define CANVAS
+#define USE_MSP_DISPLAYPORT
 
 //#define PITOT
 //#define USE_PITOT_MS4525
@@ -125,18 +125,8 @@
 #define USE_DSHOT
 
 #define LED_STRIP
-// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_PIN                      PA1
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream4
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 
 #define SENSORS_SET (SENSOR_ACC)
-
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL)

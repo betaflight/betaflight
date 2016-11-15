@@ -186,7 +186,7 @@ static void BL_SendBuf(uint8_t *pstring, uint8_t len)
         pstring++;
         len--;
     } while (len > 0);
-    
+
     if (isMcuConnected()) {
         suart_putc_(&CRC_16.bytes[0]);
         suart_putc_(&CRC_16.bytes[1]);
@@ -238,7 +238,7 @@ static uint8_t BL_GetACK(uint32_t Timeout)
     return (LastACK);
 }
 
-uint8_t BL_SendCMDKeepAlive(void) 
+uint8_t BL_SendCMDKeepAlive(void)
 {
     uint8_t sCMD[] = {CMD_KEEP_ALIVE, 0};
     BL_SendBuf(sCMD, 2);
@@ -306,8 +306,8 @@ uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
     } else {
         return BL_ReadA(CMD_READ_FLASH_SIL, pMem);
     }
-} 
- 
+}
+
 uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
     return BL_ReadA(CMD_READ_EEPROM, pMem);
@@ -829,7 +829,7 @@ uint8_t BL_ConnectEx(uint8_32_u *pDeviceInfo)
     return true;
 }
 
-uint8_t BL_SendCMDKeepAlive(void) 
+uint8_t BL_SendCMDKeepAlive(void)
 {
     return true;
 }
@@ -844,7 +844,7 @@ static uint8_t BL_ReadA(uint8_t cmd, ioMem_t *pMem)
 {
     UNUSED(cmd);
     uint16_t address = pMem->D_FLASH_ADDR_H << 8 | pMem->D_FLASH_ADDR_L;
-    
+
     uint16_t bytes = pMem->D_NUM_BYTES;
     if (bytes == 0) bytes = 256;
 
@@ -857,7 +857,7 @@ static uint8_t BL_WriteA(uint8_t cmd, ioMem_t *pMem, uint32_t timeout)
     UNUSED(cmd);
     UNUSED(timeout);
     uint16_t address = pMem->D_FLASH_ADDR_H << 8 | pMem->D_FLASH_ADDR_L;
-    
+
     uint16_t bytes = pMem->D_NUM_BYTES;
     if (bytes == 0) bytes = 256;
     memcpy(&fakeFlash[address], pMem->D_PTR_I, bytes);
@@ -869,7 +869,7 @@ uint8_t BL_ReadFlash(uint8_t interface_mode, ioMem_t *pMem)
     UNUSED(interface_mode);
     return BL_ReadA(0, pMem);
 }
- 
+
 uint8_t BL_ReadEEprom(ioMem_t *pMem)
 {
     return BL_ReadA(0, pMem);

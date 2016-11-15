@@ -73,7 +73,7 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
 #else
     UNUSED(spiType);
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    IOInit(IOGetByTag(IO_TAG(RX_NSS_PIN)), OWNER_SPI, RESOURCE_SPI_CS, rxSPIDevice + 1);
+    IOInit(IOGetByTag(IO_TAG(RX_NSS_PIN)), OWNER_SPI_CS, rxSPIDevice + 1);
 #endif // USE_RX_SOFTSPI
 
 #if defined(STM32F10X)
@@ -83,7 +83,7 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
 
 #ifdef RX_CE_PIN
     // CE as OUTPUT
-    IOInit(IOGetByTag(IO_TAG(RX_CE_PIN)), OWNER_RX_SPI, RESOURCE_RX_CE, rxSPIDevice + 1);
+    IOInit(IOGetByTag(IO_TAG(RX_CE_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
 #if defined(STM32F10X)
     IOConfigGPIO(IOGetByTag(IO_TAG(RX_CE_PIN)), SPI_IO_CS_CFG);
 #elif defined(STM32F3) || defined(STM32F4)

@@ -98,7 +98,7 @@
 #else
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#undef SKIP_RX_MSP
+#define USE_RX_MSP
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // UART2, PA3
 

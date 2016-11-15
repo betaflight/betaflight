@@ -161,7 +161,7 @@ bool mpu6000SpiDetect(void)
 #ifdef MPU6000_CS_PIN
     mpuSpi6000CsPin = IOGetByTag(IO_TAG(MPU6000_CS_PIN));
 #endif
-    IOInit(mpuSpi6000CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpuSpi6000CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi6000CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
@@ -204,7 +204,7 @@ bool mpu6000SpiDetect(void)
     return false;
 }
 
-static void mpu6000AccAndGyroInit(void) 
+static void mpu6000AccAndGyroInit(void)
 {
     if (mpuSpi6000InitDone) {
         return;

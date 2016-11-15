@@ -45,11 +45,3 @@ void dashboardEnablePageCycling(void);
 void dashboardDisablePageCycling(void);
 void dashboardResetPageCycling(void);
 void dashboardSetNextPageChangeAt(uint32_t futureMicros);
-void displayEnablePageCycling(void);
-void displayDisablePageCycling(void);
-void displayResetPageCycling(void);
-void displaySetNextPageChangeAt(uint32_t futureMicros);
-
-#ifdef CMS
-//void dashboardCmsInit(displayPort_t *pPort);
-#endif

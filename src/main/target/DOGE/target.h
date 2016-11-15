@@ -113,6 +113,7 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
+#define ADC24_DMA_REMAP // moves ADC2 DMA from DMA2ch1 to DMA2ch3.
 #define VBAT_ADC_PIN            PA4
 #define CURRENT_METER_ADC_PIN   PA5
 
@@ -124,16 +125,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define LED_STRIP
-
-// tqfp48 pin 16
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-#define WS2811_PIN                      PA6 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
+#define USE_DSHOT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 
@@ -152,6 +144,6 @@
 // timer definitions in drivers/timer.c
 // channel mapping in drivers/pwm_mapping.c
 // only 6 outputs available on hardware
-#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
 

@@ -15,21 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-#define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
+#include <platform.h>
 
-void taskSystem(uint32_t currentTime);
-void taskMainPidLoopCheck(uint32_t currentTime);
-#ifdef USE_BST
-void taskBstReadWrite(uint32_t currentTime);
-void taskBstMasterProcess(uint32_t currentTime);
-#endif
-<<<<<<< HEAD:src/main/scheduler/scheduler_tasks.h
-#ifdef VTX_CONTROL
-void taskVtxControl(uint32_t currentTime);
-#endif
-=======
+#include "config/config_master.h"
 
-void fcTasksInit(void);
->>>>>>> betaflight/master:src/main/fc/fc_tasks.h
+void targetConfiguration(master_t *config) {
+    config->batteryConfig.currentMeterScale = 125;
+}

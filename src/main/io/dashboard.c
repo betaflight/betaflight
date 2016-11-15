@@ -31,7 +31,10 @@
 #include "build/build_config.h"
 
 #include "drivers/system.h"
+#include "drivers/display.h"
 #include "drivers/display_ug2864hsweg01.h"
+
+#include "cms/cms.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -52,10 +55,7 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
-#ifdef OLEDCMS
-#include "io/cms.h"
-void dashboardCmsInit(displayPort_t *pPort); // Forward
-#endif
+#include "io/displayport_oled.h"
 
 #ifdef GPS
 #include "io/gps.h"
@@ -84,6 +84,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 static bool dashboardPresent = false;
 
 static rxConfig_t *rxConfig;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -584,17 +585,14 @@ void showDebugPage(void)
 }
 #endif
 
-#ifdef OLEDCMS
-static bool dashboardInCMS = false;
-#endif
-
 void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
 
-#ifdef OLEDCMS
-    if (dashboardInCMS)
+#ifdef CMS
+    if (displayIsGrabbed(displayPort)) {
         return;
+    }
 #endif
 
     const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
@@ -708,8 +706,9 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
-#ifdef OLEDCMS
-    cmsDeviceRegister(dashboardCmsInit);
+    displayPort = displayPortOledInit();
+#if defined(CMS)
+    cmsDisplayPortRegister(displayPort);
 #endif
 
     rxConfig = rxConfigToUse;
@@ -748,68 +747,4 @@ void dashboardDisablePageCycling(void)
 {
     pageState.pageFlags &= ~PAGE_STATE_FLAG_CYCLE_ENABLED;
 }
-
-#ifdef OLEDCMS
-int dashboardCmsBegin(void)
-{
-    dashboardInCMS = true;
-
-    return 0;
-}
-
-int dashboardCmsEnd(void)
-{
-    dashboardInCMS = false;
-
-    return 0;
-}
-
-int dashboardCmsClear(void)
-{
-    i2c_OLED_clear_display_quick();
-
-    return 0;
-}
-
-int dashboardCmsWrite(uint8_t x, uint8_t y, char *s)
-{
-    i2c_OLED_set_xy(x, y);
-    i2c_OLED_send_string(s);
-
-    return 0;
-}
-
-int dashboardCmsHeartbeat(void)
-{
-    return 0;
-}
-
-void dashboardCmsResync(displayPort_t *pPort)
-{
-    UNUSED(pPort);
-}
-
-uint32_t dashboardCmsTxBytesFree(void)
-{
-    return UINT32_MAX;
-}
-
-displayPortVTable_t dashboardCmsVTable = {
-    dashboardCmsBegin,
-    dashboardCmsEnd,
-    dashboardCmsClear,
-    dashboardCmsWrite,
-    dashboardCmsHeartbeat,
-    dashboardCmsResync,
-    dashboardCmsTxBytesFree,
-};
-
-void dashboardCmsInit(displayPort_t *pPort)
-{
-    pPort->rows = SCREEN_CHARACTER_ROW_COUNT;
-    pPort->cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    pPort->vTable = &dashboardCmsVTable;
-}
-#endif // OLEDCMS
-
-#endif
+#endif // USE_DASHBOARD

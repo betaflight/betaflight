@@ -21,7 +21,7 @@ typedef enum bjf4HardwareRevision_t {
     BJF4_REV1,  // Flash
     BJF4_REV2,  // SDCard
     BJF4_REV3,  // SDCard + Flash
-    BJF4_REV3A, // Flash (20x20 mini format)
+    BJF4_MINI_REV3A, // Flash (20x20 mini format)
 } bjf4HardwareRevision_e;
 
 extern uint8_t hardwareRevision;

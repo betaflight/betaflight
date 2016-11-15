@@ -76,7 +76,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     UNUSED(SPIx); // FIXME
 
     mpul3gd20CsPin = IOGetByTag(IO_TAG(L3GD20_CS_PIN));
-    IOInit(mpul3gd20CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpul3gd20CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpul3gd20CsPin, SPI_IO_CS_CFG);
 
     DISABLE_L3GD20;

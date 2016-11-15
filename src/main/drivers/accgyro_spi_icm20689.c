@@ -70,7 +70,7 @@ static void icm20689SpiInit(void)
     }
 
     icmSpi20689CsPin = IOGetByTag(IO_TAG(ICM20689_CS_PIN));
-    IOInit(icmSpi20689CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(icmSpi20689CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(icmSpi20689CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
@@ -82,9 +82,9 @@ bool icm20689SpiDetect(void)
 {
     uint8_t tmp;
     uint8_t attemptsRemaining = 20;
-    
+
     icm20689SpiInit();
-    
+
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed
 
     icm20689WriteRegister(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
@@ -145,7 +145,7 @@ void icm20689AccInit(acc_t *acc)
 void icm20689GyroInit(uint8_t lpf)
 {
     mpuIntExtiInit();
-    
+
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
@@ -170,7 +170,7 @@ void icm20689GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0x10);  // INT_ANYRD_2CLEAR, BYPASS_EN
 
     delay(15);
-    
+
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif

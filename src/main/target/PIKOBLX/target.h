@@ -21,6 +21,7 @@
 #define USE_CLI
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+#define TARGET_CONFIG
 
 #define LED0                    PB9
 #define LED1                    PB5
@@ -81,14 +82,6 @@
 #define VBAT_ADC_PIN            PA5
 
 #define LED_STRIP
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-#define WS2811_PIN                      PB8 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -117,6 +110,6 @@
 // !!TODO - check the following line is correct
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 9
+#define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
 

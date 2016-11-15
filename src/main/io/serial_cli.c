@@ -35,6 +35,8 @@ uint8_t cliMode = 0;
 #include "build/debug.h"
 #include "build/version.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -50,6 +52,7 @@ uint8_t cliMode = 0;
 #include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
@@ -70,7 +73,6 @@ uint8_t cliMode = 0;
 #include "io/flashfs.h"
 #include "io/beeper.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/cms.h"
 #include "io/osd.h"
 #include "io/vtx.h"
 
@@ -228,7 +230,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    " ", "VTX", "RX_SPI", "SOFTSPI", "CANVAS", NULL
+    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -525,8 +527,8 @@ static const char * const lookupTableSuperExpoYaw[] = {
 };
 
 static const char * const lookupTablePwmProtocol[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED", 
-#ifdef USE_DSHOT 
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
+#ifdef USE_DSHOT
     "DSHOT600", "DSHOT300", "DSHOT150"
 #endif
 };
@@ -940,16 +942,18 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #endif
 #ifdef LED_STRIP
-    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.ledStripConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_channel, .config.minmax = { 0,  39 } },
     { "vtx_power",                  VAR_UINT8  | MASTER_VALUE, &masterConfig.vtx_power,   .config.minmax = { 0,  1 } },
 #endif
-
+#ifdef USE_SDCARD
+    { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.sdcardConfig.useDma, .config.lookup = { TABLE_OFF_ON } },
+#endif
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
+    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
@@ -1248,12 +1252,12 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
     serialConfig_t *serialConfigDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
-	serialConfig = &masterConfig.serialConfig;
+    serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-	serialConfigDefault = &defaultConfig->serialConfig;
-	equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+    serialConfigDefault = &defaultConfig->serialConfig;
+    equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
             && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
             && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
             && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
@@ -1711,8 +1715,8 @@ static void printLed(uint8_t dumpMask, master_t *defaultConfig)
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-        ledConfig = masterConfig.ledConfigs[i];
-        ledConfigDefault = defaultConfig->ledConfigs[i];
+        ledConfig = masterConfig.ledStripConfig.ledConfigs[i];
+        ledConfigDefault = defaultConfig->ledStripConfig.ledConfigs[i];
         equalsDefault = ledConfig == ledConfigDefault;
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
@@ -1749,8 +1753,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
     hsvColor_t *colorDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-        color = &masterConfig.colors[i];
-        colorDefault = &defaultConfig->colors[i];
+        color = &masterConfig.ledStripConfig.colors[i];
+        colorDefault = &defaultConfig->ledStripConfig.colors[i];
         equalsDefault = color->h == colorDefault->h
             && color->s == colorDefault->s
             && color->v == colorDefault->v;
@@ -1795,21 +1799,26 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
-            int colorIndex = masterConfig.modeColors[i].color[j];
-            int colorIndexDefault = defaultConfig->modeColors[i].color[j];
+            int colorIndex = masterConfig.ledStripConfig.modeColors[i].color[j];
+            int colorIndexDefault = defaultConfig->ledStripConfig.modeColors[i].color[j];
             const char *format = "mode_color %u %u %u\r\n";
             cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
             cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
         }
     }
 
+    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-        int colorIndex = masterConfig.specialColors.color[j];
-        int colorIndexDefault = defaultConfig->specialColors.color[j];
-        const char *format = "mode_color %u %u %u\r\n";
+        int colorIndex = masterConfig.ledStripConfig.specialColors.color[j];
+        int colorIndexDefault = defaultConfig->ledStripConfig.specialColors.color[j];
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
+
+    int ledStripAuxChannel = masterConfig.ledStripConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultConfig->ledStripConfig.ledstrip_aux_channel;
+    cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
+    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
@@ -1962,11 +1971,11 @@ static void cliServo(char *cmdline)
 static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
-		servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
-		servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+        servoMixer_t customServoMixer = masterConfig.customServoMixer[i];
+        servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
         if (customServoMixer.rate == 0) {
             break;
-		}
+        }
 
         bool equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
             && customServoMixer.inputSource == customServoMixerDefault.inputSource
@@ -1976,7 +1985,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
             && customServoMixer.max == customServoMixerDefault.max
             && customServoMixer.box == customServoMixerDefault.box;
 
-		const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
+        const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
             customServoMixerDefault.targetChannel,
@@ -1999,7 +2008,7 @@ static void printServoMix(uint8_t dumpMask, master_t *defaultConfig)
         );
     }
 
-	cliPrint("\r\n");
+    cliPrint("\r\n");
 
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -2027,7 +2036,7 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-		printServoMix(DUMP_MASTER, NULL);
+        printServoMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
@@ -2262,11 +2271,9 @@ static void cliFlashRead(char *cmdline)
         cliPrintf("Reading %u bytes at %u:\r\n", length, address);
 
         while (length > 0) {
-            int bytesRead;
+            int bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
 
-            bytesRead = flashfsReadAbs(address, buffer, length < sizeof(buffer) ? length : sizeof(buffer));
-
-            for (uint32_t i = 0; i < bytesRead; i++) {
+            for (int i = 0; i < bytesRead; i++) {
                 cliWrite(buffer[i]);
             }
 
@@ -2372,7 +2379,7 @@ static void cliVtx(char *cmdline)
 static void printName(uint8_t dumpMask)
 {
     bool equalsDefault = strlen(masterConfig.name) == 0;
-	cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
+    cliDumpPrintf(dumpMask, equalsDefault, "name %s\r\n", equalsDefault ? emptyName : masterConfig.name);
 }
 
 static void cliName(char *cmdline)
@@ -2600,7 +2607,7 @@ static void cliMap(char *cmdline)
         parseRcChannels(cmdline, &masterConfig.rxConfig);
     }
     cliPrint("Map: ");
-	uint32_t i;
+    uint32_t i;
     for (i = 0; i < 8; i++)
         out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
@@ -3001,12 +3008,18 @@ static void cliEscPassthrough(char *cmdline)
                 break;
             case 1:
                 index = atoi(pch);
-                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                    printf("passthru at pwm output %d enabled\r\n", index);
+                if(mode == 2 && index == 255)
+                {
+                    printf("passthru on all pwm outputs enabled\r\n");
                 }
-                else {
-                    printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
-                    return;
+                else{
+                    if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                        printf("passthru at pwm output %d enabled\r\n", index);
+                    }
+                    else {
+                        printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                        return;
+                    }
                 }
                 break;
         }
@@ -3614,7 +3627,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
+    cliPrintf("# %s/%s %s %s / %s (%s)\r\n",
+        FC_FIRMWARE_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -3743,19 +3757,22 @@ typedef struct {
 
 const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
-    { OWNER_BEEPER, &masterConfig.beeperConfig.ioTag, 0 },
-#endif 
-    { OWNER_MOTOR, &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_BEEPER,        &masterConfig.beeperConfig.ioTag, 0 },
+#endif
+    { OWNER_MOTOR,         &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
-    { OWNER_SERVO, &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
-#endif 
+    { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
+#endif
 #ifndef SKIP_RX_PWM_PPM
-    { OWNER_PPMINPUT, &masterConfig.ppmConfig.ioTag, 0 },
-    { OWNER_PWMINPUT, &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
-#endif 
+    { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
+    { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
+#endif
 #ifdef SONAR
     { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
-    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+    { OWNER_SONAR_ECHO,    &masterConfig.sonarConfig.echoTag,    0 },
+#endif
+#ifdef LED_STRIP
+    { OWNER_LED_STRIP,     &masterConfig.ledStripConfig.ioTag,   0 },
 #endif
 };
 
@@ -3825,19 +3842,31 @@ static void cliResource(char *cmdline)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
 #endif
-        for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+        for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
             owner = ownerNames[ioRecs[i].owner];
 
-            const char* resource;
-            resource = resourceNames[ioRecs[i].resource];
-
             if (ioRecs[i].index > 0) {
-                cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+                cliPrintf("%c%02d: %s %d\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index);
             } else {
-                cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+                cliPrintf("%c%02d: %s \r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner);
             }
         }
+
+        cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
+        for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+            const char* owner;
+            owner = ownerNames[dmaGetOwner(i)];
+
+            cliPrintf(DMA_OUTPUT_STRING, i / DMA_MOD_VALUE + 1, (i % DMA_MOD_VALUE) + DMA_MOD_OFFSET);
+            uint8_t resourceIndex = dmaGetResourceIndex(i);
+            if (resourceIndex > 0) {
+                cliPrintf(" %s %d\r\n", owner, resourceIndex);
+            } else {
+                cliPrintf(" %s\r\n", owner);
+            }
+        }
+
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
 #endif
@@ -3849,14 +3878,14 @@ static void cliResource(char *cmdline)
     int index = 0;
     char *pch = NULL;
     char *saveptr;
-    
+
     pch = strtok_r(cmdline, " ", &saveptr);
     for (resourceIndex = 0; ; resourceIndex++) {
         if (resourceIndex >= ARRAYLEN(resourceTable)) {
             cliPrint("Invalid resource\r\n");
             return;
         }
-        
+
         if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
             break;
         }
@@ -3865,7 +3894,7 @@ static void cliResource(char *cmdline)
     if (resourceTable[resourceIndex].maxIndex > 0) {
         pch = strtok_r(NULL, " ", &saveptr);
         index = atoi(pch);
-        
+
         if (index <= 0 || index > resourceTable[resourceIndex].maxIndex) {
             cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
             return;
@@ -3874,7 +3903,7 @@ static void cliResource(char *cmdline)
 
     pch = strtok_r(NULL, " ", &saveptr);
     ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
-    
+
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
         if (strcasecmp(pch, "NONE") == 0) {
@@ -3891,7 +3920,7 @@ static void cliResource(char *cmdline)
                 pch++;
                 pin = atoi(pch);
                 if (pin < 16) {
-                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin))); 
+                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
                     if (rec) {
                         *tag = DEFIO_TAG_MAKE(port, pin);
                         cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
@@ -3903,7 +3932,7 @@ static void cliResource(char *cmdline)
             }
         }
     }
-    
+
     cliShowParseError();
 }
 #endif

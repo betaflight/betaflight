@@ -29,8 +29,10 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
-#include "drivers/nvic.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
 
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
@@ -74,9 +76,6 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
-#include "io/cms.h"
-#include "io/cms_types.h"
-
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
@@ -90,9 +89,9 @@
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
-#include "io/canvas.h"
 
 #include "scheduler/scheduler.h"
 
@@ -151,6 +150,15 @@ void init(void)
 
     printfSupportInit();
 
+    systemInit();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    detectHardwareRevision();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -158,18 +166,9 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-    systemInit();
-
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
-
     debugMode = masterConfig.debug_mode;
-
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -238,10 +237,6 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
-#if !defined(USE_HAL_DRIVER)
-    dmaInit();
-#endif
-
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
@@ -287,7 +282,7 @@ void init(void)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);        
+        pwmRxInit(&masterConfig.pwmConfig);
     }
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
@@ -380,21 +375,11 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    drv_adc_config_t adc_params;
-
-    adc_params.enableVBat = feature(FEATURE_VBAT);
-    adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
-    adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
-    adc_params.enableExternal1 = false;
-#ifdef OLIMEXINO
-    adc_params.enableExternal1 = true;
-#endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
-#endif
-
-    adcInit(&adc_params);
+    /* these can be removed from features! */
+    masterConfig.adcConfig.vbat.enabled = feature(FEATURE_VBAT);
+    masterConfig.adcConfig.currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    masterConfig.adcConfig.rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcInit(&masterConfig.adcConfig);
 #endif
 
 
@@ -463,10 +448,8 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
-#ifdef CANVAS
-    if (feature(FEATURE_CANVAS)) {
-        canvasInit();
-    }
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
 #endif
 
 #ifdef USE_CLI
@@ -497,7 +480,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
+    ledStripInit(&masterConfig.ledStripConfig);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -536,28 +519,11 @@ void init(void)
 #endif
 
 #ifdef USE_SDCARD
-    bool sdcardUseDMA = false;
-
-    sdcardInsertionDetectInit();
-
-#ifdef SDCARD_DMA_CHANNEL_TX
-
-#if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
-    // Ensure the SPI Tx DMA doesn't overlap with the led strip
-#if defined(STM32F4) || defined(STM32F7)
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
-#else
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
-#endif
-#else
-    sdcardUseDMA = true;
-#endif
-
-#endif
-
-    sdcard_init(sdcardUseDMA);
-
-    afatfs_init();
+    if (feature(FEATURE_SDCARD)) {
+        sdcardInsertionDetectInit();
+        sdcard_init(masterConfig.sdcardConfig.useDma);
+        afatfs_init();
+    }
 #endif
 
     if (masterConfig.gyro_lpf > 0 && masterConfig.gyro_lpf < 7) {

@@ -4,9 +4,7 @@
 bool smartAudioInit();
 void smartAudioProcess(uint32_t);
 
-#ifdef OSD
-
-// API for BFOSD3.0
+#ifdef CMS
 
 uint16_t smartAudioSmartbaud;
 
@@ -27,12 +25,11 @@ uint8_t smartAudioTxMode;
 uint8_t smartAudioPitFMode;
 uint16_t smartAudioORFreq;
 
-long smartAudioConfigureOpModelByGvar(displayPort_t *, void *self);
-long smartAudioConfigurePitFModeByGvar(displayPort_t *, void *self);
-long smartAudioConfigureBandByGvar(displayPort_t *, void *self);
-long smartAudioConfigureChanByGvar(displayPort_t *, void *self);
-long smartAudioConfigurePowerByGvar(displayPort_t *, void *self);
-long smartAudioSetTxModeByGvar(displayPort_t *, void *self);
+long smartAudioConfigureOpModelByGvar(displayPort_t *, const void *self);
+long smartAudioConfigurePitFModeByGvar(displayPort_t *, const void *self);
+long smartAudioConfigureBandByGvar(displayPort_t *, const void *self);
+long smartAudioConfigureChanByGvar(displayPort_t *, const void *self);
+long smartAudioConfigurePowerByGvar(displayPort_t *, const void *self);
+long smartAudioSetTxModeByGvar(displayPort_t *, const void *self);
 
-extern OSD_Entry cmsx_menuVtxSmartAudio[];
 #endif

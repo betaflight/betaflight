@@ -1,11 +1,26 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 //
 // Menu element types
 // XXX Upon separation, all OME would be renamed to CME_ or similar.
 //
 
 #pragma once
-
-typedef long (*OSDMenuFuncPtr)(displayPort_t *, void *);
 
 //type of elements
 
@@ -15,12 +30,12 @@ typedef enum
     OME_Back,
     OME_OSD_Exit,
     OME_Submenu,
+    OME_Funcall,
     OME_Bool,
     OME_INT8,
     OME_UINT8,
     OME_UINT16,
     OME_INT16,
-    OME_Poll_INT16,
     OME_String,
     OME_FLOAT, //only up to 255 value and cant be 2.55 or 25.5, just for PID's
     //wlasciwosci elementow
@@ -29,13 +44,20 @@ typedef enum
 #endif
     OME_TAB,
     OME_END,
+
+    // Debug aid
+    OME_MENU,
+
+    OME_MAX = OME_MENU
 } OSD_MenuElement;
+
+typedef long (*CMSEntryFuncPtr)(displayPort_t *displayPort, const void *ptr);
 
 typedef struct
 {
-    char *text;
-    OSD_MenuElement type;
-    OSDMenuFuncPtr func;
+    const char *text;
+    const OSD_MenuElement type;
+    const CMSEntryFuncPtr func;
     void *data;
     uint8_t flags;
 } OSD_Entry;
@@ -43,6 +65,7 @@ typedef struct
 // Bits in flags
 #define PRINT_VALUE    0x01  // Value has been changed, need to redraw
 #define PRINT_LABEL    0x02  // Text label should be printed
+#define DYNAMIC        0x04  // Value should be updated dynamically
 
 #define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
 #define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
@@ -51,6 +74,32 @@ typedef struct
 #define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
 #define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }
 #define CLR_PRINTLABEL(p) { (p)->flags &= ~PRINT_LABEL; }
+
+#define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
+
+
+typedef long (*CMSMenuFuncPtr)(void);
+
+/*
+onExit function is called with self:
+(1) Pointer to an OSD_Entry when cmsMenuBack() was called.
+    Point to an OSD_Entry with type == OME_Back if BACK was selected.
+(2) NULL if called from menu exit (forced exit at top level).
+*/
+
+typedef long (*CMSMenuOnExitPtr)(const OSD_Entry *self);
+
+typedef struct
+{
+    // These two are debug aids for menu content creators.
+    const char *GUARD_text;
+    const OSD_MenuElement GUARD_type;
+
+    const CMSMenuFuncPtr onEnter;
+    const CMSMenuOnExitPtr onExit;
+    const CMSMenuFuncPtr onGlobalExit;
+    OSD_Entry *entries;
+} CMS_Menu;
 
 typedef struct
 {

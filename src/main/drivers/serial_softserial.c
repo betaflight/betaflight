@@ -101,7 +101,7 @@ void setTxSignal(softSerial_t *softSerial, uint8_t state)
 
 void serialInputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_RX, RESOURCE_INDEX(portIndex));
+    IOInit(IOGetByTag(pin), OWNER_SERIAL_RX, RESOURCE_INDEX(portIndex) + RESOURCE_SOFT_OFFSET);
 #ifdef STM32F1
     IOConfigGPIO(IOGetByTag(pin), IOCFG_IPU);
 #else
@@ -111,7 +111,7 @@ void serialInputPortConfig(ioTag_t pin, uint8_t portIndex)
 
 static void serialOutputPortConfig(ioTag_t pin, uint8_t portIndex)
 {
-    IOInit(IOGetByTag(pin), OWNER_SOFTSERIAL, RESOURCE_UART_TX, RESOURCE_INDEX(portIndex));
+    IOInit(IOGetByTag(pin), OWNER_SERIAL_TX, RESOURCE_INDEX(portIndex) + RESOURCE_SOFT_OFFSET);
     IOConfigGPIO(IOGetByTag(pin), IOCFG_OUT_PP);
 }
 

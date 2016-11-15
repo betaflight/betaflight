@@ -144,11 +144,8 @@
 // Configuratoin Menu System
 #define CMS
 
-// Use external OSD to run CMS
-#define CANVAS
-
-// USE I2C OLED display to run CMS
-#define OLEDCMS
+// Use external display connected by MSP to run CMS
+#define USE_MSP_DISPLAYPORT
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 

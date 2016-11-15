@@ -6,12 +6,13 @@
 
 #ifdef VTX_SMARTAUDIO
 
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+
 #include "common/printf.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "io/serial.h"
-#include "io/cms.h"
-#include "io/cms_types.h"
 #include "io/vtx_smartaudio.h"
 
 #include "fc/rc_controls.h"
@@ -33,7 +34,7 @@
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
-#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART1
 serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
 #else
@@ -43,7 +44,7 @@ serialPort_t *debugSerialPort = NULL;
 #include "build/debug.h"
 
 #ifdef CMS
-static void smartAudioUpdateStatusString(void); // Forward
+static void saUpdateStatusString(void); // Forward
 #endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
@@ -306,7 +307,7 @@ static void saProcessResponse(uint8_t *buf, int len)
             smartAudioTxMode = SA_TXMODE_PIT_OUTRANGE;
         }
 
-        smartAudioUpdateStatusString();
+        saUpdateStatusString();
 
         if (sa_vers == 2) {
             smartAudioPower = sa_power + 1; // XXX Take care V1
@@ -345,7 +346,7 @@ static void saProcessResponse(uint8_t *buf, int len)
             sa_pitfreq = freq & ~SA_FREQ_GETPIT;
             dprintf(("saProcessResponse: GETPIT freq %d\r\n", sa_pitfreq));
 #ifdef CMS
-            smartAudioUpdateStatusString();
+            saUpdateStatusString();
 #endif
         } else if (freq & SA_FREQ_SETPIT) {
             dprintf(("saProcessResponse: SETPIT freq %d\r\n", freq));
@@ -637,13 +638,15 @@ bool smartAudioInit()
         return false;
     }
 
-    saOpmodel = masterConfig.vtx_smartaudio_opmodel;
+    // saOpmodel = masterConfig.vtx_smartaudio_opmodel;
 
     return true;
 }
 
 void smartAudioProcess(uint32_t now)
 {
+    debug[0]++;
+
     static bool initialSent = false;
 
     if (smartAudioSerialPort == NULL)
@@ -705,6 +708,8 @@ static void saUpdateStatusString(void)
     if (sa_vers == 0)
         return;
 
+smartAudioStatus = sa_vers;
+
     saStatusString[0] = "-FP"[saOpmodel];
     saStatusString[2] = "ABEFR"[sa_chan / 8];
     saStatusString[3] = '1' + (sa_chan % 8);
@@ -724,7 +729,7 @@ static void saUpdateStatusString(void)
     }
 }
 
-long smartAudioConfigureBandByGvar(displayPort_t *pDisp, void *self)
+long smartAudioConfigureBandByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -746,7 +751,7 @@ long smartAudioConfigureBandByGvar(displayPort_t *pDisp, void *self)
     return 0;
 }
 
-long smartAudioConfigureChanByGvar(displayPort_t *pDisp, void *self)
+long smartAudioConfigureChanByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -768,7 +773,7 @@ long smartAudioConfigureChanByGvar(displayPort_t *pDisp, void *self)
     return 0;
 }
 
-long smartAudioConfigurePowerByGvar(displayPort_t *pDisp, void *self)
+long smartAudioConfigurePowerByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -790,7 +795,7 @@ long smartAudioConfigurePowerByGvar(displayPort_t *pDisp, void *self)
     return 0;
 }
 
-long smartAudioSetTxModeByGvar(displayPort_t *pDisp, void *self)
+long smartAudioSetTxModeByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -826,7 +831,7 @@ long smartAudioSetTxModeByGvar(displayPort_t *pDisp, void *self)
     return 0;
 }
 
-long smartAudioConfigurePitFModeByGvar(displayPort_t *pDisp, void *self)
+long smartAudioConfigurePitFModeByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -840,7 +845,7 @@ long smartAudioConfigurePitFModeByGvar(displayPort_t *pDisp, void *self)
     return 0;
 }
 
-long smartAudioConfigureOpModelByGvar(displayPort_t *pDisp, void *self)
+long smartAudioConfigureOpModelByGvar(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
@@ -913,7 +918,7 @@ OSD_TAB_t entrySmartAudioPitFMode = { &smartAudioPitFMode, 1, &smartAudioPitFMod
 
 OSD_UINT16_t entrySmartAudioORFreq = { &smartAudioORFreq, 5600, 5900, 1 };
 
-OSD_Entry menu_smartAudioConfig[] = {
+OSD_Entry menu_smartAudioConfigEntries[] = {
     { "--- SMARTAUDIO CONFIG ---", OME_Label, NULL, NULL, 0 },
     { "OP MODEL", OME_TAB, smartAudioConfigureOpModelByGvar, &entrySmartAudioOpModel, 0 },
     { "PIT FREQ", OME_TAB, smartAudioConfigurePitFModeByGvar, &entrySmartAudioPitFMode, 0 },
@@ -922,44 +927,71 @@ OSD_Entry menu_smartAudioConfig[] = {
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
+CMS_Menu menu_smartAudioConfig = {
+    .GUARD_text = "XSACFG",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menu_smartAudioConfigEntries
+};
+
 static const char * const smartAudioStatusNames[] = {
     "OFFLINE",
     "ONLINE V1",
     "ONLINE V2",
 };
 
-OSD_TAB_t entrySmartAudioOnline = { &smartAudioStatus, 2, &smartAudioStatusNames[0] };
+OSD_TAB_t entrySmartAudioOnline = { &smartAudioStatus, 2, smartAudioStatusNames };
 OSD_UINT16_t entrySmartAudioBaudrate = { &smartAudioSmartbaud, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatBadpre = { &saerr_badpre, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatBadlen = { &saerr_badlen, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatCrcerr = { &saerr_crcerr, 0, 0, 0 };
 OSD_UINT16_t entrySmartAudioStatOooerr = { &saerr_oooresp, 0, 0, 0 };
 
-OSD_Entry menu_smartAudioStats[] = {
+OSD_Entry menu_smartAudioStatsEntries[] = {
     { "--- SMARTAUDIO STATS ---", OME_Label, NULL, NULL, 0 },
-    { "STATUS", OME_TAB, NULL, &entrySmartAudioOnline, 0 },
-    { "BAUDRATE", OME_UINT16, NULL, &entrySmartAudioBaudrate, 0 },
-    { "BADPRE", OME_UINT16, NULL, &entrySmartAudioStatBadpre, 0 },
-    { "BADLEN", OME_UINT16, NULL, &entrySmartAudioStatBadlen, 0 },
-    { "CRCERR", OME_UINT16, NULL, &entrySmartAudioStatCrcerr, 0 },
-    { "OOOERR", OME_UINT16, NULL, &entrySmartAudioStatOooerr, 0 },
+    { "STATUS", OME_TAB, NULL, &entrySmartAudioOnline, DYNAMIC },
+    { "BAUDRATE", OME_UINT16, NULL, &entrySmartAudioBaudrate, DYNAMIC },
+    { "BADPRE", OME_UINT16, NULL, &entrySmartAudioStatBadpre, DYNAMIC },
+    { "BADLEN", OME_UINT16, NULL, &entrySmartAudioStatBadlen, DYNAMIC },
+    { "CRCERR", OME_UINT16, NULL, &entrySmartAudioStatCrcerr, DYNAMIC },
+    { "OOOERR", OME_UINT16, NULL, &entrySmartAudioStatOooerr, DYNAMIC },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
 
-OSD_Entry cmsx_menuVtxSmartAudio[] =
+CMS_Menu menu_smartAudioStats = {
+    .GUARD_text = "XSAST",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = menu_smartAudioStatsEntries
+};
+
+OSD_Entry cmsx_menuVtxSmartAudioEntries[] =
 {
     { "- VTX SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
-    { smartAudioStatusString, OME_Label, NULL, NULL, 0 },
+    { "", OME_String, NULL, smartAudioStatusString, DYNAMIC },
     { "TXMODE", OME_TAB, smartAudioSetTxModeByGvar, &entrySmartAudioTxMode, 0 },
     { "BAND", OME_TAB, smartAudioConfigureBandByGvar, &entrySmartAudioBand, 0 },
     { "CHAN", OME_TAB, smartAudioConfigureChanByGvar, &entrySmartAudioChan, 0 },
     { "FREQ", OME_UINT16, NULL, &entrySmartAudioFreq, 0 },
     { "POWER", OME_TAB, smartAudioConfigurePowerByGvar, &entrySmartAudioPower, 0 },
-    { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig[0], 0 },
-    { "STAT", OME_Submenu, cmsMenuChange, &menu_smartAudioStats[0], 0 },
+    { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig, 0 },
+    { "STAT", OME_Submenu, cmsMenuChange, &menu_smartAudioStats, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
+};
+
+CMS_Menu cmsx_menuVtxSmartAudio = {
+    .GUARD_text = "XVTXSA",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = cmsx_menuVtxSmartAudioEntries
 };
 
 #endif // CMS

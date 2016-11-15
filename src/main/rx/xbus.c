@@ -238,10 +238,10 @@ static void xBusDataReceive(uint16_t c)
     // Done?
     if (xBusFramePosition == xBusFrameLength) {
         switch (xBusProvider) {
-            case SERIALRX_XBUS_MODE_B:
-                xBusUnpackModeBFrame(0);
-            case SERIALRX_XBUS_MODE_B_RJ01:
-                xBusUnpackRJ01Frame();
+        case SERIALRX_XBUS_MODE_B:
+            xBusUnpackModeBFrame(0);
+        case SERIALRX_XBUS_MODE_B_RJ01:
+            xBusUnpackRJ01Frame();
         }
         xBusDataIncoming = false;
         xBusFramePosition = 0;
@@ -249,7 +249,7 @@ static void xBusDataReceive(uint16_t c)
 }
 
 // Indicate time to read a frame from the data...
-uint8_t xBusFrameStatus(void)
+static uint8_t xBusFrameStatus(void)
 {
     if (!xBusFrameReceived) {
         return RX_FRAME_PENDING;
@@ -306,8 +306,8 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFunc = xBusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = xBusFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = xBusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = xBusFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

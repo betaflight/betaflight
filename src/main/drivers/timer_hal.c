@@ -70,7 +70,7 @@ typedef struct {
 } timerInfo_t;
 timerInfo_t timerInfo[USED_TIMER_COUNT+1];
 
-typedef struct 
+typedef struct
 {
     TIM_HandleTypeDef Handle;
 } timerHandle_t;
@@ -216,6 +216,16 @@ rccPeriphTag_t timerRCC(TIM_TypeDef *tim)
     return 0;
 }
 
+uint8_t timerInputIrq(TIM_TypeDef *tim)
+{
+    for (int i = 0; i < HARDWARE_TIMER_DEFINITION_COUNT; i++) {
+        if (timerDefinitions[i].TIMx == tim) {
+            return timerDefinitions[i].inputIrq;
+        }
+    }
+    return 0;
+}
+
 void timerNVICConfigure(uint8_t irq)
 {
     HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(NVIC_PRIO_TIMER), NVIC_PRIORITY_SUB(NVIC_PRIO_TIMER));
@@ -227,7 +237,7 @@ TIM_HandleTypeDef* timerFindTimerHandle(TIM_TypeDef *tim)
     uint8_t timerIndex = lookupTimerIndex(tim);
     if (timerIndex >= USED_TIMER_COUNT)
         return NULL;
-        
+
     return &timerHandle[timerIndex].Handle;
 }
 
@@ -242,16 +252,16 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
         // already configured
         return;
     }
-    
+
     timerHandle[timerIndex].Handle.Instance = tim;
-    
+
     timerHandle[timerIndex].Handle.Init.Period = (period - 1) & 0xffff; // AKA TIMx_ARR
     timerHandle[timerIndex].Handle.Init.Prescaler = (SystemCoreClock / timerClockDivisor(tim) / ((uint32_t)mhz * 1000000)) - 1;
 
     timerHandle[timerIndex].Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     timerHandle[timerIndex].Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
     timerHandle[timerIndex].Handle.Init.RepetitionCounter = 0x0000;
-    
+
     HAL_TIM_Base_Init(&timerHandle[timerIndex].Handle);
     if(tim == TIM1 || tim == TIM2 || tim == TIM3 || tim == TIM4 || tim == TIM5 || tim == TIM8 || tim == TIM9)
     {
@@ -282,12 +292,14 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    
+
     configTimeBase(timerHardwarePtr->tim, period, mhz);
     HAL_TIM_Base_Start(&timerHandle[timerIndex].Handle);
-    timerNVICConfigure(timerHardwarePtr->irq);
+
+    uint8_t irq = timerInputIrq(timerHardwarePtr->tim);
+    timerNVICConfigure(irq);
     // HACK - enable second IRQ on timers that need it
-    switch(timerHardwarePtr->irq) {
+    switch(irq) {
 
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
@@ -300,7 +312,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
 }
 
 // allocate and configure timer channel. Timer priority is set to highest priority of its channels
-void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority)
+void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriority, uint8_t irq)
 {
     uint8_t timerIndex = lookupTimerIndex(timHw->tim);
     if (timerIndex >= USED_TIMER_COUNT) {
@@ -320,8 +332,8 @@ void timerChInit(const timerHardware_t *timHw, channelType_t type, int irqPriori
         HAL_TIM_Base_Start(&timerHandle[timerIndex].Handle);
 
 
-        HAL_NVIC_SetPriority(timHw->irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
-        HAL_NVIC_EnableIRQ(timHw->irq);
+        HAL_NVIC_SetPriority(irq, NVIC_PRIORITY_BASE(irqPriority), NVIC_PRIORITY_SUB(irqPriority));
+        HAL_NVIC_EnableIRQ(irq);
 
         timerInfo[timer].priority = irqPriority;
     }
@@ -345,7 +357,7 @@ static void timerChConfig_UpdateOverflow(timerConfig_t *cfg, TIM_TypeDef *tim) {
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    
+
     timerOvrHandlerRec_t **chain = &cfg->overflowCallbackActive;
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
         for(int i = 0; i < CC_CHANNELS_PER_TIMER; i++)
@@ -429,7 +441,7 @@ void timerChITConfigDualLo(const timerHardware_t *timHw, FunctionalState newStat
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    
+
     if(newState)
         __HAL_TIM_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel&~TIM_CHANNEL_2));
     else
@@ -448,7 +460,7 @@ void timerChITConfig(const timerHardware_t *timHw, FunctionalState newState)
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    
+
     if(newState)
         __HAL_TIM_ENABLE_IT(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
     else
@@ -467,14 +479,14 @@ void timerChClearCCFlag(const timerHardware_t *timHw)
     if (timerIndex >= USED_TIMER_COUNT) {
         return;
     }
-    
+
     __HAL_TIM_CLEAR_FLAG(&timerHandle[timerIndex].Handle, TIM_IT_CCx(timHw->channel));
 }
 
 // configure timer channel GPIO mode
 void timerChConfigGPIO(const timerHardware_t* timHw, ioConfig_t mode)
 {
-    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, RESOURCE_TIMER, 0);
+    IOInit(IOGetByTag(timHw->tag), OWNER_TIMER, 0);
     IOConfigGPIO(IOGetByTag(timHw->tag), mode);
 }
 
@@ -732,8 +744,8 @@ _TIM_IRQ_HANDLER(TIM1_TRG_COM_TIM17_IRQHandler, 17);
 void timerInit(void)
 {
     memset(timerConfig, 0, sizeof (timerConfig));
-    
-    
+
+
 #if USED_TIMERS & TIM_N(1)
     __HAL_RCC_TIM1_CLK_ENABLE();
 #endif
@@ -862,8 +874,23 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
         if (timerHardware[i].tag == tag) {
             if (timerHardware[i].output & flag) {
                 return &timerHardware[i];
-            } 
+            }
         }
     }
     return NULL;
+}
+
+uint16_t timerDmaSource(uint8_t channel)
+{
+    switch (channel) {
+        case TIM_CHANNEL_1:
+            return TIM_DMA_ID_CC1;
+        case TIM_CHANNEL_2:
+            return TIM_DMA_ID_CC2;
+        case TIM_CHANNEL_3:
+            return TIM_DMA_ID_CC3;
+        case TIM_CHANNEL_4:
+            return TIM_DMA_ID_CC4;
+    }
+    return 0;
 }

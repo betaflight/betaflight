@@ -112,7 +112,7 @@ static void sumdDataReceive(uint16_t c)
 #define SUMD_FRAME_STATE_OK 0x01
 #define SUMD_FRAME_STATE_FAILSAFE 0x81
 
-uint8_t sumdFrameStatus(void)
+static uint8_t sumdFrameStatus(void)
 {
     uint8_t channelIndex;
 
@@ -165,8 +165,8 @@ bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
     rxRuntimeConfig->rxRefreshRate = 11000;
 
-    rxRuntimeConfig->rcReadRawFunc = sumdReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = sumdFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = sumdReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sumdFrameStatus;
 
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {

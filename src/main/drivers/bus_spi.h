@@ -79,6 +79,11 @@ typedef struct SPIDevice_s {
     uint8_t af;
     volatile uint16_t errorCount;
     bool leadingEdge;
+#if defined(STM32F7)
+    SPI_HandleTypeDef hspi;
+    DMA_HandleTypeDef hdma;
+    uint8_t dmaIrqHandler;
+#endif
 } spiDevice_t;
 
 bool spiInit(SPIDevice device);
