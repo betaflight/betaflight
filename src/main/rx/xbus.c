@@ -34,6 +34,7 @@
 //
 // Serial driver for JR's XBus (MODE B) receiver
 //
+
 #define XBUS_CHANNEL_COUNT 12
 #define XBUS_RJ01_CHANNEL_COUNT 12
 
@@ -80,54 +81,6 @@ static uint8_t xBusProvider;
 // Use max values for ram areas
 static volatile uint8_t xBusFrame[XBUS_RJ01_FRAME_SIZE];
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
-
-static void xBusDataReceive(uint16_t c);
-static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    uint32_t baudRate;
-
-    switch (rxConfig->serialrx_provider) {
-    case SERIALRX_XBUS_MODE_B:
-        rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
-        xBusFrameReceived = false;
-        xBusDataIncoming = false;
-        xBusFramePosition = 0;
-        baudRate = XBUS_BAUDRATE;
-        xBusFrameLength = XBUS_FRAME_SIZE;
-        xBusChannelCount = XBUS_CHANNEL_COUNT;
-        xBusProvider = SERIALRX_XBUS_MODE_B;
-        break;
-    case SERIALRX_XBUS_MODE_B_RJ01:
-        rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
-        xBusFrameReceived = false;
-        xBusDataIncoming = false;
-        xBusFramePosition = 0;
-        baudRate = XBUS_RJ01_BAUDRATE;
-        xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
-        xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
-        xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
-        break;
-    default:
-        return false;
-        break;
-    }
-
-    rxRuntimeConfig->rxRefreshRate = 11000;
-
-    rxRuntimeConfig->rcReadRawFn = xBusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFn = xBusFrameStatus;
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
-
-    return xBusPort != NULL;
-}
 
 // The xbus mode B CRC calculations
 static uint16_t xBusCRC16(uint16_t crc, uint8_t value)
@@ -211,7 +164,7 @@ static void xBusUnpackRJ01Frame(void)
     uint8_t outerCrc = 0;
     uint8_t i = 0;
 
-    // When using the Align RJ01 receiver with 
+    // When using the Align RJ01 receiver with
     // a MODE B setting in the radio (XG14 tested)
     // the MODE_B -frame is packed within some
     // at the moment unknown bytes before and after:
@@ -219,7 +172,7 @@ static void xBusUnpackRJ01Frame(void)
     // Compared to a standard MODE B frame that only
     // contains the "middle" package.
     // Hence, at the moment, the unknown header and footer
-    // of the RJ01 MODEB packages are discarded. 
+    // of the RJ01 MODEB packages are discarded.
     // However, the LAST byte (CRC_OUTER) is infact an 8-bit
     // CRC for the whole package, using the Dallas-One-Wire CRC
     // method.
@@ -282,10 +235,10 @@ static void xBusDataReceive(uint16_t c)
     // Done?
     if (xBusFramePosition == xBusFrameLength) {
         switch (xBusProvider) {
-            case SERIALRX_XBUS_MODE_B:
-                xBusUnpackModeBFrame(0);
-            case SERIALRX_XBUS_MODE_B_RJ01:
-                xBusUnpackRJ01Frame();
+        case SERIALRX_XBUS_MODE_B:
+            xBusUnpackModeBFrame(0);
+        case SERIALRX_XBUS_MODE_B_RJ01:
+            xBusUnpackRJ01Frame();
         }
         xBusDataIncoming = false;
         xBusFramePosition = 0;
@@ -316,5 +269,50 @@ static uint16_t xBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     data = xBusChannelData[chan];
 
     return data;
+}
+
+bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    uint32_t baudRate;
+
+    switch (rxConfig->serialrx_provider) {
+    case SERIALRX_XBUS_MODE_B:
+        rxRuntimeConfig->channelCount = XBUS_CHANNEL_COUNT;
+        xBusFrameReceived = false;
+        xBusDataIncoming = false;
+        xBusFramePosition = 0;
+        baudRate = XBUS_BAUDRATE;
+        xBusFrameLength = XBUS_FRAME_SIZE;
+        xBusChannelCount = XBUS_CHANNEL_COUNT;
+        xBusProvider = SERIALRX_XBUS_MODE_B;
+        break;
+    case SERIALRX_XBUS_MODE_B_RJ01:
+        rxRuntimeConfig->channelCount = XBUS_RJ01_CHANNEL_COUNT;
+        xBusFrameReceived = false;
+        xBusDataIncoming = false;
+        xBusFramePosition = 0;
+        baudRate = XBUS_RJ01_BAUDRATE;
+        xBusFrameLength = XBUS_RJ01_FRAME_SIZE;
+        xBusChannelCount = XBUS_RJ01_CHANNEL_COUNT;
+        xBusProvider = SERIALRX_XBUS_MODE_B_RJ01;
+        break;
+    default:
+        return false;
+        break;
+    }
+
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFn = xBusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = xBusFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    serialPort_t *xBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, xBusDataReceive, baudRate, MODE_RX, SERIAL_NOT_INVERTED);
+
+    return xBusPort != NULL;
 }
 #endif // USE_SERIALRX_XBUS
