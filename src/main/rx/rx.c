@@ -256,7 +256,7 @@ void rxInit(const rxConfig_t *rxConfig, const modeActivationCondition_t *modeAct
     }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM)) {
         rxPwmInit(rxConfig, &rxRuntimeConfig);
     }
@@ -311,7 +311,7 @@ bool rxUpdateCheck(uint32_t currentTime, uint32_t currentDeltaTime)
         }
     }
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
         if (isPPMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;

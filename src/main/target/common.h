@@ -51,6 +51,8 @@
 #define USE_SERIALRX_SUMH       // Graupner legacy protocol
 #define USE_SERIALRX_XBUS       // JR
 #define USE_CLI
+#define USE_PWM
+#define USE_PPM
 
 #if defined(STM_FAST_TARGET)
 #define MAX_AUX_CHANNELS                99

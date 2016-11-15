@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 
 #include "build/build_config.h"
 
