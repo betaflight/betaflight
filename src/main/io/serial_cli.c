@@ -3000,6 +3000,10 @@ static void cliEscPassthrough(char *cmdline)
                 {
                     mode = 2;
                 }
+                else if(strncasecmp(pch, "cc", strlen(pch)) == 0)
+                {
+                    mode = 4;
+                }
                 else
                 {
                     cliShowParseError();
