@@ -739,7 +739,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             continue;
 #endif
 
-#ifdef STM32F10X
+#if defined(STM32F10X) && defined(USE_I2C)
         // skip I2C ports if device 1 is selected
         if (I2C_DEVICE == I2CDEV_1 && timerHardwarePtr->gpio == GPIOB && (timerHardwarePtr->pin == Pin_6 || timerHardwarePtr->pin == Pin_7))
             continue;
