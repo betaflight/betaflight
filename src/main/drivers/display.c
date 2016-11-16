@@ -45,19 +45,25 @@ void displayGrab(displayPort_t *instance)
 {
     instance->vTable->grab(instance);
     instance->vTable->clearScreen(instance);
-    instance->isGrabbed = true;
+    ++instance->grabCount;
 }
 
 void displayRelease(displayPort_t *instance)
 {
     instance->vTable->release(instance);
-    instance->isGrabbed = false;
+    --instance->grabCount;
+}
+
+void displayReleaseAll(displayPort_t *instance)
+{
+    instance->vTable->release(instance);
+    instance->grabCount = 0;
 }
 
 bool displayIsGrabbed(const displayPort_t *instance)
 {
     // can be called before initialised
-    return (instance && instance->isGrabbed);
+    return (instance && instance->grabCount > 0);
 }
 
 int displayWrite(displayPort_t *instance, uint8_t x, uint8_t y, const char *s)
@@ -88,5 +94,14 @@ void displayResync(displayPort_t *instance)
 uint16_t displayTxBytesFree(const displayPort_t *instance)
 {
     return instance->vTable->txBytesFree(instance);
+}
+
+void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable)
+{
+    instance->vTable = vTable;
+    instance->vTable->clearScreen(instance);
+    instance->cleared = true;
+    instance->grabCount = 0;
+    instance->cursorRow = -1;
 }
 

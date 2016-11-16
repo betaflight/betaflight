@@ -112,9 +112,8 @@ static const displayPortVTable_t oledVTable = {
 
 displayPort_t *displayPortOledInit(void)
 {
-    oledDisplayPort.vTable = &oledVTable;
+    displayInit(&oledDisplayPort, &oledVTable);
     oledDisplayPort.rows = SCREEN_CHARACTER_ROW_COUNT;
     oledDisplayPort.cols = SCREEN_CHARACTER_COLUMN_COUNT;
-    oledDisplayPort.isGrabbed = false;
     return &oledDisplayPort;
 }

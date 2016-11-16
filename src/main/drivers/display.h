@@ -26,7 +26,7 @@ typedef struct displayPort_s {
     // CMS state
     bool cleared;
     int8_t cursorRow;
-    bool isGrabbed;
+    int8_t grabCount;
 } displayPort_t;
 
 typedef struct displayPortVTable_s {
@@ -45,6 +45,7 @@ typedef struct displayPortVTable_s {
 
 void displayGrab(displayPort_t *instance);
 void displayRelease(displayPort_t *instance);
+void displayReleaseAll(displayPort_t *instance);
 bool displayIsGrabbed(const displayPort_t *instance);
 void displayClearScreen(displayPort_t *instance);
 void displayDrawScreen(displayPort_t *instance);
@@ -55,3 +56,4 @@ bool displayIsTransferInProgress(const displayPort_t *instance);
 void displayHeartbeat(displayPort_t *instance);
 void displayResync(displayPort_t *instance);
 uint16_t displayTxBytesFree(const displayPort_t *instance);
+void displayInit(displayPort_t *instance, const displayPortVTable_t *vTable);

@@ -37,7 +37,6 @@ static int grab(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     osdResetAlarms();
-    displayPort->isGrabbed = true;
     refreshTimeout = 0;
 
     return 0;
@@ -46,7 +45,6 @@ static int grab(displayPort_t *displayPort)
 static int release(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    displayPort->isGrabbed = false;
 
     return 0;
 }
@@ -119,7 +117,7 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
-static displayPortVTable_t max7456VTable = {
+static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
     .clearScreen = clearScreen,
@@ -135,9 +133,8 @@ static displayPortVTable_t max7456VTable = {
 
 displayPort_t *max7456DisplayPortInit(uint8_t system)
 {
-    max7456DisplayPort.vTable = &max7456VTable;
+    displayInit(&max7456DisplayPort, &max7456VTable);
     max7456Init(system);
-    max7456DisplayPort.isGrabbed = false;
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }

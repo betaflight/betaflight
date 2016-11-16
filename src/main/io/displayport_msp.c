@@ -42,16 +42,17 @@ static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, i
     return mspSerialPush(cmd, buf, len);
 }
 
-static int grab(displayPort_t *displayPort)
+static int heartbeat(displayPort_t *displayPort)
 {
     const uint8_t subcmd[] = { 0 };
 
+    // ensure display is not released by MW OSD software
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int heartbeat(displayPort_t *displayPort)
+static int grab(displayPort_t *displayPort)
 {
-    return grab(displayPort); // ensure display is not released by MW OSD software
+    return heartbeat(displayPort);
 }
 
 static int release(displayPort_t *displayPort)
@@ -141,8 +142,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
 
 displayPort_t *displayPortMspInit(void)
 {
-    mspDisplayPort.vTable = &mspDisplayPortVTable;
-    mspDisplayPort.isGrabbed = false;
+    displayInit(&mspDisplayPort, &mspDisplayPortVTable);
     resync(&mspDisplayPort);
     return &mspDisplayPort;
 }

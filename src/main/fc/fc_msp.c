@@ -1552,7 +1552,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         for (int i = 0; i < 54; i++) {
             font_data[i] = sbufReadU8(src);
         }
+#ifdef USE_MAX7456
+        // !!TODO - replace this with a device independent implementation
         max7456WriteNvm(addr, font_data);
+#endif
         break;
 #endif
 
