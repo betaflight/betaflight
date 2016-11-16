@@ -223,7 +223,7 @@ static void validateAndFixConfig(void)
     }
 
     if (gyroConfig()->gyro_soft_notch_hz < gyroConfig()->gyro_soft_notch_cutoff_hz) {
-        gyroConfig()->gyro_soft_notch_hz = 0;
+        gyroConfig()->gyro_soft_notch_hz = gyroConfig()->gyro_soft_notch_cutoff_hz;
     }
 
 #if defined(LED_STRIP)
