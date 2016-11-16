@@ -419,11 +419,6 @@ void osdInit(displayPort_t *osdDisplayPortToUse)
 
     armState = ARMING_FLAG(ARMED);
 
-    // This will eventually go away when moving to a full displayPort
-    // oriented implementation, or replaced with hal.
-
-    max7456Init(&masterConfig.vcdProfile);
-
     displayClearScreen(osdDisplayPort);
 
     // display logo and help

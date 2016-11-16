@@ -378,7 +378,7 @@ void max7456ReInit(void)
 
 
 //here we init only CS and try to init MAX for first time
-void max7456Init(vcdProfile_t *pVcdProfile)
+void max7456Init(const vcdProfile_t *pVcdProfile)
 {
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));

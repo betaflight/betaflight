@@ -96,10 +96,9 @@ static const displayPortVTable_t testDisplayPortVTable = {
 
 displayPort_t *displayPortTestInit(void)
 {
-    testDisplayPort.vTable = &testDisplayPortVTable;
+    displayInit(&testDisplayPort, &testDisplayPortVTable);
     testDisplayPort.rows = 10;
     testDisplayPort.cols = 40;
-    testDisplayPort.isGrabbed = false;
     return &testDisplayPort;
 }
 

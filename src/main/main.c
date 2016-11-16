@@ -409,7 +409,7 @@ void init(void)
     if (feature(FEATURE_OSD)) {
 #ifdef USE_MAX7456
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(masterConfig.osdProfile.video_system);
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
 #else
         displayPort_t *osdDisplayPort = displayPortMspInit();
 #endif

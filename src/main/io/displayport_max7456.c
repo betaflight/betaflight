@@ -131,10 +131,10 @@ static const displayPortVTable_t max7456VTable = {
     .txBytesFree = txBytesFree,
 };
 
-displayPort_t *max7456DisplayPortInit(uint8_t system)
+displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
     displayInit(&max7456DisplayPort, &max7456VTable);
-    max7456Init(system);
+    max7456Init(vcdProfile);
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }
