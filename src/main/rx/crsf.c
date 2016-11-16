@@ -41,7 +41,8 @@
 
 #include "telemetry/telemetry.h"
 
-#define CRSF_TIME_NEEDED_PER_FRAME_US 1500 //!! this needs checking
+#define CRSF_TIME_NEEDED_PER_FRAME_US   1000
+#define CRSF_TIME_BETWEEN_FRAMES_US     4000 // a frame is sent by the transmitter every 4 milliseconds
 
 #define CRSF_DIGITAL_CHANNEL_MIN 172
 #define CRSF_DIGITAL_CHANNEL_MAX 1811
@@ -71,6 +72,8 @@ static uint8_t telemetryBufLen = 0;
  * 420000 bit/s = 46667 byte/s (including stop bit) = 21.43us per byte
  * Assume a max payload of 32 bytes (needs confirming with TBS), so max frame size of 36 bytes
  * A 36 byte frame can be transmitted in 771 microseconds.
+ *
+ * CRSF_TIME_NEEDED_PER_FRAME_US is set conservatively at 1000 microseconds
  *
  * Every frame has the structure:
  * <Device address> <Frame length> < Type> <Payload> < CRC>
@@ -204,10 +207,11 @@ void crsfRxSendTelemetryData(void)
 {
     // if there is telemetry data to write
     if (telemetryBufLen > 0) {
-        // check that we are not currently receiving data
-        const uint32_t now = micros();
-        if (now > crsfFrameStartAt + CRSF_TIME_NEEDED_PER_FRAME_US) {
-            // any incoming frames will be complete, so it is OK to write to shared serial port
+        // check that we are not currently receiving data (ie in the middle of an RX frame)
+        // and that there is time to send the telemetry frame before the next RX frame arrives
+        const uint32_t timeSinceStartOfFrame = micros() - crsfFrameStartAt;
+        if ((timeSinceStartOfFrame > CRSF_TIME_NEEDED_PER_FRAME_US)
+                && (timeSinceStartOfFrame < CRSF_TIME_BETWEEN_FRAMES_US - CRSF_TIME_NEEDED_PER_FRAME_US)) {
             serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
             telemetryBufLen = 0; // reset telemetry buffer
         }
