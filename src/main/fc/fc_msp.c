@@ -42,6 +42,7 @@
 #include "drivers/io.h"
 #include "drivers/flash.h"
 #include "drivers/sdcard.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
@@ -1034,7 +1035,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef OSD
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
-        sbufWriteU8(dst, masterConfig.osdProfile.video_system);
+        sbufWriteU8(dst, masterConfig.vcdProfile.video_system);
         sbufWriteU8(dst, masterConfig.osdProfile.units);
         sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
@@ -1534,7 +1535,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         addr = sbufReadU8(src);
         // set all the other settings
         if ((int8_t)addr == -1) {
-            masterConfig.osdProfile.video_system = sbufReadU8(src);
+            masterConfig.vcdProfile.video_system = sbufReadU8(src);
             masterConfig.osdProfile.units = sbufReadU8(src);
             masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
             masterConfig.osdProfile.cap_alarm = sbufReadU16(src);

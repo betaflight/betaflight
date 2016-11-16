@@ -42,6 +42,7 @@
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/light_ws2811strip.h"
@@ -483,6 +484,15 @@ void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 }
 #endif
 
+#ifdef USE_MAX7456
+void resetMax7456Config(vcdProfile_t *pVcdProfile)
+{
+    pVcdProfile->video_system = VIDEO_SYSTEM_AUTO;
+    pVcdProfile->h_offset = 0;
+    pVcdProfile->v_offset = 0;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -529,6 +539,10 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
+#endif
+
+#ifdef USE_MAX7456
+    resetMax7456Config(&config->vcdProfile);
 #endif
 
 #ifdef OSD

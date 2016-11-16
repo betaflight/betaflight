@@ -28,6 +28,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
+#include "drivers/vcd.h"
 
 #include "fc/rc_controls.h"
 
@@ -186,6 +187,10 @@ typedef struct master_s {
 
 #ifdef OSD
     osd_profile_t osdProfile;
+#endif
+
+#ifdef USE_MAX7456
+    vcdProfile_t vcdProfile;
 #endif
     
 #ifdef USE_SDCARD

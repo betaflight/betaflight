@@ -58,6 +58,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/vcd.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -948,8 +949,6 @@ const clivalue_t valueTable[] = {
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.sdcardConfig.useDma, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
-    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
@@ -972,6 +971,11 @@ const clivalue_t valueTable[] = {
     { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED], .config.minmax = { 0, 65536 } },
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
+#endif
+#ifdef USE_MAX7456
+    { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &masterConfig.vcdProfile.video_system, .config.minmax = { 0, 2 } },
+    { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.h_offset, .config.minmax = { -32, 31 } },
+    { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.v_offset, .config.minmax = { -15, 16 } },
 #endif
 };
 

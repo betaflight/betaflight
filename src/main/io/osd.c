@@ -408,8 +408,6 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->cap_alarm = 2200;
     osdProfile->time_alarm = 10; // in minutes
     osdProfile->alt_alarm = 100; // meters or feet depend on configuration
-
-    osdProfile->video_system = 0;
 }
 
 void osdInit(void)
@@ -418,7 +416,10 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    max7456Init(masterConfig.osdProfile.video_system);
+    // This will eventually go away when moving to a full displayPort
+    // oriented implementation, or replaced with hal.
+
+    max7456Init(&masterConfig.vcdProfile);
 
     max7456ClearScreen();
 
