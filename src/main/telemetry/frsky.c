@@ -167,10 +167,12 @@ static void sendAccel(void)
 
 static void sendBaro(void)
 {
+#ifdef BARO
     sendDataHead(ID_ALTITUDE_BP);
     serialize16(BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
     serialize16(ABS(BaroAlt % 100));
+#endif
 }
 
 #ifdef GPS
