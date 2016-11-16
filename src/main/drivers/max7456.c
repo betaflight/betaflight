@@ -66,10 +66,11 @@ volatile bool dmaTransactionInProgress = false;
 
 static uint8_t spiBuff[MAX_CHARS2UPDATE*6];
 
-static uint8_t  videoSignalCfg   = 0;
-static uint8_t  videoSignalReg   = VIDEO_MODE_PAL | OSD_ENABLE; //PAL by default
-static uint8_t  hosValue;
-static uint8_t  vosValue;
+static uint8_t  videoSignalCfg;
+static uint8_t  videoSignalReg  = OSD_ENABLE; // OSD_ENABLE required to trigger first ReInit
+
+static uint8_t  hosRegValue; // HOS (Horizontal offset register) value
+static uint8_t  vosRegValue; // VOS (Vertical offset register) value
 
 static bool  max7456Lock        = false;
 static bool fontIsLoading       = false;
@@ -195,10 +196,7 @@ void max7456_dma_irq_handler(dmaChannelDescriptor_t* descriptor)
 
 uint8_t max7456GetRowsCount(void)
 {
-    if (videoSignalReg & VIDEO_MODE_PAL)
-        return VIDEO_LINES_PAL;
-
-    return VIDEO_LINES_NTSC;
+    return (videoSignalReg & VIDEO_MODE_PAL) ? VIDEO_LINES_PAL : VIDEO_LINES_NTSC;
 }
 
 //because MAX7456 need some time to detect video system etc. we need to wait for a while to initialize it at startup
@@ -217,20 +215,20 @@ void max7456ReInit(void)
     ENABLE_MAX7456;
 
     switch(videoSignalCfg) {
-        case PAL:
+        case VIDEO_SYSTEM_PAL:
             videoSignalReg = VIDEO_MODE_PAL | OSD_ENABLE;
             break;
-        case NTSC:
+        case VIDEO_SYSTEM_NTSC:
             videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
             break;
-        default:
+        case VIDEO_SYSTEM_AUTO:
             srdata = max7456Send(MAX7456ADD_STAT, 0x00);
             if ((0x02 & srdata) == 0x02)
                 videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
+            else
+                videoSignalReg = VIDEO_MODE_PAL | OSD_ENABLE;
+            break;
     }
-
-    max7456Send(MAX7456ADD_HOS, hosValue);
-    max7456Send(MAX7456ADD_VOS, vosValue);
 
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
@@ -247,6 +245,9 @@ void max7456ReInit(void)
 
     // make sure the Max7456 is enabled
     max7456Send(VM0_REG, videoSignalReg);
+    max7456Send(MAX7456ADD_HOS, hosRegValue);
+    max7456Send(MAX7456ADD_VOS, vosRegValue);
+
     max7456Send(DMM_REG, CLEAR_DISPLAY);
     DISABLE_MAX7456;
 
@@ -274,9 +275,11 @@ void max7456Init(vcdProfile_t *pVcdProfile)
     ENABLE_MAX7456;
     max7456Send(VM0_REG, MAX7456_RESET);
     DISABLE_MAX7456;
+
+    // Setup values to write to registers
     videoSignalCfg = pVcdProfile->video_system;
-    hosValue = 32 - pVcdProfile->h_offset;
-    vosValue = 16 - pVcdProfile->v_offset;
+    hosRegValue = 32 - pVcdProfile->h_offset;
+    vosRegValue = 16 - pVcdProfile->v_offset;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
     dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);

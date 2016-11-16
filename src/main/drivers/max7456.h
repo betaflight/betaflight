@@ -140,8 +140,6 @@
 #define VIDEO_LINES_NTSC          13
 #define VIDEO_LINES_PAL           16
 
-enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
-
 extern uint16_t maxScreenSize;
 
 void    max7456Init(vcdProfile_t *vcdProfile);
