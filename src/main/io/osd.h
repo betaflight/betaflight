@@ -60,7 +60,8 @@ typedef struct osd_profile_s {
     osd_unit_e units;
 } osd_profile_t;
 
-void osdInit(void);
+struct displayPort_s;
+void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(uint32_t currentTime);

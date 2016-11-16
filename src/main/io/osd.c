@@ -46,7 +46,6 @@
 #include "cms/cms_menu_osd.h"
 
 #include "io/flashfs.h"
-#include "io/displayport_max7456.h"
 #include "io/osd.h"
 
 #include "fc/config.h"
@@ -411,9 +410,9 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->alt_alarm = 100; // meters or feet depend on configuration
 }
 
-void osdInit(void)
+void osdInit(displayPort_t *osdDisplayPortToUse)
 {
-    osdDisplayPort = max7456DisplayPortInit(masterConfig.osdProfile.video_system);
+    osdDisplayPort = osdDisplayPortToUse;
 #ifdef CMS
     cmsDisplayPortRegister(osdDisplayPort);
 #endif
