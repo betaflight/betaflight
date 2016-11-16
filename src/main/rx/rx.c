@@ -196,6 +196,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
     default:
         enabled = false;
+        break;
     }
     return enabled;
 }
