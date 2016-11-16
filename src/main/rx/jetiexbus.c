@@ -469,7 +469,7 @@ uint8_t createExTelemetrieValueMessage(uint8_t *exMessage, uint8_t itemStart)
         *p++ = (sensorValue & 0x9F) | jetiExSensors[item].decimals;
 
         item++;
-        if(item > JETI_EX_SENSOR_COUNT)
+        if(item >= JETI_EX_SENSOR_COUNT)
             break;
         if(EXTEL_MAX_PAYLOAD <= ((p-&exMessage[EXTEL_HEADER_ID]) + exDataTypeLen[jetiExSensors[item].exDataType]) + 1)
             break;

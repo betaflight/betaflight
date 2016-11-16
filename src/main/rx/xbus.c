@@ -237,8 +237,10 @@ static void xBusDataReceive(uint16_t c)
         switch (xBusProvider) {
         case SERIALRX_XBUS_MODE_B:
             xBusUnpackModeBFrame(0);
+            break;
         case SERIALRX_XBUS_MODE_B_RJ01:
             xBusUnpackRJ01Frame();
+            break;
         }
         xBusDataIncoming = false;
         xBusFramePosition = 0;
