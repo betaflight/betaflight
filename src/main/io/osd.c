@@ -416,7 +416,9 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    // This will eventually go away, or replaced with hal.
+    // This will eventually go away when moving to a full displayPort
+    // oriented implementation, or replaced with hal.
+
     max7456Init(&masterConfig.vcdProfile);
 
     max7456ClearScreen();
