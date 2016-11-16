@@ -42,6 +42,7 @@
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/light_ws2811strip.h"
@@ -480,6 +481,15 @@ void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
     servoMixerConfig->tri_unarmed_servo = 1;
     servoMixerConfig->servo_lowpass_freq = 400;
     servoMixerConfig->servo_lowpass_enable = 0;
+}
+#endif
+
+#ifdef USE_MAX7456
+void resetMax7456Config(vcdProfile_t *pVcdProfile)
+{
+    pVcdProfile->video_system = 0; // AUTO see drivers/max7456.h
+    pVcdProfile->h_offset = 0;
+    pVcdProfile->v_offset = 0;
 }
 #endif
 

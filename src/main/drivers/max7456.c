@@ -33,7 +33,7 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
-
+#include "drivers/vcd.h"
 #include "max7456.h"
 #include "max7456_symbols.h"
 
@@ -68,6 +68,9 @@ static uint8_t spiBuff[MAX_CHARS2UPDATE*6];
 
 static uint8_t  videoSignalCfg   = 0;
 static uint8_t  videoSignalReg   = VIDEO_MODE_PAL | OSD_ENABLE; //PAL by default
+static uint8_t  hosValue;
+static uint8_t  vosValue;
+
 static bool  max7456Lock        = false;
 static bool fontIsLoading       = false;
 static IO_t max7456CsPin        = IO_NONE;
@@ -226,6 +229,9 @@ void max7456ReInit(void)
                 videoSignalReg = VIDEO_MODE_NTSC | OSD_ENABLE;
     }
 
+    max7456Send(MAX7456ADD_HOS, hosValue);
+    max7456Send(MAX7456ADD_VOS, vosValue);
+
     if (videoSignalReg & VIDEO_MODE_PAL) { //PAL
         maxScreenSize = VIDEO_BUFFER_CHARS_PAL;
         maxScreenRows = VIDEO_LINES_PAL;
@@ -255,7 +261,7 @@ void max7456ReInit(void)
 
 
 //here we init only CS and try to init MAX for first time
-void max7456Init(uint8_t video_system)
+void max7456Init(vcdProfile_t *pVcdProfile)
 {
 #ifdef MAX7456_SPI_CS_PIN
     max7456CsPin = IOGetByTag(IO_TAG(MAX7456_SPI_CS_PIN));
@@ -268,7 +274,9 @@ void max7456Init(uint8_t video_system)
     ENABLE_MAX7456;
     max7456Send(VM0_REG, MAX7456_RESET);
     DISABLE_MAX7456;
-    videoSignalCfg = video_system;
+    videoSignalCfg = pVcdProfile->video_system;
+    hosValue = 32 - pVcdProfile->h_offset;
+    vosValue = 16 - pVcdProfile->v_offset;
 
 #ifdef MAX7456_DMA_CHANNEL_TX
     dmaSetHandler(MAX7456_DMA_IRQ_HANDLER_ID, max7456_dma_irq_handler, NVIC_PRIO_MAX7456_DMA, 0);

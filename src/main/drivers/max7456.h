@@ -144,7 +144,7 @@ enum VIDEO_TYPES { AUTO = 0, PAL, NTSC };
 
 extern uint16_t maxScreenSize;
 
-void    max7456Init(uint8_t system);
+void    max7456Init(vcdProfile_t *vcdProfile);
 void    max7456DrawScreen(void);
 void    max7456WriteNvm(uint8_t char_address, const uint8_t *font_data);
 uint8_t max7456GetRowsCount(void);
