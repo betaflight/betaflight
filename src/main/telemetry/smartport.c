@@ -212,14 +212,16 @@ void freeSmartPortTelemetryPort(void)
 
 void configureSmartPortTelemetryPort(void)
 {
-    portOptions_t portOptions;
+    portOptions_t portOptions = 0;
 
     if (!portConfig) {
         return;
     }
 
+#ifdef USE_SMARTPORT_ONEWIRE
     portOptions = SERIAL_BIDIR;
-
+#endif
+    
     if (telemetryConfig()->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
@@ -360,10 +362,12 @@ void handleSmartPortTelemetry(void)
                 break;
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
+#ifdef BARO
                 if (sensors(SENSOR_BARO)) {
                     smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
+#endif
                 break;
             case FSSP_DATAID_FUEL       :
                 if (feature(FEATURE_AMPERAGE_METER)) {

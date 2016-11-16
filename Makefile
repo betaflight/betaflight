@@ -221,6 +221,13 @@ ifeq ($(TARGET),$(filter $(TARGET),RMDO IRCFUSIONF3))
 TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3
 endif
 
+# SMARTPORT F3
+# Use bidirectional feature of F3 processor for smartport, for F1 targets always use two pins to allow external inverter.
+# This behavior will likely need modifying if softserial is updated to suport bidirectional communication on F3 targets. 
+ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+TARGET_FLAGS := $(TARGET_FLAGS) -DUSE_SMARTPORT_ONEWIRE
+endif
+
 # OSDs
 ifeq ($(TARGET),$(filter $(TARGET),$(OSD_TARGETS)))
 TARGET_FLAGS := $(TARGET_FLAGS) -DOSD
