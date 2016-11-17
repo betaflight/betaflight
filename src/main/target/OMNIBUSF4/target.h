@@ -17,9 +17,9 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FLF4"
+#define TARGET_BOARD_IDENTIFIER "OBF4"
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-#define USBD_PRODUCT_STRING     "Flip32 F4 / Airbot F4"
+#define USBD_PRODUCT_STRING     "Omnibus F4"
 
 #define LED0                    PB5
 
@@ -39,12 +39,6 @@
 #define GYRO_MPU6000_ALIGN      CW270_DEG
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
-
-#define USE_GYRO_MPU6500
-#define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN      CW270_DEG
-#define MPU6500_CS_PIN          PA4
-#define MPU6500_SPI_INSTANCE    SPI1
 
 #define ACC
 #define USE_ACC_SPI_MPU6000

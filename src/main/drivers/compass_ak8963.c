@@ -191,33 +191,35 @@ bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 }
 #endif
 
+#define DETECTION_MAX_RETRY_COUNT   5
 bool ak8963Detect(mag_t *mag)
 {
-    bool ack = false;
-    uint8_t sig = 0;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        bool ack = false;
+        uint8_t sig = 0;
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
-    // initialze I2C master via SPI bus (MPU9250)
+        // initialze I2C master via SPI bus (MPU9250)
 
-    ack = verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
-    delay(10);
+        ack = verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
+        delay(10);
 
-    ack = verifympu9250WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
-    delay(10);
+        ack = verifympu9250WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
+        delay(10);
 
-    ack = verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
-    delay(10);
+        ack = verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
+        delay(10);
 #endif
 
-    // check for AK8963
-    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
-    if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
-    {
-        mag->init = ak8963Init;
-        mag->read = ak8963Read;
-
-        return true;
+        // check for AK8963
+        ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
+        if (ack && sig == AK8963_Device_ID) { // 0x48 / 01001000 / 'H'
+            mag->init = ak8963Init;
+            mag->read = ak8963Read;
+            return true;
+        }
     }
+
     return false;
 }
 

@@ -17,4 +17,16 @@
 
 #pragma once
 
-void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef void (*pitotOpFuncPtr)(void);                       // pitot start operation
+typedef void (*pitotCalculateFuncPtr)(float *pressure, float *temperature); // airspeed calculation (filled params are pressure and temperature)
+
+typedef struct pitot_t {
+    uint16_t delay;
+    pitotOpFuncPtr start;
+    pitotOpFuncPtr get;
+    pitotCalculateFuncPtr calculate;
+} pitot_t;
+
+#ifndef PITOT_I2C_INSTANCE
+#define PITOT_I2C_INSTANCE I2C_DEVICE
+#endif

@@ -57,6 +57,10 @@
 #include "drivers/barometer_fake.h"
 #include "drivers/barometer_ms5611.h"
 
+#include "drivers/pitotmeter.h"
+#include "drivers/pitotmeter_ms4525.h"
+#include "drivers/pitotmeter_fake.h"
+
 #include "drivers/compass.h"
 #include "drivers/compass_ak8963.h"
 #include "drivers/compass_ak8975.h"
@@ -77,6 +81,7 @@
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/rangefinder.h"
@@ -89,8 +94,9 @@
 extern baro_t baro;
 extern mag_t mag;
 extern sensor_align_e gyroAlign;
+extern pitot_t pitot;
 
-uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE };
+uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
 const extiConfig_t *selectMPUIntExtiConfig(void)
@@ -455,6 +461,51 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 }
 #endif // BARO
 
+#ifdef PITOT
+static bool detectPitot(uint8_t pitotHardwareToUse)
+{
+    pitotSensor_e pitotHardware = pitotHardwareToUse;
+
+    switch (pitotHardware) {
+        case PITOT_DEFAULT:
+            ; // Fallthrough
+
+        case PITOT_MS4525:
+#ifdef USE_PITOT_MS4525
+            if (ms4525Detect(&pitot)) {
+                pitotHardware = PITOT_MS4525;
+                break;
+            }
+#endif
+            ; // Fallthrough
+
+        case PITOT_FAKE:
+#ifdef USE_PITOT_FAKE
+            if (fakePitotDetect(&pitot)) {
+                pitotHardware = PITOT_FAKE;
+                break;
+            }
+#endif
+            ; // Fallthrough
+
+        case PITOT_NONE:
+            pitotHardware = PITOT_NONE;
+            break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_PITOT_DETECTION, BOOT_EVENT_FLAGS_NONE, pitotHardware, 0, 0, 0);
+
+    if (pitotHardware == PITOT_NONE) {
+        sensorsClear(SENSOR_PITOT);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_PITOT] = pitotHardware;
+    sensorsSet(SENSOR_PITOT);
+    return true;
+}
+#endif
+
 #ifdef MAG
 static bool detectMag(magSensor_e magHardwareToUse)
 {
@@ -628,6 +679,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         uint8_t accHardwareToUse,
         uint8_t magHardwareToUse,
         uint8_t baroHardwareToUse,
+        uint8_t pitotHardwareToUse,
         int16_t magDeclinationFromConfig,
         uint32_t looptime,
         uint8_t gyroLpf,
@@ -671,6 +723,12 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     detectBaro(baroHardwareToUse);
 #else
     UNUSED(baroHardwareToUse);
+#endif
+
+#ifdef PITOT
+    detectPitot(pitotHardwareToUse);
+#else
+    UNUSED(pitotHardwareToUse);
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c

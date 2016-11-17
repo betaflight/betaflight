@@ -42,6 +42,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -243,6 +244,13 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
     barometerConfig->use_median_filtering = 1;
 }
 
+void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
+{
+    pitotmeterConfig->use_median_filtering = 1;
+    pitotmeterConfig->pitot_noise_lpf = 0.6f;
+    pitotmeterConfig->pitot_scale = 1.00f;
+}
+
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     sensorAlignmentConfig->gyro_align = ALIGN_DEFAULT;
@@ -285,7 +293,11 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
+#if defined(STM32F303xC)
+    telemetryConfig->telemetry_inversion = 1;
+#else
     telemetryConfig->telemetry_inversion = 0;
+#endif
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -582,6 +594,7 @@ static void resetConf(void)
     currentProfile->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 
     resetBarometerConfig(&masterConfig.barometerConfig);
+    resetPitotmeterConfig(&masterConfig.pitotmeterConfig);
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -808,6 +821,9 @@ void activateConfig(void)
 #ifdef BARO
     useBarometerConfig(&masterConfig.barometerConfig);
 #endif
+#ifdef PITOT
+    usePitotmeterConfig(&masterConfig.pitotmeterConfig);
+#endif
 }
 
 void validateAndFixConfig(void)
@@ -948,13 +964,6 @@ void validateAndFixConfig(void)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
         featureClear(FEATURE_DASHBOARD);
     }
-#endif
-
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#ifdef TELEMETRY
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
 #endif
 
 #if defined(CC3D)

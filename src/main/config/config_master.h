@@ -48,6 +48,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
 
@@ -109,8 +110,11 @@ typedef struct master_s {
 
     barometerConfig_t barometerConfig;
 
+    pitotmeterConfig_t pitotmeterConfig;
+
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
     uint8_t baro_hardware;                  // Barometer hardware to use
+    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
 
     flightDynamicsTrims_t accZero;          // Accelerometer offset
     flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G

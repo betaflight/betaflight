@@ -20,8 +20,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx/rx.h"
-
 typedef enum {
     NRF24RX_V202_250K = 0,
     NRF24RX_V202_1M,
@@ -70,7 +68,5 @@ typedef enum {
 #define RC_CHANNEL_HEADLESS    RC_SPI_AUX5
 #define RC_CHANNEL_RTH         RC_SPI_AUX6 // return to home
 
-bool rxSpiDataReceived(void);
-struct rxConfig_s;
-struct rxRuntimeConfig_s;
-bool rxSpiInit(rx_spi_type_e spiType, const struct rxConfig_s *rxConfig, struct rxRuntimeConfig_s *rxRuntimeConfig, rcReadRawDataPtr *callback);
+uint8_t rxSpiFrameStatus(void);
+bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);

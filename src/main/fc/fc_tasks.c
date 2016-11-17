@@ -66,6 +66,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/rangefinder.h"
 
 #include "telemetry/telemetry.h"
@@ -85,7 +86,7 @@
 
 // VBAT monitoring interval (in microseconds) - 1s
 #define VBATINTERVAL (6 * 3500)
-// IBat monitoring interval (in microseconds) - 6 default looptimes
+/* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 
 void taskHandleSerial(uint32_t currentTime)
@@ -167,6 +168,17 @@ void taskUpdateBaro(uint32_t currentTime)
     }
 
     //updatePositionEstimator_BaroTopic(currentTime);
+}
+#endif
+
+#ifdef PITOT
+void taskUpdatePitot(uint32_t currentTime)
+{
+    UNUSED(currentTime);
+
+    if (sensors(SENSOR_PITOT)) {
+        pitotUpdate();
+    }
 }
 #endif
 
@@ -354,6 +366,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
+#ifdef PITOT
+    [TASK_PITOT] = {
+        .taskName = "PITOT",
+        .taskFunc = taskUpdatePitot,
+        .desiredPeriod = 1000000 / 10,
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
 #ifdef SONAR
     [TASK_SONAR] = {
         .taskName = "SONAR",
@@ -471,6 +492,9 @@ void fcTasksInit(void)
 #endif
 #ifdef BARO
     setTaskEnabled(TASK_BARO, sensors(SENSOR_BARO));
+#endif
+#ifdef PITOT
+    setTaskEnabled(TASK_PITOT, sensors(SENSOR_PITOT));
 #endif
 #ifdef SONAR
     setTaskEnabled(TASK_SONAR, sensors(SENSOR_SONAR));

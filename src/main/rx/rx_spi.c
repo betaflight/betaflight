@@ -25,6 +25,10 @@
 #include "build/build_config.h"
 
 #include "drivers/rx_nrf24l01.h"
+
+#include "config/config.h"
+#include "config/feature.h"
+
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 #include "rx/nrf24_cx10.h"
@@ -110,30 +114,32 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
  * Called from updateRx in rx.c, updateRx called from taskUpdateRxCheck.
  * If taskUpdateRxCheck returns true, then taskUpdateRxMain will shortly be called.
  */
-bool rxSpiDataReceived(void)
+uint8_t rxSpiFrameStatus(void)
 {
     if (protocolDataReceived(rxSpiPayload) == RX_SPI_RECEIVED_DATA) {
         rxSpiNewPacketAvailable = true;
-        return true;
+        return RX_FRAME_COMPLETE;
     }
-    return false;
+    return RX_FRAME_PENDING;
 }
 
 /*
  * Set and initialize the RX protocol
  */
-bool rxSpiInit(rx_spi_type_e spiType, const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     bool ret = false;
+
+    const rx_spi_type_e spiType = feature(FEATURE_SOFTSPI) ? RX_SPI_SOFTSPI : RX_SPI_HARDSPI;
     rxSpiDeviceInit(spiType);
     if (rxSpiSetProtocol(rxConfig->rx_spi_protocol)) {
         protocolInit(rxConfig, rxRuntimeConfig);
         ret = true;
     }
+    rxRuntimeConfig->rxRefreshRate = 10000;
     rxSpiNewPacketAvailable = false;
-    if (callback) {
-        *callback = rxSpiReadRawRC;
-    }
+    rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
     return ret;
 }
 #endif

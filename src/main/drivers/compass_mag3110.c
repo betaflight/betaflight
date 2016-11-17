@@ -59,18 +59,20 @@
 #define MAG3110_MAG_REG_CTRL_REG1    0x10
 #define MAG3110_MAG_REG_CTRL_REG2    0x11
 
+#define DETECTION_MAX_RETRY_COUNT   5
 bool mag3110detect(mag_t *mag)
 {
-    uint8_t sig = 0;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        uint8_t sig = 0;
+        bool ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
+        if (ack && sig == 0xC4) {
+            mag->init = mag3110Init;
+            mag->read = mag3110Read;
+            return true;
+        }
+    }
 
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
-    if (!ack || sig != 0xC4)
-        return false;
-
-    mag->init = mag3110Init;
-    mag->read = mag3110Read;
-
-    return true;
+    return false;
 }
 
 bool mag3110Init()

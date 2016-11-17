@@ -17,4 +17,4 @@
 
 #pragma once
 
-void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+bool ms4525Detect(pitot_t *pitot);
