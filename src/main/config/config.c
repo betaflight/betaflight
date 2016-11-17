@@ -292,7 +292,11 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
+#if defined(STM32F303xC)
+    telemetryConfig->telemetry_inversion = 1;
+#else
     telemetryConfig->telemetry_inversion = 0;
+#endif
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -954,13 +958,6 @@ void validateAndFixConfig(void)
     if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
         featureClear(FEATURE_DASHBOARD);
     }
-#endif
-
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#ifdef TELEMETRY
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
 #endif
 
 #if defined(CC3D)
