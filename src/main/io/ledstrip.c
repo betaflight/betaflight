@@ -601,7 +601,7 @@ static void applyLedRssiLayer(bool updateNow, uint32_t *timer)
     static bool flash = false;
 
     int state;
-    int timeOffset = 0;
+    int timeOffset = 1;
 
     if (updateNow) {
        state = (rssi * 100) / 1023;
