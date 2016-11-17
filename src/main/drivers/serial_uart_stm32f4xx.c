@@ -136,7 +136,7 @@ static uartDevice_t uart3 =
 static uartDevice_t uart4 =
 {
     .DMAChannel = DMA_Channel_4,
-#ifdef USE_UART1_RX_DMA
+#ifdef USE_UART4_RX_DMA
     .rxDMAStream = DMA1_Stream2,
 #endif
     .txDMAStream = DMA1_Stream4,
@@ -159,10 +159,10 @@ static uartDevice_t uart4 =
 static uartDevice_t uart5 =
 {
     .DMAChannel = DMA_Channel_4,
-#ifdef USE_UART1_RX_DMA
+#ifdef USE_UART5_RX_DMA
     .rxDMAStream = DMA1_Stream0,
 #endif
-    .txDMAStream = DMA2_Stream7,
+    .txDMAStream = DMA1_Stream7,
     .dev = UART5,
     .rx = IO_TAG(UART5_RX_PIN),
     .tx = IO_TAG(UART5_TX_PIN),
@@ -171,7 +171,7 @@ static uartDevice_t uart5 =
     .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
 #endif
     .rcc_apb1 = RCC_APB1(UART5),
-    .txIrq = DMA2_ST7_HANDLER,
+    .txIrq = DMA1_ST7_HANDLER,
     .rxIrq = UART5_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART5
