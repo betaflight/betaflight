@@ -63,10 +63,9 @@ static bool useFifo = false;
 
 bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
 {
-    bool ack = false;
     uint8_t sig = 0;
-
-    ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
+    bool ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
+    
     if (!ack || sig != 0xE5)
         return false;
 
