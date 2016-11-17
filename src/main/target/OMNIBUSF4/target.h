@@ -44,10 +44,6 @@
 #define USE_ACC_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
-#define USE_ACC_MPU6500
-#define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN       CW270_DEG
-
 #define MAG
 #define USE_MAG_AK8963
 #define USE_MAG_AK8975
