@@ -56,7 +56,6 @@
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
