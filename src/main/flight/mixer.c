@@ -240,6 +240,10 @@ static motorMixer_t *customMixers;
 static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, deadbandMotor3dHigh, deadbandMotor3dLow;
 static float rcCommandThrottleRange;
 
+uint8_t getMotorCount() {
+    return motorCount;
+}
+
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
     if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)

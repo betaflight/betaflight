@@ -115,6 +115,8 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct motorConfig_s;
 struct rxConfig_s;
 
+uint8_t getMotorCount();
+
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         struct motorConfig_s *motorConfigToUse,

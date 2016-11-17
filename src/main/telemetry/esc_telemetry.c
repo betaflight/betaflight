@@ -90,7 +90,6 @@ static serialPort_t *escTelemetryPort = NULL;
 static esc_telemetry_t escTelemetryData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
 static uint32_t escTriggerLastTimestamp = -1;
-static uint8_t enabledMotorCount;
 static uint8_t timeoutRetryCount = 0;
 
 static uint8_t escTelemetryMotor = 0;      // motor index
@@ -142,12 +141,6 @@ bool escTelemetryInit(void)
         escTelemetryEnabled = true;
         masterConfig.batteryConfig.currentMeterType = CURRENT_SENSOR_ESC;
         masterConfig.batteryConfig.batteryMeterType = BATTERY_SENSOR_ESC;
-
-        //Determine number of enabled motors
-        enabledMotorCount = 0;
-        while(enabledMotorCount < MAX_SUPPORTED_MOTORS && pwmGetMotors()[enabledMotorCount].enabled) {
-            enabledMotorCount++;
-        }
     }
 
     return escTelemetryPort != NULL;
@@ -254,12 +247,12 @@ void escTelemetryProcess(uint32_t currentTime)
 
     if (state == ESC_TLM_FRAME_COMPLETE) {
         // Wait until all ESCs are processed
-        if (escTelemetryMotor == enabledMotorCount-1) {
+        if (escTelemetryMotor == getMotorCount()-1) {
             escCurrent = 0;
             escConsumption = 0;
             escVbat = 0;
 
-            for (int i = 0; i < enabledMotorCount; i++) {
+            for (int i = 0; i < getMotorCount(); i++) {
                 if (!escTelemetryData[i].skipped) {
                     escVbat =  i > 0 ? ((escVbat + escTelemetryData[i].voltage) / 2) : escTelemetryData[i].voltage;
                     escCurrent = escCurrent + escTelemetryData[i].current;
@@ -288,7 +281,7 @@ void escTelemetryProcess(uint32_t currentTime)
 static void selectNextMotor(void)
 {
     escTelemetryMotor++;
-    if (escTelemetryMotor == enabledMotorCount) {
+    if (escTelemetryMotor == getMotorCount()) {
         escTelemetryMotor = 0;
     }
     escTriggerTimestamp = millis();
