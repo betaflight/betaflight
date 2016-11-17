@@ -23,6 +23,8 @@
 
 #include "dma.h"
 #include "nvic.h"
+#include "io.h"
+#include "timer.h"
 #include "transponder_ir.h"
 
 /*
@@ -37,20 +39,19 @@ uint8_t transponderIrDMABuffer[TRANSPONDER_DMA_BUFFER_SIZE];
 
 volatile uint8_t transponderIrDataTransferInProgress = 0;
 
-void transponderDMAHandler(dmaChannelDescriptor_t* descriptor)
-{
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
-        transponderIrDataTransferInProgress = 0;
-        DMA_Cmd(descriptor->channel, DISABLE);
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    }
-}
-
 void transponderIrInit(void)
 {
     memset(&transponderIrDMABuffer, 0, TRANSPONDER_DMA_BUFFER_SIZE);
-    dmaSetHandler(TRANSPONDER_DMA_HANDLER_IDENTIFER, transponderDMAHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
-    transponderIrHardwareInit();
+
+    ioTag_t ioTag = IO_TAG_NONE;
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_TRANSPONDER) {
+            ioTag = timerHardware[i].tag;
+            break;
+        }
+    }
+
+    transponderIrHardwareInit(ioTag);
 }
 
 bool isTransponderIrReady(void)
