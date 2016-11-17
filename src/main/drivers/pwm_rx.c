@@ -218,25 +218,6 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
     ppmDev.currentTime = currentTime;
     ppmDev.currentCapture = capture;
 
-#if 1
-    static uint32_t deltaTimes[20];
-    static uint8_t deltaIndex = 0;
-
-    deltaIndex = (deltaIndex + 1) % 20;
-    deltaTimes[deltaIndex] = ppmDev.deltaTime;
-    UNUSED(deltaTimes);
-#endif
-
-
-#if 1
-    static uint32_t captureTimes[20];
-    static uint8_t captureIndex = 0;
-
-    captureIndex = (captureIndex + 1) % 20;
-    captureTimes[captureIndex] = capture;
-    UNUSED(captureTimes);
-#endif
-
     /* Sync pulse detection */
     if (ppmDev.deltaTime > PPM_IN_MIN_SYNC_PULSE_US) {
         if (ppmDev.pulseIndex == ppmDev.numChannelsPrevFrame
