@@ -263,10 +263,15 @@ void init(void)
         idlePulse = 0; // brushed motors
     }
 
+    mixerConfigureOutput();
+#ifdef USE_SERVOS
+    servoConfigureOutput();
+#endif
+
 #ifdef USE_QUAD_MIXER_ONLY
     motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
 #else
-    motorInit(&masterConfig.motorConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
+    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
 #endif
 
 #ifdef USE_SERVOS
@@ -285,10 +290,7 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    mixerConfigureOutput();
-#ifdef USE_SERVOS
-    servoConfigureOutput();
-#endif
+
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
