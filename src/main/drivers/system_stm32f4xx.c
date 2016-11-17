@@ -25,8 +25,6 @@
 #include "nvic.h"
 #include "system.h"
 
-#include "exti.h"
-
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 void SetSysClock(void);
