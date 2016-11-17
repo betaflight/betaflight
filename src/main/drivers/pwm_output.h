@@ -64,6 +64,7 @@ typedef struct {
     const timerHardware_t *timerHardware;
     uint16_t value;
     uint16_t timerDmaSource;
+    volatile bool requestTelemetry;
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     uint32_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #else
@@ -74,6 +75,8 @@ typedef struct {
     DMA_HandleTypeDef hdma_tim;
 #endif
 } motorDmaOutput_t;
+
+motorDmaOutput_t *getMotorDmaOutput(uint8_t index);
 
 extern bool pwmMotorsEnabled;
 
@@ -111,4 +114,3 @@ pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
-

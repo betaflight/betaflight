@@ -123,6 +123,7 @@
 //#define RSSI_ADC_PIN            PA0
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
 

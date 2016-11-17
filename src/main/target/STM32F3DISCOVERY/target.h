@@ -170,6 +170,7 @@
 #define EXTERNAL1_ADC_PIN       PC3
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
 
@@ -192,4 +193,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
-

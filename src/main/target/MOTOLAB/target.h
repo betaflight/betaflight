@@ -103,6 +103,7 @@
 
 #define LED_STRIP
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define SPEKTRUM_BIND
 // USART2, PB4
@@ -120,4 +121,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
-

@@ -145,6 +145,7 @@
 #define VBAT_ADC_PIN            PC3
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 #define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -166,4 +167,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
-

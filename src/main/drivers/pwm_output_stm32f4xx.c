@@ -45,6 +45,11 @@ static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
+motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
+{
+    return &dmaMotors[index];
+}
+
 uint8_t getTimerIndex(TIM_TypeDef *timer)
 {
     for (int i = 0; i < dmaMotorTimerCount; i++) {
@@ -64,7 +69,9 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+
     // compute checksum
     int csum = 0;
     int csum_data = packet;

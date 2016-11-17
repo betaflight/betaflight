@@ -66,6 +66,7 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -102,7 +103,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 {
 #ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT)) {
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
@@ -111,7 +112,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 #endif
 
     static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
@@ -194,6 +195,15 @@ static void taskTelemetry(uint32_t currentTime)
 }
 #endif
 
+#ifdef USE_ESC_TELEMETRY
+static void taskEscTelemetry(uint32_t currentTime)
+{
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryProcess(currentTime);
+     }
+ }
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -253,6 +263,9 @@ void fcTasksInit(void)
 #endif
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
+#endif
+#ifdef USE_ESC_TELEMETRY
+    setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
 #endif
 #ifdef CMS
 #ifdef USE_MSP_DISPLAYPORT
@@ -418,6 +431,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskBstMasterProcess,
         .desiredPeriod = 1000000 / 50,          // 50 Hz
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_ESC_TELEMETRY
+    [TASK_ESC_TELEMETRY] = {
+        .taskName = "ESC_TELEMETRY",
+        .taskFunc = taskEscTelemetry,
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 
