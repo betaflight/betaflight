@@ -51,9 +51,9 @@ uint8_t batteryCellCount;
 uint16_t batteryWarningVoltage;
 uint16_t batteryCriticalVoltage;
 
-uint16_t vbat = 0;                   // battery voltage in 0.1V steps (filtered)
-uint16_t vbatLatestADC = 0;         // most recent unsmoothed raw reading from vbat ADC
-uint16_t amperageLatestADC = 0;     // most recent raw reading from current ADC
+uint16_t vbat = 0;                  // battery voltage in 0.1V steps (filtered)
+uint16_t vbatLatest = 0;            // most recent unsmoothed value
+uint16_t amperageLatest = 0;        // most recent value
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
@@ -69,18 +69,18 @@ static uint16_t batteryAdcToVoltage(uint16_t src)
 
 static void updateBatteryVoltage(void)
 {
-    #ifdef USE_ESC_TELEMETRY
-    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
-        vbat = getEscTelemetryVbat();
-        return;
-    }
-    #endif
-
     static biquadFilter_t vbatFilter;
     static bool vbatFilterIsInitialised;
 
     // store the battery voltage with some other recent battery voltage readings
-    uint16_t vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
+    uint16_t vbatSample;
+
+    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
+        vbatSample = vbatLatest = getEscTelemetryVbat();
+    }
+    else {
+        vbatSample = vbatLatest = batteryAdcToVoltage(adcGetChannel(ADC_BATTERY));
+    }
 
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
@@ -88,8 +88,7 @@ static void updateBatteryVoltage(void)
         biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
-    vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
-    vbat = batteryAdcToVoltage(vbatSample);
+    vbat = biquadFilterApply(&vbatFilter, vbatSample);
 
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
@@ -98,12 +97,12 @@ static void updateBatteryVoltage(void)
 
 void updateBattery(void)
 {
-    uint16_t vbatPreviousADC = vbatLatestADC;
+    uint16_t vbatPrevious = vbatLatest;
     updateBatteryVoltage();
-    uint16_t vbatMeasured = batteryAdcToVoltage(vbatLatestADC);
+    uint16_t vbatMeasured = vbatLatest;
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && (ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA))) {
+    if (batteryState == BATTERY_NOT_PRESENT && (ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - vbatPrevious) <= VBAT_STABLE_MAX_DELTA))) {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
 
@@ -116,12 +115,15 @@ void updateBattery(void)
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
     /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig->batterynotpresentlevel */
-    } else if (batteryState != BATTERY_NOT_PRESENT && !ARMING_FLAG(ARMED) && vbat <= batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - batteryAdcToVoltage(vbatPreviousADC)) <= VBAT_STABLE_MAX_DELTA) {
+    } else if (batteryState != BATTERY_NOT_PRESENT && !ARMING_FLAG(ARMED) && vbat <= batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - vbatPrevious) <= VBAT_STABLE_MAX_DELTA) {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
     }
+
+    if (debugMode == DEBUG_BATTERY) debug[2] = batteryState;
+    if (debugMode == DEBUG_BATTERY) debug[3] = batteryCellCount;
 
     switch(batteryState)
     {
@@ -202,8 +204,8 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
     switch(batteryConfig->currentMeterType) {
         case CURRENT_SENSOR_ADC:
             amperageRaw -= amperageRaw / 8;
-            amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
-            amperage = currentSensorToCentiamps(amperageRaw / 8);
+            amperageRaw += adcGetChannel(ADC_CURRENT);
+            amperage = amperageLatest = currentSensorToCentiamps(amperageRaw / 8);
             break;
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig->currentMeterOffset;
@@ -220,16 +222,15 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_TELEMETRY
-            amperage = getEscTelemetryCurrent();
+            if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC && isEscTelemetryActive()) {
+                amperage = getEscTelemetryCurrent();
+                mAhDrawn = getEscTelemetryConsumption();
+            }
             #endif
             break;
     }
 
-    #ifdef USE_ESC_TELEMETRY
-    if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC) {
-        mAhDrawn = getEscTelemetryConsumption();
-    }
-    #else
+    #ifndef USE_ESC_TELEMETRY
     mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
     mAhDrawn = mAhdrawnRaw / (3600 * 100);
     #endif

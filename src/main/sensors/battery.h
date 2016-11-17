@@ -71,10 +71,10 @@ typedef enum {
 
 extern uint16_t vbat;
 extern uint16_t vbatRaw;
-extern uint16_t vbatLatestADC;
+extern uint16_t vbatLatest;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
-extern uint16_t amperageLatestADC;
+extern uint16_t amperageLatest;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 
