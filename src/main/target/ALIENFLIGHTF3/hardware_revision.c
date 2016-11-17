@@ -30,13 +30,15 @@
 
 static const char * const hardwareRevisionNames[] = {
         "Unknown",
-        "AlienFlight V1",
-        "AlienFlight V2"
+        "AlienFlight F3 V1",
+        "AlienFlight F3 V2"
 };
 
-uint8_t hardwareRevision = UNKNOWN;
+uint8_t hardwareRevision = AFF3_UNKNOWN;
+uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
 static IO_t HWDetectPin = IO_NONE;
+static IO_t MotorDetectPin = IO_NONE;
 
 void detectHardwareRevision(void)
 {
@@ -44,13 +46,24 @@ void detectHardwareRevision(void)
     IOInit(HWDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPin, IOCFG_IPU);
 
-    // Check hardware revision
+    MotorDetectPin = IOGetByTag(IO_TAG(MOTOR_PIN));
+    IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
+
     delayMicroseconds(10);  // allow configuration to settle
 
+    // Check hardware revision
     if (IORead(HWDetectPin)) {
         hardwareRevision = AFF3_REV_1;
     } else {
         hardwareRevision = AFF3_REV_2;
+    }
+
+    // Check presence of brushed ESC's
+    if (IORead(MotorDetectPin)) {
+        hardwareMotorType = MOTOR_BRUSHLESS;
+    } else {
+        hardwareMotorType = MOTOR_BRUSHED;
     }
 }
 

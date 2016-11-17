@@ -16,11 +16,10 @@
  */
 #pragma once
 
-typedef enum awf3HardwareRevision_t {
-    AFF3_UNKNOWN = 0,
-    AFF3_REV_1, // MPU6050 (I2C)
-    AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
-} awf3HardwareRevision_e;
+typedef enum awf1HardwareRevision_t {
+    AFF1_UNKNOWN = 0,
+    AFF1_REV_1, // MPU6050 (I2C)
+} awf1HardwareRevision_e;
 
 typedef enum awf4HardwareMotorType_t {
     MOTOR_UNKNOWN = 0,

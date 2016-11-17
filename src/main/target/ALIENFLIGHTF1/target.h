@@ -20,6 +20,9 @@
 #define TARGET_BOARD_IDENTIFIER "AFF1" // AlienFlight F1.
 #define TARGET_CONFIG
 
+#define USE_HARDWARE_REVISION_DETECTION
+#define MOTOR_PIN               PA8
+
 #define LED0                    PB3
 #define LED1                    PB4
 
@@ -70,7 +73,6 @@
 // Hardware bind plug at PB5 (Pin 41)
 #define BINDPLUG_PIN            PB5
 
-#define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
