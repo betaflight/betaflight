@@ -139,6 +139,16 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PB1
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
+//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
+//#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
+
 #define USE_ADC
 //#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN                PA0
@@ -207,18 +217,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 7 // 6 Outputs; PPM;
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))
-
-#define OSD
-
-// include the max7456 driver
-#define USE_MAX7456
-#define MAX7456_SPI_INSTANCE    SPI1
-#define MAX7456_SPI_CS_PIN      PB1
-#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
-#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
-//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
-//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
-//#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
-
-#define USE_MSP_DISPLAYPORT
-#define CMS
