@@ -75,10 +75,13 @@ static void updateBatteryVoltage(void)
     // store the battery voltage with some other recent battery voltage readings
     uint16_t vbatSample;
 
+    #ifdef USE_ESC_TELEMETRY
     if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
         vbatSample = vbatLatest = getEscTelemetryVbat();
     }
-    else {
+    else
+    #endif
+    {
         vbatSample = vbatLatest = batteryAdcToVoltage(adcGetChannel(ADC_BATTERY));
     }
 
