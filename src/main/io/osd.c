@@ -619,6 +619,7 @@ static void osdRefresh(uint32_t currentTime)
     if (!displayIsGrabbed(osdDisplayPort)) {
         osdUpdateAlarms();
         osdDrawElements();
+        displayHeartbeat(osdDisplayPort); // heartbeat to stop Minim OSD going back into native mode
 #ifdef OSD_CALLS_CMS
     } else {
         cmsUpdate(currentTime);
@@ -641,9 +642,14 @@ void osdUpdate(uint32_t currentTime)
 #endif // MAX7456_DMA_CHANNEL_TX
 
     // redraw values in buffer
-    if (counter++ % 5 == 0) {
+#ifdef USE_MAX7456
+#define DRAW_FREQ_DENOM 5
+#else
+#define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud
+#endif
+    if (counter++ % DRAW_FREQ_DENOM == 0) {
         osdRefresh(currentTime);
-    } else { // rest of time redraw screen 10 chars per idle to don't lock the main idle
+    } else { // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
         displayDrawScreen(osdDisplayPort);
     }
 

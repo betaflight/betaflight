@@ -412,8 +412,6 @@ void init(void)
         displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
 #else
         displayPort_t *osdDisplayPort = displayPortMspInit();
-        // grab the OSD to stop the minim OSD writing to it autonomously
-        displayGrab(osdDisplayPort);
 #endif
         osdInit(osdDisplayPort);
     }
