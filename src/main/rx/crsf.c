@@ -39,8 +39,6 @@
 #include "rx/rx.h"
 #include "rx/crsf.h"
 
-#include "telemetry/telemetry.h"
-
 #define CRSF_TIME_NEEDED_PER_FRAME_US   1000
 #define CRSF_TIME_BETWEEN_FRAMES_US     4000 // a frame is sent by the transmitter every 4 milliseconds
 
@@ -235,19 +233,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         return false;
     }
 
-#if defined(TELEMETRY) && defined(TELEMETRY_CRSF)
-    const bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    const bool portShared = false;
-#endif
-
-    serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, crsfDataReceive, CRSF_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, CRSF_PORT_OPTIONS);
-
-#if defined(TELEMETRY) && defined(TELEMETRY_CRSF)
-    if (portShared) {
-        telemetrySharedPort = serialPort;
-    }
-#endif
+    serialPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, crsfDataReceive, CRSF_BAUDRATE, CRSF_PORT_MODE, CRSF_PORT_OPTIONS);
 
     return serialPort != NULL;
 }

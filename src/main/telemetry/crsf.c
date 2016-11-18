@@ -64,12 +64,8 @@
 #include "fc/config.h"
 #endif
 
-#define TELEMETRY_CRSF_INITIAL_PORT_MODE    MODE_RXTX
-#define CRSF_CYCLETIME_US                   100000
+#define CRSF_CYCLETIME_US                   100000 // 100ms, 10 Hz
 
-static serialPort_t *serialPort;
-static serialPortConfig_t *serialPortConfig;
-static portSharing_e portSharing;
 static bool crsfTelemetryEnabled;
 static uint8_t crsfCrc;
 static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
@@ -351,52 +347,23 @@ static void processCrsf(void)
     crsfScheduleIndex = (crsfScheduleIndex + 1) % CRSF_SCHEDULE_COUNT;
 }
 
-static void freeCrsfTelemetryPort(void)
-{
-    closeSerialPort(serialPort);
-    serialPort = NULL;
-    crsfTelemetryEnabled = false;
-}
-
-static void configureCrsfTelemetryPort(void)
-{
-    if (!serialPortConfig) {
-        return;
-    }
-    serialPort = openSerialPort(serialPortConfig->identifier, FUNCTION_TELEMETRY_CRSF, NULL, CRSF_BAUDRATE, TELEMETRY_CRSF_INITIAL_PORT_MODE, CRSF_PORT_OPTIONS);
-    if (!serialPort) {
-        return;
-    }
-    crsfTelemetryEnabled = true;
-}
-
 void initCrsfTelemetry(void)
 {
-    serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_CRSF);
-    portSharing = determinePortSharing(serialPortConfig, FUNCTION_TELEMETRY_CRSF);
-}
+    // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
+    // if so, set CRSF telemetry enabled
+    crsfTelemetryEnabled = false;
+    const serialPortConfig_t *serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_CRSF);
+    if (serialPortConfig) {
+        const serialPort_t *serialPort = openSerialPort(serialPortConfig->identifier, FUNCTION_TELEMETRY_CRSF, NULL, CRSF_BAUDRATE, CRSF_PORT_MODE, CRSF_PORT_OPTIONS);
+        if (serialPort) {
+            crsfTelemetryEnabled = true;
+        }
+    }
+ }
 
 bool checkCrsfTelemetryState(void)
 {
-    if (serialPortConfig && telemetryCheckRxPortShared(serialPortConfig)) {
-        if (!crsfTelemetryEnabled && telemetrySharedPort != NULL) {
-            serialPort = telemetrySharedPort;
-            crsfTelemetryEnabled = true;
-            return true;
-        }
-        return false;
-    } else {
-        const bool newTelemetryEnabled = telemetryDetermineEnabledState(portSharing);
-        if (newTelemetryEnabled == crsfTelemetryEnabled) {
-            return false;
-        }
-        if (newTelemetryEnabled) {
-            configureCrsfTelemetryPort();
-        } else {
-            freeCrsfTelemetryPort();
-        }
-        return true;
-    }
+    return crsfTelemetryEnabled;
 }
 
 /*
@@ -409,13 +376,12 @@ void handleCrsfTelemetry(uint32_t currentTime)
     if (!crsfTelemetryEnabled) {
         return;
     }
-    if (!serialPort) {
-        return;
-    }
-
-    // give the receiver a change to send any outstanding telemetry data.
+    // Give the receiver a chance to send any outstanding telemetry data.
+    // This needs to be done at high frequency, to enable the RX to send the telemetry frame
+    // in between the RX frames.
     crsfRxSendTelemetryData();
 
+    // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
     if (currentTime >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
         crsfLastCycleTime = currentTime;
         processCrsf();

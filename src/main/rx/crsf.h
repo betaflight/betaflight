@@ -19,6 +19,7 @@
 
 #define CRSF_BAUDRATE           420000
 #define CRSF_PORT_OPTIONS       (SERIAL_STOPBITS_1 | SERIAL_PARITY_NO | SERIAL_BIDIR)
+#define CRSF_PORT_MODE          MODE_RXTX
 
 #define CRSF_MAX_CHANNEL        16
 

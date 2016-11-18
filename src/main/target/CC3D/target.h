@@ -111,7 +111,6 @@
 #undef MAG
 
 #ifdef CC3D_OPBL
-#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define SKIP_CLI_COMMAND_HELP
 #undef BARO
 #undef SONAR
