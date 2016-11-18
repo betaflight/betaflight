@@ -548,7 +548,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
     /* We might be experiencing air cushion effect - use sonar or baro groung altitude to detect it */
     bool isAirCushionEffectDetected = ARMING_FLAG(ARMED) &&
                                         ((isSonarValid && posEstimator.sonar.alt < 20.0f && posEstimator.state.isBaroGroundValid) ||
-                                         (isBaroValid && posEstimator.state.isBaroGroundValid && posEstimator.baro.alt < posEstimator.state.baroGroundAlt));
+                                         (isBaroValid && posEstimator.state.isBaroGroundValid && (posEstimator.baro.alt - posEstimator.est.baroOffset) < posEstimator.state.baroGroundAlt));
 
 #if defined(NAV_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
@@ -581,6 +581,11 @@ static void updateEstimatedTopic(uint32_t currentTime)
         if (!isEstZValid && useGpsZPos) {
             posEstimator.est.pos.V.Z = posEstimator.gps.pos.V.Z;
             posEstimator.est.vel.V.Z = posEstimator.gps.vel.V.Z;
+
+            if (isBaroValid) {
+                posEstimator.est.baroOffset = posEstimator.baro.alt - posEstimator.gps.pos.V.Z;
+            }
+
             newEPV = posEstimator.gps.epv;
             positionWasReset = true;
         }
@@ -630,11 +635,10 @@ static void updateEstimatedTopic(uint32_t currentTime)
         /* If we are going to use GPS Z-position - calculate and apply barometer offset */
         if (useGpsZPos) {
             const float currentGpsBaroAltitudeOffset = posEstimator.baro.alt - posEstimator.gps.pos.V.Z;
-            posEstimator.est.baroOffset += (currentGpsBaroAltitudeOffset - posEstimator.est.baroOffset) * posControl.navConfig->estimation.w_z_gps_p;
-            posEstimator.baro.alt -= posEstimator.est.baroOffset;
+            posEstimator.est.baroOffset += (currentGpsBaroAltitudeOffset - posEstimator.est.baroOffset) * posControl.navConfig->estimation.w_z_gps_p * dt;
         }
 
-        baroResidual = (isAirCushionEffectDetected ? posEstimator.state.baroGroundAlt : posEstimator.baro.alt) - posEstimator.est.pos.V.Z;
+        baroResidual = (isAirCushionEffectDetected ? posEstimator.state.baroGroundAlt : (posEstimator.baro.alt - posEstimator.est.baroOffset)) - posEstimator.est.pos.V.Z;
     }
 
     /* Correction step: Z-axis */
