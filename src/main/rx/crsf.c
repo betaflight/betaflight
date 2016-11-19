@@ -237,4 +237,9 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 
     return serialPort != NULL;
 }
+
+bool crsfRxIsActive(void)
+{
+    return serialPort != NULL;
+}
 #endif

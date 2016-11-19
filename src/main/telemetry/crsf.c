@@ -23,6 +23,7 @@
 
 #ifdef TELEMETRY
 
+#include "config/feature.h"
 #include "build/version.h"
 
 #if (FC_VERSION_MAJOR == 3) // not a very good way of finding out if this is betaflight or Cleanflight
@@ -350,15 +351,8 @@ static void processCrsf(void)
 void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
-    // if so, set CRSF telemetry enabled
-    crsfTelemetryEnabled = false;
-    const serialPortConfig_t *serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_CRSF);
-    if (serialPortConfig) {
-        const serialPort_t *serialPort = openSerialPort(serialPortConfig->identifier, FUNCTION_TELEMETRY_CRSF, NULL, CRSF_BAUDRATE, CRSF_PORT_MODE, CRSF_PORT_OPTIONS);
-        if (serialPort) {
-            crsfTelemetryEnabled = true;
-        }
-    }
+    // and feature is enabled, if so, set CRSF telemetry enabled
+    crsfTelemetryEnabled = crsfRxIsActive() && feature(FEATURE_TELEMETRY);
  }
 
 bool checkCrsfTelemetryState(void)
