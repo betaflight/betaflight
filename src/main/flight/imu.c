@@ -62,7 +62,6 @@
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
 #define SPIN_RATE_LIMIT 20
 
-int16_t accSmooth[XYZ_AXIS_COUNT];
 int32_t accSum[XYZ_AXIS_COUNT];
 
 uint32_t accTimeSum = 0;        // keep track for integration of acc
@@ -408,10 +407,8 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(void)
 {
-    static pt1Filter_t accLPFState[3];
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
-    int32_t axis;
     bool useAcc = false;
     bool useMag = false;
     bool useYaw = false;
@@ -419,15 +416,6 @@ static void imuCalculateEstimatedAttitude(void)
     uint32_t currentTime = micros();
     uint32_t deltaT = currentTime - previousIMUUpdateTime;
     previousIMUUpdateTime = currentTime;
-
-    // Smooth and use only valid accelerometer readings
-    for (axis = 0; axis < 3; axis++) {
-        if (imuRuntimeConfig->acc_cut_hz > 0) {
-            accSmooth[axis] = pt1FilterApply4(&accLPFState[axis], accADC[axis], imuRuntimeConfig->acc_cut_hz, deltaT * 1e-6f);
-        } else {
-            accSmooth[axis] = accADC[axis];
-        }
-    }
 
     if (imuIsAccelerometerHealthy()) {
         useAcc = true;
@@ -470,9 +458,9 @@ void imuUpdateAttitude(void)
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude();
     } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
+        accSmooth[X] = 0;
+        accSmooth[Y] = 0;
+        accSmooth[Z] = 0;
     }
 }
 
