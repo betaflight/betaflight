@@ -190,7 +190,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
-            int32_t alt = osdGetAltitude(BaroAlt);
+            int32_t alt = osdGetAltitude(baro.BaroAlt);
             sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
@@ -451,7 +451,7 @@ void osdUpdateAlarms(void)
     // This is overdone?
     // uint16_t *itemPos = osdProfile()->item_pos;
 
-    int32_t alt = osdGetAltitude(BaroAlt) / 100;
+    int32_t alt = osdGetAltitude(baro.BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < pOsdProfile->rssi_alarm)
@@ -525,8 +525,8 @@ static void osdUpdateStats(void)
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
 
-    if (stats.max_altitude < BaroAlt)
-        stats.max_altitude = BaroAlt;
+    if (stats.max_altitude < baro.BaroAlt)
+        stats.max_altitude = baro.BaroAlt;
 }
 
 static void osdShowStats(void)

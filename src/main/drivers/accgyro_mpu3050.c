@@ -46,10 +46,10 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static void mpu3050Init(gyro_t *gyro);
+static void mpu3050Init(gyroDev_t *gyro);
 static bool mpu3050ReadTemp(int16_t *tempData);
 
-bool mpu3050Detect(gyro_t *gyro)
+bool mpu3050Detect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_3050) {
         return false;
@@ -65,7 +65,7 @@ bool mpu3050Detect(gyro_t *gyro)
     return true;
 }
 
-static void mpu3050Init(gyro_t *gyro)
+static void mpu3050Init(gyroDev_t *gyro)
 {
     bool ack;
 

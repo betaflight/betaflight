@@ -18,7 +18,6 @@
 #pragma once
 
 #include "common/axis.h"
-#include "common/filter.h"
 #include "drivers/sensor.h"
 
 #ifndef MPU_I2C_INSTANCE
@@ -34,21 +33,20 @@
 #define GYRO_LPF_5HZ        6
 #define GYRO_LPF_NONE       7
 
-typedef struct gyro_s {
+typedef struct gyroDev_s {
     sensorGyroInitFuncPtr init;                             // initialize function
     sensorGyroReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     sensorGyroInterruptStatusFuncPtr intStatus;
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     float scale;                                            // scalefactor
-    uint32_t targetLooptime;
-    uint16_t lpf;
     volatile bool dataReady;
-} gyro_t;
+    uint16_t lpf;
+    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+} gyroDev_t;
 
-typedef struct acc_s {
+typedef struct accDev_s {
     sensorAccInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     uint16_t acc_1G;
     char revisionCode;                                      // a revision code for the sensor, if known
-} acc_t;
+} accDev_t;

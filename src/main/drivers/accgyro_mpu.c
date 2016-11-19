@@ -223,7 +223,7 @@ static void mpu6050FindRevision(void)
 
 typedef struct mpuIntRec_s {
    extiCallbackRec_t exti;
-   gyro_t *gyro;
+   gyroDev_t *gyro;
 } mpuIntRec_t;
 
 mpuIntRec_t mpuIntRec;
@@ -235,7 +235,7 @@ mpuIntRec_t mpuIntRec;
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     mpuIntRec_t *rec = container_of(cb, mpuIntRec_t, exti);
-    gyro_t *gyro = rec->gyro;
+    gyroDev_t *gyro = rec->gyro;
     gyro->dataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -248,7 +248,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 }
 #endif
 
-static void mpuIntExtiInit(gyro_t *gyro)
+static void mpuIntExtiInit(gyroDev_t *gyro)
 {
     mpuIntRec.gyro = gyro;
 #if defined(MPU_INT_EXTI)
@@ -313,7 +313,7 @@ bool mpuAccRead(int16_t *accData)
     return true;
 }
 
-bool mpuGyroRead(gyro_t *gyro)
+bool mpuGyroRead(gyroDev_t *gyro)
 {
     uint8_t data[6];
 
@@ -329,12 +329,12 @@ bool mpuGyroRead(gyro_t *gyro)
     return true;
 }
 
-void mpuGyroInit(gyro_t *gyro)
+void mpuGyroInit(gyroDev_t *gyro)
 {
     mpuIntExtiInit(gyro);
 }
 
-bool checkMPUDataReady(gyro_t* gyro)
+bool checkMPUDataReady(gyroDev_t* gyro)
 {
     bool ret;
     if (gyro->dataReady) {

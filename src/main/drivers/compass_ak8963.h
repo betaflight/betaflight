@@ -17,6 +17,6 @@
 
 #pragma once
 
-bool ak8963Detect(mag_t *mag);
+bool ak8963Detect(magDev_t *mag);
 void ak8963Init(void);
 bool ak8963Read(int16_t *magData);

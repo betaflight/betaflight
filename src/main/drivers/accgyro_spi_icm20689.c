@@ -107,7 +107,7 @@ bool icm20689SpiDetect(void)
 
 }
 
-bool icm20689SpiAccDetect(acc_t *acc)
+bool icm20689SpiAccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
@@ -119,7 +119,7 @@ bool icm20689SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool icm20689SpiGyroDetect(gyro_t *gyro)
+bool icm20689SpiGyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
@@ -135,12 +135,12 @@ bool icm20689SpiGyroDetect(gyro_t *gyro)
     return true;
 }
 
-void icm20689AccInit(acc_t *acc)
+void icm20689AccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 4;
 }
 
-void icm20689GyroInit(gyro_t *gyro)
+void icm20689GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 

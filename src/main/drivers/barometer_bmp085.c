@@ -154,7 +154,7 @@ void bmp085Disable(const bmp085Config_t *config)
     BMP085_OFF;
 }
 
-bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
+bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 {
     uint8_t data;
     bool ack;

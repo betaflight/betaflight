@@ -34,7 +34,7 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
-bool mpu6500AccDetect(acc_t *acc)
+bool mpu6500AccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -46,7 +46,7 @@ bool mpu6500AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro)
+bool mpu6500GyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -62,12 +62,12 @@ bool mpu6500GyroDetect(gyro_t *gyro)
     return true;
 }
 
-void mpu6500AccInit(acc_t *acc)
+void mpu6500AccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 4;
 }
 
-void mpu6500GyroInit(gyro_t *gyro)
+void mpu6500GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 

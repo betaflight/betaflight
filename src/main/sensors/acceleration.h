@@ -36,11 +36,14 @@ typedef enum {
     ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
 
-extern sensor_align_e accAlign;
-extern acc_t acc;
-extern uint32_t accSamplingInterval;
+typedef struct acc_s {
+    accDev_t dev;
+    sensor_align_e accAlign;
+    uint32_t accSamplingInterval;
+    int32_t accSmooth[XYZ_AXIS_COUNT];
+} acc_t;
 
-extern int32_t accSmooth[XYZ_AXIS_COUNT];
+extern acc_t acc;
 
 typedef struct rollAndPitchTrims_s {
     int16_t roll;

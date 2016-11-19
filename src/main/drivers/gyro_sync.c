@@ -16,7 +16,7 @@
 
 static uint8_t mpuDividerDrops;
 
-bool gyroSyncCheckUpdate(gyro_t *gyro)
+bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
         return false;

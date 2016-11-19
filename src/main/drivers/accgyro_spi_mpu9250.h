@@ -27,8 +27,8 @@ void mpu9250ResetGyro(void);
 
 bool mpu9250SpiDetect(void);
 
-bool mpu9250SpiAccDetect(acc_t *acc);
-bool mpu9250SpiGyroDetect(gyro_t *gyro);
+bool mpu9250SpiAccDetect(accDev_t *acc);
+bool mpu9250SpiGyroDetect(gyroDev_t *gyro);
 
 bool mpu9250WriteRegister(uint8_t reg, uint8_t data);
 bool verifympu9250WriteRegister(uint8_t reg, uint8_t data);
