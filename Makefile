@@ -37,7 +37,7 @@ FLASH_SIZE ?=
 FORKNAME			 = cleanflight
 
 64K_TARGETS  = CJMCU
-128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE OLIMEXINO RMDO SPRACINGF1OSD
+128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE RMDO SPRACINGF1OSD
 256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE EUSTM32F103RC IRCFUSIONF3 LUX_RACE MOTOLAB PORT103R RCEXPLORERF3 SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
 
 F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB RCEXPLORERF3 RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
@@ -465,28 +465,6 @@ EUSTM32F103RC_SRC = \
 		   $(SYSTEM_SRC)
 
 PORT103R_SRC = $(EUSTM32F103RC_SRC)
-
-OLIMEXINO_SRC = \
-		   startup_stm32f10x_md_gcc.S \
-		   $(STM32F10x_COMMON_SRC) \
-		   drivers/accgyro_mpu.c \
-		   drivers/accgyro_mpu6050.c \
-		   drivers/barometer_bmp085.c \
-		   drivers/bus_spi.c \
-		   drivers/compass_hmc5883l.c \
-		   drivers/light_ws2811strip.c \
-		   drivers/light_ws2811strip_stm32f10x.c \
-		   drivers/pwm_mapping.c \
-		   drivers/pwm_output.c \
-		   drivers/pwm_rx.c \
-		   drivers/serial_softserial.c \
-		   drivers/sonar_hcsr04.c \
-		   drivers/sound_beeper_stm32f10x.c \
-		   drivers/timer.c \
-		   drivers/timer_stm32f10x.c \
-		   $(HIGHEND_SRC) \
-		   $(FC_COMMON_SRC) \
-		   $(SYSTEM_SRC)
 
 CJMCU_SRC = \
 		   startup_stm32f10x_md_gcc.S \

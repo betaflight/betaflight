@@ -33,16 +33,6 @@ ECHO-----/\/\--/
 
 Current meter cannot be used in conjunction with Parallel PWM and Sonar.
 
-### Olimexino
-
-| Trigger       | Echo          | Inline 1k resistors |
-| ------------- | ------------- | ------------------- |
-| PB0 / RC7     | PB1 / RC8     | YES (3.3v input)    |
-
-#### Constraints
-
-Current meter cannot be used in conjunction with Sonar.
-
 ### CC3D
 
 | Trigger       | Echo          | Inline 1k resistors |
