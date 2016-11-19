@@ -47,7 +47,7 @@ If you use cygwin to build the binaries then be sure to have configured your com
 Create a new `GDB Hardware Debugging` launch configuration from the `Run` menu
 
 It's important to have build the executable compiled with GDB debugging information first.
-Select the appropriate .elf file (not hex file) - In these examples the target platform is an OLIMEXINO, not a naze32.
+Select the appropriate .elf file (not hex file) - In these examples the target platform is an OLIMEXINO.
 
 DISABLE auto-build
 

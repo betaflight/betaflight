@@ -25,7 +25,7 @@ Cleanflight also has additional features not found in baseflight.
 * Support for the TauLabs Sparky board (STM32F303, I2C sensors, based board with acc/gyro/compass and baro, ~$35).
 * Support for the OpenPilot CC3D board (STM32F103, board, SPI acc/gyro, ~$20).
 * Support for the CJMCU nano quadcopter board.
-* Support for developer breakout boards: (Port103R, EUSTM32F103RC, Olimexino, STM32F3Discovery).
+* Support for developer breakout boards: (Port103R, EUSTM32F103RC, STM32F3Discovery).
 * Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus).
 * Support for N-Position switches via flexible channel ranges - not just 3 like baseflight or 3/6 in MultiWii.
 * Lux's new PID (uses float values internally, resistant to looptime variation).

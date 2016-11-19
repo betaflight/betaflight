@@ -85,7 +85,7 @@ enum {
     MAP_TO_SERVO_OUTPUT,
 };
 
-#if defined(NAZE) || defined(OLIMEXINO) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R) || defined(PORT103V)
+#if defined(NAZE) || defined(NAZE32PRO) || defined(STM32F3DISCOVERY) || defined(EUSTM32F103RC) || defined(PORT103R) || defined(PORT103V)
 static const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),      // Swap to servo if needed
@@ -706,12 +706,6 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
         uint8_t type = (setup[i] & 0xFF00) >> 8;
 
         const timerHardware_t *timerHardwarePtr = &timerHardware[timerIndex];
-
-#ifdef OLIMEXINO_UNCUT_LED2_E_JUMPER
-        // PWM2 is connected to LED2 on the board and cannot be connected unless you cut LED2_E
-        if (timerIndex == PWM2)
-            continue;
-#endif
 
         // skip UART ports
 #ifdef USE_UART2

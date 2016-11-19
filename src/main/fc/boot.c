@@ -526,9 +526,6 @@ void init(void)
     adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_POWER_3V);
 #endif
 
-#ifdef OLIMEXINO
-    adc_params.channelMask |= ADC_CHANNEL_MASK(ADC_EXTERNAL);
-#endif
 #ifdef NAZE
     // optional ADC5 input on rev.5 hardware
     adc_params.channelMask |= (hardwareRevision >= NAZE32_REV5) ? ADC_CHANNEL_MASK(ADC_EXTERNAL) : 0;

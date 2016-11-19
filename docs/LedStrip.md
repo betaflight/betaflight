@@ -50,12 +50,12 @@ from another BEC.  Just ensure that the GROUND is the same for all BEC outputs a
 
 | Target                | Pin  | LED Strip | Signal |
 | --------------------- | ---- | --------- | -------|
-| Naze/Olimexino        | RC5  | Data In   | PA6    |
+| Naze                  | RC5  | Data In   | PA6    |
 | CC3D                  | RCO5 | Data In   | PB4    |
 | ChebuzzF3/F3Discovery | PB8  | Data In   | PB8    |
 | Sparky                | PWM5 | Data In   | PA6    |
 
-Since RC5 is also used for SoftSerial on the Naze/Olimexino it means that you cannot use SoftSerial and led strips at the same time.
+Since RC5 is also used for SoftSerial on the Naze it means that you cannot use SoftSerial and led strips at the same time.
 Additionally, since RC5 is also used for Parallel PWM RC input on both the Naze, Chebuzz and STM32F3Discovery targets, led strips
 can not be used at the same time at Parallel PWM.
 
