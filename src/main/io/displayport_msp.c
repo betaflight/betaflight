@@ -42,16 +42,17 @@ static int output(displayPort_t *displayPort, uint8_t cmd, const uint8_t *buf, i
     return mspSerialPush(cmd, buf, len);
 }
 
-static int grab(displayPort_t *displayPort)
+static int heartbeat(displayPort_t *displayPort)
 {
     const uint8_t subcmd[] = { 0 };
 
+    // ensure display is not released by MW OSD software
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int heartbeat(displayPort_t *displayPort)
+static int grab(displayPort_t *displayPort)
 {
-    return grab(displayPort); // ensure display is not released by MW OSD software
+    return heartbeat(displayPort);
 }
 
 static int release(displayPort_t *displayPort)
@@ -61,11 +62,22 @@ static int release(displayPort_t *displayPort)
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
 }
 
-static int clear(displayPort_t *displayPort)
+static int clearScreen(displayPort_t *displayPort)
 {
     const uint8_t subcmd[] = { 2 };
 
     return output(displayPort, MSP_DISPLAYPORT, subcmd, sizeof(subcmd));
+}
+
+static int drawScreen(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return 0;
+}
+
+static int screenSize(const displayPort_t *displayPort)
+{
+    return displayPort->rows * displayPort->cols;
 }
 
 static int write(displayPort_t *displayPort, uint8_t col, uint8_t row, const char *string)
@@ -87,6 +99,21 @@ static int write(displayPort_t *displayPort, uint8_t col, uint8_t row, const cha
     return output(displayPort, MSP_DISPLAYPORT, buf, len + 4);
 }
 
+static int writeChar(displayPort_t *displayPort, uint8_t col, uint8_t row, uint8_t c)
+{
+    char buf[2];
+
+    buf[0] = c;
+    buf[1] = 0;
+    return write(displayPort, col, row, buf); //!!TODO - check if there is a direct MSP command to do this
+}
+
+static bool isTransferInProgress(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return false;
+}
+
 static void resync(displayPort_t *displayPort)
 {
     displayPort->rows = 13; // XXX Will reflect NTSC/PAL in the future
@@ -102,8 +129,12 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
 static const displayPortVTable_t mspDisplayPortVTable = {
     .grab = grab,
     .release = release,
-    .clear = clear,
+    .clearScreen = clearScreen,
+    .drawScreen = drawScreen,
+    .screenSize = screenSize,
     .write = write,
+    .writeChar = writeChar,
+    .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
     .resync = resync,
     .txBytesFree = txBytesFree
@@ -111,8 +142,7 @@ static const displayPortVTable_t mspDisplayPortVTable = {
 
 displayPort_t *displayPortMspInit(void)
 {
-    mspDisplayPort.vTable = &mspDisplayPortVTable;
-    mspDisplayPort.isGrabbed = false;
+    displayInit(&mspDisplayPort, &mspDisplayPortVTable);
     resync(&mspDisplayPort);
     return &mspDisplayPort;
 }

@@ -1035,7 +1035,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef OSD
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
+#ifdef USE_MAX7456
         sbufWriteU8(dst, masterConfig.vcdProfile.video_system);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, masterConfig.osdProfile.units);
         sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
@@ -1197,9 +1201,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
-#endif
-#ifdef OSD
-    uint8_t addr, font_data[64];
 #endif
     switch (cmdMSP) {
     case MSP_SELECT_SETTING:
@@ -1532,27 +1533,44 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
-        addr = sbufReadU8(src);
-        // set all the other settings
-        if ((int8_t)addr == -1) {
-            masterConfig.vcdProfile.video_system = sbufReadU8(src);
-            masterConfig.osdProfile.units = sbufReadU8(src);
-            masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
-            masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
-            masterConfig.osdProfile.time_alarm = sbufReadU16(src);
-            masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
-        }
-        // set a position setting
-        else {
-            masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+        {
+            const uint8_t addr = sbufReadU8(src);
+            // set all the other settings
+            if ((int8_t)addr == -1) {
+#ifdef USE_MAX7456
+                masterConfig.vcdProfile.video_system = sbufReadU8(src);
+#else
+                sbufReadU8(src); // Skip video system
+#endif
+                masterConfig.osdProfile.units = sbufReadU8(src);
+                masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
+                masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.time_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
+            } else {
+                // set a position setting
+                masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+            }
         }
         break;
     case MSP_OSD_CHAR_WRITE:
-        addr = sbufReadU8(src);
-        for (int i = 0; i < 54; i++) {
-            font_data[i] = sbufReadU8(src);
+#ifdef USE_MAX7456
+        {
+            uint8_t font_data[64];
+            const uint8_t addr = sbufReadU8(src);
+            for (int i = 0; i < 54; i++) {
+                font_data[i] = sbufReadU8(src);
+            }
+            // !!TODO - replace this with a device independent implementation
+            max7456WriteNvm(addr, font_data);
         }
-        max7456WriteNvm(addr, font_data);
+#else
+        // just discard the data
+        sbufReadU8(src);
+        for (int i = 0; i < 54; i++) {
+            sbufReadU8(src);
+        }
+#endif
         break;
 #endif
 

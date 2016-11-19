@@ -75,6 +75,7 @@
 #include "rx/spektrum.h"
 
 #include "io/beeper.h"
+#include "io/displayport_max7456.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -406,7 +407,13 @@ void init(void)
 
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#ifdef USE_MAX7456
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
+#else
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
     }
 #endif
 

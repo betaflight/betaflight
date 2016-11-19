@@ -47,7 +47,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
 {
     UNUSED(ptr);
 
-    displayClear(pDisplay);
+    displayClearScreen(pDisplay);
     displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
     displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
 
@@ -56,7 +56,7 @@ static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
         delay(100);
     }
 
-    displayClear(pDisplay);
+    displayClearScreen(pDisplay);
     displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
 
     return 0;

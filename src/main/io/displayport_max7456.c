@@ -37,7 +37,6 @@ static int grab(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     osdResetAlarms();
-    displayPort->isGrabbed = true;
     refreshTimeout = 0;
 
     return 0;
@@ -46,7 +45,6 @@ static int grab(displayPort_t *displayPort)
 static int release(displayPort_t *displayPort)
 {
     UNUSED(displayPort);
-    displayPort->isGrabbed = false;
 
     return 0;
 }
@@ -59,12 +57,44 @@ static int clearScreen(displayPort_t *displayPort)
     return 0;
 }
 
+static int drawScreen(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    max7456DrawScreen();
+
+    return 0;
+}
+
+static int screenSize(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return maxScreenSize;
+}
+
 static int write(displayPort_t *displayPort, uint8_t x, uint8_t y, const char *s)
 {
     UNUSED(displayPort);
     max7456Write(x, y, s);
 
     return 0;
+}
+
+static int writeChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
+{
+    UNUSED(displayPort);
+    max7456WriteChar(x, y, c);
+
+    return 0;
+}
+
+static bool isTransferInProgress(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+#ifdef MAX7456_DMA_CHANNEL_TX
+    return max7456DmaInProgres();
+#else
+    return false;
+#endif
 }
 
 static void resync(displayPort_t *displayPort)
@@ -87,20 +117,24 @@ static uint32_t txBytesFree(const displayPort_t *displayPort)
     return UINT32_MAX;
 }
 
-static displayPortVTable_t max7456VTable = {
+static const displayPortVTable_t max7456VTable = {
     .grab = grab,
     .release = release,
-    .clear = clearScreen,
+    .clearScreen = clearScreen,
+    .drawScreen = drawScreen,
+    .screenSize = screenSize,
     .write = write,
+    .writeChar = writeChar,
+    .isTransferInProgress = isTransferInProgress,
     .heartbeat = heartbeat,
     .resync = resync,
     .txBytesFree = txBytesFree,
 };
 
-displayPort_t *max7456DisplayPortInit(void)
+displayPort_t *max7456DisplayPortInit(const vcdProfile_t *vcdProfile)
 {
-    max7456DisplayPort.vTable = &max7456VTable;
-    max7456DisplayPort.isGrabbed = false;
+    displayInit(&max7456DisplayPort, &max7456VTable);
+    max7456Init(vcdProfile);
     resync(&max7456DisplayPort);
     return &max7456DisplayPort;
 }
