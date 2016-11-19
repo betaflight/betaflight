@@ -116,6 +116,7 @@ static const displayPortVTable_t testDisplayPortVTable = {
     .release = displayPortTestRelease,
     .clearScreen = displayPortTestClearScreen,
     .drawScreen = displayPortTestDrawScreen,
+    .screenSize = NULL,
     .write = displayPortTestWrite,
     .writeChar = displayPortTestWriteChar,
     .isTransferInProgress = displayPortTestIsTransferInProgress,
