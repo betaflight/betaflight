@@ -253,11 +253,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     }
 }
 
-bool pwmIsSynced(void)
-{
-    return pwmCompleteWritePtr != NULL;
-}
-
 pwmOutputPort_t *pwmGetMotors(void)
 {
     return motors;
