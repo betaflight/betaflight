@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_jpeg.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Header file of JPEG HAL module.
   ******************************************************************************
   * @attention
@@ -128,7 +128,7 @@ typedef struct
 
   DMA_HandleTypeDef        *hdmaout;         /*!< JPEG Out DMA handle parameters */
 
-  uint8_t                  CustomQuanTable;  /*!< If set to ‘1’ specify that user customized quantization tables are used */
+  uint8_t                  CustomQuanTable;  /*!< If set to 1 specify that user customized quantization tables are used */
       
   uint8_t                  *QuantTable0;     /*!< Basic Quantization Table for component 0 */
 

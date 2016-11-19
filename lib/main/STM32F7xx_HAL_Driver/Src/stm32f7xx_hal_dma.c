@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dma.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   DMA HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -19,21 +19,25 @@
    (#) Enable and configure the peripheral to be connected to the DMA Stream
        (except for internal SRAM/FLASH memories: no initialization is 
        necessary) please refer to Reference manual for connection between peripherals
-       and DMA requests . 
+       and DMA requests. 
           
    (#) For a given Stream, program the required configuration through the following parameters:   
        Transfer Direction, Source and Destination data formats, 
        Circular, Normal or peripheral flow control mode, Stream Priority level, 
        Source and Destination Increment mode, FIFO mode and its Threshold (if needed), 
        Burst mode for Source and/or Destination (if needed) using HAL_DMA_Init() function.
+   
+   -@-   Prior to HAL_DMA_Init() the clock must be enabled for DMA through the following macros:
+         __HAL_RCC_DMA1_CLK_ENABLE() or __HAL_RCC_DMA2_CLK_ENABLE().
                      
      *** Polling mode IO operation ***
      =================================   
     [..] 
           (+) Use HAL_DMA_Start() to start DMA transfer after the configuration of Source 
-              address and destination address and the Length of data to be transferred
+              address and destination address and the Length of data to be transferred.
           (+) Use HAL_DMA_PollForTransfer() to poll for the end of current transfer, in this  
               case a fixed Timeout can be configured by User depending from his application.
+          (+) Use HAL_DMA_Abort() function to abort the current transfer.
                
      *** Interrupt mode IO operation ***    
      =================================== 
@@ -51,7 +55,7 @@
      (#) Use HAL_DMA_GetState() function to return the DMA state and HAL_DMA_GetError() in case of error 
          detection.
          
-     (#) Use HAL_DMA_Abort() function to abort the current transfer
+     (#) Use HAL_DMA_Abort_IT() function to abort the current transfer
      
      -@-   In Memory-to-Memory transfer mode, Circular mode is not allowed.
     
@@ -72,9 +76,6 @@
        
       (+) __HAL_DMA_ENABLE: Enable the specified DMA Stream.
       (+) __HAL_DMA_DISABLE: Disable the specified DMA Stream.
-      (+) __HAL_DMA_GET_FS: Return the current DMA Stream FIFO filled level.
-      (+) __HAL_DMA_ENABLE_IT: Enable the specified DMA Stream interrupts.
-      (+) __HAL_DMA_DISABLE_IT: Disable the specified DMA Stream interrupts.
       (+) __HAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Stream interrupt has occurred or not. 
      
      [..] 
@@ -335,6 +336,9 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
     /* Return error status */
     return HAL_BUSY;
   }
+  
+  /* Check the parameters */
+  assert_param(IS_DMA_STREAM_ALL_INSTANCE(hdma->Instance));
 
   /* Disable the selected DMA Streamx */
   __HAL_DMA_DISABLE(hdma);
@@ -613,12 +617,20 @@ HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
 HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_LevelCompleteTypeDef CompleteLevel, uint32_t Timeout)
 {
   HAL_StatusTypeDef status = HAL_OK; 
-  uint32_t temp;
+  uint32_t mask_cpltlevel;
   uint32_t tickstart = HAL_GetTick(); 
   uint32_t tmpisr;
   
   /* calculate DMA base and stream number */
   DMA_Base_Registers *regs;
+  
+  if(HAL_DMA_STATE_BUSY != hdma->State)
+  {
+    /* No transfer ongoing */
+    hdma->ErrorCode = HAL_DMA_ERROR_NO_XFER;
+    __HAL_UNLOCK(hdma);
+    return HAL_ERROR;
+  }
   
   /* Polling mode not supported in circular mode and double buffering mode */
   if ((hdma->Instance->CR & DMA_SxCR_CIRC) != RESET)
@@ -631,18 +643,18 @@ HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_Level
   if(CompleteLevel == HAL_DMA_FULL_TRANSFER)
   {
     /* Transfer Complete flag */
-    temp = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
+    mask_cpltlevel = DMA_FLAG_TCIF0_4 << hdma->StreamIndex;
   }
   else
   {
     /* Half Transfer Complete flag */
-    temp = DMA_FLAG_HTIF0_4 << hdma->StreamIndex;
+    mask_cpltlevel = DMA_FLAG_HTIF0_4 << hdma->StreamIndex;
   }
   
   regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
   tmpisr = regs->ISR;
   
-  while((tmpisr & temp) == RESET )
+  while(((tmpisr & mask_cpltlevel) == RESET) && ((hdma->ErrorCode & HAL_DMA_ERROR_TE) == RESET))
   {
     /* Check for the Timeout (Not applicable in circular mode)*/
     if(Timeout != HAL_MAX_DELAY)
@@ -661,6 +673,9 @@ HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_Level
         return HAL_TIMEOUT;
       }
     }
+    
+    /* Get the ISR register value */
+    tmpisr = regs->ISR;
     
     if((tmpisr & (DMA_FLAG_TEIF0_4 << hdma->StreamIndex)) != RESET)
     {
@@ -707,8 +722,6 @@ HAL_StatusTypeDef HAL_DMA_PollForTransfer(DMA_HandleTypeDef *hdma, HAL_DMA_Level
 
       return HAL_ERROR;
    }
-
-   status = HAL_ERROR;
   }
   
   /* Get the level transfer complete flag */
