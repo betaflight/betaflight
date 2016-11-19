@@ -60,4 +60,3 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing);
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM)
-
