@@ -42,7 +42,7 @@
     TIM4 4 channels
 */
 
-#if defined(CJMCU) || defined(EUSTM32F103RC) || defined(NAZE) || defined(PORT103R)
+#if defined(CJMCU) || defined(NAZE) || defined(PORT103R)
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM2, GPIOA, Pin_0, TIM_Channel_1, TIM2_IRQn, 0, Mode_IPD},          // PWM1 - RC1
     { TIM2, GPIOA, Pin_1, TIM_Channel_2, TIM2_IRQn, 0, Mode_IPD},          // PWM2 - RC2
