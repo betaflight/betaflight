@@ -40,13 +40,6 @@ typedef enum {
 } pidIndex_e;
 
 typedef enum {
-    PID_CONTROLLER_MW23 = 0,
-    PID_CONTROLLER_MWREWRITE,
-    PID_CONTROLLER_LUX_FLOAT,
-    PID_COUNT
-} pidControllerType_e;
-
-typedef enum {
     PID_DELTA_FROM_MEASUREMENT = 0,
     PID_DELTA_FROM_ERROR
 } pidDeltaMethod_e;
@@ -79,7 +72,7 @@ PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 struct controlRateConfig_s;
 union rollAndPitchTrims_u;
 struct rxConfig_s;
-typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig,
+void pidLuxFloat(const pidProfile_t *pidProfile, const struct controlRateConfig_s *controlRateConfig,
         uint16_t max_angle_inclination, const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
 
 extern int16_t axisPID[FD_INDEX_COUNT];
@@ -91,9 +84,7 @@ void pidFilterIsSetCheck(const pidProfile_t *pidProfile);
 
 float getdT(void);
 void pidInitFilters(const pidProfile_t *pidProfile);
-void pidSetController(pidControllerType_e type);
 void pidSetTargetLooptime(uint32_t pidLooptime);
-void pidResetITermAngle(void);
 void pidResetITerm(void);
 
 int calcHorizonLevelStrength(uint16_t rxConfigMidrc, int horizonTiltEffect,

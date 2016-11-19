@@ -215,33 +215,6 @@ TEST_F(MspTest, TestMsp_FC_VERSION)
     EXPECT_EQ(FC_VERSION_PATCH_LEVEL, rbuf[2]);
 }
 
-TEST_F(MspTest, TestMsp_PID_CONTROLLER)
-{
-    pgActivateProfile(0);
-    pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
-
-    cmd.cmd = MSP_PID_CONTROLLER;
-
-    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
-
-    EXPECT_EQ(1, reply.buf.ptr - rbuf) << "Reply size";
-    EXPECT_EQ(MSP_PID_CONTROLLER, reply.cmd);
-    EXPECT_EQ(PID_CONTROLLER_MWREWRITE, rbuf[0]);
-}
-
-TEST_F(MspTest, TestMsp_SET_PID_CONTROLLER)
-{
-    // set the pidController to a different value so we can check if it gets read back properly
-    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
-
-    cmd.cmd = MSP_SET_PID_CONTROLLER;
-    *cmd.buf.end++ = PID_CONTROLLER_MWREWRITE;
-
-    EXPECT_GT(mspProcessCommand(&cmd, &reply), 0);
-
-    EXPECT_EQ(PID_CONTROLLER_MWREWRITE, pidProfile()->pidController);
-}
-
 TEST_F(MspTest, TestMsp_PID)
 {
     // check the buffer is big enough for the data to read in
@@ -278,7 +251,7 @@ TEST_F(MspTest, TestMsp_PID)
 
     pgActivateProfile(0);
 
-    pidProfile()->pidController = PID_CONTROLLER_MWREWRITE;
+    pidProfile()->pidController = 0;
     pidProfile()->P8[PIDROLL] = P8_ROLL;
     pidProfile()->I8[PIDROLL] = I8_ROLL;
     pidProfile()->D8[PIDROLL] = D8_ROLL;
@@ -417,7 +390,6 @@ TEST_F(MspTest, TestMspCommands)
 //!! not tested        MSP_CF_SERIAL_CONFIG,           // 54
         MSP_VOLTAGE_METER_CONFIG,       // 56
         MSP_SONAR_ALTITUDE,             // 58 //out message get sonar altitude [cm]
-        MSP_PID_CONTROLLER,             // 59
         MSP_ARMING_CONFIG,              // 61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
         MSP_DATAFLASH_SUMMARY,          // 70 //out message - get description of dataflash chip
 //!! not tested       MSP_DATAFLASH_READ,             // 71 //out message - get content of dataflash chip
@@ -554,8 +526,6 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 navigationMode_e nav_mode = NAV_MODE_NONE;    // Navigation mode
 void GPS_set_next_wp(int32_t *, int32_t *) {}
-// from pid.c
-void pidSetController(pidControllerType_e) {}
 // from rc_controls.c
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 bool rcModeIsActive(boxId_e modeId) { return rcModeActivationMask & (1 << modeId); }

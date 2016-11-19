@@ -290,8 +290,6 @@ FC_COMMON_SRC = \
 		   flight/failsafe.c \
 		   flight/pid.c \
 		   flight/pid_luxfloat.c \
-		   flight/pid_mwrewrite.c \
-		   flight/pid_mw23.c \
 		   flight/imu.c \
 		   flight/mixer.c \
 		   flight/servos.c \

@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   24 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   25 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -146,9 +146,6 @@
 #define MSP_SET_VOLTAGE_METER_CONFIG    57
 
 #define MSP_SONAR_ALTITUDE              58 //out message get sonar altitude [cm]
-
-#define MSP_PID_CONTROLLER              59
-#define MSP_SET_PID_CONTROLLER          60
 
 #define MSP_ARMING_CONFIG               61 //out message         Returns auto_disarm_delay and disarm_kill_switch parameters
 #define MSP_SET_ARMING_CONFIG           62 //in message          Sets auto_disarm_delay and disarm_kill_switch parameters

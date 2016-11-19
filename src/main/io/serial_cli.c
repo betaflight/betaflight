@@ -475,7 +475,6 @@ typedef enum {
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
-    TABLE_PID_CONTROLLER,
     TABLE_SERIAL_RX,
     TABLE_GYRO_FILTER,
     TABLE_GYRO_LPF,
@@ -500,7 +499,6 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
 #endif
-    { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
     { lookupTableGyroFilter, sizeof(lookupTableGyroFilter) / sizeof(char *) },
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
@@ -755,8 +753,6 @@ const clivalue_t valueTable[] = {
 
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, .config.minmax = { -18000,  18000 } , PG_COMPASS_CONFIGURATION, offsetof(compassConfig_t, mag_declination)},
 #endif
-
-    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PID_CONTROLLER } , PG_PID_PROFILE, offsetof(pidProfile_t, pidController)},
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, P8[FD_PITCH])},
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { PID_MIN,  PID_MAX } , PG_PID_PROFILE, offsetof(pidProfile_t, I8[FD_PITCH])},

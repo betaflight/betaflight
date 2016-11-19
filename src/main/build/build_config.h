@@ -39,13 +39,3 @@
 #define REQUIRE_CC_ARM_PRINTF_SUPPORT
 #define REQUIRE_PRINTF_LONG_SUPPORT
 #endif
-
-
-
-#ifndef SKIP_PID_MWREWRITE
-#define USE_PID_MWREWRITE
-#endif
-
-#ifndef SKIP_PID_MW23
-#define USE_PID_MW23
-#endif

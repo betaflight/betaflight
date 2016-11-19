@@ -26,8 +26,6 @@
 
 #include "build/build_config.h"
 
-#ifndef SKIP_PID_LUXFLOAT
-
 #include "common/axis.h"
 #include "common/maths.h"
 #include "common/filter.h"
@@ -212,6 +210,4 @@ void pidLuxFloat(const pidProfile_t *pidProfile, const controlRateConfig_t *cont
 #endif
     }
 }
-
-#endif
 

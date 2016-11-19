@@ -128,8 +128,6 @@ extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
 
-extern pidControllerFuncPtr pid_controller;
-
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
     accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
@@ -461,9 +459,6 @@ void processRx(void)
                 DISABLE_STATE(ANTI_WINDUP);
             }
         } else {
-#ifdef USE_PID_MW23
-            pidResetITermAngle();
-#endif
             pidResetITerm();
         }
     } else {
@@ -534,9 +529,6 @@ void processRx(void)
         canUseHorizonMode = false;
 
         if (!FLIGHT_MODE(ANGLE_MODE)) {
-#ifdef USE_PID_MW23
-            pidResetITermAngle();
-#endif
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
         }
     } else {
@@ -548,9 +540,6 @@ void processRx(void)
         DISABLE_FLIGHT_MODE(ANGLE_MODE);
 
         if (!FLIGHT_MODE(HORIZON_MODE)) {
-#ifdef USE_PID_MW23
-            pidResetITermAngle();
-#endif
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         }
     } else {
@@ -668,7 +657,7 @@ void subTaskPidController(void)
     const uint32_t startTime = micros();
 
     // PID - note this is function pointer set by setPIDController()
-    pid_controller(
+    pidLuxFloat(
         pidProfile(),
         currentControlRateProfile,
         imuConfig()->max_angle_inclination,

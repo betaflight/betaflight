@@ -680,10 +680,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteString(dst, pidnames);
             break;
 
-        case MSP_PID_CONTROLLER:
-            sbufWriteU8(dst, pidProfile()->pidController);
-            break;
-
         case MSP_MODE_RANGES:
             for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
                 modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
@@ -1066,11 +1062,6 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
         case MSP_SET_ARMING_CONFIG:
             armingConfig()->auto_disarm_delay = sbufReadU8(src);
             armingConfig()->disarm_kill_switch = sbufReadU8(src);
-            break;
-
-        case MSP_SET_PID_CONTROLLER:
-            pidProfile()->pidController = sbufReadU8(src);
-            pidSetController(pidProfile()->pidController);
             break;
 
         case MSP_SET_PID:

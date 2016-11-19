@@ -252,29 +252,11 @@ $(OBJECT_DIR)/flight/pid_luxfloat.o : \
 	@mkdir -p $(dir $@)
 	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_luxfloat.c -o $@
 
-$(OBJECT_DIR)/flight/pid_mwrewrite.o : \
-	$(USER_DIR)/flight/pid_mwrewrite.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mwrewrite.c -o $@
-
-$(OBJECT_DIR)/flight/pid_mw23.o : \
-	$(USER_DIR)/flight/pid_mw23.c \
-	$(USER_DIR)/flight/pid.h \
-	$(GTEST_HEADERS)
-
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -DBLACKBOX -c $(USER_DIR)/flight/pid_mw23.c -o $@
-
 $(OBJECT_DIR)/flight_pid_unittest.o : \
 	$(TEST_DIR)/flight_pid_unittest.cc \
 	$(USER_DIR)/flight/pid.h \
 	$(USER_DIR)/flight/pid.c \
 	$(USER_DIR)/flight/pid_luxfloat.c \
-	$(USER_DIR)/flight/pid_mwrewrite.c \
-	$(USER_DIR)/flight/pid_mw23.c \
 	$(GTEST_HEADERS)
 
 	@mkdir -p $(dir $@)
@@ -285,8 +267,6 @@ $(OBJECT_DIR)/flight_pid_unittest : \
 	$(OBJECT_DIR)/common/filter.o \
 	$(OBJECT_DIR)/flight/pid.o \
 	$(OBJECT_DIR)/flight/pid_luxfloat.o \
-	$(OBJECT_DIR)/flight/pid_mwrewrite.o \
-	$(OBJECT_DIR)/flight/pid_mw23.o \
 	$(OBJECT_DIR)/flight_pid_unittest.o \
 	$(OBJECT_DIR)/gtest_main.a
 

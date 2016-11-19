@@ -122,7 +122,6 @@ STATIC_UNIT_TESTED void resetConf(void)
     motorConfig()->minthrottle = 1000;
     motorConfig()->maxthrottle = 2000;
     motorConfig()->motor_pwm_rate = 32000;
-    pidProfile()->pidController = PID_CONTROLLER_LUX_FLOAT;
     failsafeConfig()->failsafe_delay = 2;
     failsafeConfig()->failsafe_off_delay = 0;
     mixerConfig()->yaw_jump_prevention_limit = YAW_JUMP_PREVENTION_LIMIT_HIGH;
@@ -162,7 +161,6 @@ static void activateConfig(void)
     useRcControlsConfig(modeActivationProfile()->modeActivationConditions);
 
     pidInitFilters(pidProfile());
-    pidSetController(pidProfile()->pidController);
 
 #ifdef GPS
     gpsUsePIDs(pidProfile());
