@@ -613,7 +613,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 for (i = 0; i < 3; i++)
                     bstWrite16(accSmooth[i] / scale);
                 for (i = 0; i < 3; i++)
-                    bstWrite16(gyroADC[i]);
+                    bstWrite16(lrintf(gyroADCf[i]));
                 for (i = 0; i < 3; i++)
                     bstWrite16(magADC[i]);
             }

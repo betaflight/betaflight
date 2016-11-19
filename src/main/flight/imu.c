@@ -75,8 +75,6 @@ static float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
-static float gyroScale;
-
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     float q1q1 = sq(q1);
@@ -122,7 +120,6 @@ void imuConfigure(
 void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
     accVelScale = 9.80665f / acc.acc_1G / 10000.0f;
 
     imuComputeRotationMatrix();
@@ -399,7 +396,7 @@ static void imuCalculateEstimatedAttitude(uint32_t currentTime)
 #endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        gyroADC[X] * gyroScale, gyroADC[Y] * gyroScale, gyroADC[Z] * gyroScale,
+                        DEGREES_TO_RADIANS(gyroADCf[X]), DEGREES_TO_RADIANS(gyroADCf[Y]), DEGREES_TO_RADIANS(gyroADCf[Z]),
                         useAcc, accSmooth[X], accSmooth[Y], accSmooth[Z],
                         useMag, magADC[X], magADC[Y], magADC[Z],
                         useYaw, rawYawError);

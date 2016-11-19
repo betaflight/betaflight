@@ -20,7 +20,7 @@
 bool mpu6500SpiDetect(void);
 
 void mpu6500SpiAccInit(acc_t *acc);
-void mpu6500SpiGyroInit(uint8_t lpf);
+void mpu6500SpiGyroInit(gyro_t *gyro);
 
 bool mpu6500SpiAccDetect(acc_t *acc);
 bool mpu6500SpiGyroDetect(gyro_t *gyro);

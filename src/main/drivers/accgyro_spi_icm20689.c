@@ -137,14 +137,12 @@ bool icm20689SpiGyroDetect(gyro_t *gyro)
 
 void icm20689AccInit(acc_t *acc)
 {
-    mpuIntExtiInit();
-
     acc->acc_1G = 512 * 4;
 }
 
-void icm20689GyroInit(uint8_t lpf)
+void icm20689GyroInit(gyro_t *gyro)
 {
-    mpuIntExtiInit();
+    mpuGyroInit(gyro);
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
@@ -160,7 +158,7 @@ void icm20689GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
+    mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
     delay(100);

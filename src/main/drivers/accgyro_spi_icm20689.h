@@ -23,7 +23,7 @@ bool icm20689AccDetect(acc_t *acc);
 bool icm20689GyroDetect(gyro_t *gyro);
 
 void icm20689AccInit(acc_t *acc);
-void icm20689GyroInit(uint8_t lpf);
+void icm20689GyroInit(gyro_t *gyro);
 
 bool icm20689SpiDetect(void);
 

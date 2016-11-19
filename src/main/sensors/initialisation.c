@@ -102,15 +102,15 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 
 #ifdef USE_FAKE_GYRO
 int16_t fake_gyro_values[XYZ_AXIS_COUNT] = { 0,0,0 };
-static void fakeGyroInit(uint8_t lpf)
+static void fakeGyroInit(gyro_t *gyro)
 {
-    UNUSED(lpf);
+    UNUSED(gyro);
 }
 
-static bool fakeGyroRead(int16_t *gyroADC)
+static bool fakeGyroRead(gyro_t *gyro)
 {
     for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
-        gyroADC[i] = fake_gyro_values[i];
+        gyro->gyroADCRaw[X] = fake_gyro_values[i];
     }
 
     return true;
@@ -123,7 +123,9 @@ static bool fakeGyroReadTemp(int16_t *tempData)
 }
 
 
-static bool fakeGyroInitStatus(void) {
+static bool fakeGyroInitStatus(gyro_t *gyro)
+{
+    UNUSED(gyro);
     return true;
 }
 
@@ -662,7 +664,8 @@ bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
     // Now time to init things
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
     gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
-    gyro.init(gyroConfig->gyro_lpf); // driver initialisation
+    gyro.lpf = gyroConfig->gyro_lpf;
+    gyro.init(&gyro); // driver initialisation
     gyroInit(gyroConfig); // sensor initialisation
 
     if (detectAcc(sensorSelectionConfig->acc_hardware)) {
