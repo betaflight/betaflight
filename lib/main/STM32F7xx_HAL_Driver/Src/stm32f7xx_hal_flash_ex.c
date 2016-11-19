@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_flash_ex.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Extended FLASH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the FLASH extension peripheral:
@@ -90,8 +90,8 @@
 /** @addtogroup FLASHEx_Private_Constants
   * @{
   */    
-#define SECTOR_MASK               ((uint32_t)0xFFFFFF07)
-#define FLASH_TIMEOUT_VALUE       ((uint32_t)50000)/* 50 s */
+#define SECTOR_MASK               0xFFFFFF07U
+#define FLASH_TIMEOUT_VALUE       50000U/* 50 s */
 /**
   * @}
   */
@@ -774,7 +774,7 @@ static HAL_StatusTypeDef FLASH_OB_UserConfig(uint32_t Wwdg, uint32_t Iwdg, uint3
 static uint32_t FLASH_OB_GetUser(void)
 {
   /* Return the User Option Byte */
-  return ((uint32_t)(FLASH->OPTCR & 0xC00000F0));
+  return ((uint32_t)(FLASH->OPTCR & 0xC00000F0U));
 }
 #endif /* FLASH_OPTCR_nDBANK */
 

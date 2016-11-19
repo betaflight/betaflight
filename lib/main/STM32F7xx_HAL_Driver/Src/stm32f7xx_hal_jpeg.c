@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_jpeg.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   JPEG HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the JPEG encoder/decoder peripheral:
@@ -60,57 +60,57 @@
          consumed by the peripheral and to ask for a new data chunk if the operation
          (encoding/decoding) has not been complete yet.
 
-         This CallBack should be implemented in the application side. It should 
-         call the function HAL_JPEG_ConfigInputBuffer if new input data are available, 
-         or call HAL_JPEG_Pause with parameter XferSelection set to "JPEG_PAUSE_RESUME_INPUT" 
-         to inform the JPEG HAL driver that the ongoing operation shall pause waiting for the
-         application to provide a new input data chunk. 
-         Once the application succeed getting new data and if the input has been paused,
-         the application can call the function HAL_JPEG_ConfigInputBuffer to set the new
-         input buffer and size, then resume the JPEG HAL input by calling new function HAL_JPEG_Resume.
-         If the application has ended feeding the HAL JPEG with input data (no more input data), the application 
-         Should call the function “HAL_JPEG_ConfigInputBuffer” (within the callback HAL_JPEG_GetDataCallback) 
-         with the parameter “InDataLength” set to zero.
+        (++) This CallBack should be implemented in the application side. It should 
+             call the function HAL_JPEG_ConfigInputBuffer if new input data are available, 
+             or call HAL_JPEG_Pause with parameter XferSelection set to JPEG_PAUSE_RESUME_INPUT 
+             to inform the JPEG HAL driver that the ongoing operation shall pause waiting for the
+             application to provide a new input data chunk. 
+             Once the application succeed getting new data and if the input has been paused,
+             the application can call the function HAL_JPEG_ConfigInputBuffer to set the new
+             input buffer and size, then resume the JPEG HAL input by calling new function HAL_JPEG_Resume.
+             If the application has ended feeding the HAL JPEG with input data (no more input data), the application 
+             Should call the function HAL_JPEG_ConfigInputBuffer (within the callback HAL_JPEG_GetDataCallback) 
+             with the parameter InDataLength set to zero.
        
-         The mechanism of HAL_JPEG_ConfigInputBuffer/HAL_JPEG_Pause/HAL_JPEG_Resume allows
-         to the application to provide the input data (for encoding or decoding) by chunks.
-         If the new input data chunk is not available (because data should be read from an input file
-         for example) the application can pause the JPEG input (using function HAL_JPEG_Pause)
-         Once the new input data chunk is available ( read from a file for example), the application
-         can call the function "HAL_JPEG_ConfigInputBuffer" to provide the HAL with the new chunk
-         then resume the JPEG HAL input by calling function "HAL_JPEG_Resume".
+         (++) The mechanism of HAL_JPEG_ConfigInputBuffer/HAL_JPEG_Pause/HAL_JPEG_Resume allows
+              to the application to provide the input data (for encoding or decoding) by chunks.
+              If the new input data chunk is not available (because data should be read from an input file
+              for example) the application can pause the JPEG input (using function HAL_JPEG_Pause)
+              Once the new input data chunk is available ( read from a file for example), the application
+              can call the function HAL_JPEG_ConfigInputBuffer to provide the HAL with the new chunk
+              then resume the JPEG HAL input by calling function HAL_JPEG_Resume.
         
-         The application can call  functions “HAL_JPEG_ConfigInputBuffer “ then "HAL_JPEG_Resume".
-         any time (outside the HAL_JPEG_GetDataCallback)  Once the new input chunk data available.
-         However, to keep data coherency, the function “HAL_JPEG_Pause” must be imperatively called
-        (if necessary) within the callback “HAL_JPEG_GetDataCallback”, i.e when the HAL JPEG has ended
-         Transferring the previous chunk buffer to the JPEG peripheral.
+         (++) The application can call functions HAL_JPEG_ConfigInputBuffer then HAL_JPEG_Resume.
+              any time (outside the HAL_JPEG_GetDataCallback)  Once the new input chunk data available.
+              However, to keep data coherency, the function HAL_JPEG_Pause must be imperatively called
+              (if necessary) within the callback HAL_JPEG_GetDataCallback, i.e when the HAL JPEG has ended
+              Transferring the previous chunk buffer to the JPEG peripheral.
         
      (#) Callback HAL_JPEG_DataReadyCallback is asserted when the HAL JPEG driver
          has filled the given output buffer with the given size.
          
-         This CallBack should be implemented in the application side. It should 
-         call the function HAL_JPEG_ConfigOutputBuffer to provide the HAL JPEG driver
-         with the new output buffer location and size to be used  to store next data chunk.
-         if the application is not ready to provide the output chunk location then it can
-         call the function "HAL_JPEG_Pause" with parameter XferSelection set to "JPEG_PAUSE_RESUME_OUTPUT"
-         to inform the JPEG HAL driver that it shall pause output data. Once the application
-         is ready to receive the new data chunk (output buffer location free or available) it should call
-         the function "HAL_JPEG_ConfigOutputBuffer" to provide the HAL JPEG driver
-         with the new output chunk buffer location and size, then call "HAL_JPEG_Resume" 
-         to inform the HAL that it shall resume outputting data in the given output buffer.
+         (++) This CallBack should be implemented in the application side. It should 
+              call the function HAL_JPEG_ConfigOutputBuffer to provide the HAL JPEG driver
+              with the new output buffer location and size to be used  to store next data chunk.
+              if the application is not ready to provide the output chunk location then it can
+              call the function HAL_JPEG_Pause with parameter XferSelection set to "JPEG_PAUSE_RESUME_OUTPUT"
+              to inform the JPEG HAL driver that it shall pause output data. Once the application
+              is ready to receive the new data chunk (output buffer location free or available) it should call
+              the function HAL_JPEG_ConfigOutputBuffer to provide the HAL JPEG driver
+              with the new output chunk buffer location and size, then call "HAL_JPEG_Resume" 
+              to inform the HAL that it shall resume outputting data in the given output buffer.
 
-         The mechanism of HAL_JPEG_ConfigOutputBuffer/HAL_JPEG_Pause/HAL_JPEG_Resume allows
-         the application to receive data from the JPEG peripheral by chunks. when a chunk
-         is received, the application can pause the HAL JPEG output data to be able to process
-         these received data (YCbCr to RGB conversion in case of decoding or data storage in case
-         of encoding).
+         (++) The mechanism of HAL_JPEG_ConfigOutputBuffer/HAL_JPEG_Pause/HAL_JPEG_Resume allows
+              the application to receive data from the JPEG peripheral by chunks. when a chunk
+              is received, the application can pause the HAL JPEG output data to be able to process
+              these received data (YCbCr to RGB conversion in case of decoding or data storage in case
+              of encoding).
 
-        The application can call  functions “HAL_JPEG_ ConfigOutputBuffer“ then "HAL_JPEG_Resume".
-        any time (outside the HAL_JPEG_ DataReadyCallback)  Once the output data buffer is free to use.
-        However, to keep data coherency, the function “HAL_JPEG_Pause” must be imperatively called
-        (if necessary) within the callback “HAL_JPEG_ DataReadyCallback”, i.e when the HAL JPEG has ended
-        Transferring the previous chunk buffer from the JPEG peripheral to the application.
+         (++) The application can call  functions HAL_JPEG_ ConfigOutputBuffer then HAL_JPEG_Resume.
+              any time (outside the HAL_JPEG_DataReadyCallback) Once the output data buffer is free to use.
+              However, to keep data coherency, the function HAL_JPEG_Pause must be imperatively called
+              (if necessary) within the callback HAL_JPEG_ DataReadyCallback, i.e when the HAL JPEG has ended
+              Transferring the previous chunk buffer from the JPEG peripheral to the application.
 
      (#) Callback HAL_JPEG_EncodeCpltCallback is asserted when the HAL JPEG driver has
          ended the current JPEG encoding operation, and all output data has been transmitted
@@ -125,10 +125,10 @@
          to retrieve the error codes.
 
      (#) By default the HAL JPEG driver uses the default quantization tables
-          as provide in the JPEG specification (ISO/IEC 10918-1 standard) for encoding.
-          User can change these default tables if necessary using the function "HAL_JPEG_SetUserQuantTables"
-          Note that for decoding the quantization tables are automatically extracted from
-          the JPEG header.
+         as provide in the JPEG specification (ISO/IEC 10918-1 standard) for encoding.
+         User can change these default tables if necessary using the function HAL_JPEG_SetUserQuantTables
+         Note that for decoding the quantization tables are automatically extracted from
+         the JPEG header.
 
       (#) To control JPEG state you can use the following function: HAL_JPEG_GetState()      
 
@@ -202,7 +202,7 @@
 #define JPEG_AC_HUFF_TABLE_SIZE  ((uint32_t)162U) /* Huffman AC table size : 162 codes*/
 #define JPEG_DC_HUFF_TABLE_SIZE  ((uint32_t)12U)  /* Huffman AC table size : 12 codes*/
 
-#define JPEG_FIFO_SIZE ((uint32_t)8U)             /* JPEG Input/Output HW FIFO size in words*/
+#define JPEG_FIFO_SIZE ((uint32_t)16U)             /* JPEG Input/Output HW FIFO size in words*/
 
 #define JPEG_INTERRUPT_MASK  ((uint32_t)0x0000007EU) /* JPEG Interrupt Mask*/
 
@@ -438,6 +438,7 @@ static uint32_t JPEG_GetQuality(JPEG_HandleTypeDef *hjpeg);
 static HAL_StatusTypeDef JPEG_DMA_StartProcess(JPEG_HandleTypeDef *hjpeg);
 static uint32_t JPEG_DMA_ContinueProcess(JPEG_HandleTypeDef *hjpeg);
 static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg);
+static void JPEG_DMA_PollResidualData(JPEG_HandleTypeDef *hjpeg);
 static void JPEG_DMAOutCpltCallback(DMA_HandleTypeDef *hdma);
 static void JPEG_DMAInCpltCallback(DMA_HandleTypeDef *hdma);
 static void JPEG_DMAErrorCallback(DMA_HandleTypeDef *hdma);
@@ -720,7 +721,7 @@ HAL_StatusTypeDef HAL_JPEG_ConfigEncoding(JPEG_HandleTypeDef *hjpeg, JPEG_ConfTy
           error |= JPEG_Set_Quantization_Mem(hjpeg, hjpeg->QuantTable2, (uint32_t *)(hjpeg->Instance->QMEM2));
  
           /*Use Quantization 1 table for component 1*/
-          hjpeg->Instance->CONFR5 &=  (~JPEG_CONFR6_QT);           
+          hjpeg->Instance->CONFR5 &=  (~JPEG_CONFR5_QT);           
           hjpeg->Instance->CONFR5 |=  JPEG_CONFR5_QT_0; 
           
           /*Use Quantization 2 table for component 2*/
@@ -769,8 +770,8 @@ HAL_StatusTypeDef HAL_JPEG_ConfigEncoding(JPEG_HandleTypeDef *hjpeg, JPEG_ConfTy
         return  HAL_ERROR;
       }
       /* Set the image size*/
-      hjpeg->Instance->CONFR1 |= ((hjpeg->Conf.ImageHeight & 0x0000FFFF) << 16); /* set the number of lines*/
-      hjpeg->Instance->CONFR3 |= ((hjpeg->Conf.ImageWidth & 0x0000FFFF) << 16);  /* set the number of pixels per line*/
+      MODIFY_REG(hjpeg->Instance->CONFR1, JPEG_CONFR1_YSIZE, ((hjpeg->Conf.ImageHeight & 0x0000FFFF) << 16));  /* set the number of lines*/
+      MODIFY_REG(hjpeg->Instance->CONFR3, JPEG_CONFR3_XSIZE, ((hjpeg->Conf.ImageWidth & 0x0000FFFF) << 16));  /* set the number of pixels per line*/
       
       if(hjpeg->Conf.ChromaSubsampling == JPEG_420_SUBSAMPLING)  /* 4:2:0*/
       {
@@ -1593,6 +1594,12 @@ HAL_StatusTypeDef  HAL_JPEG_Resume(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelec
 
   assert_param(IS_JPEG_PAUSE_RESUME_STATE(XferSelection));  
   
+  if(((hjpeg->Context & JPEG_CONTEXT_PAUSE_INPUT) == 0) &&  ((hjpeg->Context & JPEG_CONTEXT_PAUSE_OUTPUT) == 0)) 
+  {
+    /* if nothing paused to resume return error*/
+    return HAL_ERROR;      
+  }
+
   if((hjpeg->Context & JPEG_CONTEXT_METHOD_MASK) == JPEG_CONTEXT_DMA)
   {
     
@@ -1614,11 +1621,20 @@ HAL_StatusTypeDef  HAL_JPEG_Resume(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelec
     }
     if((XferSelection & JPEG_PAUSE_RESUME_OUTPUT) == JPEG_PAUSE_RESUME_OUTPUT)
     {
-      hjpeg->Context &= (~JPEG_CONTEXT_PAUSE_OUTPUT);
-      mask |= JPEG_DMA_ODMA;
       
-      /* Start DMA FIFO Out transfer */
-      HAL_DMA_Start_IT(hjpeg->hdmaout, (uint32_t)&hjpeg->Instance->DOR, (uint32_t)hjpeg->pJpegOutBuffPtr, hjpeg->OutDataLength >> 2);
+      if((hjpeg->Context & JPEG_CONTEXT_ENDING_DMA) != 0)
+      {
+        JPEG_DMA_PollResidualData(hjpeg);
+      }
+      else
+      {
+        hjpeg->Context &= (~JPEG_CONTEXT_PAUSE_OUTPUT);
+        mask |= JPEG_DMA_ODMA;
+        
+        /* Start DMA FIFO Out transfer */
+        HAL_DMA_Start_IT(hjpeg->hdmaout, (uint32_t)&hjpeg->Instance->DOR, (uint32_t)hjpeg->pJpegOutBuffPtr, hjpeg->OutDataLength >> 2);
+      }  
+      
     }    
     JPEG_ENABLE_DMA(hjpeg,mask);
 
@@ -1758,7 +1774,7 @@ HAL_StatusTypeDef HAL_JPEG_Abort(JPEG_HandleTypeDef *hjpeg)
  *
 @verbatim   
   ==============================================================================
-              #####  JPEG Decode/Encode callback functions  #####
+              #####  JPEG Decode and Encode callback functions  #####
   ==============================================================================  
     [..]  This section provides callback functions:
       (+) HAL_JPEG_InfoReadyCallback()  : Decoding JPEG Info ready callback
@@ -1993,7 +2009,7 @@ static HAL_StatusTypeDef JPEG_Bits_To_SizeCodes(uint8_t *Bits, uint8_t *Huffsize
 {  
   uint32_t i, p, l, code, si;
    
-  /* Figure C.1 – Generation of table of Huffman code sizes */
+  /* Figure C.1: Generation of table of Huffman code sizes */
   p = 0;
   for (l = 0; l < 16; l++) 
   {
@@ -2011,7 +2027,7 @@ static HAL_StatusTypeDef JPEG_Bits_To_SizeCodes(uint8_t *Bits, uint8_t *Huffsize
   Huffsize[p] = 0;
   *LastK = p; 
   
-  /* Figure C.2 – Generation of table of Huffman codes */ 
+  /* Figure C.2: Generation of table of Huffman codes */ 
   code = 0;
   si = Huffsize[0];
   p = 0;
@@ -2056,7 +2072,7 @@ static HAL_StatusTypeDef JPEG_ACHuff_BitsVals_To_SizeCodes(JPEG_ACHuffTableTypeD
     return  error;
   }
   
-  /* Figure C.3 – Ordering procedure for encoding procedure code tables */
+  /* Figure C.3: Ordering procedure for encoding procedure code tables */
   k=0;
    
   while(k < lastK)
@@ -2227,7 +2243,7 @@ static HAL_StatusTypeDef JPEG_Set_HuffAC_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_ACH
     {
       return  error;
     }
-    /* Default values settings : 162–167 FFFh , 168–175 FD0h–FD7h */
+    /* Default values settings: 162:167 FFFh , 168:175 FD0h_FD7h */
     /* Locations 162:175 of each AC table contain information used internally by the core */
 
     addressDef = address;
@@ -3155,8 +3171,7 @@ static uint32_t JPEG_DMA_ContinueProcess(JPEG_HandleTypeDef *hjpeg)
   */
 static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
 {
-  uint32_t tmpContext, count = JPEG_FIFO_SIZE, *pDataOut;
-  
+  uint32_t tmpContext;  
   hjpeg->JpegOutCount = hjpeg->OutDataLength - ((hjpeg->hdmaout->Instance->NDTR & DMA_SxNDT) << 2);
   
   /*if Output Buffer is full, call HAL_JPEG_DataReadyCallback*/
@@ -3166,6 +3181,51 @@ static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
     hjpeg->JpegOutCount = 0;
   }
   
+  /*Check if remaining data in the output FIFO*/
+  if(__HAL_JPEG_GET_FLAG(hjpeg, JPEG_FLAG_OFNEF) == 0)
+  {
+    /*Stop Encoding/Decoding*/
+    hjpeg->Instance->CONFR0 &=  ~JPEG_CONFR0_START;
+    
+    tmpContext = hjpeg->Context;
+    /*Clear all context fileds execpt JPEG_CONTEXT_CONF_ENCODING and JPEG_CONTEXT_CUSTOM_TABLES*/
+    hjpeg->Context &= (JPEG_CONTEXT_CONF_ENCODING | JPEG_CONTEXT_CUSTOM_TABLES);
+    
+    /* Process Unlocked */
+    __HAL_UNLOCK(hjpeg);
+    
+    /* Change the JPEG state */
+    hjpeg->State = HAL_JPEG_STATE_READY;
+    
+    /*Call End of Encoding/Decoding callback */
+    if((tmpContext & JPEG_CONTEXT_OPERATION_MASK) == JPEG_CONTEXT_DECODE)
+    {
+      HAL_JPEG_DecodeCpltCallback(hjpeg);
+    }
+    else if((tmpContext & JPEG_CONTEXT_OPERATION_MASK) == JPEG_CONTEXT_ENCODE)
+    {
+      HAL_JPEG_EncodeCpltCallback(hjpeg);        
+    }    
+  }  
+  else if((hjpeg->Context &  JPEG_CONTEXT_PAUSE_OUTPUT) == 0)
+  {
+    JPEG_DMA_PollResidualData(hjpeg);
+
+    return JPEG_PROCESS_DONE; 
+  }  
+  
+  return JPEG_PROCESS_ONGOING; 
+}
+
+/**
+  * @brief  Poll residual output data when DMA process (encoding/decoding) 
+  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  *         the configuration information for JPEG module
+  * @retval None.
+  */
+static void JPEG_DMA_PollResidualData(JPEG_HandleTypeDef *hjpeg)
+{
+  uint32_t tmpContext, count = JPEG_FIFO_SIZE, *pDataOut;  
   pDataOut = (uint32_t *)(hjpeg->pJpegOutBuffPtr + hjpeg->JpegOutCount);
   
   while((__HAL_JPEG_GET_FLAG(hjpeg, JPEG_FLAG_OFNEF) != 0) && (count > 0))
@@ -3213,9 +3273,6 @@ static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
   {
     HAL_JPEG_EncodeCpltCallback(hjpeg);        
   }
-  
-  
-  return JPEG_PROCESS_DONE; 
 }
 
 /**
