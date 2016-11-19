@@ -59,7 +59,7 @@ void beeperInit(const beeperConfig_t *config)
 
     if (beeperIO) {
         IOInit(beeperIO, OWNER_BEEPER, 0);
-        IOConfigGPIO(beeperIO, config->isOD ? IOCFG_OUT_OD : IOCFG_OUT_PP);
+        IOConfigGPIO(beeperIO, config->isOpenDrain ? IOCFG_OUT_OD : IOCFG_OUT_PP);
     }
     systemBeep(false);
 #endif
