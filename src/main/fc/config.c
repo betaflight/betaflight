@@ -352,10 +352,10 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
 #ifdef BEEPER_INVERTED
-    beeperConfig->isOD = false;
+    beeperConfig->isOpenDrain = false;
     beeperConfig->isInverted = true;
 #else
-    beeperConfig->isOD = true;
+    beeperConfig->isOpenDrain = true;
     beeperConfig->isInverted = false;
 #endif
     beeperConfig->ioTag = IO_TAG(BEEPER);

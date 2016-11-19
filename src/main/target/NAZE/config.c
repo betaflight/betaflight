@@ -82,8 +82,11 @@ void targetConfiguration(master_t *config)
 
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        config->beeperConfig.isOD = false;
+        config->beeperConfig.isOpenDrain = false;
         config->beeperConfig.isInverted = true;
+    } else {
+        config->beeperConfig.isOpenDrain = true;
+        config->beeperConfig.isInverted = false;
     }
 }
 
