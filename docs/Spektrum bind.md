@@ -2,7 +2,7 @@
 
 Spektrum bind with hardware bind plug support.
  
-The Spektrum bind code is actually enabled for the NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY, CC3D, ALIENFLIGHTF1, ALIENFLIGHTF3 targets.
+The Spektrum bind code is enabled for most targets, some boards may not work due to SBus inverters.  If you need Spektrum bind code ensure the board you are using specifically provides bind support.
 
 ## Configure the bind code
 
@@ -24,7 +24,7 @@ The hardware bind plug will be enabled via defining HARDWARE_BIND_PLUG during bu
 
 ## Function
 
-The bind code will actually work for NAZE, NAZE32PRO, CJMCU, EUSTM32F103RC, SPARKY targets (USART2) and CC3D target (USART3, flex port). The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. Setting spektrum_sat_bind to zero will disable the bind mode in any case. The bind mode will only be activated after an power on or hard reset. Please refer to the table below for the different possible values.
+The spektrum_sat_bind CLI parameter is defining the number of bind impulses (1-10) send to the satellite receiver. Setting spektrum_sat_bind to zero will disable the bind mode in any case. The bind mode will only be activated after an power on or hard reset. Please refer to the table below for the different possible values.
 
 If the hardware bind plug is configured the bind mode will only be activated if the plug is set during the firmware start-up. The value of the spektrum_sat_bind parameter will be permanently preserved. The bind plug should be always removed for normal flying.
 
@@ -42,10 +42,6 @@ Please refer to the satellite receiver documentation for more details of the spe
 | 8     | DSMX 2048bit/22ms | Used by new DXe     |
 | 9     | DSMX 2048bit/11ms |                     |
 
-
-### Supported Hardware
-
-NAZE, NAZE32PRO, CJMCU, SPARKY, EUSTM32F103RC, CC3D targets and ALIENWIIF1, ALIENWIIF3 targets with hardware bind plug
 
 ### Connecting a Spektrum-compatible satellite to a Flip32+ flight controller
 
