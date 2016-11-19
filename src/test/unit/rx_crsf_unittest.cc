@@ -29,6 +29,7 @@ extern "C" {
     #include "common/maths.h"
     #include "common/utils.h"
 
+    #include "config/feature.h"
     #include "io/serial.h"
 
     #include "rx/rx.h"
