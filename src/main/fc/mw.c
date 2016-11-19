@@ -688,7 +688,8 @@ void processRx(uint32_t currentTime)
 
 void subTaskPidController(void)
 {
-    const uint32_t startTime = micros();
+    uint32_t startTime;
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,

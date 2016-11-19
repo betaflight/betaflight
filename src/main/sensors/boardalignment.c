@@ -64,51 +64,53 @@ static void alignBoard(int32_t *vec)
 
 void alignSensors(const int32_t *src, int32_t *dest, uint8_t rotation)
 {
-    static uint32_t swap[3];
-    memcpy(swap, src, sizeof(swap));
+    const int32_t x = src[X];
+    const int32_t y = src[Y];
+    const int32_t z = src[Z];
 
+    // note src and dest may point to the same address
     switch (rotation) {
-        default:
-        case CW0_DEG:
-            dest[X] = swap[X];
-            dest[Y] = swap[Y];
-            dest[Z] = swap[Z];
-            break;
-        case CW90_DEG:
-            dest[X] = swap[Y];
-            dest[Y] = -swap[X];
-            dest[Z] = swap[Z];
-            break;
-        case CW180_DEG:
-            dest[X] = -swap[X];
-            dest[Y] = -swap[Y];
-            dest[Z] = swap[Z];
-            break;
-        case CW270_DEG:
-            dest[X] = -swap[Y];
-            dest[Y] = swap[X];
-            dest[Z] = swap[Z];
-            break;
-        case CW0_DEG_FLIP:
-            dest[X] = -swap[X];
-            dest[Y] = swap[Y];
-            dest[Z] = -swap[Z];
-            break;
-        case CW90_DEG_FLIP:
-            dest[X] = swap[Y];
-            dest[Y] = swap[X];
-            dest[Z] = -swap[Z];
-            break;
-        case CW180_DEG_FLIP:
-            dest[X] = swap[X];
-            dest[Y] = -swap[Y];
-            dest[Z] = -swap[Z];
-            break;
-        case CW270_DEG_FLIP:
-            dest[X] = -swap[Y];
-            dest[Y] = -swap[X];
-            dest[Z] = -swap[Z];
-            break;
+    default:
+    case CW0_DEG:
+        dest[X] = x;
+        dest[Y] = y;
+        dest[Z] = z;
+        break;
+    case CW90_DEG:
+        dest[X] = y;
+        dest[Y] = -x;
+        dest[Z] = z;
+        break;
+    case CW180_DEG:
+        dest[X] = -x;
+        dest[Y] = -y;
+        dest[Z] = z;
+        break;
+    case CW270_DEG:
+        dest[X] = -y;
+        dest[Y] = x;
+        dest[Z] = z;
+        break;
+    case CW0_DEG_FLIP:
+        dest[X] = -x;
+        dest[Y] = y;
+        dest[Z] = -z;
+        break;
+    case CW90_DEG_FLIP:
+        dest[X] = y;
+        dest[Y] = x;
+        dest[Z] = -z;
+        break;
+    case CW180_DEG_FLIP:
+        dest[X] = x;
+        dest[Y] = -y;
+        dest[Z] = -z;
+        break;
+    case CW270_DEG_FLIP:
+        dest[X] = -y;
+        dest[Y] = -x;
+        dest[Z] = -z;
+        break;
     }
 
     if (!standardBoardAlignment)
