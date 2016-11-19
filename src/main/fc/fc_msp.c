@@ -1501,7 +1501,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_EEPROM_WRITE:
         if (ARMING_FLAG(ARMED)) {
             return MSP_RESULT_ERROR;
-            return true;
         }
         writeEEPROM();
         readEEPROM();
@@ -1739,7 +1738,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (dataSize % portConfigSize != 0) {
                 return MSP_RESULT_ERROR;
-                break;
             }
 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
@@ -1750,7 +1748,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 serialPortConfig_t *portConfig = serialFindPortConfiguration(identifier);
                 if (!portConfig) {
                     return MSP_RESULT_ERROR;
-                    break;
                 }
 
                 portConfig->identifier = identifier;
@@ -1778,7 +1775,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             i = sbufReadU8(src);
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
-                break;
             }
             ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
             *ledConfig = sbufReadU32(src);
