@@ -352,7 +352,7 @@ void initCrsfTelemetry(void)
 {
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
     // and feature is enabled, if so, set CRSF telemetry enabled
-    crsfTelemetryEnabled = crsfRxIsActive() && feature(FEATURE_TELEMETRY);
+    crsfTelemetryEnabled = crsfRxIsActive();
  }
 
 bool checkCrsfTelemetryState(void)
