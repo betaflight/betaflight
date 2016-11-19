@@ -195,10 +195,9 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 {
     #ifdef USE_ESC_TELEMETRY
     UNUSED(lastUpdateAt);
-    #else
-    static int64_t mAhdrawnRaw = 0;
     #endif
 
+    static int64_t mAhdrawnRaw = 0;
     static int32_t amperageRaw = 0;
 
     int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
@@ -233,10 +232,10 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
     }
 
-    #ifndef USE_ESC_TELEMETRY
-    mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
-    mAhDrawn = mAhdrawnRaw / (3600 * 100);
-    #endif
+    if (!feature(FEATURE_ESC_TELEMETRY)) {
+        mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+        mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    }
 }
 
 float calculateVbatPidCompensation(void) {
