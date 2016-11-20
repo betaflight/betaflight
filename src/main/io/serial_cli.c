@@ -1421,7 +1421,7 @@ static void cliSerialPassthrough(char *cmdline)
         if (!mode)
             mode = MODE_RXTX;
 
-        passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
+        passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL,
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
