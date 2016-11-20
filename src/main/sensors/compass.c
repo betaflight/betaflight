@@ -62,7 +62,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 
     mag.read(magADCRaw);
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
-    alignSensors(magADC, magADC, magAlign);
+    alignSensors(magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;

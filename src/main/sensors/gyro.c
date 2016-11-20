@@ -170,7 +170,7 @@ void gyroUpdate(void)
     gyroADC[Y] = gyroADCRaw[Y];
     gyroADC[Z] = gyroADCRaw[Z];
 
-    alignSensors(gyroADC, gyroADC, gyroAlign);
+    alignSensors(gyroADC, gyroAlign);
 
     if (!isGyroCalibrationComplete()) {
         performGyroCalibration(gyroConfig->gyroMovementCalibrationThreshold);
