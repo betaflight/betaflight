@@ -101,8 +101,6 @@ static bool armingCalibrationWasInitialised;
 float setpointRate[3];
 float rcInput[3];
 
-extern pidControllerFuncPtr pid_controller;
-
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
     masterConfig.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
@@ -695,7 +693,7 @@ void subTaskPidController(void)
         &currentProfile->pidProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
-        &masterConfig.rxConfig
+        masterConfig.rxConfig.midrc
     );
     if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
