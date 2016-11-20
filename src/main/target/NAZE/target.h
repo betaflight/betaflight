@@ -37,6 +37,7 @@
 #define DEFAULT_FEATURES FEATURE_MOTOR_STOP
 #else
 #define TARGET_BOARD_IDENTIFIER "AFNA"
+// Beeper configuration is handled in 'config.c', since it is dependent on hardware revision
 #endif
 
 //#define BARO_XCLR_PIN           PC13
