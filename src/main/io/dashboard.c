@@ -708,7 +708,9 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
 
     displayPort = displayPortOledInit();
 #if defined(CMS)
-    cmsDisplayPortRegister(displayPort);
+    if (dashboardPresent) {
+        cmsDisplayPortRegister(displayPort);
+    }
 #endif
 
     rxConfig = rxConfigToUse;
