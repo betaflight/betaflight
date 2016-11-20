@@ -44,7 +44,12 @@
 
 #include "common/utils.h"
 
-#define VBATT_LPF_FREQ  0.4f
+#define VBAT_LPF_FREQ  0.4f
+#define IBAT_LPF_FREQ  0.4f
+
+#define VBAT_STABLE_MAX_DELTA 2
+
+#define ADCVREF 3300   // in mV
 
 // Battery monitoring stuff
 uint8_t batteryCellCount;
@@ -72,31 +77,34 @@ static void updateBatteryVoltage(void)
     static biquadFilter_t vbatFilter;
     static bool vbatFilterIsInitialised;
 
-    // store the battery voltage with some other recent battery voltage readings
-    uint16_t vbatSample;
+    if (!vbatFilterIsInitialised) {
+        biquadFilterInitLPF(&vbatFilter, VBAT_LPF_FREQ, 50000); //50HZ Update
+        vbatFilterIsInitialised = true;
+    }
 
     #ifdef USE_ESC_TELEMETRY
     if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
-        vbatSample = vbatLatest = getEscTelemetryVbat();
+        vbatLatest = getEscTelemetryVbat();
+        if (debugMode == DEBUG_BATTERY) {
+            debug[0] = -1;
+        }
+        vbat = biquadFilterApply(&vbatFilter, vbatLatest);
     }
     else
     #endif
     {
-        vbatSample = vbatLatest = batteryAdcToVoltage(adcGetChannel(ADC_BATTERY));
+        uint16_t vbatSample = adcGetChannel(ADC_BATTERY);
+        if (debugMode == DEBUG_BATTERY) {
+            debug[0] = vbatSample;
+        }
+        vbat = batteryAdcToVoltage(biquadFilterApply(&vbatFilter, vbatSample));
+        vbatLatest = batteryAdcToVoltage(vbatSample);
     }
 
-    if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
-
-    if (!vbatFilterIsInitialised) {
-        biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
-        vbatFilterIsInitialised = true;
+    if (debugMode == DEBUG_BATTERY) {
+        debug[1] = vbat;
     }
-    vbat = biquadFilterApply(&vbatFilter, vbatSample);
-
-    if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
-
-#define VBAT_STABLE_MAX_DELTA 2
 
 void updateBattery(void)
 {
@@ -125,11 +133,12 @@ void updateBattery(void)
         batteryCriticalVoltage = 0;
     }
 
-    if (debugMode == DEBUG_BATTERY) debug[2] = batteryState;
-    if (debugMode == DEBUG_BATTERY) debug[3] = batteryCellCount;
+    if (debugMode == DEBUG_BATTERY) {
+        debug[2] = batteryState;
+        debug[3] = batteryCellCount;
+    }
 
-    switch(batteryState)
-    {
+    switch(batteryState) {
         case BATTERY_OK:
             if (vbat <= (batteryWarningVoltage - batteryConfig->vbathysteresis)) {
                 batteryState = BATTERY_WARNING;
@@ -180,7 +189,6 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     batteryCriticalVoltage = 0;
 }
 
-#define ADCVREF 3300   // in mV
 static int32_t currentSensorToCentiamps(uint16_t src)
 {
     int32_t millivolts;
@@ -191,50 +199,63 @@ static int32_t currentSensorToCentiamps(uint16_t src)
     return (millivolts * 1000) / (int32_t)batteryConfig->currentMeterScale; // current in 0.01A steps
 }
 
+static void updateBatteryCurrent(void)
+{
+    static biquadFilter_t ibatFilter;
+    static bool ibatFilterIsInitialised;
+
+    if (!ibatFilterIsInitialised) {
+        biquadFilterInitLPF(&ibatFilter, IBAT_LPF_FREQ, 50000); //50HZ Update
+        ibatFilterIsInitialised = true;
+    }
+
+    uint16_t ibatSample = adcGetChannel(ADC_CURRENT);
+    amperage = currentSensorToCentiamps(biquadFilterApply(&ibatFilter, ibatSample));
+}
+
+static void updateCurrentDrawn(int32_t lastUpdateAt)
+{
+    int mAhDrawnRaw = (amperage * lastUpdateAt) / 1000;
+    mAhDrawn = mAhDrawn + mAhDrawnRaw / (3600 * 100);
+}
+
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    #ifdef USE_ESC_TELEMETRY
-    UNUSED(lastUpdateAt);
-    #endif
-
-    static int64_t mAhdrawnRaw = 0;
-    static int32_t amperageRaw = 0;
-
-    int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
-    int32_t throttleFactor = 0;
-
     switch(batteryConfig->currentMeterType) {
         case CURRENT_SENSOR_ADC:
-            amperageRaw -= amperageRaw / 8;
-            amperageRaw += adcGetChannel(ADC_CURRENT);
-            amperage = amperageLatest = currentSensorToCentiamps(amperageRaw / 8);
+            updateBatteryCurrent();
+
+            updateCurrentDrawn(lastUpdateAt);
+
             break;
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
-                if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
+                int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
+                if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
                     throttleOffset = 0;
-                throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
+                }
+                int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
                 amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
             }
-            break;
-        case CURRENT_SENSOR_NONE:
-            amperage = 0;
+
+            updateCurrentDrawn(lastUpdateAt);
+
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_TELEMETRY
-            if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC && isEscTelemetryActive()) {
+            if (isEscTelemetryActive()) {
                 amperage = getEscTelemetryCurrent();
                 mAhDrawn = getEscTelemetryConsumption();
             }
-            #endif
-            break;
-    }
 
-    if (!feature(FEATURE_ESC_TELEMETRY)) {
-        mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
-        mAhDrawn = mAhdrawnRaw / (3600 * 100);
+            break;
+            #endif
+        case CURRENT_SENSOR_NONE:
+            amperage = 0;
+
+            break;
     }
 }
 
