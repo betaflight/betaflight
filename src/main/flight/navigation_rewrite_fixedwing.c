@@ -397,15 +397,15 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     int16_t maxThrottleCorrection = posControl.navConfig->fw.max_throttle - posControl.navConfig->fw.cruise_throttle;
 
     // Mix Pitch/Roll/Throttle
-    if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
-        pitchCorrection += posControl.rcAdjustment[PITCH];
-        throttleCorrection += DECIDEGREES_TO_DEGREES(posControl.rcAdjustment[PITCH]) * posControl.navConfig->fw.pitch_to_throttle;
-        throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
-    }
-
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
         pitchCorrection += ABS(posControl.rcAdjustment[ROLL]) * (posControl.navConfig->fw.roll_to_pitch / 100.0f);
         rollCorrection += posControl.rcAdjustment[ROLL];
+    }
+
+    if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
+        pitchCorrection += posControl.rcAdjustment[PITCH];
+        throttleCorrection += DECIDEGREES_TO_DEGREES(pitchCorrection) * posControl.navConfig->fw.pitch_to_throttle;
+        throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
 
     // Speed controller - only apply in POS mode
@@ -417,12 +417,12 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
     // Limit and apply
     if (isPitchAdjustmentValid && (navStateFlags & NAV_CTL_ALT)) {
         // PITCH angle is measured in opposite direction ( >0 - dive, <0 - climb)
-        pitchCorrection = constrain(pitchCorrection, -DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw.max_dive_angle), DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw.max_climb_angle));
+        pitchCorrection = constrain(pitchCorrection, -DEGREES_TO_DECIDEGREES(posControl.navConfig->fw.max_dive_angle), DEGREES_TO_DECIDEGREES(posControl.navConfig->fw.max_climb_angle));
         rcCommand[PITCH] = -pidAngleToRcCommand(pitchCorrection, posControl.pidProfile->max_angle_inclination[FD_PITCH]);
     }
 
     if (isRollAdjustmentValid && (navStateFlags & NAV_CTL_POS)) {
-        rollCorrection = constrain(rollCorrection, -DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw.max_bank_angle), DEGREES_TO_CENTIDEGREES(posControl.navConfig->fw.max_bank_angle));
+        rollCorrection = constrain(rollCorrection, -DEGREES_TO_DECIDEGREES(posControl.navConfig->fw.max_bank_angle), DEGREES_TO_DECIDEGREES(posControl.navConfig->fw.max_bank_angle));
         rcCommand[ROLL] = pidAngleToRcCommand(rollCorrection, posControl.pidProfile->max_angle_inclination[FD_ROLL]);
 
         // Calculate coordinated turn rate based on velocity and banking angle
@@ -462,9 +462,16 @@ bool isFixedWingLandingDetected(void)
 /*-----------------------------------------------------------
  * FixedWing emergency landing
  *-----------------------------------------------------------*/
+#define FW_EMERGENCY_DIVE_DECIDEG   100
+#define FW_EMERGENCY_ROLL_DECIDEG   200
+#define FW_EMERGENCY_YAW_RATE_DPS   20
 void applyFixedWingEmergencyLandingController(void)
 {
-    // TODO
+    // FIXME: Make this configurable, use altitude controller if available (similar to MC code)
+    rcCommand[PITCH] = pidAngleToRcCommand(-FW_EMERGENCY_DIVE_DECIDEG, posControl.pidProfile->max_angle_inclination[FD_PITCH]);
+    rcCommand[ROLL] = pidAngleToRcCommand(-FW_EMERGENCY_ROLL_DECIDEG, posControl.pidProfile->max_angle_inclination[FD_ROLL]);
+    rcCommand[YAW] = pidRateToRcCommand(-FW_EMERGENCY_YAW_RATE_DPS, currentControlRateProfile->rates[FD_YAW]);
+    rcCommand[THROTTLE] = posControl.navConfig->fw.min_throttle;
 }
 
 /*-----------------------------------------------------------

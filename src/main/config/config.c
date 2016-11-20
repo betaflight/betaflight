@@ -218,8 +218,8 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw.cruise_throttle = 1400;
     navConfig->fw.max_throttle = 1700;
     navConfig->fw.min_throttle = 1200;
-    navConfig->fw.pitch_to_throttle = 10;
-    navConfig->fw.roll_to_pitch = 75;
+    navConfig->fw.pitch_to_throttle = 10;   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
+    navConfig->fw.roll_to_pitch = 75;       // percent of coupling
     navConfig->fw.loiter_radius = 5000;     // 50m
 
     // Fixed wing launch
