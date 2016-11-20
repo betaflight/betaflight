@@ -33,7 +33,7 @@
 
 // NULL filter
 
-float nullFilterApply(const void *filter, float input)
+float nullFilterApply(void *filter, float input)
 {
     UNUSED(filter);
     return input;

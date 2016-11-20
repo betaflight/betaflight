@@ -62,9 +62,9 @@ typedef struct firFilter_s {
     uint8_t coeffsLength;
 } firFilter_t;
 
-typedef float (*filterApplyFnPtr)(const void *filter, float input);
+typedef float (*filterApplyFnPtr)(void *filter, float input);
 
-float nullFilterApply(const void *filter, float input);
+float nullFilterApply(void *filter, float input);
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
