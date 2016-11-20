@@ -62,13 +62,12 @@ static void alignBoard(int32_t *vec)
     vec[Z] = lrintf(boardRotation[0][Z] * x + boardRotation[1][Z] * y + boardRotation[2][Z] * z);
 }
 
-void alignSensors(const int32_t *src, int32_t *dest, uint8_t rotation)
+void alignSensors(int32_t *dest, uint8_t rotation)
 {
-    const int32_t x = src[X];
-    const int32_t y = src[Y];
-    const int32_t z = src[Z];
+    const int32_t x = dest[X];
+    const int32_t y = dest[Y];
+    const int32_t z = dest[Z];
 
-    // note src and dest may point to the same address
     switch (rotation) {
     default:
     case CW0_DEG:

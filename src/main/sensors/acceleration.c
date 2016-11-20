@@ -219,7 +219,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
         }
     }
 
-    alignSensors(accSmooth, accSmooth, accAlign);
+    alignSensors(accSmooth, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
