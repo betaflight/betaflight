@@ -28,6 +28,7 @@
 // Use floating point M_PI instead explicitly.
 #define M_PIf       3.14159265358979323846f
 #define M_LN2f      0.69314718055994530942f
+#define M_Ef        2.71828182845904523536f
 
 #define RAD    (M_PIf / 180.0f)
 
@@ -170,3 +171,5 @@ float acos_approx(float x);
 
 void arraySubInt32(int32_t *dest, int32_t *array1, int32_t *array2, int count);
 uint16_t crc16_ccitt(uint16_t crc, unsigned char a);
+
+float bellCurve(const float x, const float curveWidth);

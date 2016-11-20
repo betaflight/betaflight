@@ -271,6 +271,12 @@ typedef enum {
     GEO_ALT_RELATIVE
 } geoAltitudeConversionMode_e;
 
+typedef enum {
+    GEO_ORIGIN_SET,
+    GEO_ORIGIN_RESET_ALTITUDE
+} geoOriginResetMode_e;
+
+void geoSetOrigin(gpsOrigin_s * origin, const gpsLocation_t * llh, geoOriginResetMode_e resetMode);
 void geoConvertGeodeticToLocal(gpsOrigin_s * origin, const gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv);
 void geoConvertLocalToGeodetic(const gpsOrigin_s * origin, const t_fp_vector * pos, gpsLocation_t * llh);
 float geoCalculateMagDeclination(const gpsLocation_t * llh); // degrees units
@@ -292,6 +298,8 @@ extern int16_t navTargetSurface;
 extern int16_t navActualSurface;
 extern int16_t navDebug[4];
 extern uint16_t navFlags;
+extern uint16_t navEPH;
+extern uint16_t navEPV;
 extern int16_t navAccNEU[3];
 #if defined(BLACKBOX)
 #define NAV_BLACKBOX_DEBUG(x,y) navDebug[x] = constrain((y), -32678, 32767)

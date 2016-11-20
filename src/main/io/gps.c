@@ -132,6 +132,11 @@ static void gpsHandleProtocol(void)
             ENABLE_STATE(GPS_FIX);
         }
         else {
+            /* When no fix available - reset flags as well */
+            gpsSol.flags.validVelNE = 0;
+            gpsSol.flags.validVelD = 0;
+            gpsSol.flags.validEPE = 0;
+
             DISABLE_STATE(GPS_FIX);
         }
 
@@ -158,6 +163,7 @@ static void gpsResetSolution(void)
     gpsSol.flags.validVelNE = 0;
     gpsSol.flags.validVelD = 0;
     gpsSol.flags.validMag = 0;
+    gpsSol.flags.validEPE = 0;
 }
 
 void gpsPreInit(gpsConfig_t *initialGpsConfig)
