@@ -1016,11 +1016,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.itermThrottleGain
 
         /*
-         * To keep compatibility on MSP level with Betaflight, axis axisAccelerationLimitYaw
-         * limit will be sent and received in [dps / 1000]
+         * To keep compatibility on MSP frame length level with Betaflight, axis axisAccelerationLimitYaw
+         * limit will be sent and received in [dps / 10]
          */
-        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitRollPitch / 1000, 0, 65535));
-        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitYaw / 1000, 0, 65535));
+        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitRollPitch / 10, 0, 65535));
+        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitYaw / 10, 0, 65535));
         break;
 
     case MSP_INAV_PID:
