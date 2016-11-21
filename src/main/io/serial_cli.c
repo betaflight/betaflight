@@ -3948,10 +3948,11 @@ static void cliResource(char *cmdline)
             cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
             return;
         }
+        index -= 1;
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
+    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + index);
 
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
