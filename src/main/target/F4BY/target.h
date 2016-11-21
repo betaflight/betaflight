@@ -34,10 +34,9 @@
 
 
 // MPU6000 interrupts
-#define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
-#define MPU_INT_EXTI            PB0
 #define USE_EXTI
+#define MPU_INT_EXTI            PB0
+#define USE_MPU_DATA_READY_SIGNAL
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -73,8 +72,6 @@
 #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
-
-#define USABLE_TIMER_CHANNEL_COUNT 17
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9
@@ -156,5 +153,6 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTE         0xffff
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) |TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(8) | TIM_N(9))
 

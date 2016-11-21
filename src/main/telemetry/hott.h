@@ -485,7 +485,7 @@ typedef struct HOTT_AIRESC_MSG_s {
     uint8_t stop_byte;      //#44 constant value 0x7d
 } HOTT_AIRESC_MSG_t;
 
-void handleHoTTTelemetry(void);
+void handleHoTTTelemetry(uint32_t currentTime);
 void checkHoTTTelemetryState(void);
 
 void initHoTTTelemetry(telemetryConfig_t *telemetryConfig);

@@ -19,7 +19,7 @@
 
 void bstProcessInCommand(void);
 void bstSlaveProcessInCommand(void);
-void taskBstMasterProcess(void);
+void taskBstMasterProcess(uint32_t currentTime);
 
 bool writeGpsPositionPrameToBST(void);
 bool writeRollPitchYawToBST(void);

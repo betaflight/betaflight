@@ -11,6 +11,7 @@ targets=("PUBLISHMETA=True" \
     "TARGET=OMNIBUS" \
     "TARGET=NAZE" \
     "TARGET=AFROMINI" \
+    "TARGET=BEEBRAIN" \
     "TARGET=RMDO" \
     "TARGET=SPARKY" \
     "TARGET=MOTOLAB" \
@@ -21,8 +22,8 @@ targets=("PUBLISHMETA=True" \
     "TARGET=DOGE" \
     "TARGET=SINGULARITY" \
     "TARGET=SIRINFPV" \
-    "TARGET=X_RACERSPI")
-
+    "TARGET=X_RACERSPI" \
+    "TARGET=RCEXPLORERF3")
 
 
 #fake a travis build environment

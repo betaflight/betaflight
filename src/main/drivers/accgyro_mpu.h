@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "io_types.h"
 #include "exti.h"
 
 // MPU6050
@@ -119,7 +120,7 @@
 
 typedef bool (*mpuReadRegisterFunc)(uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
-typedef void(*mpuResetFuncPtr)(void);  
+typedef void(*mpuResetFuncPtr)(void);
 
 typedef struct mpuConfiguration_s {
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
@@ -167,7 +168,8 @@ typedef enum {
     MPU_60x0_SPI,
     MPU_65xx_I2C,
     MPU_65xx_SPI,
-    MPU_9250_SPI
+    MPU_9250_SPI,
+    ICM_20689_SPI
 } detectedMPUSensor_e;
 
 typedef enum {

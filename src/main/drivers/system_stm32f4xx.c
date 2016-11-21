@@ -17,16 +17,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
 #include "accgyro_mpu.h"
-#include "gpio.h"
+#include "exti.h"
 #include "nvic.h"
 #include "system.h"
-
-#include "exti.h"
 
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
@@ -183,7 +180,6 @@ void systemInit(void)
     // Init cycle counter
     cycleCounterInit();
 
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }
@@ -196,9 +192,9 @@ void checkForBootLoaderRequest(void)
         *((uint32_t *)0x2001FFFC) = 0x0;
 
         __enable_irq();
-        __set_MSP(0x20001000);
+        __set_MSP(*((uint32_t *)0x1FFF0000));
 
-        bootJump = (void(*)(void))(*((uint32_t *) 0x1fff0004));
+        bootJump = (void(*)(void))(*((uint32_t *) 0x1FFF0004));
         bootJump();
         while (1);
     }

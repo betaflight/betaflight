@@ -15,13 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPU9250_WHO_AM_I_CONST              (0x71)
 #define ICM20608G_WHO_AM_I_CONST            (0xAF)
+#define ICM20602_WHO_AM_I_CONST             (0x12)
 
 #define MPU6500_BIT_RESET                   (0x80)
-
-#pragma once
+#define MPU6500_BIT_INT_ANYRD_2CLEAR        (1 << 4)
+#define MPU6500_BIT_BYPASS_EN               (1 << 0)
+#define MPU6500_BIT_I2C_IF_DIS              (1 << 4)
+#define MPU6500_BIT_RAW_RDY_EN              (0x01)
 
 bool mpu6500AccDetect(acc_t *acc);
 bool mpu6500GyroDetect(gyro_t *gyro);

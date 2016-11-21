@@ -22,7 +22,7 @@
 
 #ifdef USE_ACC_LSM303DLHC
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/axis.h"

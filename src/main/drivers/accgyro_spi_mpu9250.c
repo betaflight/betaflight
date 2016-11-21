@@ -27,7 +27,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "light_led.h"
+
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -38,7 +39,7 @@
 #include "exti.h"
 #include "bus_spi.h"
 #include "gyro_sync.h"
-#include "debug.h"
+#include "light_led.h"
 
 #include "sensor.h"
 #include "accgyro.h"
@@ -190,7 +191,7 @@ bool mpu9250SpiDetect(void)
 #ifdef MPU9250_CS_PIN
     mpuSpi9250CsPin = IOGetByTag(IO_TAG(MPU9250_CS_PIN));
 #endif
-    IOInit(mpuSpi9250CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpuSpi9250CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpuSpi9250CsPin, SPI_IO_CS_CFG);
 
     spiSetDivisor(MPU9250_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON); //low speed

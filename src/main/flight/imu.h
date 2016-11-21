@@ -17,11 +17,17 @@
 
 #pragma once
 
-extern int16_t throttleAngleCorrection;
+#include "common/axis.h"
+#include "common/maths.h"
+
+#include "sensors/acceleration.h"
+
+// Exported symbols
 extern uint32_t accTimeSum;
 extern int accSumCount;
 extern float accVelScale;
 extern int32_t accSum[XYZ_AXIS_COUNT];
+
 
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
 #define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
@@ -69,23 +75,26 @@ typedef struct accProcessor_s {
     accProcessorState_e state;
 } accProcessor_t;
 
+struct pidProfile_s;
 void imuConfigure(
     imuRuntimeConfig_t *initialImuRuntimeConfig,
-    pidProfile_t *initialPidProfile,
+    struct pidProfile_s *initialPidProfile,
     accDeadband_t *initialAccDeadband,
     uint16_t throttle_correction_angle
 );
 
 float getCosTiltAngle(void);
 void calculateEstimatedAltitude(uint32_t currentTime);
-void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims);
-void imuUpdateAttitude(void);
+union rollAndPitchTrims_u;
+void imuUpdateAccelerometer(union rollAndPitchTrims_u *accelerometerTrims);
+void imuUpdateAttitude(uint32_t currentTime);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_hz);
 
-int16_t imuCalculateHeading(t_fp_vector *vec);
+union u_fp_vector;
+int16_t imuCalculateHeading(union u_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
-void imuUpdateAcc(rollAndPitchTrims_t *accelerometerTrims);
+void imuUpdateAcc(union rollAndPitchTrims_u *accelerometerTrims);
 void imuInit(void);

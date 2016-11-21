@@ -15,6 +15,7 @@
  * along with Betaflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -24,6 +25,7 @@
 
 #include "barometer.h"
 #include "barometer_bmp280.h"
+#include "io.h"
 
 #ifdef USE_BARO_SPI_BMP280
 #define DISABLE_BMP280       IOHi(bmp280CsPin)
@@ -63,7 +65,7 @@ void bmp280SpiInit(void)
     }
 
     bmp280CsPin = IOGetByTag(IO_TAG(BMP280_CS_PIN));
-    IOInit(bmp280CsPin, OWNER_BARO, RESOURCE_SPI_CS, 0);
+    IOInit(bmp280CsPin, OWNER_BARO_CS, 0);
     IOConfigGPIO(bmp280CsPin, IOCFG_OUT_PP);
 
     DISABLE_BMP280;

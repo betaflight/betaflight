@@ -19,7 +19,8 @@
 #include "stdint.h"
 
 #include "platform.h"
-#include "debug.h"
+
+#include "build/debug.h"
 
 #include "common/maths.h"
 #include "common/filter.h"
@@ -27,25 +28,32 @@
 #include "drivers/adc.h"
 #include "drivers/system.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
+#include "config/feature.h"
 
 #include "sensors/battery.h"
 
-#include "io/rc_controls.h"
+#include "telemetry/esc_telemetry.h"
+
+#include "fc/rc_controls.h"
 #include "io/beeper.h"
 
-#define VBATT_PRESENT_THRESHOLD_MV    10
+#include "rx/rx.h"
+
+#include "common/utils.h"
+
 #define VBATT_LPF_FREQ  0.4f
 
 // Battery monitoring stuff
-uint8_t batteryCellCount = 3;       // cell count
+uint8_t batteryCellCount;
 uint16_t batteryWarningVoltage;
 uint16_t batteryCriticalVoltage;
 
-uint16_t vbat = 0;                   // battery voltage in 0.1V steps (filtered)
-uint16_t vbatLatestADC = 0;         // most recent unsmoothed raw reading from vbat ADC
-uint16_t amperageLatestADC = 0;     // most recent raw reading from current ADC
+uint16_t vbat = 0;                  // battery voltage in 0.1V steps (filtered)
+uint16_t vbatLatest = 0;            // most recent unsmoothed value
+uint16_t amperageLatest = 0;        // most recent value
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
@@ -65,7 +73,17 @@ static void updateBatteryVoltage(void)
     static bool vbatFilterIsInitialised;
 
     // store the battery voltage with some other recent battery voltage readings
-    uint16_t vbatSample = vbatLatestADC = adcGetChannel(ADC_BATTERY);
+    uint16_t vbatSample;
+
+    #ifdef USE_ESC_TELEMETRY
+    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
+        vbatSample = vbatLatest = getEscTelemetryVbat();
+    }
+    else
+    #endif
+    {
+        vbatSample = vbatLatest = batteryAdcToVoltage(adcGetChannel(ADC_BATTERY));
+    }
 
     if (debugMode == DEBUG_BATTERY) debug[0] = vbatSample;
 
@@ -73,31 +91,25 @@ static void updateBatteryVoltage(void)
         biquadFilterInitLPF(&vbatFilter, VBATT_LPF_FREQ, 50000); //50HZ Update
         vbatFilterIsInitialised = true;
     }
-    vbatSample = biquadFilterApply(&vbatFilter, vbatSample);
-    vbat = batteryAdcToVoltage(vbatSample);
+    vbat = biquadFilterApply(&vbatFilter, vbatSample);
 
     if (debugMode == DEBUG_BATTERY) debug[1] = vbat;
 }
 
-#define VBATTERY_STABLE_DELAY 40
+#define VBAT_STABLE_MAX_DELTA 2
 
 void updateBattery(void)
 {
+    uint16_t vbatPrevious = vbatLatest;
     updateBatteryVoltage();
+    uint16_t vbatMeasured = vbatLatest;
 
     /* battery has just been connected*/
-    if (batteryState == BATTERY_NOT_PRESENT && vbat > VBATT_PRESENT_THRESHOLD_MV)
-    {
+    if (batteryState == BATTERY_NOT_PRESENT && (ARMING_FLAG(ARMED) || (vbat > batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - vbatPrevious) <= VBAT_STABLE_MAX_DELTA))) {
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
-        /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up)
-        We only do this on the ground so don't care if we do block, not
-        worse than original code anyway*/
-        delay(VBATTERY_STABLE_DELAY);
-        updateBatteryVoltage();
 
-        unsigned cells = (batteryAdcToVoltage(vbatLatestADC) / batteryConfig->vbatmaxcellvoltage) + 1;
+        unsigned cells = (vbatMeasured / batteryConfig->vbatmaxcellvoltage) + 1;
         if (cells > 8) {
             // something is wrong, we expect 8 cells maximum (and autodetection will be problematic at 6+ cells)
             cells = 8;
@@ -105,15 +117,16 @@ void updateBattery(void)
         batteryCellCount = cells;
         batteryWarningVoltage = batteryCellCount * batteryConfig->vbatwarningcellvoltage;
         batteryCriticalVoltage = batteryCellCount * batteryConfig->vbatmincellvoltage;
-    }
-    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of VBATT_PRESENT_THRESHOLD_MV */
-    else if (batteryState != BATTERY_NOT_PRESENT && vbat <= VBATT_PRESENT_THRESHOLD_MV)
-    {
+    /* battery has been disconnected - can take a while for filter cap to disharge so we use a threshold of batteryConfig->batterynotpresentlevel */
+    } else if (batteryState != BATTERY_NOT_PRESENT && !ARMING_FLAG(ARMED) && vbat <= batteryConfig->batterynotpresentlevel && ABS(vbatMeasured - vbatPrevious) <= VBAT_STABLE_MAX_DELTA) {
         batteryState = BATTERY_NOT_PRESENT;
         batteryCellCount = 0;
         batteryWarningVoltage = 0;
         batteryCriticalVoltage = 0;
     }
+
+    if (debugMode == DEBUG_BATTERY) debug[2] = batteryState;
+    if (debugMode == DEBUG_BATTERY) debug[3] = batteryCellCount;
 
     switch(batteryState)
     {
@@ -162,7 +175,7 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
 {
     batteryConfig = initialBatteryConfig;
     batteryState = BATTERY_NOT_PRESENT;
-    batteryCellCount = 1;
+    batteryCellCount = 0;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
 }
@@ -180,16 +193,21 @@ static int32_t currentSensorToCentiamps(uint16_t src)
 
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    static int32_t amperageRaw = 0;
+    #ifdef USE_ESC_TELEMETRY
+    UNUSED(lastUpdateAt);
+    #endif
+
     static int64_t mAhdrawnRaw = 0;
+    static int32_t amperageRaw = 0;
+
     int32_t throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
     int32_t throttleFactor = 0;
 
     switch(batteryConfig->currentMeterType) {
         case CURRENT_SENSOR_ADC:
             amperageRaw -= amperageRaw / 8;
-            amperageRaw += (amperageLatestADC = adcGetChannel(ADC_CURRENT));
-            amperage = currentSensorToCentiamps(amperageRaw / 8);
+            amperageRaw += adcGetChannel(ADC_CURRENT);
+            amperage = amperageLatest = currentSensorToCentiamps(amperageRaw / 8);
             break;
         case CURRENT_SENSOR_VIRTUAL:
             amperage = (int32_t)batteryConfig->currentMeterOffset;
@@ -204,27 +222,34 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
         case CURRENT_SENSOR_NONE:
             amperage = 0;
             break;
+        case CURRENT_SENSOR_ESC:
+            #ifdef USE_ESC_TELEMETRY
+            if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC && isEscTelemetryActive()) {
+                amperage = getEscTelemetryCurrent();
+                mAhDrawn = getEscTelemetryConsumption();
+            }
+            #endif
+            break;
     }
 
-    mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
-    mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    if (!feature(FEATURE_ESC_TELEMETRY)) {
+        mAhdrawnRaw += (amperage * lastUpdateAt) / 1000;
+        mAhDrawn = mAhdrawnRaw / (3600 * 100);
+    }
 }
 
-fix12_t calculateVbatPidCompensation(void) {
-    fix12_t batteryScaler;
-    if (feature(FEATURE_VBAT) && batteryCellCount > 1) {
-        uint16_t maxCalculatedVoltage = batteryConfig->vbatmaxcellvoltage * batteryCellCount;
-        batteryScaler = qConstruct(maxCalculatedVoltage, constrain(vbat, maxCalculatedVoltage - batteryConfig->vbatmaxcellvoltage, maxCalculatedVoltage));
-    } else {
-        batteryScaler = Q12;
+float calculateVbatPidCompensation(void) {
+    float batteryScaler =  1.0f;
+    if (feature(FEATURE_VBAT) && batteryCellCount > 0) {
+        // Up to 33% PID gain. Should be fine for 4,2to 3,3 difference
+        batteryScaler =  constrainf((( (float)batteryConfig->vbatmaxcellvoltage * batteryCellCount ) / (float) vbat), 1.0f, 1.33f);
     }
-
     return batteryScaler;
 }
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
+    return batteryCellCount > 0 ? constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100) : 0;
 }
 
 uint8_t calculateBatteryCapacityRemainingPercentage(void)

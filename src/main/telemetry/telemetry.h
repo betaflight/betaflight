@@ -44,19 +44,19 @@ typedef struct telemetryConfig_s {
     uint8_t frsky_vfas_precision;
     uint8_t frsky_vfas_cell_voltage;
     uint8_t hottAlarmSoundInterval;
+    uint8_t pidValuesAsTelemetry;
 } telemetryConfig_t;
 
 void telemetryInit(void);
-bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig);
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig);
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryCheckState(void);
 struct rxConfig_s;
-void telemetryProcess(struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void telemetryProcess(uint32_t currentTime, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 
 bool telemetryDetermineEnabledState(portSharing_e portSharing);
 
 void telemetryUseConfig(telemetryConfig_t *telemetryConfig);
 
 #define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_LTM)
-
