@@ -466,7 +466,7 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
         pageTop = currentMenu->entries;
         pageTopAlt = NULL;
 
-        displayClear(pDisplay);
+        displayClearScreen(pDisplay);
         cmsUpdateMaxRow(pDisplay);
     }
 
@@ -481,7 +481,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
         return -1;
 
     if (menuStackIdx) {
-        displayClear(pDisplay);
+        displayClearScreen(pDisplay);
         menuStackIdx--;
         currentMenu = menuStack[menuStackIdx];
         cursorRow = menuStackHistory[menuStackIdx];
@@ -544,7 +544,7 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 {
     if (ptr) {
-        displayClear(pDisplay);
+        displayClearScreen(pDisplay);
 
         displayWrite(pDisplay, 5, 3, "REBOOTING...");
         displayResync(pDisplay); // Was max7456RefreshAll(); why at this timing?
@@ -610,7 +610,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
             cursorRow++;
         } else {
             if (pageTopAlt) { // we have another page
-                displayClear(pDisplay);
+                displayClearScreen(pDisplay);
                 p = pageTopAlt;
                 pageTopAlt = pageTop;
                 pageTop = (OSD_Entry *)p;
@@ -628,7 +628,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
         if (cursorRow == -1 || (pageTop + cursorRow)->type == OME_Label) {
             if (pageTopAlt) {
-                displayClear(pDisplay);
+                displayClearScreen(pDisplay);
                 p = pageTopAlt;
                 pageTopAlt = pageTop;
                 pageTop = (OSD_Entry *)p;

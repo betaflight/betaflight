@@ -379,7 +379,7 @@ void mwDisarm(void)
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
 
-void releaseSharedTelemetryPorts(void) {
+static void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
         mspSerialReleasePortIfAllocated(sharedPort);
@@ -688,7 +688,8 @@ void processRx(uint32_t currentTime)
 
 void subTaskPidController(void)
 {
-    const uint32_t startTime = micros();
+    uint32_t startTime;
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,

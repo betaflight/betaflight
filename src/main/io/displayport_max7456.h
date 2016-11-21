@@ -17,4 +17,5 @@
 
 #pragma once
 
-displayPort_t *max7456DisplayPortInit(void);
+struct vcdProfile_s;
+displayPort_t *max7456DisplayPortInit(const struct vcdProfile_s *vcdProfile);

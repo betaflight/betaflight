@@ -20,7 +20,7 @@
 
 #include <platform.h>
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 
 #include "build/build_config.h"
 #include "build/debug.h"
@@ -218,25 +218,6 @@ static void ppmEdgeCallback(timerCCHandlerRec_t* cbRec, captureCompare_t capture
     ppmDev.currentTime = currentTime;
     ppmDev.currentCapture = capture;
 
-#if 1
-    static uint32_t deltaTimes[20];
-    static uint8_t deltaIndex = 0;
-
-    deltaIndex = (deltaIndex + 1) % 20;
-    deltaTimes[deltaIndex] = ppmDev.deltaTime;
-    UNUSED(deltaTimes);
-#endif
-
-
-#if 1
-    static uint32_t captureTimes[20];
-    static uint8_t captureIndex = 0;
-
-    captureIndex = (captureIndex + 1) % 20;
-    captureTimes[captureIndex] = capture;
-    UNUSED(captureTimes);
-#endif
-
     /* Sync pulse detection */
     if (ppmDev.deltaTime > PPM_IN_MIN_SYNC_PULSE_US) {
         if (ppmDev.pulseIndex == ppmDev.numChannelsPrevFrame
@@ -408,7 +389,11 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
         IO_t io = IOGetByTag(pwmConfig->ioTags[channel]);
         IOInit(io, OWNER_PWMINPUT, RESOURCE_INDEX(channel));
+#ifdef STM32F1
         IOConfigGPIO(io, IOCFG_IPD);
+#else
+        IOConfigGPIO(io, IOCFG_AF_PP);
+#endif
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
@@ -472,7 +457,11 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
 
     IO_t io = IOGetByTag(ppmConfig->ioTag);
     IOInit(io, OWNER_PPMINPUT, 0);
+#ifdef STM32F1
     IOConfigGPIO(io, IOCFG_IPD);
+#else
+    IOConfigGPIO(io, IOCFG_AF_PP);
+#endif
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);

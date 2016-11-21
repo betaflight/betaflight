@@ -31,8 +31,16 @@ typedef enum {
     CURRENT_SENSOR_NONE = 0,
     CURRENT_SENSOR_ADC,
     CURRENT_SENSOR_VIRTUAL,
-    CURRENT_SENSOR_MAX = CURRENT_SENSOR_VIRTUAL
+    CURRENT_SENSOR_ESC,
+    CURRENT_SENSOR_MAX = CURRENT_SENSOR_ESC
 } currentSensor_e;
+
+typedef enum {
+    BATTERY_SENSOR_NONE = 0,
+    BATTERY_SENSOR_ADC,
+    BATTERY_SENSOR_ESC,
+    BATTERY_SENSOR_MAX = BATTERY_SENSOR_ESC
+} batterySensor_e;
 
 typedef struct batteryConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
@@ -42,10 +50,11 @@ typedef struct batteryConfig_s {
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
     uint8_t vbathysteresis;                 // hysteresis for alarm, default 1 = 0.1V
+    batterySensor_e batteryMeterType;       // type of battery meter uses, either ADC or ESC
 
     int16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
     uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
-    currentSensor_e  currentMeterType;      // type of current meter used, either ADC or virtual
+    currentSensor_e  currentMeterType;      // type of current meter used, either ADC, Virtual or ESC
 
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
@@ -62,10 +71,10 @@ typedef enum {
 
 extern uint16_t vbat;
 extern uint16_t vbatRaw;
-extern uint16_t vbatLatestADC;
+extern uint16_t vbatLatest;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
-extern uint16_t amperageLatestADC;
+extern uint16_t amperageLatest;
 extern int32_t amperage;
 extern int32_t mAhDrawn;
 

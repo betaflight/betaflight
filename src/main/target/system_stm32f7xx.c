@@ -141,7 +141,7 @@
       RCC_ClkInitTypeDef RCC_ClkInitStruct;
       RCC_OscInitTypeDef RCC_OscInitStruct;
       RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
-      HAL_StatusTypeDef ret = HAL_OK;
+      HAL_StatusTypeDef ret;
 
       __HAL_RCC_PWR_CLK_ENABLE();
 

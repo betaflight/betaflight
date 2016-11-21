@@ -48,17 +48,17 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
 uint16_t adcGetChannel(uint8_t channel)
 {
 #ifdef DEBUG_ADC_CHANNELS
-    if (adcConfig[0].enabled) {
-        debug[0] = adcValues[adcConfig[0].dmaIndex];
+    if (adcOperatingConfig[0].enabled) {
+        debug[0] = adcValues[adcOperatingConfig[0].dmaIndex];
     }
-    if (adcConfig[1].enabled) {
-        debug[1] = adcValues[adcConfig[1].dmaIndex];
+    if (adcOperatingConfig[1].enabled) {
+        debug[1] = adcValues[adcOperatingConfig[1].dmaIndex];
     }
-    if (adcConfig[2].enabled) {
-        debug[2] = adcValues[adcConfig[2].dmaIndex];
+    if (adcOperatingConfig[2].enabled) {
+        debug[2] = adcValues[adcOperatingConfig[2].dmaIndex];
     }
-    if (adcConfig[3].enabled) {
-        debug[3] = adcValues[adcConfig[3].dmaIndex];
+    if (adcOperatingConfig[3].enabled) {
+        debug[3] = adcValues[adcOperatingConfig[3].dmaIndex];
     }
 #endif
     return adcValues[adcOperatingConfig[channel].dmaIndex];

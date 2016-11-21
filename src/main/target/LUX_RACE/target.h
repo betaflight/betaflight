@@ -47,6 +47,7 @@
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -173,4 +174,3 @@
 #define USABLE_TIMER_CHANNEL_COUNT 12
 #endif
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
-

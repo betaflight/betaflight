@@ -58,6 +58,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/vcd.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -230,7 +231,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", NULL
+    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_TELEMETRY", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -434,7 +435,8 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B",
     "XB-B-RJ01",
     "IBUS",
-    "JETIEXBUS"
+    "JETIEXBUS",
+    "CRSF"
 };
 #endif
 
@@ -512,6 +514,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "VELOCITY",
     "DFILTER",
     "ANGLERATE",
+    "ESC_TELEMETRY",
 };
 
 #ifdef OSD
@@ -752,8 +755,8 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef BEEPER
-    { "beeper_inverted",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isInverted, .config.lookup = { TABLE_OFF_ON } },
-    { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isOD,       .config.lookup = { TABLE_OFF_ON } },
+    { "beeper_inversion",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isInverted, .config.lookup = { TABLE_OFF_ON } },
+    { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isOpenDrain, .config.lookup = { TABLE_OFF_ON } },
 #endif
 
 #ifdef SERIAL_RX
@@ -948,8 +951,6 @@ const clivalue_t valueTable[] = {
     { "sdcard_dma",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.sdcardConfig.useDma, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
-    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
 
     { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
@@ -973,6 +974,11 @@ const clivalue_t valueTable[] = {
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
+#ifdef USE_MAX7456
+    { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &masterConfig.vcdProfile.video_system, .config.minmax = { 0, 2 } },
+    { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.h_offset, .config.minmax = { -32, 31 } },
+    { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.v_offset, .config.minmax = { -15, 16 } },
+#endif
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -992,6 +998,14 @@ static void cliWrite(uint8_t ch);
 
 static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
+
+static void cliBreak(const char *str, uint8_t len)
+{
+    for (int i = 0; i < len; i++) {
+        cliPrint(str);
+    }
+    cliPrint("\r\n");
+}
 
 static void cliPrompt(void)
 {
@@ -1407,7 +1421,7 @@ static void cliSerialPassthrough(char *cmdline)
         if (!mode)
             mode = MODE_RXTX;
 
-        passThroughPort = openSerialPort(id, FUNCTION_PASSTHROUGH, NULL,
+        passThroughPort = openSerialPort(id, FUNCTION_NONE, NULL,
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
@@ -3596,14 +3610,14 @@ static void cliTasks(char *cmdline)
                 subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
                 taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
                 if (masterConfig.pid_process_denom > 1) {
-                    cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
+                    cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
-                    cliPrintf("%02d - (%8s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
+                    cliPrintf("%02d - (%9s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
                 taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
-                cliPrintf("%02d - (%12s) ", taskId, taskInfo.taskName);
+                cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
             const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
@@ -3615,11 +3629,11 @@ static void cliTasks(char *cmdline)
                     taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
             if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
-                cliPrintf("   - (%12s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
+                cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
-    cliPrintf("Total (excluding SERIAL) %22d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif
 
@@ -3763,7 +3777,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SERVOS
     { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     { OWNER_PPMINPUT,      &masterConfig.ppmConfig.ioTag, 0 },
     { OWNER_PWMINPUT,      &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif
@@ -3830,6 +3844,25 @@ static void printResource(uint8_t dumpMask, master_t *defaultConfig)
     }
 }
 
+#ifndef CLI_MINIMAL_VERBOSITY
+static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
+{
+    for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
+        for (int i = 0; i < (resourceTable[r].maxIndex == 0 ? 1 : resourceTable[r].maxIndex); i++) {
+            if (*(resourceTable[r].ptr + i) == tag) {
+                if (r == resourceIndex && i == index) {
+                    continue;
+                }
+                cliPrintf("\r\n* WARNING * %c%d also used by %s", DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
+                if (resourceTable[r].maxIndex > 0) {
+                    cliPrintf(" %d", RESOURCE_INDEX(i));
+                }
+            }
+        }
+    }
+}
+#endif
+
 static void cliResource(char *cmdline)
 {
     int len = strlen(cmdline);
@@ -3840,7 +3873,8 @@ static void cliResource(char *cmdline)
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
 #ifndef CLI_MINIMAL_VERBOSITY
-        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
+        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n");
+        cliBreak("-", 20);
 #endif
         for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
@@ -3854,6 +3888,7 @@ static void cliResource(char *cmdline)
         }
 
         cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
+        cliBreak("-", 20);
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
             const char* owner;
             owner = ownerNames[dmaGetOwner(i)];
@@ -3908,7 +3943,7 @@ static void cliResource(char *cmdline)
     if (strlen(pch) > 0) {
         if (strcasecmp(pch, "NONE") == 0) {
             *tag = IO_TAG_NONE;
-            cliPrintf("Resource is freed!");
+            cliPrintf("Resource is freed!\r\n");
             return;
         } else {
             uint8_t port = (*pch) - 'A';
@@ -3921,11 +3956,16 @@ static void cliResource(char *cmdline)
                 pin = atoi(pch);
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
-                    if (rec) {
+                    if (rec) { 
                         *tag = DEFIO_TAG_MAKE(port, pin);
-                        cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
+#ifndef CLI_MINIMAL_VERBOSITY
+                        cliPrintf("Resource is set to %c%02d!\r\n", port + 'A', pin);
+                        resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin));
+#else
+                        cliPrintf("Set to %c%02d!", port + 'A', pin);
+#endif
                     } else {
-                        cliPrintf("Resource is invalid!");
+                        cliPrintf("Resource is invalid!\r\n");
                     }
                     return;
                 }

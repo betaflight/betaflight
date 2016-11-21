@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_usb.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   USB Low Layer HAL module driver.
   *    
   *          This file provides firmware functions to manage the following 
@@ -703,6 +703,9 @@ HAL_StatusTypeDef USB_EP0StartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeD
     
     }
     
+    /* EP enable, IN data in FIFO */
+    USBx_INEP(ep->num)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+    
     if (dma == 1)
     {
       USBx_INEP(ep->num)->DIEPDMA = (uint32_t)(ep->dma_addr);
@@ -710,14 +713,11 @@ HAL_StatusTypeDef USB_EP0StartXfer(USB_OTG_GlobalTypeDef *USBx , USB_OTG_EPTypeD
     else
     {
       /* Enable the Tx FIFO Empty Interrupt for this EP */
-      if (ep->xfer_len > 0)
+      if (ep->xfer_len > 0U)
       {
-        USBx_DEVICE->DIEPEMPMSK |= 1 << (ep->num);
+        USBx_DEVICE->DIEPEMPMSK |= 1U << (ep->num);
       }
-    }
-    
-    /* EP enable, IN data in FIFO */
-    USBx_INEP(ep->num)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);   
+    }  
   }
   else /* OUT endpoint */
   {
@@ -1227,9 +1227,10 @@ HAL_StatusTypeDef USB_ResetPort(USB_OTG_GlobalTypeDef *USBx)
   __IO uint32_t hprt0;
   
   hprt0 = USBx_HPRT0;
+  hprt0 |= USB_OTG_HPRT_PENA ;
   
-  hprt0 &= ~(USB_OTG_HPRT_PENA    | USB_OTG_HPRT_PCDET |\
-    USB_OTG_HPRT_PENCHNG | USB_OTG_HPRT_POCCHNG );
+  hprt0 &= ~(USB_OTG_HPRT_PCDET | USB_OTG_HPRT_PENCHNG |\
+             USB_OTG_HPRT_POCCHNG );
   
   USBx_HPRT0 = (USB_OTG_HPRT_PRST | hprt0);  
   HAL_Delay (10);                                /* See Note #1 */
@@ -1250,8 +1251,10 @@ HAL_StatusTypeDef USB_DriveVbus (USB_OTG_GlobalTypeDef *USBx, uint8_t state)
   __IO uint32_t hprt0;
 
   hprt0 = USBx_HPRT0;
-  hprt0 &= ~(USB_OTG_HPRT_PENA    | USB_OTG_HPRT_PCDET |\
-                         USB_OTG_HPRT_PENCHNG | USB_OTG_HPRT_POCCHNG );
+  hprt0 |= USB_OTG_HPRT_PENA ;
+  
+  hprt0 &= ~(USB_OTG_HPRT_PCDET | USB_OTG_HPRT_PENCHNG |\
+             USB_OTG_HPRT_POCCHNG );
   
   if (((hprt0 & USB_OTG_HPRT_PPWR) == 0 ) && (state == 1 ))
   {

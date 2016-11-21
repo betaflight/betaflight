@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_pcd.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   PCD HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the USB Peripheral Controller:
@@ -193,7 +193,7 @@ HAL_StatusTypeDef HAL_PCD_Init(PCD_HandleTypeDef *hpcd)
  hpcd->State= HAL_PCD_STATE_READY;
  
  /* Activate LPM */
- if (hpcd->Init.lpm_enable == 1)
+ if (hpcd->Init.lpm_enable ==1)
  {
    HAL_PCDEx_ActivateLPM(hpcd);
  }

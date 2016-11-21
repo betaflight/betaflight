@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_flash_ex.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Header file of FLASH HAL Extension module.
   ******************************************************************************
   * @attention
@@ -540,7 +540,7 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
                                  ((SECTOR) == FLASH_SECTOR_4)   || ((SECTOR) == FLASH_SECTOR_5)   ||\
                                  ((SECTOR) == FLASH_SECTOR_6)   || ((SECTOR) == FLASH_SECTOR_7))
 
-#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & (uint32_t)0xFF00FFFF) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xFF00FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
 #endif /* FLASH_SECTOR_TOTAL == 8 */
 
 #if (FLASH_SECTOR_TOTAL == 24)
@@ -557,7 +557,7 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
                                  ((SECTOR) == FLASH_SECTOR_20)  || ((SECTOR) == FLASH_SECTOR_21)  ||\
                                  ((SECTOR) == FLASH_SECTOR_22)  || ((SECTOR) == FLASH_SECTOR_23))
 
-#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & (uint32_t)0xF000FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xF000FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
 #endif /* FLASH_SECTOR_TOTAL == 24 */
 
 #if defined (FLASH_OPTCR_nDBANK)

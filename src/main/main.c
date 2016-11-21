@@ -57,7 +57,6 @@
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
@@ -77,6 +76,7 @@
 #include "rx/spektrum.h"
 
 #include "io/beeper.h"
+#include "io/displayport_max7456.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -106,6 +106,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -265,10 +266,15 @@ void init(void)
         idlePulse = 0; // brushed motors
     }
 
+    mixerConfigureOutput();
+#ifdef USE_SERVOS
+    servoConfigureOutput();
+#endif
+
 #ifdef USE_QUAD_MIXER_ONLY
     motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
 #else
-    motorInit(&masterConfig.motorConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
+    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
 #endif
 
 #ifdef USE_SERVOS
@@ -278,7 +284,7 @@ void init(void)
     }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
@@ -287,10 +293,7 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    mixerConfigureOutput();
-#ifdef USE_SERVOS
-    servoConfigureOutput();
-#endif
+
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -406,7 +409,13 @@ void init(void)
 
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#ifdef USE_MAX7456
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
+#else
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
     }
 #endif
 
@@ -490,6 +499,12 @@ void init(void)
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
         telemetryInit();
+    }
+#endif
+
+#ifdef USE_ESC_TELEMETRY
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryInit();
     }
 #endif
 

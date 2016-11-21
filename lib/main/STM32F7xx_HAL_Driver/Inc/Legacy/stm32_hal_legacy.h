@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32_hal_legacy.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   This file contains aliases definition for the STM32Cube HAL constants 
   *          macros and functions maintained for legacy purpose.
   ******************************************************************************
@@ -138,6 +138,7 @@
 #define COMP_EXTI_LINE_COMP5_EVENT     COMP_EXTI_LINE_COMP5
 #define COMP_EXTI_LINE_COMP6_EVENT     COMP_EXTI_LINE_COMP6
 #define COMP_EXTI_LINE_COMP7_EVENT     COMP_EXTI_LINE_COMP7
+#define COMP_LPTIMCONNECTION_ENABLED   COMP_LPTIMCONNECTION_IN1_ENABLED    /*!< COMPX output is connected to LPTIM input 1 */
 #define COMP_OUTPUT_COMP6TIM2OCREFCLR  COMP_OUTPUT_COMP6_TIM2OCREFCLR
 #if defined(STM32F373xC) || defined(STM32F378xx)
 #define COMP_OUTPUT_TIM3IC1            COMP_OUTPUT_COMP1_TIM3IC1
@@ -150,6 +151,9 @@
 #define COMP_NONINVERTINGINPUT_IO1      COMP_INPUT_PLUS_IO1
 #define COMP_NONINVERTINGINPUT_IO2      COMP_INPUT_PLUS_IO2
 #define COMP_NONINVERTINGINPUT_IO3      COMP_INPUT_PLUS_IO3
+#define COMP_NONINVERTINGINPUT_IO4      COMP_INPUT_PLUS_IO4
+#define COMP_NONINVERTINGINPUT_IO5      COMP_INPUT_PLUS_IO5
+#define COMP_NONINVERTINGINPUT_IO6      COMP_INPUT_PLUS_IO6
  
 #define COMP_INVERTINGINPUT_1_4VREFINT  COMP_INPUT_MINUS_1_4VREFINT
 #define COMP_INVERTINGINPUT_1_2VREFINT  COMP_INPUT_MINUS_1_2VREFINT
@@ -160,8 +164,16 @@
 #define COMP_INVERTINGINPUT_DAC1        COMP_INPUT_MINUS_DAC1_CH1
 #define COMP_INVERTINGINPUT_DAC2        COMP_INPUT_MINUS_DAC1_CH2
 #define COMP_INVERTINGINPUT_IO1         COMP_INPUT_MINUS_IO1
+#if defined(STM32L0)
+/* Issue fixed on STM32L0 COMP driver: only 2 dedicated IO (IO1 and IO2),     */
+/* IO2 was wrongly assigned to IO shared with DAC and IO3 was corresponding   */
+/* to the second dedicated IO (only for COMP2).                               */
+#define COMP_INVERTINGINPUT_IO2         COMP_INPUT_MINUS_DAC1_CH2
+#define COMP_INVERTINGINPUT_IO3         COMP_INPUT_MINUS_IO2
+#else
 #define COMP_INVERTINGINPUT_IO2         COMP_INPUT_MINUS_IO2
 #define COMP_INVERTINGINPUT_IO3         COMP_INPUT_MINUS_IO3
+#endif
 #define COMP_INVERTINGINPUT_IO4         COMP_INPUT_MINUS_IO4
 #define COMP_INVERTINGINPUT_IO5         COMP_INPUT_MINUS_IO5
 
@@ -344,6 +356,7 @@
 #define OB_RDP_LEVEL0                 OB_RDP_LEVEL_0
 #define OB_RDP_LEVEL1                 OB_RDP_LEVEL_1
 #define OB_RDP_LEVEL2                 OB_RDP_LEVEL_2
+
 /**
   * @}
   */
@@ -840,6 +853,8 @@
 #define __DIVMANT_SAMPLING8             UART_DIVMANT_SAMPLING8
 #define __DIVFRAQ_SAMPLING8             UART_DIVFRAQ_SAMPLING8
 #define __UART_BRR_SAMPLING8            UART_BRR_SAMPLING8
+
+#define __DIV_LPUART                    UART_DIV_LPUART
 
 #define UART_WAKEUPMETHODE_IDLELINE     UART_WAKEUPMETHOD_IDLELINE
 #define UART_WAKEUPMETHODE_ADDRESSMARK  UART_WAKEUPMETHOD_ADDRESSMARK
@@ -2637,10 +2652,22 @@
 
 #define RCC_IT_HSI14                RCC_IT_HSI14RDY
 
-#if defined(STM32L0)
-#define RCC_IT_LSECSS              RCC_IT_CSSLSE 
-#define RCC_IT_CSS                 RCC_IT_CSSHSE
-#endif
+#define RCC_IT_CSSLSE               RCC_IT_LSECSS
+#define RCC_IT_CSSHSE               RCC_IT_CSS
+
+#define RCC_PLLMUL_3                RCC_PLL_MUL3
+#define RCC_PLLMUL_4                RCC_PLL_MUL4
+#define RCC_PLLMUL_6                RCC_PLL_MUL6
+#define RCC_PLLMUL_8                RCC_PLL_MUL8
+#define RCC_PLLMUL_12               RCC_PLL_MUL12
+#define RCC_PLLMUL_16               RCC_PLL_MUL16
+#define RCC_PLLMUL_24               RCC_PLL_MUL24
+#define RCC_PLLMUL_32               RCC_PLL_MUL32
+#define RCC_PLLMUL_48               RCC_PLL_MUL48
+
+#define RCC_PLLDIV_2                RCC_PLL_DIV2
+#define RCC_PLLDIV_3                RCC_PLL_DIV3
+#define RCC_PLLDIV_4                RCC_PLL_DIV4
 
 #define IS_RCC_MCOSOURCE            IS_RCC_MCO1SOURCE
 #define __HAL_RCC_MCO_CONFIG        __HAL_RCC_MCO1_CONFIG

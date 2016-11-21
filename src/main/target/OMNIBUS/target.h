@@ -91,15 +91,6 @@
 #define SPI1_MISO_PIN           PA6
 #define SPI1_MOSI_PIN           PA7
 
-#define USE_DASHBOARD
-
-// Configuratoin Menu System
-#define CMS
-#define CMS_MAX_DEVICE 4
-
-// Use external display connected by MSP to run CMS
-#define USE_MSP_DISPLAYPORT
-
 // OSD define info:
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 // include the osd code
@@ -143,6 +134,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT

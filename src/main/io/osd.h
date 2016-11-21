@@ -57,13 +57,11 @@ typedef struct osd_profile_s {
     uint16_t time_alarm;
     uint16_t alt_alarm;
 
-    uint8_t video_system;
-    uint8_t row_shiftdown;
-
     osd_unit_e units;
 } osd_profile_t;
 
-void osdInit(void);
+struct displayPort_s;
+void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(uint32_t currentTime);

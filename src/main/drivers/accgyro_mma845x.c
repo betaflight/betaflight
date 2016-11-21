@@ -86,10 +86,9 @@ static bool mma8452Read(int16_t *accelData);
 
 bool mma8452Detect(acc_t *acc)
 {
-    bool ack = false;
     uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
 
-    ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
     if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
         return false;
 

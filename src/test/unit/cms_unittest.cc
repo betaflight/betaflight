@@ -52,7 +52,19 @@ static int displayPortTestRelease(displayPort_t *displayPort)
     return 0;
 }
 
-static int displayPortTestClear(displayPort_t *displayPort)
+static int displayPortTestClearScreen(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return 0;
+}
+
+static int displayPortTestDrawScreen(displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
+    return 0;
+}
+
+static int displayPortTestScreenSize(const displayPort_t *displayPort)
 {
     UNUSED(displayPort);
     return 0;
@@ -64,6 +76,21 @@ static int displayPortTestWrite(displayPort_t *displayPort, uint8_t x, uint8_t y
     UNUSED(x);
     UNUSED(y);
     UNUSED(s);
+    return 0;
+}
+
+static int displayPortTestWriteChar(displayPort_t *displayPort, uint8_t x, uint8_t y, uint8_t c)
+{
+    UNUSED(displayPort);
+    UNUSED(x);
+    UNUSED(y);
+    UNUSED(c);
+    return 0;
+}
+
+static bool displayPortTestIsTransferInProgress(const displayPort_t *displayPort)
+{
+    UNUSED(displayPort);
     return 0;
 }
 
@@ -87,8 +114,12 @@ static uint32_t displayPortTestTxBytesFree(const displayPort_t *displayPort)
 static const displayPortVTable_t testDisplayPortVTable = {
     .grab = displayPortTestGrab,
     .release = displayPortTestRelease,
-    .clear = displayPortTestClear,
+    .clearScreen = displayPortTestClearScreen,
+    .drawScreen = displayPortTestDrawScreen,
+    .screenSize = displayPortTestScreenSize,
     .write = displayPortTestWrite,
+    .writeChar = displayPortTestWriteChar,
+    .isTransferInProgress = displayPortTestIsTransferInProgress,
     .heartbeat = displayPortTestHeartbeat,
     .resync = displayPortTestResync,
     .txBytesFree = displayPortTestTxBytesFree
@@ -96,10 +127,9 @@ static const displayPortVTable_t testDisplayPortVTable = {
 
 displayPort_t *displayPortTestInit(void)
 {
-    testDisplayPort.vTable = &testDisplayPortVTable;
+    displayInit(&testDisplayPort, &testDisplayPortVTable);
     testDisplayPort.rows = 10;
     testDisplayPort.cols = 40;
-    testDisplayPort.isGrabbed = false;
     return &testDisplayPort;
 }
 

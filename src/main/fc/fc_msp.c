@@ -42,6 +42,7 @@
 #include "drivers/io.h"
 #include "drivers/flash.h"
 #include "drivers/sdcard.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
@@ -1034,7 +1035,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef OSD
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
-        sbufWriteU8(dst, masterConfig.osdProfile.video_system);
+#ifdef USE_MAX7456
+        sbufWriteU8(dst, masterConfig.vcdProfile.video_system);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, masterConfig.osdProfile.units);
         sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
         sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
@@ -1196,9 +1201,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef GPS
     uint8_t wp_no;
     int32_t lat = 0, lon = 0, alt = 0;
-#endif
-#ifdef OSD
-    uint8_t addr, font_data[64];
 #endif
     switch (cmdMSP) {
     case MSP_SELECT_SETTING:
@@ -1499,7 +1501,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_EEPROM_WRITE:
         if (ARMING_FLAG(ARMED)) {
             return MSP_RESULT_ERROR;
-            return true;
         }
         writeEEPROM();
         readEEPROM();
@@ -1531,27 +1532,44 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef OSD
     case MSP_SET_OSD_CONFIG:
-        addr = sbufReadU8(src);
-        // set all the other settings
-        if ((int8_t)addr == -1) {
-            masterConfig.osdProfile.video_system = sbufReadU8(src);
-            masterConfig.osdProfile.units = sbufReadU8(src);
-            masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
-            masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
-            masterConfig.osdProfile.time_alarm = sbufReadU16(src);
-            masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
-        }
-        // set a position setting
-        else {
-            masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+        {
+            const uint8_t addr = sbufReadU8(src);
+            // set all the other settings
+            if ((int8_t)addr == -1) {
+#ifdef USE_MAX7456
+                masterConfig.vcdProfile.video_system = sbufReadU8(src);
+#else
+                sbufReadU8(src); // Skip video system
+#endif
+                masterConfig.osdProfile.units = sbufReadU8(src);
+                masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
+                masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.time_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
+            } else {
+                // set a position setting
+                masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+            }
         }
         break;
     case MSP_OSD_CHAR_WRITE:
-        addr = sbufReadU8(src);
-        for (int i = 0; i < 54; i++) {
-            font_data[i] = sbufReadU8(src);
+#ifdef USE_MAX7456
+        {
+            uint8_t font_data[64];
+            const uint8_t addr = sbufReadU8(src);
+            for (int i = 0; i < 54; i++) {
+                font_data[i] = sbufReadU8(src);
+            }
+            // !!TODO - replace this with a device independent implementation
+            max7456WriteNvm(addr, font_data);
         }
-        max7456WriteNvm(addr, font_data);
+#else
+        // just discard the data
+        sbufReadU8(src);
+        for (int i = 0; i < 54; i++) {
+            sbufReadU8(src);
+        }
+#endif
         break;
 #endif
 
@@ -1720,7 +1738,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (dataSize % portConfigSize != 0) {
                 return MSP_RESULT_ERROR;
-                break;
             }
 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
@@ -1731,7 +1748,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 serialPortConfig_t *portConfig = serialFindPortConfiguration(identifier);
                 if (!portConfig) {
                     return MSP_RESULT_ERROR;
-                    break;
                 }
 
                 portConfig->identifier = identifier;
@@ -1759,7 +1775,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             i = sbufReadU8(src);
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
-                break;
             }
             ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
             *ledConfig = sbufReadU32(src);

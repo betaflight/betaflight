@@ -24,6 +24,7 @@
 #define USBD_PRODUCT_STRING "AnyFCF7"
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED0   PB7
 #define LED1   PB6

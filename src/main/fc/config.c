@@ -42,6 +42,7 @@
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/light_ws2811strip.h"
@@ -351,17 +352,17 @@ void resetAdcConfig(adcConfig_t *adcConfig)
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
 #ifdef BEEPER_INVERTED
-    beeperConfig->isOD = false;
+    beeperConfig->isOpenDrain = false;
     beeperConfig->isInverted = true;
 #else
-    beeperConfig->isOD = true;
+    beeperConfig->isOpenDrain = true;
     beeperConfig->isInverted = false;
 #endif
     beeperConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 void resetPpmConfig(ppmConfig_t *ppmConfig)
 {
 #ifdef PPM_PIN
@@ -423,6 +424,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
+    batteryConfig->batteryMeterType = BATTERY_SENSOR_ADC;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -483,6 +485,15 @@ void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 }
 #endif
 
+#ifdef USE_MAX7456
+void resetMax7456Config(vcdProfile_t *pVcdProfile)
+{
+    pVcdProfile->video_system = VIDEO_SYSTEM_AUTO;
+    pVcdProfile->h_offset = 0;
+    pVcdProfile->v_offset = 0;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -529,6 +540,10 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
+#endif
+
+#ifdef USE_MAX7456
+    resetMax7456Config(&config->vcdProfile);
 #endif
 
 #ifdef OSD
@@ -588,7 +603,7 @@ void createDefaultConfig(master_t *config)
 
     resetBatteryConfig(&config->batteryConfig);
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
     resetPwmConfig(&config->pwmConfig);
 #endif

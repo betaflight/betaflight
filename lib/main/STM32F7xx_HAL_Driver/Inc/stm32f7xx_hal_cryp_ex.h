@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_cryp_ex.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Header file of CRYP HAL Extension module.
   ******************************************************************************
   * @attention
@@ -43,9 +43,10 @@
  extern "C" {
 #endif
 
-#if defined (STM32F756xx) || defined (STM32F777xx) || defined (STM32F779xx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
+
+#if defined (CRYP)
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
@@ -206,7 +207,8 @@ void HAL_CRYPEx_GCMCCM_IRQHandler(CRYP_HandleTypeDef *hcryp);
   * @}
   */ 
 
-#endif /* STM32F756xx || STM32F777xx || STM32F779xx */
+#endif /* CRYP */
+
 
 /**
   * @}
