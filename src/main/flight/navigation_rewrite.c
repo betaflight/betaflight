@@ -2209,6 +2209,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
 #if defined(NAV_GPS_GLITCH_DETECTION)
     if (isGPSGlitchDetected())                      navFlags |= (1 << 4);
 #endif
+    if (posControl.flags.hasValidHeadingSensor)     navFlags |= (1 << 5);
 #endif
 
     // Reset all navigation requests - NAV controllers will set them if necessary
@@ -2243,9 +2244,9 @@ void applyWaypointNavigationAndAltitudeHold(void)
 
 
 #if defined(NAV_BLACKBOX)
-    if (posControl.flags.isAdjustingPosition)       navFlags |= (1 << 5);
-    if (posControl.flags.isAdjustingAltitude)       navFlags |= (1 << 6);
-    if (posControl.flags.isAdjustingHeading)        navFlags |= (1 << 7);
+    if (posControl.flags.isAdjustingPosition)       navFlags |= (1 << 6);
+    if (posControl.flags.isAdjustingAltitude)       navFlags |= (1 << 7);
+    if (posControl.flags.isAdjustingHeading)        navFlags |= (1 << 8);
 #endif
 }
 
