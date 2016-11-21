@@ -2305,16 +2305,18 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
+    } else {
+        options = cmdline;
     }
 
-    master_t defaultConfig;
+    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
-	createDefaultConfig(&defaultConfig);
-    }
+        createDefaultConfig(&defaultConfig);
 
-    if (checkCommand(options, "commented")) {
-        dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        if (checkCommand(cmdline, "commented")) {
+            dumpMask = dumpMask | DIFF_COMMENTED;   // add unchanged values as comments for diff
+        }
     }
 
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
@@ -2514,7 +2516,9 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
     changeProfile(profileIndex);
     cliPrint("\r\n# profile\r\n");
     cliProfile("");
+    cliPrint("\r\n");
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
+    cliRateProfile("");
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
@@ -2524,6 +2528,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, maste
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
+    cliPrint("\r\n");
     dumpValues(PROFILE_RATE_VALUE, dumpMask, defaultConfig);
 }
 
@@ -2975,7 +2980,11 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
-	return true;
+#ifdef USE_SLOW_SERIAL_CLI
+        delay(1);
+#endif
+
+	    return true;
     }
 
     return false;
@@ -3205,7 +3214,7 @@ static void cliGet(char *cmdline)
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, 0);
-            cliPrint("\n");
+            cliPrint("\r\n");
             cliPrintVarRange(val);
             cliPrint("\r\n");
 
