@@ -51,6 +51,9 @@
     #define BEEPER_INVERTED
 #elif defined(REVOLT)
     #define BEEPER                  PB4
+#elif defined(SOULF4)
+    #define BEEPER                  PB6
+    #define BEEPER_INVERTED
 #else
     #define LED1                    PB4
     // Leave beeper here but with none as io - so disabled unless mapped.
