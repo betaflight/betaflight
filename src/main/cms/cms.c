@@ -160,23 +160,6 @@ static CMS_Menu menuErr = {
 };
 #endif
 
-// Stick/key detection
-
-#define IS_HI(X)  (rcData[X] > 1750)
-#define IS_LO(X)  (rcData[X] < 1250)
-#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
-
-//key definiotion because API provide menu navigation over MSP/GUI app - not used NOW
-#define KEY_ENTER   0
-#define KEY_UP      1
-#define KEY_DOWN    2
-#define KEY_LEFT    3
-#define KEY_RIGHT   4
-#define KEY_ESC     5
-
-#define BUTTON_TIME   250 // msec
-#define BUTTON_PAUSE  500 // msec
-
 static void cmsUpdateMaxRow(displayPort_t *instance)
 {
     maxRow = 0;
@@ -185,7 +168,7 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
         maxRow++;
     }
 
-    if (maxRow > MAX_MENU_ITEMS(instance)) {
+    if (maxRow >  MAX_MENU_ITEMS(instance)) {
         maxRow = MAX_MENU_ITEMS(instance);
     }
 
@@ -547,8 +530,6 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
 
 static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
 {
-    debug[0]++;
-
     for (const OSD_Entry *p = pMenu->entries; p->type != OME_END ; p++) {
         if (p->type == OME_Submenu) {
             cmsTraverseGlobalExit(p->data);
@@ -556,7 +537,6 @@ static void cmsTraverseGlobalExit(const CMS_Menu *pMenu)
     }
 
     if (pMenu->onGlobalExit) {
-        debug[1]++;
         pMenu->onGlobalExit();
     }
 }
@@ -593,6 +573,24 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
     return 0;
 }
+
+
+// Stick/key detection and key codes
+
+#define IS_HI(X)  (rcData[X] > 1750)
+#define IS_LO(X)  (rcData[X] < 1250)
+#define IS_MID(X) (rcData[X] > 1250 && rcData[X] < 1750)
+
+#define KEY_NONE    0
+#define KEY_UP      1
+#define KEY_DOWN    2
+#define KEY_LEFT    3
+#define KEY_RIGHT   4
+#define KEY_ESC     5
+#define KEY_MENU    6
+
+#define BUTTON_TIME   250 // msec
+#define BUTTON_PAUSE  500 // msec
 
 STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
@@ -782,9 +780,24 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
+uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
+{
+    uint16_t ret;
+
+    for (int i = 0 ; i < repeatCount ; i++) {
+        ret = cmsHandleKey(pDisplay, key);
+    }
+
+    return ret;
+}
+
 static void cmsUpdate(uint32_t currentTimeUs)
 {
     static int16_t rcDelayMs = BUTTON_TIME;
+    static int holdCount = 1;
+    static int repeatCount = 1;
+    static int repeatBase = 0;
+
     static uint32_t lastCalledMs = 0;
     static uint32_t lastCmsHeartBeatMs = 0;
 
@@ -797,42 +810,79 @@ static void cmsUpdate(uint32_t currentTimeUs)
             rcDelayMs = BUTTON_PAUSE;    // Tends to overshoot if BUTTON_TIME
         }
     } else {
-        uint8_t key = 0;
-        if (rcDelayMs > 0) {
-            rcDelayMs -= (currentTimeMs - lastCalledMs);
-        }
-        else if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
-            // Double enter = display switching
-            cmsMenuOpen();
-            rcDelayMs = BUTTON_PAUSE;
+        //
+        // Scan 'key' first
+        //
+
+        uint8_t key = KEY_NONE;
+
+        if (IS_MID(THROTTLE) && IS_LO(YAW) && IS_HI(PITCH) && !ARMING_FLAG(ARMED)) {
+            key = KEY_MENU;
         }
         else if (IS_HI(PITCH)) {
             key = KEY_UP;
-            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_LO(PITCH)) {
             key = KEY_DOWN;
-            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_LO(ROLL)) {
             key = KEY_LEFT;
-            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_HI(ROLL)) {
             key = KEY_RIGHT;
-            rcDelayMs = BUTTON_TIME;
         }
         else if (IS_HI(YAW) || IS_LO(YAW))
         {
             key = KEY_ESC;
-            rcDelayMs = BUTTON_TIME;
         }
 
-        //lastCalled = currentTime;
+        if (key == KEY_NONE) {
+            // No 'key' pressed, reset repeat control
+            holdCount = 1;
+            repeatCount = 1;
+            repeatBase = 0;
+        } else {
+            // The 'key' is being pressed; keep counting
+            ++holdCount;
+        }
 
-        if (key) {
-            rcDelayMs = cmsHandleKey(pCurrentDisplay, key);
-            return;
+        if (rcDelayMs > 0) {
+            rcDelayMs -= (currentTimeMs - lastCalledMs);
+        } else if (key) {
+            rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
+
+            // Key repeat effect is implemented in two phases.
+            // First phldase is to decrease rcDelayMs reciprocal to hold time.
+            // When rcDelayMs reached a certain limit (scheduling interval),
+            // repeat rate will not raise anymore, so we call key handler
+            // multiple times (repeatCount).
+            //
+            // XXX Caveat: Most constants are adjusted pragmatically.
+            // XXX Rewrite this someday, so it uses actual hold time instead
+            // of holdCount, which depends on the scheduling interval.
+
+            if (((key == KEY_LEFT) || (key == KEY_RIGHT)) && (holdCount > 20)) {
+
+                // Decrease rcDelayMs reciprocally
+
+                rcDelayMs /= (holdCount - 20);
+
+                // When we reach the scheduling limit,
+
+                if (rcDelayMs <= 50) {
+
+                    // start calling handler multiple times.
+
+                    if (repeatBase == 0)
+                        repeatBase = holdCount;
+
+                    repeatCount = repeatCount + (holdCount - repeatBase) / 5;
+
+                    if (repeatCount > 5) {
+                        repeatCount= 5;
+                    }
+                }
+            }
         }
 
         cmsDrawMenu(pCurrentDisplay, currentTimeUs);
