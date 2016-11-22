@@ -339,7 +339,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
         RCC_AHB1PeriphClockCmd(uart->rcc_ahb1, ENABLE);
 
     if (options & SERIAL_BIDIR) {
-        IOInit(tx, OWNER_SERIAL, RESOURCE_UART_TXRX, RESOURCE_INDEX(device));
+        IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         if (options & SERIAL_BIDIR_PP)
             IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
         else
