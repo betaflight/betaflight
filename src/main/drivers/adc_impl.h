@@ -33,7 +33,8 @@ typedef enum ADCDevice {
     ADCDEV_1   = 0,
 #if defined(STM32F3)
     ADCDEV_2,
-    ADCDEV_MAX = ADCDEV_2,
+    ADCDEV_3,
+    ADCDEV_MAX = ADCDEV_3,
 #elif defined(STM32F4) || defined(STM32F7)
     ADCDEV_2,
     ADCDEV_3,
