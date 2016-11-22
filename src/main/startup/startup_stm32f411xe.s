@@ -72,6 +72,9 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler: 
+  // Enable CCM
+
+  // Check for bootloader reboot
   ldr r0, =0x2001FFFC         // mj666
   ldr r1, =0xDEADBEEF         // mj666
   ldr r2, [r0, #0]            // mj666

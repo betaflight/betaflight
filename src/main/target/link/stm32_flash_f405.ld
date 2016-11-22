@@ -35,7 +35,8 @@ MEMORY
 	FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 0x0e0000 - 0x64
 	INFOX (rx)      : ORIGIN = 0x08000000 + 0x0e0000 - 0x64, LENGTH = 0x64
 	RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 128K
+    CCM (xrw)       : ORIGIN = 0x10000000, LENGTH = 64K
 	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_ccm.ld"

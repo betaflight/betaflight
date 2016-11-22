@@ -46,7 +46,4 @@ MEMORY
 	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-REGION_ALIAS("CCSRAM", CCM);
-REGION_ALIAS("SRAM", RAM);
-
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_ccm.ld"

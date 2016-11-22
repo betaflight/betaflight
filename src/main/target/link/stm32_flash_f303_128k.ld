@@ -14,7 +14,8 @@ MEMORY
 {
   FLASH  (rx)     : ORIGIN = 0x08000000, LENGTH = 126K /* last 2kb used for config storage */
   RAM    (xrw)    : ORIGIN = 0x20000000, LENGTH = 40K
+  CCM    (xrw)    : ORIGIN = 0x10000000, LENGTH = 8K
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-INCLUDE "stm32_flash.ld"
+INCLUDE "stm32_flash_ccm.ld"
