@@ -255,7 +255,7 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL, RESOURCE_UART_TXRX, 3);
+        IOInit(IOGetByTag(IO_TAG(UART3_TX_PIN)), OWNER_SERIAL_TX, 3);
         IOConfigGPIO(IOGetByTag(IO_TAG(UART3_TX_PIN)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
