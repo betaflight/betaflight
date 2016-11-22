@@ -344,7 +344,7 @@ static void saProcessResponse(uint8_t *buf, int len)
         break;
 
     case SA_CMD_SET_MODE: // Set Mode
-        dprintf(("resp SET_MODE 0x%x\r\n", buf[2]));
+        dprintf(("saProcessResponse: SET_MODE 0x%x\r\n", buf[2]));
         break;
 
     default:
@@ -600,7 +600,7 @@ static void saSetMode(int mode)
 {
     static uint8_t buf[6] = { 0xAA, 0x55, SACMD(SA_CMD_SET_MODE), 1 };
 
-    buf[4] = (mode & 0x1f)|saLockMode;
+    buf[4] = (mode & 0x3f)|saLockMode;
     buf[5] = CRC8(buf, 5);
 
     saQueueCmd(buf, 6);
@@ -668,7 +668,6 @@ void smartAudioProcess(uint32_t now)
         saGetSettings();
         saGetPitFreq();
         saSendQueue();
-    saSetPitFreq(5705);
         initialSent = true;
         return;
     }
@@ -677,6 +676,7 @@ void smartAudioProcess(uint32_t now)
             && (now - sa_lastTransmission > SMARTAUDIO_CMD_TIMEOUT)) {
         // Last command timed out
         // dprintf(("process: resending 0x%x\r\n", sa_outstanding));
+        // XXX Todo: Resend termination and possible offline transition
         saResendCmd();
     } else if (!saQueueEmpty()) {
         // Command pending. Send it.
@@ -773,6 +773,11 @@ if (smartAudioUserFreq == 0 && saDevice.freq != 0)
     smartAudioUserFreq = saDevice.freq;
 if (smartAudioOpModel == 0 && saCmsOpmodel != 0)
     smartAudioOpModel = saCmsOpmodel + 1;
+
+if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+    smartAudioPitFMode = 1;
+else
+    smartAudioPitFMode = 0;
 
     saCmsStatusString[0] = "-FP"[saCmsOpmodel];
     saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
@@ -900,13 +905,16 @@ long saConfigureOpModelByGvar(displayPort_t *pDisp, const void *self)
 
     dprintf(("saConfigureOpModelByGvar: opmodel %d\r\n", opmodel));
 
+
     if (opmodel == SA_OPMODEL_FREE) {
         // VTX should power up transmitting.
         // Turn off In-Range and Out-Range bits
         saSetMode(0);
     } else if (opmodel == SA_OPMODEL_PIT) {
         // VTX should power up in pit mode.
-        // Setup In-Range or Out-Range bits
+        // Default PitFMode is in-range to prevent users without
+        // out-range receivers from getting blinded.
+        smartAudioPitFMode = 0;
         saConfigurePitFModeByGvar(pDisp, self);
     }
 
@@ -1069,12 +1077,28 @@ CMS_Menu menu_smartAudioConfig = {
     .entries = menu_smartAudioConfigEntries
 };
 
+OSD_Entry saMenuCommenceEntries[] = {
+    { "- CONFIRM -", OME_Label, NULL, NULL, 0 },
+    { "YES", OME_Funcall, saClearPitMode, NULL, 0 },
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+CMS_Menu saMenuCommence = {
+    .GUARD_text = "XVTXCOM",
+    .GUARD_type = OME_MENU,
+    .onEnter = NULL,
+    .onExit = NULL,
+    .onGlobalExit = NULL,
+    .entries = saMenuCommenceEntries,
+};
+
 OSD_Entry saMenuFreqModeEntries[] = {
     { "- SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
     { "", OME_Label, NULL, saCmsStatusString, DYNAMIC },
     { "FREQ", OME_UINT16, NULL, &cmsEntUserFreq, 0 },
     { "POWER", OME_TAB, saConfigurePowerByGvar, &cmsEntPower, 0 },
-    { "START", OME_Funcall, saClearPitMode, NULL, 0 },
+    { "START", OME_Submenu, cmsMenuChange, &saMenuCommence, 0 },
     { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -1088,7 +1112,7 @@ OSD_Entry saMenuChanModeEntries[] =
     { "CHAN", OME_TAB, saConfigureChanByGvar, &cmsEntChan, 0 },
     { "FREQ", OME_UINT16, NULL, &cmsEntFreq, DYNAMIC },
     { "POWER", OME_TAB, saConfigurePowerByGvar, &cmsEntPower, 0 },
-    { "START", OME_Funcall, saClearPitMode, NULL, 0 },
+    { "START", OME_Submenu, cmsMenuChange, &saMenuCommence, 0 },
     { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
