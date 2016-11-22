@@ -999,13 +999,15 @@ static void cliWrite(uint8_t ch);
 static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 
-static void cliBreak(const char *str, uint8_t len)
+#ifndef CLI_MINIMAL_VERBOSITY
+static void cliRepeat(const char *str, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
         cliPrint(str);
     }
     cliPrint("\r\n");
 }
+#endif
 
 static void cliPrompt(void)
 {
@@ -3845,21 +3847,31 @@ static void printResource(uint8_t dumpMask, master_t *defaultConfig)
 }
 
 #ifndef CLI_MINIMAL_VERBOSITY
-static void resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
+static bool resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
+    const char * format = "\r\n* %s * %c%d also used by %s";
     for (int r = 0; r < (int)ARRAYLEN(resourceTable); r++) {
         for (int i = 0; i < (resourceTable[r].maxIndex == 0 ? 1 : resourceTable[r].maxIndex); i++) {
             if (*(resourceTable[r].ptr + i) == tag) {
-                if (r == resourceIndex && i == index) {
-                    continue;
+                bool error = false;
+                if (r == resourceIndex) {
+                    if (i == index) {
+                        continue;
+                    }
+                    error = true;
                 }
-                cliPrintf("\r\n* WARNING * %c%d also used by %s", DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
+
+                cliPrintf(format, error ? "ERROR" : "WARNING", DEFIO_TAG_GPIOID(tag) + 'A', DEFIO_TAG_PIN(tag), ownerNames[resourceTable[r].owner]);
                 if (resourceTable[r].maxIndex > 0) {
                     cliPrintf(" %d", RESOURCE_INDEX(i));
+                }
+                if (error) {
+                    return false;
                 }
             }
         }
     }
+    return true;
 }
 #endif
 
@@ -3874,7 +3886,7 @@ static void cliResource(char *cmdline)
     } else if (strncasecmp(cmdline, "list", len) == 0) {
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n");
-        cliBreak("-", 20);
+        cliRepeat("-", 20);
 #endif
         for (int i = 0; i < DEFIO_IO_USED_COUNT; i++) {
             const char* owner;
@@ -3888,7 +3900,9 @@ static void cliResource(char *cmdline)
         }
 
         cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
-        cliBreak("-", 20);
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliRepeat("-", 20);
+#endif
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
             const char* owner;
             owner = ownerNames[dmaGetOwner(i)];
@@ -3934,10 +3948,11 @@ static void cliResource(char *cmdline)
             cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
             return;
         }
+        index -= 1;
     }
 
     pch = strtok_r(NULL, " ", &saveptr);
-    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
+    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + index);
 
     uint8_t pin = 0;
     if (strlen(pch) > 0) {
@@ -3957,13 +3972,15 @@ static void cliResource(char *cmdline)
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
                     if (rec) { 
-                        *tag = DEFIO_TAG_MAKE(port, pin);
 #ifndef CLI_MINIMAL_VERBOSITY
+                        if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
+                            return;
+                        }
                         cliPrintf("Resource is set to %c%02d!\r\n", port + 'A', pin);
-                        resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin));
 #else
                         cliPrintf("Set to %c%02d!", port + 'A', pin);
 #endif
+                        *tag = DEFIO_TAG_MAKE(port, pin);
                     } else {
                         cliPrintf("Resource is invalid!\r\n");
                     }
