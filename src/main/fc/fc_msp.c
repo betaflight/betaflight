@@ -956,6 +956,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         serializeSDCardSummaryReply(dst);
         break;
 
+    case MSP_OSD_CONFIG:
+    #ifdef OSD
+        sbufWriteU8(dst, 1); // OSD supported
+        // send video system (AUTO/PAL/NTSC)
+        sbufWriteU8(dst, masterConfig.osdProfile.video_system);
+        sbufWriteU8(dst, masterConfig.osdProfile.units);
+        sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
+
+        for (uint8_t i = 0; i < OSD_ITEM_COUNT; i++) {
+            sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
+        }
+    #else
+        sbufWriteU8(dst, 0); // OSD not supported
+    #endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         sbufWriteData(dst, buildDate, 11); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
         sbufWriteU32(dst, 0); // future exp
