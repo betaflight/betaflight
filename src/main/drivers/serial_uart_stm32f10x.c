@@ -122,7 +122,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     // UART1_TX    PA9
     // UART1_RX    PA10
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL, RESOURCE_UART_TXRX, 1);
+        IOInit(IOGetByTag(IO_TAG(PA9)), OWNER_SERIAL_TX, 1);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA9)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
@@ -193,7 +193,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     // UART2_TX    PA2
     // UART2_RX    PA3
     if (options & SERIAL_BIDIR) {
-        IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL, RESOURCE_UART_TXRX, 2);
+        IOInit(IOGetByTag(IO_TAG(PA2)), OWNER_SERIAL_TX, 2);
         IOConfigGPIO(IOGetByTag(IO_TAG(PA2)), (options & SERIAL_BIDIR_PP) ? IOCFG_AF_PP : IOCFG_AF_OD);
     } else {
         if (mode & MODE_TX) {
