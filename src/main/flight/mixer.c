@@ -65,7 +65,6 @@ static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
 static airplaneConfig_t *airplaneConfig;
 rxConfig_t *rxConfig;
-static bool syncMotorOutputWithPidLoop = false;
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -240,6 +239,10 @@ static motorMixer_t *customMixers;
 static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, deadbandMotor3dHigh, deadbandMotor3dLow;
 static float rcCommandThrottleRange;
 
+uint8_t getMotorCount() {
+    return motorCount;
+}
+
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
     if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
@@ -256,8 +259,8 @@ void initEscEndpoints(void) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
         minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
         maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
-	    deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
-	    deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
     } else
 #endif
     {
@@ -300,8 +303,6 @@ void mixerConfigureOutput(void)
     int i;
 
     motorCount = 0;
-
-    syncMotorOutputWithPidLoop = pwmIsSynced();
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
@@ -354,8 +355,6 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
 #else
 void mixerConfigureOutput(void)
 {
-    syncMotorOutputWithPidLoop = pwmIsSynced();
-    
     motorCount = QUAD_MOTOR_COUNT;
 
     for (uint8_t i = 0; i < motorCount; i++) {
@@ -376,13 +375,11 @@ void mixerResetDisarmedMotors(void)
 
 void writeMotors(void)
 {
-	for (uint8_t i = 0; i < motorCount; i++) {
+    for (uint8_t i = 0; i < motorCount; i++) {
         pwmWriteMotor(i, motor[i]);
-	}
-
-    if (syncMotorOutputWithPidLoop) {
-        pwmCompleteMotorUpdate(motorCount);
     }
+
+    pwmCompleteMotorUpdate(motorCount);
 }
 
 static void writeAllMotors(int16_t mc)
@@ -452,9 +449,10 @@ void mixTable(pidProfile_t *pidProfile)
     throttle = constrainf((throttle - rxConfig->mincheck) / rcCommandThrottleRange, 0.0f, 1.0f);
     throttleRange = motorOutputMax - motorOutputMin;
 
+    float scaledAxisPIDf[3];
     // Limit the PIDsum
     for (int axis = 0; axis < 3; axis++)
-        axisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
+        scaledAxisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
 
     // Calculate voltage compensation
     if (batteryConfig && pidProfile->vbatPidCompensation) vbatCompensationFactor = calculateVbatPidCompensation();
@@ -462,9 +460,9 @@ void mixTable(pidProfile_t *pidProfile)
     // Find roll/pitch/yaw desired output
     for (i = 0; i < motorCount; i++) {
         motorMix[i] =
-            axisPIDf[PITCH] * currentMixer[i].pitch +
-            axisPIDf[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_motor_direction * axisPIDf[YAW] * currentMixer[i].yaw;
+            scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
+            scaledAxisPIDf[ROLL] * currentMixer[i].roll +
+            -mixerConfig->yaw_motor_direction * scaledAxisPIDf[YAW] * currentMixer[i].yaw;
 
         if (vbatCompensationFactor > 1.0f) motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
 

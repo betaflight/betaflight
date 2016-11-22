@@ -29,8 +29,9 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
-#include "drivers/nvic.h"
+#include "cms/cms.h"
 
+#include "drivers/nvic.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
@@ -55,7 +56,6 @@
 #include "drivers/sdcard.h"
 #include "drivers/usb_io.h"
 #include "drivers/transponder_ir.h"
-#include "drivers/io.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 
@@ -75,6 +75,7 @@
 #include "rx/spektrum.h"
 
 #include "io/beeper.h"
+#include "io/displayport_max7456.h"
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
@@ -87,6 +88,7 @@
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
+#include "io/displayport_msp.h"
 #include "io/vtx.h"
 
 #include "scheduler/scheduler.h"
@@ -102,6 +104,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -146,6 +149,15 @@ void init(void)
 
     printfSupportInit();
 
+    systemInit();
+
+    // initialize IO (needed for all IO operations)
+    IOInitGlobal();
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+    detectHardwareRevision();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -153,18 +165,9 @@ void init(void)
 
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
-    systemInit();
-
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
-    // initialize IO (needed for all IO operations)
-    IOInitGlobal();
-
     debugMode = masterConfig.debug_mode;
-
-#ifdef USE_HARDWARE_REVISION_DETECTION
-    detectHardwareRevision();
-#endif
 
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
@@ -233,10 +236,6 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
-#if !defined(USE_HAL_DRIVER)
-    dmaInit();
-#endif
-
 #if defined(AVOID_UART1_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
@@ -265,10 +264,15 @@ void init(void)
         idlePulse = 0; // brushed motors
     }
 
+    mixerConfigureOutput();
+#ifdef USE_SERVOS
+    servoConfigureOutput();
+#endif
+
 #ifdef USE_QUAD_MIXER_ONLY
     motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
 #else
-    motorInit(&masterConfig.motorConfig, idlePulse, mixers[masterConfig.mixerMode].motorCount);
+    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
 #endif
 
 #ifdef USE_SERVOS
@@ -278,19 +282,16 @@ void init(void)
     }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
         ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);        
+        pwmRxInit(&masterConfig.pwmConfig);
     }
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-    mixerConfigureOutput();
-#ifdef USE_SERVOS
-    servoConfigureOutput();
-#endif
+
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -375,25 +376,19 @@ void init(void)
 #endif
 
 #ifdef USE_ADC
-    drv_adc_config_t adc_params;
-
-    adc_params.enableVBat = feature(FEATURE_VBAT);
-    adc_params.enableRSSI = feature(FEATURE_RSSI_ADC);
-    adc_params.enableCurrentMeter = feature(FEATURE_CURRENT_METER);
-    adc_params.enableExternal1 = false;
-#ifdef OLIMEXINO
-    adc_params.enableExternal1 = true;
-#endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
-#endif
-
-    adcInit(&adc_params);
+    /* these can be removed from features! */
+    masterConfig.adcConfig.vbat.enabled = feature(FEATURE_VBAT);
+    masterConfig.adcConfig.currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    masterConfig.adcConfig.rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcInit(&masterConfig.adcConfig);
 #endif
 
 
     initBoardAlignment(&masterConfig.boardAlignment);
+
+#ifdef CMS
+    cmsInit();
+#endif
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
@@ -412,7 +407,13 @@ void init(void)
 
 #ifdef OSD
     if (feature(FEATURE_OSD)) {
-        osdInit();
+#ifdef USE_MAX7456
+        // if there is a max7456 chip for the OSD then use it, otherwise use MSP
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
+#else
+        displayPort_t *osdDisplayPort = displayPortMspInit();
+#endif
+        osdInit(osdDisplayPort);
     }
 #endif
 
@@ -453,6 +454,10 @@ void init(void)
 
     mspFcInit();
     mspSerialInit();
+
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
 
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
@@ -495,6 +500,12 @@ void init(void)
     }
 #endif
 
+#ifdef USE_ESC_TELEMETRY
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryInit();
+    }
+#endif
+
 #ifdef USB_CABLE_DETECTION
     usbCableDetectInit();
 #endif
@@ -521,28 +532,11 @@ void init(void)
 #endif
 
 #ifdef USE_SDCARD
-    bool sdcardUseDMA = false;
-
-    sdcardInsertionDetectInit();
-
-#ifdef SDCARD_DMA_CHANNEL_TX
-
-#if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
-    // Ensure the SPI Tx DMA doesn't overlap with the led strip
-#if defined(STM32F4) || defined(STM32F7)
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
-#else
-    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
-#endif
-#else
-    sdcardUseDMA = true;
-#endif
-
-#endif
-
-    sdcard_init(sdcardUseDMA);
-
-    afatfs_init();
+    if (feature(FEATURE_SDCARD)) {
+        sdcardInsertionDetectInit();
+        sdcard_init(masterConfig.sdcardConfig.useDma);
+        afatfs_init();
+    }
 #endif
 
     if (masterConfig.gyro_lpf > 0 && masterConfig.gyro_lpf < 7) {

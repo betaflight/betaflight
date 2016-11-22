@@ -79,7 +79,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     static DMA_HandleTypeDef  hdma_tim;
 
     ws2811IO = IOGetByTag(ioTag);
-    IOInit(ws2811IO, OWNER_LED_STRIP, RESOURCE_OUTPUT, 0);
+    IOInit(ws2811IO, OWNER_LED_STRIP, 0);
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
@@ -106,6 +106,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&TimHandle, hdma[dmaSource], hdma_tim);
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_LED_STRIP, 0);
     dmaSetHandler(timerHardware->dmaIrqHandler, WS2811_DMA_IRQHandler, NVIC_PRIO_WS2811_DMA, dmaSource);
 
     /* Initialize TIMx DMA handle */
@@ -131,9 +132,7 @@ void ws2811LedStripHardwareInit(ioTag_t ioTag)
         return;
     }
 
-    const hsvColor_t hsv_white = {  0, 255, 255};
     ws2811Initialised = true;
-    setStripColor(&hsv_white);
 }
 
 
@@ -145,9 +144,9 @@ void ws2811LedStripDMAEnable(void)
         return;
     }
 
-    if(  HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
+    if (HAL_TIM_PWM_Start_DMA(&TimHandle, timerChannel, ledStripDMABuffer, WS2811_DMA_BUFFER_SIZE) != HAL_OK)
     {
-      /* Starting PWM generation Error */
+        /* Starting PWM generation Error */
         ws2811LedDataTransferInProgress = 0;
         return;
     }

@@ -55,12 +55,14 @@ typedef uint32_t timCNT_t;
 #endif
 
 typedef enum {
-    TIM_USE_ANY   = 0x0,
-    TIM_USE_PPM   = 0x1,
-    TIM_USE_PWM   = 0x2,
-    TIM_USE_MOTOR = 0x4,
-    TIM_USE_SERVO = 0x8,
-    TIM_USE_LED   = 0x10
+    TIM_USE_ANY           = 0x0,
+    TIM_USE_NONE          = 0x0,
+    TIM_USE_PPM           = 0x1,
+    TIM_USE_PWM           = 0x2,
+    TIM_USE_MOTOR         = 0x4,
+    TIM_USE_SERVO         = 0x8,
+    TIM_USE_LED           = 0x10,
+    TIM_USE_TRANSPONDER   = 0x20
 } timerUsageFlag_e;
 
 // use different types from capture and overflow - multiple overflow handlers are implemented as linked list
@@ -95,16 +97,17 @@ typedef struct timerHardware_s {
 #endif
 #if defined(USE_DSHOT) || defined(LED_STRIP)
 #if defined(STM32F4) || defined(STM32F7)
-    DMA_Stream_TypeDef *dmaStream; 
+    DMA_Stream_TypeDef *dmaStream;
     uint32_t dmaChannel;
 #elif defined(STM32F3) || defined(STM32F1)
     DMA_Channel_TypeDef *dmaChannel;
 #endif
     uint8_t dmaIrqHandler;
-#endif 
+#endif
 } timerHardware_t;
 
 typedef enum {
+    TIMER_OUTPUT_NONE      = 0x00,
     TIMER_INPUT_ENABLED    = 0x00,
     TIMER_OUTPUT_ENABLED   = 0x01,
     TIMER_OUTPUT_INVERTED  = 0x02,
@@ -121,7 +124,7 @@ typedef enum {
 #endif
 #elif defined(STM32F3)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
-#elif defined(STM32F411xE) 
+#elif defined(STM32F411xE)
 #define HARDWARE_TIMER_DEFINITION_COUNT 10
 #elif defined(STM32F4)
 #define HARDWARE_TIMER_DEFINITION_COUNT 14

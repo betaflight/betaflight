@@ -21,9 +21,14 @@
 
 #include "config/config_profile.h"
 
+#include "cms/cms.h"
+
+#include "drivers/adc.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
+#include "drivers/sdcard.h"
+#include "drivers/vcd.h"
 
 #include "fc/rc_controls.h"
 
@@ -147,11 +152,18 @@ typedef struct master_s {
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
-#ifndef SKIP_RX_PWM_PPM
+#ifdef USE_PPM
     ppmConfig_t ppmConfig;
-    pwmConfig_t pwmConfig;
 #endif
     
+#ifdef USE_PWM
+    pwmConfig_t pwmConfig;
+#endif
+
+#ifdef USE_ADC
+    adcConfig_t adcConfig;
+#endif
+
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
 #endif
@@ -175,6 +187,14 @@ typedef struct master_s {
 
 #ifdef OSD
     osd_profile_t osdProfile;
+#endif
+
+#ifdef USE_MAX7456
+    vcdProfile_t vcdProfile;
+#endif
+    
+#ifdef USE_SDCARD
+    sdcardConfig_t sdcardConfig;
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
@@ -205,10 +225,10 @@ typedef struct master_s {
     char name[MAX_NAME_LENGTH + 1];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
-    uint8_t chk;                            // XOR checksum 
-    /* 
-        do not add properties after the CHK
-        as it is assumed to exist at length-1 
+    uint8_t chk;                            // XOR checksum
+    /*
+        do not add properties after the MAGIC_EF and CHK
+        as it is assumed to exist at length-2 and length-1
     */
 } master_t;
 

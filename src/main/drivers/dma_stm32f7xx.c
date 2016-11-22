@@ -23,11 +23,12 @@
 
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
+#include "resource.h"
 
 /*
  * DMA descriptors.
  */
-static dmaChannelDescriptor_t dmaDescriptors[] = {
+static dmaChannelDescriptor_t dmaDescriptors[DMA_MAX_DESCRIPTORS] = {
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream0,  0, DMA1_Stream0_IRQn, RCC_AHB1ENR_DMA1EN),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream1,  6, DMA1_Stream1_IRQn, RCC_AHB1ENR_DMA1EN),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Stream2, 16, DMA1_Stream2_IRQn, RCC_AHB1ENR_DMA1EN),
@@ -68,30 +69,50 @@ DEFINE_DMA_IRQ_HANDLER(2, 5, DMA2_ST5_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 6, DMA2_ST6_HANDLER)
 DEFINE_DMA_IRQ_HANDLER(2, 7, DMA2_ST7_HANDLER)
 
-
-void dmaInit(void)
+static void enableDmaClock(uint32_t rcc)
 {
-    // TODO: Do we need this?
-}
-
-void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
-{
-    //clock
-    //RCC_AHB1PeriphClockCmd(dmaDescriptors[identifier].rcc, ENABLE);
-
     do {
         __IO uint32_t tmpreg;
-        SET_BIT(RCC->AHB1ENR, dmaDescriptors[identifier].rcc);
+        SET_BIT(RCC->AHB1ENR, rcc);
         /* Delay after an RCC peripheral clock enabling */
-        tmpreg = READ_BIT(RCC->AHB1ENR, dmaDescriptors[identifier].rcc);
+        tmpreg = READ_BIT(RCC->AHB1ENR, rcc);
         UNUSED(tmpreg);
     } while(0);
+}
 
+void dmaInit(dmaIdentifier_e identifier, resourceOwner_e owner, uint8_t resourceIndex)
+{
+    enableDmaClock(dmaDescriptors[identifier].rcc);
+    dmaDescriptors[identifier].owner = owner;
+    dmaDescriptors[identifier].resourceIndex = resourceIndex;
+}
+
+void dmaSetHandler(dmaIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback, uint32_t priority, uint32_t userParam)
+{
+    enableDmaClock(dmaDescriptors[identifier].rcc);
     dmaDescriptors[identifier].irqHandlerCallback = callback;
     dmaDescriptors[identifier].userParam = userParam;
-
 
     HAL_NVIC_SetPriority(dmaDescriptors[identifier].irqN, NVIC_PRIORITY_BASE(priority), NVIC_PRIORITY_SUB(priority));
     HAL_NVIC_EnableIRQ(dmaDescriptors[identifier].irqN);
 }
 
+resourceOwner_e dmaGetOwner(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].owner;
+}
+
+uint8_t dmaGetResourceIndex(dmaIdentifier_e identifier)
+{
+    return dmaDescriptors[identifier].resourceIndex;
+}
+
+dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
+{
+    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+        if (dmaDescriptors[i].stream == stream) {
+            return i;
+        }
+    }
+    return 0;
+}

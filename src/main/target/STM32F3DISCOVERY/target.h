@@ -120,6 +120,8 @@
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
+#define CMS
+
 //#define USE_SDCARD
 //#define USE_SDCARD_SPI2
 //
@@ -167,7 +169,8 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define USE_DSHOT 
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
 
@@ -190,4 +193,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
-

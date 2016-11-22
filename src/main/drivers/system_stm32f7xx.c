@@ -27,7 +27,6 @@
 #include "nvic.h"
 #include "system.h"
 
-#include "exti.h"
 
 #define AIRCR_VECTKEY_MASK    ((uint32_t)0x05FA0000)
 void SystemClock_Config(void);
@@ -151,9 +150,9 @@ bool isMPUSoftReset(void)
 
 void systemInit(void)
 {
-	checkForBootLoaderRequest();
+    checkForBootLoaderRequest();
 
-	//SystemClock_Config();
+    //SystemClock_Config();
 
     // Configure NVIC preempt/priority groups
     //NVIC_PriorityGroupConfig(NVIC_PRIORITY_GROUPING);

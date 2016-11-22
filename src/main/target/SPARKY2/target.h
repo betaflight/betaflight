@@ -22,7 +22,7 @@
 
 #define USBD_PRODUCT_STRING "Sparky 2.0"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
+    #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0                    PB5
@@ -32,9 +32,11 @@
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
 
-
 #define INVERTER                PC6
 #define INVERTER_USART          USART6
+
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 // MPU9250 interrupt
 #define USE_EXTI
@@ -131,4 +133,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
-

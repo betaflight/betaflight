@@ -95,6 +95,7 @@
 //   feature name (includes source) -> MAX_OSD, used in target.mk
 // include the osd code
 #define OSD
+
 // include the max7456 driver
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI1
@@ -128,6 +129,7 @@
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT

@@ -157,13 +157,6 @@ static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 
 }
 
-static void applyGyroZero(void)
-{
-    for (int axis = 0; axis < 3; axis++) {
-        gyroADC[axis] -= gyroZero[axis];
-    }
-}
-
 void gyroUpdate(void)
 {
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
@@ -173,17 +166,19 @@ void gyroUpdate(void)
         return;
     }
 
-    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        gyroADC[axis] = gyroADCRaw[axis];
-    }
+    gyroADC[X] = gyroADCRaw[X];
+    gyroADC[Y] = gyroADCRaw[Y];
+    gyroADC[Z] = gyroADCRaw[Z];
 
-    alignSensors(gyroADC, gyroADC, gyroAlign);
+    alignSensors(gyroADC, gyroAlign);
 
     if (!isGyroCalibrationComplete()) {
         performGyroCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
-    applyGyroZero();
+    gyroADC[X] -= gyroZero[X];
+    gyroADC[Y] -= gyroZero[Y];
+    gyroADC[Z] -= gyroZero[Z];
 
     if (gyroSoftLpfHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

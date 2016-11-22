@@ -102,6 +102,8 @@
 #define RSSI_ADC_PIN            PB2
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
+
 #define REMAP_TIM17_DMA
 // UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
 #if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
@@ -129,4 +131,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-

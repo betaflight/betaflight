@@ -62,8 +62,6 @@
 #include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
 
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
@@ -94,8 +92,9 @@ static void ledStripDisable(void);
 
 //#define USE_LED_ANIMATION
 
-#define LED_STRIP_HZ(hz) ((int32_t)((1000 * 1000) / (hz)))
-#define LED_STRIP_MS(ms) ((int32_t)(1000 * (ms)))
+#define HZ_TO_US(hz) ((int32_t)((1000 * 1000) / (hz)))
+
+#define MAX_TIMER_DELAY (5 * 1000 * 1000)
 
 #if LED_MAX_STRIP_LENGTH > WS2811_LED_STRIP_LENGTH
 # error "Led strip length must match driver"
@@ -538,7 +537,7 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
             if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
         }
-        *timer += LED_STRIP_HZ(10);
+        *timer += HZ_TO_US(10);
     }
 
     if (warningFlags) {
@@ -570,27 +569,31 @@ static void applyLedBatteryLayer(bool updateNow, uint32_t *timer)
     static bool flash = false;
 
     int state;
-    int timeOffset = 1;
+    int timerDelayUs = HZ_TO_US(1);
 
     if (updateNow) {
        state = getBatteryState();
 
-       switch (state) {
-           case BATTERY_OK:
-               flash = false;
-               timeOffset = 1;
-               break;
-           case BATTERY_WARNING:
-               timeOffset = 2;
-               break;
-           default:
-               timeOffset = 8;
-               break;
-       }
-       flash = !flash;
+        switch (state) {
+            case BATTERY_OK:
+                flash = true;
+                timerDelayUs = HZ_TO_US(1);
+
+                break;
+            case BATTERY_WARNING:
+                flash = !flash;
+                timerDelayUs = HZ_TO_US(2);
+
+                break;
+            default:
+                flash = !flash;
+                timerDelayUs = HZ_TO_US(8);
+
+                break;
+        }
     }
 
-    *timer += LED_STRIP_HZ(timeOffset);
+    *timer += timerDelayUs;
 
     if (!flash) {
        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
@@ -603,24 +606,24 @@ static void applyLedRssiLayer(bool updateNow, uint32_t *timer)
     static bool flash = false;
 
     int state;
-    int timeOffset = 0;
+    int timerDelay = HZ_TO_US(1);
 
     if (updateNow) {
        state = (rssi * 100) / 1023;
 
        if (state > 50) {
-           flash = false;
-           timeOffset = 1;
+           flash = true;
+           timerDelay = HZ_TO_US(1);
        } else if (state > 20) {
-           timeOffset = 2;
+           flash = !flash;
+           timerDelay = HZ_TO_US(2);
        } else {
-           timeOffset = 8;
+           flash = !flash;
+           timerDelay = HZ_TO_US(8);
        }
-       flash = !flash;
     }
 
-
-    *timer += LED_STRIP_HZ(timeOffset);
+    *timer += timerDelay;
 
     if (!flash) {
        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
@@ -645,7 +648,7 @@ static void applyLedGpsLayer(bool updateNow, uint32_t *timer)
             gpsFlashCounter++;
             gpsPauseCounter = 1;
         }
-        *timer += LED_STRIP_HZ(2.5);
+        *timer += HZ_TO_US(2.5f);
     }
 
     const hsvColor_t *gpsColor;
@@ -677,11 +680,11 @@ static void applyLedIndicatorLayer(bool updateNow, uint32_t *timer)
             // calculate update frequency
             int scale = MAX(ABS(rcCommand[ROLL]), ABS(rcCommand[PITCH]));  // 0 - 500
             scale = scale - INDICATOR_DEADBAND;  // start increasing frequency right after deadband
-            *timer += LED_STRIP_HZ(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
+            *timer += HZ_TO_US(5 + (45 * scale) / (500 - INDICATOR_DEADBAND));   // 5 - 50Hz update, 2.5 - 25Hz blink
 
             flash = !flash;
         } else {
-            *timer += LED_STRIP_HZ(5);  // try again soon
+            *timer += HZ_TO_US(5);
         }
     }
 
@@ -739,8 +742,7 @@ static void applyLedThrustRingLayer(bool updateNow, uint32_t *timer)
     if (updateNow) {
         rotationPhase = rotationPhase > 0 ? rotationPhase - 1 : ledCounts.ringSeqLen - 1;
 
-        int scale = scaledThrottle; // ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 10, 100) : 10;
-        *timer += LED_STRIP_HZ(5) * 10 / scale;  // 5 - 50Hz update rate
+        *timer += HZ_TO_US(5 + (45 * scaledThrottle) / 100);  // 5 - 50Hz update rate
     }
 
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
@@ -808,7 +810,7 @@ static void applyLarsonScannerLayer(bool updateNow, uint32_t *timer)
 
     if (updateNow) {
         larsonScannerNextStep(&larsonParameters, 15);
-        *timer += LED_STRIP_HZ(60);
+        *timer += HZ_TO_US(60);
     }
 
     int scannerLedIndex = 0;
@@ -837,7 +839,7 @@ static void applyLedBlinkLayer(bool updateNow, uint32_t *timer)
         if (blinkMask <= 1)
             blinkMask = blinkPattern;
 
-        *timer += LED_STRIP_HZ(10);
+        *timer += HZ_TO_US(10);
     }
 
     bool ledOn = (blinkMask & 1);  // b_b_____...
@@ -846,7 +848,7 @@ static void applyLedBlinkLayer(bool updateNow, uint32_t *timer)
             const ledConfig_t *ledConfig = &ledConfigs[i];
 
             if (ledGetOverlayBit(ledConfig, LED_OVERLAY_BLINK) ||
-                    (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 55 && scaledThrottle > 10)) {
+                    (ledGetOverlayBit(ledConfig, LED_OVERLAY_LANDING_FLASH) && scaledThrottle < 50)) {
                 setLedHsv(i, getSC(LED_SCOLOR_BLINKBACKGROUND));
             }
         }
@@ -860,7 +862,7 @@ static void applyLedAnimationLayer(bool updateNow, uint32_t *timer)
     const int animationFrames = ledGridHeight;
     if(updateNow) {
         frameCounter = (frameCounter + 1 < animationFrames) ? frameCounter + 1 : 0;
-        *timer += LED_STRIP_HZ(20);
+        *timer += HZ_TO_US(20);
     }
 
     if (ARMING_FLAG(ARMED))
@@ -948,12 +950,12 @@ void ledStripUpdate(uint32_t currentTime)
     uint32_t timActive = 0;
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
         // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
-        // max delay is limited to 5s
         int32_t delta = cmp32(now, timerVal[timId]);
-        if (delta < 0 && delta > -LED_STRIP_MS(5000))
+        // max delay is limited to 5s
+        if (delta < 0 && delta > -MAX_TIMER_DELAY)
             continue;  // not ready yet
         timActive |= 1 << timId;
-        if (delta >= LED_STRIP_MS(100) || delta < 0) {
+        if (delta >= 100 * 1000 || delta < 0) {
             timerVal[timId] = now;
         }
     }
@@ -963,7 +965,7 @@ void ledStripUpdate(uint32_t currentTime)
 
     // apply all layers; triggered timed functions has to update timers
 
-    scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 10, 100) : 10;
+    scaledThrottle = ARMING_FLAG(ARMED) ? scaleRange(rcData[THROTTLE], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, 100) : 0;
     scaledAux = scaleRange(rcData[currentLedStripConfig->ledstrip_aux_channel], PWM_RANGE_MIN, PWM_RANGE_MAX, 0, HSV_HUE_MAX + 1);
 
     applyLedFixedLayers();
@@ -1124,7 +1126,7 @@ void ledStripEnable(void)
 static void ledStripDisable(void)
 {
     setStripColor(&HSV(BLACK));
-    
-	ws2811UpdateStrip();
+
+    ws2811UpdateStrip();
 }
 #endif

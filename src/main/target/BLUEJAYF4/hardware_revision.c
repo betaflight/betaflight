@@ -42,43 +42,46 @@ uint8_t hardwareRevision = UNKNOWN;
 void detectHardwareRevision(void)
 {
     IO_t pin1 = IOGetByTag(IO_TAG(PB12));
-    IOInit(pin1, OWNER_SYSTEM, RESOURCE_INPUT, 1);
+    IOInit(pin1, OWNER_SYSTEM, 1);
     IOConfigGPIO(pin1, IOCFG_IPU);
-
-    IO_t pin2 = IOGetByTag(IO_TAG(PB13));
-    IOInit(pin2, OWNER_SYSTEM, RESOURCE_INPUT, 2);
-    IOConfigGPIO(pin2, IOCFG_IPU);
 
     // Check hardware revision
     delayMicroseconds(10);  // allow configuration to settle
 
-    /* 
+    /*
         if both PB12 and 13 are tied to GND then it is Rev3A (mini)
-        if only PB12 is tied to GND then it is a Rev3 (full size) 
+        if only PB12 is tied to GND then it is a Rev3 (full size)
     */
     if (!IORead(pin1)) {
-        if (!IORead(pin2)) {
-            hardwareRevision = BJF4_REV3A;
-        }
         hardwareRevision = BJF4_REV3;
+    } else {
+        IO_t pin2 = IOGetByTag(IO_TAG(PB13));
+        IOInit(pin2, OWNER_SYSTEM, 2);
+        IOConfigGPIO(pin2, IOCFG_OUT_PP);
+
+        IOWrite(pin2, false);
+
+        if (!IORead(pin1)) {
+            hardwareRevision = BJF4_MINI_REV3A;
+        }
     }
 
     if (hardwareRevision == UNKNOWN) {
         hardwareRevision = BJF4_REV2;
         return;
     }
-    
-    /* 
+
+    /*
         enable the UART1 inversion PC9
-        
+
         TODO: once param groups are in place, inverter outputs
         can be moved to be simple IO outputs, and merely set them
         HI or LO in configuration.
     */
     IO_t uart1invert = IOGetByTag(IO_TAG(PC9));
-    IOInit(uart1invert, OWNER_INVERTER, RESOURCE_OUTPUT, 2);
+    IOInit(uart1invert, OWNER_INVERTER, 2);
     IOConfigGPIO(uart1invert, IOCFG_AF_PP);
-    IOLo(uart1invert);    
+    IOLo(uart1invert);
 }
 
 void updateHardwareRevision(void)
@@ -86,14 +89,14 @@ void updateHardwareRevision(void)
     if (hardwareRevision != BJF4_REV2) {
         return;
     }
-    
-    /* 
+
+    /*
         if flash exists on PB3 then Rev1
     */
     if (m25p16_init(IO_TAG(PB3))) {
         hardwareRevision = BJF4_REV1;
     } else {
-        IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, RESOURCE_NONE, 0);
+        IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, 0);
     }
 }
 

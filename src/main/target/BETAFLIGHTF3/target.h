@@ -45,6 +45,7 @@
 #define USE_EXTI
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 

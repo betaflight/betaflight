@@ -44,6 +44,11 @@ static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];
 
+motorDmaOutput_t *getMotorDmaOutput(uint8_t index)
+{
+    return &dmaMotors[index];
+}
+
 uint8_t getTimerIndex(TIM_TypeDef *timer)
 {
     for (int i = 0; i < dmaMotorTimerCount; i++) {
@@ -57,9 +62,16 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 void pwmWriteDigital(uint8_t index, uint16_t value)
 {
+
+    if (!pwmMotorsEnabled) {
+        return;
+    }
+
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
-    uint16_t packet = (value << 1) | 0;                            // Here goes telemetry bit (false for now)
+    uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
+    motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
+
     // compute checksum
     int csum = 0;
     int csum_data = packet;
@@ -86,7 +98,11 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
 {
     UNUSED(motorCount);
-    
+
+    if (!pwmMotorsEnabled) {
+        return;
+    }
+
     for (uint8_t i = 0; i < dmaMotorTimerCount; i++) {
         //TIM_SetCounter(dmaMotorTimers[i].timer, 0);
         //TIM_DMACmd(dmaMotorTimers[i].timer, dmaMotorTimers[i].timerDmaSources, ENABLE);
@@ -114,21 +130,21 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 {
     motorDmaOutput_t * const motor = &dmaMotors[motorIndex];
     motor->timerHardware = timerHardware;
-        
+
     TIM_TypeDef *timer = timerHardware->tim;
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
-    
+
     const uint8_t timerIndex = getTimerIndex(timer);
     const bool configureTimer = (timerIndex == dmaMotorTimerCount-1);
-    
-    IOInit(motorIO, OWNER_MOTOR, RESOURCE_OUTPUT, 0);
+
+    IOInit(motorIO, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     IOConfigGPIOAF(motorIO, IO_CONFIG(GPIO_MODE_AF_PP, GPIO_SPEED_FREQ_VERY_HIGH, GPIO_PULLUP), timerHardware->alternateFunction);
 
     __DMA1_CLK_ENABLE();
 
     if (configureTimer) {
         RCC_ClockCmd(timerRCC(timer), ENABLE);
-        
+
         uint32_t hz;
         switch (pwmProtocolType) {
             case(PWM_TYPE_DSHOT600):
@@ -159,7 +175,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     {
         motor->TimHandle = dmaMotors[timerIndex].TimHandle;
     }
-    
+
     switch (timerHardware->channel) {
         case TIM_CHANNEL_1:
             motor->timerDmaSource = TIM_DMA_ID_CC1;
@@ -182,8 +198,8 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     motor->hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
     motor->hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
     motor->hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
-    motor->hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD ;
-    motor->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
+    motor->hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    motor->hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     motor->hdma_tim.Init.Mode = DMA_NORMAL;
     motor->hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
     motor->hdma_tim.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
@@ -202,6 +218,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     /* Link hdma_tim to hdma[x] (channelx) */
     __HAL_LINKDMA(&motor->TimHandle, hdma[motor->timerDmaSource], motor->hdma_tim);
 
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     dmaSetHandler(timerHardware->dmaIrqHandler, motor_DMA_IRQHandler, NVIC_BUILD_PRIORITY(1, 2), motorIndex);
 
     /* Initialize TIMx DMA handle */
@@ -210,14 +227,14 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
         /* Initialization Error */
         return;
     }
-    
+
     TIM_OC_InitTypeDef TIM_OCInitStructure;
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCInitStructure.OCMode = TIM_OCMODE_PWM1;
     TIM_OCInitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
     TIM_OCInitStructure.OCIdleState = TIM_OCIDLESTATE_RESET;
-    TIM_OCInitStructure.OCNIdleState  = TIM_OCNIDLESTATE_RESET;
+    TIM_OCInitStructure.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     TIM_OCInitStructure.OCFastMode = TIM_OCFAST_DISABLE;
     TIM_OCInitStructure.Pulse = 0;
 

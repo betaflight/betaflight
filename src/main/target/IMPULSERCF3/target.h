@@ -46,6 +46,10 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
+#define REMAP_TIM17_DMA
+
 #define USE_VCP
 #define USE_UART1
 #define USE_UART2
@@ -85,7 +89,7 @@
 
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_BLACKBOX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define SPEKTRUM_BIND
 // USART2, PA15
@@ -102,4 +106,3 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(16) |TIM_N(17))
-

@@ -162,13 +162,13 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
+#define REMAP_TIM17_DMA
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
-#define TARGET_IO_PORTF         (BIT(4))
+#define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
+#define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 8
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
-

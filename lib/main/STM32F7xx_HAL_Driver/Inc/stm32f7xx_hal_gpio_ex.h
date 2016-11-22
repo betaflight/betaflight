@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_gpio_ex.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Header file of GPIO HAL Extension module.
   ******************************************************************************
   * @attention
@@ -64,7 +64,9 @@
 /** @defgroup GPIO_Alternate_function_selection GPIO Alternate Function Selection
   * @{
   */  
-
+/*--------------- STM32F74xxx/STM32F75xxx/STM32F76xxx/STM32F77xxx -------------*/
+#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) ||\
+    defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)   
 /** 
   * @brief   AF 0 selection  
   */ 
@@ -188,7 +190,8 @@
 #define GPIO_AF10_SAI2          ((uint8_t)0xAU)  /* SAI2 Alternate Function mapping */
 #if defined (STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx) || defined(STM32F777xx) || defined(STM32F779xx)
 #define GPIO_AF10_DFSDM1         ((uint8_t)0x0AU)  /* DFSDM1 Alternate Function mapping  */
-#define GPIO_AF10_SDMMC2        ((uint8_t)0x0AU)  /* SDMMC2 Alternate Function mapping */   
+#define GPIO_AF10_SDMMC2         ((uint8_t)0x0AU)  /* SDMMC2 Alternate Function mapping */   
+#define GPIO_AF10_LTDC           ((uint8_t)0x0AU)  /* LCD-TFT Alternate Function mapping */
 #endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */   
 
 /** 
@@ -231,7 +234,8 @@
   * @brief   AF 15 selection  
   */ 
 #define GPIO_AF15_EVENTOUT      ((uint8_t)0x0FU)  /* EVENTOUT Alternate Function mapping */
-
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+/*----------------------------------------------------------------------------*/
 
 /**
   * @}
@@ -291,6 +295,8 @@
 /** @defgroup GPIOEx_Get_Port_Index GPIO Get Port Index
   * @{
   */
+#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) ||\
+    defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
 #define GPIO_GET_INDEX(__GPIOx__)   (uint8_t)(((__GPIOx__) == (GPIOA))? 0U :\
                                               ((__GPIOx__) == (GPIOB))? 1U :\
                                               ((__GPIOx__) == (GPIOC))? 2U :\
@@ -300,7 +306,9 @@
                                               ((__GPIOx__) == (GPIOG))? 6U :\
                                               ((__GPIOx__) == (GPIOH))? 7U :\
                                               ((__GPIOx__) == (GPIOI))? 8U :\
-                                              ((__GPIOx__) == (GPIOJ))? 9U : 10U)			
+                                              ((__GPIOx__) == (GPIOJ))? 9U : 10U)
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+
 /**
   * @}
   */
@@ -352,9 +360,9 @@
                           ((AF) == GPIO_AF12_FMC)       || ((AF) == GPIO_AF15_EVENTOUT)  || \
                           ((AF) == GPIO_AF13_DCMI)      || ((AF) == GPIO_AF14_LTDC))
 #elif defined(STM32F745xx)
-#define IS_GPIO_AF(AF)   (((AF) == GPIO_AF0_RTC_50Hz)   || ((AF) == GPIO_AF1_TIM1)        || \
+#define IS_GPIO_AF(AF)   (((AF) == GPIO_AF0_RTC_50Hz)   || ((AF) == GPIO_AF1_TIM1)       || \
                           ((AF) == GPIO_AF0_SWJ)        || ((AF) == GPIO_AF0_TRACE)      || \
-                          ((AF) == GPIO_AF0_MCO)       || ((AF) == GPIO_AF1_TIM2)       || \
+                          ((AF) == GPIO_AF0_MCO)       || ((AF) == GPIO_AF1_TIM2)        || \
                           ((AF) == GPIO_AF2_TIM3)       || ((AF) == GPIO_AF2_TIM4)       || \
                           ((AF) == GPIO_AF2_TIM5)       || ((AF) == GPIO_AF3_TIM8)       || \
                           ((AF) == GPIO_AF3_TIM9)       || ((AF) == GPIO_AF3_TIM10)      || \
@@ -379,7 +387,7 @@
                           ((AF) == GPIO_AF13_DCMI)      || ((AF) == GPIO_AF10_OTG_FS)    || \
                           ((AF) == GPIO_AF10_OTG_HS)    || ((AF) == GPIO_AF10_SAI2)      || \
                           ((AF) == GPIO_AF10_QUADSPI)   || ((AF) == GPIO_AF11_ETH)       || \
-                          ((AF) == GPIO_AF12_OTG_HS_FS) || ((AF) == GPIO_AF12_SDMMC1)     || \
+                          ((AF) == GPIO_AF12_OTG_HS_FS) || ((AF) == GPIO_AF12_SDMMC1)    || \
                           ((AF) == GPIO_AF12_FMC)       || ((AF) == GPIO_AF15_EVENTOUT))
 #elif defined(STM32F767xx) || defined(STM32F777xx)
 #define IS_GPIO_AF(AF)   (((AF) == GPIO_AF0_RTC_50Hz)   || ((AF) == GPIO_AF1_TIM1)        || \
@@ -409,10 +417,11 @@
                           ((AF) == GPIO_AF10_OTG_FS)    || ((AF) == GPIO_AF9_LTDC)       || \
                           ((AF) == GPIO_AF10_OTG_HS)    || ((AF) == GPIO_AF10_SAI2)      || \
                           ((AF) == GPIO_AF10_QUADSPI)   || ((AF) == GPIO_AF11_ETH)       || \
+                          ((AF) == GPIO_AF10_SDMMC2)    || ((AF) == GPIO_AF11_SDMMC2)    || \
                           ((AF) == GPIO_AF11_CAN3)      || ((AF) == GPIO_AF12_OTG_HS_FS) || \
                           ((AF) == GPIO_AF12_SDMMC1)    || ((AF) == GPIO_AF12_FMC)       || \
                           ((AF) == GPIO_AF15_EVENTOUT)  || ((AF) == GPIO_AF13_DCMI)      || \
-						  ((AF) == GPIO_AF14_LTDC))
+		                  ((AF) == GPIO_AF14_LTDC))
 #elif defined(STM32F769xx) || defined(STM32F779xx)
 #define IS_GPIO_AF(AF)   (((AF) == GPIO_AF0_RTC_50Hz)   || ((AF) == GPIO_AF1_TIM1)        || \
                           ((AF) == GPIO_AF0_SWJ)        || ((AF) == GPIO_AF0_TRACE)      || \
@@ -441,6 +450,7 @@
                           ((AF) == GPIO_AF9_LTDC)       || ((AF) == GPIO_AF10_OTG_FS)    || \
                           ((AF) == GPIO_AF10_OTG_HS)    || ((AF) == GPIO_AF10_SAI2)      || \
                           ((AF) == GPIO_AF10_QUADSPI)   || ((AF) == GPIO_AF11_ETH)       || \
+                          ((AF) == GPIO_AF10_SDMMC2)    || ((AF) == GPIO_AF11_SDMMC2)    || \
                           ((AF) == GPIO_AF11_CAN3)      || ((AF) == GPIO_AF12_OTG_HS_FS) || \
                           ((AF) == GPIO_AF12_SDMMC1)    || ((AF) == GPIO_AF12_FMC)       || \
                           ((AF) == GPIO_AF15_EVENTOUT)  || ((AF) == GPIO_AF13_DCMI)      || \
@@ -472,6 +482,7 @@
                           ((AF) == GPIO_AF9_TIM14)      || ((AF) == GPIO_AF9_QUADSPI)    || \
                           ((AF) == GPIO_AF10_OTG_HS)    || ((AF) == GPIO_AF10_SAI2)      || \
                           ((AF) == GPIO_AF10_QUADSPI)   || ((AF) == GPIO_AF11_ETH)       || \
+                          ((AF) == GPIO_AF10_SDMMC2)    || ((AF) == GPIO_AF11_SDMMC2)    || \
                           ((AF) == GPIO_AF11_CAN3)      || ((AF) == GPIO_AF12_OTG_HS_FS) || \
                           ((AF) == GPIO_AF12_SDMMC1)    || ((AF) == GPIO_AF12_FMC)       || \
                           ((AF) == GPIO_AF15_EVENTOUT)  || ((AF) == GPIO_AF13_DCMI)      || \

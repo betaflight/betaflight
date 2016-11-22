@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dsi.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   DSI HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the DSI peripheral:
@@ -222,7 +222,7 @@ HAL_StatusTypeDef HAL_DSI_Init(DSI_HandleTypeDef *hdsi, DSI_PLLInitTypeDef *PLLI
   
     /* Set the TX escape clock division factor */
     hdsi->Instance->CCR &= ~DSI_CCR_TXECKDIV;
-    hdsi->Instance->CCR = hdsi->Init.TXEscapeCkdiv;
+    hdsi->Instance->CCR |= hdsi->Init.TXEscapeCkdiv;
     
     /* Calculate the bit period in high-speed mode in unit of 0.25 ns (UIX4) */
     /* The equation is : UIX4 = IntegerPart( (1000/F_PHY_Mhz) * 4 )          */
@@ -1005,7 +1005,7 @@ HAL_StatusTypeDef HAL_DSI_ConfigHostTimeouts(DSI_HandleTypeDef *hdsi, DSI_HOST_T
   
   /* Set the timeout clock division factor */
   hdsi->Instance->CCR &= ~DSI_CCR_TOCKDIV;
-  hdsi->Instance->CCR = ((HostTimeouts->TimeoutCkdiv)<<8);
+  hdsi->Instance->CCR |= ((HostTimeouts->TimeoutCkdiv)<<8);
   
   /* High-speed transmission timeout */
   hdsi->Instance->TCCR[0] &= ~DSI_TCCR0_HSTX_TOCNT;

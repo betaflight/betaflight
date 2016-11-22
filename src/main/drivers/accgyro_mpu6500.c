@@ -97,7 +97,7 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_INT_PIN_CFG, MPU6500_BIT_INT_ANYRD_2CLEAR);  // INT_ANYRD_2CLEAR
 #endif
     delay(15);
-    
+
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
 #endif

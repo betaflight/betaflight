@@ -808,7 +808,7 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
-        vbatReference = vbatLatestADC;
+        vbatReference = vbatLatest;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -1005,8 +1005,8 @@ static void loadMainState(uint32_t currentTime)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = vbatLatestADC;
-    blackboxCurrent->amperageLatest = amperageLatestADC;
+    blackboxCurrent->vbatLatest = vbatLatest;
+    blackboxCurrent->amperageLatest = amperageLatest;
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1625,4 +1625,3 @@ void initBlackbox(void)
     }
 }
 #endif
-

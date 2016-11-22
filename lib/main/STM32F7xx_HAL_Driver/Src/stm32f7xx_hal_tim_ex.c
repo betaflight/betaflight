@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Timer extension peripheral:
@@ -42,10 +42,10 @@
            (++) Hall Sensor output : HAL_TIM_HallSensor_MspInit()
            
      (#) Initialize the TIM low level resources :
-        (##) Enable the TIM interface clock using __TIMx_CLK_ENABLE(); 
+        (##) Enable the TIM interface clock using __HAL_RCC_TIMx_CLK_ENABLE(); 
         (##) TIM pins configuration
             (+++) Enable the clock for the TIM GPIOs using the following function:
-                 __GPIOx_CLK_ENABLE();   
+                  __HAL_RCC_GPIOx_CLK_ENABLE();   
             (+++) Configure these TIM pins in Alternate function mode using HAL_GPIO_Init();  
 
      (#) The external Clock can be configured, if needed (the default clock is the 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define EEPROM_CONF_VERSION 144
+#define EEPROM_CONF_VERSION 145
 
 void initEEPROM(void);
 void writeEEPROM();

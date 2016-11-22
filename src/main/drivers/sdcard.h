@@ -20,7 +20,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct sdcardMetadata_t {
+typedef struct sdcardConfig_s {
+    uint8_t useDma;
+} sdcardConfig_t;
+
+typedef struct sdcardMetadata_s {
     uint8_t manufacturerID;
     uint16_t oemID;
 

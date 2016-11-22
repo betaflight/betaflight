@@ -40,10 +40,10 @@
 #include "io.h"
 #include "light_ws2811strip.h"
 
-#if defined(STM32F4) || defined(STM32F7)
-uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
-#else
+#if defined(STM32F1) || defined(STM32F3)
 uint8_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
+#else
+uint32_t ledStripDMABuffer[WS2811_DMA_BUFFER_SIZE];
 #endif
 volatile uint8_t ws2811LedDataTransferInProgress = 0;
 
@@ -89,6 +89,9 @@ void ws2811LedStripInit(ioTag_t ioTag)
 {
     memset(&ledStripDMABuffer, 0, WS2811_DMA_BUFFER_SIZE);
     ws2811LedStripHardwareInit(ioTag);
+
+    const hsvColor_t hsv_white = {  0, 255, 255};
+    setStripColor(&hsv_white);
     ws2811UpdateStrip();
 }
 
