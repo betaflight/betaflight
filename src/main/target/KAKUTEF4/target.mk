@@ -8,3 +8,4 @@ TARGET_SRC = \
             drivers/compass_ak8963.c \
             drivers/compass_hmc5883l.c \
             drivers/max7456.c 
+            
