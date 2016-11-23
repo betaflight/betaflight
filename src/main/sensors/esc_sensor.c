@@ -91,6 +91,7 @@ static esc_telemetry_t escSensorData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
 static uint32_t escTriggerLastTimestamp = -1;
 static uint8_t timeoutRetryCount = 0;
+static uint8_t totalRetryCount = 0;
 
 static uint8_t escSensorMotor = 0;      // motor index
 static bool escSensorEnabled = false;
@@ -218,7 +219,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
         escTriggerLastTimestamp = escTriggerTimestamp;
     }
     else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_READY) {
-        if (debugMode == DEBUG_ESC_SENSOR) debug[0] = escSensorMotor+1;
+        DEBUG_SET(DEBUG_ESC_SENSOR, 0, escSensorMotor+1);
 
         motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
         motor->requestTelemetry = true;
@@ -237,7 +238,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
             selectNextMotor();
         }
 
-        if (debugMode == DEBUG_ESC_SENSOR) debug[1]++;
+        DEBUG_SET(DEBUG_ESC_SENSOR, 1, ++totalRetryCount);
     }
 
     // Get received frame status
@@ -259,8 +260,8 @@ void escSensorProcess(timeUs_t currentTimeUs)
             }
         }
 
-        if (debugMode == DEBUG_ESC_SENSOR) debug[2] = escVbat;
-        if (debugMode == DEBUG_ESC_SENSOR) debug[3] = escCurrent;
+        DEBUG_SET(DEBUG_ESC_SENSOR, 2, escVbat);
+        DEBUG_SET(DEBUG_ESC_SENSOR, 3, escCurrent);
 
         selectNextMotor();
         escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
