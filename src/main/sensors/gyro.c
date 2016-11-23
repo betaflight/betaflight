@@ -208,7 +208,7 @@ void gyroUpdate(void)
         if (debugMode == DEBUG_GYRO)
             debug[axis] = gyroADC[axis];
 
-        gyroADCf[axis] = softLpfFilterApplyFn(&gyroDenoiseState[axis], (float) gyroADC[axis]);
+        gyroADCf[axis] = softLpfFilterApplyFn(&gyroFilterPt1[axis], (float) gyroADC[axis]);
 
         if (debugMode == DEBUG_NOTCH)
             debug[axis] = lrintf(gyroADCf[axis]);
