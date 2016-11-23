@@ -295,6 +295,8 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
                 updateCurrentDrawn(lastUpdateAt);
             }
             #endif
+
+            break;
         case CURRENT_SENSOR_NONE:
             amperage = 0;
 
