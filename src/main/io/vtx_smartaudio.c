@@ -33,7 +33,13 @@
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
+
+#ifdef OMNIBUSF4
+#define DPRINTF_SERIAL_PORT SERIAL_PORT_USART3
+#else
 #define DPRINTF_SERIAL_PORT SERIAL_PORT_USART1
+#endif
+
 serialPort_t *debugSerialPort = NULL;
 #define dprintf(x) if (debugSerialPort) printf x
 #else
@@ -90,6 +96,8 @@ enum {
 // Statistical counters, for user side trouble shooting.
 
 typedef struct smartAudioStat_s {
+    uint16_t pktsent;
+    uint16_t pktrcvd;
     uint16_t badpre;
     uint16_t badlen;
     uint16_t crc;
@@ -98,6 +106,8 @@ typedef struct smartAudioStat_s {
 } smartAudioStat_t;
 
 static smartAudioStat_t saStat = {
+    .pktsent = 0,
+    .pktrcvd = 0,
     .badpre = 0,
     .badlen = 0,
     .crc = 0,
@@ -230,26 +240,21 @@ static int sa_baudstep = 50;
 
 #define SMARTAUDIO_CMD_TIMEOUT    120
 
-// Statistics for autobauding
-
-static int sa_pktsent = 0;
-static int sa_pktrcvd = 0;
-
 static void saAutobaud(void)
 {
-    if (sa_pktsent < 10)
+    if (saStat.pktsent < 10)
         // Not enough samples collected
         return;
 
 #if 0
     dprintf(("autobaud: %d rcvd %d/%d (%d)\r\n",
-        sa_smartbaud, sa_pktrcvd, sa_pktsent, ((sa_pktrcvd * 100) / sa_pktsent)));
+        sa_smartbaud, saStat.pktrcvd, saStat.pktsent, ((saStat.pktrcvd * 100) / saStat.pktsent)));
 #endif
 
-    if (((sa_pktrcvd * 100) / sa_pktsent) >= 70) {
+    if (((saStat.pktrcvd * 100) / saStat.pktsent) >= 70) {
         // This is okay
-        sa_pktsent = 0; // Should be more moderate?
-        sa_pktrcvd = 0;
+        saStat.pktsent = 0; // Should be more moderate?
+        saStat.pktrcvd = 0;
         return;
     }
 
@@ -269,8 +274,8 @@ static void saAutobaud(void)
 
     smartAudioSerialPort->vTable->serialSetBaudRate(smartAudioSerialPort, sa_smartbaud);
 
-    sa_pktsent = 0;
-    sa_pktrcvd = 0;
+    saStat.pktsent = 0;
+    saStat.pktrcvd = 0;
 }
 
 // Transport level variables
@@ -431,7 +436,7 @@ static void saReceiveFramer(uint8_t c)
         if (CRC8(sa_rbuf, 2 + len) == c) {
             // Got a response
             saProcessResponse(sa_rbuf, len + 2);
-            sa_pktrcvd++;
+            saStat.pktrcvd++;
         } else if (sa_rbuf[0] & 1) {
             // Command echo
             // XXX There is an exceptional case (V2 response)
@@ -456,7 +461,7 @@ static void saSendFrame(uint8_t *buf, int len)
     serialWrite(smartAudioSerialPort, 0x00); // XXX Probably don't need this
 
     sa_lastTransmission = millis();
-    sa_pktsent++;
+    saStat.pktsent++;
 }
 
 /*
@@ -925,6 +930,8 @@ static const char * const saCmsDeviceStatusNames[] = {
 
 static OSD_TAB_t saCmsEntOnline = { &saCmsDeviceStatus, 2, saCmsDeviceStatusNames };
 static OSD_UINT16_t saCmsEntBaudrate = { &sa_smartbaud, 0, 0, 0 };
+static OSD_UINT16_t saCmsEntStatPktSent = { &saStat.pktsent, 0, 0, 0 };
+static OSD_UINT16_t saCmsEntStatPktRcvd = { &saStat.pktrcvd, 0, 0, 0 };
 static OSD_UINT16_t saCmsEntStatBadpre = { &saStat.badpre, 0, 0, 0 };
 static OSD_UINT16_t saCmsEntStatBadlen = { &saStat.badlen, 0, 0, 0 };
 static OSD_UINT16_t saCmsEntStatCrcerr = { &saStat.crc, 0, 0, 0 };
@@ -934,6 +941,8 @@ static OSD_Entry menu_smartAudioStatsEntries[] = {
     { "- SA STATS -", OME_Label, NULL, NULL, 0 },
     { "STATUS", OME_TAB, NULL, &saCmsEntOnline, DYNAMIC },
     { "BAUDRATE", OME_UINT16, NULL, &saCmsEntBaudrate, DYNAMIC },
+    { "SENT",   OME_UINT16, NULL, &saCmsEntStatPktSent, DYNAMIC },
+    { "RCVD",   OME_UINT16, NULL, &saCmsEntStatPktRcvd, DYNAMIC },
     { "BADPRE", OME_UINT16, NULL, &saCmsEntStatBadpre, DYNAMIC },
     { "BADLEN", OME_UINT16, NULL, &saCmsEntStatBadlen, DYNAMIC },
     { "CRCERR", OME_UINT16, NULL, &saCmsEntStatCrcerr, DYNAMIC },
