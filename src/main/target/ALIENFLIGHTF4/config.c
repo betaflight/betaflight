@@ -24,6 +24,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -50,7 +51,19 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
+    config->batteryConfig.currentMeterOffset = 2500;
+    config->batteryConfig.currentMeterScale = -667;
+    config->gyro_sync_denom = 1;
     config->mag_hardware = MAG_NONE;            // disabled by default
+    config->pid_process_denom = 1;
+
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        config->motorConfig.minthrottle = 1000;
+        config->motorConfig.motorPwmRate = 32000;
+        config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        config->motorConfig.useUnsyncedPwm = true;
+    }
+
     if (hardwareRevision == AFF4_REV_1) {
         config->rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
         config->rxConfig.spektrum_sat_bind = 5;
@@ -61,12 +74,8 @@ void targetConfiguration(master_t *config)
         config->serialConfig.portConfigs[SERIAL_PORT_USART2].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
         intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
-        config->batteryConfig.currentMeterOffset = 2500;
-        config->batteryConfig.currentMeterScale = -667;
     }
-    config->motorConfig.motorPwmRate = 32000;
-    config->gyro_sync_denom = 1;
-    config->pid_process_denom = 1;
+
     config->profile[0].pidProfile.P8[ROLL] = 53;
     config->profile[0].pidProfile.I8[ROLL] = 45;
     config->profile[0].pidProfile.D8[ROLL] = 52;

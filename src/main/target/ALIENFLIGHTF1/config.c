@@ -20,6 +20,8 @@
 
 #include <platform.h>
 
+#include "drivers/pwm_output.h"
+
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
@@ -31,13 +33,21 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "hardware_revision.h"
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->motorConfig.motorPwmRate = 32000;
+
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        config->motorConfig.minthrottle = 1000;
+        config->motorConfig.motorPwmRate = 32000;
+        config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        config->motorConfig.useUnsyncedPwm = true;
+    }
+
     config->profile[0].pidProfile.P8[ROLL] = 90;
     config->profile[0].pidProfile.I8[ROLL] = 44;
     config->profile[0].pidProfile.D8[ROLL] = 60;
@@ -52,5 +62,5 @@ void targetConfiguration(master_t *config)
     config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
     config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
     config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
+    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }
