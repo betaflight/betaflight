@@ -20,7 +20,7 @@
 #include <stdbool.h>
 
 #define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 1000.0f
+#define PID_MIXER_SCALING 900.0f
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define PIDSUM_LIMIT 0.5f
