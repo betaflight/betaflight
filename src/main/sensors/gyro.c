@@ -68,10 +68,14 @@ void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
     gyroConfig = gyroConfigToUse;
     gyroSoftLpfHz = gyro_soft_lpf_hz;
     gyroSoftNotchHz1 = gyro_soft_notch_hz_1;
+    if (gyro_soft_notch_hz_1) {
+        gyroSoftNotchQ1 = filterGetNotchQ(gyro_soft_notch_hz_1, gyro_soft_notch_cutoff_1);
+    }
     gyroSoftNotchHz2 = gyro_soft_notch_hz_2;
+    if (gyro_soft_notch_hz_2) {
+        gyroSoftNotchQ2 = filterGetNotchQ(gyro_soft_notch_hz_2, gyro_soft_notch_cutoff_2);
+    }
     gyroSoftLpfType = gyro_soft_lpf_type;
-    gyroSoftNotchQ1 = filterGetNotchQ(gyro_soft_notch_hz_1, gyro_soft_notch_cutoff_1);
-    gyroSoftNotchQ2 = filterGetNotchQ(gyro_soft_notch_hz_2, gyro_soft_notch_cutoff_2);
 }
 
 void gyroInit(void)
