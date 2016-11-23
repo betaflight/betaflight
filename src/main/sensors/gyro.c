@@ -89,7 +89,7 @@ void gyroInit(void)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
             }
         } else if (gyroSoftLpfType == FILTER_PT1) {
-            softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
+            softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply4;
             const float gyroDt = (float) gyro.targetLooptime * 0.000001f;
             for (int axis = 0; axis < 3; axis++) {
                 pt1FilterInit(&gyroFilterPt1[axis], gyroSoftLpfHz, gyroDt);
@@ -208,7 +208,7 @@ void gyroUpdate(void)
         if (debugMode == DEBUG_GYRO)
             debug[axis] = gyroADC[axis];
 
-        gyroADCf[axis] = softLpfFilterApplyFn(&gyroDenoiseState[axis], (float) gyroADC[axis]);
+        gyroADCf[axis] = softLpfFilterApplyFn(&gyroFilterPt1[axis], (float) gyroADC[axis]);
 
         if (debugMode == DEBUG_NOTCH)
             debug[axis] = lrintf(gyroADCf[axis]);
