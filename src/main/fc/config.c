@@ -575,12 +575,12 @@ void createDefaultConfig(master_t *config)
     config->gyro_sync_denom = 4;
     config->pid_process_denom = 2;
 #endif
-    config->gyro_soft_type = FILTER_PT1;
-    config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz_1 = 400;
-    config->gyro_soft_notch_cutoff_1 = 300;
-    config->gyro_soft_notch_hz_2 = 200;
-    config->gyro_soft_notch_cutoff_2 = 100;
+    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
+    config->gyroConfig.gyro_soft_lpf_hz = 90;
+    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
+    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
+    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
+    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_NONE;
 
@@ -830,13 +830,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig,
-        masterConfig.gyro_soft_lpf_hz,
-        masterConfig.gyro_soft_notch_hz_1,
-        masterConfig.gyro_soft_notch_cutoff_1,
-        masterConfig.gyro_soft_notch_hz_2,
-        masterConfig.gyro_soft_notch_cutoff_2,
-        masterConfig.gyro_soft_type);
+    gyroUseConfig(&masterConfig.gyroConfig);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -1002,11 +996,11 @@ void validateAndFixConfig(void)
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
-    if (masterConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyro_soft_notch_hz_1) {
-        masterConfig.gyro_soft_notch_hz_1 = 0;
+    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyroConfig.gyro_soft_notch_hz_1) {
+        masterConfig.gyroConfig.gyro_soft_notch_hz_1 = 0;
     }
-    if (masterConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyro_soft_notch_hz_2) {
-        masterConfig.gyro_soft_notch_hz_2 = 0;
+    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyroConfig.gyro_soft_notch_hz_2) {
+        masterConfig.gyroConfig.gyro_soft_notch_hz_2 = 0;
     }
 
     if (masterConfig.gyro_lpf != GYRO_LPF_256HZ && masterConfig.gyro_lpf != GYRO_LPF_NONE) {

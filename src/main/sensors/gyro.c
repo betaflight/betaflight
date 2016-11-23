@@ -57,25 +57,19 @@ static void *notchFilter1[3];
 static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
-                   uint8_t gyro_soft_lpf_hz,
-                   uint16_t gyro_soft_notch_hz_1,
-                   uint16_t gyro_soft_notch_cutoff_1,
-                   uint16_t gyro_soft_notch_hz_2,
-                   uint16_t gyro_soft_notch_cutoff_2,
-                   uint8_t gyro_soft_lpf_type)
+void gyroUseConfig(const gyroConfig_t *gyroConfigToUse)
 {
     gyroConfig = gyroConfigToUse;
-    gyroSoftLpfHz = gyro_soft_lpf_hz;
-    gyroSoftNotchHz1 = gyro_soft_notch_hz_1;
-    if (gyro_soft_notch_hz_1) {
-        gyroSoftNotchQ1 = filterGetNotchQ(gyro_soft_notch_hz_1, gyro_soft_notch_cutoff_1);
+    gyroSoftLpfHz = gyroConfig->gyro_soft_lpf_hz;
+    gyroSoftNotchHz1 = gyroConfig->gyro_soft_notch_hz_1;
+    if (gyroConfig->gyro_soft_notch_hz_1) {
+        gyroSoftNotchQ1 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_1, gyroConfig->gyro_soft_notch_cutoff_1);
     }
-    gyroSoftNotchHz2 = gyro_soft_notch_hz_2;
-    if (gyro_soft_notch_hz_2) {
-        gyroSoftNotchQ2 = filterGetNotchQ(gyro_soft_notch_hz_2, gyro_soft_notch_cutoff_2);
+    gyroSoftNotchHz2 = gyroConfig->gyro_soft_notch_hz_2;
+    if (gyroConfig->gyro_soft_notch_hz_2) {
+        gyroSoftNotchQ2 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_2, gyroConfig->gyro_soft_notch_cutoff_2);
     }
-    gyroSoftLpfType = gyro_soft_lpf_type;
+    gyroSoftLpfType = gyroConfig->gyro_soft_lpf_type;
 }
 
 void gyroInit(void)
