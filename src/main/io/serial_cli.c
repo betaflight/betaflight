@@ -1444,7 +1444,7 @@ static void cliSerialPassthrough(char *cmdline)
     }
 
     printf("Relaying data to device on port %d, Reset your board to exit "
-           "serial passthrough mode.\r\n");
+           "serial passthrough mode.\r\n", id);
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
