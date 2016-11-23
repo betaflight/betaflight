@@ -41,10 +41,11 @@
 const adcDevice_t adcHardware[] = {
     { .ADCx = ADC1, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA1_Channel1 },
 #ifdef ADC24_DMA_REMAP
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 }
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel3 },
 #else
-    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 }
+    { .ADCx = ADC2, .rccADC = RCC_AHB(ADC12), .DMAy_Channelx = DMA2_Channel1 },
 #endif
+    { .ADCx = ADC3, .rccADC = RCC_AHB(ADC34), .DMAy_Channelx = DMA2_Channel5 }
 };
 
 const adcTagMap_t adcTagMap[] = {
@@ -96,6 +97,9 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 
     if (instance == ADC2)
         return ADCDEV_2;
+
+    if (instance == ADC3)
+        return ADCDEV_3;
 
     return ADCINVALID;
 }
@@ -152,7 +156,14 @@ void adcInit(adcConfig_t *config)
         return;
     }
     
-    RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    if ((device == ADCDEV_1) || (device == ADCDEV_2)) {
+        // enable clock for ADC1+2
+        RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    } else {
+        // enable clock for ADC3+4
+        RCC_ADCCLKConfig(RCC_ADC34PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz
+    }
+
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
     dmaInit(dmaGetIdentifier(adc.DMAy_Channelx), OWNER_ADC, 0);
