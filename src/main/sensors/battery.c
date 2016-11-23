@@ -34,8 +34,7 @@
 #include "config/feature.h"
 
 #include "sensors/battery.h"
-
-#include "telemetry/esc_telemetry.h"
+#include "sensors/esc_sensor.h"
 
 #include "fc/rc_controls.h"
 #include "io/beeper.h"
@@ -84,9 +83,9 @@ static void updateBatteryVoltage(void)
         vBatFilterIsInitialised = true;
     }
 
-    #ifdef USE_ESC_TELEMETRY
-    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
-        vbatLatest = getEscTelemetryVbat();
+    #ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
+        vbatLatest = getEscSensorVbat();
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
@@ -270,11 +269,9 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
             updateCurrentDrawn(lastUpdateAt);
 
-            updateConsumptionWarning();
-
             break;
         case CURRENT_SENSOR_VIRTUAL:
-            amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
+            amperage = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
                 int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
@@ -282,30 +279,24 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
                     throttleOffset = 0;
                 }
                 int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-                amperageLatest += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
+                amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
             }
-            amperage = amperageLatest;
 
             updateCurrentDrawn(lastUpdateAt);
 
-            updateConsumptionWarning();
-
             break;
         case CURRENT_SENSOR_ESC:
-            #ifdef USE_ESC_TELEMETRY
-            if (isEscTelemetryActive()) {
-                amperageLatest = getEscTelemetryCurrent();
-                amperage = amperageLatest;
-                mAhDrawn = getEscTelemetryConsumption();
+            #ifdef USE_ESC_SENSOR
+            if (feature(FEATURE_ESC_SENSOR))
+            {
+                amperage = getEscSensorCurrent();
+                mAhDrawn = getEscSensorConsumption();
 
-                updateConsumptionWarning();
+                updateCurrentDrawn(lastUpdateAt);
             }
-
-            break;
             #endif
         case CURRENT_SENSOR_NONE:
             amperage = 0;
-            amperageLatest = 0;
 
             break;
     }

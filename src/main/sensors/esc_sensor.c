@@ -21,7 +21,7 @@
 
 #include "sensors/battery.h"
 
-#include "esc_telemetry.h"
+#include "esc_sensor.h"
 
 #include "build/debug.h"
 
@@ -68,64 +68,64 @@ typedef struct {
 } esc_telemetry_t;
 
 typedef enum {
-    ESC_TLM_FRAME_PENDING = 1 << 0,     // 1
-    ESC_TLM_FRAME_COMPLETE = 1 << 1     // 2
+    ESC_SENSOR_FRAME_PENDING = 1 << 0,     // 1
+    ESC_SENSOR_FRAME_COMPLETE = 1 << 1     // 2
 } escTlmFrameState_t;
 
 typedef enum {
-    ESC_TLM_TRIGGER_WAIT = 0,
-    ESC_TLM_TRIGGER_READY = 1 << 0,     // 1
-    ESC_TLM_TRIGGER_PENDING = 1 << 1    // 2
-} escTlmTriggerState_t;
+    ESC_SENSOR_TRIGGER_WAIT = 0,
+    ESC_SENSOR_TRIGGER_READY = 1 << 0,     // 1
+    ESC_SENSOR_TRIGGER_PENDING = 1 << 1,   // 2
+} escSensorTriggerState_t;
 
-#define ESC_TLM_BAUDRATE 115200
-#define ESC_TLM_BUFFSIZE 10
+#define ESC_SENSOR_BAUDRATE 115200
+#define ESC_SENSOR_BUFFSIZE 10
 #define ESC_BOOTTIME 5000               // 5 seconds
 #define ESC_REQUEST_TIMEOUT 100         // 100 ms (data transfer takes only 900us)
 
 static bool tlmFrameDone = false;
-static uint8_t tlm[ESC_TLM_BUFFSIZE] = { 0, };
+static uint8_t tlm[ESC_SENSOR_BUFFSIZE] = { 0, };
 static uint8_t tlmFramePosition = 0;
-static serialPort_t *escTelemetryPort = NULL;
-static esc_telemetry_t escTelemetryData[MAX_SUPPORTED_MOTORS];
+static serialPort_t *escSensorPort = NULL;
+static esc_telemetry_t escSensorData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
 static uint32_t escTriggerLastTimestamp = -1;
 static uint8_t timeoutRetryCount = 0;
 
-static uint8_t escTelemetryMotor = 0;      // motor index
-static bool escTelemetryEnabled = false;
-static escTlmTriggerState_t escTelemetryTriggerState = ESC_TLM_TRIGGER_WAIT;
+static uint8_t escSensorMotor = 0;      // motor index
+static bool escSensorEnabled = false;
+static escSensorTriggerState_t escSensorTriggerState = ESC_SENSOR_TRIGGER_WAIT;
 
 static int16_t escVbat = 0;
 static int16_t escCurrent = 0;
 static int16_t escConsumption = 0;
 
-static void escTelemetryDataReceive(uint16_t c);
+static void escSensorDataReceive(uint16_t c);
 static uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
 static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen);
 static void selectNextMotor(void);
 
-bool isEscTelemetryActive(void)
+bool isEscSensorActive(void)
 {
-    return escTelemetryEnabled;
+    return escSensorEnabled;
 }
 
-int16_t getEscTelemetryVbat(void)
+int16_t getEscSensorVbat(void)
 {
     return escVbat / 10;
 }
 
-int16_t getEscTelemetryCurrent(void)
+int16_t getEscSensorCurrent(void)
 {
     return escCurrent;
 }
 
-int16_t getEscTelemetryConsumption(void)
+int16_t getEscSensorConsumption(void)
 {
     return escConsumption;
 }
 
-bool escTelemetryInit(void)
+bool escSensorInit(void)
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_ESC);
     if (!portConfig) {
@@ -135,35 +135,33 @@ bool escTelemetryInit(void)
     portOptions_t options = (SERIAL_NOT_INVERTED);
 
     // Initialize serial port
-    escTelemetryPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escTelemetryDataReceive, ESC_TLM_BAUDRATE, MODE_RX, options);
+    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
-    if (escTelemetryPort) {
-        escTelemetryEnabled = true;
-        batteryConfig()->currentMeterType = CURRENT_SENSOR_ESC;
-        batteryConfig()->batteryMeterType = BATTERY_SENSOR_ESC;
+    if (escSensorPort) {
+        escSensorEnabled = true;
     }
 
-    return escTelemetryPort != NULL;
+    return escSensorPort != NULL;
 }
 
-void freeEscTelemetryPort(void)
+void freeEscSensorPort(void)
 {
-    closeSerialPort(escTelemetryPort);
-    escTelemetryPort = NULL;
-    escTelemetryEnabled = false;
+    closeSerialPort(escSensorPort);
+    escSensorPort = NULL;
+    escSensorEnabled = false;
 }
 
 // Receive ISR callback
-static void escTelemetryDataReceive(uint16_t c)
+static void escSensorDataReceive(uint16_t c)
 {
     // KISS ESC sends some data during startup, ignore this for now (maybe future use)
     // startup data could be firmware version and serialnumber
 
-    if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT) return;
+    if (escSensorTriggerState == ESC_SENSOR_TRIGGER_WAIT) return;
 
     tlm[tlmFramePosition] = (uint8_t)c;
 
-    if (tlmFramePosition == ESC_TLM_BUFFSIZE - 1) {
+    if (tlmFramePosition == ESC_SENSOR_BUFFSIZE - 1) {
         tlmFrameDone = true;
         tlmFramePosition = 0;
     } else {
@@ -171,9 +169,9 @@ static void escTelemetryDataReceive(uint16_t c)
     }
 }
 
-uint8_t escTelemetryFrameStatus(void)
+uint8_t escSensorFrameStatus(void)
 {
-    uint8_t frameStatus = ESC_TLM_FRAME_PENDING;
+    uint8_t frameStatus = ESC_SENSOR_FRAME_PENDING;
     uint16_t chksum, tlmsum;
 
     if (!tlmFrameDone) {
@@ -183,28 +181,28 @@ uint8_t escTelemetryFrameStatus(void)
     tlmFrameDone = false;
 
     // Get CRC8 checksum
-    chksum = get_crc8(tlm, ESC_TLM_BUFFSIZE - 1);
-    tlmsum = tlm[ESC_TLM_BUFFSIZE - 1];     // last byte contains CRC value
+    chksum = get_crc8(tlm, ESC_SENSOR_BUFFSIZE - 1);
+    tlmsum = tlm[ESC_SENSOR_BUFFSIZE - 1];     // last byte contains CRC value
 
     if (chksum == tlmsum) {
-        escTelemetryData[escTelemetryMotor].skipped = false;
-        escTelemetryData[escTelemetryMotor].temperature = tlm[0];
-        escTelemetryData[escTelemetryMotor].voltage = tlm[1] << 8 | tlm[2];
-        escTelemetryData[escTelemetryMotor].current = tlm[3] << 8 | tlm[4];
-        escTelemetryData[escTelemetryMotor].consumption = tlm[5] << 8 | tlm[6];
-        escTelemetryData[escTelemetryMotor].rpm = tlm[7] << 8 | tlm[8];
+        escSensorData[escSensorMotor].skipped = false;
+        escSensorData[escSensorMotor].temperature = tlm[0];
+        escSensorData[escSensorMotor].voltage = tlm[1] << 8 | tlm[2];
+        escSensorData[escSensorMotor].current = tlm[3] << 8 | tlm[4];
+        escSensorData[escSensorMotor].consumption = tlm[5] << 8 | tlm[6];
+        escSensorData[escSensorMotor].rpm = tlm[7] << 8 | tlm[8];
 
-        frameStatus = ESC_TLM_FRAME_COMPLETE;
+        frameStatus = ESC_SENSOR_FRAME_COMPLETE;
     }
 
     return frameStatus;
 }
 
-void escTelemetryProcess(timeUs_t currentTimeUs)
+void escSensorProcess(timeUs_t currentTimeUs)
 {
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
-    if (!escTelemetryEnabled) {
+    if (!escSensorEnabled) {
         return;
     }
 
@@ -212,66 +210,66 @@ void escTelemetryProcess(timeUs_t currentTimeUs)
     if (millis() < ESC_BOOTTIME) {
         return;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_WAIT) {
+    else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_WAIT) {
         // Ready for starting requesting telemetry
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
-        escTelemetryMotor = 0;
+        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
+        escSensorMotor = 0;
         escTriggerTimestamp = currentTimeMs;
         escTriggerLastTimestamp = escTriggerTimestamp;
     }
-    else if (escTelemetryTriggerState == ESC_TLM_TRIGGER_READY) {
-        if (debugMode == DEBUG_ESC_TELEMETRY) debug[0] = escTelemetryMotor+1;
+    else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_READY) {
+        if (debugMode == DEBUG_ESC_SENSOR) debug[0] = escSensorMotor+1;
 
-        motorDmaOutput_t * const motor = getMotorDmaOutput(escTelemetryMotor);
+        motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
         motor->requestTelemetry = true;
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_PENDING;
+        escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
     }
 
     if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs) {
         // ESC did not repond in time, retry
         timeoutRetryCount++;
         escTriggerTimestamp = currentTimeMs;
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
+        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
         if (timeoutRetryCount == 4) {
             // Not responding after 3 times, skip motor
-            escTelemetryData[escTelemetryMotor].skipped = true;
+            escSensorData[escSensorMotor].skipped = true;
             selectNextMotor();
         }
 
-        if (debugMode == DEBUG_ESC_TELEMETRY) debug[1]++;
+        if (debugMode == DEBUG_ESC_SENSOR) debug[1]++;
     }
 
     // Get received frame status
-    uint8_t state = escTelemetryFrameStatus();
+    uint8_t state = escSensorFrameStatus();
 
-    if (state == ESC_TLM_FRAME_COMPLETE) {
+    if (state == ESC_SENSOR_FRAME_COMPLETE) {
         // Wait until all ESCs are processed
-        if (escTelemetryMotor == getMotorCount()-1) {
+        if (escSensorMotor == getMotorCount()-1) {
             escCurrent = 0;
             escConsumption = 0;
             escVbat = 0;
 
             for (int i = 0; i < getMotorCount(); i++) {
-                if (!escTelemetryData[i].skipped) {
-                    escVbat =  i > 0 ? ((escVbat + escTelemetryData[i].voltage) / 2) : escTelemetryData[i].voltage;
-                    escCurrent = escCurrent + escTelemetryData[i].current;
-                    escConsumption = escConsumption + escTelemetryData[i].consumption;
+                if (!escSensorData[i].skipped) {
+                    escVbat =  i > 0 ? ((escVbat + escSensorData[i].voltage) / 2) : escSensorData[i].voltage;
+                    escCurrent = escCurrent + escSensorData[i].current;
+                    escConsumption = escConsumption + escSensorData[i].consumption;
                 }
             }
         }
 
-        if (debugMode == DEBUG_ESC_TELEMETRY) debug[2] = escVbat;
-        if (debugMode == DEBUG_ESC_TELEMETRY) debug[3] = escCurrent;
+        if (debugMode == DEBUG_ESC_SENSOR) debug[2] = escVbat;
+        if (debugMode == DEBUG_ESC_SENSOR) debug[3] = escCurrent;
 
         selectNextMotor();
-        escTelemetryTriggerState = ESC_TLM_TRIGGER_READY;
+        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
     }
 
     if (escTriggerLastTimestamp + 10000 < currentTimeMs) {
         // ESCs did not respond for 10 seconds
         // Disable ESC telemetry and fallback to onboard vbat sensor
-        freeEscTelemetryPort();
+        freeEscSensorPort();
         escVbat = 0;
         escCurrent = 0;
         escConsumption = 0;
@@ -280,9 +278,9 @@ void escTelemetryProcess(timeUs_t currentTimeUs)
 
 static void selectNextMotor(void)
 {
-    escTelemetryMotor++;
-    if (escTelemetryMotor == getMotorCount()) {
-        escTelemetryMotor = 0;
+    escSensorMotor++;
+    if (escSensorMotor == getMotorCount()) {
+        escSensorMotor = 0;
     }
     escTriggerTimestamp = millis();
     escTriggerLastTimestamp = escTriggerTimestamp;

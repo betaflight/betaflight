@@ -104,7 +104,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/esc_telemetry.h"
+#include "sensors/esc_sensor.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -493,9 +493,9 @@ void init(void)
     }
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryInit();
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escSensorInit();
     }
 #endif
 
