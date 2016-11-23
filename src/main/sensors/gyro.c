@@ -89,7 +89,7 @@ void gyroInit(void)
                 biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
             }
         } else if (gyroSoftLpfType == FILTER_PT1) {
-            softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply4;
+            softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
             const float gyroDt = (float) gyro.targetLooptime * 0.000001f;
             for (int axis = 0; axis < 3; axis++) {
                 pt1FilterInit(&gyroFilterPt1[axis], gyroSoftLpfHz, gyroDt);
