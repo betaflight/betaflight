@@ -44,10 +44,7 @@ float gyroADCf[XYZ_AXIS_COUNT];
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
-static uint8_t gyroSoftLpfType;
-static uint16_t gyroSoftNotchHz1, gyroSoftNotchHz2;
 static float gyroSoftNotchQ1, gyroSoftNotchQ2;
-static uint8_t gyroSoftLpfHz;
 static uint16_t calibratingG = 0;
 
 static filterApplyFnPtr softLpfFilterApplyFn;
@@ -60,16 +57,12 @@ static void *notchFilter2[3];
 void gyroUseConfig(const gyroConfig_t *gyroConfigToUse)
 {
     gyroConfig = gyroConfigToUse;
-    gyroSoftLpfHz = gyroConfig->gyro_soft_lpf_hz;
-    gyroSoftNotchHz1 = gyroConfig->gyro_soft_notch_hz_1;
     if (gyroConfig->gyro_soft_notch_hz_1) {
         gyroSoftNotchQ1 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_1, gyroConfig->gyro_soft_notch_cutoff_1);
     }
-    gyroSoftNotchHz2 = gyroConfig->gyro_soft_notch_hz_2;
     if (gyroConfig->gyro_soft_notch_hz_2) {
         gyroSoftNotchQ2 = filterGetNotchQ(gyroConfig->gyro_soft_notch_hz_2, gyroConfig->gyro_soft_notch_cutoff_2);
     }
-    gyroSoftLpfType = gyroConfig->gyro_soft_lpf_type;
 }
 
 void gyroInit(void)
@@ -84,14 +77,14 @@ void gyroInit(void)
     notchFilter1ApplyFn = nullFilterApply;
     notchFilter2ApplyFn = nullFilterApply;
 
-    if (gyroSoftLpfHz) {  // Initialisation needs to happen once samplingrate is known
-        if (gyroSoftLpfType == FILTER_BIQUAD) {
+    if (gyroConfig->gyro_soft_lpf_hz) {  // Initialisation needs to happen once samplingrate is known
+        if (gyroConfig->gyro_soft_lpf_type == FILTER_BIQUAD) {
             softLpfFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
             for (int axis = 0; axis < 3; axis++) {
                 softLpfFilter[axis] = &gyroFilterLPF[axis];
                 biquadFilterInitLPF(softLpfFilter[axis], gyroSoftLpfHz, gyro.targetLooptime);
             }
-        } else if (gyroSoftLpfType == FILTER_PT1) {
+        } else if (gyroConfig->gyro_soft_lpf_type == FILTER_BIQUAD) {
             softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
             const float gyroDt = (float) gyro.targetLooptime * 0.000001f;
             for (int axis = 0; axis < 3; axis++) {
@@ -107,14 +100,14 @@ void gyroInit(void)
         }
     }
 
-    if (gyroSoftNotchHz1) {
+    if (gyroConfig->gyro_soft_notch_hz_1) {
         notchFilter1ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         for (int axis = 0; axis < 3; axis++) {
             notchFilter1[axis] = &gyroFilterNotch_1[axis];
             biquadFilterInit(notchFilter1[axis], gyroSoftNotchHz1, gyro.targetLooptime, gyroSoftNotchQ1, FILTER_NOTCH);
         }
     }
-    if (gyroSoftNotchHz1) {
+    if (gyroConfig->gyro_soft_notch_hz_2) {
         notchFilter2ApplyFn = (filterApplyFnPtr)biquadFilterApply;
         for (int axis = 0; axis < 3; axis++) {
             notchFilter2[axis] = &gyroFilterNotch_2[axis];
