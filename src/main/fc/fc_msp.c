@@ -1458,6 +1458,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             masterConfig.gyro_soft_notch_hz_2 = sbufReadU16(src);
             masterConfig.gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
+        // reinitialize the gyro filters with the new values
+        validateAndFixGyroConfig();
+        gyroUseConfig(&masterConfig.gyroConfig,
+            masterConfig.gyro_soft_lpf_hz,
+            masterConfig.gyro_soft_notch_hz_1,
+            masterConfig.gyro_soft_notch_cutoff_1,
+            masterConfig.gyro_soft_notch_hz_2,
+            masterConfig.gyro_soft_notch_cutoff_2,
+            masterConfig.gyro_soft_type);
+        gyroInit();
+        // reinitialize the PID filters with the new values
+        pidInitFilters(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_PID_ADVANCED:

@@ -56,7 +56,7 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float errorGyroIf[3];
 
-void setTargetPidLooptime(uint32_t pidLooptime)
+void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
 }
@@ -82,7 +82,7 @@ static void *dtermFilterLpf[2];
 static filterApplyFnPtr ptermYawFilterApplyFn;
 static void *ptermYawFilter;
 
-static void pidInitFilters(const pidProfile_t *pidProfile)
+void pidInitFilters(const pidProfile_t *pidProfile)
 {
     static bool initialized = false; // !!TODO - remove this temporary measure once filter lazy initialization is removed
     static biquadFilter_t biquadFilterNotch[2];
@@ -165,8 +165,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
     if (!dT) {
         dT = (float)targetPidLooptime * 0.000001f;
     }
-
-    pidInitFilters(pidProfile);
 
     float horizonLevelStrength = 1;
     if (FLIGHT_MODE(HORIZON_MODE)) {

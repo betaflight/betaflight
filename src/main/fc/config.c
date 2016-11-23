@@ -564,7 +564,7 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;    // default profile
     config->dcm_kp = 2500;                // 1.0 * 10000
     config->dcm_ki = 0;                   // 0.003 * 10000
-    config->gyro_lpf = 0;                 // 256HZ default
+    config->gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyro_sync_denom = 8;
     config->pid_process_denom = 1;
@@ -830,13 +830,6 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    // Prevent invalid notch cutoff
-    if (masterConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyro_soft_notch_hz_1)
-        masterConfig.gyro_soft_notch_hz_1 = 0;
-
-    if (masterConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyro_soft_notch_hz_2)
-        masterConfig.gyro_soft_notch_hz_2 = 0;
-
     gyroUseConfig(&masterConfig.gyroConfig,
         masterConfig.gyro_soft_lpf_hz,
         masterConfig.gyro_soft_notch_hz_1,
@@ -998,10 +991,28 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
-    
+
+    validateAndFixGyroConfig();
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration(&masterConfig);
 #endif
+}
+
+void validateAndFixGyroConfig(void)
+{
+    // Prevent invalid notch cutoff
+    if (masterConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyro_soft_notch_hz_1) {
+        masterConfig.gyro_soft_notch_hz_1 = 0;
+    }
+    if (masterConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyro_soft_notch_hz_2) {
+        masterConfig.gyro_soft_notch_hz_2 = 0;
+    }
+
+    if (masterConfig.gyro_lpf != GYRO_LPF_256HZ && masterConfig.gyro_lpf != GYRO_LPF_NONE) {
+        masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        masterConfig.gyro_sync_denom = 1;
+    }
 }
 
 void readEEPROMAndNotify(void)

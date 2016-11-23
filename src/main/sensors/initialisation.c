@@ -24,6 +24,8 @@
 
 #include "common/axis.h"
 
+#include "config/feature.h"
+
 #include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
@@ -61,6 +63,7 @@
 
 #include "drivers/sonar_hcsr04.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -609,6 +612,19 @@ retry:
 }
 #endif
 
+#ifdef SONAR
+static bool detectSonar(void)
+{
+    if (feature(FEATURE_SONAR)) {
+        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+        // since there is no way to detect it
+        sensorsSet(SENSOR_SONAR);
+        return true;
+    }
+    return false;
+}
+#endif
+
 void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
@@ -626,7 +642,8 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
         uint8_t gyroLpf,
-        uint8_t gyroSyncDenominator)
+        uint8_t gyroSyncDenominator,
+        const sonarConfig_t *sonarConfig)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -664,6 +681,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         const int16_t deg = magDeclinationFromConfig / 100;
         const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
+        compassInit();
     }
 #else
     UNUSED(magDeclinationFromConfig);
@@ -671,6 +689,14 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
 #ifdef BARO
     detectBaro(sensorSelectionConfig->baro_hardware);
+#endif
+
+#ifdef SONAR
+    if (detectSonar()) {
+        sonarInit(sonarConfig);
+    }
+#else
+    UNUSED(sonarConfig);
 #endif
 
     reconfigureAlignment(sensorAlignmentConfig);

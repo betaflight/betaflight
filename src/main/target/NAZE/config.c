@@ -43,7 +43,7 @@ void targetConfiguration(master_t *config)
 
     config->motorConfig.minthrottle = 1049;
 
-    config->gyro_lpf = 1;
+    config->gyro_lpf = GYRO_LPF_188HZ;
     config->gyro_soft_lpf_hz = 100;
     config->gyro_soft_notch_hz_1 = 0;
     config->gyro_soft_notch_hz_2 = 0;
