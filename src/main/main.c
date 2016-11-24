@@ -425,8 +425,7 @@ void init(void)
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
             &masterConfig.sensorSelectionConfig,
             masterConfig.compassConfig.mag_declination,
-            masterConfig.gyro_lpf,
-            masterConfig.gyro_sync_denom,
+            &masterConfig.gyroConfig,
             sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);

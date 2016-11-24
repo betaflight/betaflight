@@ -1081,11 +1081,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ADVANCED_CONFIG:
-        if (masterConfig.gyro_lpf) {
+        if (masterConfig.gyroConfig.gyro_lpf) {
             sbufWriteU8(dst, 8); // If gyro_lpf != OFF then looptime is set to 1000
             sbufWriteU8(dst, 1);
         } else {
-            sbufWriteU8(dst, masterConfig.gyro_sync_denom);
+            sbufWriteU8(dst, masterConfig.gyroConfig.gyro_sync_denom);
             sbufWriteU8(dst, masterConfig.pid_process_denom);
         }
         sbufWriteU8(dst, masterConfig.motorConfig.useUnsyncedPwm);
@@ -1433,7 +1433,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        masterConfig.gyro_sync_denom = sbufReadU8(src);
+        masterConfig.gyroConfig.gyro_sync_denom = sbufReadU8(src);
         masterConfig.pid_process_denom = sbufReadU8(src);
         masterConfig.motorConfig.useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
@@ -1460,8 +1460,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
-        gyroUseConfig(&masterConfig.gyroConfig);
-        gyroInit();
+        gyroInit(&masterConfig.gyroConfig);
         // reinitialize the PID filters with the new values
         pidInitFilters(&currentProfile->pidProfile);
         break;

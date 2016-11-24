@@ -638,11 +638,10 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
+bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
         sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
-        uint8_t gyroLpf,
-        uint8_t gyroSyncDenominator,
+        const gyroConfig_t *gyroConfig,
         const sonarConfig_t *sonarConfig)
 {
     memset(&acc, 0, sizeof(acc));
@@ -662,9 +661,9 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
     // Now time to init things
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
-    gyro.init(gyroLpf); // driver initialisation
-    gyroInit(); // sensor initialisation
+    gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
+    gyro.init(gyroConfig->gyro_lpf); // driver initialisation
+    gyroInit(gyroConfig); // sensor initialisation
 
     if (detectAcc(sensorSelectionConfig->acc_hardware)) {
         acc.acc_1G = 256; // set default
