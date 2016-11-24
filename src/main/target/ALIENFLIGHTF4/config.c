@@ -48,18 +48,23 @@
 
 #include "hardware_revision.h"
 
+#define CURRENTOFFSET 2500                      // ACS712/714-30A - 0A = 2.5V
+#define CURRENTSCALE -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
+
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
-    config->batteryConfig.currentMeterOffset = 2500;
-    config->batteryConfig.currentMeterScale = -667;
+    config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
+    config->batteryConfig.currentMeterScale = CURRENTSCALE;
     config->gyro_sync_denom = 1;
     config->mag_hardware = MAG_NONE;            // disabled by default
     config->pid_process_denom = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.minthrottle = 1000;
-        config->motorConfig.motorPwmRate = 32000;
+        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
         config->motorConfig.useUnsyncedPwm = true;
     }
@@ -71,7 +76,7 @@ void targetConfiguration(master_t *config)
     } else {
         config->rxConfig.serialrx_provider = SERIALRX_SBUS;
         config->rxConfig.sbus_inversion = 0;
-        config->serialConfig.portConfigs[SERIAL_PORT_USART2].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        config->serialConfig.portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
         intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
     }
