@@ -16,5 +16,5 @@
  */
 
 #pragma once
-
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, uint8_t accHardwareToUse, uint8_t magHardwareToUse, uint8_t baroHardwareToUse, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator);
+struct sensorSelectionConfig_s;
+bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, struct sensorSelectionConfig_s *sensorSelectionConfig, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator);

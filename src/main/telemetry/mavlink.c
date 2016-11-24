@@ -430,7 +430,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch(masterConfig.mixerMode)
+    switch(masterConfig.mixerConfig.mixerMode)
     {
         case MIXER_TRI:
             mavSystemType = MAV_TYPE_TRICOPTER;
