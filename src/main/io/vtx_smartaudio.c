@@ -1064,6 +1064,15 @@ static long saCmsSetPORFreq(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+static char *saCmsORFreqGetString(void)
+{
+    static char pbuf[5];
+
+    tfp_sprintf(pbuf, "%4d", saCmsORFreq);
+
+    return pbuf;
+}
+
 static OSD_UINT16_t saCmsEntUserFreq = { &saCmsUserFreq, 5000, 5900, 0 };
 static OSD_UINT16_t saCmsEntUserFreqNew = { &saCmsUserFreqNew, 5000, 5900, 1 };
 
@@ -1127,7 +1136,7 @@ static OSD_Entry menu_smartAudioConfigEntries[] = {
     { "OP MODEL", OME_TAB, saCmsConfigOpModelByGvar, &saCmsEntOpModel, 0 },
     { "FREQ MODE", OME_TAB, saCmsConfigFreqModeByGvar, &saCmsEntFreqMode, 0 },
     { "PIT FMODE", OME_TAB, saCmsConfigPitFModeByGvar, &saCmsEntPitFMode, 0 },
-    { "POR FREQ", OME_Submenu, cmsMenuChange, &saCmsMenuPORFreq, 0 },
+    { "POR FREQ", OME_Submenu, (CMSEntryFuncPtr)saCmsORFreqGetString, &saCmsMenuPORFreq, OPTSTRING },
     { "STATX", OME_Submenu, cmsMenuChange, &menu_smartAudioStats, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
