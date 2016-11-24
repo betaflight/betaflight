@@ -292,6 +292,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_SENSOR
+<<<<<<< 2af7ff8434cfe047c841c85aae300154c7b4065e
             if (feature(FEATURE_ESC_SENSOR))
             {
                 amperage = getEscSensorCurrent();
@@ -299,6 +300,12 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             }
             #endif
 
+=======
+            if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC) {
+                amperage = getEscSensorCurrent();
+                mAhDrawn = getEscSensorConsumption();
+            }
+>>>>>>> Fixed Travis build warning
             break;
         case CURRENT_SENSOR_NONE:
             amperage = 0;
