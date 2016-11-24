@@ -76,6 +76,7 @@
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_4way.h"
+#include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
 
@@ -1341,6 +1342,27 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
 #endif
+        case MSP_VTX: {
+#ifdef VTX
+            uint8_t flags = 0;
+            flags |= (1 << 0);
+            flags |= vtxState.enabled ? (1 << 1) : (0 << 1);
+            sbufWriteU8(dst, flags);
+            sbufWriteU8(dst, vtxState.channel);
+            sbufWriteU8(dst, vtxState.band);
+            sbufWriteU8(dst, vtxState.rfPower);
+
+            sbufWriteU8(dst, vtxConfig()->channel);
+            sbufWriteU8(dst, vtxConfig()->band);
+            sbufWriteU8(dst, vtxConfig()->rfPower);
+            sbufWriteU8(dst, vtxConfig()->enabledOnBoot);
+#else
+            for (i = 0; i < 8; i ++) {
+                sbufWriteU8(dst, 0);
+            }
+#endif
+            break;
+        }
         case MSP_RESET_CONF:
             if (!ARMING_FLAG(ARMED)) {
                 resetEEPROM();

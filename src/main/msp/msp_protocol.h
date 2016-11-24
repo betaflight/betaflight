@@ -59,7 +59,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   24 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   25 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -193,8 +193,8 @@
 #define MSP_OSD_CHAR_READ               86 //out message         Read a font character.
 #define MSP_OSD_CHAR_WRITE              87 //in message          Write a font character.
 
-#define MSP_VTX_CONFIG                  88 //out message         Get vtx settings - betaflight
-#define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
+#define MSP_VTX                         88 //out message
+#define MSP_SET_VTX                     89 //in message
 
 // Betaflight Additional Commands
 // DEPRECATED - for reference only, 'ADVANCED' is like 'MISC' or 'UTIL' it's a garbage bin for random stuff. A bad idea.
