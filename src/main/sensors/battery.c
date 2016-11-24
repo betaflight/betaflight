@@ -84,12 +84,17 @@ static void updateBatteryVoltage(void)
     }
 
     #ifdef USE_ESC_SENSOR
+<<<<<<< 0a89e28c8e6e538d5b283fe9a389c481f24523fb
     if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
         vbatLatest = getEscSensorVbat();
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
         vbat = biquadFilterApply(&vBatFilter, vbatLatest);
+=======
+    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
+        vbatSample = vbatLatest = getEscSensorVbat();
+>>>>>>> Remove fallback on ADC sensor when ESC sensor fails
     }
     else
     #endif
@@ -291,8 +296,6 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             {
                 amperage = getEscSensorCurrent();
                 mAhDrawn = getEscSensorConsumption();
-
-                updateCurrentDrawn(lastUpdateAt);
             }
             #endif
 

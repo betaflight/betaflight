@@ -269,11 +269,10 @@ void escSensorProcess(timeUs_t currentTimeUs)
 
     if (escTriggerLastTimestamp + 10000 < currentTimeMs) {
         // ESCs did not respond for 10 seconds
-        // Disable ESC telemetry and fallback to onboard vbat sensor
+        // Disable ESC telemetry and reset voltage and current to let the use know something is wrong
         freeEscSensorPort();
         escVbat = 0;
         escCurrent = 0;
-        escConsumption = 0;
     }
 }
 
