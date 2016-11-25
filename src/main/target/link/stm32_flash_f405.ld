@@ -29,6 +29,7 @@ MEMORY
     BACKUP_SRAM (rwx) : ORIGIN = 0x40024000, LENGTH = 4K
     MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
-/* note CCM could be used for stack */
+
+REGION_ALIAS("STACKRAM", CCM)
 
 INCLUDE "stm32_flash.ld"
