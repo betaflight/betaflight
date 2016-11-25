@@ -68,10 +68,11 @@ uint8_t crfsCrc(uint8_t *frame, int frameLen)
     }
     return crc;
 }
+
 /*
 int32_t     Latitude ( degree / 10`000`000 )
 int32_t     Longitude (degree / 10`000`000 )
-uint16_t    Groundspeed ( km/h / 100 )
+uint16_t    Groundspeed ( km/h / 10 )
 uint16_t    GPS heading ( degree / 100 )
 uint16      Altitude ( meter ­ 1000m offset )
 uint8_t     Satellites in use ( counter )
@@ -81,8 +82,7 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint16_t GPS_altitude;              // altitude in m
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
-
- */
+*/
 #define FRAME_HEADER_FOOTER_LEN 4
 
 TEST(TelemetryCrsfTest, TestGPS)
@@ -112,7 +112,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     GPS_coord[LON] = 163 * GPS_DEGREES_DIVIDER;
     ENABLE_STATE(GPS_FIX);
     GPS_altitude = 2345;              // altitude in m
-    GPS_speed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h
+    GPS_speed = 163;                 // speed in 0.1m/s, 16.3 m/s = 58.68 km/h, so CRSF (km/h *10) value is 587
     GPS_numSat = 9;
     GPS_ground_course = 1479;     // degrees * 10
     frameLen = getCrsfFrame(frame, CRSF_FRAME_GPS);
@@ -121,7 +121,7 @@ TEST(TelemetryCrsfTest, TestGPS)
     longitude = frame[7] << 24 | frame[8] << 16 | frame[9] << 8 | frame[10];
     EXPECT_EQ(1630000000, longitude);
     groundSpeed = frame[11] << 8 | frame[12];
-    EXPECT_EQ(5868, groundSpeed);
+    EXPECT_EQ(587, groundSpeed);
     GPSheading = frame[13] << 8 | frame[14];
     EXPECT_EQ(14790, GPSheading);
     altitude = frame[15] << 8 | frame[16];
@@ -167,18 +167,6 @@ TEST(TelemetryCrsfTest, TestBattery)
     remaining = frame[10]; // percent
     EXPECT_EQ(67, remaining);
     EXPECT_EQ(crfsCrc(frame, frameLen), frame[11]);
-}
-
-TEST(TelemetryCrsfTest, TestLinkStatistics)
-{
-    uint8_t frame[CRSF_FRAME_SIZE_MAX];
-
-    int frameLen = getCrsfFrame(frame, CRSF_FRAME_LINK_STATISTICS);
-    EXPECT_EQ(CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE + FRAME_HEADER_FOOTER_LEN, frameLen);
-    EXPECT_EQ(CRSF_ADDRESS_BROADCAST, frame[0]); // address
-    EXPECT_EQ(12, frame[1]); // length
-    EXPECT_EQ(0x14, frame[2]); // type
-    EXPECT_EQ(crfsCrc(frame, frameLen), frame[13]);
 }
 
 TEST(TelemetryCrsfTest, TestAttitude)
@@ -302,6 +290,8 @@ int32_t mAhDrawn;
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
 
 uint32_t micros(void) {return 0;}
+
+bool feature(uint32_t) {return true;}
 
 uint32_t serialRxBytesWaiting(const serialPort_t *) {return 0;}
 uint32_t serialTxBytesFree(const serialPort_t *) {return 0;}
