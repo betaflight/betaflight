@@ -223,7 +223,7 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) (1000.0f * (angle) * RAD)
+#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
 
 void crsfFrameAttitude(sbuf_t *dst)
 {
