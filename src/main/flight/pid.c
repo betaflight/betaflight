@@ -147,6 +147,8 @@ static void pidInitFilters(const pidProfile_t *pidProfile)
         ptermYawFilter = &pt1FilterYaw;
         pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, dT);
     }
+
+    initialized = true;
 }
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
