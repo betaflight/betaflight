@@ -14,6 +14,11 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
 
+/* Base address where the config is stored. */
+__config_start = ORIGIN(FLASH) + LENGTH(FLASH);
+
+__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
+
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
@@ -76,6 +81,19 @@ SECTIONS
     KEEP (*(.fini_array*))
     KEEP (*(SORT(.fini_array.*)))
     PROVIDE_HIDDEN (__fini_array_end = .);
+  } >FLASH
+  .pg_registry :
+  {
+    PROVIDE_HIDDEN (__pg_registry_start = .);
+    KEEP (*(.pg_registry))
+    KEEP (*(SORT(.pg_registry.*)))
+    PROVIDE_HIDDEN (__pg_registry_end = .);
+  } >FLASH
+  .pg_resetdata :
+  {
+    PROVIDE_HIDDEN (__pg_resetdata_start = .);
+    KEEP (*(.pg_resetdata))
+    PROVIDE_HIDDEN (__pg_resetdata_end = .);
   } >FLASH
 
   /* used by the startup to initialize data */

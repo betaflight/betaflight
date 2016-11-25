@@ -486,6 +486,7 @@ COMMON_SRC = \
             config/config_eeprom.c \
             config/feature.c \
             config/parameter_group.c \
+            config/config_streamer.c \
             drivers/adc.c \
             drivers/buf_writer.c \
             drivers/bus_i2c_soft.c \
@@ -581,6 +582,7 @@ HIGHEND_SRC = \
             io/displayport_msp.c \
             io/displayport_oled.c \
             io/gps.c \
+            io/gimbal.c \
             io/ledstrip.c \
             io/osd.c \
             sensors/sonar.c \

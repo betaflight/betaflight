@@ -69,8 +69,10 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
-void readEEPROMAndNotify(void);
+void readEEPROM(void);
+void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);

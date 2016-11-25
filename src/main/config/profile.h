@@ -17,23 +17,15 @@
 
 #pragma once
 
-#include "blackbox/blackbox_fielddefs.h"
 #include "config/parameter_group.h"
 
-typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
-    uint8_t device;
-    uint8_t on_motor_test;
-} blackboxConfig_t;
+#define MAX_PROFILE_COUNT 3 // do not use more than 3 due to some legacy code (e.g. profile selection, msp) and more recent code (config storage)
 
-PG_DECLARE(blackboxConfig_t, blackboxConfig);
+typedef struct profileSelection_s {
+    uint8_t current_profile_index;
+} profileSelection_t;
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
+PG_DECLARE(profileSelection_t, profileSelection);
 
-void initBlackbox(void);
-void handleBlackbox(uint32_t currentTime);
-void startBlackbox(void);
-void finishBlackbox(void);
-
-bool blackboxMayEditConfig();
+uint8_t getCurrentProfile(void);
+void setProfile(uint8_t profileIndex);

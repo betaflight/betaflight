@@ -19,8 +19,7 @@
 
 #define EEPROM_CONF_VERSION 145
 
-void initEEPROM(void);
-void writeEEPROM();
-void readEEPROM(void);
 bool isEEPROMContentValid(void);
-
+bool loadEEPROM(void);
+void writeConfigToEEPROM(void);
+void activateProfile(uint8_t profileIndexToActivate);

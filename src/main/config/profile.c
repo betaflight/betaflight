@@ -15,25 +15,27 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "blackbox/blackbox_fielddefs.h"
-#include "config/parameter_group.h"
+#include "platform.h"
 
-typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
-    uint8_t device;
-    uint8_t on_motor_test;
-} blackboxConfig_t;
+#include "config/parameter_group_ids.h"
 
-PG_DECLARE(blackboxConfig_t, blackboxConfig);
+#include "config/profile.h"
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
+PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
-void initBlackbox(void);
-void handleBlackbox(uint32_t currentTime);
-void startBlackbox(void);
-void finishBlackbox(void);
+uint8_t getCurrentProfile(void)
+{
+    return profileSelection()->current_profile_index;
+}
 
-bool blackboxMayEditConfig();
+void setProfile(uint8_t profileIndex)
+{
+    if (profileIndex >= MAX_PROFILE_COUNT) // sanity check
+        profileIndex = 0;
+
+    profileSelection()->current_profile_index = profileIndex;
+}
+

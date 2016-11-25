@@ -782,7 +782,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, masterConfig.motorConfig.maxthrottle);
         sbufWriteU16(dst, masterConfig.motorConfig.mincommand);
 
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
 
 #ifdef GPS
         sbufWriteU8(dst, masterConfig.gpsConfig.provider); // gps_type
@@ -866,9 +866,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BOARD_ALIGNMENT:
-        sbufWriteU16(dst, masterConfig.boardAlignment.rollDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.pitchDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.yawDegrees);
+        sbufWriteU16(dst, boardAlignment()->rollDegrees);
+        sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+        sbufWriteU16(dst, boardAlignment()->yawDegrees);
         break;
 
     case MSP_VOLTAGE_METER_CONFIG:
@@ -906,12 +906,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FAILSAFE_CONFIG:
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_delay);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_off_delay);
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_kill_switch);
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle_low_delay);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_procedure);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -938,9 +938,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
         sbufWriteU8(dst, masterConfig.rxConfig.serialrx_provider);
 
-        sbufWriteU16(dst, masterConfig.boardAlignment.rollDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.pitchDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.yawDegrees);
+        sbufWriteU16(dst, boardAlignment()->rollDegrees);
+        sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+        sbufWriteU16(dst, boardAlignment()->yawDegrees);
 
         sbufWriteU16(dst, masterConfig.batteryConfig.currentMeterScale);
         sbufWriteU16(dst, masterConfig.batteryConfig.currentMeterOffset);
@@ -1005,9 +1005,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
-        sbufWriteU8(dst, masterConfig.blackbox_device);
-        sbufWriteU8(dst, masterConfig.blackbox_rate_num);
-        sbufWriteU8(dst, masterConfig.blackbox_rate_denom);
+        sbufWriteU8(dst, blackboxConfig()->device);
+        sbufWriteU8(dst, blackboxConfig()->rate_num);
+        sbufWriteU8(dst, blackboxConfig()->rate_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1340,7 +1340,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.motorConfig.maxthrottle = sbufReadU16(src);
         masterConfig.motorConfig.mincommand = sbufReadU16(src);
 
-        masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
+        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
 
 #ifdef GPS
         masterConfig.gpsConfig.provider = sbufReadU8(src); // gps_type
@@ -1510,9 +1510,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            masterConfig.blackbox_device = sbufReadU8(src);
-            masterConfig.blackbox_rate_num = sbufReadU8(src);
-            masterConfig.blackbox_rate_denom = sbufReadU8(src);
+            blackboxConfig()->device = sbufReadU8(src);
+            blackboxConfig()->rate_num = sbufReadU8(src);
+            blackboxConfig()->rate_denom = sbufReadU8(src);
         }
         break;
 #endif
@@ -1636,9 +1636,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        masterConfig.boardAlignment.rollDegrees = sbufReadU16(src);
-        masterConfig.boardAlignment.pitchDegrees = sbufReadU16(src);
-        masterConfig.boardAlignment.yawDegrees = sbufReadU16(src);
+        boardAlignment()->rollDegrees = sbufReadU16(src);
+        boardAlignment()->pitchDegrees = sbufReadU16(src);
+        boardAlignment()->yawDegrees = sbufReadU16(src);
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG:
@@ -1684,12 +1684,12 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_FAILSAFE_CONFIG:
-        masterConfig.failsafeConfig.failsafe_delay = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_off_delay = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
-        masterConfig.failsafeConfig.failsafe_kill_switch = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_throttle_low_delay = sbufReadU16(src);
-        masterConfig.failsafeConfig.failsafe_procedure = sbufReadU8(src);
+        failsafeConfig()->failsafe_delay = sbufReadU8(src);
+        failsafeConfig()->failsafe_off_delay = sbufReadU8(src);
+        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
+        failsafeConfig()->failsafe_kill_switch = sbufReadU8(src);
+        failsafeConfig()->failsafe_throttle_low_delay = sbufReadU16(src);
+        failsafeConfig()->failsafe_procedure = sbufReadU8(src);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
@@ -1724,9 +1724,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         masterConfig.rxConfig.serialrx_provider = sbufReadU8(src); // serialrx_type
 
-        masterConfig.boardAlignment.rollDegrees = sbufReadU16(src); // board_align_roll
-        masterConfig.boardAlignment.pitchDegrees = sbufReadU16(src); // board_align_pitch
-        masterConfig.boardAlignment.yawDegrees = sbufReadU16(src); // board_align_yaw
+        boardAlignment()->rollDegrees = sbufReadU16(src); // board_align_roll
+        boardAlignment()->pitchDegrees = sbufReadU16(src); // board_align_pitch
+        boardAlignment()->yawDegrees = sbufReadU16(src); // board_align_yaw
 
         masterConfig.batteryConfig.currentMeterScale = sbufReadU16(src);
         masterConfig.batteryConfig.currentMeterOffset = sbufReadU16(src);

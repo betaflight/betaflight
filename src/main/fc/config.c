@@ -588,9 +588,9 @@ void createDefaultConfig(master_t *config)
 
     resetSensorAlignment(&config->sensorAlignmentConfig);
 
-    config->boardAlignment.rollDegrees = 0;
-    config->boardAlignment.pitchDegrees = 0;
-    config->boardAlignment.yawDegrees = 0;
+    boardAlignment()->rollDegrees = 0;
+    boardAlignment()->pitchDegrees = 0;
+    boardAlignment()->yawDegrees = 0;
     config->acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->yaw_control_direction = 1;
@@ -719,13 +719,6 @@ void createDefaultConfig(master_t *config)
     config->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
     config->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
-    // Failsafe Variables
-    config->failsafeConfig.failsafe_delay = 10;                            // 1sec
-    config->failsafeConfig.failsafe_off_delay = 10;                        // 1sec
-    config->failsafeConfig.failsafe_throttle = 1000;                       // default throttle off.
-    config->failsafeConfig.failsafe_kill_switch = 0;                       // default failsafe switch action is identical to rc link loss
-    config->failsafeConfig.failsafe_throttle_low_delay = 100;              // default throttle low delay for "just disarm" on failsafe condition
-    config->failsafeConfig.failsafe_procedure = FAILSAFE_PROCEDURE_DROP_IT;// default full failsafe procedure is 0: auto-landing
 
 #ifdef USE_SERVOS
     // servos
@@ -740,7 +733,7 @@ void createDefaultConfig(master_t *config)
     }
 
     // gimbal
-    config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+    gimbalConfig()->mode = GIMBAL_MODE_NORMAL;
 #endif
 
 #ifdef GPS
@@ -749,7 +742,7 @@ void createDefaultConfig(master_t *config)
 
     // custom mixer. clear by defaults.
     for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        config->customMotorMixer[i].throttle = 0.0f;
+        customMotorMixer(i)->throttle = 0.0f;
     }
 
 #ifdef VTX
@@ -767,18 +760,11 @@ void createDefaultConfig(master_t *config)
 
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_FLASH;
+    featureSet(FEATURE_BLACKBOX);
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
-#else
-    config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    featureSet(FEATURE_BLACKBOX);
 #endif
 
-    config->blackbox_rate_num = 1;
-    config->blackbox_rate_denom = 1;
-    config->blackbox_on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART
@@ -854,7 +840,7 @@ void activateConfig(void)
     gpsUsePIDs(&currentProfile->pidProfile);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    useFailsafeConfig();
     setAccelerationTrims(&masterConfig.accZero);
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 
@@ -867,7 +853,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
 
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
@@ -1004,11 +990,32 @@ void validateAndFixConfig(void)
 #endif
 }
 
-void readEEPROMAndNotify(void)
+void readEEPROM(void)
 {
-    // re-read written data
-    readEEPROM();
-    beeperConfirmationBeeps(1);
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//!!    pgActivateProfile(getCurrentProfile());
+
+//!!    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
 }
 
 void ensureEEPROMContainsValidData(void)
@@ -1016,7 +1023,6 @@ void ensureEEPROMContainsValidData(void)
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
@@ -1029,7 +1035,8 @@ void resetEEPROM(void)
 void saveConfigAndNotify(void)
 {
     writeEEPROM();
-    readEEPROMAndNotify();
+    readEEPROM();
+    beeperConfirmationBeeps(1);
 }
 
 void changeProfile(uint8_t profileIndex)

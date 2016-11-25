@@ -31,7 +31,8 @@
 
 #ifdef OSD
 
-#include "build/debug.h"
+#include "blackbox/blackbox.h"
+
 #include "build/version.h"
 
 #include "common/printf.h"

@@ -47,7 +47,7 @@
 #include "fc/runtime_config.h"
 
 #include "config/feature.h"
-#include "config/config_master.h"
+#include "config/parameter_group_ids.h"
 
 #define EXTERNAL_DSHOT_CONVERSION_FACTOR 2
 // (minimum output value(1001) - (minimum input value(48) / conversion factor(2))
@@ -68,6 +68,8 @@ rxConfig_t *rxConfig;
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
+
+PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
 
 static const motorMixer_t mixerQuadX[] = {

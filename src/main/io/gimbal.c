@@ -15,25 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "blackbox/blackbox_fielddefs.h"
-#include "config/parameter_group.h"
+#include "platform.h"
 
-typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
-    uint8_t device;
-    uint8_t on_motor_test;
-} blackboxConfig_t;
+#include "config/parameter_group_ids.h"
+#include "config/profile.h"
 
-PG_DECLARE(blackboxConfig_t, blackboxConfig);
+#include "io/gimbal.h"
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
+#ifdef USE_SERVOS
 
-void initBlackbox(void);
-void handleBlackbox(uint32_t currentTime);
-void startBlackbox(void);
-void finishBlackbox(void);
+PG_REGISTER_PROFILE(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
-bool blackboxMayEditConfig();
+#endif

@@ -32,14 +32,12 @@
 
 #include "fc/rc_controls.h"
 
-#include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
 
 #include "io/serial.h"
-#include "io/gimbal.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gps.h"
@@ -54,7 +52,6 @@
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 
@@ -69,7 +66,6 @@ typedef struct master_s {
     uint32_t enabledFeatures;
 
     // motor/esc/servo related stuff
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     motorConfig_t motorConfig;
     flight3DConfig_t flight3DConfig;
 
@@ -79,13 +75,10 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-    // gimbal-related configuration
-    gimbalConfig_t gimbalConfig;
 #endif
 
     // global sensor-related stuff
     sensorAlignmentConfig_t sensorAlignmentConfig;
-    boardAlignment_t boardAlignment;
 
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
@@ -148,7 +141,6 @@ typedef struct master_s {
     mixerConfig_t mixerConfig;
     airplaneConfig_t airplaneConfig;
 
-    failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
@@ -212,12 +204,6 @@ typedef struct master_s {
     vtxChannelActivationCondition_t vtxChannelActivationConditions[MAX_CHANNEL_ACTIVATION_CONDITION_COUNT];
 #endif
 
-#ifdef BLACKBOX
-    uint8_t blackbox_rate_num;
-    uint8_t blackbox_rate_denom;
-    uint8_t blackbox_device;
-    uint8_t blackbox_on_motor_test;
-#endif
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;

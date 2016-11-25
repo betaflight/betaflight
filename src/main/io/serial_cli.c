@@ -31,6 +31,8 @@ uint8_t cliMode = 0;
 
 #ifdef USE_CLI
 
+#include "blackbox/blackbox.h"
+
 #include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
@@ -103,6 +105,7 @@ uint8_t cliMode = 0;
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group_ids.h"
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
@@ -676,11 +679,14 @@ typedef union {
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
-    void *ptr;
     const cliValueConfig_t config;
-} clivalue_t;
+
+    pgn_t pgn;
+    uint16_t offset;
+} __attribute__((packed)) clivalue_t;
 
 const clivalue_t valueTable[] = {
+/*
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, .config.minmax = { 1200,  1700 } },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -797,11 +803,11 @@ const clivalue_t valueTable[] = {
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT } },
-
-    { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.rollDegrees, .config.minmax = { -180,  360 } },
-    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.pitchDegrees, .config.minmax = { -180,  360 } },
-    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.yawDegrees, .config.minmax = { -180,  360 } },
-
+*/
+    { "align_board_roll",           VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDegrees)},
+    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDegrees)},
+    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -180,  360 } , PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDegrees)},
+/*
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
@@ -834,8 +840,10 @@ const clivalue_t valueTable[] = {
     { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.servoMixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoPwmRate, .config.minmax = { 50,  498 } },
-    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
-#endif
+*/
+    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GIMBAL_MODE }, PG_GIMBAL_CONFIG, offsetof(gimbalConfig_t, mode)},
+/*
+//#endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
     { "rc_rate_yaw",                VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcYawRate8, .config.minmax = { 0,  255 } },
@@ -849,14 +857,14 @@ const clivalue_t valueTable[] = {
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
     { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.rxConfig.airModeActivateThreshold, .config.minmax = {1000, 2000 } },
-
-    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 } },
-    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } },
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
-    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
-    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_procedure, .config.lookup = { TABLE_FAILSAFE } },
-
+*/
+    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_delay)},
+    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  200 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_off_delay)},
+    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle)},
+    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_kill_switch)},
+    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  300 } , PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_throttle_low_delay)},
+    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_FAILSAFE }, PG_FAILSAFE_CONFIG, offsetof(failsafeConfig_t, failsafe_procedure)},
+/*
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
@@ -920,14 +928,14 @@ const clivalue_t valueTable[] = {
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
 
     { "level_sensitivity",          VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.levelSensitivity, .config.minmax = { 0.1,  3.0 } },
-
+*/
 #ifdef BLACKBOX
-    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },
-    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, .config.minmax = { 1,  32 } },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_device, .config.lookup = { TABLE_BLACKBOX_DEVICE } },
-    { "blackbox_on_motor_test",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_on_motor_test, .config.lookup = { TABLE_OFF_ON } },
+    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_num) },
+    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_denom)  },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device)  },
+    { "blackbox_on_motor_test",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, on_motor_test)  },
 #endif
-
+/*
 #ifdef VTX
     { "vtx_band",                   VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_band, .config.minmax = { 1, 5 } },
     { "vtx_channel",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.vtx_channel, .config.minmax = { 1, 8 } },
@@ -989,6 +997,7 @@ typedef union {
 } int_float_value_t;
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
+static void *cliVarPtr(const clivalue_t *var);
 static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, master_t *defaultConfig);
 static void cliPrintVarRange(const clivalue_t *var);
@@ -1548,32 +1557,33 @@ static void cliAdjustmentRange(char *cmdline)
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
-static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
+static void printMotorMix(uint8_t dumpMask)
 {
     char buf0[8];
     char buf1[8];
     char buf2[8];
     char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        if (masterConfig.customMotorMixer[i].throttle == 0.0f)
+        if (customMotorMixer(i)->throttle == 0.0f)
             break;
-        float thr = masterConfig.customMotorMixer[i].throttle;
-        float roll = masterConfig.customMotorMixer[i].roll;
-        float pitch = masterConfig.customMotorMixer[i].pitch;
-        float yaw = masterConfig.customMotorMixer[i].yaw;
-        float thrDefault = defaultConfig->customMotorMixer[i].throttle;
+        float thr = customMotorMixer(i)->throttle;
+        float roll = customMotorMixer(i)->roll;
+        float pitch = customMotorMixer(i)->pitch;
+        float yaw = customMotorMixer(i)->yaw;
+        /*float thrDefault = defaultConfig->customMotorMixer[i].throttle;
         float rollDefault = defaultConfig->customMotorMixer[i].roll;
         float pitchDefault = defaultConfig->customMotorMixer[i].pitch;
         float yawDefault = defaultConfig->customMotorMixer[i].yaw;
-        bool equalsDefault = thr == thrDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;
+        bool equalsDefault = thr == thrDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;*/
 
+        const bool equalsDefault = false;
         const char *format = "mmix %d %s %s %s %s\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
+        /*cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
             ftoa(thrDefault, buf0),
             ftoa(rollDefault, buf1),
             ftoa(pitchDefault, buf2),
-            ftoa(yawDefault, buf3));
+            ftoa(yawDefault, buf3));*/
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             ftoa(thr, buf0),
@@ -1594,11 +1604,11 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printMotorMix(DUMP_MASTER, NULL);
+        printMotorMix(DUMP_MASTER);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-            masterConfig.customMotorMixer[i].throttle = 0.0f;
+            customMotorMixer(i)->throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
@@ -1609,7 +1619,7 @@ static void cliMotorMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    mixerLoadMix(i, masterConfig.customMotorMixer);
+                    mixerLoadMix(i, customMotorMixer(0));
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
                     break;
@@ -1622,28 +1632,28 @@ static void cliMotorMix(char *cmdline)
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].throttle = fastA2F(ptr);
+                customMotorMixer(i)->throttle = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].roll = fastA2F(ptr);
+                customMotorMixer(i)->roll = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].pitch = fastA2F(ptr);
+                customMotorMixer(i)->pitch = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].yaw = fastA2F(ptr);
+                customMotorMixer(i)->yaw = fastA2F(ptr);
                 check++;
             }
             if (check != 4) {
                 cliShowParseError();
             } else {
-                printMotorMix(DUMP_MASTER, NULL);
+                printMotorMix(DUMP_MASTER);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -2628,7 +2638,7 @@ static void cliMap(char *cmdline)
 
 void *getValuePointer(const clivalue_t *value)
 {
-    void *ptr = value->ptr;
+    void *ptr = cliVarPtr(value);
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
@@ -2779,9 +2789,9 @@ static void printConfig(char *cmdline, bool doDiff)
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
 
-        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, &defaultConfig);
+        printMotorMix(dumpMask);
 
 #ifdef USE_SERVOS
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -3354,9 +3364,24 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
+static void* cliVarPtr(const clivalue_t *var)
+{
+    const pgRegistry_t* rec = pgFind(var->pgn);
+
+    switch (var->type & VALUE_SECTION_MASK) {
+        case MASTER_VALUE:
+            return rec->address + var->offset;
+        case PROFILE_RATE_VALUE:
+            return rec->address + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile()) + var->offset;
+        case PROFILE_VALUE:
+            return *rec->ptr + var->offset;
+    }
+    return NULL;
+}
+
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
-    void *ptr = getValuePointer(var);
+    void *ptr = cliVarPtr(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -3393,7 +3418,7 @@ static void cliPrintVarRange(const clivalue_t *var)
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
-    void *ptr = var->ptr;
+    void *ptr = cliVarPtr(var);
     if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }

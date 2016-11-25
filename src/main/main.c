@@ -249,7 +249,7 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(masterConfig.mixerMode, customMotorMixer(0));
 #ifdef USE_SERVOS
     servoMixerInit(masterConfig.customServoMixer);
 #endif
@@ -384,7 +384,7 @@ void init(void)
 #endif
 
 
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment(boardAlignment());
 
 #ifdef CMS
     cmsInit();
