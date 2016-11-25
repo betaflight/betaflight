@@ -20,6 +20,8 @@
 #define TARGET_CONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 
+#define CLI_MINIMAL_VERBOSITY
+
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0                    PB3
