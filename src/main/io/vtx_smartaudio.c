@@ -165,7 +165,10 @@ static smartAudioDevice_t saDevicePrev = {
 };
 
 // XXX Possible compliance problem here. Need LOCK/UNLOCK menu?
-static uint8_t saLockMode = SA_MODE_SET_UNLOCK;
+static uint8_t saLockMode = SA_MODE_SET_UNLOCK; // saCms variable?
+
+// XXX Should be configurable by user?
+static bool saDeferred = true; // saCms variable?
 
 // Receive frame reassembly buffer
 #define SA_MAX_RCVLEN 11
@@ -732,27 +735,29 @@ uint8_t  saCmsRFState;          // RF state; ACTIVE, PIR, POR XXX Not currently 
 
 void saCmsUpdate(void)
 {
+// XXX Take care of pit mode update somewhere???
+
     if (saCmsOpmodel == SA_OPMODEL_UNDEF) {
         // This is a first valid response to GET_SETTINGS.
         saCmsOpmodel = (saDevice.mode & SA_MODE_GET_PITMODE) ? SA_OPMODEL_PIT : SA_OPMODEL_FREE;
-    }
 
-    saCmsBand = (saDevice.chan / 8) + 1;
-    saCmsChan = (saDevice.chan % 8) + 1;
-    saCmsDeviceFreq = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
+        saCmsBand = (saDevice.chan / 8) + 1;
+        saCmsChan = (saDevice.chan % 8) + 1;
+        saCmsDeviceFreq = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
 
-    if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
-        saCmsRFState = SA_TXMODE_ACTIVE;
-    } else if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
-        saCmsRFState = SA_TXMODE_PIT_INRANGE;
-    } else {
-        saCmsRFState = SA_TXMODE_PIT_OUTRANGE;
-    }
+        if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
+            saCmsRFState = SA_TXMODE_ACTIVE;
+        } else if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
+            saCmsRFState = SA_TXMODE_PIT_INRANGE;
+        } else {
+            saCmsRFState = SA_TXMODE_PIT_OUTRANGE;
+        }
 
-    if (saDevice.version == 2) {
-        saCmsPower = saDevice.power + 1; // XXX Take care V1
-    } else {
-        saCmsPower = saDacToPowerIndex(saDevice.power) + 1;
+        if (saDevice.version == 2) {
+            saCmsPower = saDevice.power + 1; // XXX Take care V1
+        } else {
+            saCmsPower = saDacToPowerIndex(saDevice.power) + 1;
+        }
     }
 
     saUpdateStatusString();
@@ -826,13 +831,18 @@ static long saCmsConfigBandByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
+dprintf(("saCmsConfigBand: band req %d ", saCmsBand));
+
     if (saCmsBand == 0) {
         // Bouce back, no going back to undef state
         saCmsBand = 1;
+dprintf(("--> %d\r\n", saCmsBand));
         return 0;
     }
+dprintf(("--> %d\r\n", saCmsBand));
 
-    saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+    if (!(saCmsOpmodel == SA_OPMODEL_FREE && saDeferred))
+        saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     return 0;
 }
@@ -854,7 +864,8 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+    if (!(saCmsOpmodel == SA_OPMODEL_FREE && saDeferred))
+        saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     return 0;
 }
@@ -1031,15 +1042,22 @@ static long saCmsConfigFreqModeByGvar(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
-static long saCmsClearPitMode(displayPort_t *pDisp, const void *self)
+static long saCmsCommence(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (saCmsPitFMode == 0)
-        saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
-    else
-        saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_OUT_RANGE_PITMODE);
+    if (saCmsOpmodel == SA_OPMODEL_PIT) {
+        if (saCmsPitFMode == 0)
+            saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
+        else
+            saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_OUT_RANGE_PITMODE);
+    } else {
+        if (saCmsFreqMode == 0)
+            saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+        else
+            saSetFreq(saCmsUserFreq);
+    }
 
     return 0;
 }
@@ -1153,7 +1171,7 @@ static CMS_Menu menu_smartAudioConfig = {
 
 static OSD_Entry saCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label, NULL, NULL, 0 },
-    { "YES", OME_Funcall, saCmsClearPitMode, NULL, 0 },
+    { "YES", OME_Funcall, saCmsCommence, NULL, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };
@@ -1172,7 +1190,7 @@ static OSD_Entry saCmsMenuFreqModeEntries[] = {
     { "", OME_Label, NULL, saCmsStatusString, DYNAMIC },
     { "FREQ", OME_Submenu, cmsMenuChange, &saCmsMenuUserFreq, 0 },
     { "POWER", OME_TAB, saCmsConfigPowerByGvar, &saCmsEntPower, 0 },
-    { "START", OME_Submenu, cmsMenuChange, &saCmsMenuCommence, 0 },
+    { "SET", OME_Submenu, cmsMenuChange, &saCmsMenuCommence, 0 },
     { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
@@ -1186,7 +1204,7 @@ static OSD_Entry saCmsMenuChanModeEntries[] =
     { "CHAN", OME_TAB, saCmsConfigChanByGvar, &saCmsEntChan, 0 },
     { "(FREQ)", OME_UINT16, NULL, &saCmsEntFreq, DYNAMIC },
     { "POWER", OME_TAB, saCmsConfigPowerByGvar, &saCmsEntPower, 0 },
-    { "START", OME_Submenu, cmsMenuChange, &saCmsMenuCommence, 0 },
+    { "SET", OME_Submenu, cmsMenuChange, &saCmsMenuCommence, 0 },
     { "CONFIG", OME_Submenu, cmsMenuChange, &menu_smartAudioConfig, 0 },
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
