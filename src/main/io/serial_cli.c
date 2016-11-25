@@ -1441,6 +1441,12 @@ static void cliSerialPassthrough(char *cmdline)
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
+        // If this port has a rx callback associated we need to remove it now.
+        // Otherwise no data will be pushed in the serial port buffer!
+        if (passThroughPort->rxCallback) {
+            printf("Removing rxCallback from port\r\n");
+            passThroughPort->rxCallback = 0;
+        }
     }
 
     printf("Relaying data to device on port %d, Reset your board to exit "
