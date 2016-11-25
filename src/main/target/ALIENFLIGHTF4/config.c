@@ -58,14 +58,13 @@ void targetConfiguration(master_t *config)
 {
     config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
     config->batteryConfig.currentMeterScale = CURRENTSCALE;
-    config->gyro_sync_denom = 1;
     config->sensorSelectionConfig.mag_hardware = MAG_NONE;            // disabled by default
-    config->pid_process_denom = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.minthrottle = 1000;
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        config->pid_process_denom = 1;
         config->motorConfig.useUnsyncedPwm = true;
     }
 
