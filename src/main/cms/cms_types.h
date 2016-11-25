@@ -78,8 +78,10 @@ typedef struct
 
 #define IS_DYNAMIC(p) ((p)->flags & DYNAMIC)
 
-
 typedef long (*CMSMenuFuncPtr)(void);
+
+// Special return value(s) for function chaining by CMSMenuFuncPtr
+#define MENU_CHAIN_BACK  (-1) // Causes automatic cmsMenuBack
 
 /*
 onExit function is called with self:
