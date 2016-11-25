@@ -59,7 +59,7 @@ void targetConfiguration(master_t *config)
     config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
     config->batteryConfig.currentMeterScale = CURRENTSCALE;
     config->gyro_sync_denom = 1;
-    config->mag_hardware = MAG_NONE;            // disabled by default
+    config->sensorSelectionConfig.mag_hardware = MAG_NONE;            // disabled by default
     config->pid_process_denom = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {

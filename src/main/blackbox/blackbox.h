@@ -19,6 +19,13 @@
 
 #include "blackbox/blackbox_fielddefs.h"
 
+typedef struct blackboxConfig_s {
+    uint8_t rate_num;
+    uint8_t rate_denom;
+    uint8_t device;
+    uint8_t on_motor_test;
+} blackboxConfig_t;
+
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
@@ -26,4 +33,4 @@ void handleBlackbox(uint32_t currentTime);
 void startBlackbox(void);
 void finishBlackbox(void);
 
-bool blackboxMayEditConfig();
+bool blackboxMayEditConfig(void);
