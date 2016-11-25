@@ -110,8 +110,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 {
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
-        const serialPortUsage_t *candidate = &serialPortUsageList[index];
-        if (candidate->identifier == identifier) {
+        if (serialPortIdentifiers[index] == identifier) {
             return index;
         }
     }
