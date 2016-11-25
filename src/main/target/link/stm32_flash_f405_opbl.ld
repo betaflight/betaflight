@@ -12,21 +12,22 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-/* Specify the memory areas */
-
 /*
-0x08000000 to 0x08100000 1024kb full flash,
-0x08000000 to 0x08020000 128kb OPBL,
-0x08020000 to 0x08080000 384kb firmware,
-0x08080000 to 0x080A0000 128kb config,
+0x08000000 to 0x08100000 1024K full flash,
+0x08000000 to 0x08004000   16K OPBL,
+0x08004000 to 0x080FC000  992K firmware,
+0x080FC000 to 0x08100000   16K config,
 */
 
+/* Specify the memory areas */
 MEMORY
 {
-	FLASH (rx)      : ORIGIN = 0x08020000, LENGTH = 0x000A0000 
-  CCM (rwx)       : ORIGIN = 0x10000000, LENGTH = 64K
-	RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 0x00020000
-	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
+    FLASH (rx)      : ORIGIN = 0x08004000, LENGTH = 992K
+    FLASH_CONFIG (r): ORIGIN = 0x080FC000, LENGTH = 16K
+
+    RAM (rwx)       : ORIGIN = 0x20000000, LENGTH = 128K
+    CCM (rwx)       : ORIGIN = 0x10000000, LENGTH = 64K
+    MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
 INCLUDE "stm32_flash.ld"
