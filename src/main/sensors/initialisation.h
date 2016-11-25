@@ -21,7 +21,7 @@ struct sensorAlignmentConfig_s;
 struct sensorSelectionConfig_s;
 struct gyroConfig_s;
 struct sonarConfig_s;
-bool sensorsAutodetect(const sensorAlignmentConfig_s *sensorAlignmentConfig,
+bool sensorsAutodetect(const struct sensorAlignmentConfig_s *sensorAlignmentConfig,
         const struct sensorSelectionConfig_s *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
         const struct gyroConfig_s *gyroConfig,

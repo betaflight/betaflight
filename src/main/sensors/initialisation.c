@@ -625,7 +625,7 @@ static bool detectSonar(void)
 }
 #endif
 
-void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
+static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
         gyroAlign = sensorAlignmentConfig->gyro_align;
@@ -639,7 +639,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 }
 
 bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
-        sensorSelectionConfig_t *sensorSelectionConfig,
+        const sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
         const gyroConfig_t *gyroConfig,
         const sonarConfig_t *sonarConfig)
