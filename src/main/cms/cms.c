@@ -669,7 +669,7 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
     switch (p->type) {
         case OME_Submenu:
-            if (p->func && key == KEY_RIGHT) {
+            if (key == KEY_RIGHT) {
                 cmsMenuChange(pDisplay, p->data);
                 res = BUTTON_PAUSE;
             }
