@@ -623,9 +623,7 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
 }
 
 bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
-        uint8_t accHardwareToUse,
-        uint8_t magHardwareToUse,
-        uint8_t baroHardwareToUse,
+        sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
         uint8_t gyroLpf,
         uint8_t gyroSyncDenominator)
@@ -651,7 +649,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     gyro.init(gyroLpf); // driver initialisation
     gyroInit(); // sensor initialisation
 
-    if (detectAcc(accHardwareToUse)) {
+    if (detectAcc(sensorSelectionConfig->acc_hardware)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc); // driver initialisation
         accInit(gyro.targetLooptime); // sensor initialisation
@@ -661,21 +659,18 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (detectMag(magHardwareToUse)) {
+    if (detectMag(sensorSelectionConfig->mag_hardware)) {
         // calculate magnetic declination
         const int16_t deg = magDeclinationFromConfig / 100;
         const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     }
 #else
-    UNUSED(magHardwareToUse);
     UNUSED(magDeclinationFromConfig);
 #endif
 
 #ifdef BARO
-    detectBaro(baroHardwareToUse);
-#else
-    UNUSED(baroHardwareToUse);
+    detectBaro(sensorSelectionConfig->baro_hardware);
 #endif
 
     reconfigureAlignment(sensorAlignmentConfig);

@@ -32,7 +32,7 @@
 #define EXPAND_I(x) x
 #define EXPAND(x) EXPAND_I(x)
 
-#if !defined(USE_HAL_DRIVER)
+#if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
 #endif
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))

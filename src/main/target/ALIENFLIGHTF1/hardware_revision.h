@@ -14,7 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
-struct sensorSelectionConfig_s;
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig, struct sensorSelectionConfig_s *sensorSelectionConfig, int16_t magDeclinationFromConfig, uint8_t gyroLpf, uint8_t gyroSyncDenominator);
+
+typedef enum awf1HardwareRevision_t {
+    AFF1_UNKNOWN = 0,
+    AFF1_REV_1, // MPU6050 (I2C)
+} awf1HardwareRevision_e;
+
+typedef enum awf4HardwareMotorType_t {
+    MOTOR_UNKNOWN = 0,
+    MOTOR_BRUSHED,
+    MOTOR_BRUSHLESS
+} awf4HardwareMotorType_e;
+
+extern uint8_t hardwareRevision;
+extern uint8_t hardwareMotorType;
+
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);
+
+struct extiConfig_s;
+const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);

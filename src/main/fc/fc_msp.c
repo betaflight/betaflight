@@ -313,7 +313,7 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
     }
 
@@ -360,7 +360,7 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef USE_SERVOS
-    if (masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
@@ -563,7 +563,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     // DEPRECATED - Use MSP_API_VERSION
     case MSP_IDENT:
         sbufWriteU8(dst, MW_VERSION);
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
         sbufWriteU32(dst, CAP_DYNBALANCE); // "capability"
         break;
@@ -700,8 +700,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ARMING_CONFIG:
-        sbufWriteU8(dst, masterConfig.auto_disarm_delay);
-        sbufWriteU8(dst, masterConfig.disarm_kill_switch);
+        sbufWriteU8(dst, masterConfig.armingConfig.auto_disarm_delay);
+        sbufWriteU8(dst, masterConfig.armingConfig.disarm_kill_switch);
         break;
 
     case MSP_LOOP_TIME:
@@ -797,7 +797,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, masterConfig.rxConfig.rssi_channel);
         sbufWriteU8(dst, 0);
 
-        sbufWriteU16(dst, masterConfig.mag_declination / 10);
+        sbufWriteU16(dst, masterConfig.compassConfig.mag_declination / 10);
 
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatscale);
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatmincellvoltage);
@@ -886,7 +886,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_MIXER:
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
         break;
 
     case MSP_RX_CONFIG:
@@ -932,7 +932,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BF_CONFIG:
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
 
         sbufWriteU32(dst, featureMask());
 
@@ -1005,9 +1005,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
-        sbufWriteU8(dst, masterConfig.blackbox_device);
-        sbufWriteU8(dst, masterConfig.blackbox_rate_num);
-        sbufWriteU8(dst, masterConfig.blackbox_rate_denom);
+        sbufWriteU8(dst, masterConfig.blackboxConfig.device);
+        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_num);
+        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1121,9 +1121,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_CONFIG:
-        sbufWriteU8(dst, masterConfig.acc_hardware);
-        sbufWriteU8(dst, masterConfig.baro_hardware);
-        sbufWriteU8(dst, masterConfig.mag_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.acc_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.baro_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.mag_hardware);
         break;
 
     case MSP_REBOOT:
@@ -1247,8 +1247,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
-        masterConfig.auto_disarm_delay = sbufReadU8(src);
-        masterConfig.disarm_kill_switch = sbufReadU8(src);
+        masterConfig.armingConfig.auto_disarm_delay = sbufReadU8(src);
+        masterConfig.armingConfig.disarm_kill_switch = sbufReadU8(src);
         break;
 
     case MSP_SET_LOOP_TIME:
@@ -1355,7 +1355,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.rxConfig.rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
-        masterConfig.mag_declination = sbufReadU16(src) * 10;
+        masterConfig.compassConfig.mag_declination = sbufReadU16(src) * 10;
 
         masterConfig.batteryConfig.vbatscale = sbufReadU8(src);           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1476,9 +1476,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        masterConfig.acc_hardware = sbufReadU8(src);
-        masterConfig.baro_hardware = sbufReadU8(src);
-        masterConfig.mag_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.acc_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.baro_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.mag_hardware = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:
@@ -1510,9 +1510,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            masterConfig.blackbox_device = sbufReadU8(src);
-            masterConfig.blackbox_rate_num = sbufReadU8(src);
-            masterConfig.blackbox_rate_denom = sbufReadU8(src);
+            masterConfig.blackboxConfig.device = sbufReadU8(src);
+            masterConfig.blackboxConfig.rate_num = sbufReadU8(src);
+            masterConfig.blackboxConfig.rate_denom = sbufReadU8(src);
         }
         break;
 #endif
@@ -1657,7 +1657,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        masterConfig.mixerMode = sbufReadU8(src);
+        masterConfig.mixerConfig.mixerMode = sbufReadU8(src);
         break;
 #endif
 
@@ -1716,7 +1716,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_QUAD_MIXER_ONLY
         sbufReadU8(src); // mixerMode ignored
 #else
-        masterConfig.mixerMode = sbufReadU8(src); // mixerMode
+        masterConfig.mixerConfig.mixerMode = sbufReadU8(src); // mixerMode
 #endif
 
         featureClearAll();

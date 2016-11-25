@@ -558,7 +558,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->version = EEPROM_CONF_VERSION;
-    config->mixerMode = MIXER_QUADX;
+    config->mixerConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     config->current_profile_index = 0;    // default profile
@@ -584,22 +584,22 @@ void createDefaultConfig(master_t *config)
 
     config->debug_mode = DEBUG_NONE;
 
-    resetAccelerometerTrims(&config->accZero);
+    resetAccelerometerTrims(&config->sensorTrims.accZero);
 
     resetSensorAlignment(&config->sensorAlignmentConfig);
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->acc_hardware = ACC_DEFAULT;     // default/autodetect
+    config->sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
-    config->mag_hardware = 1;
+    config->sensorSelectionConfig.mag_hardware = 1;
 
-    config->baro_hardware = 1;
+    config->sensorSelectionConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
@@ -663,10 +663,10 @@ void createDefaultConfig(master_t *config)
 
     config->inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    config->gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
-    config->disarm_kill_switch = 1;
-    config->auto_disarm_delay = 5;
-    config->small_angle = 25;
+    config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
+    config->armingConfig.disarm_kill_switch = 1;
+    config->armingConfig.auto_disarm_delay = 5;
+    config->armingConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
@@ -697,7 +697,7 @@ void createDefaultConfig(master_t *config)
 
     resetRollAndPitchTrims(&config->accelerometerTrims);
 
-    config->mag_declination = 0;
+    config->compassConfig.mag_declination = 0;
     config->acc_lpf_hz = 10.0f;
     config->accDeadband.xy = 40;
     config->accDeadband.z = 40;
@@ -768,17 +768,17 @@ void createDefaultConfig(master_t *config)
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_FLASH;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_SDCARD;
 #else
-    config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
 
-    config->blackbox_rate_num = 1;
-    config->blackbox_rate_denom = 1;
-    config->blackbox_on_motor_test = 0; // default off
+    config->blackboxConfig.rate_num = 1;
+    config->blackboxConfig.rate_denom = 1;
+    config->blackboxConfig.on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART
@@ -855,7 +855,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&masterConfig.accZero);
+    setAccelerationTrims(&masterConfig.sensorTrims.accZero);
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
@@ -873,7 +873,7 @@ void activateConfig(void)
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
-    imuRuntimeConfig.small_angle = masterConfig.small_angle;
+    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,

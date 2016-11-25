@@ -249,7 +249,7 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(masterConfig.mixerConfig.mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servoMixerInit(masterConfig.customServoMixer);
 #endif
@@ -418,10 +418,8 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            masterConfig.acc_hardware,
-            masterConfig.mag_hardware,
-            masterConfig.baro_hardware,
-            masterConfig.mag_declination,
+            &masterConfig.sensorSelectionConfig,
+            masterConfig.compassConfig.mag_declination,
             masterConfig.gyro_lpf,
             masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
@@ -550,7 +548,7 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (masterConfig.mixerMode == MIXER_GIMBAL) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles();

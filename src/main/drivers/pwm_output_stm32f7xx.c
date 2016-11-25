@@ -69,6 +69,10 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
 
     motorDmaOutput_t * const motor = &dmaMotors[index];
 
+    if (!motor->timerHardware->dmaStream) {
+        return;
+    }
+
     uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
 
@@ -88,7 +92,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    if(  HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
+    if(HAL_TIM_PWM_Start_DMA(&motor->TimHandle, motor->timerHardware->channel, motor->dmaBuffer, MOTOR_DMA_BUFFER_SIZE) != HAL_OK)
     {
       /* Starting PWM generation Error */
         return;

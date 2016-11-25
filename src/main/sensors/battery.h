@@ -53,7 +53,7 @@ typedef struct batteryConfig_s {
     batterySensor_e batteryMeterType;       // type of battery meter uses, either ADC or ESC
 
     int16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
+    int16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
     currentSensor_e  currentMeterType;      // type of current meter used, either ADC, Virtual or ESC
 
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
