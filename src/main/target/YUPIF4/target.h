@@ -109,11 +109,11 @@
 // SPI Ports
 #define USE_SPI
 
-#define USE_SPI_DEVICE_1 //MPU6500
+#define USE_SPI_DEVICE_1 //Gyro
 #define SPI1_NSS_PIN            PA4
 #define SPI1_SCK_PIN            PA5
 #define SPI1_MISO_PIN           PA6
-#define SPI1_MOSI_PIN             PA7
+#define SPI1_MOSI_PIN           PA7
 
 /*
 #define USE_SPI_DEVICE_2 //Free
@@ -138,7 +138,7 @@
 #define VBAT_ADC_PIN            PC1
 #define RSSI_ADC_GPIO_PIN       PC0
 
-
+#define USE_DSHOT
 #define LED_STRIP
 
 // Default configuration
@@ -156,4 +156,4 @@
 #define TARGET_IO_PORTD         (BIT(2))
 
 #define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(8))
+#define USED_TIMERS             (TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8))
