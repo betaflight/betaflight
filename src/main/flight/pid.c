@@ -84,16 +84,11 @@ static void *ptermYawFilter;
 
 void pidInitFilters(const pidProfile_t *pidProfile)
 {
-    static bool initialized = false; // !!TODO - remove this temporary measure once filter lazy initialization is removed
     static biquadFilter_t biquadFilterNotch[2];
     static pt1Filter_t pt1Filter[2];
     static biquadFilter_t biquadFilter[2];
     static firFilterDenoise_t denoisingFilter[2];
     static pt1Filter_t pt1FilterYaw;
-
-    if (initialized) {
-        return;
-    }
 
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
     const float dT = (float)targetPidLooptime * 0.000001f;
@@ -147,8 +142,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
         ptermYawFilter = &pt1FilterYaw;
         pt1FilterInit(ptermYawFilter, pidProfile->yaw_lpf_hz, dT);
     }
-
-    initialized = true;
 }
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
