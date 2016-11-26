@@ -18,4 +18,6 @@ MEMORY
   MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-INCLUDE "stm32_flash_ccm.ld"
+REGION_ALIAS("STACKRAM", CCM)
+
+INCLUDE "stm32_flash.ld"

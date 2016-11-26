@@ -2874,8 +2874,9 @@ static void cliStatus(char *cmdline)
 #endif
 
 #ifdef STACK_CHECK
-    cliPrintf("Used stack: %d, Total stack: %d\r\n", getUsedStackSize(), getTotalStackSize());
+    cliPrintf("Stack used: %d, ", getUsedStackSize());
 #endif
+    cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", getTotalStackSize(), stackHighMem());
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }
