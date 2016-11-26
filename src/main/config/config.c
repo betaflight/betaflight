@@ -538,9 +538,9 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.disarm_kill_switch = 1;
-    masterConfig.auto_disarm_delay = 5;
-    masterConfig.small_angle = 25;
+    masterConfig.armingConfig.disarm_kill_switch = 1;
+    masterConfig.armingConfig.auto_disarm_delay = 5;
+    masterConfig.armingConfig.small_angle = 25;
 
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
@@ -798,7 +798,7 @@ void activateConfig(void)
     imuRuntimeConfig.dcm_ki_acc = masterConfig.dcm_ki_acc / 10000.0f;
     imuRuntimeConfig.dcm_kp_mag = masterConfig.dcm_kp_mag / 10000.0f;
     imuRuntimeConfig.dcm_ki_mag = masterConfig.dcm_ki_mag / 10000.0f;
-    imuRuntimeConfig.small_angle = masterConfig.small_angle;
+    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
 
     imuConfigure(&imuRuntimeConfig, &currentProfile->pidProfile);
 
