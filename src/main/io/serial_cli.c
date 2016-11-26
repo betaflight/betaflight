@@ -519,6 +519,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "DFILTER",
     "ANGLERATE",
     "ESC_TELEMETRY",
+    "SCHEDULER",
 };
 
 #ifdef OSD
@@ -3643,6 +3644,9 @@ static void cliTasks(char *cmdline)
             }
         }
     }
+    cfCheckFuncInfo_t checkFuncInfo;
+    getCheckFuncInfo(&checkFuncInfo);
+    cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
     cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif

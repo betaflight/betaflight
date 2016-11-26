@@ -17,8 +17,6 @@
 
 #pragma once
 
-//#define SCHEDULER_DEBUG
-
 typedef enum {
     TASK_PRIORITY_IDLE = 0,     // Disables dynamic scheduling, task is executed only if no other task is active this cycle
     TASK_PRIORITY_LOW = 1,
@@ -27,6 +25,12 @@ typedef enum {
     TASK_PRIORITY_REALTIME = 6,
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
+
+typedef struct {
+    uint32_t     maxExecutionTime;
+    uint32_t     totalExecutionTime;
+    uint32_t     averageExecutionTime;
+} cfCheckFuncInfo_t;
 
 typedef struct {
     const char * taskName;
@@ -114,11 +118,11 @@ typedef struct {
     uint16_t taskAgeCycles;
     uint32_t lastExecutedAt;        // last time of invocation
     uint32_t lastSignaledAt;        // time of invocation event for event-driven tasks
+    uint32_t taskLatestDeltaTime;
 
-    /* Statistics */
-    uint32_t averageExecutionTime;  // Moving average over 6 samples, used to calculate guard interval
-    uint32_t taskLatestDeltaTime;   //
 #ifndef SKIP_TASK_STATISTICS
+    /* Statistics */
+    uint32_t averageExecutionTime;  // Moving average over 32 samples
     uint32_t maxExecutionTime;
     uint32_t totalExecutionTime;    // total time consumed by task since boot
 #endif
@@ -127,13 +131,15 @@ typedef struct {
 extern cfTask_t cfTasks[TASK_COUNT];
 extern uint16_t averageSystemLoadPercent;
 
-void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo);
+void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
+void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 uint32_t getTaskDeltaTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
+void taskSystem(uint32_t currentTime);
 
 #define LOAD_PERCENTAGE_ONE 100
 

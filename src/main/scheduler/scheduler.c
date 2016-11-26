@@ -121,6 +121,17 @@ void taskSystem(uint32_t currentTime)
 }
 
 #ifndef SKIP_TASK_STATISTICS
+uint32_t checkFuncMaxExecutionTime;
+uint32_t checkFuncTotalExecutionTime;
+uint32_t checkFuncAverageExecutionTime;
+
+void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
+{
+    checkFuncInfo->maxExecutionTime = checkFuncMaxExecutionTime;
+    checkFuncInfo->totalExecutionTime = checkFuncTotalExecutionTime;
+    checkFuncInfo->averageExecutionTime = checkFuncAverageExecutionTime;
+}
+
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
@@ -198,13 +209,25 @@ void scheduler(void)
     for (cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         // Task has checkFunc - event driven
         if (task->checkFunc != NULL) {
+            const uint32_t currentTimeBeforeCheckFuncCall = micros();
             // Increase priority for event driven tasks
             if (task->dynamicPriority > 0) {
                 task->taskAgeCycles = 1 + ((currentTime - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
-            } else if (task->checkFunc(currentTime, currentTime - task->lastExecutedAt)) {
-                task->lastSignaledAt = currentTime;
+            } else if (task->checkFunc(currentTimeBeforeCheckFuncCall, currentTimeBeforeCheckFuncCall - task->lastExecutedAt)) {
+#if defined(SCHEDULER_DEBUG) || !defined(SKIP_TASK_STATISTICS)
+                const uint32_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCall;
+#endif
+#if defined(SCHEDULER_DEBUG)
+                DEBUG_SET(DEBUG_SCHEDULER, 3, checkFuncExecutionTime);
+#endif
+#ifndef SKIP_TASK_STATISTICS
+                checkFuncAverageExecutionTime = (checkFuncAverageExecutionTime * 31 + checkFuncExecutionTime) / 32;
+                checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
+                checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
+#endif
+                task->lastSignaledAt = currentTimeBeforeCheckFuncCall;
                 task->taskAgeCycles = 1;
                 task->dynamicPriority = 1 + task->staticPriority;
                 waitingTasks++;
@@ -247,17 +270,17 @@ void scheduler(void)
         // Execute task
         const uint32_t currentTimeBeforeTaskCall = micros();
         selectedTask->taskFunc(currentTimeBeforeTaskCall);
-        const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
-        selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
+        const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
+        selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
         selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
         selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif
-#if defined SCHEDULER_DEBUG
-        debug[3] = (micros() - currentTime) - taskExecutionTime;
+#if defined(SCHEDULER_DEBUG)
+        DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - currentTime - taskExecutionTime); // time spent in scheduler
     } else {
-        debug[3] = (micros() - currentTime);
+        DEBUG_SET(DEBUG_SCHEDULER, 2, micros() - currentTime);
 #endif
     }
 }

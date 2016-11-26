@@ -582,7 +582,7 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_soft_notch_hz_2 = 200;
     config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
-    config->debug_mode = DEBUG_NONE;
+    config->debug_mode = DEBUG_MODE;
 
     resetAccelerometerTrims(&config->sensorTrims.accZero);
 

@@ -177,9 +177,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
         angleRate *= rcSuperfactor;
     }
 
-    if (debugMode == DEBUG_ANGLERATE) {
-        debug[axis] = angleRate;
-    }
+    DEBUG_SET(DEBUG_ANGLERATE, axis, angleRate);
 
     setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
@@ -687,7 +685,7 @@ void processRx(uint32_t currentTime)
 void subTaskPidController(void)
 {
     uint32_t startTime;
-    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
+    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
@@ -695,7 +693,7 @@ void subTaskPidController(void)
         &masterConfig.accelerometerTrims,
         masterConfig.rxConfig.midrc
     );
-    if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
+    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
 }
 
 void subTaskMainSubprocesses(void)
@@ -772,7 +770,7 @@ void subTaskMainSubprocesses(void)
     #ifdef TRANSPONDER
         transponderUpdate(startTime);
     #endif
-    if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
+        DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
 void subTaskMotorUpdate(void)
@@ -798,7 +796,7 @@ void subTaskMotorUpdate(void)
     if (motorControlEnable) {
         writeMotors();
     }
-    if (debugMode == DEBUG_PIDLOOP) {debug[3] = micros() - startTime;}
+    DEBUG_SET(DEBUG_PIDLOOP, 3, micros() - startTime);
 }
 
 uint8_t setPidUpdateCountDown(void)
@@ -811,7 +809,7 @@ uint8_t setPidUpdateCountDown(void)
 }
 
 // Function for loop trigger
-void taskMainPidLoopCheck(uint32_t currentTime)
+void taskMainPidLoop(uint32_t currentTime)
 {
     UNUSED(currentTime);
 
@@ -830,7 +828,15 @@ void taskMainPidLoopCheck(uint32_t currentTime)
         runTaskMainSubprocesses = false;
     }
 
+    // DEBUG_PIDLOOP
+    // 0 - gyroUpdate()
+    // 1 - pidController()
+    // 2 - subTaskMainSubprocesses()
+    // 3 - subTaskMotorUpdate()
+    uint32_t startTime;
+    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
     gyroUpdate();
+    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[0] = micros() - startTime;}
 
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
