@@ -41,18 +41,19 @@ extern int32_t gyroADC[XYZ_AXIS_COUNT];
 extern float gyroADCf[XYZ_AXIS_COUNT];
 
 typedef struct gyroConfig_s {
-    uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t  gyro_sync_denom;                  // Gyro sample divider
+    uint8_t  gyro_soft_lpf_type;
+    uint8_t  gyro_soft_lpf_hz;
+    uint16_t gyro_lpf;                         // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_soft_notch_hz_1;
+    uint16_t gyro_soft_notch_cutoff_1;
+    uint16_t gyro_soft_notch_hz_2;
+    uint16_t gyro_soft_notch_cutoff_2;
 } gyroConfig_t;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse,
-                   uint8_t gyro_soft_lpf_hz,
-                   uint16_t gyro_soft_notch_hz_1,
-                   uint16_t gyro_soft_notch_cutoff_1,
-                   uint16_t gyro_soft_notch_hz_2,
-                   uint16_t gyro_soft_notch_cutoff_2,
-                   uint8_t gyro_soft_lpf_type);
 void gyroSetCalibrationCycles(void);
-void gyroInit(void);
+void gyroInit(const gyroConfig_t *gyroConfigToUse);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);
 

@@ -1081,11 +1081,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ADVANCED_CONFIG:
-        if (masterConfig.gyro_lpf) {
+        if (masterConfig.gyroConfig.gyro_lpf) {
             sbufWriteU8(dst, 8); // If gyro_lpf != OFF then looptime is set to 1000
             sbufWriteU8(dst, 1);
         } else {
-            sbufWriteU8(dst, masterConfig.gyro_sync_denom);
+            sbufWriteU8(dst, masterConfig.gyroConfig.gyro_sync_denom);
             sbufWriteU8(dst, masterConfig.pid_process_denom);
         }
         sbufWriteU8(dst, masterConfig.motorConfig.useUnsyncedPwm);
@@ -1094,15 +1094,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FILTER_CONFIG :
-        sbufWriteU8(dst, masterConfig.gyro_soft_lpf_hz);
+        sbufWriteU8(dst, masterConfig.gyroConfig.gyro_soft_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
-        sbufWriteU16(dst, masterConfig.gyro_soft_notch_hz_1);
-        sbufWriteU16(dst, masterConfig.gyro_soft_notch_cutoff_1);
+        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_hz_1);
+        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_cutoff_1);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_cutoff);
-        sbufWriteU16(dst, masterConfig.gyro_soft_notch_hz_2);
-        sbufWriteU16(dst, masterConfig.gyro_soft_notch_cutoff_2);
+        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_hz_2);
+        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_cutoff_2);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1433,7 +1433,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        masterConfig.gyro_sync_denom = sbufReadU8(src);
+        masterConfig.gyroConfig.gyro_sync_denom = sbufReadU8(src);
         masterConfig.pid_process_denom = sbufReadU8(src);
         masterConfig.motorConfig.useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
@@ -1445,19 +1445,24 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_FILTER_CONFIG:
-        masterConfig.gyro_soft_lpf_hz = sbufReadU8(src);
+        masterConfig.gyroConfig.gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = sbufReadU16(src);
         currentProfile->pidProfile.yaw_lpf_hz = sbufReadU16(src);
         if (dataSize > 5) {
-            masterConfig.gyro_soft_notch_hz_1 = sbufReadU16(src);
-            masterConfig.gyro_soft_notch_cutoff_1 = sbufReadU16(src);
+            masterConfig.gyroConfig.gyro_soft_notch_hz_1 = sbufReadU16(src);
+            masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_hz = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_cutoff = sbufReadU16(src);
         }
         if (dataSize > 13) {
-            masterConfig.gyro_soft_notch_hz_2 = sbufReadU16(src);
-            masterConfig.gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+            masterConfig.gyroConfig.gyro_soft_notch_hz_2 = sbufReadU16(src);
+            masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
+        // reinitialize the gyro filters with the new values
+        validateAndFixGyroConfig();
+        gyroInit(&masterConfig.gyroConfig);
+        // reinitialize the PID filters with the new values
+        pidInitFilters(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_PID_ADVANCED:

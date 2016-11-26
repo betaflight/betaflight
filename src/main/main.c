@@ -417,11 +417,16 @@ void init(void)
     }
 #endif
 
+#ifdef SONAR
+    const sonarConfig_t *sonarConfig = &masterConfig.sonarConfig;
+#else
+    const void *sonarConfig = NULL;
+#endif
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
             &masterConfig.sensorSelectionConfig,
             masterConfig.compassConfig.mag_declination,
-            masterConfig.gyro_lpf,
-            masterConfig.gyro_sync_denom)) {
+            &masterConfig.gyroConfig,
+            sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -443,10 +448,9 @@ void init(void)
     LED0_OFF;
     LED1_OFF;
 
-#ifdef MAG
-    if (sensors(SENSOR_MAG))
-        compassInit();
-#endif
+    // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
+    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
+    pidInitFilters(&currentProfile->pidProfile);
 
     imuInit();
 
@@ -475,12 +479,6 @@ void init(void)
             &masterConfig.gpsProfile,
             &currentProfile->pidProfile
         );
-    }
-#endif
-
-#ifdef SONAR
-    if (feature(FEATURE_SONAR)) {
-        sonarInit(&masterConfig.sonarConfig);
     }
 #endif
 
@@ -536,13 +534,6 @@ void init(void)
         afatfs_init();
     }
 #endif
-
-    if (masterConfig.gyro_lpf > 0 && masterConfig.gyro_lpf < 7) {
-        masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        masterConfig.gyro_sync_denom = 1;
-    }
-
-    setTargetPidLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
 
 #ifdef BLACKBOX
     initBlackbox();
