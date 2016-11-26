@@ -491,18 +491,18 @@ static void resetConf(void)
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     masterConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
-    resetAccelerometerTrims(&masterConfig.accZero, &masterConfig.accGain);
+    resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
 
     resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
 
     masterConfig.boardAlignment.rollDeciDegrees = 0;
     masterConfig.boardAlignment.pitchDeciDegrees = 0;
     masterConfig.boardAlignment.yawDeciDegrees = 0;
-    masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    masterConfig.sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
-    masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
+    masterConfig.sensorSelectionConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+    masterConfig.sensorSelectionConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
@@ -785,8 +785,8 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
 
-    setAccelerationZero(&masterConfig.accZero);
-    setAccelerationGain(&masterConfig.accGain);
+    setAccelerationZero(&masterConfig.sensorTrims.accZero);
+    setAccelerationGain(&masterConfig.sensorTrims.accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);

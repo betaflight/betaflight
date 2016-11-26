@@ -460,10 +460,7 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            masterConfig.acc_hardware,
-            masterConfig.mag_hardware,
-            masterConfig.baro_hardware,
-            masterConfig.pitot_hardware,
+            &masterConfig.sensorSelectionConfig,
             currentProfile->mag_declination,
             masterConfig.looptime,
             masterConfig.gyro_lpf,
