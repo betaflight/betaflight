@@ -19,6 +19,12 @@
 
 #include "blackbox/blackbox_fielddefs.h"
 
+typedef struct blackboxConfig_s {
+    uint8_t rate_num;
+    uint8_t rate_denom;
+    uint8_t device;
+} blackboxConfig_t;
+
 void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
 
 void initBlackbox(void);
