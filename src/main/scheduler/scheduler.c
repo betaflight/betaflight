@@ -121,15 +121,16 @@ void taskSystem(uint32_t currentTime)
 }
 
 #ifndef SKIP_TASK_STATISTICS
+#define MOVING_SUM_COUNT 32
 uint32_t checkFuncMaxExecutionTime;
 uint32_t checkFuncTotalExecutionTime;
-uint32_t checkFuncAverageExecutionTime;
+uint32_t checkFuncMovingSumExecutionTime;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
 {
     checkFuncInfo->maxExecutionTime = checkFuncMaxExecutionTime;
     checkFuncInfo->totalExecutionTime = checkFuncTotalExecutionTime;
-    checkFuncInfo->averageExecutionTime = checkFuncAverageExecutionTime;
+    checkFuncInfo->averageExecutionTime = checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
 }
 
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
@@ -141,7 +142,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
-    taskInfo->averageExecutionTime = cfTasks[taskId].averageExecutionTime;
+    taskInfo->averageExecutionTime = cfTasks[taskId].movingSumExecutionTime / MOVING_SUM_COUNT;
     taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
 }
 #endif
@@ -223,7 +224,7 @@ void scheduler(void)
                 DEBUG_SET(DEBUG_SCHEDULER, 3, checkFuncExecutionTime);
 #endif
 #ifndef SKIP_TASK_STATISTICS
-                checkFuncAverageExecutionTime = (checkFuncAverageExecutionTime * 31 + checkFuncExecutionTime) / 32;
+                checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / MOVING_SUM_COUNT;
                 checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
                 checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
 #endif
@@ -273,7 +274,7 @@ void scheduler(void)
 
 #ifndef SKIP_TASK_STATISTICS
         const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
-        selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
+        selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / MOVING_SUM_COUNT;
         selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
         selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif

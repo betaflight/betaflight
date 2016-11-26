@@ -122,7 +122,7 @@ typedef struct {
 
 #ifndef SKIP_TASK_STATISTICS
     /* Statistics */
-    uint32_t averageExecutionTime;  // Moving average over 32 samples
+    uint32_t movingSumExecutionTime;  // moving sum over 32 samples
     uint32_t maxExecutionTime;
     uint32_t totalExecutionTime;    // total time consumed by task since boot
 #endif
