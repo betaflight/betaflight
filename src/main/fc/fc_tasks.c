@@ -25,15 +25,13 @@
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/maths.h"
 #include "common/utils.h"
 
-#include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/io_pca9685.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/sensor.h"
 #include "drivers/serial.h"
+#include "drivers/stack_check.h"
 
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
@@ -41,9 +39,10 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "flight/pid.h"
+
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
@@ -63,7 +62,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
-#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
@@ -71,20 +69,16 @@
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/hil.h"
-#include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
-
 #include "config/config.h"
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-// VBAT monitoring interval (in microseconds) - 1s
+#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
+#define TASK_PERIOD_MS(ms) ((ms) * 1000)
+#define TASK_PERIOD_US(us) (us)
+
+/* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
@@ -150,7 +144,7 @@ void taskProcessGPS(uint32_t currentTime)
 void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(currentTime, &masterConfig.sensorTrims.magZero);
+        compassUpdate(currentTime, &masterConfig.sensorTrims.magZero);
     }
 }
 #endif
@@ -219,7 +213,7 @@ void taskTelemetry(uint32_t currentTime)
 void taskLedStrip(uint32_t currentTime)
 {
     if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip(currentTime);
+        ledStripUpdate(currentTime);
     }
 }
 #endif
@@ -257,196 +251,6 @@ void taskUpdateOsd(uint32_t currentTime)
     }
 }
 #endif
-
-cfTask_t cfTasks[TASK_COUNT] = {
-    [TASK_SYSTEM] = {
-        .taskName = "SYSTEM",
-        .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-    #ifdef ASYNC_GYRO_PROCESSING
-        [TASK_PID] = {
-            .taskName = "PID",
-            .taskFunc = taskMainPidLoop,
-            .desiredPeriod = 1000000 / 500, // Run at 500Hz
-            .staticPriority = TASK_PRIORITY_HIGH,
-        },
-
-        [TASK_GYRO] = {
-            .taskName = "GYRO",
-            .taskFunc = taskGyro,
-            .desiredPeriod = 1000000 / 1000, //Run at 1000Hz
-            .staticPriority = TASK_PRIORITY_REALTIME,
-        },
-
-        [TASK_ACC] = {
-            .taskName = "ACC",
-            .taskFunc = taskAcc,
-            .desiredPeriod = 1000000 / 520, //520Hz is ACC bandwidth (260Hz) * 2
-            .staticPriority = TASK_PRIORITY_HIGH,
-        },
-
-        [TASK_ATTI] = {
-            .taskName = "ATTITUDE",
-            .taskFunc = taskAttitude,
-            .desiredPeriod = 1000000 / 60, //With acc LPF at 15Hz 60Hz attitude refresh should be enough
-            .staticPriority = TASK_PRIORITY_HIGH,
-        },
-
-    #else
-
-        /*
-         * Legacy synchronous PID/gyro/acc/atti mode
-         * for 64kB targets and other smaller targets
-         */
-
-        [TASK_GYROPID] = {
-            .taskName = "GYRO/PID",
-            .taskFunc = taskMainPidLoop,
-            .desiredPeriod = 1000,
-            .staticPriority = TASK_PRIORITY_REALTIME,
-        },
-    #endif
-
-    [TASK_SERIAL] = {
-        .taskName = "SERIAL",
-        .taskFunc = taskHandleSerial,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-
-    [TASK_BEEPER] = {
-        .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_BATTERY] = {
-        .taskName = "BATTERY",
-        .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-
-    [TASK_RX] = {
-        .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
-        .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-
-#ifdef GPS
-    [TASK_GPS] = {
-        .taskName = "GPS",
-        .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 25,      // GPS usually don't go raster than 10Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef MAG
-    [TASK_COMPASS] = {
-        .taskName = "COMPASS",
-        .taskFunc = taskUpdateCompass,
-        .desiredPeriod = 1000000 / 10,      // Compass is updated at 10 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef BARO
-    [TASK_BARO] = {
-        .taskName = "BARO",
-        .taskFunc = taskUpdateBaro,
-        .desiredPeriod = 1000000 / 20,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef PITOT
-    [TASK_PITOT] = {
-        .taskName = "PITOT",
-        .taskFunc = taskUpdatePitot,
-        .desiredPeriod = 1000000 / 10,
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef SONAR
-    [TASK_SONAR] = {
-        .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 70000,                 // every 70 ms, approximately 14 Hz
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
-#ifdef USE_DASHBOARD
-    [TASK_DASHBOARD] = {
-        .taskName = "DASHBOARD",
-        .taskFunc = taskDashboardUpdate,
-        .desiredPeriod = 1000000 / 10,
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifdef TELEMETRY
-    [TASK_TELEMETRY] = {
-        .taskName = "TELEMETRY",
-        .taskFunc = taskTelemetry,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef LED_STRIP
-    [TASK_LEDSTRIP] = {
-        .taskName = "LEDSTRIP",
-        .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef USE_PMW_SERVO_DRIVER
-    [TASK_PWMDRIVER] = {
-        .taskName = "PWMDRIVER",
-        .taskFunc = taskSyncPwmDriver,
-        .desiredPeriod = 1000000 / 200,         // 200 Hz
-        .staticPriority = TASK_PRIORITY_HIGH,
-    },
-#endif
-
-#ifdef STACK_CHECK
-    [TASK_STACK_CHECK] = {
-        .taskName = "STACKCHECK",
-        .taskFunc = taskStackCheck,
-        .desiredPeriod = 1000000 / 10,          // 10 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
-#ifdef OSD
-    [TASK_OSD] = {
-        .taskName = "OSD",
-        .taskFunc = taskUpdateOsd,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-
-#ifdef CMS
-    [TASK_CMS] = {
-        .taskName = "CMS",
-        .taskFunc = cmsHandler,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
-        .staticPriority = TASK_PRIORITY_LOW,
-    },
-#endif
-};
 
 void fcTasksInit(void)
 {
@@ -487,7 +291,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #if (defined(MPU6500_SPI_INSTANCE) || defined(MPU9250_SPI_INSTANCE)) && defined(USE_MAG_AK8963)
     // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+    rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 #endif
 #endif
 #ifdef BARO
@@ -511,15 +315,12 @@ void fcTasksInit(void)
 #ifdef STACK_CHECK
     setTaskEnabled(TASK_STACK_CHECK, true);
 #endif
-
 #ifdef USE_PMW_SERVO_DRIVER
     setTaskEnabled(TASK_PWMDRIVER, feature(FEATURE_PWM_SERVO_DRIVER));
 #endif
-
 #ifdef OSD
     setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
 #endif
-
 #ifdef CMS
 #ifdef USE_MSP_DISPLAYPORT
     setTaskEnabled(TASK_CMS, true);
@@ -528,3 +329,193 @@ void fcTasksInit(void)
 #endif
 #endif
 }
+
+cfTask_t cfTasks[TASK_COUNT] = {
+    [TASK_SYSTEM] = {
+        .taskName = "SYSTEM",
+        .taskFunc = taskSystem,
+        .desiredPeriod = TASK_PERIOD_HZ(10),              // run every 100 ms, 10Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
+    #ifdef ASYNC_GYRO_PROCESSING
+        [TASK_PID] = {
+            .taskName = "PID",
+            .taskFunc = taskMainPidLoop,
+            .desiredPeriod = TASK_PERIOD_HZ(500), // Run at 500Hz
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+        [TASK_GYRO] = {
+            .taskName = "GYRO",
+            .taskFunc = taskGyro,
+            .desiredPeriod = TASK_PERIOD_HZ(1000), //Run at 1000Hz
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+
+        [TASK_ACC] = {
+            .taskName = "ACC",
+            .taskFunc = taskAcc,
+            .desiredPeriod = TASK_PERIOD_HZ(520), //520Hz is ACC bandwidth (260Hz) * 2
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+        [TASK_ATTI] = {
+            .taskName = "ATTITUDE",
+            .taskFunc = taskAttitude,
+            .desiredPeriod = TASK_PERIOD_HZ(60), //With acc LPF at 15Hz 60Hz attitude refresh should be enough
+            .staticPriority = TASK_PRIORITY_HIGH,
+        },
+
+    #else
+
+        /*
+         * Legacy synchronous PID/gyro/acc/atti mode
+         * for 64kB targets and other smaller targets
+         */
+
+        [TASK_GYROPID] = {
+            .taskName = "GYRO/PID",
+            .taskFunc = taskMainPidLoop,
+            .desiredPeriod = TASK_PERIOD_US(1000),
+            .staticPriority = TASK_PRIORITY_REALTIME,
+        },
+    #endif
+
+    [TASK_SERIAL] = {
+        .taskName = "SERIAL",
+        .taskFunc = taskHandleSerial,
+        .desiredPeriod = TASK_PERIOD_HZ(100),     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+
+    [TASK_BEEPER] = {
+        .taskName = "BEEPER",
+        .taskFunc = taskUpdateBeeper,
+        .desiredPeriod = TASK_PERIOD_HZ(100),     // 100 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_BATTERY] = {
+        .taskName = "BATTERY",
+        .taskFunc = taskUpdateBattery,
+        .desiredPeriod = TASK_PERIOD_HZ(50),      // 50 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
+    [TASK_RX] = {
+        .taskName = "RX",
+        .checkFunc = taskUpdateRxCheck,
+        .taskFunc = taskUpdateRxMain,
+        .desiredPeriod = TASK_PERIOD_HZ(50),      // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
+#ifdef GPS
+    [TASK_GPS] = {
+        .taskName = "GPS",
+        .taskFunc = taskProcessGPS,
+        .desiredPeriod = TASK_PERIOD_HZ(25),      // GPS usually don't go raster than 10Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
+#ifdef MAG
+    [TASK_COMPASS] = {
+        .taskName = "COMPASS",
+        .taskFunc = taskUpdateCompass,
+        .desiredPeriod = TASK_PERIOD_HZ(10),      // Compass is updated at 10 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
+#ifdef BARO
+    [TASK_BARO] = {
+        .taskName = "BARO",
+        .taskFunc = taskUpdateBaro,
+        .desiredPeriod = TASK_PERIOD_HZ(20),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
+#ifdef PITOT
+    [TASK_PITOT] = {
+        .taskName = "PITOT",
+        .taskFunc = taskUpdatePitot,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
+#ifdef SONAR
+    [TASK_SONAR] = {
+        .taskName = "SONAR",
+        .taskFunc = taskUpdateSonar,
+        .desiredPeriod = TASK_PERIOD_MS(70),                 // every 70 ms, approximately 14 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+#endif
+
+#ifdef USE_DASHBOARD
+    [TASK_DASHBOARD] = {
+        .taskName = "DASHBOARD",
+        .taskFunc = taskDashboardUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef TELEMETRY
+    [TASK_TELEMETRY] = {
+        .taskName = "TELEMETRY",
+        .taskFunc = taskTelemetry,
+        .desiredPeriod = TASK_PERIOD_HZ(250),         // 250 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef LED_STRIP
+    [TASK_LEDSTRIP] = {
+        .taskName = "LEDSTRIP",
+        .taskFunc = taskLedStrip,
+        .desiredPeriod = TASK_PERIOD_HZ(100),         // 100 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_PMW_SERVO_DRIVER
+    [TASK_PWMDRIVER] = {
+        .taskName = "PWMDRIVER",
+        .taskFunc = taskSyncPwmDriver,
+        .desiredPeriod = TASK_PERIOD_HZ(200),         // 200 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+#endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef OSD
+    [TASK_OSD] = {
+        .taskName = "OSD",
+        .taskFunc = taskUpdateOsd,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+};

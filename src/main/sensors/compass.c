@@ -72,7 +72,7 @@ bool isCompassReady(void)
 
 static sensorCalibrationState_t calState;
 
-void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
+void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 {
     static uint32_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];

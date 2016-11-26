@@ -23,7 +23,6 @@ void taskMainPidLoopChecker(uint32_t currentTime);
 bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime);
 void taskUpdateRxMain(uint32_t currentTime);
 void taskSystem(uint32_t currentTime);
-void taskStackCheck(uint32_t currentTime);
 
 void taskMainPidLoop(uint32_t currentTime);
 void taskGyro(uint32_t currentTime);
