@@ -87,13 +87,15 @@ typedef struct master_s {
     // global sensor-related stuff
     sensorSelectionConfig_t sensorSelectionConfig;
     sensorAlignmentConfig_t sensorAlignmentConfig;
+    sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
-
-    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
-    uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
 
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
+    accDeadband_t accDeadband;
+    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
+    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
 
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 
@@ -102,12 +104,9 @@ typedef struct master_s {
     gyroConfig_t gyroConfig;
     compassConfig_t compassConfig;
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
+    accelerometerConfig_t accelerometerConfig;
 
-    uint16_t acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
-    accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
     uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
     uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
@@ -120,9 +119,6 @@ typedef struct master_s {
     gpsProfile_t gpsProfile;
     gpsConfig_t gpsConfig;
 #endif
-
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    sensorTrims_t sensorTrims;
 
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
