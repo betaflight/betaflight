@@ -745,8 +745,8 @@ void subTaskMainSubprocesses(void)
             setpointRate[YAW] = 0;
         }
 
-        if (masterConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttle_correction_value);
+        if (masterConfig.throttleCorrectionConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttleCorrectionConfig.throttle_correction_value);
         }
 
         processRcCommand();

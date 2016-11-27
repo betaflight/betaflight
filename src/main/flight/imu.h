@@ -51,6 +51,11 @@ typedef struct accDeadband_s {
     uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
 } accDeadband_t;
 
+typedef struct throttleCorrectionConfig_s {
+    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
+    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
+} throttleCorrectionConfig_t;
+
 typedef struct imuRuntimeConfig_s {
     uint8_t acc_cut_hz;
     uint8_t acc_unarmedcal;

@@ -719,8 +719,8 @@ void createDefaultConfig(master_t *config)
 
     resetRcControlsConfig(&config->rcControlsConfig);
 
-    config->throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
-    config->throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
+    config->throttleCorrectionConfig.throttle_correction_value = 0;      // could 10 with althold or 40 for fpv
+    config->throttleCorrectionConfig.throttle_correction_angle = 800;    // could be 80.0 deg with atlhold or 45.0 for fpv
 
     // Failsafe Variables
     config->failsafeConfig.failsafe_delay = 10;                            // 1sec
@@ -867,7 +867,7 @@ void activateConfig(void)
         &imuRuntimeConfig,
         &currentProfile->pidProfile,
         &masterConfig.accDeadband,
-        masterConfig.throttle_correction_angle
+        masterConfig.throttleCorrectionConfig.throttle_correction_angle
     );
 
     configureAltitudeHold(
