@@ -472,7 +472,7 @@ TEST_F(OsdScreenTest, TestOsdElement_Indicator_Mag_Off)
 TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
 {
     // given
-    fcStatus.rssi = 1023;
+    fcStatus.rssi = 1000;
 
     element_t element = {
         0, 0, true, OSD_ELEMENT_RSSI_FC
