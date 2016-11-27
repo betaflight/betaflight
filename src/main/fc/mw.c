@@ -389,7 +389,7 @@ void mwArm(void)
 {
     static bool firstArmingCalibrationWasCompleted;
 
-    if (masterConfig.armingConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
+    if (armingConfig()->gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
         gyroSetCalibrationCycles();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
@@ -418,7 +418,7 @@ void mwArm(void)
                 startBlackbox();
             }
 #endif
-            disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
 #ifdef GPS
@@ -548,7 +548,7 @@ void processRx(uint32_t currentTime)
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
-                if (masterConfig.armingConfig.auto_disarm_delay != 0
+                if (armingConfig()->auto_disarm_delay != 0
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
@@ -561,9 +561,9 @@ void processRx(uint32_t currentTime)
                 }
             } else {
                 // throttle is not low
-                if (masterConfig.armingConfig.auto_disarm_delay != 0) {
+                if (armingConfig()->auto_disarm_delay != 0) {
                     // extend disarm time
-                    disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;
+                    disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;
                 }
 
                 if (armedBeeperOn) {
@@ -583,7 +583,7 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.armingConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();

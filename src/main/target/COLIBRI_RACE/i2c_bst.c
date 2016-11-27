@@ -683,8 +683,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
-            bstWrite8(masterConfig.armingConfig.auto_disarm_delay);
-            bstWrite8(masterConfig.armingConfig.disarm_kill_switch);
+            bstWrite8(armingConfig()->auto_disarm_delay);
+            bstWrite8(armingConfig()->disarm_kill_switch);
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
@@ -1033,8 +1033,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
-            masterConfig.armingConfig.auto_disarm_delay = bstRead8();
-            masterConfig.armingConfig.disarm_kill_switch = bstRead8();
+            armingConfig()->auto_disarm_delay = bstRead8();
+            armingConfig()->disarm_kill_switch = bstRead8();
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();

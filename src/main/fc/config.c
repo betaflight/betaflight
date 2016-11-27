@@ -861,7 +861,7 @@ void activateConfig(void)
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
-    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
+    imuRuntimeConfig.small_angle = armingConfig()->small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,
