@@ -430,6 +430,9 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->batteryCapacity = 0;
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
     batteryConfig->batterynotpresentlevel = 55; // VBAT below 5.5 V will be igonored
+    batteryConfig->useVBatAlerts = true;
+    batteryConfig->useConsumptionAlerts = false;
+    batteryConfig->consumptionWarningPercentage = 10;
 }
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
