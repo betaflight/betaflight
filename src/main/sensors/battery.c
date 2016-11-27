@@ -84,17 +84,12 @@ static void updateBatteryVoltage(void)
     }
 
     #ifdef USE_ESC_SENSOR
-<<<<<<< 0a89e28c8e6e538d5b283fe9a389c481f24523fb
     if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
         vbatLatest = getEscSensorVbat();
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
         vbat = biquadFilterApply(&vBatFilter, vbatLatest);
-=======
-    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
-        vbatSample = vbatLatest = getEscSensorVbat();
->>>>>>> Remove fallback on ADC sensor when ESC sensor fails
     }
     else
     #endif
@@ -292,7 +287,6 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_SENSOR
-<<<<<<< 2af7ff8434cfe047c841c85aae300154c7b4065e
             if (feature(FEATURE_ESC_SENSOR))
             {
                 amperage = getEscSensorCurrent();
@@ -300,12 +294,6 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
             }
             #endif
 
-=======
-            if (batteryConfig->currentMeterType == CURRENT_SENSOR_ESC) {
-                amperage = getEscSensorCurrent();
-                mAhDrawn = getEscSensorConsumption();
-            }
->>>>>>> Fixed Travis build warning
             break;
         case CURRENT_SENSOR_NONE:
             amperage = 0;
