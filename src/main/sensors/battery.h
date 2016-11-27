@@ -93,4 +93,3 @@ int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
-uint8_t calculateBatteryCapacityRemainingPercentage(void);

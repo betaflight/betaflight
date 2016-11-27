@@ -311,6 +311,7 @@ portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
 
 uint8_t batteryCapacityRemainingPercentage(void) {return 67;}
 uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}
+uint8_t calculateBatteryPercentage(void) {return 67;}
 batteryState_e getBatteryState(void) {return BATTERY_OK;}
 bool isAirmodeActive(void) {return airMode;}
 
