@@ -828,7 +828,7 @@ void taskMainPidLoop(uint32_t currentTime)
         runTaskMainSubprocesses = false;
     }
 
-    // DEBUG_PIDLOOP
+    // DEBUG_PIDLOOP, timings for:
     // 0 - gyroUpdate()
     // 1 - pidController()
     // 2 - subTaskMainSubprocesses()

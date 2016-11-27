@@ -32,6 +32,12 @@
 
 #include "drivers/system.h"
 
+// DEBUG_SCHEDULER, timings for:
+// 0 - gyroUpdate()
+// 1 - pidController()
+// 2 - time spent in scheduler
+// 3 - time spent executing check function
+
 static cfTask_t *currentTask = NULL;
 
 static uint32_t totalWaitingTasks;
