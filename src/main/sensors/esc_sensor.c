@@ -89,7 +89,7 @@ static uint8_t tlmFramePosition = 0;
 static serialPort_t *escSensorPort = NULL;
 static esc_telemetry_t escSensorData[MAX_SUPPORTED_MOTORS];
 static uint32_t escTriggerTimestamp = -1;
-static uint32_t escTriggerLastTimestamp = -1;
+static uint32_t escLastResponseTimestamp;
 static uint8_t timeoutRetryCount = 0;
 static uint8_t totalRetryCount = 0;
 
@@ -208,7 +208,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
     }
 
     // Wait period of time before requesting telemetry (let the system boot first)
-    if (millis() < ESC_BOOTTIME) {
+    if (currentTimeMs < ESC_BOOTTIME) {
         return;
     }
     else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_WAIT) {
@@ -216,7 +216,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
         escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
         escSensorMotor = 0;
         escTriggerTimestamp = currentTimeMs;
-        escTriggerLastTimestamp = escTriggerTimestamp;
+        escLastResponseTimestamp = escTriggerTimestamp;
     }
     else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_READY) {
         DEBUG_SET(DEBUG_ESC_SENSOR, 0, escSensorMotor+1);
@@ -225,49 +225,52 @@ void escSensorProcess(timeUs_t currentTimeUs)
         motor->requestTelemetry = true;
         escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
     }
+    else if (escSensorTriggerState == ESC_SENSOR_TRIGGER_PENDING) {
 
-    if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs) {
-        // ESC did not repond in time, retry
-        timeoutRetryCount++;
-        escTriggerTimestamp = currentTimeMs;
-        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
+        if (escTriggerTimestamp + ESC_REQUEST_TIMEOUT < currentTimeMs) {
+            // ESC did not repond in time, retry
+            timeoutRetryCount++;
+            escTriggerTimestamp = currentTimeMs;
+            escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
 
-        if (timeoutRetryCount == 4) {
-            // Not responding after 3 times, skip motor
-            escSensorData[escSensorMotor].skipped = true;
-            selectNextMotor();
+            if (timeoutRetryCount == 4) {
+                // Not responding after 3 times, skip motor
+                escSensorData[escSensorMotor].skipped = true;
+                selectNextMotor();
+            }
+
+            DEBUG_SET(DEBUG_ESC_SENSOR, 1, ++totalRetryCount);
         }
 
-        DEBUG_SET(DEBUG_ESC_SENSOR, 1, ++totalRetryCount);
-    }
+        // Get received frame status
+        uint8_t state = escSensorFrameStatus();
 
-    // Get received frame status
-    uint8_t state = escSensorFrameStatus();
+        if (state == ESC_SENSOR_FRAME_COMPLETE) {
+            // Wait until all ESCs are processed
+            if (escSensorMotor == getMotorCount()-1) {
+                escCurrent = 0;
+                escConsumption = 0;
+                escVbat = 0;
 
-    if (state == ESC_SENSOR_FRAME_COMPLETE) {
-        // Wait until all ESCs are processed
-        if (escSensorMotor == getMotorCount()-1) {
-            escCurrent = 0;
-            escConsumption = 0;
-            escVbat = 0;
-
-            for (int i = 0; i < getMotorCount(); i++) {
-                if (!escSensorData[i].skipped) {
-                    escVbat =  i > 0 ? ((escVbat + escSensorData[i].voltage) / 2) : escSensorData[i].voltage;
-                    escCurrent = escCurrent + escSensorData[i].current;
-                    escConsumption = escConsumption + escSensorData[i].consumption;
+                for (int i = 0; i < getMotorCount(); i++) {
+                    if (!escSensorData[i].skipped) {
+                        escVbat =  i > 0 ? ((escVbat + escSensorData[i].voltage) / 2) : escSensorData[i].voltage;
+                        escCurrent = escCurrent + escSensorData[i].current;
+                        escConsumption = escConsumption + escSensorData[i].consumption;
+                    }
                 }
             }
+
+            DEBUG_SET(DEBUG_ESC_SENSOR, 2, escVbat);
+            DEBUG_SET(DEBUG_ESC_SENSOR, 3, escCurrent);
+
+            selectNextMotor();
+            escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
+            escLastResponseTimestamp = currentTimeMs;
         }
-
-        DEBUG_SET(DEBUG_ESC_SENSOR, 2, escVbat);
-        DEBUG_SET(DEBUG_ESC_SENSOR, 3, escCurrent);
-
-        selectNextMotor();
-        escSensorTriggerState = ESC_SENSOR_TRIGGER_READY;
     }
 
-    if (escTriggerLastTimestamp + 10000 < currentTimeMs) {
+    if (escLastResponseTimestamp + 10000 < currentTimeMs) {
         // ESCs did not respond for 10 seconds
         // Disable ESC telemetry and reset voltage and current to let the use know something is wrong
         freeEscSensorPort();
@@ -282,8 +285,8 @@ static void selectNextMotor(void)
     if (escSensorMotor == getMotorCount()) {
         escSensorMotor = 0;
     }
+    timeoutRetryCount = 0;
     escTriggerTimestamp = millis();
-    escTriggerLastTimestamp = escTriggerTimestamp;
 }
 
 //-- CRC
