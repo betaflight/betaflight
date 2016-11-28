@@ -205,7 +205,7 @@ void ltm_sframe(sbuf_t *dst)
         lt_statemode |= 2;
     sbufWriteU8(dst, 'S');
     ltm_serialise_16(dst, vbat * 100);    //vbat converted to mv
-    ltm_serialise_16(dst, 0);             //  current, not implemented
+    ltm_serialise_16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF));    // current mAh (65535 mAh max)
     ltm_serialise_8(dst, (uint8_t)((rssi * 254) / 1023));        // scaled RSSI (uchar)
     ltm_serialise_8(dst, 0);              // no airspeed
     ltm_serialise_8(dst, (lt_flightmode << 2) | lt_statemode);
