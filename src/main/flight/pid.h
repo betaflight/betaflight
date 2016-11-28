@@ -52,6 +52,7 @@ typedef enum {
 
 typedef enum {
     PID_STABILISATION_OFF = 0,
+    PID_STABILISATION_ZERO_ITERM,
     PID_STABILISATION_ON
 } pidStabilisationState_e;
 
@@ -103,7 +104,7 @@ extern uint32_t targetPidLooptime;
 extern uint8_t PIDweight[3];
 
 void pidResetErrorGyroState(void);
-void pidStabilisationState(pidStabilisationState_e pidControllerState);
+void pidSetStabilisationState(pidStabilisationState_e pidControllerState);
 void pidSetTargetLooptime(uint32_t pidLooptime);
 void pidInitFilters(const pidProfile_t *pidProfile);
 
