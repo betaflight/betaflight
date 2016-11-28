@@ -403,7 +403,13 @@ void init(void)
 #else
     i2cInit(I2C_DEVICE);
 #if defined(I2C_DEVICE_EXT)
-    i2cInit(I2C_DEVICE_EXT);
+    #if defined(I2C_DEVICE_EXT_SHARES_UART3)
+        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+            i2cInit(I2C_DEVICE_EXT);
+        }
+    #else
+        i2cInit(I2C_DEVICE_EXT);
+    #endif
 #endif
 #endif
 #endif
