@@ -1413,13 +1413,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.flight3DConfig.deadband3d_low = sbufReadU16(src);
         masterConfig.flight3DConfig.deadband3d_high = sbufReadU16(src);
         masterConfig.flight3DConfig.neutral3d = sbufReadU16(src);
-        masterConfig.flight3DConfig.deadband3d_throttle = sbufReadU16(src);
         break;
 
     case MSP_SET_RC_DEADBAND:
         masterConfig.rcControlsConfig.deadband = sbufReadU8(src);
         masterConfig.rcControlsConfig.yaw_deadband = sbufReadU8(src);
         masterConfig.rcControlsConfig.alt_hold_deadband = sbufReadU8(src);
+        masterConfig.flight3DConfig.deadband3d_throttle = sbufReadU16(src);
         break;
 
     case MSP_SET_RESET_CURR_PID:
