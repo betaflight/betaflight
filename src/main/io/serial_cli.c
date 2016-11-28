@@ -3811,47 +3811,43 @@ static void printResource(uint8_t dumpMask, master_t *defaultConfig)
 
         if (resourceTable[i].maxIndex > 0) {
             for (int index = 0; index < resourceTable[i].maxIndex; index++) {
-                ioTag_t ioPtr = *(resourceTable[i].ptr + index);
-                ioTag_t ioPtrDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+                ioTag_t ioTag = *(resourceTable[i].ptr + index);
+                ioTag_t ioTagDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
 
-                IO_t io = IOGetByTag(ioPtr);
-                IO_t ioDefault = IOGetByTag(ioPtrDefault);
-                bool equalsDefault = io == ioDefault;
+                bool equalsDefault = ioTag == ioTagDefault;
                 const char *format = "resource %s %d %c%02d\r\n";
                 const char *formatUnassigned = "resource %s %d NONE\r\n";
-                if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                if (!ioTagDefault) {
                     cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
                 } else {
-                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
                 }
-                if (DEFIO_TAG_ISEMPTY(io)) {
+                if (!ioTag) {
                     if (!(dumpMask & HIDE_UNUSED)) {
                         cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
                     }
                 } else {
-                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
                 }
             }
         } else {
-            ioTag_t ioPtr = *resourceTable[i].ptr;
-            ioTag_t ioPtrDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+            ioTag_t ioTag = *resourceTable[i].ptr;
+            ioTag_t ioTagDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
 
-            IO_t io = IOGetByTag(ioPtr);
-            IO_t ioDefault = IOGetByTag(ioPtrDefault);
-            bool equalsDefault = io == ioDefault;
+            bool equalsDefault = ioTag == ioTagDefault;
             const char *format = "resource %s %c%02d\r\n";
             const char *formatUnassigned = "resource %s NONE\r\n";
-            if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+            if (!ioTagDefault) {
                 cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
             } else {
-                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdxByTag(ioTagDefault) + 'A', IO_GPIOPinIdxByTag(ioTagDefault));
             }
-            if (DEFIO_TAG_ISEMPTY(io)) {
+            if (!ioTag) {
                 if (!(dumpMask & HIDE_UNUSED)) {
                     cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
                 }
             } else {
-                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdxByTag(ioTag) + 'A', IO_GPIOPinIdxByTag(ioTag));
             }
         }
     }
