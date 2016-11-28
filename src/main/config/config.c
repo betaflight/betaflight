@@ -646,12 +646,12 @@ static void resetConf(void)
 #ifdef BLACKBOX
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
     featureSet(FEATURE_BLACKBOX);
-    masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
+    masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
 #else
-    masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
+    masterConfig.blackboxConfig.rate_num = 1;
+    masterConfig.blackboxConfig.rate_denom = 1;
 #endif
 
     // alternative defaults settings for COLIBRI RACE targets
