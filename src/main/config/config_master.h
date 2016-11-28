@@ -84,14 +84,16 @@ typedef struct master_s {
     uint8_t asyncMode;
 #endif
 
+    // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
+    motorConfig_t motorConfig;
+    flight3DConfig_t flight3DConfig;
+
 #ifdef USE_SERVOS
+    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
-    // motor/esc/servo related stuff
-    motorConfig_t motorConfig;
-    servoConfig_t servoConfig;
-    flight3DConfig_t flight3DConfig;
 
     // global sensor-related stuff
     sensorSelectionConfig_t sensorSelectionConfig;
@@ -117,14 +119,6 @@ typedef struct master_s {
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
-    failsafeConfig_t failsafeConfig;
-
-    armingConfig_t armingConfig;
-
-    // mixer-related configuration
-    mixerConfig_t mixerConfig;
-    servoMixerConfig_t servoMixerConfig;
-
 #ifdef GPS
     gpsConfig_t gpsConfig;
 #endif
@@ -133,8 +127,13 @@ typedef struct master_s {
     navConfig_t navConfig;
 #endif
 
-    serialConfig_t serialConfig;
+    armingConfig_t armingConfig;
 
+    // mixer-related configuration
+    mixerConfig_t mixerConfig;
+
+    failsafeConfig_t failsafeConfig;
+    serialConfig_t serialConfig;
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
 #endif
