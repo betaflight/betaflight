@@ -32,8 +32,8 @@
 #define ACC
 #define USE_ACC_MPU6050
 
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define BRUSHED_MOTORS
 
@@ -91,14 +91,23 @@
 //#define TELEMETRY
 //#define TELEMETRY_LTM
 //#define TELEMETRY_NRF24_LTM
-#define SKIP_RX_PWM_PPM
+#ifdef USE_PWM
+#undef USE_PWM
+#endif
+
+#ifdef USE_PPM
+#undef USE_PPM
+#endif
+
+#ifdef SERIAL_RX
 #undef SERIAL_RX
+#endif
 //#undef SKIP_TASK_STATISTICS
 
 #else
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#undef SKIP_RX_MSP
+#define USE_RX_MSP
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // UART2, PA3
 
@@ -107,7 +116,6 @@
 #define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define SKIP_SERIAL_PASSTHROUGH
-#define SKIP_PID_FLOAT
 #undef USE_CLI
 
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.

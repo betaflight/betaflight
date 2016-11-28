@@ -20,7 +20,7 @@
 #include "io_types.h"
 #include "rcc_types.h"
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(STM32F3)
 #define ADC_TAG_MAP_COUNT 39
@@ -33,8 +33,9 @@ typedef enum ADCDevice {
     ADCDEV_1   = 0,
 #if defined(STM32F3)
     ADCDEV_2,
-    ADCDEV_MAX = ADCDEV_2,
-#elif defined(STM32F4)
+    ADCDEV_3,
+    ADCDEV_MAX = ADCDEV_3,
+#elif defined(STM32F4) || defined(STM32F7)
     ADCDEV_2,
     ADCDEV_3,
     ADCDEV_MAX = ADCDEV_3,
@@ -51,8 +52,7 @@ typedef struct adcTagMap_s {
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
-    rccPeriphTag_t rccDMA;
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(STM32F7)
     DMA_Stream_TypeDef* DMAy_Streamx;
     uint32_t channel;
 #else
@@ -62,7 +62,7 @@ typedef struct adcDevice_s {
 
 extern const adcDevice_t adcHardware[];
 extern const adcTagMap_t adcTagMap[ADC_TAG_MAP_COUNT];
-extern adc_config_t adcConfig[ADC_CHANNEL_COUNT];
+extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);

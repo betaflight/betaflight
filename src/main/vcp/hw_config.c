@@ -39,7 +39,7 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +68,7 @@ void Set_System(void)
 {
 #if !defined(STM32L1XX_MD) && !defined(STM32L1XX_HD) && !defined(STM32L1XX_MD_PLUS)
     GPIO_InitTypeDef GPIO_InitStructure;
-#endif /* STM32L1XX_MD && STM32L1XX_XD */ 
+#endif /* STM32L1XX_MD && STM32L1XX_XD */
 
 #if defined(USB_USE_EXTERNAL_PULLUP)
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -277,7 +277,7 @@ static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 
 /*******************************************************************************
  * Function Name  : Send DATA .
- * Description    : send the data received from the STM32 to the PC through USB 
+ * Description    : send the data received from the STM32 to the PC through USB
  * Input          : None.
  * Output         : None.
  * Return         : None.

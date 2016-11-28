@@ -36,7 +36,9 @@
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
 #include "drivers/system.h"
+#include "drivers/pwm_output.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -48,7 +50,6 @@
 #include "sensors/compass.h"
 #include "sensors/sonar.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -348,7 +349,7 @@ bool blackboxMayEditConfig()
 }
 
 static bool blackboxIsOnlyLoggingIntraframes() {
-    return masterConfig.blackbox_rate_num == 1 && masterConfig.blackbox_rate_denom == 32;
+    return masterConfig.blackboxConfig.rate_num == 1 && masterConfig.blackboxConfig.rate_denom == 32;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -368,7 +369,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
 
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
-            return masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI;
+            return masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI;
 
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
@@ -406,7 +407,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return masterConfig.rxConfig.rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
+            return masterConfig.blackboxConfig.rate_num < masterConfig.blackboxConfig.rate_denom;
 
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
@@ -757,22 +758,22 @@ static void validateBlackboxConfig()
 {
     int div;
 
-    if (masterConfig.blackbox_rate_num == 0 || masterConfig.blackbox_rate_denom == 0
-            || masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
-        masterConfig.blackbox_rate_num = 1;
-        masterConfig.blackbox_rate_denom = 1;
+    if (masterConfig.blackboxConfig.rate_num == 0 || masterConfig.blackboxConfig.rate_denom == 0
+            || masterConfig.blackboxConfig.rate_num >= masterConfig.blackboxConfig.rate_denom) {
+        masterConfig.blackboxConfig.rate_num = 1;
+        masterConfig.blackboxConfig.rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        div = gcd(masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
 
-        masterConfig.blackbox_rate_num /= div;
-        masterConfig.blackbox_rate_denom /= div;
+        masterConfig.blackboxConfig.rate_num /= div;
+        masterConfig.blackboxConfig.rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
-    switch (masterConfig.blackbox_device) {
+    switch (masterConfig.blackboxConfig.device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
 #endif
@@ -784,7 +785,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+            masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -807,7 +808,7 @@ void startBlackbox(void)
         blackboxHistory[1] = &blackboxHistoryRing[1];
         blackboxHistory[2] = &blackboxHistoryRing[2];
 
-        vbatReference = vbatLatestADC;
+        vbatReference = vbatLatest;
 
         //No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
 
@@ -866,7 +867,7 @@ bool startedLoggingInTestMode = false;
 void startInTestMode(void)
 {
     if(!startedLoggingInTestMode) {
-        if (masterConfig.blackbox_device == BLACKBOX_DEVICE_SERIAL) {
+        if (masterConfig.blackboxConfig.device == BLACKBOX_DEVICE_SERIAL) {
             serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
             if (sharedBlackboxAndMspPort) {
                 return; // When in test mode, we cannot share the MSP and serial logger port!
@@ -895,7 +896,17 @@ void stopInTestMode(void)
  */
 bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
-    uint16_t inactiveMotorCommand = (feature(FEATURE_3D) ? masterConfig.flight3DConfig.neutral3d : masterConfig.motorConfig.mincommand);
+    uint16_t inactiveMotorCommand;
+    if (feature(FEATURE_3D)) {
+       inactiveMotorCommand = masterConfig.flight3DConfig.neutral3d;
+#ifdef USE_DSHOT
+    } else if (isMotorProtocolDshot()) {
+       inactiveMotorCommand = DSHOT_DISARM_COMMAND;
+#endif
+    } else {
+       inactiveMotorCommand = masterConfig.motorConfig.mincommand;
+    }
+
     int i;
     bool atLeastOneMotorActivated = false;
 
@@ -994,8 +1005,8 @@ static void loadMainState(uint32_t currentTime)
         blackboxCurrent->motor[i] = motor[i];
     }
 
-    blackboxCurrent->vbatLatest = vbatLatestADC;
-    blackboxCurrent->amperageLatest = amperageLatestADC;
+    blackboxCurrent->vbatLatest = vbatLatest;
+    blackboxCurrent->amperageLatest = amperageLatest;
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
@@ -1158,10 +1169,10 @@ static bool blackboxWriteSysinfo()
 
     switch (xmitState.headerIndex) {
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                    "Cleanflight");
-        BLACKBOX_PRINT_HEADER_LINE("Firmware revision:Betaflight %s (%s) %s", FC_VERSION_STRING, shortGitRevision, targetName);
+        BLACKBOX_PRINT_HEADER_LINE("Firmware revision:%s %s (%s) %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
-        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.motorConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.motorConfig.maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
@@ -1188,7 +1199,7 @@ static bool blackboxWriteSysinfo()
             );
 
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom:%d",                  masterConfig.gyro_sync_denom);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom:%d",                  masterConfig.gyroConfig.gyro_sync_denom);
         BLACKBOX_PRINT_HEADER_LINE("pid_process_denom:%d",                masterConfig.pid_process_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
@@ -1201,7 +1212,6 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[ROLL],
                                                                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[PITCH],
                                                                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("pidController:%d",                    masterConfig.profile[masterConfig.current_profile_index].pidProfile.pidController);
         BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                    masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[ROLL],
                                                                           masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[ROLL],
                                                                           masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[ROLL]);
@@ -1235,7 +1245,6 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_hz:%d",                   masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_hz);
         BLACKBOX_PRINT_HEADER_LINE("dterm_notch_cutoff:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_notch_cutoff);
-        BLACKBOX_PRINT_HEADER_LINE("deltaMethod:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.deltaMethod);
         BLACKBOX_PRINT_HEADER_LINE("rollPitchItermIgnoreRate:%d",         masterConfig.profile[masterConfig.current_profile_index].pidProfile.rollPitchItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("yawItermIgnoreRate:%d",               masterConfig.profile[masterConfig.current_profile_index].pidProfile.yawItermIgnoreRate);
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
@@ -1253,18 +1262,18 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                         masterConfig.rcControlsConfig.deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                     masterConfig.rcControlsConfig.yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                         masterConfig.gyro_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_soft_type:%d",                   masterConfig.gyro_soft_type);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                  masterConfig.gyro_soft_lpf_hz);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz:%d,%d",                 masterConfig.gyro_soft_notch_hz_1,
-                                                                          masterConfig.gyro_soft_notch_hz_2);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff:%d,%d",             masterConfig.gyro_soft_notch_cutoff_1,
-                                                                          masterConfig.gyro_soft_notch_cutoff_2);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                         masterConfig.gyroConfig.gyro_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_soft_type:%d",                   masterConfig.gyroConfig.gyro_soft_lpf_type);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                  masterConfig.gyroConfig.gyro_soft_lpf_hz);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_hz:%d,%d",                 masterConfig.gyroConfig.gyro_soft_notch_hz_1,
+                                                                          masterConfig.gyroConfig.gyro_soft_notch_hz_2);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff:%d,%d",             masterConfig.gyroConfig.gyro_soft_notch_cutoff_1,
+                                                                          masterConfig.gyroConfig.gyro_soft_notch_cutoff_2);
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                 (int)(masterConfig.acc_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     masterConfig.acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.gyro_cal_on_first_arm);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     masterConfig.sensorSelectionConfig.acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    masterConfig.sensorSelectionConfig.baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     masterConfig.sensorSelectionConfig.mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            masterConfig.armingConfig.gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation:%d",                 masterConfig.rxConfig.rcInterpolation);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        masterConfig.rxConfig.rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
@@ -1367,10 +1376,10 @@ static void blackboxCheckAndLogFlightMode()
  */
 static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 {
-    /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
+    /* Adding a magic shift of "masterConfig.blackboxConfig.rate_num - 1" in here creates a better spread of
      * recorded / skipped frames when the I frame's position is considered:
      */
-    return (pFrameIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num;
+    return (pFrameIndex + masterConfig.blackboxConfig.rate_num - 1) % masterConfig.blackboxConfig.rate_denom < masterConfig.blackboxConfig.rate_num;
 }
 
 static bool blackboxShouldLogIFrame() {
@@ -1586,7 +1595,7 @@ void handleBlackbox(uint32_t currentTime)
         if (startedLoggingInTestMode) startedLoggingInTestMode = false;
     } else { // Only log in test mode if there is room!
 
-        if(masterConfig.blackbox_on_motor_test) {
+        if(masterConfig.blackboxConfig.on_motor_test) {
             // Handle Motor Test Mode
             if(inMotorTestMode()) {
                 if(blackboxState==BLACKBOX_STATE_STOPPED)
@@ -1616,4 +1625,3 @@ void initBlackbox(void)
     }
 }
 #endif
-

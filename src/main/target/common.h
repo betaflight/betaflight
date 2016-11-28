@@ -20,42 +20,72 @@
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
 
+#ifdef STM32F7
+#define STM_FAST_TARGET
+#endif
 
-/* STM32F4 specific settings that apply to all F4 targets */
+/****************************
+  STM32 F4 specific settings. 
+****************************/
 #ifdef STM32F4
+#define STM_FAST_TARGET
+#define USE_DSHOT
+#define I2C3_OVERCLOCK true
+#endif
 
-#define MAX_AUX_CHANNELS                99
-#define TASK_GYROPID_DESIRED_PERIOD     125
-#define SCHEDULER_DELAY_LIMIT           10
-#define I2C3_OVERCLOCK                  true
-
-#else /* when not an F4 */
-
-#define MAX_AUX_CHANNELS                6
-#define TASK_GYROPID_DESIRED_PERIOD     1000
-#define SCHEDULER_DELAY_LIMIT           100
-
+#ifdef STM32F3
+#define USE_DSHOT
 #endif
 
 #ifdef STM32F1
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
-
+#define USE_UART1_TX_DMA
 #endif
 
 #define SERIAL_RX
+#define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
+#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
+#define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+#define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#define USE_SERIALRX_SUMD       // Graupner Hott protocol
+#define USE_SERIALRX_SUMH       // Graupner legacy protocol
+#define USE_SERIALRX_XBUS       // JR
 #define USE_CLI
+#define USE_PWM
+#define USE_PPM
+
+#if defined(STM_FAST_TARGET)
+#define MAX_AUX_CHANNELS                99
+#define TASK_GYROPID_DESIRED_PERIOD     125
+#define SCHEDULER_DELAY_LIMIT           10
+#else
+#define MAX_AUX_CHANNELS                6
+#define TASK_GYROPID_DESIRED_PERIOD     1000
+#define SCHEDULER_DELAY_LIMIT           100
+#endif
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
 #define GPS
 #define TELEMETRY
+#define TELEMETRY_FRSKY
+#define TELEMETRY_HOTT
+#define TELEMETRY_IBUS
+#define TELEMETRY_LTM
+#define TELEMETRY_SMARTPORT
 #define USE_SERVOS
 #endif
 
 #if (FLASH_SIZE > 128)
-#define DISPLAY
+#define CMS
+#define USE_DASHBOARD
+#define USE_MSP_DISPLAYPORT
+#define TELEMETRY_CRSF
+#define TELEMETRY_JETIEXBUS
+#define TELEMETRY_MAVLINK
+#define USE_RX_MSP
+#define USE_SERIALRX_JETIEXBUS
 #else
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_RX_MSP
 #endif

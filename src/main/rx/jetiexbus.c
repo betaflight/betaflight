@@ -210,10 +210,6 @@ static uint8_t jetiExBusChannelFrame[EXBUS_MAX_CHANNEL_FRAME_SIZE];
 static uint8_t jetiExBusRequestFrame[EXBUS_MAX_REQUEST_FRAME_SIZE];
 
 static uint16_t jetiExBusChannelData[JETIEXBUS_CHANNEL_COUNT];
-static void jetiExBusDataReceive(uint16_t c);
-static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-static void jetiExBusFrameReset();
 
 #ifdef TELEMETRY
 
@@ -226,30 +222,6 @@ uint8_t calcCRC8(uint8_t *pt, uint8_t msgLen);
 #endif //TELEMETRY
 
 uint16_t calcCRC16(uint8_t *pt, uint8_t msgLen);
-
-
-bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
-{
-    UNUSED(rxConfig);
-
-    rxRuntimeConfig->channelCount = JETIEXBUS_CHANNEL_COUNT;
-    rxRuntimeConfig->rxRefreshRate = 5500;
-
-    rxRuntimeConfig->rcReadRawFunc = jetiExBusReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = jetiExBusFrameStatus;
-
-    jetiExBusFrameReset();
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-
-    if (!portConfig) {
-        return false;
-    }
-
-    jetiExBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, jetiExBusDataReceive, JETIEXBUS_BAUDRATE, MODE_RXTX, JETIEXBUS_OPTIONS );
-    serialSetMode(jetiExBusPort, MODE_RX);
-    return jetiExBusPort != NULL;
-}
 
 
 // Jeti Ex Bus CRC calculations for a frame
@@ -403,7 +375,7 @@ static void jetiExBusDataReceive(uint16_t c)
 
 
 // Check if it is time to read a frame from the data...
-uint8_t jetiExBusFrameStatus()
+static uint8_t jetiExBusFrameStatus()
 {
     if (jetiExBusFrameState != EXBUS_STATE_RECEIVED)
         return RX_FRAME_PENDING;
@@ -612,6 +584,28 @@ void sendJetiExBusTelemetry(uint8_t packetID)
     jetiExBusTransceiveState = EXBUS_TRANS_IS_TX_COMPLETED;
     requestLoop++;
 }
-
 #endif // TELEMETRY
+
+bool jetiExBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = JETIEXBUS_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 5500;
+
+    rxRuntimeConfig->rcReadRawFn = jetiExBusReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = jetiExBusFrameStatus;
+
+    jetiExBusFrameReset();
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+
+    if (!portConfig) {
+        return false;
+    }
+
+    jetiExBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, jetiExBusDataReceive, JETIEXBUS_BAUDRATE, MODE_RXTX, JETIEXBUS_OPTIONS );
+    serialSetMode(jetiExBusPort, MODE_RX);
+    return jetiExBusPort != NULL;
+}
 #endif // SERIAL_RX

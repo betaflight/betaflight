@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/serial.h"
+
 typedef enum {
     PORTSHARING_UNUSED = 0,
     PORTSHARING_NOT_SHARED,
@@ -33,8 +35,9 @@ typedef enum {
     FUNCTION_TELEMETRY_SMARTPORT = (1 << 5), // 32
     FUNCTION_RX_SERIAL           = (1 << 6), // 64
     FUNCTION_BLACKBOX            = (1 << 7), // 128
-    FUNCTION_PASSTHROUGH         = (1 << 8), // 256
+
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 9), // 512
+    FUNCTION_TELEMETRY_ESC       = (1 << 10), // 1024
 } serialPortFunction_e;
 
 typedef enum {
@@ -46,8 +49,14 @@ typedef enum {
     BAUD_115200,
     BAUD_230400,
     BAUD_250000,
+    BAUD_400000,
+    BAUD_460800,
     BAUD_500000,
+    BAUD_921600,
     BAUD_1000000,
+    BAUD_1500000,
+    BAUD_2000000,
+    BAUD_2470000
 } baudRate_e;
 
 extern const uint32_t baudRates[];
@@ -61,6 +70,8 @@ typedef enum {
     SERIAL_PORT_USART4,
     SERIAL_PORT_USART5,
     SERIAL_PORT_USART6,
+    SERIAL_PORT_USART7,
+    SERIAL_PORT_USART8,
     SERIAL_PORT_USB_VCP = 20,
     SERIAL_PORT_SOFTSERIAL1 = 30,
     SERIAL_PORT_SOFTSERIAL2,
@@ -117,14 +128,14 @@ portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFun
 bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction);
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier);
-
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier);
 //
 // runtime
 //
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
-    serialReceiveCallbackPtr callback,
+    serialReceiveCallbackPtr rxCallback,
     uint32_t baudrate,
     portMode_t mode,
     portOptions_t options
@@ -139,5 +150,5 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate);
 //
 // msp/cli/bootloader
 //
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar);
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar);
 void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer *leftC, serialConsumer *rightC);

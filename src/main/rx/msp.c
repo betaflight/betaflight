@@ -20,13 +20,9 @@
 
 #include "platform.h"
 
-#ifndef SKIP_RX_MSP
+#ifdef USE_RX_MSP
 
-#include "build/build_config.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
+#include "common/utils.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -40,6 +36,9 @@ static uint16_t rxMspReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfigPtr, uint
     return mspFrame[chan];
 }
 
+/*
+ * Called from MSP command handler - mspFcProcessCommand
+ */
 void rxMspFrameReceive(uint16_t *frame, int channelCount)
 {
     for (int i = 0; i < channelCount; i++) {
@@ -54,7 +53,7 @@ void rxMspFrameReceive(uint16_t *frame, int channelCount)
     rxMspFrameDone = true;
 }
 
-uint8_t rxMspFrameStatus(void)
+static uint8_t rxMspFrameStatus(void)
 {
     if (!rxMspFrameDone) {
         return RX_FRAME_PENDING;
@@ -69,8 +68,9 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxConfig);
 
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFunc = rxMspReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = rxMspFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = rxMspReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = rxMspFrameStatus;
 }
 #endif

@@ -66,9 +66,9 @@
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15
 
-#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
-#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
-#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
+//#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
+//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
+//#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
 //#define PITOT
 //#define USE_PITOT_MS4525
@@ -96,6 +96,9 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
 #define USE_SPI
@@ -116,24 +119,17 @@
 #define VBAT_ADC_PIN            PC2
 //#define RSSI_ADC_PIN            PA0
 
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
+
 #define LED_STRIP
-// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
-#define WS2811_PIN                      PA1
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream4
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
 #define SENSORS_SET (SENSOR_ACC)
 
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL)
+
+#define AVOID_UART1_FOR_PWM_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_rcc_ex.h
   * @author  MCD Application Team                                                                                                     
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   Header file of RCC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -105,9 +105,12 @@ typedef struct
                             This parameter must be a number between Min_Data = 2 and Max_Data = 15. 
                             This parameter will be used only when PLLI2S is selected as Clock Source SAI */
 
+#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+    defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
   uint32_t PLLI2SP;    /*!< Specifies the division factor for SPDIF-RX clock.
                             This parameter must be a value of @ref RCCEx_PLLI2SP_Clock_Divider. 
                             This parameter will be used only when PLLI2S is selected as Clock Source SPDIF-RX */
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */  
 }RCC_PLLI2SInitTypeDef;
 
 /** 
@@ -122,11 +125,14 @@ typedef struct
   uint32_t PLLSAIQ;    /*!< Specifies the division factor for SAI1 clock.
                             This parameter must be a number between Min_Data = 2 and Max_Data = 15.
                             This parameter will be used only when PLLSAI is selected as Clock Source SAI or LTDC */
-                              
+  
+#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+    defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
   uint32_t PLLSAIR;    /*!< specifies the division factor for LTDC clock
                             This parameter must be a number between Min_Data = 2 and Max_Data = 7.
                             This parameter will be used only when PLLSAI is selected as Clock Source LTDC */
-
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+  
   uint32_t PLLSAIP;    /*!< Specifies the division factor for 48MHz clock.
                             This parameter must be a value of @ref RCCEx_PLLSAIP_Clock_Divider
                             This parameter will be used only when PLLSAI is disabled */
@@ -273,12 +279,14 @@ typedef struct
 #define RCC_PERIPHCLK_SDMMC2          ((uint32_t)0x04000000U)
 #define RCC_PERIPHCLK_DFSDM1           ((uint32_t)0x08000000U)
 #define RCC_PERIPHCLK_DFSDM1_AUDIO      ((uint32_t)0x10000000U)    
-#endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
     
 /**
   * @}
   */
 
+#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+    defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
 /** @defgroup RCCEx_PLLI2SP_Clock_Divider RCCEx PLLI2SP Clock Divider
   * @{
   */
@@ -289,6 +297,7 @@ typedef struct
 /**
   * @}
   */
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
   
 /** @defgroup RCCEx_PLLSAIP_Clock_Divider RCCEx PLLSAIP Clock Divider
   * @{

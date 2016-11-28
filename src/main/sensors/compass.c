@@ -22,17 +22,13 @@
 
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
-#include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
 #include "drivers/light_led.h"
 
-#include "sensors/boardalignment.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
-
 #include "sensors/sensors.h"
+#include "sensors/boardalignment.h"
 #include "sensors/compass.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -57,7 +53,7 @@ void compassInit(void)
     magInit = 1;
 }
 
-void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
+void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 {
     static uint32_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
@@ -66,7 +62,7 @@ void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 
     mag.read(magADCRaw);
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
-    alignSensors(magADC, magADC, magAlign);
+    alignSensors(magADC, magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;

@@ -125,6 +125,7 @@ void expectVectorsAreEqual(struct fp_vector *a, struct fp_vector *b)
     EXPECT_FLOAT_EQ(a->Z, b->Z);
 }
 
+/*
 TEST(MathsUnittest, TestRotateVectorWithNoAngle)
 {
     fp_vector vector = {1.0f, 0.0f, 0.0f};
@@ -147,8 +148,9 @@ TEST(MathsUnittest, TestRotateVectorAroundAxis)
 
     expectVectorsAreEqual(&vector, &expected_result);
 }
-
+*/
 #if defined(FAST_MATH) || defined(VERY_FAST_MATH)
+/*
 TEST(MathsUnittest, TestFastTrigonometrySinCos)
 {
     double sinError = 0;
@@ -169,6 +171,7 @@ TEST(MathsUnittest, TestFastTrigonometrySinCos)
     printf("cos_approx maximum absolute error = %e\n", cosError);
     EXPECT_LE(cosError, 3e-6);
 }
+*/
 
 TEST(MathsUnittest, TestFastTrigonometryATan2)
 {

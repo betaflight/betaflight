@@ -24,6 +24,7 @@
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PB2
+#define MOTOR_PIN               PB15
 
 // LED's V1
 #define LED0                    PB4
@@ -70,6 +71,9 @@
 #define SERIAL_PORT_COUNT       4
 #define AVOID_UART2_FOR_PWM_PPM
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
 
@@ -111,11 +115,10 @@
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
-#define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

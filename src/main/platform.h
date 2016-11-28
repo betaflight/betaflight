@@ -17,6 +17,18 @@
 
 #pragma once
 
+#if defined(STM32F745xx)
+#include "stm32f7xx.h"
+#include "stm32f7xx_hal.h"
+
+// Chip Unique ID on F7
+#define U_ID_0 (*(uint32_t*)0x1ff0f420)
+#define U_ID_1 (*(uint32_t*)0x1ff0f424)
+#define U_ID_2 (*(uint32_t*)0x1ff0f428)
+
+#define STM32F7
+#endif
+
 #if defined(STM32F40_41xxx) || defined (STM32F411xE)
 #include "stm32f4xx_conf.h"
 #include "stm32f4xx_rcc.h"

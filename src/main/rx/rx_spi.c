@@ -26,8 +26,9 @@
 
 #include "drivers/rx_nrf24l01.h"
 
-#include "config/config.h"
 #include "config/feature.h"
+
+#include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -139,8 +140,8 @@ bool rxSpiInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     rxSpiNewPacketAvailable = false;
     rxRuntimeConfig->rxRefreshRate = 20000;
 
-    rxRuntimeConfig->rcReadRawFunc = rxSpiReadRawRC;
-    rxRuntimeConfig->rcFrameStatusFunc = rxSpiFrameStatus;
+    rxRuntimeConfig->rcReadRawFn = rxSpiReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = rxSpiFrameStatus;
 
     return ret;
 }

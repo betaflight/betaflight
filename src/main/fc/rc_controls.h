@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -161,6 +163,13 @@ typedef struct rcControlsConfig_s {
     uint8_t alt_hold_deadband;              // defines the neutral zone of throttle stick during altitude hold, default setting is +/-40
     uint8_t alt_hold_fast_change;           // when disabled, turn off the althold when throttle stick is out of deadband defined with alt_hold_deadband; when enabled, altitude changes slowly proportional to stick movement
 } rcControlsConfig_t;
+
+typedef struct armingConfig_s {
+    uint8_t gyro_cal_on_first_arm;          // allow disarm/arm on throttle down + roll left/right
+    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
+    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
+    uint8_t small_angle;
+} armingConfig_t;
 
 bool areUsingSticksToArm(void);
 

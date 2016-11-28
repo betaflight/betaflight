@@ -21,15 +21,12 @@
 
 #include <platform.h>
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
-#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
-
-#include "fc/rc_controls.h"
 
 #include "io/statusindicator.h"
 #include "io/vtx.h"
@@ -38,9 +35,9 @@
 #include "io/gps.h"
 #endif
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "io/beeper.h"
@@ -189,7 +186,7 @@ static const beeperTableEntry_t *currentBeeperEntry = NULL;
  */
 void beeper(beeperMode_e mode)
 {
-    if (mode == BEEPER_SILENCE || ((getBeeperOffMask() & (1 << (BEEPER_USB-1))) && (feature(FEATURE_VBAT) && (batteryCellCount < 2)))) {
+    if (mode == BEEPER_SILENCE || ((getBeeperOffMask() & (1 << (BEEPER_USB-1))) && (feature(FEATURE_VBAT) && (batteryCellCount == 0)))) {
         beeperSilence();
         return;
     }
@@ -392,7 +389,8 @@ int beeperTableEntryCount(void)
 /*
  * Returns true if the beeper is on, false otherwise
  */
-bool isBeeperOn(void) {
+bool isBeeperOn(void)
+{
     return beeperIsOn;
 }
 

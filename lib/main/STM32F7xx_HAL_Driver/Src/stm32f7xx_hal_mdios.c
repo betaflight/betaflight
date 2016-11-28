@@ -2,23 +2,21 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_mdios.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   MDIOS HAL module driver.
-  * 
   *          This file provides firmware functions to manage the following 
   *          functionalities of the MDIOS Peripheral.
   *           + Initialization and de-initialization functions
   *           + IO operation functions
   *           + Peripheral Control functions
-  *
   *           
   @verbatim       
  ===============================================================================
                         ##### How to use this driver #####
  ===============================================================================
     [..]
-    The MDIOS HAL driver can be used as follow:
+    The MDIOS HAL driver can be used as follows:
 
     (#) Declare a MDIOS_HandleTypeDef handle structure.
 
@@ -53,9 +51,9 @@
         (##) a DOUTn register read by the Master
         (##) an error occur
 
-        (@) A callback is executed for each genereted interrupt, so the driver provide the following 
+       -@@- A callback is executed for each genereted interrupt, so the driver provides the following 
             HAL_MDIOS_WriteCpltCallback(), HAL_MDIOS_ReadCpltCallback() and HAL_MDIOS_ErrorCallback()
-        (@) HAL_MDIOS_IRQHandler() must be called from the MDIOS IRQ Handler, to handle the interrupt
+       -@@- HAL_MDIOS_IRQHandler() must be called from the MDIOS IRQ Handler, to handle the interrupt
             and execute the previous callbacks
    
     (#) Reset the MDIOS peripheral and all related ressources by calling the HAL_MDIOS_DeInit() API.

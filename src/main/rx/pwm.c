@@ -23,14 +23,14 @@
 
 #include "platform.h"
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 
 #include "build/build_config.h"
 
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "config/config.h"
+#include "fc/config.h"
+
 #include "config/feature.h"
 
 #include "rx/rx.h"
@@ -57,10 +57,10 @@ void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
-        rxRuntimeConfig->rcReadRawFunc = pwmReadRawRC;
+        rxRuntimeConfig->rcReadRawFn = pwmReadRawRC;
     } else if (feature(FEATURE_RX_PPM)) {
         rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
-        rxRuntimeConfig->rcReadRawFunc = ppmReadRawRC;
+        rxRuntimeConfig->rcReadRawFn = ppmReadRawRC;
     }
 }
 #endif

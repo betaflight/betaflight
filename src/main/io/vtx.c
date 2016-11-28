@@ -15,27 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
 
+// Get target build configuration
 #include "platform.h"
 
 #ifdef VTX
 
-#include "drivers/vtx_rtc6705.h"
-
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
-
-#include "flight/pid.h"
-
-#include "io/beeper.h"
+// Own interfaces
 #include "io/vtx.h"
 
-#include "config/config.h"
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
+//External dependencies
 #include "config/config_master.h"
+#include "config/config_eeprom.h"
+#include "drivers/vtx_rtc6705.h"
+#include "fc/runtime_config.h"
+#include "io/beeper.h"
 
 
 static uint8_t locked = 0;

@@ -20,46 +20,53 @@
 
 #include <platform.h>
 
-#include "gpio.h"
-#include "transponder_ir.h"
+#include "io.h"
 #include "nvic.h"
 
-#ifndef TRANSPONDER_GPIO
-#define USE_TRANSPONDER_ON_DMA1_CHANNEL3
-#define TRANSPONDER_GPIO                     GPIOB
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOB
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_1
-#define TRANSPONDER_PIN                      GPIO_Pin_8 // TIM16_CH1
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM16
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM16
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel3
-#define TRANSPONDER_IRQ                      DMA1_Channel3_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#endif
+#include "dma.h"
+#include "rcc.h"
+#include "timer.h"
 
-void transponderIrHardwareInit(void)
+#include "transponder_ir.h"
+
+static IO_t transponderIO = IO_NONE;
+static DMA_Channel_TypeDef *dmaChannel = NULL;
+static TIM_TypeDef *timer = NULL;
+
+static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF)) {
+        transponderIrDataTransferInProgress = 0;
+        DMA_Cmd(descriptor->channel, DISABLE);
+        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
+    }
+}
+
+
+void transponderIrHardwareInit(ioTag_t ioTag)
+{
+    if (!ioTag) {
+        return;
+    }
+
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_OCInitTypeDef  TIM_OCInitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
     DMA_InitTypeDef DMA_InitStructure;
 
-    RCC_AHBPeriphClockCmd(TRANSPONDER_GPIO_AHB_PERIPHERAL, ENABLE);
+    const timerHardware_t *timerHardware = timerGetByTag(ioTag, TIM_USE_ANY);
+    timer = timerHardware->tim;
 
-    GPIO_PinAFConfig(TRANSPONDER_GPIO, TRANSPONDER_PIN_SOURCE,  TRANSPONDER_GPIO_AF);
+    if (timerHardware->dmaChannel == NULL) {
+        return;
+    }
 
-    /* Configuration alternate function push-pull */
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = TRANSPONDER_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(TRANSPONDER_GPIO, &GPIO_InitStructure);
+    transponderIO = IOGetByTag(ioTag);
+    IOInit(transponderIO, OWNER_TRANSPONDER, 0);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
 
-    RCC_APB2PeriphClockCmd(TRANSPONDER_TIMER_APB2_PERIPHERAL, ENABLE);
+    dmaInit(timerHardware->dmaIrqHandler, OWNER_TRANSPONDER, 0);
+    dmaSetHandler(timerHardware->dmaIrqHandler, TRANSPONDER_DMA_IRQHandler, NVIC_PRIO_TRANSPONDER_DMA, 0);
+    RCC_ClockCmd(timerRCC(timer), ENABLE);
 
     /* Time base configuration */
     TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
@@ -67,32 +74,31 @@ void transponderIrHardwareInit(void)
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
     TIM_TimeBaseStructure.TIM_ClockDivision = 0;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TRANSPONDER_TIMER, &TIM_TimeBaseStructure);
+    TIM_TimeBaseInit(timer, &TIM_TimeBaseStructure);
 
     /* PWM1 Mode configuration: Channel1 */
     TIM_OCStructInit(&TIM_OCInitStructure);
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+    if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
+        TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Enable;
+        TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCNIdleState_Reset;
+    } else {
+        TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+        TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+    }
+    TIM_OCInitStructure.TIM_OCPolarity =  (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIM_OCPolarity_Low : TIM_OCPolarity_High;
     TIM_OCInitStructure.TIM_Pulse = 0;
-#ifdef TRANSPONDER_INVERTED
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-#else
-    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-#endif
-    TIM_OC1Init(TRANSPONDER_TIMER, &TIM_OCInitStructure);
-    TIM_OC1PreloadConfig(TRANSPONDER_TIMER, TIM_OCPreload_Enable);
+    TIM_OC1Init(timer, &TIM_OCInitStructure);
+    TIM_OC1PreloadConfig(timer, TIM_OCPreload_Enable);
 
-    TIM_CtrlPWMOutputs(TRANSPONDER_TIMER, ENABLE);
+    TIM_CtrlPWMOutputs(timer, ENABLE);
 
     /* configure DMA */
-    /* DMA clock enable */
-    //RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
-    /* DMA1 Channel6 Config */
-    DMA_DeInit(TRANSPONDER_DMA_CHANNEL);
+    dmaChannel = timerHardware->dmaChannel;
+    DMA_DeInit(dmaChannel);
 
     DMA_StructInit(&DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&TRANSPONDER_TIMER->CCR1;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerCCR(timer, timerHardware->channel);
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)transponderIrDMABuffer;
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
     DMA_InitStructure.DMA_BufferSize = TRANSPONDER_DMA_BUFFER_SIZE;
@@ -104,40 +110,34 @@ void transponderIrHardwareInit(void)
     DMA_InitStructure.DMA_Priority = DMA_Priority_High;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(TRANSPONDER_DMA_CHANNEL, &DMA_InitStructure);
+    DMA_Init(dmaChannel, &DMA_InitStructure);
 
-    TIM_DMACmd(TRANSPONDER_TIMER, TIM_DMA_CC1, ENABLE);
+    TIM_DMACmd(timer, timerDmaSource(timerHardware->channel), ENABLE);
 
-    DMA_ITConfig(TRANSPONDER_DMA_CHANNEL, DMA_IT_TC, ENABLE);
+    DMA_ITConfig(dmaChannel, DMA_IT_TC, ENABLE);
 
 }
 
 void transponderIrDMAEnable(void)
 {
-    DMA_SetCurrDataCounter(TRANSPONDER_DMA_CHANNEL, TRANSPONDER_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
-    TIM_SetCounter(TRANSPONDER_TIMER, 0);
-    TIM_Cmd(TRANSPONDER_TIMER, ENABLE);
-    DMA_Cmd(TRANSPONDER_DMA_CHANNEL, ENABLE);
+    DMA_SetCurrDataCounter(dmaChannel, TRANSPONDER_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
+    TIM_SetCounter(timer, 0);
+    TIM_Cmd(timer, ENABLE);
+    DMA_Cmd(dmaChannel, ENABLE);
 }
 
 void transponderIrDisable(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    DMA_Cmd(dmaChannel, DISABLE);
+    TIM_Cmd(timer, DISABLE);
 
-    DMA_Cmd(TRANSPONDER_DMA_CHANNEL, DISABLE);
-    TIM_Cmd(TRANSPONDER_TIMER, DISABLE);
+    IOInit(transponderIO, OWNER_TRANSPONDER, 0);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_DOWN), timerHardware->alternateFunction);
 
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = TRANSPONDER_PIN;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(TRANSPONDER_GPIO, &GPIO_InitStructure);
 #ifdef TRANSPONDER_INVERTED
-    digitalHi(TRANSPONDER_GPIO, TRANSPONDER_PIN);
+    IOHi(transponderIO);
 #else
-    digitalLo(TRANSPONDER_GPIO, TRANSPONDER_PIN);
+    IOLo(transponderIO);
 #endif
 }
 

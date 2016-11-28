@@ -42,8 +42,8 @@
 #endif
 
 #include "io/serial.h"
-#include "serial_msp.h"
 
+#include "msp/msp_serial.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
@@ -74,6 +74,12 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_UART6
     SERIAL_PORT_USART6,
 #endif
+#ifdef USE_UART7
+    SERIAL_PORT_USART7,
+#endif
+#ifdef USE_UART8
+    SERIAL_PORT_USART8,
+#endif
 #ifdef USE_SOFTSERIAL1
     SERIAL_PORT_SOFTSERIAL1,
 #endif
@@ -84,7 +90,8 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 
 static uint8_t serialPortCount;
 
-const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000, 500000, 1000000}; // see baudRate_e
+const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000,
+        400000, 460800, 500000, 921600, 1000000, 1500000, 2000000, 2470000}; // see baudRate_e
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
 
@@ -98,6 +105,16 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
         }
     }
     return BAUD_AUTO;
+}
+
+int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
+{
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
+        if (serialPortIdentifiers[index] == identifier) {
+            return index;
+        }
+    }
+    return -1;
 }
 
 serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
@@ -204,7 +221,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
      * - MSP is allowed to be shared with EITHER any telemetry OR blackbox.
-     * - serial RX and FrSky / LTM telemetry can be shared
+     * - serial RX and FrSky / LTM / MAVLink telemetry can be shared
      * - No other sharing combinations are valid.
      */
     uint8_t mspPortCount = 0;
@@ -264,13 +281,13 @@ bool doesConfigurationUsePort(serialPortIdentifier_e identifier)
 serialPort_t *openSerialPort(
     serialPortIdentifier_e identifier,
     serialPortFunction_e function,
-    serialReceiveCallbackPtr callback,
+    serialReceiveCallbackPtr rxCallback,
     uint32_t baudRate,
     portMode_t mode,
     portOptions_t options)
 {
 #if (!defined(USE_UART1) && !defined(USE_UART2) && !defined(USE_UART3) && !defined(USE_UART4) && !defined(USE_UART5) && !defined(USE_UART6) && !defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2))
-    UNUSED(callback);
+    UNUSED(rxCallback);
     UNUSED(baudRate);
     UNUSED(mode);
     UNUSED(options);
@@ -292,43 +309,53 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_UART1
         case SERIAL_PORT_USART1:
-            serialPort = uartOpen(USART1, callback, baudRate, mode, options);
+            serialPort = uartOpen(USART1, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART2
         case SERIAL_PORT_USART2:
-            serialPort = uartOpen(USART2, callback, baudRate, mode, options);
+            serialPort = uartOpen(USART2, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART3
         case SERIAL_PORT_USART3:
-            serialPort = uartOpen(USART3, callback, baudRate, mode, options);
+            serialPort = uartOpen(USART3, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_UART4
-    case SERIAL_PORT_USART4:
-        serialPort = uartOpen(UART4, callback, baudRate, mode, options);
-        break;
+        case SERIAL_PORT_USART4:
+            serialPort = uartOpen(UART4, rxCallback, baudRate, mode, options);
+            break;
 #endif
 #ifdef USE_UART5
-    case SERIAL_PORT_USART5:
-        serialPort = uartOpen(UART5, callback, baudRate, mode, options);
-        break;
+        case SERIAL_PORT_USART5:
+            serialPort = uartOpen(UART5, rxCallback, baudRate, mode, options);
+            break;
 #endif
 #ifdef USE_UART6
-    case SERIAL_PORT_USART6:
-        serialPort = uartOpen(USART6, callback, baudRate, mode, options);
-        break;
+        case SERIAL_PORT_USART6:
+            serialPort = uartOpen(USART6, rxCallback, baudRate, mode, options);
+            break;
+#endif
+#ifdef USE_UART7
+        case SERIAL_PORT_USART7:
+            serialPort = uartOpen(UART7, rxCallback, baudRate, mode, options);
+            break;
+#endif
+#ifdef USE_UART8
+        case SERIAL_PORT_USART8:
+            serialPort = uartOpen(UART8, rxCallback, baudRate, mode, options);
+            break;
 #endif
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, callback, baudRate, options);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, options);
             serialSetMode(serialPort, mode);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, callback, baudRate, options);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, options);
             serialSetMode(serialPort, mode);
             break;
 #endif
@@ -348,7 +375,8 @@ serialPort_t *openSerialPort(
     return serialPort;
 }
 
-void closeSerialPort(serialPort_t *serialPort) {
+void closeSerialPort(serialPort_t *serialPort)
+{
     serialPortUsage_t *serialPortUsage = findSerialPortUsageByPort(serialPort);
     if (!serialPortUsage) {
         // already closed
@@ -357,7 +385,7 @@ void closeSerialPort(serialPort_t *serialPort) {
 
     // TODO wait until data has been transmitted.
 
-    serialPort->callback = NULL;
+    serialPort->rxCallback = NULL;
 
     serialPortUsage->function = FUNCTION_NONE;
     serialPortUsage->serialPort = NULL;
@@ -431,7 +459,7 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
 
 void cliEnter(serialPort_t *serialPort);
 
-void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
+void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
 {
 #ifndef USE_CLI
     UNUSED(serialPort);

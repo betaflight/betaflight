@@ -16,83 +16,60 @@
  */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "platform.h"
 
 #include "build/debug.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/maths.h"
 #include "common/axis.h"
-#include "common/color.h"
 #include "common/utils.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/light_led.h"
-
-#include "drivers/gpio.h"
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/intpwm.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
-#include "io/beeper.h"
-#include "io/display.h"
-#include "io/motors.h"
-#include "io/servos.h"
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
+#include "fc/runtime_config.h"
+
+#include "msp/msp_serial.h"
+
+#include "io/beeper.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/serial.h"
 #include "io/serial_cli.h"
-#include "io/serial_msp.h"
 #include "io/statusindicator.h"
-#include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
-#include "io/osd.h"
-
-#include "io/vtx.h"
+#include "io/asyncfatfs/asyncfatfs.h"
 
 #include "rx/rx.h"
-#include "rx/msp.h"
 
-#include "telemetry/telemetry.h"
-#include "blackbox/blackbox.h"
+#include "scheduler/scheduler.h"
 
 #include "flight/mixer.h"
+#include "flight/servos.h"
 #include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/altitudehold.h"
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
-#include "flight/navigation.h"
+#include "flight/altitudehold.h"
 
-#include "fc/runtime_config.h"
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
-
-#include "scheduler/scheduler.h"
-#include "scheduler/scheduler_tasks.h"
 
 // June 2013     V2.2-dev
 
@@ -102,10 +79,6 @@ enum {
     ALIGN_MAG = 2
 };
 
-/* VBAT monitoring interval (in microseconds) - 1s*/
-#define VBATINTERVAL (6 * 3500)
-/* IBat monitoring interval (in microseconds) - 6 default looptimes */
-#define IBATINTERVAL (6 * 3500)
 
 #define GYRO_WATCHDOG_DELAY 80 //  delay for gyro sync
 
@@ -123,12 +96,11 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 extern uint8_t PIDweight[3];
 
-static bool isRXDataNew;
+uint16_t filteredCycleTime;
+bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
 float setpointRate[3];
 float rcInput[3];
-
-extern pidControllerFuncPtr pid_controller;
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -210,10 +182,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
         debug[axis] = angleRate;
     }
 
-    if (currentProfile->pidProfile.pidController == PID_CONTROLLER_LEGACY)
-        setpointRate[axis] = constrainf(angleRate * 4.1f, -8190.0f, 8190.0f); // Rate limit protection
-    else
-        setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
+    setpointRate[axis] = constrainf(angleRate, -1998.0f, 1998.0f); // Rate limit protection (deg/sec)
 }
 
 void scaleRcCommandToFpvCamAngle(void) {
@@ -298,7 +267,7 @@ void processRcCommand(void)
     }
 }
 
-static void updateRcCommands(void)
+void updateRcCommands(void)
 {
     // PITCH & ROLL only dynamic PID adjustment,  depending on throttle value
     int32_t prop;
@@ -362,7 +331,7 @@ static void updateRcCommands(void)
     }
 }
 
-static void updateLEDs(void)
+void updateLEDs(void)
 {
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
@@ -409,7 +378,7 @@ void mwDisarm(void)
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
 
-void releaseSharedTelemetryPorts(void) {
+static void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
         mspSerialReleasePortIfAllocated(sharedPort);
@@ -421,7 +390,7 @@ void mwArm(void)
 {
     static bool firstArmingCalibrationWasCompleted;
 
-    if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
+    if (masterConfig.armingConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
         gyroSetCalibrationCycles();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
@@ -450,7 +419,7 @@ void mwArm(void)
                 startBlackbox();
             }
 #endif
-            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
 #ifdef GPS
@@ -575,12 +544,12 @@ void processRx(uint32_t currentTime)
     if (ARMING_FLAG(ARMED)
         && feature(FEATURE_MOTOR_STOP)
         && !STATE(FIXED_WING)
-		&& !feature(FEATURE_3D)
-		&& !isAirmodeActive()
+        && !feature(FEATURE_3D)
+        && !isAirmodeActive()
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
-                if (masterConfig.auto_disarm_delay != 0
+                if (masterConfig.armingConfig.auto_disarm_delay != 0
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
@@ -593,9 +562,9 @@ void processRx(uint32_t currentTime)
                 }
             } else {
                 // throttle is not low
-                if (masterConfig.auto_disarm_delay != 0) {
+                if (masterConfig.armingConfig.auto_disarm_delay != 0) {
                     // extend disarm time
-                    disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;
+                    disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;
                 }
 
                 if (armedBeeperOn) {
@@ -615,7 +584,7 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.armingConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -693,7 +662,7 @@ void processRx(uint32_t currentTime)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
@@ -718,13 +687,14 @@ void processRx(uint32_t currentTime)
 
 void subTaskPidController(void)
 {
-    const uint32_t startTime = micros();
+    uint32_t startTime;
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pid_controller(
+    pidController(
         &currentProfile->pidProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
-        &masterConfig.rxConfig
+        masterConfig.rxConfig.midrc
     );
     if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
@@ -766,10 +736,10 @@ void subTaskMainSubprocesses(void)
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
     #ifndef USE_QUAD_MIXER_ONLY
     #ifdef USE_SERVOS
-                    && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.mixerConfig.tri_unarmed_servo)
+                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
     #endif
-                    && masterConfig.mixerMode != MIXER_AIRPLANE
-                    && masterConfig.mixerMode != MIXER_FLYING_WING
+                    && masterConfig.mixerConfig.mixerMode != MIXER_AIRPLANE
+                    && masterConfig.mixerConfig.mixerMode != MIXER_FLYING_WING
     #endif
         ) {
             rcCommand[YAW] = 0;
@@ -801,7 +771,7 @@ void subTaskMainSubprocesses(void)
     #endif
 
     #ifdef TRANSPONDER
-        updateTransponder(startTime);
+        transponderUpdate(startTime);
     #endif
     if (debugMode == DEBUG_PIDLOOP) {debug[1] = micros() - startTime;}
 }
@@ -820,6 +790,8 @@ void subTaskMotorUpdate(void)
     mixTable(&currentProfile->pidProfile);
 
 #ifdef USE_SERVOS
+    // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
+    servoTable();
     filterServos();
     writeServos();
 #endif
@@ -832,7 +804,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void)
 {
-    if (masterConfig.gyro_soft_lpf_hz) {
+    if (masterConfig.gyroConfig.gyro_soft_lpf_hz) {
         return masterConfig.pid_process_denom - 1;
     } else {
         return 1;
@@ -870,207 +842,3 @@ void taskMainPidLoopCheck(uint32_t currentTime)
         runTaskMainSubprocesses = true;
     }
 }
-
-void taskUpdateAccelerometer(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
-}
-
-void taskUpdateAttitude(uint32_t currentTime)
-{
-    imuUpdateAttitude(currentTime);
-}
-
-void taskHandleSerial(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-#ifdef USE_CLI
-    // in cli mode, all serial stuff goes to here. enter cli mode by sending #
-    if (cliMode) {
-        cliProcess();
-        return;
-    }
-#endif
-    mspSerialProcess();
-}
-
-void taskUpdateBeeper(uint32_t currentTime)
-{
-    beeperUpdate(currentTime);          //call periodic beeper handler
-}
-
-void taskUpdateBattery(uint32_t currentTime)
-{
-#ifdef USE_ADC
-    static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTime;
-            updateBattery();
-        }
-    }
-#endif
-
-    static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER)) {
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
-
-        if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-        }
-    }
-}
-
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
-{
-    UNUSED(currentDeltaTime);
-    return rxUpdate(currentTime);
-}
-
-void taskUpdateRxMain(uint32_t currentTime)
-{
-    processRx(currentTime);
-    isRXDataNew = true;
-
-#if !defined(BARO) && !defined(SONAR)
-    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-    updateRcCommands();
-#endif
-    updateLEDs();
-
-#ifdef BARO
-    if (sensors(SENSOR_BARO)) {
-        updateAltHoldState();
-    }
-#endif
-
-#ifdef SONAR
-    if (sensors(SENSOR_SONAR)) {
-        updateSonarAltHoldState();
-    }
-#endif
-}
-
-#ifdef GPS
-void taskProcessGPS(uint32_t currentTime)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsThread() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsThread();
-    }
-
-    if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
-    }
-}
-#endif
-
-#ifdef MAG
-void taskUpdateCompass(uint32_t currentTime)
-{
-    if (sensors(SENSOR_MAG)) {
-        updateCompass(currentTime, &masterConfig.magZero);
-    }
-}
-#endif
-
-#ifdef BARO
-void taskUpdateBaro(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_BARO)) {
-        const uint32_t newDeadline = baroUpdate();
-        if (newDeadline != 0) {
-            rescheduleTask(TASK_SELF, newDeadline);
-        }
-    }
-}
-#endif
-
-#ifdef SONAR
-void taskUpdateSonar(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_SONAR)) {
-        sonarUpdate();
-    }
-}
-#endif
-
-#if defined(BARO) || defined(SONAR)
-void taskCalculateAltitude(uint32_t currentTime)
-{
-    if (false
-#if defined(BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(SONAR)
-        || sensors(SENSOR_SONAR)
-#endif
-        ) {
-        calculateEstimatedAltitude(currentTime);
-    }}
-#endif
-
-#ifdef DISPLAY
-void taskUpdateDisplay(uint32_t currentTime)
-{
-    if (feature(FEATURE_DISPLAY)) {
-        updateDisplay(currentTime);
-    }
-}
-#endif
-
-#ifdef TELEMETRY
-void taskTelemetry(uint32_t currentTime)
-{
-    telemetryCheckState();
-
-    if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
-    }
-}
-#endif
-
-#ifdef LED_STRIP
-void taskLedStrip(uint32_t currentTime)
-{
-    if (feature(FEATURE_LED_STRIP)) {
-        updateLedStrip(currentTime);
-    }
-}
-#endif
-
-#ifdef TRANSPONDER
-void taskTransponder(uint32_t currentTime)
-{
-    if (feature(FEATURE_TRANSPONDER)) {
-        updateTransponder(currentTime);
-    }
-}
-#endif
-
-#ifdef OSD
-void taskUpdateOsd(uint32_t currentTime)
-{
-    if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
-    }
-}
-#endif
-
-#ifdef USE_INTPWM
-void taskIntpwm()
-{
-    //if (feature(FEATURE_INTPWM)) {
-        updateIntpwm();
-    //}
-}
-#endif

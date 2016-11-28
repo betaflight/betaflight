@@ -17,7 +17,11 @@
 
 #pragma once
 
+#ifdef RMDO 
+#define TARGET_BOARD_IDENTIFIER "RMDO"
+#else 
 #define TARGET_BOARD_IDENTIFIER "SRF3"
+#endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
 
@@ -40,9 +44,16 @@
 #define ACC_MPU6050_ALIGN       CW270_DEG
 
 #define BARO
+#define USE_BARO_BMP280
+
+#ifdef RMDO
+
+#undef USE_GPS
+
+#else
+
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
-#define USE_BARO_BMP280
 
 #define MAG
 #define USE_MAG_AK8975
@@ -52,6 +63,8 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 #define MAG_INT_EXTI            PC14
+
+#endif
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
@@ -66,6 +79,9 @@
 #define USE_SOFTSERIAL1
 #define USE_SOFTSERIAL2
 #define SERIAL_PORT_COUNT       5
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -99,15 +115,16 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define LED_STRIP
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
+#define REMAP_TIM17_DMA
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
+
+#define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
@@ -128,4 +145,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-

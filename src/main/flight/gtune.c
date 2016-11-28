@@ -38,11 +38,10 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 
-#include "config/config.h"
 #include "blackbox/blackbox.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
-
 #include "fc/runtime_config.h"
 
 

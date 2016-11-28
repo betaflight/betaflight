@@ -212,6 +212,7 @@ USBD_StatusTypeDef  USBD_Stop   (USBD_HandleTypeDef *pdev)
 */
 USBD_StatusTypeDef  USBD_RunTestMode (USBD_HandleTypeDef  *pdev) 
 {
+  (void)pdev;
   return USBD_OK;
 }
 
@@ -508,6 +509,8 @@ USBD_StatusTypeDef USBD_LL_SOF(USBD_HandleTypeDef  *pdev)
 */
 USBD_StatusTypeDef USBD_LL_IsoINIncomplete(USBD_HandleTypeDef  *pdev, uint8_t epnum)
 {
+  (void)pdev;
+  (void)epnum;
   return USBD_OK;
 }
 
@@ -519,6 +522,8 @@ USBD_StatusTypeDef USBD_LL_IsoINIncomplete(USBD_HandleTypeDef  *pdev, uint8_t ep
 */
 USBD_StatusTypeDef USBD_LL_IsoOUTIncomplete(USBD_HandleTypeDef  *pdev, uint8_t epnum)
 {
+  (void)pdev;
+  (void)epnum;
   return USBD_OK;
 }
 
@@ -530,6 +535,7 @@ USBD_StatusTypeDef USBD_LL_IsoOUTIncomplete(USBD_HandleTypeDef  *pdev, uint8_t e
 */
 USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef  *pdev)
 {
+  (void)pdev;
   return USBD_OK;
 }
 

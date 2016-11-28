@@ -203,7 +203,7 @@ bool intpwmInit(void)
     if (IOGetOwner(intpwmIO) != OWNER_FREE)
         return false;
 
-    IOInit(intpwmIO, OWNER_INTPWM, RESOURCE_INPUT, 0);
+    IOInit(intpwmIO, OWNER_INTPWM, 0);
     IOConfigGPIO(intpwmIO, IOCFG_IN_FLOATING);
 
     EXTIHandlerInit(&intpwm_extiCallbackRec, intpwmExtiHandler);
@@ -226,8 +226,10 @@ bool intpwmInit(void)
 // would not be a problem for RSSI measurements; 50Hz (17ms old) or
 // even 10Hz (97ms old) would suffice.
 
-void updateIntpwm(void)
+void updateIntpwm(uint32_t currentTime)
 {
+    UNUSED(currentTime);
+
     uint32_t value;
 
     if (!intpwmInitialized) {

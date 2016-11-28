@@ -27,9 +27,6 @@
 #define BEEPER      PA0
 #define BEEPER_INVERTED
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
-
-
 #define USE_EXTI
 #define USE_MPU_DATA_READY_SIGNAL
 #define MPU_INT_EXTI PA15
@@ -69,6 +66,9 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT 4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
 
@@ -104,18 +104,10 @@
 
 #define LED_STRIP // LED strip configuration using PWM motor output pin 5.
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL3
-#define WS2811_PIN                      PB8 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART2
+#define SERIALRX_UART           SERIAL_PORT_USART1
 
 #define NAV
 #define NAV_AUTO_MAG_DECLINATION
@@ -126,7 +118,6 @@
 #define TELEMETRY
 #define SERIAL_RX
 #define AUTOTUNE
-#define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
 
@@ -141,5 +132,5 @@
 #define TARGET_IO_PORTC (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USABLE_TIMER_CHANNEL_COUNT 7
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(17))

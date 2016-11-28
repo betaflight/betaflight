@@ -97,6 +97,9 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, UART1, UART2, UART3
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -119,15 +122,6 @@
 #define SENSORS_SET             (SENSOR_ACC)
 
 #define LED_STRIP
-#define WS2811_PIN                      PB7 // Shared UART1
-#define WS2811_TIMER                    TIM4
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST3_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream3
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF3
-#define WS2811_DMA_IT                   DMA_IT_TCIF3
-#define WS2811_DMA_CHANNEL              DMA_Channel_2
-#define WS2811_DMA_IRQ                  DMA1_Stream3_IRQn
 
 // alternative defaults for Colibri/Gemini target
 #define TARGET_CONFIG
@@ -144,5 +138,5 @@
 #define TARGET_IO_PORTC         0xffff
 #define TARGET_IO_PORTD         0xffff
 
-#define USABLE_TIMER_CHANNEL_COUNT 16
-#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(10) | TIM_N(11))
+#define USABLE_TIMER_CHANNEL_COUNT 17
+#define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(10) | TIM_N(11))

@@ -18,6 +18,7 @@
 #pragma once
 
 extern int16_t magHold;
+extern bool isRXDataNew;
 
 union rollAndPitchTrims_u;
 void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
@@ -25,3 +26,8 @@ void handleInflightCalibrationStickPosition();
 
 void mwDisarm(void);
 void mwArm(void);
+
+void processRx(uint32_t currentTime);
+void updateLEDs(void);
+void updateRcCommands(void);
+

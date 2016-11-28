@@ -28,12 +28,13 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "rx/rx.h"
-#include "rx/msp.h"
+#include "fc/config.h"
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "io/motors.h"
 #include "io/servos.h"
-#include "fc/rc_controls.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -41,7 +42,8 @@
 #include "io/flashfs.h"
 #include "io/beeper.h"
 
-#include "telemetry/telemetry.h"
+#include "rx/rx.h"
+#include "rx/msp.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -52,6 +54,8 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -59,10 +63,6 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
-#include "fc/mw.h"
-#include "fc/runtime_config.h"
-
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -556,7 +556,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             // DEPRECATED - Use MSP_API_VERSION
         case BST_IDENT:
             bstWrite8(MW_VERSION);
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
             bstWrite8(BST_PROTOCOL_VERSION);
             bstWrite32(CAP_DYNBALANCE); // "capability"
             break;
@@ -683,8 +683,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
-            bstWrite8(masterConfig.auto_disarm_delay);
-            bstWrite8(masterConfig.disarm_kill_switch);
+            bstWrite8(masterConfig.armingConfig.auto_disarm_delay);
+            bstWrite8(masterConfig.armingConfig.disarm_kill_switch);
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
@@ -713,7 +713,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWriteNames(pidnames);
             break;
         case BST_PID_CONTROLLER:
-            bstWrite8(currentProfile->pidProfile.pidController);
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -770,7 +769,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rxConfig.rssi_channel);
             bstWrite8(0);
 
-            bstWrite16(masterConfig.mag_declination / 10);
+            bstWrite16(masterConfig.compassConfig.mag_declination / 10);
 
             bstWrite8(masterConfig.batteryConfig.vbatscale);
             bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -869,7 +868,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_MIXER:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
             break;
 
         case BST_RX_CONFIG:
@@ -905,7 +904,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_BF_CONFIG:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
 
             bstWrite32(featureMask());
 
@@ -936,7 +935,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #ifdef LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &masterConfig.colors[i];
+                hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
                 bstWrite16(color->h);
                 bstWrite8(color->s);
                 bstWrite8(color->v);
@@ -945,7 +944,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_LED_STRIP_CONFIG:
             for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+                ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
                 bstWrite32(*ledConfig);
             }
             break;
@@ -978,7 +977,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
+            bstWrite16(constrain(masterConfig.gyroConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -1034,16 +1033,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
-            masterConfig.auto_disarm_delay = bstRead8();
-            masterConfig.disarm_kill_switch = bstRead8();
+            masterConfig.armingConfig.auto_disarm_delay = bstRead8();
+            masterConfig.armingConfig.disarm_kill_switch = bstRead8();
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
             cycleTime = bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
-            currentProfile->pidProfile.pidController = bstRead8();
-            pidSetController(currentProfile->pidProfile.pidController);
             break;
         case BST_SET_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1135,7 +1132,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rxConfig.rssi_channel = bstRead8();
             bstRead8();
 
-            masterConfig.mag_declination = bstRead16() * 10;
+            masterConfig.compassConfig.mag_declination = bstRead16() * 10;
 
             masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
             masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1144,7 +1141,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
@@ -1276,7 +1273,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
 #ifndef USE_QUAD_MIXER_ONLY
         case BST_SET_MIXER:
-            masterConfig.mixerMode = bstRead8();
+            masterConfig.mixerConfig.mixerMode = bstRead8();
             break;
 #endif
 
@@ -1322,7 +1319,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #ifdef USE_QUAD_MIXER_ONLY
            bstRead8(); // mixerMode ignored
 #else
-           masterConfig.mixerMode = bstRead8(); // mixerMode
+           masterConfig.mixerConfig.mixerMode = bstRead8(); // mixerMode
 #endif
 
            featureClearAll();
@@ -1370,7 +1367,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
                i = bstRead8();
-               hsvColor_t *color = &masterConfig.colors[i];
+               hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
                color->h = bstRead16();
                color->s = bstRead8();
                color->v = bstRead8();
@@ -1383,7 +1380,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                    break;
                }
-               ledConfig_t *ledConfig = &masterConfig.ledConfigs[i];
+               ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
                *ledConfig = bstRead32();
                reevaluateLedConfig();
            }
@@ -1407,7 +1404,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            masterConfig.gyro_lpf = bstRead16();
+            masterConfig.gyroConfig.gyro_lpf = bstRead16();
             break;
 
         default:
