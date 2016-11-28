@@ -497,18 +497,18 @@ static void resetConf(void)
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     masterConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
-    resetAccelerometerTrims(&masterConfig.accZero, &masterConfig.accGain);
+    resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
 
     resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
 
     masterConfig.boardAlignment.rollDeciDegrees = 0;
     masterConfig.boardAlignment.pitchDeciDegrees = 0;
     masterConfig.boardAlignment.yawDeciDegrees = 0;
-    masterConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    masterConfig.sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    masterConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
-    masterConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
+    masterConfig.sensorSelectionConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+    masterConfig.sensorSelectionConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
@@ -544,9 +544,9 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.disarm_kill_switch = 1;
-    masterConfig.auto_disarm_delay = 5;
-    masterConfig.small_angle = 25;
+    masterConfig.armingConfig.disarm_kill_switch = 1;
+    masterConfig.armingConfig.auto_disarm_delay = 5;
+    masterConfig.armingConfig.small_angle = 25;
 
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
@@ -652,12 +652,12 @@ static void resetConf(void)
 #ifdef BLACKBOX
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
     featureSet(FEATURE_BLACKBOX);
-    masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
+    masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
 #else
-    masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
-    masterConfig.blackbox_rate_num = 1;
-    masterConfig.blackbox_rate_denom = 1;
+    masterConfig.blackboxConfig.rate_num = 1;
+    masterConfig.blackboxConfig.rate_denom = 1;
 #endif
 
     // alternative defaults settings for COLIBRI RACE targets
@@ -791,8 +791,8 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
 
-    setAccelerationZero(&masterConfig.accZero);
-    setAccelerationGain(&masterConfig.accGain);
+    setAccelerationZero(&masterConfig.sensorTrims.accZero);
+    setAccelerationGain(&masterConfig.sensorTrims.accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
@@ -804,7 +804,7 @@ void activateConfig(void)
     imuRuntimeConfig.dcm_ki_acc = masterConfig.dcm_ki_acc / 10000.0f;
     imuRuntimeConfig.dcm_kp_mag = masterConfig.dcm_kp_mag / 10000.0f;
     imuRuntimeConfig.dcm_ki_mag = masterConfig.dcm_ki_mag / 10000.0f;
-    imuRuntimeConfig.small_angle = masterConfig.small_angle;
+    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
 
     imuConfigure(&imuRuntimeConfig, &currentProfile->pidProfile);
 

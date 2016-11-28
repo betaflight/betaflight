@@ -440,7 +440,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes()
 {
-    return masterConfig.blackbox_rate_num == 1 && masterConfig.blackbox_rate_denom == 32;
+    return masterConfig.blackboxConfig.rate_num == 1 && masterConfig.blackboxConfig.rate_denom == 32;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -505,7 +505,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return masterConfig.rxConfig.rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return masterConfig.blackbox_rate_num < masterConfig.blackbox_rate_denom;
+            return masterConfig.blackboxConfig.rate_num < masterConfig.blackboxConfig.rate_denom;
 
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
@@ -942,22 +942,22 @@ static void validateBlackboxConfig()
 {
     int div;
 
-    if (masterConfig.blackbox_rate_num == 0 || masterConfig.blackbox_rate_denom == 0
-            || masterConfig.blackbox_rate_num >= masterConfig.blackbox_rate_denom) {
-        masterConfig.blackbox_rate_num = 1;
-        masterConfig.blackbox_rate_denom = 1;
+    if (masterConfig.blackboxConfig.rate_num == 0 || masterConfig.blackboxConfig.rate_denom == 0
+            || masterConfig.blackboxConfig.rate_num >= masterConfig.blackboxConfig.rate_denom) {
+        masterConfig.blackboxConfig.rate_num = 1;
+        masterConfig.blackboxConfig.rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        div = gcd(masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
 
-        masterConfig.blackbox_rate_num /= div;
-        masterConfig.blackbox_rate_denom /= div;
+        masterConfig.blackboxConfig.rate_num /= div;
+        masterConfig.blackboxConfig.rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
-    switch (masterConfig.blackbox_device) {
+    switch (masterConfig.blackboxConfig.device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
 #endif
@@ -969,7 +969,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            masterConfig.blackbox_device = BLACKBOX_DEVICE_SERIAL;
+            masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -1309,7 +1309,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                      "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:INAV %s (%s) %s",     FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                   buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      masterConfig.blackbox_rate_num, masterConfig.blackbox_rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        masterConfig.motorConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        masterConfig.motorConfig.maxthrottle);
@@ -1382,9 +1382,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.sensorSelectionConfig.acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.sensorSelectionConfig.baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.sensorSelectionConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
 
         default:
@@ -1455,10 +1455,10 @@ static void blackboxCheckAndLogArmingBeep()
  */
 static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 {
-    /* Adding a magic shift of "masterConfig.blackbox_rate_num - 1" in here creates a better spread of
+    /* Adding a magic shift of "masterConfig.blackboxConfig.rate_num - 1" in here creates a better spread of
      * recorded / skipped frames when the I frame's position is considered:
      */
-    return (pFrameIndex + masterConfig.blackbox_rate_num - 1) % masterConfig.blackbox_rate_denom < masterConfig.blackbox_rate_num;
+    return (pFrameIndex + masterConfig.blackboxConfig.rate_num - 1) % masterConfig.blackboxConfig.rate_denom < masterConfig.blackboxConfig.rate_num;
 }
 
 static bool blackboxShouldLogIFrame() {

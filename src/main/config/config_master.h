@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -31,6 +33,13 @@
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
+
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/imu.h"
+#include "flight/navigation_rewrite.h"
+#include "flight/pid.h"
 
 #include "io/gimbal.h"
 #include "io/gps.h"
@@ -51,13 +60,6 @@
 #include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
 
 #include "config/config.h"
 #include "config/config_profile.h"
@@ -93,11 +95,10 @@ typedef struct master_s {
     flight3DConfig_t flight3DConfig;
 
     // global sensor-related stuff
-
+    sensorSelectionConfig_t sensorSelectionConfig;
     sensorAlignmentConfig_t sensorAlignmentConfig;
+    sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
-
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
 
     uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer
     uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
@@ -112,14 +113,6 @@ typedef struct master_s {
 
     pitotmeterConfig_t pitotmeterConfig;
 
-    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
-    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
-
-    flightDynamicsTrims_t accZero;          // Accelerometer offset
-    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
-    flightDynamicsTrims_t magZero;          // Compass offset
-
     batteryConfig_t batteryConfig;
 
     rxConfig_t rxConfig;
@@ -127,10 +120,7 @@ typedef struct master_s {
 
     failsafeConfig_t failsafeConfig;
 
-    uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
-    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
-    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
-    uint8_t small_angle;
+    armingConfig_t armingConfig;
 
     // mixer-related configuration
     mixerConfig_t mixerConfig;
@@ -168,9 +158,7 @@ typedef struct master_s {
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
 #ifdef BLACKBOX
-    uint8_t blackbox_rate_num;
-    uint8_t blackbox_rate_denom;
-    uint8_t blackbox_device;
+    blackboxConfig_t blackboxConfig;
 #endif
 
     uint32_t beeper_off_flags;
@@ -180,6 +168,10 @@ typedef struct master_s {
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
+    /*
+        do not add properties after the MAGIC_EF and CHK
+        as it is assumed to exist at length-2 and length-1
+    */
 } master_t;
 
 extern master_t masterConfig;

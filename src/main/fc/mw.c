@@ -236,7 +236,7 @@ void mwArm(void)
                 startBlackbox();
             }
 #endif
-            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
 #ifdef NAV
@@ -291,7 +291,7 @@ void processRx(uint32_t currentTime)
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
-                if (masterConfig.auto_disarm_delay != 0
+                if (masterConfig.armingConfig.auto_disarm_delay != 0
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
@@ -304,9 +304,9 @@ void processRx(uint32_t currentTime)
                 }
             } else {
                 // throttle is not low
-                if (masterConfig.auto_disarm_delay != 0) {
+                if (masterConfig.armingConfig.auto_disarm_delay != 0) {
                     // extend disarm time
-                    disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;
+                    disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;
                 }
 
                 if (armedBeeperOn) {
@@ -326,7 +326,7 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch, masterConfig.fixed_wing_auto_arm);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.armingConfig.disarm_kill_switch, masterConfig.armingConfig.fixed_wing_auto_arm);
 
     updateActivatedModes(currentProfile->modeActivationConditions, currentProfile->modeActivationOperator);
 

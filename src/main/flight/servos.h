@@ -115,8 +115,6 @@ typedef struct servoParam_s {
     uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
 } __attribute__ ((__packed__)) servoParam_t;
 
-struct gimbalConfig_s;
-
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isServoOutputEnabled(void);
@@ -126,5 +124,6 @@ void filterServos(void);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
+struct gimbalConfig_s;
+void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
 void servosInit(servoMixer_t *customServoMixers);

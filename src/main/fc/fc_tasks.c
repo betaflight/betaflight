@@ -150,7 +150,7 @@ void taskProcessGPS(uint32_t currentTime)
 void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        updateCompass(currentTime, &masterConfig.magZero);
+        updateCompass(currentTime, &masterConfig.sensorTrims.magZero);
     }
 }
 #endif

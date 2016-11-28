@@ -655,10 +655,10 @@ const clivalue_t valueTable[] = {
     { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 50,  32000 }, 0 },
     { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
 
-    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
-    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.small_angle, .config.minmax = { 0,  180 }, 0 },
+    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
+    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.small_angle, .config.minmax = { 0,  180 }, 0 },
 
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, .config.minmax = { 48,  126 }, 0 },
 
@@ -853,22 +853,22 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
 #ifdef BARO
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.barometerConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
 #endif
 
 #ifdef PITOT
-    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.pitot_hardware, .config.minmax = { 0,  PITOT_MAX }, 0 },
+    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.pitot_hardware, .config.minmax = { 0,  PITOT_MAX }, 0 },
     { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.pitotmeterConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
     { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_scale, .config.minmax = { 0, 100 }, 0 },
 #endif
 
 #ifdef MAG
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, .config.minmax = { -18000,  18000 }, 0 },
     { "mag_hold_rate_limit",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.mag_hold_rate_limit, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, 0 },
 #endif
@@ -904,26 +904,23 @@ const clivalue_t valueTable[] = {
     { "rate_accel_limit_yaw",       VAR_UINT32 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.axisAccelerationLimitYaw, .config.minmax = {0, 500000 } },
 
 #ifdef BLACKBOX
-    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 }, 0 },
-    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_denom, .config.minmax = { 1,  32 }, 0 },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackbox_device, .config.lookup = { TABLE_BLACKBOX_DEVICE }, 0 },
+    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackboxConfig.rate_num, .config.minmax = { 1,  32 }, 0 },
+    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackboxConfig.rate_denom, .config.minmax = { 1,  32 }, 0 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackboxConfig.device, .config.lookup = { TABLE_BLACKBOX_DEVICE }, 0 },
 #endif
 
 #ifdef MAG
-    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[X], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
-    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Y], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
-    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.magZero.raw[Z], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
+    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[X], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
+    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[Y], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
+    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[Z], .config.minmax = { -32768,  32767 }, FLAG_MAG_CALIBRATION_DONE },
 #endif
 
-    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accZero.raw[X], .config.minmax = { -32768,  32767 }, 0 },
-    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accZero.raw[Y], .config.minmax = { -32768,  32767 }, 0 },
-    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accZero.raw[Z], .config.minmax = { -32768,  32767 }, 0 },
+    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[X], .config.minmax = { -32768,  32767 }, 0 },
+    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[Y], .config.minmax = { -32768,  32767 }, 0 },
+    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[Z], .config.minmax = { -32768,  32767 }, 0 },
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
-    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accGain.raw[X], .config.minmax = { 1,  8192 }, 0 },
-    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accGain.raw[Y], .config.minmax = { 1,  8192 }, 0 },
-    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.accGain.raw[Z], .config.minmax = { 1,  8192 }, 0 },
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
     { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
@@ -950,6 +947,10 @@ const clivalue_t valueTable[] = {
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
+    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[X], .config.minmax = { 1,  8192 }, 0 },
+    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[Y], .config.minmax = { 1,  8192 }, 0 },
+    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[Z], .config.minmax = { 1,  8192 }, 0 },
+
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -2914,8 +2915,9 @@ static void cliStatus(char *cmdline)
 #endif
 
 #ifdef STACK_CHECK
-    cliPrintf("Used stack: %d, Total stack: %d\r\n", getUsedStackSize(), getTotalStackSize());
+    cliPrintf("Stack used: %d, ", getUsedStackSize());
 #endif
+    cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", getTotalStackSize(), stackHighMem());
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 }

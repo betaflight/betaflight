@@ -627,8 +627,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ARMING_CONFIG:
-        sbufWriteU8(dst, masterConfig.auto_disarm_delay);
-        sbufWriteU8(dst, masterConfig.disarm_kill_switch);
+        sbufWriteU8(dst, masterConfig.armingConfig.auto_disarm_delay);
+        sbufWriteU8(dst, masterConfig.armingConfig.disarm_kill_switch);
         break;
 
     case MSP_LOOP_TIME:
@@ -942,9 +942,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
             sbufWriteU8(dst, 1); //Blackbox supported
-            sbufWriteU8(dst, masterConfig.blackbox_device);
-            sbufWriteU8(dst, masterConfig.blackbox_rate_num);
-            sbufWriteU8(dst, masterConfig.blackbox_rate_denom);
+            sbufWriteU8(dst, masterConfig.blackboxConfig.device);
+            sbufWriteU8(dst, masterConfig.blackboxConfig.rate_num);
+            sbufWriteU8(dst, masterConfig.blackboxConfig.rate_denom);
 #else
             sbufWriteU8(dst, 0); // Blackbox not supported
             sbufWriteU8(dst, 0);
@@ -1181,8 +1181,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ARMING_CONFIG:
-        masterConfig.auto_disarm_delay = sbufReadU8(src);
-        masterConfig.disarm_kill_switch = sbufReadU8(src);
+        masterConfig.armingConfig.auto_disarm_delay = sbufReadU8(src);
+        masterConfig.armingConfig.disarm_kill_switch = sbufReadU8(src);
         break;
 
     case MSP_SET_LOOP_TIME:
@@ -1476,9 +1476,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // Don't allow config to be updated while Blackbox is logging
             if (!blackboxMayEditConfig())
                 return false;
-            masterConfig.blackbox_device = sbufReadU8(src);
-            masterConfig.blackbox_rate_num = sbufReadU8(src);
-            masterConfig.blackbox_rate_denom = sbufReadU8(src);
+            masterConfig.blackboxConfig.device = sbufReadU8(src);
+            masterConfig.blackboxConfig.rate_num = sbufReadU8(src);
+            masterConfig.blackboxConfig.rate_denom = sbufReadU8(src);
             break;
 #endif
 
