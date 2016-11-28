@@ -658,7 +658,7 @@ const clivalue_t valueTable[] = {
     { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
-    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.small_angle, .config.minmax = { 0,  180 }, 0 },
+    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.imuConfig.small_angle, .config.minmax = { 0,  180 }, 0 },
 
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, .config.minmax = { 48,  126 }, 0 },
 
@@ -798,10 +798,10 @@ const clivalue_t valueTable[] = {
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 }, 0 },
 
-    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp_acc, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki_acc, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_kp_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp_mag, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_ki_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki_mag, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_kp_acc, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_ki_acc, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_kp_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_kp_mag, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_ki_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_ki_mag, .config.minmax = { 0,  65535 }, 0 },
 
     { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.deadband, .config.minmax = { 0,  32 }, 0 },
     { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 }, 0 },

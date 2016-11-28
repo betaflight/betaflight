@@ -98,10 +98,7 @@ typedef struct master_s {
     sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 
-    uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer
-    uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
-    uint16_t dcm_kp_mag;                    // DCM filter proportional gain ( x 10000) for magnetometer and GPS heading
-    uint16_t dcm_ki_mag;                    // DCM filter integral gain ( x 10000) for magnetometer and GPS heading
+    imuConfig_t imuConfig;
 
     gyroConfig_t gyroConfig;
 
@@ -111,9 +108,6 @@ typedef struct master_s {
 
     batteryConfig_t batteryConfig;
 
-    rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
-
 #ifdef GPS
     gpsConfig_t gpsConfig;
 #endif
@@ -121,6 +115,9 @@ typedef struct master_s {
 #ifdef NAV
     navConfig_t navConfig;
 #endif
+
+    rxConfig_t rxConfig;
+    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
     armingConfig_t armingConfig;
 
