@@ -25,41 +25,36 @@
 
 #include "build/build_config.h"
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/maths.h"
 
+#include "config/config.h"
+#include "config/feature.h"
+
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
+
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+#include "flight/navigation_rewrite.h"
+#include "flight/failsafe.h"
+
+#include "io/gps.h"
+#include "io/beeper.h"
+#include "io/motors.h"
+
+#include "rx/rx.h"
 
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
-
-#include "rx/rx.h"
-
-#include "io/gps.h"
-#include "io/beeper.h"
-#include "io/motors.h"
-
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
-#include "fc/runtime_config.h"
-
-#include "io/display.h"
-
-#include "flight/pid.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/failsafe.h"
-
-#include "config/config.h"
-#include "config/feature.h"
-
-#include "blackbox/blackbox.h"
-
-#include "mw.h"
 
 #define AIRMODE_DEADBAND 25
 
@@ -149,6 +144,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
+    static uint8_t rcDisarmTicks;       // this is an extra guard for disarming through switch to prevent that one frame can disarm it
     uint8_t stTmp = 0;
     int i;
 
@@ -171,6 +167,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     // perform actions
     if (!isUsingSticksToArm) {
         if (IS_RC_MODE_ACTIVE(BOXARM)) {
+            rcDisarmTicks = 0;
             // Arming via ARM BOX
             if (throttleStatus == THROTTLE_LOW) {
                 if (ARMING_FLAG(OK_TO_ARM)) {
@@ -179,13 +176,20 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
             }
         } else {
             // Disarming via ARM BOX
-
-            if (ARMING_FLAG(ARMED) && rxIsReceivingSignal() && !failsafeIsActive()  ) {
-                if (disarm_kill_switch) {
-                    mwDisarm();
-                } else if (throttleStatus == THROTTLE_LOW) {
-                    mwDisarm();
+            // Don't disarm via switch if failsafe is active or receiver doesn't receive data - we can't trust receiver
+            // and can't afford to risk disarming in the air
+            if (ARMING_FLAG(ARMED) && !(IS_RC_MODE_ACTIVE(BOXFAILSAFE) && feature(FEATURE_FAILSAFE)) && rxIsReceivingSignal() && !failsafeIsActive()) {
+                rcDisarmTicks++;
+                if (rcDisarmTicks > 3) {    // Wait for at least 3 RX ticks (60ms @ 50Hz RX)
+                    if (disarm_kill_switch) {
+                        mwDisarm();
+                    } else if (throttleStatus == THROTTLE_LOW) {
+                        mwDisarm();
+                    }
                 }
+            }
+            else {
+                rcDisarmTicks = 0;
             }
         }
     }
@@ -527,6 +531,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             controlRateConfig->rates[FD_PITCH] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_RATE, newValue);
             if (adjustmentFunction == ADJUSTMENT_PITCH_RATE) {
+                signalRequiredPIDCoefficientsUpdate();
                 break;
             }
             // follow though for combined ADJUSTMENT_PITCH_ROLL_RATE
@@ -534,11 +539,13 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             newValue = constrain((int)controlRateConfig->rates[FD_ROLL] + delta, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
             controlRateConfig->rates[FD_ROLL] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_RATE, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_YAW_RATE:
             newValue = constrain((int)controlRateConfig->rates[FD_YAW] + delta, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
             controlRateConfig->rates[FD_YAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_RATE, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_PITCH_ROLL_P:
         case ADJUSTMENT_PITCH_P:
@@ -546,6 +553,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             pidProfile->P8[PIDPITCH] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_P, newValue);
             if (adjustmentFunction == ADJUSTMENT_PITCH_P) {
+                signalRequiredPIDCoefficientsUpdate();
                 break;
             }
             // follow though for combined ADJUSTMENT_PITCH_ROLL_P
@@ -553,6 +561,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             newValue = constrain((int)pidProfile->P8[PIDROLL] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->P8[PIDROLL] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_P, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_PITCH_ROLL_I:
         case ADJUSTMENT_PITCH_I:
@@ -560,6 +569,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             pidProfile->I8[PIDPITCH] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_I, newValue);
             if (adjustmentFunction == ADJUSTMENT_PITCH_I) {
+                signalRequiredPIDCoefficientsUpdate();
                 break;
             }
             // follow though for combined ADJUSTMENT_PITCH_ROLL_I
@@ -567,6 +577,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             newValue = constrain((int)pidProfile->I8[PIDROLL] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->I8[PIDROLL] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_I, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_PITCH_ROLL_D:
         case ADJUSTMENT_PITCH_D:
@@ -574,6 +585,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             pidProfile->D8[PIDPITCH] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_PITCH_D, newValue);
             if (adjustmentFunction == ADJUSTMENT_PITCH_D) {
+                signalRequiredPIDCoefficientsUpdate();
                 break;
             }
             // follow though for combined ADJUSTMENT_PITCH_ROLL_D
@@ -581,21 +593,25 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
             newValue = constrain((int)pidProfile->D8[PIDROLL] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDROLL] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_D, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_YAW_P:
             newValue = constrain((int)pidProfile->P8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->P8[PIDYAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_P, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_YAW_I:
             newValue = constrain((int)pidProfile->I8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->I8[PIDYAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_I, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         case ADJUSTMENT_YAW_D:
             newValue = constrain((int)pidProfile->D8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDYAW] = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_YAW_D, newValue);
+            signalRequiredPIDCoefficientsUpdate();
             break;
         default:
             break;

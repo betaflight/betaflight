@@ -29,6 +29,7 @@
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
 
+#include "rx/rx.h"
 #include "rx/rx_spi.h"
 #include "rx/nrf24_inav.h"
 

@@ -72,7 +72,7 @@
 #define USE_RX_H8_3D
 #define USE_RX_INAV
 #define USE_RX_SYMA
-#define USE_RX_V202
+//#define USE_RX_V202
 //#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X5
 //#define RX_SPI_DEFAULT_PROTOCOL NRF24RX_SYMA_X5C
 #define RX_SPI_DEFAULT_PROTOCOL NRF24RX_INAV
@@ -104,13 +104,6 @@
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
 #undef USE_SERVOS
-
-#if (FLASH_SIZE <= 64)
-#undef BLACKBOX
-#endif
-
-#define STACK_CHECK
-#define DEBUG_STACK
 
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    4

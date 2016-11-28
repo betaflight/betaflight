@@ -60,7 +60,7 @@
 #define MSP_PROTOCOL_VERSION                0
 
 #define API_VERSION_MAJOR                   1 // increment when major changes are made
-#define API_VERSION_MINOR                   21 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
+#define API_VERSION_MINOR                   22 // increment when any change is made, reset to zero when major changes are released after changing API_VERSION_MAJOR
 
 #define API_VERSION_LENGTH                  2
 
@@ -98,6 +98,9 @@
 #define MSP_FC_VERSION                  3    //out message
 #define MSP_BOARD_INFO                  4    //out message
 #define MSP_BUILD_INFO                  5    //out message
+
+#define MSP_INAV_PID                    6
+#define MSP_SET_INAV_PID                7
 
 #define MSP_NAME                        10   //out message          Returns user set board name - betaflight
 #define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
@@ -205,8 +208,8 @@
 #define MSP_FILTER_CONFIG               92
 #define MSP_SET_FILTER_CONFIG           93
 
-#define MSP_ADVANCED_TUNING             94
-#define MSP_SET_ADVANCED_TUNING         95
+#define MSP_PID_ADVANCED                94
+#define MSP_SET_PID_ADVANCED         95
 
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97

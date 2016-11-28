@@ -154,6 +154,7 @@ void bmp085Disable(const bmp085Config_t *config)
     BMP085_OFF;
 }
 
+#define DETECTION_MAX_RETRY_COUNT   5
 bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 {
     uint8_t data;
@@ -184,28 +185,30 @@ bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
 
     delay(20); // datasheet says 10ms, we'll be careful and do 20.
 
-    ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
-    if (ack) {
-        bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
-        bmp085.oversampling_setting = 3;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        ack = i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_CHIP_ID__REG, 1, &data); /* read Chip Id */
+        if (ack) {
+            bmp085.chip_id = BMP085_GET_BITSLICE(data, BMP085_CHIP_ID);
+            bmp085.oversampling_setting = 3;
 
-        if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
-            i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
-            bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
-            bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
-            bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
-            baro->ut_delay = UT_DELAY;
-            baro->up_delay = UP_DELAY;
-            baro->start_ut = bmp085_start_ut;
-            baro->get_ut = bmp085_get_ut;
-            baro->start_up = bmp085_start_up;
-            baro->get_up = bmp085_get_up;
-            baro->calculate = bmp085_calculate;
+            if (bmp085.chip_id == BMP085_CHIP_ID) { /* get bitslice */
+                i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_VERSION_REG, 1, &data); /* read Version reg */
+                bmp085.ml_version = BMP085_GET_BITSLICE(data, BMP085_ML_VERSION); /* get ML Version */
+                bmp085.al_version = BMP085_GET_BITSLICE(data, BMP085_AL_VERSION); /* get AL Version */
+                bmp085_get_cal_param(); /* readout bmp085 calibparam structure */
+                baro->ut_delay = UT_DELAY;
+                baro->up_delay = UP_DELAY;
+                baro->start_ut = bmp085_start_ut;
+                baro->get_ut = bmp085_get_ut;
+                baro->start_up = bmp085_start_up;
+                baro->get_up = bmp085_get_up;
+                baro->calculate = bmp085_calculate;
 #if defined(BARO_EOC_GPIO)
-            isEOCConnected = bmp085TestEOCConnected(config);
+                isEOCConnected = bmp085TestEOCConnected(config);
 #endif
-            bmp085InitDone = true;
-            return true;
+                bmp085InitDone = true;
+                return true;
+            }
         }
     }
 
@@ -342,7 +345,7 @@ STATIC_UNIT_TESTED void bmp085_calculate(int32_t *pressure, int32_t *temperature
 
 static void bmp085_get_cal_param(void)
 {
-    uint8_t data[22];
+    uint8_t data[BMP085_PROM_DATA__LEN];
     i2cRead(BARO_I2C_INSTANCE, BMP085_I2C_ADDR, BMP085_PROM_START__ADDR, BMP085_PROM_DATA__LEN, data);
 
     /*parameters AC1-AC6*/

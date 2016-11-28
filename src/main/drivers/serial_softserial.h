@@ -25,6 +25,7 @@ typedef enum {
 } softSerialPortIndex_e;
 
 serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portOptions_t options);
+serialPort_t *softSerialLoopbackPort(void);
 
 // serialPort API
 void softSerialWriteByte(serialPort_t *instance, uint8_t ch);

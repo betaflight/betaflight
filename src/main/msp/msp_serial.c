@@ -31,7 +31,6 @@
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
 
-static mspProcessCommandFnPtr mspProcessCommandFn;
 static mspPort_t mspPorts[MAX_MSP_PORT_COUNT];
 
 
@@ -74,7 +73,7 @@ void mspSerialReleasePortIfAllocated(serialPort_t *serialPort)
     }
 }
 
-static bool mspSerialProcessReceivedData(mspPort_t * mspPort, uint8_t c)
+static bool mspSerialProcessReceivedData(mspPort_t *mspPort, uint8_t c)
 {
     if (mspPort->c_state == MSP_IDLE) {
         if (c == '$') {
@@ -121,22 +120,32 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, const uint8_t *data, int l
     return checksum;
 }
 
-static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
+#define JUMBO_FRAME_SIZE_LIMIT 255
+
+static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
 {
     serialBeginWrite(msp->port);
     const int len = sbufBytesRemaining(&packet->buf);
-    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', len, packet->cmd};
+    const int mspLen = len < JUMBO_FRAME_SIZE_LIMIT ? len : JUMBO_FRAME_SIZE_LIMIT;
+    const uint8_t hdr[5] = {'$', 'M', packet->result == MSP_RESULT_ERROR ? '!' : '>', mspLen, packet->cmd};
     serialWriteBuf(msp->port, hdr, sizeof(hdr));
     uint8_t checksum = mspSerialChecksumBuf(0, hdr + 3, 2); // checksum starts from len field
+    if (len >= JUMBO_FRAME_SIZE_LIMIT) {
+        serialWrite(msp->port, len & 0xff);
+        checksum ^= len & 0xff;
+        serialWrite(msp->port, (len >> 8) & 0xff);
+        checksum ^= (len >> 8) & 0xff;
+    }
     if (len > 0) {
         serialWriteBuf(msp->port, sbufPtr(&packet->buf), len);
         checksum = mspSerialChecksumBuf(checksum, sbufPtr(&packet->buf), len);
     }
     serialWrite(msp->port, checksum);
     serialEndWrite(msp->port);
+    return sizeof(hdr) + len + 1; // header, data, and checksum
 }
 
-static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
+static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
 {
     static uint8_t outBuf[MSP_PORT_OUTBUF_SIZE];
 
@@ -165,7 +174,12 @@ static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp)
     return mspPostProcessFn;
 }
 
-void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
+/*
+ * Process MSP commands from serial ports configured as MSP ports.
+ *
+ * Called periodically by the scheduler.
+ */
+void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData, mspProcessCommandFnPtr mspProcessCommandFn)
 {
     for (uint8_t portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
         mspPort_t * const mspPort = &mspPorts[portIndex];
@@ -183,7 +197,7 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
             }
 
             if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
-                mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort);
+                mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
                 break; // process one command at a time so as not to block.
             }
         }
@@ -194,10 +208,63 @@ void mspSerialProcess(mspEvaluateNonMspData_e evaluateNonMspData)
     }
 }
 
-void mspSerialInit(mspProcessCommandFnPtr mspProcessCommandFnToUse)
+void mspSerialInit(void)
 {
-    mspProcessCommandFn = mspProcessCommandFnToUse;
     memset(mspPorts, 0, sizeof(mspPorts));
     mspSerialAllocatePorts();
 }
 
+int mspSerialPush(uint8_t cmd, const uint8_t *data, int datalen)
+{
+    static uint8_t pushBuf[30];
+    int ret = 0;
+
+    mspPacket_t push = {
+        .buf = { .ptr = pushBuf, .end = ARRAYEND(pushBuf), },
+        .cmd = cmd,
+        .result = 0,
+    };
+
+    for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        sbufWriteData(&push.buf, data, datalen);
+
+        sbufSwitchToReader(&push.buf, pushBuf);
+
+        ret = mspSerialEncode(mspPort, &push);
+    }
+    return ret; // return the number of bytes written
+}
+
+uint32_t mspSerialTxBytesFree()
+{
+    uint32_t ret = UINT32_MAX;
+
+    for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        const uint32_t bytesFree = serialTxBytesFree(mspPort->port);
+        if (bytesFree < ret) {
+            ret = bytesFree;
+        }
+    }
+
+    return ret;
+}

@@ -20,17 +20,17 @@
 #include <stdlib.h>
 
 #include "platform.h"
-#include "build/debug.h"
 
+#ifdef USE_SERIALRX_SPEKTRUM
+
+#include "build/debug.h"
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/light_led.h"
+#include "drivers/serial.h"
 #include "drivers/system.h"
 
-#include "drivers/light_led.h"
-
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
 #include "io/serial.h"
 
 #include "config/config.h"
@@ -60,9 +60,6 @@ static bool spekHiRes = false;
 
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
-static void spektrumDataReceive(uint16_t c);
-static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 
 #ifdef SPEKTRUM_BIND
@@ -72,51 +69,6 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
-bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    rxRuntimeConfigPtr = rxRuntimeConfig;
-
-    switch (rxConfig->serialrx_provider) {
-        case SERIALRX_SPEKTRUM2048:
-            // 11 bit frames
-            spek_chan_shift = 3;
-            spek_chan_mask = 0x07;
-            spekHiRes = true;
-            rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
-            break;
-        case SERIALRX_SPEKTRUM1024:
-            // 10 bit frames
-            spek_chan_shift = 2;
-            spek_chan_mask = 0x03;
-            spekHiRes = false;
-            rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
-            break;
-    }
-
-    if (callback)
-        *callback = spektrumReadRawRC;
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-#else
-    bool portShared = false;
-#endif
-
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
-
-#ifdef TELEMETRY
-    if (portShared) {
-        telemetrySharedPort = spektrumPort;
-    }
-#endif
-
-    return spektrumPort != NULL;
-}
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
@@ -150,7 +102,7 @@ uint8_t spektrumFrameStatus(void)
     uint8_t b;
 
     if (!rcFrameComplete) {
-        return SERIAL_RX_FRAME_PENDING;
+        return RX_FRAME_PENDING;
     }
 
     rcFrameComplete = false;
@@ -162,7 +114,7 @@ uint8_t spektrumFrameStatus(void)
         }
     }
 
-    return SERIAL_RX_FRAME_COMPLETE;
+    return RX_FRAME_COMPLETE;
 }
 
 static uint16_t spektrumReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan)
@@ -256,4 +208,53 @@ void spektrumBind(rxConfig_t *rxConfig)
 #endif
 
 }
+#endif // SPEKTRUM_BIND
+
+bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    rxRuntimeConfigPtr = rxRuntimeConfig;
+
+    switch (rxConfig->serialrx_provider) {
+    case SERIALRX_SPEKTRUM2048:
+        // 11 bit frames
+        spek_chan_shift = 3;
+        spek_chan_mask = 0x07;
+        spekHiRes = true;
+        rxRuntimeConfig->channelCount = SPEKTRUM_2048_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 11000;
+        break;
+    case SERIALRX_SPEKTRUM1024:
+        // 10 bit frames
+        spek_chan_shift = 2;
+        spek_chan_mask = 0x03;
+        spekHiRes = false;
+        rxRuntimeConfig->channelCount = SPEKTRUM_1024_CHANNEL_COUNT;
+        rxRuntimeConfig->rxRefreshRate = 22000;
+        break;
+    }
+
+    rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
 #endif
+
+    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+
+#ifdef TELEMETRY
+    if (portShared) {
+        telemetrySharedPort = spektrumPort;
+    }
+#endif
+
+    return spektrumPort != NULL;
+}
+#endif // USE_SERIALRX_SPEKTRUM

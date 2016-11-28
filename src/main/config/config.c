@@ -30,15 +30,9 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/pwm_output.h"
-#include "drivers/rx_nrf24l01.h"
 #include "drivers/serial.h"
 
 #include "sensors/sensors.h"
@@ -48,6 +42,7 @@
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -165,79 +160,94 @@ void resetPidProfile(pidProfile_t *pidProfile)
 void resetNavConfig(navConfig_t * navConfig)
 {
     // Navigation flags
-    navConfig->flags.use_thr_mid_for_althold = 0;
-    navConfig->flags.extra_arming_safety = 1;
-    navConfig->flags.user_control_mode = NAV_GPS_ATTI;
-    navConfig->flags.rth_alt_control_style = NAV_RTH_AT_LEAST_ALT;
-    navConfig->flags.rth_tail_first = 0;
-    navConfig->flags.disarm_on_landing = 0;
+    navConfig->general.flags.use_thr_mid_for_althold = 0;
+    navConfig->general.flags.extra_arming_safety = 1;
+    navConfig->general.flags.user_control_mode = NAV_GPS_ATTI;
+    navConfig->general.flags.rth_alt_control_style = NAV_RTH_AT_LEAST_ALT;
+    navConfig->general.flags.rth_tail_first = 0;
+    navConfig->general.flags.disarm_on_landing = 0;
 
     // Inertial position estimator parameters
 #if defined(NAV_AUTO_MAG_DECLINATION)
-    navConfig->inav.automatic_mag_declination = 1;
+    navConfig->estimation.automatic_mag_declination = 1;
 #endif
-    navConfig->inav.gps_min_sats = 6;
-    navConfig->inav.gps_delay_ms = 200;
-    navConfig->inav.accz_unarmed_cal = 1;
-    navConfig->inav.use_gps_velned = 1;         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
+    navConfig->estimation.gps_min_sats = 6;
+    navConfig->estimation.gps_delay_ms = 200;
+    navConfig->estimation.accz_unarmed_cal = 1;
+    navConfig->estimation.use_gps_velned = 1;         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
 
-    navConfig->inav.w_z_baro_p = 0.35f;
+    navConfig->estimation.w_z_baro_p = 0.35f;
 
-    navConfig->inav.w_z_gps_p = 0.2f;
-    navConfig->inav.w_z_gps_v = 0.5f;
+    navConfig->estimation.w_z_gps_p = 0.2f;
+    navConfig->estimation.w_z_gps_v = 0.5f;
 
-    navConfig->inav.w_xy_gps_p = 1.0f;
-    navConfig->inav.w_xy_gps_v = 2.0f;
+    navConfig->estimation.w_xy_gps_p = 1.0f;
+    navConfig->estimation.w_xy_gps_v = 2.0f;
 
-    navConfig->inav.w_z_res_v = 0.5f;
-    navConfig->inav.w_xy_res_v = 0.5f;
+    navConfig->estimation.w_z_res_v = 0.5f;
+    navConfig->estimation.w_xy_res_v = 0.5f;
 
-    navConfig->inav.w_acc_bias = 0.01f;
+    navConfig->estimation.w_acc_bias = 0.01f;
 
-    navConfig->inav.max_eph_epv = 1000.0f;
-    navConfig->inav.baro_epv = 100.0f;
+    navConfig->estimation.max_eph_epv = 1000.0f;
+    navConfig->estimation.baro_epv = 100.0f;
 
     // General navigation parameters
-    navConfig->pos_failure_timeout = 5;     // 5 sec
-    navConfig->waypoint_radius = 100;       // 2m diameter
-    navConfig->max_speed = 300;             // 3 m/s = 10.8 km/h
-    navConfig->max_climb_rate = 500;        // 5 m/s
-    navConfig->max_manual_speed = 500;
-    navConfig->max_manual_climb_rate = 200;
-    navConfig->land_descent_rate = 200;     // 2 m/s
-    navConfig->land_slowdown_minalt = 500;  // 5 meters of altitude
-    navConfig->land_slowdown_maxalt = 2000; // 20 meters of altitude
-    navConfig->emerg_descent_rate = 500;    // 5 m/s
-    navConfig->min_rth_distance = 500;      // If closer than 5m - land immediately
-    navConfig->rth_altitude = 1000;         // 10m
+    navConfig->general.pos_failure_timeout = 5;     // 5 sec
+    navConfig->general.waypoint_radius = 100;       // 2m diameter
+    navConfig->general.max_speed = 300;             // 3 m/s = 10.8 km/h
+    navConfig->general.max_climb_rate = 500;        // 5 m/s
+    navConfig->general.max_manual_speed = 500;
+    navConfig->general.max_manual_climb_rate = 200;
+    navConfig->general.land_descent_rate = 200;     // 2 m/s
+    navConfig->general.land_slowdown_minalt = 500;  // 5 meters of altitude
+    navConfig->general.land_slowdown_maxalt = 2000; // 20 meters of altitude
+    navConfig->general.emerg_descent_rate = 500;    // 5 m/s
+    navConfig->general.min_rth_distance = 500;      // If closer than 5m - land immediately
+    navConfig->general.rth_altitude = 1000;         // 10m
 
     // MC-specific
-    navConfig->mc_max_bank_angle = 30;      // 30 deg
-    navConfig->mc_hover_throttle = 1500;
-    navConfig->mc_auto_disarm_delay = 2000;
+    navConfig->mc.max_bank_angle = 30;      // 30 deg
+    navConfig->mc.hover_throttle = 1500;
+    navConfig->mc.auto_disarm_delay = 2000;
 
     // Fixed wing
-    navConfig->fw_max_bank_angle = 20;      // 30 deg
-    navConfig->fw_max_climb_angle = 20;
-    navConfig->fw_max_dive_angle = 15;
-    navConfig->fw_cruise_throttle = 1400;
-    navConfig->fw_max_throttle = 1700;
-    navConfig->fw_min_throttle = 1200;
-    navConfig->fw_pitch_to_throttle = 10;
-    navConfig->fw_roll_to_pitch = 75;
-    navConfig->fw_loiter_radius = 5000;     // 50m
+    navConfig->fw.max_bank_angle = 20;      // 30 deg
+    navConfig->fw.max_climb_angle = 20;
+    navConfig->fw.max_dive_angle = 15;
+    navConfig->fw.cruise_throttle = 1400;
+    navConfig->fw.max_throttle = 1700;
+    navConfig->fw.min_throttle = 1200;
+    navConfig->fw.pitch_to_throttle = 10;   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
+    navConfig->fw.roll_to_pitch = 75;       // percent of coupling
+    navConfig->fw.loiter_radius = 5000;     // 50m
+
+    // Fixed wing launch
+    navConfig->fw.launch_accel_thresh = 1.9f * 981;     // cm/s/s (1.9*G)
+    navConfig->fw.launch_time_thresh = 40;              // 40ms
+    navConfig->fw.launch_throttle = 1700;
+    navConfig->fw.launch_motor_timer = 500;             // ms
+    navConfig->fw.launch_timeout = 5000;                // ms, timeout for launch procedure
+    navConfig->fw.launch_climb_angle = 10;              // 10 deg
 }
 
 void validateNavConfig(navConfig_t * navConfig)
 {
     // Make sure minAlt is not more than maxAlt, maxAlt cannot be set lower than 500.
-    navConfig->land_slowdown_minalt = MIN(navConfig->land_slowdown_minalt, navConfig->land_slowdown_maxalt - 100);
+    navConfig->general.land_slowdown_minalt = MIN(navConfig->general.land_slowdown_minalt, navConfig->general.land_slowdown_maxalt - 100);
 }
 #endif
 
 void resetBarometerConfig(barometerConfig_t *barometerConfig)
 {
     barometerConfig->use_median_filtering = 1;
+}
+
+void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
+{
+    pitotmeterConfig->use_median_filtering = 1;
+    pitotmeterConfig->pitot_noise_lpf = 0.6f;
+    pitotmeterConfig->pitot_scale = 1.00f;
 }
 
 void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
@@ -282,14 +292,22 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
+#if defined(STM32F303xC)
+    telemetryConfig->telemetry_inversion = 1;
+#else
     telemetryConfig->telemetry_inversion = 0;
+#endif
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
     telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
     telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
     telemetryConfig->frsky_vfas_precision = 0;
+    telemetryConfig->frsky_vfas_cell_voltage = 0;
     telemetryConfig->hottAlarmSoundInterval = 5;
+#ifdef TELEMETRY_SMARTPORT
+    telemetryConfig->smartportUartUnidirectional = 0;
+#endif
 }
 #endif
 
@@ -375,6 +393,40 @@ static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
     servoMixerConfig->tri_unarmed_servo = 1;
     servoMixerConfig->servo_lowpass_freq = 400;
     servoMixerConfig->servo_lowpass_enable = 0;
+}
+#endif
+
+#ifdef ASYNC_GYRO_PROCESSING
+uint32_t getPidUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
+        return getGyroUpdateRate();
+    } else {
+        return masterConfig.looptime;
+    }
+}
+
+uint32_t getGyroUpdateRate(void) {
+    return gyro.targetLooptime;
+}
+
+uint16_t getAccUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / masterConfig.accTaskFrequency;
+    } else {
+        return getPidUpdateRate();
+    }
+}
+
+uint16_t getAttitudeUpdateRate(void) {
+    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / masterConfig.attitudeTaskFrequency;
+    } else {
+        return getPidUpdateRate();
+    }
+}
+
+uint8_t getAsyncMode(void) {
+    return masterConfig.asyncMode;
 }
 #endif
 
@@ -519,6 +571,12 @@ static void resetConf(void)
     masterConfig.gyroSync = 0;
     masterConfig.gyroSyncDenominator = 2;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    masterConfig.accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
+    masterConfig.attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT;
+    masterConfig.asyncMode = ASYNC_MODE_NONE;
+#endif
+
     resetPidProfile(&currentProfile->pidProfile);
 
     resetControlRateConfig(&masterConfig.controlRateProfiles[0]);
@@ -531,6 +589,7 @@ static void resetConf(void)
     currentProfile->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 
     resetBarometerConfig(&masterConfig.barometerConfig);
+    resetPitotmeterConfig(&masterConfig.pitotmeterConfig);
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -757,12 +816,21 @@ void activateConfig(void)
 #ifdef BARO
     useBarometerConfig(&masterConfig.barometerConfig);
 #endif
+#ifdef PITOT
+    usePitotmeterConfig(&masterConfig.pitotmeterConfig);
+#endif
 }
 
 void validateAndFixConfig(void)
 {
     // Disable unused features
     featureClear(FEATURE_UNUSED_1 | FEATURE_UNUSED_2);
+
+#ifdef DISABLE_RX_PWM_FEATURE
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM)) {
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+    }
+#endif
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
         featureSet(DEFAULT_RX_FEATURE);
@@ -826,16 +894,38 @@ void validateAndFixConfig(void)
     }
 #endif
 
+#ifdef ASYNC_GYRO_PROCESSING
+    /*
+     * When async processing mode is enabled, gyroSync has to be forced to "ON"
+     */
+    if (getAsyncMode() != ASYNC_MODE_NONE) {
+        masterConfig.gyroSync = 1;
+    }
+#endif
+
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-    if (masterConfig.gyroSync && masterConfig.gyroSyncDenominator < 2 && featureConfigured(FEATURE_GPS)) {
-        masterConfig.gyroSyncDenominator = 2;
-    }
 
-    // avoid overloading the CPU when looptime < 2000 and GPS
-    if (masterConfig.looptime && featureConfigured(FEATURE_GPS)) {
-        masterConfig.looptime = 2000;
+    if (featureConfigured(FEATURE_GPS)) {
+        // avoid overloading the CPU when looptime < 2000 and GPS
+
+        uint8_t denominatorLimit = 2;
+
+        if (masterConfig.gyro_lpf == 0) {
+            denominatorLimit = 16;
+        }
+
+        if (masterConfig.gyroSyncDenominator < denominatorLimit) {
+            masterConfig.gyroSyncDenominator = denominatorLimit;
+        }
+
+        if (masterConfig.looptime < 2000) {
+            masterConfig.looptime = 2000;
+        }
+
     }
+#else
+
 #endif
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
@@ -865,17 +955,10 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(CC3D) && defined(DISPLAY) && defined(USE_UART3)
-    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DISPLAY)) {
-        featureClear(FEATURE_DISPLAY);
+#if defined(CC3D) && defined(USE_DASHBOARD) && defined(USE_UART3)
+    if (doesConfigurationUsePort(SERIAL_PORT_USART3) && feature(FEATURE_DASHBOARD)) {
+        featureClear(FEATURE_DASHBOARD);
     }
-#endif
-
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-#ifdef TELEMETRY
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
 #endif
 
 #if defined(CC3D)
@@ -929,6 +1012,9 @@ void validateAndFixConfig(void)
 #endif
 
     /* Limitations of different protocols */
+#ifdef BRUSHED_MOTORS
+    masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 500, 32000);
+#else
     switch (masterConfig.motorConfig.motorPwmProtocol) {
     case PWM_TYPE_STANDARD: // Limited to 490 Hz
         masterConfig.motorConfig.motorPwmRate = MIN(masterConfig.motorConfig.motorPwmRate, 490);
@@ -945,11 +1031,11 @@ void validateAndFixConfig(void)
     case PWM_TYPE_MULTISHOT:    // 2-16 kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 2000, 16000);
         break;
-
     case PWM_TYPE_BRUSHED:      // 500Hz - 32kHz
         masterConfig.motorConfig.motorPwmRate = constrain(masterConfig.motorConfig.motorPwmRate, 500, 32000);
         break;
     }
+#endif
 }
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)

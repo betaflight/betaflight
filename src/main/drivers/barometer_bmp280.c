@@ -65,6 +65,7 @@ static void bmp280_get_up(void);
 #endif
 STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
+#define DETECTION_MAX_RETRY_COUNT   5
 bool bmp280Detect(baro_t *baro)
 {
     if (bmp280InitDone)
@@ -72,46 +73,50 @@ bool bmp280Detect(baro_t *baro)
 
     delay(20);
 
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
 #ifdef USE_BARO_SPI_BMP280
-    bmp280SpiInit();
-    bmp280ReadRegister(BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);
-    if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
-        return false;
+        bmp280SpiInit();
+        bmp280ReadRegister(BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);
+        if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
+            continue;
 
-    // read calibration
-    bmp280ReadRegister(BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
-    // set oversampling + power mode (forced), and start sampling
-    bmp280WriteRegister(BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        // read calibration
+        bmp280ReadRegister(BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
+        // set oversampling + power mode (forced), and start sampling
+        bmp280WriteRegister(BMP280_CTRL_MEAS_REG, BMP280_MODE);
 #else
-    i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
-    if (bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
-        return false;
+        bool ack = i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CHIP_ID_REG, 1, &bmp280_chip_id);  /* read Chip Id */
+        if (!ack || bmp280_chip_id != BMP280_DEFAULT_CHIP_ID)
+            continue;
 
-    // read calibration
-    i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
-    // set oversampling + power mode (forced), and start sampling
-    i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CTRL_MEAS_REG, BMP280_MODE);
+        // read calibration
+        i2cRead(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG, 24, (uint8_t *)&bmp280_cal);
+        // set oversampling + power mode (forced), and start sampling
+        i2cWrite(BARO_I2C_INSTANCE, BMP280_I2C_ADDR, BMP280_CTRL_MEAS_REG, BMP280_MODE);
 #endif
 
-    bmp280InitDone = true;
+        bmp280InitDone = true;
 
-    // these are dummy as temperature is measured as part of pressure
-    baro->ut_delay = 0;
-    baro->get_ut = bmp280_get_ut;
-    baro->start_ut = bmp280_start_ut;
+        // these are dummy as temperature is measured as part of pressure
+        baro->ut_delay = 0;
+        baro->get_ut = bmp280_get_ut;
+        baro->start_ut = bmp280_start_ut;
 
-    // only _up part is executed, and gets both temperature and pressure
-    baro->up_delay = ((T_INIT_MAX + T_MEASURE_PER_OSRS_MAX * (((1 << BMP280_TEMPERATURE_OSR) >> 1) + ((1 << BMP280_PRESSURE_OSR) >> 1)) + (BMP280_PRESSURE_OSR ? T_SETUP_PRESSURE_MAX : 0) + 15) / 16) * 1000;
+        // only _up part is executed, and gets both temperature and pressure
+        baro->up_delay = ((T_INIT_MAX + T_MEASURE_PER_OSRS_MAX * (((1 << BMP280_TEMPERATURE_OSR) >> 1) + ((1 << BMP280_PRESSURE_OSR) >> 1)) + (BMP280_PRESSURE_OSR ? T_SETUP_PRESSURE_MAX : 0) + 15) / 16) * 1000;
 #ifdef USE_BARO_SPI_BMP280
-    baro->start_up = bmp280_spi_start_up;
-    baro->get_up = bmp280_spi_get_up;
+        baro->start_up = bmp280_spi_start_up;
+        baro->get_up = bmp280_spi_get_up;
 #else
-    baro->start_up = bmp280_start_up;
-    baro->get_up = bmp280_get_up;
+        baro->start_up = bmp280_start_up;
+        baro->get_up = bmp280_get_up;
 #endif
-    baro->calculate = bmp280_calculate;
+        baro->calculate = bmp280_calculate;
 
-    return true;
+        return true;
+    }
+    
+    return false;
 }
 
 static void bmp280_start_ut(void)

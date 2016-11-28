@@ -40,7 +40,6 @@ static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
 static uint32_t realtimeGuardInterval;
 
-uint32_t currentTime = 0;
 uint16_t averageSystemLoadPercent = 0;
 
 #define REALTIME_GUARD_INTERVAL_MIN     10
@@ -124,16 +123,18 @@ STATIC_INLINE_UNIT_TESTED cfTask_t *queueNext(void)
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
 
-void taskSystem(void)
+void taskSystem(uint32_t currentTime)
 {
-    /* Calculate system load */
+    UNUSED(currentTime);
+
+    // Calculate system load
     if (totalWaitingTasksSamples > 0) {
         averageSystemLoadPercent = 100 * totalWaitingTasks / totalWaitingTasksSamples;
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
     }
 
-    /* Calculate guard interval */
+    // Calculate guard interval
     uint32_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
@@ -200,8 +201,9 @@ void schedulerInit(void)
 void scheduler(void)
 {
     // Cache currentTime
-    currentTime = micros();
+    const uint32_t currentTime = micros();
 
+    // Check for realtime tasks
     uint32_t timeToNextRealtimeTask = UINT32_MAX;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
         const uint32_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
@@ -228,7 +230,7 @@ void scheduler(void)
                 task->taskAgeCycles = 1 + ((currentTime - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
-            } else if (task->checkFunc(currentTime - task->lastExecutedAt)) {
+            } else if (task->checkFunc(currentTime, currentTime - task->lastExecutedAt)) {
                 task->lastSignaledAt = currentTime;
                 task->taskAgeCycles = 1;
                 task->dynamicPriority = 1 + task->staticPriority;
@@ -271,7 +273,7 @@ void scheduler(void)
 
         // Execute task
         const uint32_t currentTimeBeforeTaskCall = micros();
-        selectedTask->taskFunc();
+        selectedTask->taskFunc(currentTimeBeforeTaskCall);
         const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
         selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;

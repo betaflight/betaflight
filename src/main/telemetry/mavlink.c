@@ -35,12 +35,7 @@
 #include "common/color.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
 
 #include "io/serial.h"
 #include "fc/rc_controls.h"
@@ -57,6 +52,7 @@
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/pitotmeter.h"
 
 #include "rx/rx.h"
 
@@ -69,8 +65,6 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/mavlink.h"
-
-#include "mavlink/common/mavlink.h"
 
 #include "config/config.h"
 #include "fc/runtime_config.h"
@@ -85,7 +79,7 @@
 // until this is resolved in mavlink library - ignore -Wpedantic for mavlink code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "mavlink/common/mavlink.h"
+#include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
 #define TELEMETRY_MAVLINK_INITIAL_PORT_MODE MODE_TX
@@ -279,7 +273,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(GPS)
-void mavlinkSendPosition(void)
+void mavlinkSendPosition(uint32_t currentTime)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -296,7 +290,7 @@ void mavlinkSendPosition(void)
 
     mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
+        currentTime,
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
         gpsFixType,
         // lat Latitude in 1E7 degrees
@@ -321,7 +315,7 @@ void mavlinkSendPosition(void)
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        micros(),
+        currentTime,
         // lat Latitude in 1E7 degrees
         gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
@@ -451,6 +445,7 @@ void mavlinkSendHUDAndHeartbeat(void)
             break;
         case MIXER_FLYING_WING:
         case MIXER_AIRPLANE:
+        case MIXER_CUSTOM_AIRPLANE:
             mavSystemType = MAV_TYPE_FIXED_WING;
             break;
         case MIXER_HELI_120_CCPM:
@@ -507,7 +502,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(void)
+void processMAVLinkTelemetry(uint32_t currentTime)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
@@ -520,7 +515,7 @@ void processMAVLinkTelemetry(void)
 
 #ifdef GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition();
+        mavlinkSendPosition(currentTime);
     }
 #endif
 
@@ -533,7 +528,7 @@ void processMAVLinkTelemetry(void)
     }
 }
 
-void handleMAVLinkTelemetry(void)
+void handleMAVLinkTelemetry(uint32_t currentTime)
 {
     if (!mavlinkTelemetryEnabled) {
         return;
@@ -543,10 +538,9 @@ void handleMAVLinkTelemetry(void)
         return;
     }
 
-    uint32_t now = micros();
-    if ((now - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
-        processMAVLinkTelemetry();
-        lastMavlinkMessage = now;
+    if ((currentTime - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+        processMAVLinkTelemetry(currentTime);
+        lastMavlinkMessage = currentTime;
     }
 }
 

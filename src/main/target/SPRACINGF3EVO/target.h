@@ -30,19 +30,19 @@
 #define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU_INT, SDCardDetect
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
+#define MPU6500_CS_PIN          PB9
+#define MPU6500_SPI_INSTANCE    SPI1
 
 //#define USE_MAG_DATA_READY_SIGNAL
 //#define ENSURE_MAG_DATA_READY_IS_HIGH
 
-
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW180_DEG
 
 #define ACC
 #define USE_ACC_SPI_MPU6500
-
 #define ACC_MPU6500_ALIGN       CW180_DEG
-#define GYRO_MPU6500_ALIGN      CW180_DEG
 
 #define BARO
 #define USE_BARO_BMP280
@@ -53,10 +53,7 @@
 #define USE_MAG_AK8963
 //#define USE_MAG_MAG3110 // External
 #define USE_MAG_HMC5883 // External
-
-#define MAG_AK8963_ALIGN CW270_DEG_FLIP
-
-//#define SONAR
+#define MAG_AK8963_ALIGN        CW270_DEG_FLIP
 
 #define USB_IO
 
@@ -64,7 +61,9 @@
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
-#define SERIAL_PORT_COUNT       4
+#define USE_SOFTSERIAL1
+#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       6
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -74,6 +73,14 @@
 
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
+
+#define SOFTSERIAL_1_TIMER      TIM3
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 5
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 6
+
+#define SOFTSERIAL_2_TIMER      TIM3
+#define SOFTSERIAL_2_TIMER_RX_HARDWARE 7
+#define SOFTSERIAL_2_TIMER_TX_HARDWARE 8
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
@@ -96,22 +103,16 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_INVERTED
-
-#define SDCARD_DETECT_PIN                   PC14
-#define SDCARD_SPI_INSTANCE                 SPI2
-#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
-
+#define SDCARD_DETECT_PIN       PC14
+#define SDCARD_SPI_INSTANCE     SPI2
+#define SDCARD_SPI_CS_PIN       SPI2_NSS_PIN
 // SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
-
 // Note, this is the same DMA channel as UART1_RX. Luckily we don't use DMA for USART Rx.
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
-
-#define MPU6500_CS_PIN                   PB9
-#define MPU6500_SPI_INSTANCE             SPI1
 
 #define USE_ADC
 #define ADC_INSTANCE            ADC2
@@ -128,20 +129,10 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-/*
-#define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-*/
+#define SONAR
+#define SONAR_TRIGGER_PIN       PB0
+#define SONAR_ECHO_PIN          PB1
+#define USE_SONAR_SRF10
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
@@ -149,15 +140,7 @@
 #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY)
 
 #define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
-#define USE_SERIAL_4WAY_BLHELI_INTERFACE
-
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       60
+#define BIND_PIN                PB11 // UART3
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

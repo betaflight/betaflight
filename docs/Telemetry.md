@@ -4,7 +4,7 @@ Telemetry allows you to know what is happening on your aircraft while you are fl
 
 Telemetry can be either always on, or enabled when armed.  If a serial port for telemetry is shared with other functionality then then telemetry will only be enabled when armed on that port.
 
-Telemetry is enabled using the 'TELEMETRY` feature.
+Telemetry is enabled using the 'TELEMETRY' feature.
 
 ```
 feature TELEMETRY
@@ -30,7 +30,7 @@ For 1, just connect your inverter to a usart or software serial port.
 For 2 and 3 use the CLI command as follows:
 
 ```
-set telemetry_inversion = 1
+set telemetry_inversion = ON
 ```
 
 ### Precision setting for VFAS
@@ -112,7 +112,7 @@ https://github.com/stronnag/mwptools/blob/master/docs/ltm-definition.txt
 
 ## MAVLink telemetry
 
-MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles. 
+MAVLink is a very lightweight, header-only message marshalling library for micro air vehicles.
 Cleanflight supports MAVLink for compatibility with ground stations, OSDs and antenna trackers built
 for PX4, PIXHAWK, APM and Parrot AR.Drone platforms.
 
@@ -131,5 +131,22 @@ Smartport devices can be connected directly to STM32F3 boards such as the SPRaci
 For Smartport on F3 based boards, enable the telemetry inversion setting.
 
 ```
-set telemetry_inversion = 1
+set telemetry_inversion = ON
 ```
+
+### SmartPort (S.Port) with external hardware inverter
+
+It is possible to use DIY UART inverter to connect SmartPort receivers to F1 and F4 based flight controllers. This method does not require hardware hack of S.Port receiver.
+
+![Inverter](assets/images/smartport_inverter.png)
+
+**Warning** Chosen UART has to be 5V tolerant. If not, use 3.3V power supply instead (not tested)
+
+When external inverter is used, following configuration has to be applied:
+
+```
+set smartport_uart_unidir = ON
+set telemetry_inversion = OFF
+```
+
+This has been tested with Flip32 F4 / Airbot F4 and FrSky X4R-SB receiver.

@@ -356,6 +356,9 @@ else
 endif
 
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
+                   $(ROOT)/lib/main/MAVLink
+
+INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(TARGET_DIR)
 
 VPATH           := $(VPATH):$(TARGET_DIR)
@@ -411,10 +414,12 @@ COMMON_SRC = \
             flight/servos.c \
             flight/pid.c \
             io/beeper.c \
-            fc/msp_fc.c \
+            fc/fc_init.c \
+            fc/fc_tasks.c \
+            fc/fc_hardfaults.c \
+            fc/fc_msp.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
-            fc/fc_tasks.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -459,6 +464,7 @@ HIGHEND_SRC = \
             flight/navigation_rewrite.c \
             flight/navigation_rewrite_multicopter.c \
             flight/navigation_rewrite_fixedwing.c \
+            flight/navigation_rewrite_fw_launch.c \
             flight/navigation_rewrite_pos_estimator.c \
             flight/navigation_rewrite_geo.c \
             flight/gps_conversion.c \
@@ -468,9 +474,10 @@ HIGHEND_SRC = \
             io/gps_naza.c \
             io/gps_i2cnav.c \
             io/ledstrip.c \
-            io/display.c \
+            io/dashboard.c \
             sensors/rangefinder.c \
             sensors/barometer.c \
+            sensors/pitotmeter.c \
             telemetry/telemetry.c \
             telemetry/frsky.c \
             telemetry/hott.c \

@@ -300,7 +300,7 @@ uint8_t *Virtual_Com_Port_GetConfigDescriptor(uint16_t Length)
 uint8_t *Virtual_Com_Port_GetStringDescriptor(uint16_t Length)
 {
     uint8_t wValue0 = pInformation->USBwValue0;
-    if (wValue0 > 4) {
+    if (wValue0 >= 4) {
         return NULL;
     } else {
         return Standard_GetDescriptorData(Length, &String_Descriptor[wValue0]);

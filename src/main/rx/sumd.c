@@ -21,13 +21,14 @@
 
 #include "platform.h"
 
+#ifdef USE_SERIALRX_SUMD
+
 #include "build/build_config.h"
 
-
 #include "drivers/system.h"
-
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
+
 #include "io/serial.h"
 
 #include "rx/rx.h"
@@ -46,28 +47,6 @@
 static bool sumdFrameDone = false;
 static uint16_t sumdChannels[SUMD_MAX_CHANNEL];
 static uint16_t crc;
-
-static void sumdDataReceive(uint16_t c);
-static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan);
-
-bool sumdInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
-{
-    UNUSED(rxConfig);
-
-    if (callback)
-        *callback = sumdReadRawRC;
-
-    rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
-
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
-
-    return sumdPort != NULL;
-}
 
 #define CRC_POLYNOME 0x1021
 
@@ -135,7 +114,7 @@ uint8_t sumdFrameStatus(void)
 {
     uint8_t channelIndex;
 
-    uint8_t frameStatus = SERIAL_RX_FRAME_PENDING;
+    uint8_t frameStatus = RX_FRAME_PENDING;
 
     if (!sumdFrameDone) {
         return frameStatus;
@@ -150,10 +129,10 @@ uint8_t sumdFrameStatus(void)
 
     switch (sumd[1]) {
         case SUMD_FRAME_STATE_FAILSAFE:
-            frameStatus = SERIAL_RX_FRAME_COMPLETE | SERIAL_RX_FRAME_FAILSAFE;
+            frameStatus = RX_FRAME_COMPLETE | RX_FRAME_FAILSAFE;
             break;
         case SUMD_FRAME_STATE_OK:
-            frameStatus = SERIAL_RX_FRAME_COMPLETE;
+            frameStatus = RX_FRAME_COMPLETE;
             break;
         default:
             return frameStatus;
@@ -176,3 +155,24 @@ static uint16_t sumdReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t 
     UNUSED(rxRuntimeConfig);
     return sumdChannels[chan] / 8;
 }
+
+bool sumdInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+{
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->channelCount = SUMD_MAX_CHANNEL;
+    rxRuntimeConfig->rxRefreshRate = 11000;
+
+    rxRuntimeConfig->rcReadRawFn = sumdReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = sumdFrameStatus;
+
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    serialPort_t *sumdPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sumdDataReceive, SUMD_BAUDRATE, MODE_RX, SERIAL_NOT_INVERTED);
+
+    return sumdPort != NULL;
+}
+#endif // USE_SERIALRX_SUMD

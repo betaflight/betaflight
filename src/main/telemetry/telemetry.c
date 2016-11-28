@@ -25,19 +25,16 @@
 
 #include "common/utils.h"
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
-#include "drivers/serial_softserial.h"
+
 #include "io/serial.h"
 
-#include "rx/rx.h"
 #include "fc/rc_controls.h"
-
-
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
+
+#include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
@@ -102,7 +99,7 @@ bool telemetryDetermineEnabledState(portSharing_e portSharing)
     return enabled;
 }
 
-bool telemetryCheckRxPortShared(serialPortConfig_t *portConfig)
+bool telemetryCheckRxPortShared(const serialPortConfig_t *portConfig)
 {
     return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK;
 }
@@ -141,7 +138,7 @@ void telemetryCheckState(void)
 
 }
 
-void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
 #if defined(TELEMETRY_FRSKY)
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
@@ -151,7 +148,9 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 #endif
 
 #if defined(TELEMETRY_HOTT)
-    handleHoTTTelemetry();
+    handleHoTTTelemetry(currentTime);
+#else
+    UNUSED(currentTime);
 #endif
 
 #if defined(TELEMETRY_SMARTPORT)
@@ -163,7 +162,9 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 #endif
 
 #if defined(TELEMETRY_MAVLINK)
-    handleMAVLinkTelemetry();
+    handleMAVLinkTelemetry(currentTime);
+#else
+    UNUSED(currentTime);
 #endif
 
 #if defined(TELEMETRY_JETIEXBUS)

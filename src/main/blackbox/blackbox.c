@@ -31,12 +31,10 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
-#include "drivers/gpio.h"
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/compass.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/accgyro.h"
 #include "drivers/light_led.h"
@@ -47,6 +45,7 @@
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
@@ -54,7 +53,6 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gimbal.h"
@@ -210,6 +208,9 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef BARO
     {"BaroAlt",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
 #endif
+#ifdef PITOT
+    {"AirSpeed",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_PITOT},
+#endif
 #ifdef SONAR
     {"sonarRaw",   -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_SONAR},
 #endif
@@ -242,6 +243,8 @@ static const blackboxDeltaFieldDefinition_t blackboxMainFields[] = {
 #ifdef NAV_BLACKBOX
     {"navState",  -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navFlags",  -1, UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navEPH",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"navEPV",    -1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navPos",     0, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navPos",     1, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
     {"navPos",     2, SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
@@ -335,6 +338,9 @@ typedef struct blackboxMainState_s {
 #ifdef BARO
     int32_t BaroAlt;
 #endif
+#ifdef PITOT
+    int32_t AirSpeed;
+#endif
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
 #endif
@@ -345,6 +351,8 @@ typedef struct blackboxMainState_s {
 #ifdef NAV_BLACKBOX
     int16_t navState;
     uint16_t navFlags;
+    uint16_t navEPH;
+    uint16_t navEPV;
     int32_t navPos[XYZ_AXIS_COUNT];
     int16_t navRealVel[XYZ_AXIS_COUNT];
     int16_t navAccNEU[XYZ_AXIS_COUNT];
@@ -374,9 +382,6 @@ typedef struct blackboxSlowState_s {
 
 //From mixer.c:
 extern uint8_t motorCount;
-
-//From mw.c:
-extern uint32_t currentTime;
 
 //From rx.c:
 extern uint16_t rssi;
@@ -472,6 +477,13 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_BARO:
 #ifdef BARO
             return sensors(SENSOR_BARO);
+#else
+            return false;
+#endif
+
+        case FLIGHT_LOG_FIELD_CONDITION_PITOT:
+#ifdef PITOT
+            return sensors(SENSOR_PITOT);
 #else
             return false;
 #endif
@@ -611,6 +623,12 @@ static void writeIntraframe(void)
         }
 #endif
 
+#ifdef PITOT
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
+            blackboxWriteSignedVB(blackboxCurrent->AirSpeed);
+        }
+#endif
+
 #ifdef SONAR
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
             blackboxWriteSignedVB(blackboxCurrent->sonarRaw);
@@ -642,6 +660,8 @@ static void writeIntraframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navState);
 
     blackboxWriteSignedVB(blackboxCurrent->navFlags);
+    blackboxWriteSignedVB(blackboxCurrent->navEPH);
+    blackboxWriteSignedVB(blackboxCurrent->navEPV);
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x]);
@@ -773,6 +793,12 @@ static void writeInterframe(void)
     }
 #endif
 
+#ifdef PITOT
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
+        deltas[optionalFieldCount++] = blackboxCurrent->AirSpeed - blackboxLast->AirSpeed;
+    }
+#endif
+
 #ifdef SONAR
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_SONAR)) {
         deltas[optionalFieldCount++] = blackboxCurrent->sonarRaw - blackboxLast->sonarRaw;
@@ -799,6 +825,8 @@ static void writeInterframe(void)
     blackboxWriteSignedVB(blackboxCurrent->navState - blackboxLast->navState);
 
     blackboxWriteSignedVB(blackboxCurrent->navFlags - blackboxLast->navFlags);
+    blackboxWriteSignedVB(blackboxCurrent->navEPH - blackboxLast->navEPH);
+    blackboxWriteSignedVB(blackboxCurrent->navEPV - blackboxLast->navEPV);
 
     for (x = 0; x < XYZ_AXIS_COUNT; x++) {
         blackboxWriteSignedVB(blackboxCurrent->navPos[x] - blackboxLast->navPos[x]);
@@ -1026,7 +1054,7 @@ static void writeGPSHomeFrame()
     gpsHistory.GPS_home[1] = GPS_home.lon;
 }
 
-static void writeGPSFrame()
+static void writeGPSFrame(uint32_t currentTime)
 {
     blackboxWrite('G');
 
@@ -1061,7 +1089,7 @@ static void writeGPSFrame()
 /**
  * Fill the current state of the blackbox using values read from the flight controller
  */
-static void loadMainState(void)
+static void loadMainState(uint32_t currentTime)
 {
     blackboxMainState_t *blackboxCurrent = blackboxHistory[0];
     int i;
@@ -1114,6 +1142,10 @@ static void loadMainState(void)
     blackboxCurrent->BaroAlt = BaroAlt;
 #endif
 
+#ifdef PITOT
+    blackboxCurrent->AirSpeed = AirSpeed;
+#endif
+
 #ifdef SONAR
     // Store the raw sonar value without applying tilt correction
     blackboxCurrent->sonarRaw = rangefinderRead();
@@ -1129,6 +1161,8 @@ static void loadMainState(void)
 #ifdef NAV_BLACKBOX
     blackboxCurrent->navState = navCurrentState;
     blackboxCurrent->navFlags = navFlags;
+    blackboxCurrent->navEPH = navEPH;
+    blackboxCurrent->navEPV = navEPV;
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
         blackboxCurrent->navPos[i] = navLatestActualPosition[i];
         blackboxCurrent->navRealVel[i] = navActualVelocity[i];
@@ -1388,6 +1422,7 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
                 blackboxWrite(data->inflightAdjustment.adjustmentFunction);
                 blackboxWriteSignedVB(data->inflightAdjustment.newValue);
             }
+        break;
         case FLIGHT_LOG_EVENT_LOGGING_RESUME:
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);
             blackboxWriteUnsignedVB(data->loggingResume.currentTime);
@@ -1444,7 +1479,7 @@ static void blackboxAdvanceIterationTimers()
 }
 
 // Called once every FC loop in order to log the current state
-static void blackboxLogIteration()
+static void blackboxLogIteration(uint32_t currentTime)
 {
     // Write a keyframe every BLACKBOX_I_INTERVAL frames so we can resynchronise upon missing frames
     if (blackboxShouldLogIFrame()) {
@@ -1454,7 +1489,7 @@ static void blackboxLogIteration()
          */
         writeSlowFrameIfNeeded(blackboxIsOnlyLoggingIntraframes());
 
-        loadMainState();
+        loadMainState(currentTime);
         writeIntraframe();
     } else {
         blackboxCheckAndLogArmingBeep();
@@ -1466,7 +1501,7 @@ static void blackboxLogIteration()
              */
             writeSlowFrameIfNeeded(true);
 
-            loadMainState();
+            loadMainState(currentTime);
             writeInterframe();
         }
 #ifdef GPS
@@ -1481,12 +1516,12 @@ static void blackboxLogIteration()
             if (GPS_home.lat != gpsHistory.GPS_home[0] || GPS_home.lon != gpsHistory.GPS_home[1]
                 || (blackboxPFrameIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIFrameIndex % 128 == 0)) {
 
-                writeGPSHomeFrame();
-                writeGPSFrame();
+                writeGPSHomeFrame(currentTime);
+                writeGPSFrame(currentTime);
             } else if (gpsSol.numSat != gpsHistory.GPS_numSat || gpsSol.llh.lat != gpsHistory.GPS_coord[0]
                     || gpsSol.llh.lon != gpsHistory.GPS_coord[1]) {
                 //We could check for velocity changes as well but I doubt it changes independent of position
-                writeGPSFrame();
+                writeGPSFrame(currentTime);
             }
         }
 #endif
@@ -1499,7 +1534,7 @@ static void blackboxLogIteration()
 /**
  * Call each flight loop iteration to perform blackbox logging.
  */
-void handleBlackbox(void)
+void handleBlackbox(uint32_t currentTime)
 {
     int i;
 
@@ -1596,7 +1631,7 @@ void handleBlackbox(void)
                 blackboxLogEvent(FLIGHT_LOG_EVENT_LOGGING_RESUME, (flightLogEventData_t *) &resume);
                 blackboxSetState(BLACKBOX_STATE_RUNNING);
 
-                blackboxLogIteration();
+                blackboxLogIteration(currentTime);
             }
 
             // Keep the logging timers ticking so our log iteration continues to advance
@@ -1607,7 +1642,7 @@ void handleBlackbox(void)
             if (blackboxModeActivationConditionPresent && !IS_RC_MODE_ACTIVE(BOXBLACKBOX)) {
                 blackboxSetState(BLACKBOX_STATE_PAUSED);
             } else {
-                blackboxLogIteration();
+                blackboxLogIteration(currentTime);
             }
 
             blackboxAdvanceIterationTimers();

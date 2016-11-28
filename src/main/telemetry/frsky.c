@@ -32,12 +32,7 @@
 #include "common/axis.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
-
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -412,11 +407,16 @@ static void sendVoltageAmp(void)
         serialize16(vbat);
     } else {
         uint16_t voltage = (vbat * 110) / 21;
-
+        uint16_t vfasVoltage;
+        if (telemetryConfig->frsky_vfas_cell_voltage) {
+            vfasVoltage = voltage / batteryCellCount;
+        } else {
+            vfasVoltage = voltage;
+        }
         sendDataHead(ID_VOLTAGE_AMP_BP);
-        serialize16(voltage / 100);
+        serialize16(vfasVoltage / 100);
         sendDataHead(ID_VOLTAGE_AMP_AP);
-        serialize16(((voltage % 100) + 5) / 10);
+        serialize16(((vfasVoltage % 100) + 5) / 10);
     }
 }
 

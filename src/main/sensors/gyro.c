@@ -25,16 +25,14 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gyro_sync.h"
-
 #include "io/beeper.h"
 #include "io/statusindicator.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+
+#include "config/config.h"
 
 gyro_t gyro;                      // gyro access functions
 sensor_align_e gyroAlign = 0;
@@ -57,9 +55,17 @@ void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz
 
 void gyroInit(void)
 {
-    if (gyroSoftLpfHz && gyro.targetLooptime) {  // Initialisation needs to happen once samplingrate is known
+    /*
+     * After refactoring this function is always called after gyro sampling rate is known, so
+     * no additional condition is required
+     */
+    if (gyroSoftLpfHz) {
         for (int axis = 0; axis < 3; axis++) {
+        #ifdef ASYNC_GYRO_PROCESSING
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, getGyroUpdateRate());
+        #else
             biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+        #endif
         }
     }
 }

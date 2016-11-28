@@ -42,7 +42,14 @@ typedef struct {
 typedef enum {
     /* Actual tasks */
     TASK_SYSTEM = 0,
+#ifdef ASYNC_GYRO_PROCESSING
+    TASK_PID,
+    TASK_GYRO,
+    TASK_ACC,
+    TASK_ATTI,
+#else
     TASK_GYROPID,
+#endif
     TASK_SERIAL,
     TASK_BEEPER,
     TASK_BATTERY,
@@ -56,11 +63,14 @@ typedef enum {
 #ifdef BARO
     TASK_BARO,
 #endif
+#ifdef PITOT
+    TASK_PITOT,
+#endif
 #ifdef SONAR
     TASK_SONAR,
 #endif
-#ifdef DISPLAY
-    TASK_DISPLAY,
+#ifdef USE_DASHBOARD
+    TASK_DASHBOARD,
 #endif
 #ifdef TELEMETRY
     TASK_TELEMETRY,
@@ -86,8 +96,8 @@ typedef enum {
 typedef struct {
     /* Configuration */
     const char * taskName;
-    bool (*checkFunc)(uint32_t currentDeltaTime);
-    void (*taskFunc)(void);
+    bool (*checkFunc)(uint32_t currentTime, uint32_t currentDeltaTime);
+    void (*taskFunc)(uint32_t currentTime);
     uint32_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 

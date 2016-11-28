@@ -58,7 +58,7 @@
 #define MAG
 #define USE_MAG_HMC5883
 
-#define SONAR
+// #define SONAR
 #define SONAR_TRIGGER_PIN       PB0 // RX7 (PB0) - only 3.3v ( add a 1K Ohms resistor )
 #define SONAR_ECHO_PIN          PB1 // RX8 (PB1) - only 3.3v ( add a 1K Ohms resistor )
 

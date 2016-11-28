@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "sensors/sensors.h"
+
 // Type of magnetometer used/detected
 typedef enum {
     MAG_DEFAULT = 0,
@@ -31,11 +33,10 @@ typedef enum {
 
 #define MAG_MAX  MAG_FAKE
 
-#ifdef MAG
 bool compassInit(int16_t magDeclinationFromConfig);
-void updateCompass(flightDynamicsTrims_t *magZero);
+union flightDynamicsTrims_u;
+void updateCompass(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
-#endif
 
 extern int32_t magADC[XYZ_AXIS_COUNT];
 

@@ -25,17 +25,14 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/sensor.h"
-#include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
-#include "drivers/gpio.h"
-#include "drivers/light_led.h"
-
-#include "sensors/boardalignment.h"
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
 
+#include "drivers/compass.h"
+#include "drivers/light_led.h"
+
+#include "fc/runtime_config.h"
+
+#include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 
@@ -45,8 +42,6 @@
 
 mag_t mag;                   // mag access functions
 float magneticDeclination = 0.0f;       // calculated at startup from config
-
-extern uint32_t currentTime; // FIXME dependency on global variable, pass it in instead.
 
 int16_t magADCRaw[XYZ_AXIS_COUNT];
 int32_t magADC[XYZ_AXIS_COUNT];
@@ -77,7 +72,7 @@ bool isCompassReady(void)
 
 static sensorCalibrationState_t calState;
 
-void updateCompass(flightDynamicsTrims_t *magZero)
+void updateCompass(uint32_t currentTime, flightDynamicsTrims_t *magZero)
 {
     static uint32_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];

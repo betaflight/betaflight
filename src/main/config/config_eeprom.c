@@ -26,12 +26,7 @@
 #include "common/color.h"
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 
 #include "sensors/sensors.h"
@@ -41,6 +36,7 @@
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"

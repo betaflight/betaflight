@@ -25,10 +25,6 @@
 
 #ifndef SKIP_RX_MSP
 
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-
 #include "rx/rx.h"
 #include "rx/msp.h"
 
@@ -55,21 +51,22 @@ void rxMspFrameReceive(uint16_t *frame, int channelCount)
     rxMspFrameDone = true;
 }
 
-bool rxMspFrameComplete(void)
+uint8_t rxMspFrameStatus(void)
 {
     if (!rxMspFrameDone) {
-        return false;
+        return RX_FRAME_PENDING;
     }
 
     rxMspFrameDone = false;
-    return true;
+    return RX_FRAME_COMPLETE;
 }
 
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
+
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
-    if (callback)
-        *callback = rxMspReadRawRC;
+    rxRuntimeConfig->rcReadRawFn = rxMspReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFn = rxMspFrameStatus;
 }
 #endif

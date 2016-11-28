@@ -15,7 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "msp/msp.h"
+#pragma once
 
-mspProcessCommandFnPtr mspFcInit(void);
+typedef void (*pitotOpFuncPtr)(void);                       // pitot start operation
+typedef void (*pitotCalculateFuncPtr)(float *pressure, float *temperature); // airspeed calculation (filled params are pressure and temperature)
 
+typedef struct pitot_t {
+    uint16_t delay;
+    pitotOpFuncPtr start;
+    pitotOpFuncPtr get;
+    pitotCalculateFuncPtr calculate;
+} pitot_t;
+
+#ifndef PITOT_I2C_INSTANCE
+#define PITOT_I2C_INSTANCE I2C_DEVICE
+#endif

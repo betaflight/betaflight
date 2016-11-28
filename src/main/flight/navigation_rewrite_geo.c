@@ -29,10 +29,6 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
@@ -76,15 +72,15 @@ static float get_lookup_table_val(unsigned lat_index, unsigned lon_index)
     return declination_table[lat_index][lon_index];
 }
 
-float geoCalculateMagDeclination(gpsLocation_t * llh) // degrees units
+float geoCalculateMagDeclination(const gpsLocation_t * llh) // degrees units
 {
     /*
      * If the values exceed valid ranges, return zero as default
      * as we have no way of knowing what the closest real value
      * would be.
      */
-    float lat = llh->lat / 10000000.0f;
-    float lon = llh->lon / 10000000.0f;
+    const float lat = llh->lat / 10000000.0f;
+    const float lon = llh->lon / 10000000.0f;
 
     if (lat < -90.0f || lat > 90.0f ||
         lon < -180.0f || lon > 180.0f) {
@@ -117,34 +113,39 @@ float geoCalculateMagDeclination(gpsLocation_t * llh) // degrees units
     }
 
     /* find index of nearest low sampling point */
-    unsigned min_lat_index = (-(SAMPLING_MIN_LAT) + min_lat)  / SAMPLING_RES;
-    unsigned min_lon_index = (-(SAMPLING_MIN_LON) + min_lon) / SAMPLING_RES;
+    const unsigned min_lat_index = (-(SAMPLING_MIN_LAT) + min_lat)  / SAMPLING_RES;
+    const unsigned min_lon_index = (-(SAMPLING_MIN_LON) + min_lon) / SAMPLING_RES;
 
-    float declination_sw = get_lookup_table_val(min_lat_index, min_lon_index);
-    float declination_se = get_lookup_table_val(min_lat_index, min_lon_index + 1);
-    float declination_ne = get_lookup_table_val(min_lat_index + 1, min_lon_index + 1);
-    float declination_nw = get_lookup_table_val(min_lat_index + 1, min_lon_index);
+    const float declination_sw = get_lookup_table_val(min_lat_index, min_lon_index);
+    const float declination_se = get_lookup_table_val(min_lat_index, min_lon_index + 1);
+    const float declination_ne = get_lookup_table_val(min_lat_index + 1, min_lon_index + 1);
+    const float declination_nw = get_lookup_table_val(min_lat_index + 1, min_lon_index);
 
     /* perform bilinear interpolation on the four grid corners */
 
-    float declination_min = ((lon - min_lon) / SAMPLING_RES) * (declination_se - declination_sw) + declination_sw;
-    float declination_max = ((lon - min_lon) / SAMPLING_RES) * (declination_ne - declination_nw) + declination_nw;
+    const float declination_min = ((lon - min_lon) / SAMPLING_RES) * (declination_se - declination_sw) + declination_sw;
+    const float declination_max = ((lon - min_lon) / SAMPLING_RES) * (declination_ne - declination_nw) + declination_nw;
 
     return ((lat - min_lat) / SAMPLING_RES) * (declination_max - declination_min) + declination_min;
 }
 #endif
 
-void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv)
+void geoSetOrigin(gpsOrigin_s * origin, const gpsLocation_t * llh, geoOriginResetMode_e resetMode)
 {
-    // Origin can only be set if GEO_ALT_ABSOLUTE to get a valid reference
-    if ((!origin->valid) && (altConv == GEO_ALT_ABSOLUTE)) {
+    if (resetMode == GEO_ORIGIN_SET) {
         origin->valid = true;
         origin->lat = llh->lat;
         origin->lon = llh->lon;
         origin->alt = llh->alt;
         origin->scale = constrainf(cos_approx((ABS(origin->lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
     }
+    else if (origin->valid && (resetMode == GEO_ORIGIN_RESET_ALTITUDE)) {
+        origin->alt = llh->alt;
+    }
+}
 
+void geoConvertGeodeticToLocal(gpsOrigin_s * origin, const gpsLocation_t * llh, t_fp_vector * pos, geoAltitudeConversionMode_e altConv)
+{
     if (origin->valid) {
         pos->V.X = (llh->lat - origin->lat) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR;
         pos->V.Y = (llh->lon - origin->lon) * (DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR * origin->scale);
@@ -163,7 +164,7 @@ void geoConvertGeodeticToLocal(gpsOrigin_s * origin, gpsLocation_t * llh, t_fp_v
     }
 }
 
-void geoConvertLocalToGeodetic(gpsOrigin_s * origin, t_fp_vector * pos, gpsLocation_t * llh)
+void geoConvertLocalToGeodetic(const gpsOrigin_s * origin, const t_fp_vector * pos, gpsLocation_t * llh)
 {
     float scaleLonDown;
 

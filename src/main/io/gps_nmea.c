@@ -29,14 +29,12 @@
 
 #include "build/debug.h"
 
-
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/utils.h"
 
-#include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/serial_uart.h"
+#include "drivers/system.h"
 
 #include "io/serial.h"
 #include "io/gps.h"

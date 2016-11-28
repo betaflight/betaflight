@@ -16,16 +16,7 @@
 #include "common/maths.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
-#include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/adc.h"
-#include "drivers/light_led.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -33,24 +24,16 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "io/motors.h"
 #include "io/gps.h"
-#include "io/gimbal.h"
 #include "io/serial.h"
 #include "io/ledstrip.h"
 
-#include "sensors/boardalignment.h"
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
 #include "sensors/acceleration.h"
+#include "sensors/battery.h"
 #include "sensors/barometer.h"
-#include "sensors/compass.h"
-#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
 
-#include "flight/pid.h"
 #include "flight/imu.h"
-#include "flight/mixer.h"
-#include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
 #include "telemetry/telemetry.h"
@@ -81,7 +64,7 @@ enum
     // remaining 3 bits are crc (according to comments in openTx code)
 };
 
-// these data identifiers are obtained from http://diydrones.com/forum/topics/amp-to-frsky-x8r-sport-converter
+// these data identifiers are obtained from https://github.com/opentx/opentx/blob/master/radio/src/telemetry/frsky.h
 enum
 {
     FSSP_DATAID_SPEED      = 0x0830 ,
@@ -104,6 +87,9 @@ enum
     FSSP_DATAID_T1         = 0x0400 ,
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
+    FSSP_DATAID_ASPD       = 0x0A00 ,
+    FSSP_DATAID_A3         = 0x0900 ,
+    FSSP_DATAID_A4         = 0x0910 ,
 };
 
 const uint16_t frSkyDataIdTable[] = {
@@ -128,6 +114,8 @@ const uint16_t frSkyDataIdTable[] = {
     FSSP_DATAID_T1        ,
     FSSP_DATAID_T2        ,
     FSSP_DATAID_GPS_ALT   ,
+    FSSP_DATAID_ASPD      ,
+    FSSP_DATAID_A4        ,
     0
 };
 
@@ -226,7 +214,11 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    portOptions = SERIAL_BIDIR;
+    if (telemetryConfig->smartportUartUnidirectional) {
+        portOptions = SERIAL_UNIDIR;
+    } else {
+        portOptions = SERIAL_BIDIR;
+    }
 
     if (telemetryConfig->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
@@ -298,7 +290,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
- 
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back
@@ -323,7 +315,13 @@ void handleSmartPortTelemetry(void)
 #endif
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
-                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
+                    uint16_t vfasVoltage;
+                    if (telemetryConfig->frsky_vfas_cell_voltage) {
+                        vfasVoltage = vbat / batteryCellCount;
+                    } else {
+                        vfasVoltage = vbat;
+                    }
+                    smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -457,6 +455,20 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
 #endif
+#ifdef PITOT
+            case FSSP_DATAID_ASPD    :
+                if (sensors(SENSOR_PITOT)) {
+                    smartPortSendPackage(id, AirSpeed*0.194384449f); // cm/s to knots*10
+                    smartPortHasRequest = 0;
+                }
+                break;
+#endif
+            case FSSP_DATAID_A4         :
+                if (feature(FEATURE_VBAT)) {
+                    smartPortSendPackage(id, vbat * 10 / batteryCellCount ); // given in 0.1V, convert to volts
+                    smartPortHasRequest = 0;
+                }
+                break;
             default:
                 break;
                 // if nothing is sent, smartPortHasRequest isn't cleared, we already incremented the counter, just loop back to the start

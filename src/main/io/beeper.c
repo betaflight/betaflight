@@ -23,14 +23,13 @@
 #include "build/build_config.h"
 
 
-#include "drivers/gpio.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 
 #include "rx/rx.h"
-#include "fc/rc_controls.h"
 
 #include "io/statusindicator.h"
 
@@ -38,6 +37,7 @@
 #include "io/gps.h"
 #endif
 
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "config/config.h"
@@ -119,6 +119,10 @@ static const uint8_t beep_2longerBeeps[] = {
 static const uint8_t beep_gyroCalibrated[] = {
     20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
 };
+// two short beeps and a pause (first pause, then short beep)
+static const uint8_t beep_launchModeBeep[] = {
+    5, 5, 5, 100, BEEPER_COMMAND_STOP
+};
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
@@ -173,9 +177,10 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
     { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
     { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
+    { BEEPER_ENTRY(BEEPER_LAUNCH_MODE_ENABLED,   18, beep_launchModeBeep,  "LAUNCH_MODE") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -282,7 +287,7 @@ void beeperGpsStatus(void)
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
  */
-void beeperUpdate(void)
+void beeperUpdate(uint32_t currentTime)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
@@ -302,7 +307,7 @@ void beeperUpdate(void)
         return;
     }
 
-    uint32_t now = millis();
+    const uint32_t now = currentTime / 1000;
     if (beeperNextToggleTime > now) {
         return;
     }
@@ -320,7 +325,7 @@ void beeperUpdate(void)
                 beeperPos == 0
                 && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)
             ) {
-                armingBeepTimeMicros = micros();
+                armingBeepTimeMicros = currentTime;
             }
         }
     } else {

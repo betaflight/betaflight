@@ -39,31 +39,31 @@ typedef enum {
     NAV_RTH_MODE    = (1 << 4), // old GPS_HOME
     NAV_POSHOLD_MODE= (1 << 5), // old GPS_HOLD
     HEADFREE_MODE   = (1 << 6),
-    UNUSED_MODE     = (1 << 7), // old autotune
+    NAV_LAUNCH_MODE = (1 << 7),
     PASSTHRU_MODE   = (1 << 8),
     FAILSAFE_MODE   = (1 << 10),
-    UNUSED_MODE2    = (1 << 11), // old G-Tune
+    UNUSED_MODE     = (1 << 11), // old G-Tune
     NAV_WP_MODE     = (1 << 12),
     HEADING_LOCK    = (1 << 13),
     FLAPERON        = (1 << 14),
     TURN_ASSISTANT  = (1 << 15),
 } flightModeFlags_e;
 
-extern uint16_t flightModeFlags;
+extern uint32_t flightModeFlags;
 
 #define DISABLE_FLIGHT_MODE(mask) disableFlightMode(mask)
 #define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
 #define FLIGHT_MODE(mask) (flightModeFlags & (mask))
 
 typedef enum {
-    GPS_FIX_HOME        = (1 << 0),
-    GPS_FIX             = (1 << 1),
-    CALIBRATE_MAG       = (1 << 2),
-    SMALL_ANGLE         = (1 << 3),
-    FIXED_WING          = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
-    ANTI_WINDUP         = (1 << 5),
-    //PID_ATTENUATE       = (1 << 6),
-    FLAPERON_AVAILABLE  = (1 << 7)
+    GPS_FIX_HOME            = (1 << 0),
+    GPS_FIX                 = (1 << 1),
+    CALIBRATE_MAG           = (1 << 2),
+    SMALL_ANGLE             = (1 << 3),
+    FIXED_WING              = (1 << 4),     // set when in flying_wing or airplane mode. currently used by althold selection code
+    ANTI_WINDUP             = (1 << 5),
+    FLAPERON_AVAILABLE      = (1 << 6),
+    NAV_MOTOR_STOP_OR_IDLE  = (1 << 7),     // navigation requests MOTOR_STOP or motor idle regardless of throttle stick, will only activate if MOTOR_STOP feature is available
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
@@ -72,8 +72,8 @@ typedef enum {
 
 extern uint8_t stateFlags;
 
-uint16_t enableFlightMode(flightModeFlags_e mask);
-uint16_t disableFlightMode(flightModeFlags_e mask);
+uint32_t enableFlightMode(flightModeFlags_e mask);
+uint32_t disableFlightMode(flightModeFlags_e mask);
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);

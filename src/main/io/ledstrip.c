@@ -32,26 +32,23 @@
 #include "common/typeconversion.h"
 
 #include "drivers/light_ws2811strip.h"
-#include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/system.h"
 
-#include <common/printf.h>
 #include "common/axis.h"
+#include "common/printf.h"
 #include "common/utils.h"
 
 #include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/gyro.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+#include "sensors/pitotmeter.h"
 
 #include "io/ledstrip.h"
 #include "io/beeper.h"
@@ -63,6 +60,8 @@
 
 #include "rx/rx.h"
 
+#include "telemetry/telemetry.h"
+
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
@@ -70,13 +69,9 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "telemetry/telemetry.h"
-
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
-#include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/config_profile.h"
 #include "config/feature.h"
 
 /*
@@ -85,6 +80,7 @@ PG_REGISTER_ARR_WITH_RESET_FN(hsvColor_t, LED_CONFIGURABLE_COLOR_COUNT, colors, 
 PG_REGISTER_ARR_WITH_RESET_FN(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG_MODE_COLOR_CONFIG, 0);
 PG_REGISTER_WITH_RESET_FN(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
 */
+
 
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
@@ -925,7 +921,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void updateLedStrip(void)
+void updateLedStrip(uint32_t currentTime)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
@@ -940,19 +936,17 @@ void updateLedStrip(void)
     }
     ledStripEnabled = true;
 
-    uint32_t now = micros();
-
     // test all led timers, setting corresponding bits
     uint32_t timActive = 0;
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
         // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
         // max delay is limited to 5s
-        int32_t delta = cmp32(now, timerVal[timId]);
+        int32_t delta = cmp32(currentTime, timerVal[timId]);
         if (delta < 0 && delta > -LED_STRIP_MS(5000))
             continue;  // not ready yet
         timActive |= 1 << timId;
         if (delta >= LED_STRIP_MS(100) || delta < 0) {
-            timerVal[timId] = now;
+            timerVal[timId] = currentTime;
         }
     }
 

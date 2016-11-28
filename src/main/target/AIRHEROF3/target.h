@@ -86,13 +86,6 @@
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
-#define GPS
-
-#define NAV
-#define NAV_AUTO_MAG_DECLINATION
-#define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       60
-
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
@@ -101,10 +94,10 @@
 
 #ifdef AIRHEROF3_QUAD
     #define USE_I2C
-    #define I2C_DEVICE              (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
+    #define I2C_DEVICE  (I2CDEV_1) // SDA (PB9/AF4), SCL (PB8/AF4)
 
-    #define I2C1_SCL_PIN            PB8
-    #define I2C1_SDA_PIN            PB9
+    #define I2C1_SCL    PB8
+    #define I2C1_SDA    PB9
 
     // MAG is I2C, so it is only useful when I2C is available
     #define MAG

@@ -13,7 +13,7 @@ It is possible to use both types at the same time, which may be desirable.  Flig
 
 Alternatively you may configure a transmitter switch to activate failsafe mode. This is useful for fieldtesting the failsafe system and as a **_`PANIC`_** switch when you lose orientation.
 
-## Flight controller failsafe system 
+## Flight controller failsafe system
 
 This system has two stages.
 
@@ -37,7 +37,8 @@ Note that:
 
 * When `failsafe_kill_switch` is set to ON and the rc switch configured for failsafe is set to ON, the craft is instantly disarmed. Re-arming is possible when the signal from the receiver has restored for at least 3 seconds AND the arming switch is in the OFF position (when one is in use). Similar effect can be achieved by setting 'failsafe_throttle' to 1000 and 'failsafe_off_delay' to 0. This is not the prefered method, since the reaction is slower and re-arming will be locked.
 
-* Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle.     
+* Prior to starting a stage 2 intervention it is checked if the throttle position was below `min_throttle` level for the last `failsafe_throttle_low_delay` seconds. If it was, the craft is assumed to be on the ground and is only disarmed. It may be re-armed without a power cycle. This feature can be disabled completely by 
+setting `failsafe_throttle_low_delay` to zero. This is useful for gliders that may fly long with zero throttle.
 
 Some notes about **SAFETY**:
 * The failsafe system will be activated regardless of current throttle position. So when the failsafe intervention is aborted (RC signal restored/failsafe switch set to OFF) the current stick position will direct the craft !
@@ -106,11 +107,11 @@ Use standard RX usec values.  See Rx documentation.
 
 ### `rx_min_usec`
 
-The lowest channel value considered valid.  e.g. PWM/PPM pulse length 
+The lowest channel value considered valid.  e.g. PWM/PPM pulse length
 
 ### `rx_max_usec`
 
-The highest channel value considered valid.  e.g. PWM/PPM pulse length 
+The highest channel value considered valid.  e.g. PWM/PPM pulse length
 
 The `rx_min_usec` and `rx_max_usec` settings helps detect when your RX stops sending any data, enters failsafe mode or when the RX looses signal.
 
@@ -133,7 +134,7 @@ With a Graupner GR-24 configured for PWM output with failsafe on channels 1-4 se
 1. Ensure that your switch positions don't now cause the craft to disarm (otherwise it would fall out of the sky on regained signal).
 1. Observe that normal flight behavior is resumed.
 1. Disarm.
- 
+
 **Field test the failsafe system.**
 
 1. Perform bench testing first!

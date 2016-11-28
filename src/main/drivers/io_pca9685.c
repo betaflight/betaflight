@@ -9,9 +9,6 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
-#include "fc/runtime_config.h"
-
 #define PCA9685_ADDR 0x40
 #define PCA9685_MODE1 0x00
 #define PCA9685_PRESCALE 0xFE
@@ -25,8 +22,8 @@
 #define PCA9685_SERVO_COUNT 16
 #define PCA9685_SYNC_THRESHOLD 5
 
-uint16_t currentOutputState[PCA9685_SERVO_FREQUENCY] = {0};
-uint16_t temporaryOutputState[PCA9685_SERVO_FREQUENCY] = {0};
+uint16_t currentOutputState[PCA9685_SERVO_COUNT] = {0};
+uint16_t temporaryOutputState[PCA9685_SERVO_COUNT] = {0};
 
 void pca9685setPWMOn(uint8_t servoIndex, uint16_t on) {
     if (servoIndex < PCA9685_SERVO_COUNT) {

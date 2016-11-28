@@ -11,6 +11,7 @@ The core set of supported flyable boards are:
 * Naze32
 * Sparky
 * SPRacingF3
+* [OpenPilot Revolution](Board%20-%20Revolution.md)
 
 INAV also runs on the following developer boards:
 

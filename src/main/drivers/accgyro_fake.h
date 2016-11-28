@@ -15,15 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-typedef enum {
-    PAGE_WELCOME,
-    PAGE_ARMED,
-    PAGE_STATUS
-} pageId_e;
+#pragma once
 
-struct rxConfig_s;
-void displayInit(struct rxConfig_s *intialRxConfig);
-void updateDisplay(void);
+struct acc_s;
+bool fakeAccDetect(struct acc_s *acc);
+void fakeAccSet(int16_t x, int16_t y, int16_t z);
 
-void displaySetPage(pageId_e newPageId);
-void displaySetNextPageChangeAt(uint32_t futureMicros);
+struct gyro_s;
+bool fakeGyroDetect(struct gyro_s *gyro);
+void fakeGyroSet(int16_t x, int16_t y, int16_t z);

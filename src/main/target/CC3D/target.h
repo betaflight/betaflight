@@ -22,7 +22,7 @@
 #define INVERTER                PB2 // PB2 (BOOT1) used as inverter select GPIO
 #define INVERTER_USART          USART1
 
-#define BEEPER                  PB15
+#define BEEPER                  PA15
 #define BEEPER_OPT              PB2
 
 #define USE_EXTI
@@ -36,6 +36,7 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
+#define I2C_DEVICE_SHARES_UART3
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
@@ -161,29 +162,15 @@
 #define SONAR_ECHO_PIN          PB0
 #define SONAR_TRIGGER_PIN       PB5
 
-#define NAV
 //#define NAV_AUTO_MAG_DECLINATION
 //#define NAV_GPS_GLITCH_DETECTION
-#define NAV_MAX_WAYPOINTS       30
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#undef TELEMETRY_FRSKY
-#undef TELEMETRY_HOTT
-#undef TELEMETRY_SMARTPORT
-
-// Disable all GPS protocols except UBLOX
-#undef GPS_PROTO_NMEA
-#undef GPS_PROTO_I2C_NAV
-#undef GPS_PROTO_NAZA
 
 #ifdef OPBL
 
 #ifdef USE_RX_NRF24
 #undef USE_SERVOS
-#undef USE_SONAR
-#else
-#undef USE_SONAR_SRF10
 #endif // USE_RX_NRF24
 
 #define TARGET_MOTOR_COUNT 4
@@ -196,18 +183,14 @@
 #else
 #define TARGET_MOTOR_COUNT 4
 #define DISABLE_UNCOMMON_MIXERS
+#undef BLACKBOX
 #endif //OPBL
 
 
-#define SKIP_CLI_RESOURCES
-#define SKIP_RX_MSP
 #ifdef USE_RX_NRF24
 #define SKIP_RX_PWM_PPM
 #undef SERIAL_RX
 #undef SPEKTRUM_BIND
-#undef TELEMETRY
-#undef TELEMETRY_LTM
-#undef TELEMETRY_IBUS
 #endif
 
 // Number of available PWM outputs

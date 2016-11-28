@@ -46,11 +46,11 @@
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "fc/rc_controls.h"

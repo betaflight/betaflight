@@ -35,9 +35,6 @@
 #include "common/filter.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -70,8 +67,10 @@
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
 // which results in false gyro drift. See
 // http://gentlenav.googlecode.com/files/fastRotations.pdf
-#define SPIN_RATE_LIMIT     20
-#define MAX_ACC_SQ_NEARNESS 25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
+
+#define SPIN_RATE_LIMIT             20
+#define MAX_ACC_SQ_NEARNESS         25      // 25% or G^2, accepted acceleration of (0.87 - 1.12G)
+#define MAX_GPS_HEADING_ERROR_DEG   60      // Amount of error between GPS CoG and estimated Yaw at witch we stop trusting GPS and fallback to MAG
 
 t_fp_vector imuAccelInBodyFrame;
 t_fp_vector imuMeasuredGravityBF;
@@ -91,6 +90,28 @@ static pidProfile_t *pidProfile;
 static float gyroScale;
 
 static bool gpsHeadingInitialized = false;
+
+#ifdef ASYNC_GYRO_PROCESSING
+/* Asynchronous update accumulators */
+static float imuAccumulatedRate[XYZ_AXIS_COUNT];
+static float imuAccumulatedRateTime;
+static float imuAccumulatedAcc[XYZ_AXIS_COUNT];
+static int   imuAccumulatedAccCount;
+#endif
+
+#ifdef ASYNC_GYRO_PROCESSING
+void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
+{
+    const float gyroUpdateDelta = gyroUpdateDeltaUs * 1e-6f;
+
+    for (int axis = 0; axis < 3; axis++) {
+        imuAccumulatedRate[axis] += gyroADC[axis] * gyroScale * gyroUpdateDelta;
+    }
+
+    imuAccumulatedRateTime += gyroUpdateDelta;
+}
+#endif
+
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
@@ -303,8 +324,8 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     if (accWeight > 0) {
         float kpAcc = imuRuntimeConfig->dcm_kp_acc * imuGetPGainScaleFactor();
 
-        // Just scale by 1G length - That's our vector adjustment. Rather than 
-        // using one-over-exact length (which needs a costly square root), we already 
+        // Just scale by 1G length - That's our vector adjustment. Rather than
+        // using one-over-exact length (which needs a costly square root), we already
         // know the vector is enough "roughly unit length" and since it is only weighted
         // in by a certain amount anyway later, having that exact is meaningless. (c) MasterZap
         ax *= (1.0f / GRAVITY_CMSS);
@@ -405,29 +426,51 @@ static bool isMagnetometerHealthy(void)
 
 static void imuCalculateEstimatedAttitude(float dT)
 {
-    float courseOverGround = 0;
+    const bool canUseMAG = sensors(SENSOR_MAG) && isMagnetometerHealthy();
+    const int accWeight = imuCalculateAccelerometerConfidence();
 
-    int accWeight = 0;
+    float courseOverGround = 0;
     bool useMag = false;
     bool useCOG = false;
 
-    accWeight = imuCalculateAccelerometerConfidence();
-
-    if (sensors(SENSOR_MAG) && isMagnetometerHealthy()) {
-        useMag = true;
-    }
 #if defined(GPS)
-    else if (STATE(FIXED_WING) && sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 5 && gpsSol.groundSpeed >= 300) {
-        // In case of a fixed-wing aircraft we can use GPS course over ground to correct heading
-        if (gpsHeadingInitialized) {
-            courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
-            useCOG = true;
+    if (STATE(FIXED_WING)) {
+        bool canUseCOG = sensors(SENSOR_GPS) && STATE(GPS_FIX) && gpsSol.numSat >= 6 && gpsSol.groundSpeed >= 300;
+
+        if (canUseCOG) {
+            if (gpsHeadingInitialized) {
+                // Use GPS heading if error is acceptable or if it's the only source of heading
+                if (ABS(gpsSol.groundCourse - attitude.values.yaw) < DEGREES_TO_DECIDEGREES(MAX_GPS_HEADING_ERROR_DEG) || !canUseMAG) {
+                    courseOverGround = DECIDEGREES_TO_RADIANS(gpsSol.groundCourse);
+                    useCOG = true;
+                }
+            }
+            else {
+                // Re-initialize quaternion from known Roll, Pitch and GPS heading
+                imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
+                gpsHeadingInitialized = true;
+            }
+
+            // If we can't use COG and there's MAG available - fallback
+            if (!useCOG && canUseMAG) {
+                useMag = true;
+            }
         }
-        else {
-            // Re-initialize quaternion from known Roll, Pitch and GPS heading
-            imuComputeQuaternionFromRPY(attitude.values.roll, attitude.values.pitch, gpsSol.groundCourse);
-            gpsHeadingInitialized = true;
+        else if (canUseMAG) {
+            useMag = true;
+            gpsHeadingInitialized = true;   // GPS heading initialised from MAG, continue on GPS if possible
         }
+    }
+    else {
+        // Multicopters don't use GPS heading
+        if (canUseMAG) {
+            useMag = true;
+        }
+    }
+#else
+    // In absence of GPS MAG is the only option
+    if (canUseMAG) {
+        useMag = true;
     }
 #endif
 
@@ -444,9 +487,18 @@ static void imuUpdateMeasuredRotationRate(void)
 {
     int axis;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    for (axis = 0; axis < 3; axis++) {
+        imuMeasuredRotationBF.A[axis] = imuAccumulatedRate[axis] / imuAccumulatedRateTime;
+        imuAccumulatedRate[axis] = 0.0f;
+    }
+
+    imuAccumulatedRateTime = 0.0f;
+#else
     for (axis = 0; axis < 3; axis++) {
         imuMeasuredRotationBF.A[axis] = gyroADC[axis] * gyroScale;
     }
+#endif
 }
 
 /* Calculate measured acceleration in body frame cm/s/s */
@@ -454,11 +506,20 @@ static void imuUpdateMeasuredAcceleration(void)
 {
     int axis;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccelInBodyFrame.A[axis] = imuAccumulatedAcc[axis] / imuAccumulatedAccCount;
+        imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
+        imuAccumulatedAcc[axis] = 0;
+    }
+    imuAccumulatedAccCount = 0;;
+#else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
+#endif
 
 #ifdef GPS
     /** Centrifugal force compensation on a fixed-wing aircraft
@@ -504,18 +565,21 @@ void imuUpdateAccelerometer(void)
         isAccelUpdatedAtLeastOnce = true;
     }
 #endif
+
+#ifdef ASYNC_GYRO_PROCESSING
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccumulatedAcc[axis] += accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
+    }
+    imuAccumulatedAccCount++;
+#endif
 }
 
-void imuUpdateGyroAndAttitude(void)
+void imuUpdateAttitude(uint32_t currentTime)
 {
     /* Calculate dT */
     static uint32_t previousIMUUpdateTime;
-    uint32_t currentTime = micros();
-    float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
+    const float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
     previousIMUUpdateTime = currentTime;
-
-    /* Update gyroscope */
-    gyroUpdate();
 
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
 #ifdef HIL

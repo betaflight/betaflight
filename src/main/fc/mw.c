@@ -31,19 +31,16 @@
 #include "common/utils.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/light_led.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_rx.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/serial.h"
+#include "drivers/system.h"
 
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 
@@ -52,7 +49,7 @@
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"
-#include "io/display.h"
+#include "io/dashboard.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/gimbal.h"
@@ -103,8 +100,6 @@ uint8_t motorControlEnable = false;
 
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
-
-extern uint32_t currentTime;
 
 static bool isRXDataNew;
 
@@ -262,7 +257,7 @@ void mwArm(void)
     }
 }
 
-void processRx(void)
+void processRx(uint32_t currentTime)
 {
     static bool armedBeeperOn = false;
 
@@ -484,21 +479,19 @@ void filterRc(bool isRXDataNew)
     static int16_t factor, rcInterpolationFactor;
     static biquadFilter_t filteredCycleTimeState;
     static bool filterInitialised;
-    uint16_t filteredCycleTime;
-    uint16_t rxRefreshRate;
-
-    // Set RC refresh rate for sampling and channels to filter
-    initRxRefreshRate(&rxRefreshRate);
 
     // Calculate average cycle time (1Hz LPF on cycle time)
     if (!filterInitialised) {
+    #ifdef ASYNC_GYRO_PROCESSING
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, getPidUpdateRate());
+    #else
         biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
+    #endif
         filterInitialised = true;
     }
 
-    filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
-
-    rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
+    const uint16_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
+    rcInterpolationFactor = rxRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
@@ -521,13 +514,54 @@ void filterRc(bool isRXDataNew)
     }
 }
 
-void taskMainPidLoop(void)
+// Function for loop trigger
+void taskGyro(uint32_t currentTime) {
+    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
+    // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
+    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+
+    if (masterConfig.gyroSync) {
+        while (true) {
+        #ifdef ASYNC_GYRO_PROCESSING
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+        #else
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        #endif
+                break;
+            }
+        }
+    }
+
+    /* Update actual hardware readings */
+    gyroUpdate();
+
+#ifdef ASYNC_GYRO_PROCESSING
+    /* Update IMU for better accuracy */
+    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTime));
+#endif
+}
+
+void taskMainPidLoop(uint32_t currentTime)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
+#ifdef ASYNC_GYRO_PROCESSING
+    if (getAsyncMode() == ASYNC_MODE_NONE) {
+        taskGyro(currentTime);
+    }
+
+    if (getAsyncMode() != ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
+        imuUpdateAccelerometer();
+        imuUpdateAttitude(currentTime);
+    }
+#else
+    /* Update gyroscope */
+    taskGyro(currentTime);
     imuUpdateAccelerometer();
-    imuUpdateGyroAndAttitude();
+    imuUpdateAttitude(currentTime);
+#endif
+
 
     annexCode();
 
@@ -583,7 +617,14 @@ void taskMainPidLoop(void)
                                             masterConfig.motorConfig.maxthrottle);
         }
     }
+    else {
+        // FIXME: throttle pitch comp for FW
+    }
 
+    // Update PID coefficients
+    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.motorConfig);
+
+    // Calculate stabilisation
     pidController(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
 
 #ifdef HIL
@@ -622,39 +663,21 @@ void taskMainPidLoop(void)
 
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox();
+        handleBlackbox(micros());
     }
 #endif
 
 }
 
-// Function for loop trigger
-void taskMainPidLoopChecker(void) {
-    // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
-    // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
-
-    if (masterConfig.gyroSync) {
-        while (1) {
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
-                break;
-            }
-        }
-    }
-
-    taskMainPidLoop();
-}
-
-bool taskUpdateRxCheck(uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
-    updateRx(currentTime);
-    return shouldProcessRx(currentTime);
+
+    return updateRx(currentTime);
 }
 
-void taskUpdateRxMain(void)
+void taskUpdateRxMain(uint32_t currentTime)
 {
-    processRx();
-    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
+    processRx(currentTime);
     isRXDataNew = true;
 }

@@ -58,19 +58,20 @@
 #define AK8975_MAG_REG_CNTL         0x0a
 #define AK8975_MAG_REG_ASCT         0x0c // self test
 
+#define DETECTION_MAX_RETRY_COUNT   5
 bool ak8975Detect(mag_t *mag)
 {
-    bool ack = false;
-    uint8_t sig = 0;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        uint8_t sig = 0;
+        bool ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_WHO_AM_I, 1, &sig);
+        if (ack && sig == 'H') { // 0x48 / 01001000 / 'H'
+            mag->init = ak8975Init;
+            mag->read = ak8975Read;
+            return true;
+        }
+    }
 
-    ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_WHO_AM_I, 1, &sig);
-    if (!ack || sig != 'H') // 0x48 / 01001000 / 'H'
-        return false;
-
-    mag->init = ak8975Init;
-    mag->read = ak8975Read;
-
-    return true;
+    return false;
 }
 
 #define AK8975A_ASAX 0x10 // Fuse ROM x-axis sensitivity adjustment value
