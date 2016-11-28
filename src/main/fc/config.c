@@ -173,7 +173,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
-    pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
+    pidProfile->pidAtMinThrottle = PID_STABILISATION_OFF;
 
     // Betaflight PID controller parameters
     pidProfile->setpointRelaxRatio = 30;
