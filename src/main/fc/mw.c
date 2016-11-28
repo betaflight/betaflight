@@ -520,7 +520,7 @@ void taskGyro(uint32_t currentTime) {
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
     const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
-    if (masterConfig.gyroSync) {
+    if (masterConfig.gyroConfig.gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
             if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {

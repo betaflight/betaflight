@@ -402,7 +402,7 @@ uint32_t getPidUpdateRate(void) {
     if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
         return getGyroUpdateRate();
     } else {
-        return masterConfig.looptime;
+        return masterConfig.gyroConfig.looptime;
     }
 }
 
@@ -495,7 +495,7 @@ static void resetConf(void)
     masterConfig.dcm_ki_acc = 50;               // 0.005 * 10000
     masterConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
-    masterConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
+    masterConfig.gyroConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
 
@@ -572,10 +572,10 @@ static void resetConf(void)
 
     resetSerialConfig(&masterConfig.serialConfig);
 
-    masterConfig.looptime = 2000;
+    masterConfig.gyroConfig.looptime = 2000;
     masterConfig.i2c_overclock = 0;
-    masterConfig.gyroSync = 0;
-    masterConfig.gyroSyncDenominator = 2;
+    masterConfig.gyroConfig.gyroSync = 0;
+    masterConfig.gyroConfig.gyroSyncDenominator = 2;
 
 #ifdef ASYNC_GYRO_PROCESSING
     masterConfig.accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
@@ -783,7 +783,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroUseConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_soft_lpf_hz);
+    masterConfig.gyroConfig.gyro_soft_lpf_hz = currentProfile->pidProfile.gyro_soft_lpf_hz;
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -905,7 +905,7 @@ void validateAndFixConfig(void)
      * When async processing mode is enabled, gyroSync has to be forced to "ON"
      */
     if (getAsyncMode() != ASYNC_MODE_NONE) {
-        masterConfig.gyroSync = 1;
+        masterConfig.gyroConfig.gyroSync = 1;
     }
 #endif
 
@@ -917,16 +917,16 @@ void validateAndFixConfig(void)
 
         uint8_t denominatorLimit = 2;
 
-        if (masterConfig.gyro_lpf == 0) {
+        if (masterConfig.gyroConfig.gyro_lpf == 0) {
             denominatorLimit = 16;
         }
 
-        if (masterConfig.gyroSyncDenominator < denominatorLimit) {
-            masterConfig.gyroSyncDenominator = denominatorLimit;
+        if (masterConfig.gyroConfig.gyroSyncDenominator < denominatorLimit) {
+            masterConfig.gyroConfig.gyroSyncDenominator = denominatorLimit;
         }
 
-        if (masterConfig.looptime < 2000) {
-            masterConfig.looptime = 2000;
+        if (masterConfig.gyroConfig.looptime < 2000) {
+            masterConfig.gyroConfig.looptime = 2000;
         }
 
     }

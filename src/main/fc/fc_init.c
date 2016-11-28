@@ -476,10 +476,7 @@ void init(void)
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
             &masterConfig.sensorSelectionConfig,
             currentProfile->mag_declination,
-            masterConfig.looptime,
-            masterConfig.gyro_lpf,
-            masterConfig.gyroSync,
-            masterConfig.gyroSyncDenominator)) {
+            &masterConfig.gyroConfig)) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);

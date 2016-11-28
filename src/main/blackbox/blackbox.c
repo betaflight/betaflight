@@ -1379,7 +1379,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyro_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyroConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.sensorSelectionConfig.acc_hardware);
