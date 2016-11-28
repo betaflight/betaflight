@@ -15,7 +15,7 @@
 **
 **  Environment : Atollic TrueSTUDIO(R)
 **
-**  Distribution: The file is distributed “as is,” without any warranty
+**  Distribution: The file is distributed ï¿½as is,ï¿½ without any warranty
 **                of any kind.
 **
 **  (c)Copyright Atollic AB.
@@ -40,10 +40,10 @@ MEMORY
 {
 	FLASH (rx)      : ORIGIN = 0x08010000, LENGTH = 0x00070000 
 	RAM (rwx)       : ORIGIN = 0x20000000, LENGTH = 0x00020000
+    CCM (xrw)       : ORIGIN = 0x10000000, LENGTH = 64K
 	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-REGION_ALIAS("CCSRAM", RAM);
-REGION_ALIAS("SRAM", RAM);
+REGION_ALIAS("STACKRAM", CCM)
 
 INCLUDE "stm32_flash.ld"
