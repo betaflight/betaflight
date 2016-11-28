@@ -91,8 +91,8 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
-#ifdef USE_INTPWM
-    TASK_INTPWM,
+#ifdef USE_RSSI_SOFTPWM
+    TASK_RSSI_SOFTPWM,
 #endif
 
     /* Count of real tasks */

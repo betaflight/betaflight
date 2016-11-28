@@ -793,6 +793,10 @@ void createDefaultConfig(master_t *config)
     }
 #endif
 
+#ifdef USE_RSSISOFTPWM
+    config->rssi_softpwm_device = 0;
+#endif
+
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif

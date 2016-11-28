@@ -58,7 +58,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
-#include "drivers/intpwm.h"
+#include "drivers/rssi_softpwm.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -432,8 +432,8 @@ void init(void)
         failureMode(FAILURE_MISSING_ACC);
     }
 
-#ifdef USE_INTPWM
-    intpwmInit();
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmInit();
 #endif
 
     systemState |= SYSTEM_STATE_SENSORS_READY;

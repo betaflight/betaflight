@@ -31,7 +31,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/serial.h"
-#include "drivers/intpwm.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -208,11 +208,11 @@ static void taskEscTelemetry(uint32_t currentTime)
  }
 #endif
 
-#ifdef USE_INTPWM
-static void taskIntPwm(uint32_t currentTime)
+#ifdef USE_RSSI_SOFTPWM
+static void taskRssiSoftPwm(uint32_t currentTime)
 {
     // Feature switch here?
-    updateIntpwm(currentTime);
+    rssiSoftPwmUpdate(currentTime);
 }
 #endif
 
@@ -291,8 +291,8 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
-#ifdef USE_INTPWM
-    setTaskEnabled(TASK_INTPWM, true); // XXX Feature switch?
+#ifdef USE_RSSI_SOFTPWM
+    setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
 #endif
 }
 
@@ -472,10 +472,10 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_INTPWM
-    [TASK_INTPWM] = {
-        .taskName = "INTPWM",
-        .taskFunc = taskIntPwm,
+#ifdef USE_RSSI_SOFTPWM
+    [TASK_RSSI_SOFTPWM] = {
+        .taskName = "RSSIPWM",
+        .taskFunc = taskRssiSoftPwm,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },

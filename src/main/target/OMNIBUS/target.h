@@ -197,16 +197,8 @@
 #define USABLE_TIMER_CHANNEL_COUNT 8 // PPM + 6 Outputs (2 shared with UART3)
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15))
 
-// Experimental stand alone PWM support RSSI input
-#define RSSI_PWM
-
 // RSSI_PWM uses interrupt based PWM input
-#define USE_INTPWM       // Interrupt based measurements
-//#define INTPWM_PIN           PB2 // Requires 1K inline to be bypassed.
-//#define INTPWM_PIN           PB4 // Shared with PPM
-#define INTPWM_PIN           PB6 // Shared with PWM8 & I2C
-// Values for FrSky PWM RSSI
-#define INTPWM_INPUT_MIN     20
-#define INTPWM_INPUT_MAX   1024
-#define INTPWM_OUTPUT_MIN     0
-#define INTPWM_OUTPUT_MAX  1023
+#define USE_RSSI_SOFTPWM       // Interrupt based measurements
+//#define RSSI_SOFTPWM_PIN      PB2 // Requires 1K inline to be bypassed.
+//#define RSSI_SOFTPWM_PIN      PB4 // Shared with PPM
+#define RSSI_SOFTPWM_PIN      PB6 // Shared with PWM8 & I2C

@@ -14,4 +14,4 @@ TARGET_SRC = \
             drivers/transponder_ir.c \
             drivers/transponder_ir_stm32f30x.c \
             io/transponder_ir.c \
-            drivers/intpwm.c
+            drivers/rssi_softpwm.c
