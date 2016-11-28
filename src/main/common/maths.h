@@ -41,6 +41,10 @@
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
 #define DECIDEGREES_TO_DEGREES(angle) ((angle) / 10)
 
+#define DEGREES_PER_DEKADEGREE 10
+#define DEGREES_TO_DEKADEGREES(angle) ((angle) / DEGREES_PER_DEKADEGREE)
+#define DEKADEGREES_TO_DEGREES(angle) ((angle) * DEGREES_PER_DEKADEGREE)
+
 #define DEGREES_TO_RADIANS(angle) ((angle) * RAD)
 #define RADIANS_TO_DEGREES(angle) ((angle) / RAD)
 #define DECIDEGREES_TO_RADIANS(angle) (((angle) / 10.0f) * RAD)

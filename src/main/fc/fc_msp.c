@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
 #include "drivers/sdcard.h"
+#include "drivers/max7456.h"
 
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
@@ -956,6 +957,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         serializeSDCardSummaryReply(dst);
         break;
 
+    case MSP_OSD_CONFIG:
+    #ifdef OSD
+        sbufWriteU8(dst, 1); // OSD supported
+        // send video system (AUTO/PAL/NTSC)
+        sbufWriteU8(dst, masterConfig.osdProfile.video_system);
+        sbufWriteU8(dst, masterConfig.osdProfile.units);
+        sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
+        sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
+
+        for (uint8_t i = 0; i < OSD_ITEM_COUNT; i++) {
+            sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
+        }
+    #else
+        sbufWriteU8(dst, 0); // OSD not supported
+    #endif
+        break;
+
     case MSP_BF_BUILD_INFO:
         sbufWriteData(dst, buildDate, 11); // MMM DD YYYY as ascii, MMM = Jan/Feb... etc
         sbufWriteU32(dst, 0); // future exp
@@ -1460,6 +1480,49 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             masterConfig.blackboxConfig.rate_num = sbufReadU8(src);
             masterConfig.blackboxConfig.rate_denom = sbufReadU8(src);
             break;
+#endif
+
+#ifdef OSD
+    case MSP_SET_OSD_CONFIG:
+        {
+            const uint8_t addr = sbufReadU8(src);
+            // set all the other settings
+            if ((int8_t)addr == -1) {
+#ifdef USE_MAX7456
+                masterConfig.osdProfile.video_system = sbufReadU8(src);
+#else
+                sbufReadU8(src); // Skip video system
+#endif
+                masterConfig.osdProfile.units = sbufReadU8(src);
+                masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
+                masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.time_alarm = sbufReadU16(src);
+                masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
+            } else {
+                // set a position setting
+                masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+            }
+        }
+        break;
+    case MSP_OSD_CHAR_WRITE:
+#ifdef USE_MAX7456
+        {
+            uint8_t font_data[64];
+            const uint8_t addr = sbufReadU8(src);
+            for (int i = 0; i < 54; i++) {
+                font_data[i] = sbufReadU8(src);
+            }
+            // !!TODO - replace this with a device independent implementation
+            max7456WriteNvm(addr, font_data);
+        }
+#else
+        // just discard the data
+        sbufReadU8(src);
+        for (int i = 0; i < 54; i++) {
+            sbufReadU8(src);
+        }
+#endif
+        break;
 #endif
 
 #ifdef USE_FLASHFS

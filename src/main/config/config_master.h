@@ -43,6 +43,7 @@
 
 #include "io/gimbal.h"
 #include "io/gps.h"
+#include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/serial.h"
@@ -148,6 +149,10 @@ typedef struct master_s {
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 #endif
 
+#ifdef OSD
+    osd_profile_t osdProfile;
+#endif
+
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
@@ -158,6 +163,8 @@ typedef struct master_s {
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+
+    char name[MAX_NAME_LENGTH + 1];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

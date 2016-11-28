@@ -388,6 +388,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/display.c \
             drivers/exti.c \
             drivers/gps_i2cnav.c \
             drivers/gyro_sync.c \
@@ -457,6 +458,13 @@ COMMON_SRC = \
 HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
             common/colorconversion.c \
             drivers/display_ug2864hsweg01.c \
             drivers/sonar_hcsr04.c \
@@ -468,13 +476,17 @@ HIGHEND_SRC = \
             flight/navigation_rewrite_pos_estimator.c \
             flight/navigation_rewrite_geo.c \
             flight/gps_conversion.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
             io/gps.c \
             io/gps_ublox.c \
             io/gps_nmea.c \
             io/gps_naza.c \
             io/gps_i2cnav.c \
             io/ledstrip.c \
-            io/dashboard.c \
+            io/osd.c \
             sensors/rangefinder.c \
             sensors/barometer.c \
             sensors/pitotmeter.c \
@@ -484,7 +496,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/mavlink.c \
             telemetry/ltm.c \
-			telemetry/ibus.c
+            telemetry/ibus.c
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \

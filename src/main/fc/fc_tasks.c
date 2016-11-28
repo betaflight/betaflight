@@ -21,6 +21,8 @@
 
 #include "platform.h"
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -44,6 +46,7 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#include "io/osd.h"
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/pwmdriver_i2c.h"
@@ -246,6 +249,15 @@ void taskAcc(uint32_t currentTime)
 }
 #endif
 
+#ifdef OSD
+void taskUpdateOsd(uint32_t currentTime)
+{
+    if (feature(FEATURE_OSD)) {
+        osdUpdate(currentTime);
+    }
+}
+#endif
+
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
@@ -416,6 +428,24 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef OSD
+    [TASK_OSD] = {
+        .taskName = "OSD",
+        .taskFunc = taskUpdateOsd,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
 };
 
 void fcTasksInit(void)
@@ -484,5 +514,17 @@ void fcTasksInit(void)
 
 #ifdef USE_PMW_SERVO_DRIVER
     setTaskEnabled(TASK_PWMDRIVER, feature(FEATURE_PWM_SERVO_DRIVER));
+#endif
+
+#ifdef OSD
+    setTaskEnabled(TASK_OSD, feature(FEATURE_OSD));
+#endif
+
+#ifdef CMS
+#ifdef USE_MSP_DISPLAYPORT
+    setTaskEnabled(TASK_CMS, true);
+#else
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+#endif
 #endif
 }

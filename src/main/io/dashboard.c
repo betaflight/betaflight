@@ -30,7 +30,7 @@
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
 
-//#include "cms/cms.h"
+#include "cms/cms.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -46,8 +46,11 @@
 #include "flight/navigation_rewrite.h"
 
 #include "io/dashboard.h"
-//#include "io/displayport_oled.h"
+#include "io/displayport_oled.h"
+
+#ifdef GPS
 #include "io/gps.h"
+#endif
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -73,7 +76,7 @@ static uint32_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
 static const rxConfig_t *rxConfig;
-//static displayPort_t *displayPort;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -374,14 +377,23 @@ static void showStatusPage(void)
 void dashboardUpdate(uint32_t currentTime)
 {
     static uint8_t previousArmedState = 0;
+    static bool wasGrabbed = false;
+    bool pageChanging;
 
 #ifdef CMS
     if (displayIsGrabbed(displayPort)) {
+        wasGrabbed = true;
         return;
+    } else if (wasGrabbed) {
+        pageChanging = true;
+        wasGrabbed = false;
+    } else {
+        pageChanging = false;
     }
+#else
+    pageChanging = false;
 #endif
 
-    bool pageChanging = false;
     bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
 
     if (!updateNow) {
@@ -470,10 +482,12 @@ void dashboardInit(const rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
-//    displayPort = displayPortOledInit();
+    displayPort = displayPortOledInit();
 #if defined(CMS)
     cmsDisplayPortRegister(displayPort);
 #endif
+
+    rxConfig = rxConfigToUse;
 
     dashboardSetPage(PAGE_WELCOME);
     const uint32_t now = micros();
