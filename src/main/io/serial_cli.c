@@ -2042,7 +2042,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
-        cliPrintf("mixer %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("mixer %s\r\n", mixerNames[masterConfig.mixerConfig.mixerMode - 1]);
 
         cliPrintf("mmix reset\r\n");
 
@@ -2438,7 +2438,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        cliPrintf("Mixer: %s\r\n", mixerNames[masterConfig.mixerMode - 1]);
+        cliPrintf("Mixer: %s\r\n", mixerNames[masterConfig.mixerConfig.mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -2457,7 +2457,7 @@ static void cliMixer(char *cmdline)
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            masterConfig.mixerMode = i + 1;
+            masterConfig.mixerConfig.mixerMode = i + 1;
             break;
         }
     }

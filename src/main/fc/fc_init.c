@@ -222,7 +222,7 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(masterConfig.mixerConfig.mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servosInit(masterConfig.customServoMixer);
 #endif
@@ -242,7 +242,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;

@@ -71,7 +71,6 @@ typedef struct master_s {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint8_t mixerMode;
     uint32_t enabledFeatures;
     uint8_t persistentFlags;
     uint16_t looptime;                      // imu loop time in us

@@ -470,7 +470,7 @@ static void resetConf(void)
     setControlRateProfile(0);
 
     masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.mixerMode = MIXER_QUADX;
+    masterConfig.mixerConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
     persistentFlagClearAll();
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE);
@@ -1008,8 +1008,8 @@ void validateAndFixConfig(void)
     /*
      * If provided predefined mixer setup is disabled, fallback to default one
      */
-    if (!isMixerEnabled(masterConfig.mixerMode)) {
-        masterConfig.mixerMode = DEFAULT_MIXER;
+    if (!isMixerEnabled(masterConfig.mixerConfig.mixerMode)) {
+        masterConfig.mixerConfig.mixerMode = DEFAULT_MIXER;
     }
 
 #if defined(NAV)
