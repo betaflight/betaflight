@@ -1382,9 +1382,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.sensorSelectionConfig.acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.sensorSelectionConfig.baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.sensorSelectionConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
 
         default:

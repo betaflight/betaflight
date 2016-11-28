@@ -675,11 +675,8 @@ static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentC
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
-        uint8_t accHardwareToUse,
-        uint8_t magHardwareToUse,
-        uint8_t baroHardwareToUse,
-        uint8_t pitotHardwareToUse,
+bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
+        const sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
         uint32_t looptime,
         uint8_t gyroLpf,
@@ -703,7 +700,7 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     gyro.init(gyroLpf); // driver initialisation
     gyroInit(); // sensor initialisation
 
-    if (detectAcc(accHardwareToUse)) {
+    if (detectAcc(sensorSelectionConfig->acc_hardware)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc);
     #ifdef ASYNC_GYRO_PROCESSING
@@ -720,21 +717,17 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     }
 
 #ifdef BARO
-    detectBaro(baroHardwareToUse);
-#else
-    UNUSED(baroHardwareToUse);
+    detectBaro(sensorSelectionConfig->baro_hardware);
 #endif
 
 #ifdef PITOT
-    detectPitot(pitotHardwareToUse);
-#else
-    UNUSED(pitotHardwareToUse);
+    detectPitot(sensorSelectionConfig->pitot_hardware);
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (detectMag(magHardwareToUse)) {
+    if (detectMag(sensorSelectionConfig->mag_hardware)) {
         // calculate magnetic declination
         if (!compassInit(magDeclinationFromConfig)) {
             addBootlogEvent2(BOOT_EVENT_MAG_INIT_FAILED, BOOT_EVENT_FLAGS_ERROR);
@@ -742,7 +735,6 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
         }
     }
 #else
-    UNUSED(magHardwareToUse);
     UNUSED(magDeclinationFromConfig);
 #endif
 

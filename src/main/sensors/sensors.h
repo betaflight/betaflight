@@ -72,3 +72,17 @@ typedef struct sensorAlignmentConfig_s {
     sensor_align_e acc_align;               // acc alignment
     sensor_align_e mag_align;               // mag alignment
 } sensorAlignmentConfig_t;
+
+typedef struct sensorSelectionConfig_s {
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    uint8_t baro_hardware;                  // Barometer hardware to use
+    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
+} sensorSelectionConfig_t;
+
+typedef struct sensorTrims_s {
+    flightDynamicsTrims_t accZero;          // Accelerometer offset
+    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
+    flightDynamicsTrims_t magZero;          // Compass offset
+} sensorTrims_t;
+
