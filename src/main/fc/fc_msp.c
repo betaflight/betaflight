@@ -987,7 +987,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 1);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         sbufWriteU8(dst, masterConfig.motorConfig.motorPwmProtocol);
         sbufWriteU16(dst, masterConfig.motorConfig.motorPwmRate);
+#ifdef USE_SERVOS
         sbufWriteU16(dst, masterConfig.servoConfig.servoPwmRate);
+#else
+        sbufWriteU16(dst, 0);
+#endif
         sbufWriteU8(dst, masterConfig.gyroSync);
         break;
 
@@ -1361,7 +1365,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         masterConfig.motorConfig.motorPwmProtocol = sbufReadU8(src);
         masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
+#ifdef USE_SERVOS
         masterConfig.servoConfig.servoPwmRate = sbufReadU16(src);
+#else
+        sbufReadU16(src);
+#endif
         masterConfig.gyroSync = sbufReadU8(src);
         break;
 
