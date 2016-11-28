@@ -68,6 +68,8 @@ int32_t navLatestActualPosition[3];
 int16_t navTargetSurface;
 int16_t navActualSurface;
 uint16_t navFlags;
+uint16_t navEPH;
+uint16_t navEPV;
 int16_t navAccNEU[3];
 #endif
 int16_t navDebug[4];
@@ -966,12 +968,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
             else {
                 t_fp_vector targetHoldPos;
 
-                if (!STATE(FIXED_WING)) {
-                    // Multicopter, hover and climb
-                    calculateInitialHoldPosition(&targetHoldPos);
-                } else {
+                if (STATE(FIXED_WING)) {
                     // Airplane - climbout before turning around
                     calculateFarAwayTarget(&targetHoldPos, posControl.actualState.yaw, 100000.0f);  // 1km away
+                } else {
+                    // Multicopter, hover and climb
+                    calculateInitialHoldPosition(&targetHoldPos);
                 }
 
                 setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
@@ -1025,14 +1027,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
     }
 
     if (isWaypointReached(&posControl.homeWaypointAbove)) {
-        if (!STATE(FIXED_WING)) {
-            // Successfully reached position target - update XYZ-position
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-            return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
-        } else {
-            // Don't switch to landing for airplanes
-            return NAV_FSM_EVENT_NONE;
-        }
+        // Successfully reached position target - update XYZ-position
+        setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
     }
     else {
         // Update XYZ-position target
@@ -1062,13 +1059,19 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_L
     }
 
     // Wait until target heading is reached (with 15 deg margin for error)
-    if (ABS(wrap_18000(posControl.homeWaypointAbove.yaw - posControl.actualState.yaw)) < DEGREES_TO_CENTIDEGREES(15)) {
+    if (STATE(FIXED_WING)) {
         resetLandingDetector();
         return NAV_FSM_EVENT_SUCCESS;
     }
     else {
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-        return NAV_FSM_EVENT_NONE;
+        if (ABS(wrap_18000(posControl.homeWaypointAbove.yaw - posControl.actualState.yaw)) < DEGREES_TO_CENTIDEGREES(15)) {
+            resetLandingDetector();
+            return NAV_FSM_EVENT_SUCCESS;
+        }
+        else {
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+            return NAV_FSM_EVENT_NONE;
+        }
     }
 }
 
@@ -1083,26 +1086,32 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigati
         return NAV_FSM_EVENT_SUCCESS;
     }
     else {
-        // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
-        if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
-            // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
-            // Do not allow descent velocity slower than -30cm/s so the landing detector works.
-            float descentVelLimited = MIN(-0.15f * posControl.navConfig->general.land_descent_rate, -30.0f);
-            updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+        if (STATE(FIXED_WING)) {
+            // FIXME: Continue loitering at home altitude
+            return NAV_FSM_EVENT_NONE;
         }
         else {
-            // Ramp down descent velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
-            float descentVelScaling = (posControl.actualState.pos.V.Z - posControl.homePosition.pos.V.Z - posControl.navConfig->general.land_slowdown_minalt)
-                                        / (posControl.navConfig->general.land_slowdown_maxalt - posControl.navConfig->general.land_slowdown_minalt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
+            // A safeguard - if sonar is available and it is reading < 50cm altitude - drop to low descend speed
+            if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surface < 50.0f) {
+                // land_descent_rate == 200 : descend speed = 30 cm/s, gentle touchdown
+                // Do not allow descent velocity slower than -30cm/s so the landing detector works.
+                float descentVelLimited = MIN(-0.15f * posControl.navConfig->general.land_descent_rate, -30.0f);
+                updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+            }
+            else {
+                // Ramp down descent velocity from 100% at maxAlt altitude to 25% from minAlt to 0cm.
+                float descentVelScaling = (posControl.actualState.pos.V.Z - posControl.homePosition.pos.V.Z - posControl.navConfig->general.land_slowdown_minalt)
+                                            / (posControl.navConfig->general.land_slowdown_maxalt - posControl.navConfig->general.land_slowdown_minalt) * 0.75f + 0.25f;  // Yield 1.0 at 2000 alt and 0.25 at 500 alt
 
-            descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
+                descentVelScaling = constrainf(descentVelScaling, 0.25f, 1.0f);
 
-            // Do not allow descent velocity slower than -50cm/s so the landing detector works.
-            float descentVelLimited = MIN(-descentVelScaling * posControl.navConfig->general.land_descent_rate, -50.0f);
-            updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+                // Do not allow descent velocity slower than -50cm/s so the landing detector works.
+                float descentVelLimited = MIN(-descentVelScaling * posControl.navConfig->general.land_descent_rate, -50.0f);
+                updateAltitudeTargetFromClimbRate(descentVelLimited, CLIMB_RATE_RESET_SURFACE_TARGET);
+            }
+
+            return NAV_FSM_EVENT_NONE;
         }
-
-        return NAV_FSM_EVENT_NONE;
     }
 }
 
@@ -2200,6 +2209,7 @@ void applyWaypointNavigationAndAltitudeHold(void)
 #if defined(NAV_GPS_GLITCH_DETECTION)
     if (isGPSGlitchDetected())                      navFlags |= (1 << 4);
 #endif
+    if (posControl.flags.hasValidHeadingSensor)     navFlags |= (1 << 5);
 #endif
 
     // Reset all navigation requests - NAV controllers will set them if necessary
@@ -2234,9 +2244,9 @@ void applyWaypointNavigationAndAltitudeHold(void)
 
 
 #if defined(NAV_BLACKBOX)
-    if (posControl.flags.isAdjustingPosition)       navFlags |= (1 << 5);
-    if (posControl.flags.isAdjustingAltitude)       navFlags |= (1 << 6);
-    if (posControl.flags.isAdjustingHeading)        navFlags |= (1 << 7);
+    if (posControl.flags.isAdjustingPosition)       navFlags |= (1 << 6);
+    if (posControl.flags.isAdjustingAltitude)       navFlags |= (1 << 7);
+    if (posControl.flags.isAdjustingHeading)        navFlags |= (1 << 8);
 #endif
 }
 
