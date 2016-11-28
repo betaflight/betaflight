@@ -73,17 +73,9 @@ static IO_t intpwmIO;
 static extiCallbackRec_t intpwm_extiCallbackRec;
 
 // Measurement array
-static volatile uint32_t tStamp[4]; // Time stamps
-static volatile union {        // Signal levels
-    uint8_t sb[4];
-    uint32_t sigs;
-} pwmRec;
-
-static volatile int recCount;
-
-// Valid value for pwmRec.sigs, corresponding to 1010b and 0101b
-#define SIGPAT1 ((1 << (8*0)) | (0 << (8*1)) | (1 << (8*2)) | (0 << (8*3)))
-#define SIGPAT2 ((0 << (8*0)) | (1 << (8*1)) | (0 << (8*2)) | (1 << (8*3)))
+static volatile uint8_t sampleLVL[4];     // Input levels
+static volatile uint32_t sampleTS[4]; // Time stamps
+static volatile int sampleCount;
 
 static bool intpwmInitialized = false;
 static bool intpwmActive = false;
@@ -92,8 +84,6 @@ static volatile uint32_t pulseWidth;
 
 extern uint16_t rssi; // Defined in rx.c
 
-#define INTPWM_MAX_PULSE 2500 // To detect glitch in micros()
-
 void intpwmExtiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
@@ -101,18 +91,16 @@ void intpwmExtiHandler(extiCallbackRec_t* cb)
     if (!intpwmInProgress)
         return;
 
-    if (recCount < 4) {
-        pwmRec.sb[recCount] = IORead(intpwmIO);
-        tStamp[recCount++] = micros();
+    if (sampleCount < 3) {
+        sampleLVL[sampleCount] = IORead(intpwmIO);
+        sampleTS[sampleCount] = micros();
     }
 
-    if (recCount < 4)
-        return;
-
-    // Disable interrupt
-    EXTIEnable(intpwmIO, false);
-
-    intpwmInProgress = false;
+    if (++sampleCount == 3) {
+        // Disable interrupt
+        EXTIEnable(intpwmIO, false);
+        intpwmInProgress = false;
+    }
 }
 
 static uint32_t tmin = 0xFFFFFFFF;
@@ -120,55 +108,66 @@ static uint32_t tmax = 0;
 
 void computePulse(void)
 {
-    uint32_t sigbits;
+    uint8_t sigbits;
 
-    sigbits = (pwmRec.sb[0] << 3)
-        |(pwmRec.sb[1] << 2)
-        |(pwmRec.sb[2] << 1)
-        |(pwmRec.sb[3] << 0);
-
-    debug[0] = sigbits;
-
-#if 0
-    if (pwmRec.sigs != SIGPAT1 && pwmRec.sigs != SIGPAT2) {
-        //debug[0]++;
-        return;
-    }
-#endif
+    pulseWidth = 0;
+    sigbits = ((sampleLVL[0] << 2)|(sampleLVL[1] << 1)|(sampleLVL[2]));
 
     // Compute intervals
 
-    int i;
-
-    for (i = 0 ; i < 3 ; i++) {
-        tStamp[i] = tStamp[i+1] - tStamp[i];
-
-        debug[i+1] = tStamp[i];
-    }
-
-    return;
-
-    // After converting to intervals, check for invalid intervals,
-    // discard the whole measurement if found.
-
-    for (i = 0 ; i < 3 ; i++) {
-        // If the measurement contains out range values,
-        // ignore this measurement. (Was counter-going-back-micros; keep it?)
-
-        if (tStamp[i] > INTPWM_MAX_PULSE)
-            return;
-
-        if (tStamp[i] > 1023 || tStamp[i] < 20)
+    for (int i = 0 ; i < 2 ; i++) {
+        sampleTS[i] = sampleTS[i+1] - sampleTS[i];
+        if (sampleTS[i] > 1200)
             return;
     }
 
-    if (pwmRec.sb[0] == 0) {
-        pulseWidth = tStamp[1];
-    } else {
-        pulseWidth = tStamp[2];
+#define PULSE_LIMIT    1100
+#define PULSE_INTERVAL 1000
+#define PULSE_MAX_SHORT  40
+#define PULSE_MIN_LONG  960
+
+    switch (sigbits) {
+    case 0: // 000 Start with H, long H x 3
+        pulseWidth = PULSE_INTERVAL - 1;
+        break;
+
+    case 1: // 001 Start with H, long H x 1
+        pulseWidth = PULSE_INTERVAL - sampleTS[1];
+        break;
+
+    case 2: // 010 Okay
+        pulseWidth = sampleTS[1];
+        break;
+
+    case 3: // 011 Start with H, short H x 2
+        pulseWidth = PULSE_INTERVAL - sampleTS[0];
+        break;
+
+    case 4: // 100 Start with L, Long H x 2
+        pulseWidth = sampleTS[0];
+        break;
+
+    case 5: // 101 Okay
+        if (sampleTS[0] + sampleTS[1] < PULSE_LIMIT)
+            pulseWidth = sampleTS[0];
+        break;
+
+    case 6: // 110 Start with L, short H x 2
+        pulseWidth = sampleTS[1];
+        break;
+
+    case 7: // 111 Start with L, short H x 3
+        pulseWidth = 0;
+        break;
     }
 
-    debug[1] = pulseWidth;
+    debug[0] = pulseWidth;
+
+    if (pulseWidth > 100) {
+        debug[1] = sigbits;
+        debug[2] = sampleTS[0];
+        debug[3] = sampleTS[1];
+    }
 
     // Monitor pulseWidths for parameter decision.
 
@@ -178,8 +177,10 @@ void computePulse(void)
     if (pulseWidth < tmin)
         tmin = pulseWidth;
 
+#if 0
     debug[2] = tmin;
     debug[3] = tmax;
+#endif
 }
 
 bool intpwmInit(void)
@@ -265,7 +266,7 @@ void updateIntpwm(uint32_t currentTime)
     }
 
     // Start a new measurement
-    recCount = 0;
+    sampleCount = 0;
 
     // Mark it busy
     intpwmInProgress = true;
