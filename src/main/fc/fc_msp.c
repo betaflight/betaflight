@@ -269,7 +269,7 @@ static void initActiveBoxIds(void)
     if (feature(FEATURE_SERVO_TILT))
         activeBoxIds[activeBoxIdCount++] = BOXCAMSTAB;
 
-    bool isFixedWing = masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE;
+    bool isFixedWing = masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE;
 
 #ifdef GPS
     if (sensors(SENSOR_BARO) || (isFixedWing && feature(FEATURE_GPS))) {
@@ -294,7 +294,7 @@ static void initActiveBoxIds(void)
      * FLAPERON mode active only in case of airplane and custom airplane. Activating on
      * flying wing can cause bad thing
      */
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
     }
 
@@ -495,7 +495,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     // DEPRECATED - Use MSP_API_VERSION
     case MSP_IDENT:
         sbufWriteU8(dst, MW_VERSION);
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
         sbufWriteU32(dst, CAP_PLATFORM_32BIT | CAP_DYNBALANCE | CAP_FLAPS | CAP_NAVCAP | CAP_EXTAUX); // "capability"
         break;
@@ -829,7 +829,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_MIXER:
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
         break;
 
     case MSP_RX_CONFIG:
@@ -873,7 +873,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BF_CONFIG:
-        sbufWriteU8(dst, masterConfig.mixerMode);
+        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
 
         sbufWriteU32(dst, featureMask());
 
@@ -1605,7 +1605,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        masterConfig.mixerMode = sbufReadU8(src);
+        masterConfig.mixerConfig.mixerMode = sbufReadU8(src);
         break;
 #endif
 
@@ -1669,7 +1669,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_QUAD_MIXER_ONLY
         sbufReadU8(src); // mixerMode ignored
 #else
-        masterConfig.mixerMode = sbufReadU8(src); // mixerMode
+        masterConfig.mixerConfig.mixerMode = sbufReadU8(src); // mixerMode
 #endif
 
         featureClearAll();
