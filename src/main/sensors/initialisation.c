@@ -24,6 +24,8 @@
 
 #include "common/axis.h"
 
+#include "config/feature.h"
+
 #include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/exti.h"
@@ -61,6 +63,7 @@
 
 #include "drivers/sonar_hcsr04.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -609,7 +612,20 @@ retry:
 }
 #endif
 
-void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
+#ifdef SONAR
+static bool detectSonar(void)
+{
+    if (feature(FEATURE_SONAR)) {
+        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+        // since there is no way to detect it
+        sensorsSet(SENSOR_SONAR);
+        return true;
+    }
+    return false;
+}
+#endif
+
+static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentConfig)
 {
     if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
         gyroAlign = sensorAlignmentConfig->gyro_align;
@@ -622,13 +638,11 @@ void reconfigureAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     }
 }
 
-bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
-        uint8_t accHardwareToUse,
-        uint8_t magHardwareToUse,
-        uint8_t baroHardwareToUse,
+bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
+        const sensorSelectionConfig_t *sensorSelectionConfig,
         int16_t magDeclinationFromConfig,
-        uint8_t gyroLpf,
-        uint8_t gyroSyncDenominator)
+        const gyroConfig_t *gyroConfig,
+        const sonarConfig_t *sonarConfig)
 {
     memset(&acc, 0, sizeof(acc));
     memset(&gyro, 0, sizeof(gyro));
@@ -647,11 +661,11 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
 
     // Now time to init things
     // this is safe because either mpu6050 or mpu3050 or lg3d20 sets it, and in case of fail, we never get here.
-    gyro.targetLooptime = gyroSetSampleRate(gyroLpf, gyroSyncDenominator);    // Set gyro sample rate before initialisation
-    gyro.init(gyroLpf); // driver initialisation
-    gyroInit(); // sensor initialisation
+    gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
+    gyro.init(gyroConfig->gyro_lpf); // driver initialisation
+    gyroInit(gyroConfig); // sensor initialisation
 
-    if (detectAcc(accHardwareToUse)) {
+    if (detectAcc(sensorSelectionConfig->acc_hardware)) {
         acc.acc_1G = 256; // set default
         acc.init(&acc); // driver initialisation
         accInit(gyro.targetLooptime); // sensor initialisation
@@ -661,21 +675,27 @@ bool sensorsAutodetect(sensorAlignmentConfig_t *sensorAlignmentConfig,
     magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (detectMag(magHardwareToUse)) {
+    if (detectMag(sensorSelectionConfig->mag_hardware)) {
         // calculate magnetic declination
         const int16_t deg = magDeclinationFromConfig / 100;
         const int16_t min = magDeclinationFromConfig % 100;
         magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
+        compassInit();
     }
 #else
-    UNUSED(magHardwareToUse);
     UNUSED(magDeclinationFromConfig);
 #endif
 
 #ifdef BARO
-    detectBaro(baroHardwareToUse);
+    detectBaro(sensorSelectionConfig->baro_hardware);
+#endif
+
+#ifdef SONAR
+    if (detectSonar()) {
+        sonarInit(sonarConfig);
+    }
 #else
-    UNUSED(baroHardwareToUse);
+    UNUSED(sonarConfig);
 #endif
 
     reconfigureAlignment(sensorAlignmentConfig);

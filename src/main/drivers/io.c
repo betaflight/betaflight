@@ -15,11 +15,11 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- #include "common/utils.h"
-
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
+
+#include "common/utils.h"
 
 #include "target.h"
 

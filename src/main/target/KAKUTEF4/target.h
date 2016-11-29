@@ -59,6 +59,15 @@
 #define USE_BARO_MS5611
 //#define USE_BARO_BMP280
 
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PB14
+
+#define MAX7456_DMA_CHANNEL_TX              DMA1_Stream5
+#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream0
+#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
+
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
 

@@ -430,6 +430,9 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->batteryCapacity = 0;
     batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
     batteryConfig->batterynotpresentlevel = 55; // VBAT below 5.5 V will be igonored
+    batteryConfig->useVBatAlerts = true;
+    batteryConfig->useConsumptionAlerts = false;
+    batteryConfig->consumptionWarningPercentage = 10;
 }
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
@@ -558,48 +561,48 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->version = EEPROM_CONF_VERSION;
-    config->mixerMode = MIXER_QUADX;
+    config->mixerConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     config->current_profile_index = 0;    // default profile
     config->dcm_kp = 2500;                // 1.0 * 10000
     config->dcm_ki = 0;                   // 0.003 * 10000
-    config->gyro_lpf = 0;                 // 256HZ default
+    config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
-    config->gyro_sync_denom = 8;
+    config->gyroConfig.gyro_sync_denom = 8;
     config->pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-    config->gyro_sync_denom = 1;
+    config->gyroConfig.gyro_sync_denom = 1;
     config->pid_process_denom = 4;
 #else
-    config->gyro_sync_denom = 4;
+    config->gyroConfig.gyro_sync_denom = 4;
     config->pid_process_denom = 2;
 #endif
-    config->gyro_soft_type = FILTER_PT1;
-    config->gyro_soft_lpf_hz = 90;
-    config->gyro_soft_notch_hz_1 = 400;
-    config->gyro_soft_notch_cutoff_1 = 300;
-    config->gyro_soft_notch_hz_2 = 200;
-    config->gyro_soft_notch_cutoff_2 = 100;
+    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
+    config->gyroConfig.gyro_soft_lpf_hz = 90;
+    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
+    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
+    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
+    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_NONE;
 
-    resetAccelerometerTrims(&config->accZero);
+    resetAccelerometerTrims(&config->sensorTrims.accZero);
 
     resetSensorAlignment(&config->sensorAlignmentConfig);
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->acc_hardware = ACC_DEFAULT;     // default/autodetect
+    config->sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
-    config->mag_hardware = 1;
+    config->sensorSelectionConfig.mag_hardware = 1;
 
-    config->baro_hardware = 1;
+    config->sensorSelectionConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
@@ -663,10 +666,10 @@ void createDefaultConfig(master_t *config)
 
     config->inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    config->gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
-    config->disarm_kill_switch = 1;
-    config->auto_disarm_delay = 5;
-    config->small_angle = 25;
+    config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
+    config->armingConfig.disarm_kill_switch = 1;
+    config->armingConfig.auto_disarm_delay = 5;
+    config->armingConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
@@ -697,7 +700,7 @@ void createDefaultConfig(master_t *config)
 
     resetRollAndPitchTrims(&config->accelerometerTrims);
 
-    config->mag_declination = 0;
+    config->compassConfig.mag_declination = 0;
     config->acc_lpf_hz = 10.0f;
     config->accDeadband.xy = 40;
     config->accDeadband.z = 40;
@@ -768,17 +771,17 @@ void createDefaultConfig(master_t *config)
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_FLASH;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
     intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
-    config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_SDCARD;
 #else
-    config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
+    config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
 
-    config->blackbox_rate_num = 1;
-    config->blackbox_rate_denom = 1;
-    config->blackbox_on_motor_test = 0; // default off
+    config->blackboxConfig.rate_num = 1;
+    config->blackboxConfig.rate_denom = 1;
+    config->blackboxConfig.on_motor_test = 0; // default off
 #endif // BLACKBOX
 
 #ifdef SERIALRX_UART
@@ -830,21 +833,6 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    // Prevent invalid notch cutoff
-    if (masterConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyro_soft_notch_hz_1)
-        masterConfig.gyro_soft_notch_hz_1 = 0;
-
-    if (masterConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyro_soft_notch_hz_2)
-        masterConfig.gyro_soft_notch_hz_2 = 0;
-
-    gyroUseConfig(&masterConfig.gyroConfig,
-        masterConfig.gyro_soft_lpf_hz,
-        masterConfig.gyro_soft_notch_hz_1,
-        masterConfig.gyro_soft_notch_cutoff_1,
-        masterConfig.gyro_soft_notch_hz_2,
-        masterConfig.gyro_soft_notch_cutoff_2,
-        masterConfig.gyro_soft_type);
-
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
@@ -855,7 +843,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&masterConfig.accZero);
+    setAccelerationTrims(&masterConfig.sensorTrims.accZero);
     setAccelerationFilter(masterConfig.acc_lpf_hz);
 
     mixerUseConfigs(
@@ -873,7 +861,7 @@ void activateConfig(void)
     imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
     imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
-    imuRuntimeConfig.small_angle = masterConfig.small_angle;
+    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
 
     imuConfigure(
         &imuRuntimeConfig,
@@ -998,10 +986,28 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
-    
+
+    validateAndFixGyroConfig();
+
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration(&masterConfig);
 #endif
+}
+
+void validateAndFixGyroConfig(void)
+{
+    // Prevent invalid notch cutoff
+    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyroConfig.gyro_soft_notch_hz_1) {
+        masterConfig.gyroConfig.gyro_soft_notch_hz_1 = 0;
+    }
+    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyroConfig.gyro_soft_notch_hz_2) {
+        masterConfig.gyroConfig.gyro_soft_notch_hz_2 = 0;
+    }
+
+    if (masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_256HZ && masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_NONE) {
+        masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        masterConfig.gyroConfig.gyro_sync_denom = 1;
+    }
 }
 
 void readEEPROMAndNotify(void)

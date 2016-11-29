@@ -556,7 +556,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             // DEPRECATED - Use MSP_API_VERSION
         case BST_IDENT:
             bstWrite8(MW_VERSION);
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
             bstWrite8(BST_PROTOCOL_VERSION);
             bstWrite32(CAP_DYNBALANCE); // "capability"
             break;
@@ -683,8 +683,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
-            bstWrite8(masterConfig.auto_disarm_delay);
-            bstWrite8(masterConfig.disarm_kill_switch);
+            bstWrite8(masterConfig.armingConfig.auto_disarm_delay);
+            bstWrite8(masterConfig.armingConfig.disarm_kill_switch);
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
@@ -769,7 +769,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rxConfig.rssi_channel);
             bstWrite8(0);
 
-            bstWrite16(masterConfig.mag_declination / 10);
+            bstWrite16(masterConfig.compassConfig.mag_declination / 10);
 
             bstWrite8(masterConfig.batteryConfig.vbatscale);
             bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -868,7 +868,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_MIXER:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
             break;
 
         case BST_RX_CONFIG:
@@ -904,7 +904,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_BF_CONFIG:
-            bstWrite8(masterConfig.mixerMode);
+            bstWrite8(masterConfig.mixerConfig.mixerMode);
 
             bstWrite32(featureMask());
 
@@ -977,7 +977,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            bstWrite16(constrain(masterConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
+            bstWrite16(constrain(masterConfig.gyroConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -1033,8 +1033,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
-            masterConfig.auto_disarm_delay = bstRead8();
-            masterConfig.disarm_kill_switch = bstRead8();
+            masterConfig.armingConfig.auto_disarm_delay = bstRead8();
+            masterConfig.armingConfig.disarm_kill_switch = bstRead8();
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
@@ -1132,7 +1132,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rxConfig.rssi_channel = bstRead8();
             bstRead8();
 
-            masterConfig.mag_declination = bstRead16() * 10;
+            masterConfig.compassConfig.mag_declination = bstRead16() * 10;
 
             masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
             masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1273,7 +1273,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
 #ifndef USE_QUAD_MIXER_ONLY
         case BST_SET_MIXER:
-            masterConfig.mixerMode = bstRead8();
+            masterConfig.mixerConfig.mixerMode = bstRead8();
             break;
 #endif
 
@@ -1319,7 +1319,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #ifdef USE_QUAD_MIXER_ONLY
            bstRead8(); // mixerMode ignored
 #else
-           masterConfig.mixerMode = bstRead8(); // mixerMode
+           masterConfig.mixerConfig.mixerMode = bstRead8(); // mixerMode
 #endif
 
            featureClearAll();
@@ -1404,7 +1404,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            masterConfig.gyro_lpf = bstRead16();
+            masterConfig.gyroConfig.gyro_lpf = bstRead16();
             break;
 
         default:

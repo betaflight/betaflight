@@ -16,20 +16,20 @@
  */
 
 // FC configuration
-#define PG_FAILSAFE_CONFIG 1
-#define PG_BOARD_ALIGNMENT 2
-#define PG_GIMBAL_CONFIG 3
-#define PG_MOTOR_MIXER 4
-#define PG_BLACKBOX_CONFIG 5
-#define PG_MOTOR_AND_SERVO_CONFIG 6
-#define PG_SENSOR_SELECTION_CONFIG 7
-#define PG_SENSOR_ALIGNMENT_CONFIG 8
-#define PG_SENSOR_TRIMS 9
-#define PG_GYRO_CONFIG 10
-#define PG_BATTERY_CONFIG 11
-#define PG_CONTROL_RATE_PROFILES 12
-#define PG_SERIAL_CONFIG 13
-#define PG_PID_PROFILE 14
+#define PG_FAILSAFE_CONFIG 1 // strruct OK
+#define PG_BOARD_ALIGNMENT 2 // struct OK
+#define PG_GIMBAL_CONFIG 3 // struct OK
+#define PG_MOTOR_MIXER 4 // two structs mixerConfig_t servoMixerConfig_t
+#define PG_BLACKBOX_CONFIG 5 // struct OK
+#define PG_MOTOR_CONFIG 6 // struct OK
+#define PG_SENSOR_SELECTION_CONFIG 7 // struct OK
+#define PG_SENSOR_ALIGNMENT_CONFIG 8 // struct OK
+#define PG_SENSOR_TRIMS 9 // struct OK
+#define PG_GYRO_CONFIG 10 // PR outstanding, need to think about pid_process_denom
+#define PG_BATTERY_CONFIG 11 // struct OK
+#define PG_CONTROL_RATE_PROFILES 12 // struct OK, needs to be split out of rc_controls.h into rate_profile.h
+#define PG_SERIAL_CONFIG 13 // struct OK
+#define PG_PID_PROFILE 14 // struct OK, CF differences
 #define PG_GTUNE_CONFIG 15
 #define PG_ARMING_CONFIG 16
 #define PG_TRANSPONDER_CONFIG 17

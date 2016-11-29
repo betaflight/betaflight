@@ -14,18 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+typedef enum awf1HardwareRevision_t {
+    AFF1_UNKNOWN = 0,
+    AFF1_REV_1, // MPU6050 (I2C)
+} awf1HardwareRevision_e;
 
-#include <platform.h>
+typedef enum awf4HardwareMotorType_t {
+    MOTOR_UNKNOWN = 0,
+    MOTOR_BRUSHED,
+    MOTOR_BRUSHLESS
+} awf4HardwareMotorType_e;
 
-#include "config/config_master.h"
+extern uint8_t hardwareRevision;
+extern uint8_t hardwareMotorType;
 
+void updateHardwareRevision(void);
+void detectHardwareRevision(void);
 
-// Motolab target supports 2 different type of boards Tornado / Cyclone.
-void targetConfiguration(master_t *config)
-{
-    config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 1;
-}
+struct extiConfig_s;
+const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);

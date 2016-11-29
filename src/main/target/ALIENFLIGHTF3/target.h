@@ -24,6 +24,7 @@
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PB2
+#define MOTOR_PIN               PB15
 
 // LED's V1
 #define LED0                    PB4
@@ -114,7 +115,6 @@
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
-#define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048

@@ -101,8 +101,6 @@ static bool armingCalibrationWasInitialised;
 float setpointRate[3];
 float rcInput[3];
 
-extern pidControllerFuncPtr pid_controller;
-
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
     masterConfig.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
@@ -391,7 +389,7 @@ void mwArm(void)
 {
     static bool firstArmingCalibrationWasCompleted;
 
-    if (masterConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
+    if (masterConfig.armingConfig.gyro_cal_on_first_arm && !firstArmingCalibrationWasCompleted) {
         gyroSetCalibrationCycles();
         armingCalibrationWasInitialised = true;
         firstArmingCalibrationWasCompleted = true;
@@ -420,7 +418,7 @@ void mwArm(void)
                 startBlackbox();
             }
 #endif
-            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
 #ifdef GPS
@@ -550,7 +548,7 @@ void processRx(uint32_t currentTime)
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
-                if (masterConfig.auto_disarm_delay != 0
+                if (masterConfig.armingConfig.auto_disarm_delay != 0
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
@@ -563,9 +561,9 @@ void processRx(uint32_t currentTime)
                 }
             } else {
                 // throttle is not low
-                if (masterConfig.auto_disarm_delay != 0) {
+                if (masterConfig.armingConfig.auto_disarm_delay != 0) {
                     // extend disarm time
-                    disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;
+                    disarmAt = millis() + masterConfig.armingConfig.auto_disarm_delay * 1000;
                 }
 
                 if (armedBeeperOn) {
@@ -585,7 +583,7 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.armingConfig.disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -663,7 +661,7 @@ void processRx(uint32_t currentTime)
         DISABLE_FLIGHT_MODE(PASSTHRU_MODE);
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE) {
+    if (masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
@@ -695,7 +693,7 @@ void subTaskPidController(void)
         &currentProfile->pidProfile,
         masterConfig.max_angle_inclination,
         &masterConfig.accelerometerTrims,
-        &masterConfig.rxConfig
+        masterConfig.rxConfig.midrc
     );
     if (debugMode == DEBUG_PIDLOOP) {debug[2] = micros() - startTime;}
 }
@@ -737,10 +735,10 @@ void subTaskMainSubprocesses(void)
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
     #ifndef USE_QUAD_MIXER_ONLY
     #ifdef USE_SERVOS
-                    && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
+                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
     #endif
-                    && masterConfig.mixerMode != MIXER_AIRPLANE
-                    && masterConfig.mixerMode != MIXER_FLYING_WING
+                    && masterConfig.mixerConfig.mixerMode != MIXER_AIRPLANE
+                    && masterConfig.mixerConfig.mixerMode != MIXER_FLYING_WING
     #endif
         ) {
             rcCommand[YAW] = 0;
@@ -805,7 +803,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void)
 {
-    if (masterConfig.gyro_soft_lpf_hz) {
+    if (masterConfig.gyroConfig.gyro_soft_lpf_hz) {
         return masterConfig.pid_process_denom - 1;
     } else {
         return 1;

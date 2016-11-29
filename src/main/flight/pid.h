@@ -20,7 +20,7 @@
 #include <stdbool.h>
 
 #define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 1000.0f
+#define PID_MIXER_SCALING 900.0f
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define PIDSUM_LIMIT 0.5f
@@ -90,14 +90,9 @@ typedef struct pidProfile_s {
 #endif
 } pidProfile_t;
 
-struct controlRateConfig_s;
 union rollAndPitchTrims_u;
-struct rxConfig_s;
-typedef void (*pidControllerFuncPtr)(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
-        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);            // pid controller function prototype
-
 void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
-        const union rollAndPitchTrims_u *angleTrim, const struct rxConfig_s *rxConfig);
+        const union rollAndPitchTrims_u *angleTrim, uint16_t midrc);
 
 extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
@@ -109,5 +104,6 @@ extern uint8_t PIDweight[3];
 
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void setTargetPidLooptime(uint32_t pidLooptime);
+void pidSetTargetLooptime(uint32_t pidLooptime);
+void pidInitFilters(const pidProfile_t *pidProfile);
 

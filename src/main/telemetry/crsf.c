@@ -142,7 +142,7 @@ CRC:            (uint8_t)
 Payload:
 int32_t     Latitude ( degree / 10`000`000 )
 int32_t     Longitude (degree / 10`000`000 )
-uint16_t    Groundspeed ( km/h / 100 )
+uint16_t    Groundspeed ( km/h / 10 )
 uint16_t    GPS heading ( degree / 100 )
 uint16      Altitude ( meter ­ 1000m offset )
 uint8_t     Satellites in use ( counter )
@@ -154,7 +154,7 @@ void crsfFrameGps(sbuf_t *dst)
     crsfSerialize8(dst, CRSF_FRAMETYPE_GPS);
     crsfSerialize32(dst, GPS_coord[LAT]); // CRSF and betaflight use same units for degrees
     crsfSerialize32(dst, GPS_coord[LON]);
-    crsfSerialize16(dst, GPS_speed * 36); // GPS_speed is in 0.1m/s
+    crsfSerialize16(dst, (GPS_speed * 36 + 5) / 10); // GPS_speed is in 0.1m/s
     crsfSerialize16(dst, GPS_ground_course * 10); // GPS_ground_course is degrees * 10
     //Send real GPS altitude only if it's reliable (there's a GPS fix)
     const uint16_t altitude = (STATE(GPS_FIX) ? GPS_altitude : 0) + 1000;
@@ -216,39 +216,6 @@ typedef enum {
 } crsrRfPower_e;
 
 /*
-0x14 Link statistics
-Uplink is the connection from the ground to the UAV and downlink the opposite direction.
-Payload:
-uint8_t     UplinkRSSI Ant.1(dBm*­1)
-uint8_t     UplinkRSSI Ant.2(dBm*­1)
-uint8_t     Uplink Package success rate / Link quality ( % )
-int8_t      Uplink SNR ( db )
-uint8_t     Diversity active antenna ( enum ant. 1 = 0, ant. 2 )
-uint8_t     RF Mode ( enum 4fps = 0 , 50fps, 150hz)
-uint8_t     Uplink TX Power ( enum 0mW = 0, 10mW, 25 mW, 100 mW, 500 mW, 1000 mW, 2000mW )
-uint8_t     Downlink RSSI ( dBm * ­-1 )
-uint8_t     Downlink package success rate / Link quality ( % )
-int8_t      Downlink SNR ( db )
-*/
-
-void crsfFrameLinkStatistics(sbuf_t *dst)
-{
-    // use sbufWrite since CRC does not include frame length
-    sbufWriteU8(dst, CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE + CRSF_FRAME_LENGTH_TYPE_CRC);
-    crsfSerialize8(dst, CRSF_FRAMETYPE_LINK_STATISTICS);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-    crsfSerialize8(dst, 0);
-}
-
-/*
 0x1E Attitude
 Payload:
 int16_t     Pitch angle ( rad / 10000 )
@@ -256,7 +223,7 @@ int16_t     Roll angle ( rad / 10000 )
 int16_t     Yaw angle ( rad / 10000 )
 */
 
-#define DECIDEGREES_TO_RADIANS10000(angle) (1000.0f * (angle) * RAD)
+#define DECIDEGREES_TO_RADIANS10000(angle) ((int16_t)(1000.0f * (angle) * RAD))
 
 void crsfFrameAttitude(sbuf_t *dst)
 {
@@ -301,14 +268,10 @@ void crsfFrameFlightMode(sbuf_t *dst)
 #define BV(x)  (1 << (x)) // bit value
 
 // schedule array to decide how often each type of frame is sent
-#define CRSF_SCHEDULE_COUNT     5
-static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT] = {
-    BV(CRSF_FRAME_ATTITUDE),
-    BV(CRSF_FRAME_BATTERY_SENSOR),
-    BV(CRSF_FRAME_LINK_STATISTICS),
-    BV(CRSF_FRAME_FLIGHT_MODE),
-    BV(CRSF_FRAME_GPS),
-};
+#define CRSF_SCHEDULE_COUNT_MAX     5
+static uint8_t crsfScheduleCount;
+static uint8_t crsfSchedule[CRSF_SCHEDULE_COUNT_MAX];
+
 
 static void processCrsf(void)
 {
@@ -328,11 +291,6 @@ static void processCrsf(void)
         crsfFrameBatterySensor(dst);
         crsfFinalize(dst);
     }
-    if (currentSchedule & BV(CRSF_FRAME_LINK_STATISTICS)) {
-        crsfInitializeFrame(dst);
-        crsfFrameLinkStatistics(dst);
-        crsfFinalize(dst);
-    }
     if (currentSchedule & BV(CRSF_FRAME_FLIGHT_MODE)) {
         crsfInitializeFrame(dst);
         crsfFrameFlightMode(dst);
@@ -345,7 +303,7 @@ static void processCrsf(void)
         crsfFinalize(dst);
     }
 #endif
-    crsfScheduleIndex = (crsfScheduleIndex + 1) % CRSF_SCHEDULE_COUNT;
+    crsfScheduleIndex = (crsfScheduleIndex + 1) % crsfScheduleCount;
 }
 
 void initCrsfTelemetry(void)
@@ -353,6 +311,15 @@ void initCrsfTelemetry(void)
     // check if there is a serial port open for CRSF telemetry (ie opened by the CRSF RX)
     // and feature is enabled, if so, set CRSF telemetry enabled
     crsfTelemetryEnabled = crsfRxIsActive();
+    int index = 0;
+    crsfSchedule[index++] = BV(CRSF_FRAME_ATTITUDE);
+    crsfSchedule[index++] = BV(CRSF_FRAME_BATTERY_SENSOR);
+    crsfSchedule[index++] = BV(CRSF_FRAME_FLIGHT_MODE);
+    if (feature(FEATURE_GPS)) {
+        crsfSchedule[index++] = BV(CRSF_FRAME_GPS);
+    }
+    crsfScheduleCount = (uint8_t)index;
+
  }
 
 bool checkCrsfTelemetryState(void)
@@ -395,9 +362,6 @@ int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType)
         break;
     case CRSF_FRAME_BATTERY_SENSOR:
         crsfFrameBatterySensor(sbuf);
-        break;
-    case CRSF_FRAME_LINK_STATISTICS:
-        crsfFrameLinkStatistics(sbuf);
         break;
     case CRSF_FRAME_FLIGHT_MODE:
         crsfFrameFlightMode(sbuf);

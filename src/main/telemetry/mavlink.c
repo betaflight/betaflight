@@ -170,16 +170,23 @@ void configureMAVLinkTelemetryPort(void)
 
 void checkMAVLinkTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
+    if (portConfig && telemetryCheckRxPortShared(portConfig)) {
+        if (!mavlinkTelemetryEnabled && telemetrySharedPort != NULL) {
+            mavlinkPort = telemetrySharedPort;
+            mavlinkTelemetryEnabled = true;
+        }
+    } else {
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
 
-    if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
-        return;
+        if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
+            return;
+        }
+
+        if (newTelemetryEnabledValue)
+            configureMAVLinkTelemetryPort();
+        else
+            freeMAVLinkTelemetryPort();
     }
-
-    if (newTelemetryEnabledValue)
-        configureMAVLinkTelemetryPort();
-    else
-        freeMAVLinkTelemetryPort();
 }
 
 void mavlinkSendSystemStatus(void)
@@ -430,7 +437,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch(masterConfig.mixerMode)
+    switch(masterConfig.mixerConfig.mixerMode)
     {
         case MIXER_TRI:
             mavSystemType = MAV_TYPE_TRICOPTER;

@@ -155,7 +155,7 @@ static void taskUpdateRxMain(uint32_t currentTime)
 static void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTime, &masterConfig.magZero);
+        compassUpdate(currentTime, &masterConfig.sensorTrims.magZero);
     }
 }
 #endif
