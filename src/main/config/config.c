@@ -491,10 +491,11 @@ static void resetConf(void)
 
     // global settings
     masterConfig.current_profile_index = 0;     // default profile
-    masterConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
-    masterConfig.dcm_ki_acc = 50;               // 0.005 * 10000
-    masterConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
-    masterConfig.dcm_ki_mag = 0;                // 0.00 * 10000
+    masterConfig.imuConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
+    masterConfig.imuConfig.dcm_ki_acc = 50;               // 0.005 * 10000
+    masterConfig.imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
+    masterConfig.imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
+    masterConfig.imuConfig.small_angle = 25;
     masterConfig.gyroConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
@@ -546,7 +547,6 @@ static void resetConf(void)
 
     masterConfig.armingConfig.disarm_kill_switch = 1;
     masterConfig.armingConfig.auto_disarm_delay = 5;
-    masterConfig.armingConfig.small_angle = 25;
 
     resetMixerConfig(&masterConfig.mixerConfig);
 #ifdef USE_SERVOS
@@ -771,8 +771,6 @@ void activateControlRateConfig(void)
 
 void activateConfig(void)
 {
-    static imuRuntimeConfig_t imuRuntimeConfig;
-
     activateControlRateConfig();
 
     resetAdjustmentStates();
@@ -800,13 +798,7 @@ void activateConfig(void)
     servosUseConfigs(&masterConfig.servoMixerConfig, currentProfile->servoConf, &currentProfile->gimbalConfig, &masterConfig.rxConfig);
 #endif
 
-    imuRuntimeConfig.dcm_kp_acc = masterConfig.dcm_kp_acc / 10000.0f;
-    imuRuntimeConfig.dcm_ki_acc = masterConfig.dcm_ki_acc / 10000.0f;
-    imuRuntimeConfig.dcm_kp_mag = masterConfig.dcm_kp_mag / 10000.0f;
-    imuRuntimeConfig.dcm_ki_mag = masterConfig.dcm_ki_mag / 10000.0f;
-    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
-
-    imuConfigure(&imuRuntimeConfig, &currentProfile->pidProfile);
+    imuConfigure(&masterConfig.imuConfig, &currentProfile->pidProfile);
 
     pidInit();
 

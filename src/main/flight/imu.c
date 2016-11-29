@@ -84,7 +84,8 @@ STATIC_UNIT_TESTED float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
-static imuRuntimeConfig_t *imuRuntimeConfig;
+static imuRuntimeConfig_t imuRuntimeConfig;
+
 static pidProfile_t *pidProfile;
 
 static float gyroScale;
@@ -139,9 +140,13 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
-void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, pidProfile_t *initialPidProfile)
+void imuConfigure(imuConfig_t *imuConfig, pidProfile_t *initialPidProfile)
 {
-    imuRuntimeConfig = initialImuRuntimeConfig;
+    imuRuntimeConfig.dcm_kp_acc = imuConfig->dcm_kp_acc / 10000.0f;
+    imuRuntimeConfig.dcm_ki_acc = imuConfig->dcm_ki_acc / 10000.0f;
+    imuRuntimeConfig.dcm_kp_mag = imuConfig->dcm_kp_mag / 10000.0f;
+    imuRuntimeConfig.dcm_ki_mag = imuConfig->dcm_ki_mag / 10000.0f;
+    imuRuntimeConfig.small_angle = imuConfig->small_angle;
     pidProfile = initialPidProfile;
 }
 
@@ -149,7 +154,7 @@ void imuInit(void)
 {
     int axis;
 
-    smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig->small_angle));
+    smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
     gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
@@ -251,7 +256,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     /* Step 1: Yaw correction */
     // Use measured magnetic field vector
     if (useMag || useCOG) {
-        float kpMag = imuRuntimeConfig->dcm_kp_mag * imuGetPGainScaleFactor();
+        float kpMag = imuRuntimeConfig.dcm_kp_mag * imuGetPGainScaleFactor();
 
         recipNorm = mx * mx + my * my + mz * mz;
         if (useMag && recipNorm > 0.01f) {
@@ -300,12 +305,12 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         }
 
         // Compute and apply integral feedback if enabled
-        if(imuRuntimeConfig->dcm_ki_mag > 0.0f) {
+        if(imuRuntimeConfig.dcm_ki_mag > 0.0f) {
             // Stop integrating if spinning beyond the certain limit
             if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
-                integralMagX += imuRuntimeConfig->dcm_ki_mag * ex * dt;    // integral error scaled by Ki
-                integralMagY += imuRuntimeConfig->dcm_ki_mag * ey * dt;
-                integralMagZ += imuRuntimeConfig->dcm_ki_mag * ez * dt;
+                integralMagX += imuRuntimeConfig.dcm_ki_mag * ex * dt;    // integral error scaled by Ki
+                integralMagY += imuRuntimeConfig.dcm_ki_mag * ey * dt;
+                integralMagZ += imuRuntimeConfig.dcm_ki_mag * ez * dt;
 
                 gx += integralMagX;
                 gy += integralMagY;
@@ -322,7 +327,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
 
     /* Step 2: Roll and pitch correction -  use measured acceleration vector */
     if (accWeight > 0) {
-        float kpAcc = imuRuntimeConfig->dcm_kp_acc * imuGetPGainScaleFactor();
+        float kpAcc = imuRuntimeConfig.dcm_kp_acc * imuGetPGainScaleFactor();
 
         // Just scale by 1G length - That's our vector adjustment. Rather than
         // using one-over-exact length (which needs a costly square root), we already
@@ -340,12 +345,12 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
         ez = (ax * rMat[2][1] - ay * rMat[2][0]) * fAccWeightScaler;
 
         // Compute and apply integral feedback if enabled
-        if(imuRuntimeConfig->dcm_ki_acc > 0.0f) {
+        if(imuRuntimeConfig.dcm_ki_acc > 0.0f) {
             // Stop integrating if spinning beyond the certain limit
             if (spin_rate_sq < sq(DEGREES_TO_RADIANS(SPIN_RATE_LIMIT))) {
-                integralAccX += imuRuntimeConfig->dcm_ki_acc * ex * dt;    // integral error scaled by Ki
-                integralAccY += imuRuntimeConfig->dcm_ki_acc * ey * dt;
-                integralAccZ += imuRuntimeConfig->dcm_ki_acc * ez * dt;
+                integralAccX += imuRuntimeConfig.dcm_ki_acc * ex * dt;    // integral error scaled by Ki
+                integralAccY += imuRuntimeConfig.dcm_ki_acc * ey * dt;
+                integralAccZ += imuRuntimeConfig.dcm_ki_acc * ez * dt;
 
                 gx += integralAccX;
                 gy += integralAccY;
