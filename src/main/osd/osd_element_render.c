@@ -125,7 +125,7 @@ void osdElementRender_rssi(const element_t *element, elementDataProviderFn dataF
 {
     uint16_t rssi = (uint16_t) dataFn();
 
-    tfp_sprintf(elementAsciiBuffer, "%3d", (rssi / 1023) * 100);
+    tfp_sprintf(elementAsciiBuffer, "%3d", rssi / 10);
     osdPrintAt(element->x, element->y, elementAsciiBuffer);
     osdSetRawCharacterAtPosition(element->x + 3, element->y, FONT_CHARACTER_RSSI);
 }
