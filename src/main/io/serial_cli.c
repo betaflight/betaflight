@@ -986,7 +986,7 @@ const clivalue_t valueTable[] = {
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.h_offset, .config.minmax = { -32, 31 } },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.v_offset, .config.minmax = { -15, 16 } },
 #endif
-#ifdef USE_RSSISOFTPWM
+#ifdef USE_RSSI_SOFTPWM
     { "rssi_softpwm_device",         VAR_UINT8   | MASTER_VALUE, &masterConfig.rssiSoftPwmConfig.device, .config.minmax = { 0, 1 } },
 #endif
 };

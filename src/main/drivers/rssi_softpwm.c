@@ -52,7 +52,7 @@ static volatile uint32_t pulseWidth;
 
 static uint8_t rxtype;
 
-extern uint16_t rssi; // XXX Defined in rx.c, should not access it.
+static uint16_t rssiSoftPwm;
 
 #define INTPWM_INPUT_MIN      1
 #define INTPWM_INPUT_MAX    999
@@ -215,9 +215,9 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
 
         // In terms of layering, this assignment should be done
         // somewhere higher; e.g., RSSI task in sensors.
-        rssi = value;
+        rssiSoftPwm = value;
 
-        if (value > 100) {
+        if (value > 800) {
             debug[3] = rawWidth;
         }
     }
@@ -226,6 +226,11 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     rssiSoftPwmInProgress = true;
     EXTIConfig(rssiSoftPwmIO, &rssiSoftPwm_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(rssiSoftPwmIO, true);
+}
+
+uint16_t rssiSoftPwmRead(void)
+{
+    return rssiSoftPwm;
 }
 
 #endif // USE_RSSI_SOFTPWM

@@ -806,8 +806,8 @@ void createDefaultConfig(master_t *config)
     }
 #endif
 
-#ifdef USE_RSSISOFTPWM
-    rssiSoftPwmResetConfig(&config->rssiSoftPwmConfig);
+#ifdef USE_RSSI_SOFTPWM
+    resetRssiSoftPwmConfig(&config->rssiSoftPwmConfig);
 #endif
 
 #if defined(TARGET_CONFIG)
