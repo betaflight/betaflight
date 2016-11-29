@@ -39,6 +39,10 @@ typedef enum {
     FILTER_NOTCH
 } biquadFilterType_e;
 
+typedef float (*filterApplyFnPtr)(void *filter, float input);
+
+float nullFilterApply(void *filter, float input);
+
 void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterHz, uint16_t cutoffHz);
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 
@@ -50,4 +54,3 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
 
 int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]);
 float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]);
-
