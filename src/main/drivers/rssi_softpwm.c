@@ -140,7 +140,9 @@ bool rssiSoftPwmInit(void)
 #endif
 
 #if defined(STM32F3) || defined(STM32F4)
+#if 0
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+#endif
 
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
@@ -177,7 +179,7 @@ bool rssiSoftPwmInit(void)
     return true;
 }
 
-// updateIntpwm(): Scheduler task
+// rssiSoftPwmUpdate(): Scheduler task
 
 void rssiSoftPwmUpdate(uint32_t currentTime)
 {
