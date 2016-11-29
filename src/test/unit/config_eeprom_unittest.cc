@@ -450,7 +450,7 @@ void setControlRateProfile(uint8_t) {}
 void resetControlRateConfig(controlRateConfig_t *) {}
 void configureRateProfileSelection(uint8_t, uint8_t) {}
 void activateControlRateConfig() {}
-
+void accelerationFilterInit(uint8_t ) {}
 void recalculateMagneticDeclination(void) {}
 
 void pgReset_serialConfig(serialConfig_t *) {}
