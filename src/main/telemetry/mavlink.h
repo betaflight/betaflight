@@ -19,7 +19,7 @@
 #define TELEMETRY_MAVLINK_H_
 
 void initMAVLinkTelemetry(void);
-void handleMAVLinkTelemetry(uint32_t currentTime);
+void handleMAVLinkTelemetry(timeUs_t currentTimeUs);
 void checkMAVLinkTelemetryState(void);
 
 void freeMAVLinkTelemetryPort(void);

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 //#define SCHEDULER_DEBUG
 
 typedef enum {
@@ -102,23 +104,23 @@ typedef enum {
 typedef struct {
     /* Configuration */
     const char * taskName;
-    bool (*checkFunc)(uint32_t currentTime, uint32_t currentDeltaTime);
-    void (*taskFunc)(uint32_t currentTime);
+    bool (*checkFunc)(timeUs_t currentTimeUs, uint32_t currentDeltaTime);
+    void (*taskFunc)(timeUs_t currentTimeUs);
     uint32_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
     uint16_t dynamicPriority;       // measurement of how old task was last executed, used to avoid task starvation
     uint16_t taskAgeCycles;
-    uint32_t lastExecutedAt;        // last time of invocation
-    uint32_t lastSignaledAt;        // time of invocation event for event-driven tasks
+    timeUs_t lastExecutedAt;        // last time of invocation
+    timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
 
     /* Statistics */
-    uint32_t averageExecutionTime;  // Moving average over 6 samples, used to calculate guard interval
-    uint32_t taskLatestDeltaTime;   //
+    timeUs_t averageExecutionTime;  // Moving average over 6 samples, used to calculate guard interval
+    timeUs_t taskLatestDeltaTime;   //
 #ifndef SKIP_TASK_STATISTICS
-    uint32_t maxExecutionTime;
-    uint32_t totalExecutionTime;    // total time consumed by task since boot
+    timeUs_t maxExecutionTime;
+    timeUs_t totalExecutionTime;    // total time consumed by task since boot
 #endif
 } cfTask_t;
 

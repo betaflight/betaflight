@@ -19,12 +19,14 @@
 
 #include <stdint.h>
 
-void taskMainPidLoopChecker(uint32_t currentTime);
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime);
-void taskUpdateRxMain(uint32_t currentTime);
-void taskSystem(uint32_t currentTime);
+#include "common/time.h"
 
-void taskMainPidLoop(uint32_t currentTime);
-void taskGyro(uint32_t currentTime);
+void taskMainPidLoopChecker(timeUs_t currentTimeUs);
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime);
+void taskUpdateRxMain(timeUs_t currentTimeUs);
+void taskSystem(timeUs_t currentTimeUs);
+
+void taskMainPidLoop(timeUs_t currentTimeUs);
+void taskGyro(timeUs_t currentTimeUs);
 
 void fcTasksInit(void);

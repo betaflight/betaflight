@@ -339,7 +339,7 @@ bool adjustMulticopterAltitudeFromRCInput(void);
 bool adjustMulticopterHeadingFromRCInput(void);
 bool adjustMulticopterPositionFromRCInput(void);
 
-void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs);
 
 void resetFixedWingLandingDetector(void);
 void resetMulticopterLandingDetector(void);
@@ -360,15 +360,15 @@ bool adjustFixedWingAltitudeFromRCInput(void);
 bool adjustFixedWingHeadingFromRCInput(void);
 bool adjustFixedWingPositionFromRCInput(void);
 
-void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime);
+void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs);
 
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
 
 /* Fixed-wing launch controller */
-void resetFixedWingLaunchController(const uint32_t currentTime);
+void resetFixedWingLaunchController(timeUs_t currentTimeUs);
 bool isFixedWingLaunchDetected(void);
-void enableFixedWingLaunchController(const uint32_t currentTime);
+void enableFixedWingLaunchController(timeUs_t currentTimeUs);
 bool isFixedWingLaunchFinishedOrAborted(void);
-void applyFixedWingLaunchController(const uint32_t currentTime);
+void applyFixedWingLaunchController(timeUs_t currentTimeUs);
 
 #endif

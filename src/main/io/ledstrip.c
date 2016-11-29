@@ -896,7 +896,7 @@ typedef enum {
     timTimerCount
 } timId_e;
 
-static uint32_t timerVal[timTimerCount];
+static timeUs_t timerVal[timTimerCount];
 
 // function to apply layer.
 // function must replan self using timer pointer
@@ -921,7 +921,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void ledStripUpdate(uint32_t currentTime)
+void ledStripUpdate(timeUs_t currentTimeUs)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
@@ -941,12 +941,12 @@ void ledStripUpdate(uint32_t currentTime)
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
         // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
         // max delay is limited to 5s
-        int32_t delta = cmp32(currentTime, timerVal[timId]);
+        int32_t delta = cmpTimeUs(currentTimeUs, timerVal[timId]);
         if (delta < 0 && delta > -LED_STRIP_MS(5000))
             continue;  // not ready yet
         timActive |= 1 << timId;
         if (delta >= LED_STRIP_MS(100) || delta < 0) {
-            timerVal[timId] = currentTime;
+            timerVal[timId] = currentTimeUs;
         }
     }
 
@@ -960,7 +960,7 @@ void ledStripUpdate(uint32_t currentTime)
     applyLedFixedLayers();
 
     for (timId_e timId = 0; timId < ARRAYLEN(layerTable); timId++) {
-        uint32_t *timer = &timerVal[timId];
+        timeUs_t *timer = &timerVal[timId];
         bool updateNow = timActive & (1 << timId);
         (*layerTable[timId])(updateNow, timer);
     }

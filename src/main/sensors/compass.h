@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #include "sensors/sensors.h"
 
 // Type of magnetometer used/detected
@@ -35,7 +37,7 @@ typedef enum {
 
 bool compassInit(int16_t magDeclinationFromConfig);
 union flightDynamicsTrims_u;
-void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
+void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
 
 extern int32_t magADC[XYZ_AXIS_COUNT];

@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "common/time.h"
+
 #define ARRAYLEN(x) (sizeof(x) / sizeof((x)[0]))
 #define ARRAYEND(x) (&(x)[ARRAYLEN(x)])
 
@@ -71,6 +73,7 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 
 static inline int16_t cmp16(uint16_t a, uint16_t b) { return a-b; }
 static inline int32_t cmp32(uint32_t a, uint32_t b) { return a-b; }
+static inline int32_t cmpTimeUs(timeUs_t a, timeUs_t b) { return a-b; }
 
 // using memcpy_fn will force memcpy function call, instead of inlining it. In most cases function call takes fewer instructions
 //  than inlined version (inlining is cheaper for very small moves < 8 bytes / 2 store instructions)

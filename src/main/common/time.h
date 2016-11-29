@@ -17,18 +17,17 @@
 
 #pragma once
 
-#include "blackbox/blackbox_fielddefs.h"
+#include <stdint.h>
 
-typedef struct blackboxConfig_s {
-    uint8_t rate_num;
-    uint8_t rate_denom;
-    uint8_t device;
-} blackboxConfig_t;
+#include "platform.h"
 
-void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data);
-
-void initBlackbox(void);
-void handleBlackbox(timeUs_t currentTimeUs);
-void startBlackbox(void);
-void finishBlackbox(void);
-bool blackboxMayEditConfig(void);
+// millisecond time
+typedef uint32_t timeMs_t ;
+// microsecond time
+#ifdef USE_64BIT_TIME
+typedef uint64_t timeUs_t;
+#define TIMEUS_MAX UINT64_MAX
+#else
+typedef uint32_t timeUs_t;
+#define TIMEUS_MAX UINT32_MAX
+#endif

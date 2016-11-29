@@ -78,12 +78,12 @@
 #define INAV_HISTORY_BUF_SIZE               (INAV_POSITION_PUBLISH_RATE_HZ / 2)     // Enough to hold 0.5 sec historical data
 
 typedef struct {
-    uint32_t    lastTriggeredTime;
-    uint32_t    deltaTime;
+    timeUs_t    lastTriggeredTime;
+    timeUs_t    deltaTime;
 } navigationTimer_t;
 
 typedef struct {
-    uint32_t    lastUpdateTime; // Last update time (us)
+    timeUs_t    lastUpdateTime; // Last update time (us)
 #if defined(NAV_GPS_GLITCH_DETECTION)
     bool        glitchDetected;
     bool        glitchRecovery;
@@ -95,24 +95,24 @@ typedef struct {
 } navPositionEstimatorGPS_t;
 
 typedef struct {
-    uint32_t    lastUpdateTime; // Last update time (us)
+    timeUs_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw barometric altitude (cm)
     float       epv;
 } navPositionEstimatorBARO_t;
 
 typedef struct {
-    uint32_t    lastUpdateTime; // Last update time (us)
+    timeUs_t    lastUpdateTime; // Last update time (us)
     float       airspeed;            // airspeed (cm/s)
 } navPositionEstimatorPITOT_t;
 
 typedef struct {
-    uint32_t    lastUpdateTime; // Last update time (us)
+    timeUs_t    lastUpdateTime; // Last update time (us)
     float       alt;            // Raw altitude measurement (cm)
     float       vel;
 } navPositionEstimatorSONAR_t;
 
 typedef struct {
-    uint32_t    lastUpdateTime; // Last update time (us)
+    timeUs_t    lastUpdateTime; // Last update time (us)
     t_fp_vector pos;
     t_fp_vector vel;
     float       baroOffset;
@@ -123,7 +123,7 @@ typedef struct {
 } navPositionEstimatorESTIMATE_t;
 
 typedef struct {
-    uint32_t    baroGroundTimeout;
+    timeUs_t    baroGroundTimeout;
     float       baroGroundAlt;
     bool        isBaroGroundValid;
 } navPositionEstimatorSTATE_t;
@@ -180,13 +180,13 @@ static void inavFilterCorrectVel(int axis, float dt, float e, float w)
     posEstimator.est.vel.A[axis] += e * w * dt;
 }
 
-#define resetTimer(tim, currentTime) { (tim)->deltaTime = 0; (tim)->lastTriggeredTime = currentTime; }
+#define resetTimer(tim, currentTimeUs) { (tim)->deltaTime = 0; (tim)->lastTriggeredTime = currentTimeUs; }
 #define getTimerDeltaMicros(tim) ((tim)->deltaTime)
-static bool updateTimer(navigationTimer_t * tim, uint32_t interval, uint32_t currentTime)
+static bool updateTimer(navigationTimer_t * tim, uint32_t interval, timeUs_t currentTimeUs)
 {
-    if ((currentTime - tim->lastTriggeredTime) >= interval) {
-        tim->deltaTime = currentTime - tim->lastTriggeredTime;
-        tim->lastTriggeredTime = currentTime;
+    if ((currentTimeUs - tim->lastTriggeredTime) >= interval) {
+        tim->deltaTime = currentTimeUs - tim->lastTriggeredTime;
+        tim->lastTriggeredTime = currentTimeUs;
         return true;
     }
     else {
@@ -214,9 +214,9 @@ static uint32_t getGPSDeltaTimeFilter(uint32_t dTus)
 }
 
 #if defined(NAV_GPS_GLITCH_DETECTION)
-static bool detectGPSGlitch(uint32_t currentTime)
+static bool detectGPSGlitch(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTime = 0;
+    static timeUs_t previousTime = 0;
     static t_fp_vector lastKnownGoodPosition;
     static t_fp_vector lastKnownGoodVelocity;
 
@@ -228,7 +228,7 @@ static bool detectGPSGlitch(uint32_t currentTime)
     else {
         t_fp_vector predictedGpsPosition;
         float gpsDistance;
-        float dT = US2S(currentTime - previousTime);
+        float dT = US2S(currentTimeUs - previousTime);
 
         /* We predict new position based on previous GPS velocity and position */
         predictedGpsPosition.V.X = lastKnownGoodPosition.V.X + lastKnownGoodVelocity.V.X * dT;
@@ -245,7 +245,7 @@ static bool detectGPSGlitch(uint32_t currentTime)
     }
 
     if (!isGlitching) {
-        previousTime = currentTime;
+        previousTime = currentTimeUs;
         lastKnownGoodPosition = posEstimator.gps.pos;
         lastKnownGoodVelocity = posEstimator.gps.vel;
     }
@@ -267,7 +267,7 @@ void onNewGPSData(void)
     static bool isFirstGPSUpdate = true;
 
     gpsLocation_t newLLH;
-    uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
     newLLH.lat = gpsSol.llh.lat;
     newLLH.lon = gpsSol.llh.lon;
@@ -279,7 +279,7 @@ void onNewGPSData(void)
             return;
         }
 
-        if ((currentTime - lastGPSNewDataTime) > MS2US(INAV_GPS_TIMEOUT_MS)) {
+        if ((currentTimeUs - lastGPSNewDataTime) > MS2US(INAV_GPS_TIMEOUT_MS)) {
             isFirstGPSUpdate = true;
         }
 
@@ -309,7 +309,7 @@ void onNewGPSData(void)
 
             /* If not the first update - calculate velocities */
             if (!isFirstGPSUpdate) {
-                float dT = US2S(getGPSDeltaTimeFilter(currentTime - lastGPSNewDataTime));
+                float dT = US2S(getGPSDeltaTimeFilter(currentTimeUs - lastGPSNewDataTime));
 
                 /* Use VELNED provided by GPS if available, calculate from coordinates otherwise */
                 float gpsScaleLonDown = constrainf(cos_approx((ABS(gpsSol.llh.lat) / 10000000.0f) * 0.0174532925f), 0.01f, 1.0f);
@@ -331,7 +331,7 @@ void onNewGPSData(void)
 
 #if defined(NAV_GPS_GLITCH_DETECTION)
                 /* GPS glitch protection. We have local coordinates and local velocity for current GPS update. Check if they are sane */
-                if (detectGPSGlitch(currentTime)) {
+                if (detectGPSGlitch(currentTimeUs)) {
                     posEstimator.gps.glitchRecovery = false;
                     posEstimator.gps.glitchDetected = true;
                 }
@@ -353,7 +353,7 @@ void onNewGPSData(void)
                 }
 
                 /* Indicate a last valid reading of Pos/Vel */
-                posEstimator.gps.lastUpdateTime = currentTime;
+                posEstimator.gps.lastUpdateTime = currentTimeUs;
             }
 
             previousLat = gpsSol.llh.lat;
@@ -361,7 +361,7 @@ void onNewGPSData(void)
             previousAlt = gpsSol.llh.alt;
             isFirstGPSUpdate = false;
 
-            lastGPSNewDataTime = currentTime;
+            lastGPSNewDataTime = currentTimeUs;
         }
     }
     else {
@@ -375,11 +375,11 @@ void onNewGPSData(void)
  * Read BARO and update alt/vel topic
  *  Function is called at main loop rate, updates happen at reduced rate
  */
-static void updateBaroTopic(uint32_t currentTime)
+static void updateBaroTopic(timeUs_t currentTimeUs)
 {
     static navigationTimer_t baroUpdateTimer;
 
-    if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTime)) {
+    if (updateTimer(&baroUpdateTimer, HZ2US(INAV_BARO_UPDATE_RATE), currentTimeUs)) {
         static float initialBaroAltitudeOffset = 0.0f;
         float newBaroAlt = baroCalculateAltitude();
 
@@ -391,7 +391,7 @@ static void updateBaroTopic(uint32_t currentTime)
         if (sensors(SENSOR_BARO) && isBaroCalibrationComplete()) {
             posEstimator.baro.alt = newBaroAlt - initialBaroAltitudeOffset;
             posEstimator.baro.epv = posControl.navConfig->estimation.baro_epv;
-            posEstimator.baro.lastUpdateTime = currentTime;
+            posEstimator.baro.lastUpdateTime = currentTimeUs;
         }
         else {
             posEstimator.baro.alt = 0;
@@ -406,11 +406,11 @@ static void updateBaroTopic(uint32_t currentTime)
  * Read Pitot and update airspeed topic
  *  Function is called at main loop rate, updates happen at reduced rate
  */
-static void updatePitotTopic(uint32_t currentTime)
+static void updatePitotTopic(timeUs_t currentTimeUs)
 {
     static navigationTimer_t pitotUpdateTimer;
 
-    if (updateTimer(&pitotUpdateTimer, HZ2US(INAV_PITOT_UPDATE_RATE), currentTime)) {
+    if (updateTimer(&pitotUpdateTimer, HZ2US(INAV_PITOT_UPDATE_RATE), currentTimeUs)) {
         float newTAS = pitotCalculateAirSpeed();
         if (sensors(SENSOR_PITOT) && isPitotCalibrationComplete()) {
             posEstimator.pitot.airspeed = newTAS;
@@ -428,11 +428,11 @@ static void updatePitotTopic(uint32_t currentTime)
  * Read sonar and update alt/vel topic
  *  Function is called at main loop rate, updates happen at reduced rate
  */
-static void updateSonarTopic(uint32_t currentTime)
+static void updateSonarTopic(timeUs_t currentTimeUs)
 {
     static navigationTimer_t sonarUpdateTimer;
 
-    if (updateTimer(&sonarUpdateTimer, HZ2US(INAV_SONAR_UPDATE_RATE), currentTime)) {
+    if (updateTimer(&sonarUpdateTimer, HZ2US(INAV_SONAR_UPDATE_RATE), currentTimeUs)) {
         if (sensors(SENSOR_SONAR)) {
             /* Read sonar */
             float newSonarAlt = rangefinderRead();
@@ -441,8 +441,8 @@ static void updateSonarTopic(uint32_t currentTime)
             /* Apply predictive filter to sonar readings (inspired by PX4Flow) */
             if (newSonarAlt > 0 && newSonarAlt <= INAV_SONAR_MAX_DISTANCE) {
                 float sonarPredVel, sonarPredAlt;
-                float sonarDt = (currentTime - posEstimator.sonar.lastUpdateTime) * 1e-6;
-                posEstimator.sonar.lastUpdateTime = currentTime;
+                float sonarDt = (currentTimeUs - posEstimator.sonar.lastUpdateTime) * 1e-6;
+                posEstimator.sonar.lastUpdateTime = currentTimeUs;
 
                 sonarPredVel = (sonarDt < 0.25f) ? posEstimator.sonar.vel : 0.0f;
                 sonarPredAlt = posEstimator.sonar.alt + sonarPredVel * sonarDt;
@@ -522,11 +522,11 @@ static float updateEPE(const float oldEPE, const float dt, const float newEPE, c
  * Calculate next estimate using IMU and apply corrections from reference sensors (GPS, BARO etc)
  *  Function is called at main loop rate
  */
-static void updateEstimatedTopic(uint32_t currentTime)
+static void updateEstimatedTopic(timeUs_t currentTimeUs)
 {
     t_fp_vector accelBiasCorr;
-    float dt = US2S(currentTime - posEstimator.est.lastUpdateTime);
-    posEstimator.est.lastUpdateTime = currentTime;
+    float dt = US2S(currentTimeUs - posEstimator.est.lastUpdateTime);
+    posEstimator.est.lastUpdateTime = currentTimeUs;
 
     /* If IMU is not ready we can't estimate anything */
     if (!isImuReady()) {
@@ -549,25 +549,25 @@ static void updateEstimatedTopic(uint32_t currentTime)
 
 
     /* Figure out if we have valid position data from our data sources */
-    bool isGPSValid = sensors(SENSOR_GPS) && posControl.gpsOrigin.valid && ((currentTime - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
-    bool isBaroValid = sensors(SENSOR_BARO) && ((currentTime - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
-    bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTime - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
+    bool isGPSValid = sensors(SENSOR_GPS) && posControl.gpsOrigin.valid && ((currentTimeUs - posEstimator.gps.lastUpdateTime) <= MS2US(INAV_GPS_TIMEOUT_MS));
+    bool isBaroValid = sensors(SENSOR_BARO) && ((currentTimeUs - posEstimator.baro.lastUpdateTime) <= MS2US(INAV_BARO_TIMEOUT_MS));
+    bool isSonarValid = sensors(SENSOR_SONAR) && ((currentTimeUs - posEstimator.sonar.lastUpdateTime) <= MS2US(INAV_SONAR_TIMEOUT_MS));
 
     /* Do some preparations to data */
     if (isBaroValid) {
         if (!ARMING_FLAG(ARMED)) {
             posEstimator.state.baroGroundAlt = posEstimator.est.pos.V.Z;
             posEstimator.state.isBaroGroundValid = true;
-            posEstimator.state.baroGroundTimeout = currentTime + 250000;   // 0.25 sec
+            posEstimator.state.baroGroundTimeout = currentTimeUs + 250000;   // 0.25 sec
         }
         else {
             if (posEstimator.est.vel.V.Z > 15) {
-                if (currentTime > posEstimator.state.baroGroundTimeout) {
+                if (currentTimeUs > posEstimator.state.baroGroundTimeout) {
                     posEstimator.state.isBaroGroundValid = false;
                 }
             }
             else {
-                posEstimator.state.baroGroundTimeout = currentTime + 250000;   // 0.25 sec
+                posEstimator.state.baroGroundTimeout = currentTimeUs + 250000;   // 0.25 sec
             }
         }
     }
@@ -790,7 +790,7 @@ static void updateEstimatedTopic(uint32_t currentTime)
  * Examine estimation error and update navigation system if estimate is good enough
  *  Function is called at main loop rate, but updates happen less frequently - at a fixed rate
  */
-static void publishEstimatedTopic(uint32_t currentTime)
+static void publishEstimatedTopic(timeUs_t currentTimeUs)
 {
     static navigationTimer_t posPublishTimer;
 
@@ -798,7 +798,7 @@ static void publishEstimatedTopic(uint32_t currentTime)
     updateActualHeading(DECIDEGREES_TO_CENTIDEGREES(attitude.values.yaw));
 
     /* Position and velocity are published with INAV_POSITION_PUBLISH_RATE_HZ */
-    if (updateTimer(&posPublishTimer, HZ2US(INAV_POSITION_PUBLISH_RATE_HZ), currentTime)) {
+    if (updateTimer(&posPublishTimer, HZ2US(INAV_POSITION_PUBLISH_RATE_HZ), currentTimeUs)) {
         /* Publish position update */
         if (posEstimator.est.eph < posControl.navConfig->estimation.max_eph_epv) {
             updateActualHorizontalPositionAndVelocity(true, posEstimator.est.pos.V.X, posEstimator.est.pos.V.Y, posEstimator.est.vel.V.X, posEstimator.est.vel.V.Y);
@@ -889,29 +889,29 @@ void updatePositionEstimator(void)
         isInitialized = true;
     }
 
-    uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
     /* Periodic sensor updates */
 #if defined(BARO)
-    updateBaroTopic(currentTime);
+    updateBaroTopic(currentTimeUs);
 #endif
 
 #if defined(PITOT)
-    updatePitotTopic(currentTime);
+    updatePitotTopic(currentTimeUs);
 #endif
 
 #if defined(SONAR)
-    updateSonarTopic(currentTime);
+    updateSonarTopic(currentTimeUs);
 #endif
 
     /* Read updates from IMU, preprocess */
     updateIMUTopic();
 
     /* Update estimate */
-    updateEstimatedTopic(currentTime);
+    updateEstimatedTopic(currentTimeUs);
 
     /* Publish estimate */
-    publishEstimatedTopic(currentTime);
+    publishEstimatedTopic(currentTimeUs);
 }
 
 #endif

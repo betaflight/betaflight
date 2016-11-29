@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define GRAVITY_CMSS    980.665f
 
 extern int16_t throttleAngleCorrection;
@@ -57,7 +59,7 @@ typedef struct imuRuntimeConfig_s {
 struct pidProfile_s;
 void imuConfigure(imuConfig_t *imuConfig, struct pidProfile_s *initialPidProfile);
 
-void imuUpdateAttitude(uint32_t currentTime);
+void imuUpdateAttitude(timeUs_t currentTimeUs);
 void imuUpdateAccelerometer(void);
 void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);

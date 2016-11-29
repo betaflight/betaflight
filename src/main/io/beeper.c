@@ -287,7 +287,7 @@ void beeperGpsStatus(void)
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
  */
-void beeperUpdate(uint32_t currentTime)
+void beeperUpdate(timeUs_t currentTimeUs)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
@@ -307,7 +307,7 @@ void beeperUpdate(uint32_t currentTime)
         return;
     }
 
-    const uint32_t now = currentTime / 1000;
+    const timeMs_t now = currentTimeUs / 1000;
     if (beeperNextToggleTime > now) {
         return;
     }
@@ -325,7 +325,7 @@ void beeperUpdate(uint32_t currentTime)
                 beeperPos == 0
                 && (currentBeeperEntry->mode == BEEPER_ARMING || currentBeeperEntry->mode == BEEPER_ARMING_GPS_FIX)
             ) {
-                armingBeepTimeMicros = currentTime;
+                armingBeepTimeMicros = currentTimeUs;
             }
         }
     } else {

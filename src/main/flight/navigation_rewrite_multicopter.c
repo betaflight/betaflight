@@ -190,26 +190,26 @@ void resetMulticopterAltitudeController(void)
     }
 }
 
-static void applyMulticopterAltitudeController(uint32_t currentTime)
+static void applyMulticopterAltitudeController(timeUs_t currentTimeUs)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
-    static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
+    static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    const const uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    const const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-        previousTimeUpdate = currentTime;
-        previousTimePositionUpdate = currentTime;
+        previousTimeUpdate = currentTimeUs;
+        previousTimePositionUpdate = currentTimeUs;
         resetMulticopterAltitudeController();
         return;
     }
 
     // If we have an update on vertical position data - update velocity and accel targets
     if (posControl.flags.verticalPositionDataNew) {
-        const uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-        previousTimePositionUpdate = currentTime;
+        const uint32_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+        previousTimePositionUpdate = currentTimeUs;
 
         // Check if last correction was too log ago - ignore this update
         if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
@@ -413,13 +413,13 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -maxBankAngle, maxBankAngle);
 }
 
-static void applyMulticopterPositionController(uint32_t currentTime)
+static void applyMulticopterPositionController(timeUs_t currentTimeUs)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
-    static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
+    static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    const uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
     bool bypassPositionController;
 
     // We should passthrough rcCommand is adjusting position in GPS_ATTI mode
@@ -427,8 +427,8 @@ static void applyMulticopterPositionController(uint32_t currentTime)
 
     // If last call to controller was too long in the past - ignore it (likely restarting position controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-        previousTimeUpdate = currentTime;
-        previousTimePositionUpdate = currentTime;
+        previousTimeUpdate = currentTimeUs;
+        previousTimePositionUpdate = currentTimeUs;
         resetMulticopterPositionController();
         return;
     }
@@ -438,8 +438,8 @@ static void applyMulticopterPositionController(uint32_t currentTime)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-            previousTimePositionUpdate = currentTime;
+            uint32_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            previousTimePositionUpdate = currentTimeUs;
 
             if (!bypassPositionController) {
                 // Update position controller
@@ -489,11 +489,11 @@ void resetMulticopterLandingDetector(void)
 
 bool isMulticopterLandingDetected(void)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
     // FIXME: Remove delay between resetMulticopterLandingDetector and first run of this function so this code isn't needed.
     if (landingDetectorStartedAt == 0) {
-        landingDetectorStartedAt = currentTime;
+        landingDetectorStartedAt = currentTimeUs;
     }
 
     // Average climb rate should be low enough
@@ -507,7 +507,7 @@ bool isMulticopterLandingDetected(void)
     // from processRx() and rcCommand at that moment holds rc input, not adjusted values from NAV core)
     // Wait for 1 second so throttle has stabilized.
     bool isAtMinimalThrust = false;
-    if (currentTime - landingDetectorStartedAt > 1000 * 1000) {
+    if (currentTimeUs - landingDetectorStartedAt > 1000 * 1000) {
         landingThrSamples += 1;
         landingThrSum += rcCommandAdjustedThrottle;
         isAtMinimalThrust = rcCommandAdjustedThrottle < (landingThrSum / landingThrSamples - 40);
@@ -517,7 +517,7 @@ bool isMulticopterLandingDetected(void)
 
     navDebug[0] = isAtMinimalThrust * 100 + !verticalMovement * 10 + !horizontalMovement * 1;
     navDebug[1] = (landingThrSamples == 0) ? (navDebug[1] = 0) : (rcCommandAdjustedThrottle - (landingThrSum / landingThrSamples));
-    navDebug[2] = (currentTime - landingTimer) / 1000;
+    navDebug[2] = (currentTimeUs - landingTimer) / 1000;
 
     // If we have surface sensor (for example sonar) - use it to detect touchdown
     if (posControl.flags.hasValidSurfaceSensor && posControl.actualState.surface >= 0 && posControl.actualState.surfaceMin >= 0) {
@@ -528,23 +528,23 @@ bool isMulticopterLandingDetected(void)
     }
 
     if (!possibleLandingDetected) {
-        landingTimer = currentTime;
+        landingTimer = currentTimeUs;
         return false;
     }
     else {
-        return ((currentTime - landingTimer) > (posControl.navConfig->mc.auto_disarm_delay * 1000)) ? true : false;
+        return ((currentTimeUs - landingTimer) > (posControl.navConfig->mc.auto_disarm_delay * 1000)) ? true : false;
     }
 }
 
 /*-----------------------------------------------------------
  * Multicopter emergency landing
  *-----------------------------------------------------------*/
-static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
+static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimeUpdate;
+    static timeUs_t previousTimeUpdate;
     static uint32_t previousTimePositionUpdate;
-    const uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
 
     /* Attempt to stabilise */
     rcCommand[ROLL] = 0;
@@ -556,15 +556,15 @@ static void applyMulticopterEmergencyLandingController(uint32_t currentTime)
 
         // If last position update was too long in the past - ignore it (likely restarting altitude controller)
         if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-            previousTimeUpdate = currentTime;
-            previousTimePositionUpdate = currentTime;
+            previousTimeUpdate = currentTimeUs;
+            previousTimePositionUpdate = currentTimeUs;
             resetMulticopterAltitudeController();
             return;
         }
 
         if (posControl.flags.verticalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-            previousTimePositionUpdate = currentTime;
+            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            previousTimePositionUpdate = currentTimeUs;
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
@@ -619,17 +619,17 @@ static void applyMulticopterHeadingController(void)
     updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 }
 
-void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
 {
     if (navStateFlags & NAV_CTL_EMERG) {
-        applyMulticopterEmergencyLandingController(currentTime);
+        applyMulticopterEmergencyLandingController(currentTimeUs);
     }
     else {
         if (navStateFlags & NAV_CTL_ALT)
-            applyMulticopterAltitudeController(currentTime);
+            applyMulticopterAltitudeController(currentTimeUs);
 
         if (navStateFlags & NAV_CTL_POS)
-            applyMulticopterPositionController(currentTime);
+            applyMulticopterPositionController(currentTimeUs);
 
         if (navStateFlags & NAV_CTL_YAW)
             applyMulticopterHeadingController();

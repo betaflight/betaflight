@@ -120,18 +120,18 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
 #endif
 }
 
-void applyFixedWingAltitudeController(uint32_t currentTime)
+void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
-    static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
+    static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
 
     // If last time Z-controller was called is too far in the past - ignore it (likely restarting altitude controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-        previousTimeUpdate = currentTime;
-        previousTimePositionUpdate = currentTime;
+        previousTimeUpdate = currentTimeUs;
+        previousTimePositionUpdate = currentTimeUs;
         resetFixedWingAltitudeController();
         return;
     }
@@ -139,8 +139,8 @@ void applyFixedWingAltitudeController(uint32_t currentTime)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have an update on vertical position data - update velocity and accel targets
         if (posControl.flags.verticalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-            previousTimePositionUpdate = currentTime;
+            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            previousTimePositionUpdate = currentTimeUs;
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
@@ -290,18 +290,18 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
     //posControl.rcAdjustment[PITCH] = -CENTIDEGREES_TO_DECIDEGREES(ABS(rollAdjustment)) * 0.50f;
 }
 
-void applyFixedWingPositionController(uint32_t currentTime)
+void applyFixedWingPositionController(timeUs_t currentTimeUs)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
-    static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
+    static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-        previousTimeUpdate = currentTime;
-        previousTimePositionUpdate = currentTime;
+        previousTimeUpdate = currentTimeUs;
+        previousTimePositionUpdate = currentTimeUs;
         resetFixedWingPositionController();
         return;
     }
@@ -310,8 +310,8 @@ void applyFixedWingPositionController(uint32_t currentTime)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-            previousTimePositionUpdate = currentTime;
+            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            previousTimePositionUpdate = currentTimeUs;
 
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
                 // Calculate virtual position target at a distance of forwardVelocity * HZ2S(POSITION_TARGET_UPDATE_RATE_HZ)
@@ -338,18 +338,18 @@ void applyFixedWingPositionController(uint32_t currentTime)
     }
 }
 
-int16_t applyFixedWingMinSpeedController(uint32_t currentTime)
+int16_t applyFixedWingMinSpeedController(timeUs_t currentTimeUs)
 {
     static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
-    static uint32_t previousTimeUpdate;                 // Occurs @ looptime rate
+    static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    uint32_t deltaMicros = currentTime - previousTimeUpdate;
-    previousTimeUpdate = currentTime;
+    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-        previousTimeUpdate = currentTime;
-        previousTimePositionUpdate = currentTime;
+        previousTimeUpdate = currentTimeUs;
+        previousTimePositionUpdate = currentTimeUs;
         throttleSpeedAdjustment = 0;
         return 0;
     }
@@ -358,8 +358,8 @@ int16_t applyFixedWingMinSpeedController(uint32_t currentTime)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTime - previousTimePositionUpdate;
-            previousTimePositionUpdate = currentTime;
+            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            previousTimePositionUpdate = currentTimeUs;
 
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
                 float velThrottleBoost = (NAV_FW_MIN_VEL_SPEED_BOOST - posControl.actualState.velXY) * NAV_FW_THROTTLE_SPEED_BOOST_GAIN * US2S(deltaMicrosPositionUpdate);
@@ -387,7 +387,7 @@ int16_t applyFixedWingMinSpeedController(uint32_t currentTime)
     return throttleSpeedAdjustment;
 }
 
-void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
+void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
 {
     int16_t pitchCorrection = 0;        // >0 climb, <0 dive
     int16_t rollCorrection = 0;         // >0 right, <0 left
@@ -410,7 +410,7 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 
     // Speed controller - only apply in POS mode
     if (navStateFlags & NAV_CTL_POS) {
-        throttleCorrection += applyFixedWingMinSpeedController(currentTime);
+        throttleCorrection += applyFixedWingMinSpeedController(currentTimeUs);
         throttleCorrection = constrain(throttleCorrection, minThrottleCorrection, maxThrottleCorrection);
     }
 
@@ -444,18 +444,18 @@ void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStat
 /*-----------------------------------------------------------
  * FixedWing land detector
  *-----------------------------------------------------------*/
-static uint32_t landingTimer;
+static timeUs_t landingTimerUs;
 
 void resetFixedWingLandingDetector(void)
 {
-    landingTimer = micros();
+    landingTimerUs = micros();
 }
 
 bool isFixedWingLandingDetected(void)
 {
-    uint32_t currentTime = micros();
+    timeUs_t currentTimeUs = micros();
 
-    landingTimer = currentTime;
+    landingTimerUs = currentTimeUs;
     return false;
 }
 
@@ -488,10 +488,10 @@ void resetFixedWingHeadingController(void)
     updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
-void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTime)
+void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
 {
     if (navStateFlags & NAV_CTL_LAUNCH) {
-        applyFixedWingLaunchController(currentTime);
+        applyFixedWingLaunchController(currentTimeUs);
     }
     else if (navStateFlags & NAV_CTL_EMERG) {
         applyFixedWingEmergencyLandingController();
@@ -501,10 +501,10 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         // Don't apply anything if ground speed is too low (<3m/s)
         if (posControl.actualState.velXY > 300) {
             if (navStateFlags & NAV_CTL_ALT)
-                applyFixedWingAltitudeController(currentTime);
+                applyFixedWingAltitudeController(currentTimeUs);
 
             if (navStateFlags & NAV_CTL_POS)
-                applyFixedWingPositionController(currentTime);
+                applyFixedWingPositionController(currentTimeUs);
         }
         else {
             posControl.rcAdjustment[PITCH] = 0;
@@ -512,15 +512,15 @@ void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags,
         }
 #else
         if (navStateFlags & NAV_CTL_ALT)
-            applyFixedWingAltitudeController(currentTime);
+            applyFixedWingAltitudeController(currentTimeUs);
 
         if (navStateFlags & NAV_CTL_POS)
-            applyFixedWingPositionController(currentTime);
+            applyFixedWingPositionController(currentTimeUs);
 #endif
 
         //if (navStateFlags & NAV_CTL_YAW)
         if ((navStateFlags & NAV_CTL_ALT) || (navStateFlags & NAV_CTL_POS))
-            applyFixedWingPitchRollThrottleController(navStateFlags, currentTime);
+            applyFixedWingPitchRollThrottleController(navStateFlags, currentTimeUs);
     }
 }
 

@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "rx/rx.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"

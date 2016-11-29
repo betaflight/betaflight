@@ -1,10 +1,11 @@
+#include "platform.h"
+
 #include "common/utils.h"
 
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
 
-#include "target.h"
 #include "build/assert.h"
 
 // io ports defs are stored in array by index now
