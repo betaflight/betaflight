@@ -565,8 +565,8 @@ void createDefaultConfig(master_t *config)
 
     // global settings
     config->current_profile_index = 0;    // default profile
-    config->dcm_kp = 2500;                // 1.0 * 10000
-    config->dcm_ki = 0;                   // 0.003 * 10000
+    config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
+    config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyroConfig.gyro_sync_denom = 8;
@@ -669,7 +669,7 @@ void createDefaultConfig(master_t *config)
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
-    config->armingConfig.small_angle = 25;
+    config->imuConfig.small_angle = 25;
 
     config->airplaneConfig.fixedwing_althold_dir = 1;
 
@@ -703,9 +703,9 @@ void createDefaultConfig(master_t *config)
     config->compassConfig.mag_declination = 0;
     config->accelerometerConfig.acc_lpf_hz = 10.0f;
 
-    config->accDeadband.xy = 40;
-    config->accDeadband.z = 40;
-    config->acc_unarmedcal = 1;
+    config->imuConfig.accDeadband.xy = 40;
+    config->imuConfig.accDeadband.z = 40;
+    config->imuConfig.acc_unarmedcal = 1;
 
 #ifdef BARO
     resetBarometerConfig(&config->barometerConfig);
@@ -822,8 +822,6 @@ void activateControlRateConfig(void)
 
 void activateConfig(void)
 {
-    static imuRuntimeConfig_t imuRuntimeConfig;
-
     activateControlRateConfig();
 
     resetAdjustmentStates();
@@ -859,15 +857,10 @@ void activateConfig(void)
     servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
 #endif
 
-    imuRuntimeConfig.dcm_kp = masterConfig.dcm_kp / 10000.0f;
-    imuRuntimeConfig.dcm_ki = masterConfig.dcm_ki / 10000.0f;
-    imuRuntimeConfig.acc_unarmedcal = masterConfig.acc_unarmedcal;
-    imuRuntimeConfig.small_angle = masterConfig.armingConfig.small_angle;
 
     imuConfigure(
-        &imuRuntimeConfig,
+        &masterConfig.imuConfig,
         &currentProfile->pidProfile,
-        &masterConfig.accDeadband,
         masterConfig.throttleCorrectionConfig.throttle_correction_angle
     );
 

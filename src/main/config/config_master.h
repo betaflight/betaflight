@@ -90,11 +90,9 @@ typedef struct master_s {
     sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    imuConfig_t imuConfig;
+
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-    accDeadband_t accDeadband;
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
 
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate

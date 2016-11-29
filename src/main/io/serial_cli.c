@@ -719,7 +719,7 @@ const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.auto_disarm_delay, .config.minmax = { 0,  60 } },
-    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.small_angle, .config.minmax = { 0,  180 } },
+    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.imuConfig.small_angle, .config.minmax = { 0,  180 } },
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &masterConfig.airplaneConfig.fixedwing_althold_dir, .config.minmax = { -1,  1 } },
 
@@ -820,8 +820,8 @@ const clivalue_t valueTable[] = {
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyroConfig.gyro_soft_notch_hz_2, .config.minmax = { 0,  1000 } },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyroConfig.gyro_soft_notch_cutoff_2, .config.minmax = { 1, 1000 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
-    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
-    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
+    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_kp, .config.minmax = { 0,  50000 } },
+    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_ki, .config.minmax = { 0,  50000 } },
 
     { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.alt_hold_deadband, .config.minmax = { 1,  250 } },
     { "alt_hold_fast_change",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.rcControlsConfig.alt_hold_fast_change, .config.lookup = { TABLE_OFF_ON } },
@@ -870,9 +870,9 @@ const clivalue_t valueTable[] = {
 
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorSelectionConfig.acc_hardware, .config.lookup = { TABLE_ACC_HARDWARE } },
     { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, &masterConfig.accelerometerConfig.acc_lpf_hz, .config.minmax = { 0,  400 } },
-    { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
-    { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.z, .config.minmax = { 0,  100 } },
-    { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
+    { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &masterConfig.imuConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
+    { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &masterConfig.imuConfig.accDeadband.z, .config.minmax = { 0,  100 } },
+    { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.imuConfig.acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
     { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
     { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
 
