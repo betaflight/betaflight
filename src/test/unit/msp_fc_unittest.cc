@@ -57,6 +57,7 @@ extern "C" {
     #include "io/motors.h"
     #include "io/transponder_ir.h"
     #include "io/serial.h"
+    #include "io/vtx.h"
 
     #include "msp/msp_protocol.h"
     #include "msp/msp.h"
@@ -120,6 +121,7 @@ extern "C" {
     PG_REGISTER(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 0);
     PG_REGISTER(frskyTelemetryConfig_t, frskyTelemetryConfig, PG_FRSKY_TELEMETRY_CONFIG, 0);
     PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+    PG_REGISTER(vtxConfig_t, vtxConfig, PG_VTX_CONFIG, 0);
 
     PG_REGISTER_PROFILE_WITH_RESET_FN(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
     void pgResetFn_pidProfile(pidProfile_t *) {}
@@ -573,6 +575,8 @@ rxRuntimeConfig_t rxRuntimeConfig;
 // from system.c
 void delay(uint32_t ms) {UNUSED(ms);}
 uint32_t millis(void) { return 0;}
+// from vtx.c
+vtxState_t vtxState;
 
 // from system_stm32fN0x.c
 void systemReset(void) {}
