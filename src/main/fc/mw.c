@@ -296,7 +296,7 @@ void updateRcCommands(void)
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -masterConfig.yaw_control_direction;
+            rcCommand[axis] = tmp * -masterConfig.rcControlsConfig.yaw_control_direction;
         }
         if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
@@ -484,7 +484,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -masterConfig.yaw_control_direction;
+        dif *= -masterConfig.rcControlsConfig.yaw_control_direction;
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
     } else

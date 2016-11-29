@@ -57,7 +57,6 @@ typedef struct throttleCorrectionConfig_s {
 } throttleCorrectionConfig_t;
 
 typedef struct imuRuntimeConfig_s {
-    uint8_t acc_cut_hz;
     uint8_t acc_unarmedcal;
     float dcm_ki;
     float dcm_kp;

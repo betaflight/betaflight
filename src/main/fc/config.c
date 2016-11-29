@@ -596,7 +596,7 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.yawDegrees = 0;
     config->sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
-    config->yaw_control_direction = 1;
+    config->rcControlsConfig.yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
@@ -701,7 +701,8 @@ void createDefaultConfig(master_t *config)
     resetRollAndPitchTrims(&config->accelerometerTrims);
 
     config->compassConfig.mag_declination = 0;
-    config->acc_lpf_hz = 10.0f;
+    config->accelerometerConfig.acc_lpf_hz = 10.0f;
+
     config->accDeadband.xy = 40;
     config->accDeadband.z = 40;
     config->acc_unarmedcal = 1;
@@ -844,7 +845,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
     setAccelerationTrims(&masterConfig.sensorTrims.accZero);
-    setAccelerationFilter(masterConfig.acc_lpf_hz);
+    setAccelerationFilter(masterConfig.accelerometerConfig.acc_lpf_hz);
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
