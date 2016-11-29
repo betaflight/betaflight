@@ -75,7 +75,6 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
     accelerometerCFG = instance;
 }
 
-int32_t accADC[XYZ_AXIS_COUNT];
 int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions

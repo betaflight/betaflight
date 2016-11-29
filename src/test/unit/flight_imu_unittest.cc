@@ -168,7 +168,6 @@ uint8_t armingFlags;
 int32_t sonarAlt;
 int16_t sonarCfAltCm;
 int16_t sonarMaxAltWithTiltCm;
-int32_t accADC[XYZ_AXIS_COUNT];
 int32_t accSmooth[XYZ_AXIS_COUNT];
 int32_t gyroADC[XYZ_AXIS_COUNT];
 

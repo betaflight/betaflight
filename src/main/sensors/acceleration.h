@@ -36,7 +36,6 @@ typedef enum {
 extern sensor_align_e accAlign;
 extern acc_t acc;
 
-extern int32_t accADC[XYZ_AXIS_COUNT];
 extern int32_t accSmooth[XYZ_AXIS_COUNT];
 uint32_t accSamplingInterval;
 
