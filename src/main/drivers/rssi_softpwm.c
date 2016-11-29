@@ -35,24 +35,19 @@ Configuration problem: USE_RSSI_SOFTPWM requires USE_EXTI
 #include "config/config_master.h"
 //#include "config/feature.h"
 
-static IO_t rssiSoftPwmIO;
-static extiCallbackRec_t rssiSoftPwm_extiCallbackRec;
+static IO_t rspIO;
+static extiCallbackRec_t rsp_extiCallbackRec;
 
-// Measurement array
-static volatile uint8_t sampleLVL[4];     // Input levels
-static volatile uint32_t sampleTS[4]; // Time stamps
-static volatile int sampleCount;
-
-static bool rssiSoftPwmInitialized = false;
-static bool rssiSoftPwmActive = false;
-static volatile bool rssiSoftPwmInProgress = false;
+static bool rspInitialized = false;
+static bool rspActive = false;
+static volatile bool rspInProgress = false;
 
 static volatile uint32_t rawWidth;
 static volatile uint32_t pulseWidth;
 
 static uint8_t rxtype;
 
-static uint16_t rssiSoftPwm;
+static uint16_t rspValue;
 
 #define INTPWM_INPUT_MIN      1
 #define INTPWM_INPUT_MAX    999
@@ -62,34 +57,36 @@ static uint16_t rssiSoftPwm;
 static uint16_t pulseMin;
 static uint16_t pulseMax;
 
-static void rssiSoftPwmExtiHandler(extiCallbackRec_t* cb)
+static void rspExtiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 
     static bool running = false;
     static uint32_t timeStart;
 
-    if (!rssiSoftPwmInProgress)
+    if (!rspInProgress)
         return;
 
     if (!running) {
         timeStart = micros();
-        EXTIConfig(rssiSoftPwmIO, &rssiSoftPwm_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Falling);
+        EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Falling);
         running = true;
     } else {
         rawWidth = micros() - timeStart;
-        EXTIEnable(rssiSoftPwmIO, false);
-        rssiSoftPwmInProgress = false;
+        EXTIEnable(rspIO, false);
+        rspInProgress = false;
         running = false;
     }
 }
 
+// Measurement for min and max pulse width.
+// Should eventually be gone.
 static uint32_t tmin = 0xFFFFFFFF;
 static uint32_t tmax = 0;
 
-static void computePulse(void)
+static void rspComputePulse(void)
 {
-    debug[1] = rawWidth;
+    debug[0] = rawWidth;
 
     switch (rxtype) {
     case RXTYPE_FRSKY_TFR4:
@@ -115,7 +112,7 @@ static void computePulse(void)
         break;
     }
 
-    debug[2] = pulseWidth;
+    debug[1] = pulseWidth;
 
     // Monitor pulseWidths for parameter decision.
 
@@ -125,8 +122,11 @@ static void computePulse(void)
     if (rawWidth < tmin)
         tmin = rawWidth;
 
-    debug[0] = tmax;
+    debug[4] = tmax;
 }
+
+static int32_t rspFilterArray[5];
+static int rspFilterPos;
 
 bool rssiSoftPwmInit(void)
 {
@@ -150,13 +150,13 @@ bool rssiSoftPwmInit(void)
     if (tag == IO_TAG_NONE)
         return false;
 
-    rssiSoftPwmIO = IOGetByTag(tag);
+    rspIO = IOGetByTag(tag);
 
-    IOInit(rssiSoftPwmIO, OWNER_RSSIPWM, 0);
-    IOConfigGPIO(rssiSoftPwmIO, IOCFG_IN_FLOATING);
+    IOInit(rspIO, OWNER_RSSIPWM, 0);
+    IOConfigGPIO(rspIO, IOCFG_IN_FLOATING);
 
-    EXTIHandlerInit(&rssiSoftPwm_extiCallbackRec, rssiSoftPwmExtiHandler);
-    EXTIConfig(rssiSoftPwmIO, &rssiSoftPwm_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
+    EXTIHandlerInit(&rsp_extiCallbackRec, rspExtiHandler);
+    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
 
     rxtype = masterConfig.rssiSoftPwmConfig.device;
 
@@ -172,8 +172,13 @@ bool rssiSoftPwmInit(void)
         break;
     }
 
-    rssiSoftPwmInitialized = true;
-    rssiSoftPwmActive = false;
+    rspInitialized = true;
+    rspActive = false;
+
+    for (int i = 0 ; i < 5 ; i++)
+        rspFilterArray[i] = 0;
+
+    rspFilterPos = 0;
 
     return true;
 }
@@ -186,51 +191,55 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
 
     uint32_t value;
 
-    if (!rssiSoftPwmInitialized) {
+    if (!rspInitialized) {
         return;
     }
 
-    if (rssiSoftPwmInProgress) {
+    if (rspInProgress) {
         // Measurement in progress
         // XXX Check for non-interrupting case!?
         return;
     }
 
-    if (!rssiSoftPwmActive) {
+    if (!rspActive) {
         // Dodge the first call.
-        rssiSoftPwmActive = true;
+        rspActive = true;
     } else {
-        computePulse();
+        rspComputePulse();
 
-        if (pulseWidth >= pulseMin
-          && pulseWidth <= pulseMax) {
-            // Valid duration, compute the scaled value.
+        if (pulseWidth >= pulseMin && pulseWidth <= pulseMax) {
 
-          value = scaleRange(pulseWidth,
-                        pulseMin, pulseMax,   // Config var?
-                        INTPWM_OUTPUT_MIN, INTPWM_OUTPUT_MAX); // Config var?
+          // Valid duration, compute the scaled value.
+
+          value = scaleRange(pulseWidth, pulseMin, pulseMax,
+                        INTPWM_OUTPUT_MIN, INTPWM_OUTPUT_MAX);
         } else {
             value = 0;
         }
 
-        // In terms of layering, this assignment should be done
-        // somewhere higher; e.g., RSSI task in sensors.
-        rssiSoftPwm = value;
-
+#if 1
         if (value > 800) {
             debug[3] = rawWidth;
         }
+#endif
+
+        rspFilterArray[rspFilterPos] = value;
+        rspFilterPos = (rspFilterPos + 1) % 5;
+        rspValue = (uint16_t)quickMedianFilter5(rspFilterArray);
+
+        debug[2] = rspValue;
     }
 
     // Start a new measurement
-    rssiSoftPwmInProgress = true;
-    EXTIConfig(rssiSoftPwmIO, &rssiSoftPwm_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
-    EXTIEnable(rssiSoftPwmIO, true);
+
+    rspInProgress = true;
+    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
+    EXTIEnable(rspIO, true);
 }
 
 uint16_t rssiSoftPwmRead(void)
 {
-    return rssiSoftPwm;
+    return rspValue;
 }
 
 #endif // USE_RSSI_SOFTPWM
