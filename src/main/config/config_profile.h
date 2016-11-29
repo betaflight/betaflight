@@ -17,6 +17,12 @@
 
 #pragma once
 
+#ifdef USE_SERVOS
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "io/gimbal.h"
+#endif
+
 typedef struct profile_s {
     pidProfile_t pidProfile;
 
