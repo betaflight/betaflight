@@ -19,11 +19,4 @@
 
 #define LOOPTIME_SUSPEND_TIME 3  // Prevent too long busy wait times
 
-void taskSystem(uint32_t currentTime);
-void taskMainPidLoopCheck(uint32_t currentTime);
-#ifdef USE_BST
-void taskBstReadWrite(uint32_t currentTime);
-void taskBstMasterProcess(uint32_t currentTime);
-#endif
-
 void fcTasksInit(void);

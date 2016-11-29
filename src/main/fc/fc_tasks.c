@@ -72,6 +72,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifdef USE_BST
+void taskBstMasterProcess(uint32_t currentTime);
+#endif
+
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
@@ -295,7 +299,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoopCheck,
+        .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },

@@ -17,6 +17,9 @@
 
 #pragma once
 
+//#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
+#define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
+
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
 
