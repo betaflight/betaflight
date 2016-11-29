@@ -78,7 +78,7 @@ int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
 sensor_align_e accAlign = 0;
-uint32_t accTargetLooptime;
+uint32_t accSamplingInterval;
 
 uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
@@ -220,9 +220,9 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     
     if (accelerometerCFG->acc_cut_hz) {
         if (!accFilterInitialised) {
-            if (accTargetLooptime) {  /* Initialisation needs to happen once sample rate is known */
+            if (accSamplingInterval) {  /* Initialisation needs to happen once sample rate is known */
                 for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&accFilter[axis], accelerometerCFG->acc_cut_hz, accTargetLooptime);
+                    biquadFilterInitLPF(&accFilter[axis], accelerometerCFG->acc_cut_hz, accSamplingInterval);
                 }
                 accFilterInitialised = true;
             }

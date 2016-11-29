@@ -742,8 +742,8 @@ void configureScheduler(void)
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        accTargetLooptime = 1000;
-        rescheduleTask(TASK_ACCEL, accTargetLooptime);
+        accSamplingInterval = 1000;
+        rescheduleTask(TASK_ACCEL, accSamplingInterval);
     }
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
