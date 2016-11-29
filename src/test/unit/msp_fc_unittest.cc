@@ -503,7 +503,7 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal St
 int32_t gyroADC[XYZ_AXIS_COUNT];
 // form imu.c
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-int16_t accSmooth[XYZ_AXIS_COUNT];
+int32_t accSmooth[XYZ_AXIS_COUNT];
 // from ledstrip.c
 void reevaluateLedConfig(void) {}
 bool setModeColor(ledModeIndex_e , int , int ) { return true; }

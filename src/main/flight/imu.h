@@ -21,7 +21,6 @@ extern int16_t throttleAngleCorrection;
 extern uint32_t accTimeSum;
 extern int accSumCount;
 extern float accVelScale;
-extern int16_t accSmooth[XYZ_AXIS_COUNT];
 extern int32_t accSum[XYZ_AXIS_COUNT];
 
 #define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
