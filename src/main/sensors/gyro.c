@@ -45,26 +45,20 @@ static const gyroConfig_t *gyroConfig;
 static uint16_t calibratingG = 0;
 
 static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
-static uint8_t gyroSoftLpfHz = 0;
 
-void gyroUseConfig(const gyroConfig_t *gyroConfigToUse, uint8_t gyro_soft_lpf_hz)
-{
-    gyroConfig = gyroConfigToUse;
-    gyroSoftLpfHz = gyro_soft_lpf_hz;
-}
-
-void gyroInit(void)
+void gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
     /*
      * After refactoring this function is always called after gyro sampling rate is known, so
      * no additional condition is required
      */
-    if (gyroSoftLpfHz) {
+    gyroConfig = gyroConfigToUse;
+    if (gyroConfig->gyro_soft_lpf_hz) {
         for (int axis = 0; axis < 3; axis++) {
         #ifdef ASYNC_GYRO_PROCESSING
-            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, getGyroUpdateRate());
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, getGyroUpdateRate());
         #else
-            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroSoftLpfHz, gyro.targetLooptime);
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, gyro.targetLooptime);
         #endif
         }
     }
@@ -150,7 +144,7 @@ void gyroUpdate(void)
         gyroADC[axis] = gyroADCRaw[axis];
     }
 
-    if (gyroSoftLpfHz) {
+    if (gyroConfig->gyro_soft_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]));
         }

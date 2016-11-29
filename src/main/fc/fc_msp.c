@@ -632,7 +632,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_LOOP_TIME:
-        sbufWriteU16(dst, masterConfig.looptime);
+        sbufWriteU16(dst, masterConfig.gyroConfig.looptime);
         break;
 
     case MSP_RC_TUNING:
@@ -1002,7 +1002,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ADVANCED_CONFIG:
-        sbufWriteU8(dst, masterConfig.gyroSyncDenominator);
+        sbufWriteU8(dst, masterConfig.gyroConfig.gyroSyncDenominator);
         sbufWriteU8(dst, 1);    // BF: masterConfig.pid_process_denom
         sbufWriteU8(dst, 1);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         sbufWriteU8(dst, masterConfig.motorConfig.motorPwmProtocol);
@@ -1012,7 +1012,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU8(dst, masterConfig.gyroSync);
+        sbufWriteU8(dst, masterConfig.gyroConfig.gyroSync);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1065,7 +1065,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0);
     #endif
         sbufWriteU16(dst, masterConfig.mixerConfig.yaw_jump_prevention_limit);
-        sbufWriteU8(dst, masterConfig.gyro_lpf);
+        sbufWriteU8(dst, masterConfig.gyroConfig.gyro_lpf);
         sbufWriteU8(dst, currentProfile->pidProfile.acc_soft_lpf_hz);
         sbufWriteU8(dst, 0); //reserved
         sbufWriteU8(dst, 0); //reserved
@@ -1190,7 +1190,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_LOOP_TIME:
-        masterConfig.looptime = sbufReadU16(src);
+        masterConfig.gyroConfig.looptime = sbufReadU16(src);
         break;
 
     case MSP_SET_PID_CONTROLLER:
@@ -1380,7 +1380,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        masterConfig.gyroSyncDenominator = sbufReadU8(src);
+        masterConfig.gyroConfig.gyroSyncDenominator = sbufReadU8(src);
         sbufReadU8(src);    // BF: masterConfig.pid_process_denom
         sbufReadU8(src);    // BF: masterConfig.motorConfig.useUnsyncedPwm
         masterConfig.motorConfig.motorPwmProtocol = sbufReadU8(src);
@@ -1390,7 +1390,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU16(src);
 #endif
-        masterConfig.gyroSync = sbufReadU8(src);
+        masterConfig.gyroConfig.gyroSync = sbufReadU8(src);
         break;
 
     case MSP_SET_FILTER_CONFIG :
@@ -1446,7 +1446,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src);
         #endif
             masterConfig.mixerConfig.yaw_jump_prevention_limit = sbufReadU16(src);
-            masterConfig.gyro_lpf = sbufReadU8(src);
+            masterConfig.gyroConfig.gyro_lpf = sbufReadU8(src);
             currentProfile->pidProfile.acc_soft_lpf_hz = sbufReadU8(src);
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved

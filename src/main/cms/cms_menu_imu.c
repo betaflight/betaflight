@@ -470,9 +470,9 @@ static uint8_t cmsx_gyroLpf; // Global
 
 static long cmsx_menuGyro_onEnter(void)
 {
-    cmsx_gyroSync =  masterConfig.gyroSync;
-    cmsx_gyroSyncDenom = masterConfig.gyroSyncDenominator;
-    cmsx_gyroLpf = masterConfig.gyro_lpf;
+    cmsx_gyroSync =  masterConfig.gyroConfig.gyroSync;
+    cmsx_gyroSyncDenom = masterConfig.gyroConfig.gyroSyncDenominator;
+    cmsx_gyroLpf = masterConfig.gyroConfig.gyro_lpf;
 
     return 0;
 }
@@ -481,9 +481,9 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.gyroSync = cmsx_gyroSync;
-    masterConfig.gyroSyncDenominator = cmsx_gyroSyncDenom;
-    masterConfig.gyro_lpf = cmsx_gyroLpf;
+    masterConfig.gyroConfig.gyroSync = cmsx_gyroSync;
+    masterConfig.gyroConfig.gyroSyncDenominator = cmsx_gyroSyncDenom;
+    masterConfig.gyroConfig.gyro_lpf = cmsx_gyroLpf;
 
     return 0;
 }
