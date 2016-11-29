@@ -827,8 +827,8 @@ const clivalue_t valueTable[] = {
     { "deadband",                   VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.deadband, .config.minmax = { 0,  32 } },
     { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 } },
 
-    { "throttle_correction_value",  VAR_UINT8  | MASTER_VALUE, &masterConfig.throttle_correction_value, .config.minmax = { 0,  150 } },
-    { "throttle_correction_angle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.throttle_correction_angle, .config.minmax = { 1,  900 } },
+    { "throttle_correction_value",  VAR_UINT8  | MASTER_VALUE, &masterConfig.throttleCorrectionConfig.throttle_correction_value, .config.minmax = { 0,  150 } },
+    { "throttle_correction_angle",  VAR_UINT16 | MASTER_VALUE, &masterConfig.throttleCorrectionConfig.throttle_correction_angle, .config.minmax = { 1,  900 } },
 
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
 
