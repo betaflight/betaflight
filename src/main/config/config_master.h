@@ -31,6 +31,7 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/vcd.h"
+#include "drivers/rssi_softpwm.h"
 
 #include "fc/rc_controls.h"
 
@@ -204,7 +205,9 @@ typedef struct master_s {
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
-    uint8_t rssi_softpwm_device;
+#ifdef USE_RSSI_SOFTPWM
+    rssiSoftPwmConfig_t rssiSoftPwmConfig;
+#endif
 
     char name[MAX_NAME_LENGTH + 1];
 

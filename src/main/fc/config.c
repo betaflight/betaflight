@@ -497,6 +497,19 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+#ifdef USE_RSSI_SOFTPWM
+void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
+{
+#if defined(RSSI_SOFTPWM_PIN)
+    rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
+#else
+    rssiSoftPwmConfig->ioTag = IO_TAG(IO_TAG_NONE);
+#endif
+
+    rssiSoftPwmConfig->device = RXTYPE_FRSKY_X4R;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -794,7 +807,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef USE_RSSISOFTPWM
-    config->rssi_softpwm_device = 0;
+    rssiSoftPwmResetConfig(&config->rssiSoftPwmConfig);
 #endif
 
 #if defined(TARGET_CONFIG)

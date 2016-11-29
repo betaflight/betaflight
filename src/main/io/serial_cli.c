@@ -987,7 +987,7 @@ const clivalue_t valueTable[] = {
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &masterConfig.vcdProfile.v_offset, .config.minmax = { -15, 16 } },
 #endif
 #ifdef USE_RSSISOFTPWM
-    { "rssi_softpwm_device",         VAR_UINT8   | MASTER_VALUE, &masterConfig.rssi_softpwm_device, .config.minmax = { 0, 1 } },
+    { "rssi_softpwm_device",         VAR_UINT8   | MASTER_VALUE, &masterConfig.rssiSoftPwmConfig.device, .config.minmax = { 0, 1 } },
 #endif
 };
 
@@ -3803,6 +3803,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &masterConfig.ledStripConfig.ioTag,   0 },
+#endif
+#ifdef USE_RSSI_SOFTPWM
+    { OWNER_RSSIPWM,       &masterConfig.rssiSoftPwmConfig.ioTag,   0 },
 #endif
 };
 

@@ -51,8 +51,6 @@ static volatile uint32_t rawWidth;
 static volatile uint32_t pulseWidth;
 
 static uint8_t rxtype;
-#define RXTYPE_FRSKY_X4R    0
-#define RXTYPE_FRSKY_TFR4   1
 
 extern uint16_t rssi; // XXX Defined in rx.c, should not access it.
 
@@ -148,18 +146,19 @@ bool rssiSoftPwmInit(void)
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
 
-    rssiSoftPwmIO = IOGetByTag(IO_TAG(RSSI_SOFTPWM_PIN)); // XXX Config var?
-
-    if (IOGetOwner(rssiSoftPwmIO) != OWNER_FREE)
+    ioTag_t tag = masterConfig.rssiSoftPwmConfig.ioTag;
+    if (tag == IO_TAG_NONE)
         return false;
 
-    IOInit(rssiSoftPwmIO, OWNER_INTPWM, 0);
+    rssiSoftPwmIO = IOGetByTag(tag);
+
+    IOInit(rssiSoftPwmIO, OWNER_RSSIPWM, 0);
     IOConfigGPIO(rssiSoftPwmIO, IOCFG_IN_FLOATING);
 
     EXTIHandlerInit(&rssiSoftPwm_extiCallbackRec, rssiSoftPwmExtiHandler);
     EXTIConfig(rssiSoftPwmIO, &rssiSoftPwm_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
 
-    rxtype = masterConfig.rssi_softpwm_device;
+    rxtype = masterConfig.rssiSoftPwmConfig.device;
 
     switch(rxtype) {
     case RXTYPE_FRSKY_TFR4:
