@@ -151,5 +151,5 @@ void gyroUpdate(void)
     gyroADC[Y] -= gyroZero[Y];
     gyroADC[Z] -= gyroZero[Z];
 
-    alignSensors(gyroADC, gyroADC, gyroAlign);
+    alignSensors(gyroADC, gyroAlign);
 }
