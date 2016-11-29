@@ -52,6 +52,8 @@ static accelerometerConfig_t *accelerometerCFG;
 
 PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
+filterApplyFnPtr accFilterApplyFn;
+
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
@@ -91,7 +93,6 @@ extern bool AccInflightCalibrationActive;
 static flightDynamicsTrims_t *accelerationTrims;
 
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
-static bool accFilterInitialised = false;
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
@@ -215,26 +216,9 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accSmooth[axis] = accADCRaw[axis];
+        accSmooth[axis] = lrintf(accFilterApplyFn(&accFilter[axis], (float)accADCRaw[axis]));
     }
-    
-    if (accelerometerCFG->acc_cut_hz) {
-        if (!accFilterInitialised) {
-            if (accSamplingInterval) {  /* Initialisation needs to happen once sample rate is known */
-                for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                    biquadFilterInitLPF(&accFilter[axis], accelerometerCFG->acc_cut_hz, accSamplingInterval);
-                }
-                accFilterInitialised = true;
-            }
-        }
 
-        if (accFilterInitialised) {
-            for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-                accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
-            }
-        }
-    }
-    
     alignSensors(accSmooth, accSmooth, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
@@ -251,4 +235,16 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
 {
     accelerationTrims = accelerationTrimsToUse;
+}
+
+void accelerationFilterInit(uint8_t acc_cut_hz) {
+    if (acc_cut_hz == 0) {
+        accFilterApplyFn = nullFilterApply;
+        return;
+    }
+
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        biquadFilterInitLPF(&accFilter[axis], acc_cut_hz, accSamplingInterval);
+        accFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
+    }
 }

@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "build/build_config.h"
+
 #include "common/filter.h"
 #include "common/maths.h"
 
@@ -27,6 +29,14 @@
 
 #define BIQUAD_BANDWIDTH 1.9f           // bandwidth in octaves
 #define BIQUAD_Q (1.0f / sqrtf(2.0f))   // 2nd order Butterworth Q
+
+// NULL filter
+
+float nullFilterApply(void *filter, float input)
+{
+    UNUSED(filter);
+    return input;
+}
 
 // PT1 Low Pass filter
 

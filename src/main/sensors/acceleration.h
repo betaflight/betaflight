@@ -72,3 +72,4 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
 void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse);
+void accelerationFilterInit(uint8_t acc_cut_hz);

@@ -170,6 +170,7 @@ static void activateConfig(void)
 
     useFailsafeConfig();
     setAccelerationTrims(&sensorTrims()->accZero);
+    accelerationFilterInit(accelerometerConfig()->acc_cut_hz);
 
 #ifdef USE_SERVOS
     mixerUseConfigs(servoProfile()->servoConf);
