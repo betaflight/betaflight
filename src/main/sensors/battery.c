@@ -296,7 +296,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
                 break;
             case BATTERY_WARNING:
                 if (calculateBatteryCapacityRemainingPercentage() == 0) {
-                    vBatState = BATTERY_CRITICAL;
+                    consumptionState = BATTERY_CRITICAL;
                 }
 
                 break;
