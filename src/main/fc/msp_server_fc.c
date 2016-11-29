@@ -1357,7 +1357,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, vtxConfig()->rfPower);
             sbufWriteU8(dst, vtxConfig()->enabledOnBoot);
 #else
-            for (i = 0; i < 8; i ++) {
+            for (uint8_t i = 0; i < 8; i ++) {
                 sbufWriteU8(dst, 0);
             }
 #endif
