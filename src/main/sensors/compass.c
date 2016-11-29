@@ -140,7 +140,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
         }
     }
 
-    alignSensors(magADC, magADC, magAlign);
+    alignSensors(magADC, magAlign);
 
     magUpdatedAtLeastOnce = 1;
 }

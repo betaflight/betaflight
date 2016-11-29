@@ -23,6 +23,6 @@ typedef struct boardAlignment_s {
     int16_t yawDeciDegrees;
 } boardAlignment_t;
 
-void alignSensors(const int32_t *src, int32_t *dest, uint8_t rotation);
+void alignSensors(int32_t *dest, uint8_t rotation);
 void initBoardAlignment(const boardAlignment_t *boardAlignment);
 void updateBoardAlignment(boardAlignment_t *boardAlignment, int16_t roll, int16_t pitch);
