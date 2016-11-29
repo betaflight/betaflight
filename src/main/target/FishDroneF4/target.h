@@ -17,10 +17,10 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "FDV2"
+#define TARGET_BOARD_IDENTIFIER "FDF4"
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
-#define USBD_PRODUCT_STRING  "FishDroneFC"
+#define USBD_PRODUCT_STRING  "FishDroneF4"
 
 #define LED0                    PC13
 #define LED1                    PC14
@@ -41,9 +41,11 @@
 
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
+
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN      CW90_DEG
+
 #define ACC
 #define USE_ACC_SPI_MPU6500
 #define ACC_MPU6500_ALIGN       CW90_DEG
