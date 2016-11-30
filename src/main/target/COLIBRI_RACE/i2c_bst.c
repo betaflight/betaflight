@@ -1518,6 +1518,7 @@ void taskBstMasterProcess(uint32_t currentTime)
 
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
             writeGpsPositionPrameToBST();
+
     }
     bstMasterWriteLoop();
     if (isRebootScheduled) {
@@ -1549,22 +1550,25 @@ static void bstMasterWrite16(uint16_t data)
     bstMasterWrite8((uint8_t)(data >> 0));
 }
 
+/*************************************************************************************************/
+#define PUBLIC_ADDRESS            0x00
+
+#ifdef GPS
 static void bstMasterWrite32(uint32_t data)
 {
     bstMasterWrite16((uint8_t)(data >> 16));
     bstMasterWrite16((uint8_t)(data >> 0));
 }
 
-/*************************************************************************************************/
-#define PUBLIC_ADDRESS            0x00
-
 static int32_t lat = 0;
 static int32_t lon = 0;
 static uint16_t alt = 0;
 static uint8_t numOfSat = 0;
+#endif
 
 bool writeGpsPositionPrameToBST(void)
 {
+#ifdef GPS
     if((lat != GPS_coord[LAT]) || (lon != GPS_coord[LON]) || (alt != GPS_altitude) || (numOfSat != GPS_numSat)) {
         lat = GPS_coord[LAT];
         lon = GPS_coord[LON];
@@ -1589,6 +1593,9 @@ bool writeGpsPositionPrameToBST(void)
         return bstMasterWrite(masterWriteData);
     } else
         return false;
+#else
+    return true;
+#endif
 }
 
 bool writeRollPitchYawToBST(void)
