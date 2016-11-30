@@ -515,7 +515,7 @@ void processRx(uint32_t currentTime)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -528,11 +528,39 @@ void processRx(uint32_t currentTime)
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
         if (currentProfile->pidProfile.pidAtMinThrottle)
-            pidStabilisationState(PID_STABILISATION_ON);
+            pidSetStabilisationState(PID_STABILISATION_ON);
         else
-            pidStabilisationState(PID_STABILISATION_OFF);
+            pidSetStabilisationState(PID_STABILISATION_OFF);
     } else {
-        pidStabilisationState(PID_STABILISATION_ON);
+        pidSetStabilisationState(PID_STABILISATION_ON);
+    }
+
+    // Prevent motor windup on when on ground
+    // rcCommand in the range -500 to 500 at this point
+    // create a center band slightly wider than the deadband
+    const int centerBand = masterConfig.rcControlsConfig.deadband + 4;
+    const int yawCenterBand = masterConfig.rcControlsConfig.yaw_deadband + 4;
+    if (rcCommand[THROTTLE] > 1200
+            || rcCommand[ROLL]  < -centerBand || rcCommand[ROLL]  > centerBand
+            || rcCommand[PITCH] < -centerBand || rcCommand[PITCH] > centerBand
+            || rcCommand[YAW]   < -yawCenterBand || rcCommand[YAW]   > yawCenterBand) {
+        // do nothing
+    } else {
+        // all sticks centered and throttle low
+#define COS_5_DEGREES 0.996194698091746f
+        if (getCosTiltAngle() > COS_5_DEGREES) {
+            // we are nearly level
+            if (sensors(SENSOR_ACC)) {
+                const int32_t accZ = accSmooth[Z] * 100 / acc.acc_1G;
+                if ((accZ > 80) && (accZ < 110)) {
+                    // accelerometer  Z readings is in the range 0.80g - 1.10g, so we are not in free fall
+                    // so don't allow ITerm to wind-up
+                    pidSetStabilisationState(PID_STABILISATION_ZERO_ITERM);
+                }
+            } else {
+                pidSetStabilisationState(PID_STABILISATION_ZERO_ITERM);
+            }
+        }
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
