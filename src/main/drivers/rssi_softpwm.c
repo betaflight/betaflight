@@ -49,10 +49,8 @@ static uint8_t rxtype;
 
 static uint16_t rspValue;
 
-#define INTPWM_INPUT_MIN      1
-#define INTPWM_INPUT_MAX    999
-#define INTPWM_OUTPUT_MIN     0
-#define INTPWM_OUTPUT_MAX  1023
+#define RSSI_OUTPUT_MIN     0
+#define RSSI_OUTPUT_MAX  1023
 
 static uint16_t pulseMin;
 static uint16_t pulseMax;
@@ -99,16 +97,34 @@ static void rspComputePulse(void)
         }
         break;
 
-    default:
+    case RXTYPE_FRSKY_X4R: // Probably all X series
+
+        // X4R's RSSI signal is evil; shortest pulse is less than 3usec,
+        // which is beyond the limit of software assisted PWM input can
+        // reliably measure (probably even with input capture).
+        // Here, we admit that we can miss the falling edge of the pulse
+        // we have started our measurement, and compensate for the extra
+        // cycle (effectively measuring the next pulse provided cycle time
+        // is stable).
+
         if (rawWidth >= 990) {
             // Must have missed the first falling edge
-            if (rawWidth < 1000 + 200)
-                pulseWidth = (rawWidth - 990) / 2;
-            else
+            if (rawWidth < 1000 + 100) {
+                if (rawWidth < 1000)
+                    pulseWidth = 0;
+                else
+                    pulseWidth = rawWidth - 1000;
+            } else {
+                // Something went wrong
                 pulseWidth = 0; // Fail
+            }
         } else {
             pulseWidth = rawWidth;
         }
+        break;
+
+    default:
+        pulseWidth = 500; // Default marker
         break;
     }
 
@@ -131,17 +147,13 @@ static int rspFilterPos;
 bool rssiSoftPwmInit(void)
 {
     // Nothing special, standard spell.
-
+    // XXX Are these done in exti.c already?
 #ifdef STM32F10X
     // enable AFIO for EXTI support
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 #endif
 
 #if defined(STM32F3) || defined(STM32F4)
-#if 0
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-#endif
-
     /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 #endif
@@ -183,7 +195,7 @@ bool rssiSoftPwmInit(void)
     return true;
 }
 
-// rssiSoftPwmUpdate(): Scheduler task
+// rssiSoftPwmUpdate: Scheduler task
 
 void rssiSoftPwmUpdate(uint32_t currentTime)
 {
@@ -212,7 +224,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
           // Valid duration, compute the scaled value.
 
           value = scaleRange(pulseWidth, pulseMin, pulseMax,
-                        INTPWM_OUTPUT_MIN, INTPWM_OUTPUT_MAX);
+                        RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
         } else {
             value = 0;
         }
@@ -223,6 +235,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
         }
 #endif
 
+        // Apply 5 position median filter to filter out occasional spikes
         rspFilterArray[rspFilterPos] = value;
         rspFilterPos = (rspFilterPos + 1) % 5;
         rspValue = (uint16_t)quickMedianFilter5(rspFilterArray);
