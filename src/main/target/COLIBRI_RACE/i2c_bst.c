@@ -936,7 +936,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #ifdef LED_STRIP
         case BST_LED_COLORS:
             for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-                hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
+                hsvColor_t *color = &ledStripConfig()->colors[i];
                 bstWrite16(color->h);
                 bstWrite8(color->s);
                 bstWrite8(color->v);
@@ -945,7 +945,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_LED_STRIP_CONFIG:
             for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-                ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
+                ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
                 bstWrite32(*ledConfig);
             }
             break;
@@ -1368,7 +1368,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            //for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
            {
                i = bstRead8();
-               hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
+               hsvColor_t *color = &ledStripConfig()->colors[i];
                color->h = bstRead16();
                color->s = bstRead8();
                color->v = bstRead8();
@@ -1381,7 +1381,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                    break;
                }
-               ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
+               ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
                *ledConfig = bstRead32();
                reevaluateLedConfig();
            }

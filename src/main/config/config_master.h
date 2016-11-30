@@ -89,6 +89,10 @@
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ppmConfig(x) (&masterConfig.ppmConfig)
 #define pwmConfig(x) (&masterConfig.pwmConfig)
+#define adcConfig(x) (&masterConfig.adcConfig)
+#define beeperConfig(x) (&masterConfig.beeperConfig)
+#define sonarConfig(x) (&masterConfig.sonarConfig)
+#define ledStripConfig(x) (&masterConfig.ledStripConfig)
 
 
 // System-wide
