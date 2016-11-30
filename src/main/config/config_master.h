@@ -61,6 +61,8 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 
+#define armingConfig(x) (&masterConfig.armingConfig)
+
 // System-wide
 typedef struct master_s {
     uint8_t version;
