@@ -56,9 +56,12 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 static float errorGyroIf[3];
 
+static float dT;
+
 void pidSetTargetLooptime(uint32_t pidLooptime)
 {
     targetPidLooptime = pidLooptime;
+    dT = (float)targetPidLooptime * 0.000001f;
 }
 
 void pidResetErrorGyroState(void)
@@ -91,7 +94,6 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     static pt1Filter_t pt1FilterYaw;
 
     BUILD_BUG_ON(FD_YAW != 2); // only setting up Dterm filters on roll and pitch axes, so ensure yaw axis is 2
-    const float dT = (float)targetPidLooptime * 0.000001f;
 
     if (pidProfile->dterm_notch_hz == 0) {
         dtermNotchFilterApplyFn = nullFilterApply;
@@ -144,20 +146,28 @@ void pidInitFilters(const pidProfile_t *pidProfile)
     }
 }
 
+static float Kp[3], Ki[3], Kd[3], c[3];
+static float rollPitchMaxVelocity, yawMaxVelocity, relaxFactor[3];
+
+void pidInitConfig(const pidProfile_t *pidProfile) {
+    for(int axis = FD_ROLL; axis <= FD_YAW; axis++) {
+        Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
+        Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
+        Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
+        c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
+        relaxFactor[axis] = 1.0f - (pidProfile->setpointRelaxRatio / 100.0f);
+    }
+    yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * dT;
+    rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * dT;
+}
+
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
 void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, uint16_t midrc)
 {
     static float lastRateError[2];
-    static float Kp[3], Ki[3], Kd[3], c[3];
-    static float rollPitchMaxVelocity, yawMaxVelocity;
-    static float previousSetpoint[3], relaxFactor[3];
-    static float dT;
-
-    if (!dT) {
-        dT = (float)targetPidLooptime * 0.000001f;
-    }
+    static float previousSetpoint[3];
 
     float horizonLevelStrength = 1;
     if (FLIGHT_MODE(HORIZON_MODE)) {
@@ -195,25 +205,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
     // ----------PID controller----------
     const float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-
-        static uint8_t configP[3], configI[3], configD[3];
-
-        // Prevent unnecessary computing and check for changed PIDs. No need for individual checks. Only pids is fine for now
-        // Prepare all parameters for PID controller
-        if ((pidProfile->P8[axis] != configP[axis]) || (pidProfile->I8[axis] != configI[axis]) || (pidProfile->D8[axis] != configD[axis])) {
-            Kp[axis] = PTERM_SCALE * pidProfile->P8[axis];
-            Ki[axis] = ITERM_SCALE * pidProfile->I8[axis];
-            Kd[axis] = DTERM_SCALE * pidProfile->D8[axis];
-            c[axis] = pidProfile->dtermSetpointWeight / 100.0f;
-            relaxFactor[axis] = 1.0f - (pidProfile->setpointRelaxRatio / 100.0f);
-            yawMaxVelocity = pidProfile->yawRateAccelLimit * 1000 * dT;
-            rollPitchMaxVelocity = pidProfile->rateAccelLimit * 1000 * dT;
-
-            configP[axis] = pidProfile->P8[axis];
-            configI[axis] = pidProfile->I8[axis];
-            configD[axis] = pidProfile->D8[axis];
-        }
-
         // Limit abrupt yaw inputs / stops
         const float maxVelocity = (axis == FD_YAW) ? yawMaxVelocity : rollPitchMaxVelocity;
         if (maxVelocity) {

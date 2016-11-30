@@ -1264,6 +1264,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentProfile->pidProfile.I8[i] = sbufReadU8(src);
             currentProfile->pidProfile.D8[i] = sbufReadU8(src);
         }
+        pidInitConfig(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_MODE_RANGE:
@@ -1478,6 +1479,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         currentProfile->pidProfile.itermThrottleGain = sbufReadU8(src);
         currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src);
         currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src);
+        pidInitConfig(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_SENSOR_CONFIG:
