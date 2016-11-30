@@ -778,9 +778,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_MISC:
         sbufWriteU16(dst, masterConfig.rxConfig.midrc);
 
-        sbufWriteU16(dst, masterConfig.motorConfig.minthrottle);
-        sbufWriteU16(dst, masterConfig.motorConfig.maxthrottle);
-        sbufWriteU16(dst, masterConfig.motorConfig.mincommand);
+        sbufWriteU16(dst, motorConfig()->minthrottle);
+        sbufWriteU16(dst, motorConfig()->maxthrottle);
+        sbufWriteU16(dst, motorConfig()->mincommand);
 
         sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1088,9 +1088,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, masterConfig.gyroConfig.gyro_sync_denom);
             sbufWriteU8(dst, masterConfig.pid_process_denom);
         }
-        sbufWriteU8(dst, masterConfig.motorConfig.useUnsyncedPwm);
-        sbufWriteU8(dst, masterConfig.motorConfig.motorPwmProtocol);
-        sbufWriteU16(dst, masterConfig.motorConfig.motorPwmRate);
+        sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
+        sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
+        sbufWriteU16(dst, motorConfig()->motorPwmRate);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1336,9 +1336,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (tmp < 1600 && tmp > 1400)
             masterConfig.rxConfig.midrc = tmp;
 
-        masterConfig.motorConfig.minthrottle = sbufReadU16(src);
-        masterConfig.motorConfig.maxthrottle = sbufReadU16(src);
-        masterConfig.motorConfig.mincommand = sbufReadU16(src);
+        motorConfig()->minthrottle = sbufReadU16(src);
+        motorConfig()->maxthrottle = sbufReadU16(src);
+        motorConfig()->mincommand = sbufReadU16(src);
 
         masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
 
@@ -1435,13 +1435,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADVANCED_CONFIG:
         masterConfig.gyroConfig.gyro_sync_denom = sbufReadU8(src);
         masterConfig.pid_process_denom = sbufReadU8(src);
-        masterConfig.motorConfig.useUnsyncedPwm = sbufReadU8(src);
+        motorConfig()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
-        masterConfig.motorConfig.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
+        motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
 #else
-        masterConfig.motorConfig.motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
+        motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
-        masterConfig.motorConfig.motorPwmRate = sbufReadU16(src);
+        motorConfig()->motorPwmRate = sbufReadU16(src);
         break;
 
     case MSP_SET_FILTER_CONFIG:

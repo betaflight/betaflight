@@ -750,9 +750,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
         case BST_MISC:
             bstWrite16(masterConfig.rxConfig.midrc);
 
-            bstWrite16(masterConfig.motorConfig.minthrottle);
-            bstWrite16(masterConfig.motorConfig.maxthrottle);
-            bstWrite16(masterConfig.motorConfig.mincommand);
+            bstWrite16(motorConfig()->minthrottle);
+            bstWrite16(motorConfig()->maxthrottle);
+            bstWrite16(motorConfig()->mincommand);
 
             bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1113,9 +1113,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             if (tmp < 1600 && tmp > 1400)
                 masterConfig.rxConfig.midrc = tmp;
 
-            masterConfig.motorConfig.minthrottle = bstRead16();
-            masterConfig.motorConfig.maxthrottle = bstRead16();
-            masterConfig.motorConfig.mincommand = bstRead16();
+            motorConfig()->minthrottle = bstRead16();
+            motorConfig()->maxthrottle = bstRead16();
+            motorConfig()->mincommand = bstRead16();
 
             masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
 

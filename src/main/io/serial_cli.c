@@ -699,22 +699,22 @@ const clivalue_t valueTable[] = {
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &motorConfig()->mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 #ifdef USE_DSHOT
-    { "digital_idle_percent",       VAR_FLOAT  | MASTER_VALUE,  &masterConfig.motorConfig.digitalIdleOffsetPercent, .config.minmax = { 0,  20} },
+    { "digital_idle_percent",       VAR_FLOAT  | MASTER_VALUE,  &motorConfig()->digitalIdleOffsetPercent, .config.minmax = { 0,  20} },
 #endif
-    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &motorConfig()->maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 200, 32000 } },
+    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &motorConfig()->motorPwmRate, .config.minmax = { 200, 32000 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
@@ -3790,7 +3790,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef BEEPER
     { OWNER_BEEPER,        &masterConfig.beeperConfig.ioTag, 0 },
 #endif
-    { OWNER_MOTOR,         &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
+    { OWNER_MOTOR,         &motorConfig()->ioTags[0], MAX_SUPPORTED_MOTORS },
 #ifdef USE_SERVOS
     { OWNER_SERVO,         &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
 #endif

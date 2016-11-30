@@ -61,6 +61,8 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 
+#define motorConfig(x) (&masterConfig.motorConfig)
+
 // System-wide
 typedef struct master_s {
     uint8_t version;

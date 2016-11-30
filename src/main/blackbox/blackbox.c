@@ -495,7 +495,7 @@ static void writeIntraframe(void)
      * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
      * Throttle lies in range [minthrottle..maxthrottle]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorConfig()->minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -539,7 +539,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->debug, 4);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.motorConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
@@ -904,7 +904,7 @@ bool inMotorTestMode(void) {
        inactiveMotorCommand = DSHOT_DISARM_COMMAND;
 #endif
     } else {
-       inactiveMotorCommand = masterConfig.motorConfig.mincommand;
+       inactiveMotorCommand = motorConfig()->mincommand;
     }
 
     int i;
@@ -1173,8 +1173,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
-        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      masterConfig.motorConfig.minthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      masterConfig.motorConfig.maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.acc_1G);
 
@@ -1278,9 +1278,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        masterConfig.rxConfig.rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        masterConfig.rxConfig.airModeActivateThreshold);
         BLACKBOX_PRINT_HEADER_LINE("serialrx_provider:%d",                masterConfig.rxConfig.serialrx_provider);
-        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                masterConfig.motorConfig.useUnsyncedPwm);
-        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                masterConfig.motorConfig.motorPwmProtocol);
-        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   masterConfig.motorConfig.motorPwmRate);
+        BLACKBOX_PRINT_HEADER_LINE("unsynced_fast_pwm:%d",                motorConfig()->useUnsyncedPwm);
+        BLACKBOX_PRINT_HEADER_LINE("fast_pwm_protocol:%d",                motorConfig()->motorPwmProtocol);
+        BLACKBOX_PRINT_HEADER_LINE("motor_pwm_rate:%d",                   motorConfig()->motorPwmRate);
         BLACKBOX_PRINT_HEADER_LINE("debug_mode:%d",                       masterConfig.debug_mode);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                         masterConfig.enabledFeatures);
 
