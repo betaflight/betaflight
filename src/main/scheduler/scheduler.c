@@ -45,6 +45,7 @@ uint16_t averageSystemLoadPercent = 0;
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
 #define REALTIME_GUARD_INTERVAL_MARGIN  25
+#define TASK_MOVING_SUM_COUNT           32
 
 static int taskQueuePos = 0;
 static int taskQueueSize = 0;
@@ -138,7 +139,8 @@ void taskSystem(timeUs_t currentTimeUs)
     timeUs_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
-            maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, task->averageExecutionTime);
+            const uint32_t taskAverageExecutionTime = task->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+            maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, taskAverageExecutionTime);
         }
     }
 
@@ -149,6 +151,17 @@ void taskSystem(timeUs_t currentTimeUs)
 }
 
 #ifndef SKIP_TASK_STATISTICS
+uint32_t checkFuncMaxExecutionTime;
+uint32_t checkFuncTotalExecutionTime;
+uint32_t checkFuncMovingSumExecutionTime;
+
+void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
+{
+    checkFuncInfo->maxExecutionTime = checkFuncMaxExecutionTime;
+    checkFuncInfo->totalExecutionTime = checkFuncTotalExecutionTime;
+    checkFuncInfo->averageExecutionTime = checkFuncMovingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+}
+
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 {
     taskInfo->taskName = cfTasks[taskId].taskName;
@@ -157,7 +170,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
     taskInfo->staticPriority = cfTasks[taskId].staticPriority;
     taskInfo->maxExecutionTime = cfTasks[taskId].maxExecutionTime;
     taskInfo->totalExecutionTime = cfTasks[taskId].totalExecutionTime;
-    taskInfo->averageExecutionTime = cfTasks[taskId].averageExecutionTime;
+    taskInfo->averageExecutionTime = cfTasks[taskId].movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
     taskInfo->latestDeltaTime = cfTasks[taskId].taskLatestDeltaTime;
 }
 #endif
@@ -225,13 +238,21 @@ void scheduler(void)
     for (cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         // Task has checkFunc - event driven
         if (task->checkFunc != NULL) {
+            const timeUs_t currentTimeBeforeCheckFuncCallUs = micros();
+
             // Increase priority for event driven tasks
             if (task->dynamicPriority > 0) {
                 task->taskAgeCycles = 1 + ((currentTimeUs - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
-            } else if (task->checkFunc(currentTimeUs, currentTimeUs - task->lastExecutedAt)) {
-                task->lastSignaledAt = currentTimeUs;
+            } else if (task->checkFunc(currentTimeBeforeCheckFuncCallUs, currentTimeBeforeCheckFuncCallUs - task->lastExecutedAt)) {
+#ifndef SKIP_TASK_STATISTICS
+                const timeUs_t checkFuncExecutionTime = micros() - currentTimeBeforeCheckFuncCallUs;
+                checkFuncMovingSumExecutionTime += checkFuncExecutionTime - checkFuncMovingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+                checkFuncTotalExecutionTime += checkFuncExecutionTime;   // time consumed by scheduler + task
+                checkFuncMaxExecutionTime = MAX(checkFuncMaxExecutionTime, checkFuncExecutionTime);
+#endif
+                task->lastSignaledAt = currentTimeBeforeCheckFuncCallUs;
                 task->taskAgeCycles = 1;
                 task->dynamicPriority = 1 + task->staticPriority;
                 waitingTasks++;
@@ -276,8 +297,8 @@ void scheduler(void)
         selectedTask->taskFunc(currentTimeBeforeTaskCall);
         const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
-        selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
+        selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
         selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
         selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif

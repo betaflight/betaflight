@@ -2928,6 +2928,7 @@ static void cliTasks(char *cmdline)
     UNUSED(cmdline);
     int maxLoadSum = 0;
     int averageLoadSum = 0;
+    cfCheckFuncInfo_t checkFuncInfo;
 
     cliPrintf("Task list         rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
@@ -2946,6 +2947,8 @@ static void cliTasks(char *cmdline)
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
         }
     }
+    getCheckFuncInfo(&checkFuncInfo);
+    cliPrintf("Task check function %13d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
     cliPrintf("Total (excluding SERIAL) %21d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif
