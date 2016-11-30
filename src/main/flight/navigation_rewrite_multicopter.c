@@ -542,7 +542,7 @@ bool isMulticopterLandingDetected(void)
 static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUpdate;
-    static uint32_t previousTimePositionUpdate;
+    static timeUs_t previousTimePositionUpdate;
     const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
