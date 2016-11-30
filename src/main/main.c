@@ -531,7 +531,7 @@ void init(void)
 #ifdef USE_SDCARD
     if (feature(FEATURE_SDCARD)) {
         sdcardInsertionDetectInit();
-        sdcard_init(masterConfig.sdcardConfig.useDma);
+        sdcard_init(sdcardConfig()->useDma);
         afatfs_init();
     }
 #endif

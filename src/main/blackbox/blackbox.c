@@ -349,7 +349,7 @@ bool blackboxMayEditConfig()
 }
 
 static bool blackboxIsOnlyLoggingIntraframes() {
-    return masterConfig.blackboxConfig.rate_num == 1 && masterConfig.blackboxConfig.rate_denom == 32;
+    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -407,7 +407,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return masterConfig.blackboxConfig.rate_num < masterConfig.blackboxConfig.rate_denom;
+            return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
 
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
@@ -758,22 +758,22 @@ static void validateBlackboxConfig()
 {
     int div;
 
-    if (masterConfig.blackboxConfig.rate_num == 0 || masterConfig.blackboxConfig.rate_denom == 0
-            || masterConfig.blackboxConfig.rate_num >= masterConfig.blackboxConfig.rate_denom) {
-        masterConfig.blackboxConfig.rate_num = 1;
-        masterConfig.blackboxConfig.rate_denom = 1;
+    if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
+            || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
+        blackboxConfig()->rate_num = 1;
+        blackboxConfig()->rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
+        div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
 
-        masterConfig.blackboxConfig.rate_num /= div;
-        masterConfig.blackboxConfig.rate_denom /= div;
+        blackboxConfig()->rate_num /= div;
+        blackboxConfig()->rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
-    switch (masterConfig.blackboxConfig.device) {
+    switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
 #endif
@@ -785,7 +785,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -867,7 +867,7 @@ bool startedLoggingInTestMode = false;
 void startInTestMode(void)
 {
     if(!startedLoggingInTestMode) {
-        if (masterConfig.blackboxConfig.device == BLACKBOX_DEVICE_SERIAL) {
+        if (blackboxConfig()->device == BLACKBOX_DEVICE_SERIAL) {
             serialPort_t *sharedBlackboxAndMspPort = findSharedSerialPort(FUNCTION_BLACKBOX, FUNCTION_MSP);
             if (sharedBlackboxAndMspPort) {
                 return; // When in test mode, we cannot share the MSP and serial logger port!
@@ -1172,7 +1172,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:%s %s (%s) %s", FC_FIRMWARE_NAME, FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                 buildDate, buildTime);
         BLACKBOX_PRINT_HEADER_LINE("Craft name:%s",                       masterConfig.name);
-        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
@@ -1376,10 +1376,10 @@ static void blackboxCheckAndLogFlightMode()
  */
 static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 {
-    /* Adding a magic shift of "masterConfig.blackboxConfig.rate_num - 1" in here creates a better spread of
+    /* Adding a magic shift of "blackboxConfig()->rate_num - 1" in here creates a better spread of
      * recorded / skipped frames when the I frame's position is considered:
      */
-    return (pFrameIndex + masterConfig.blackboxConfig.rate_num - 1) % masterConfig.blackboxConfig.rate_denom < masterConfig.blackboxConfig.rate_num;
+    return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
 }
 
 static bool blackboxShouldLogIFrame() {
@@ -1595,7 +1595,7 @@ void handleBlackbox(uint32_t currentTime)
         if (startedLoggingInTestMode) startedLoggingInTestMode = false;
     } else { // Only log in test mode if there is room!
 
-        if(masterConfig.blackboxConfig.on_motor_test) {
+        if(blackboxConfig()->on_motor_test) {
             // Handle Motor Test Mode
             if(inMotorTestMode()) {
                 if(blackboxState==BLACKBOX_STATE_STOPPED)

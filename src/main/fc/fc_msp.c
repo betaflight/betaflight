@@ -1005,9 +1005,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
-        sbufWriteU8(dst, masterConfig.blackboxConfig.device);
-        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_num);
-        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_denom);
+        sbufWriteU8(dst, blackboxConfig()->device);
+        sbufWriteU8(dst, blackboxConfig()->rate_num);
+        sbufWriteU8(dst, blackboxConfig()->rate_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1036,17 +1036,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
 #ifdef USE_MAX7456
-        sbufWriteU8(dst, masterConfig.vcdProfile.video_system);
+        sbufWriteU8(dst, vcdProfile()->video_system);
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, masterConfig.osdProfile.units);
-        sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
+        sbufWriteU8(dst, osdProfile()->units);
+        sbufWriteU8(dst, osdProfile()->rssi_alarm);
+        sbufWriteU16(dst, osdProfile()->cap_alarm);
+        sbufWriteU16(dst, osdProfile()->time_alarm);
+        sbufWriteU16(dst, osdProfile()->alt_alarm);
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
+            sbufWriteU16(dst, osdProfile()->item_pos[i]);
         }
 #else
         sbufWriteU8(dst, 0); // OSD not supported
@@ -1517,9 +1517,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            masterConfig.blackboxConfig.device = sbufReadU8(src);
-            masterConfig.blackboxConfig.rate_num = sbufReadU8(src);
-            masterConfig.blackboxConfig.rate_denom = sbufReadU8(src);
+            blackboxConfig()->device = sbufReadU8(src);
+            blackboxConfig()->rate_num = sbufReadU8(src);
+            blackboxConfig()->rate_denom = sbufReadU8(src);
         }
         break;
 #endif
@@ -1544,18 +1544,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // set all the other settings
             if ((int8_t)addr == -1) {
 #ifdef USE_MAX7456
-                masterConfig.vcdProfile.video_system = sbufReadU8(src);
+                vcdProfile()->video_system = sbufReadU8(src);
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-                masterConfig.osdProfile.units = sbufReadU8(src);
-                masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
-                masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
-                masterConfig.osdProfile.time_alarm = sbufReadU16(src);
-                masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
+                osdProfile()->units = sbufReadU8(src);
+                osdProfile()->rssi_alarm = sbufReadU8(src);
+                osdProfile()->cap_alarm = sbufReadU16(src);
+                osdProfile()->time_alarm = sbufReadU16(src);
+                osdProfile()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
-                masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+                osdProfile()->item_pos[addr] = sbufReadU16(src);
             }
         }
         break;

@@ -93,6 +93,10 @@
 #define beeperConfig(x) (&masterConfig.beeperConfig)
 #define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define osdProfile(x) (&masterConfig.osdProfile)
+#define vcdProfile(x) (&masterConfig.vcdProfile)
+#define sdcardConfig(x) (&masterConfig.sdcardConfig)
+#define blackboxConfig(x) (&masterConfig.blackboxConfig)
 
 
 // System-wide
