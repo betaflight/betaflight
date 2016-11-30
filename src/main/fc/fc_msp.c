@@ -797,7 +797,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, masterConfig.rxConfig.rssi_channel);
         sbufWriteU8(dst, 0);
 
-        sbufWriteU16(dst, masterConfig.compassConfig.mag_declination / 10);
+        sbufWriteU16(dst, compassConfig()->mag_declination / 10);
 
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatscale);
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatmincellvoltage);
@@ -866,9 +866,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_BOARD_ALIGNMENT:
-        sbufWriteU16(dst, masterConfig.boardAlignment.rollDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.pitchDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.yawDegrees);
+        sbufWriteU16(dst, boardAlignment()->rollDegrees);
+        sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+        sbufWriteU16(dst, boardAlignment()->yawDegrees);
         break;
 
     case MSP_VOLTAGE_METER_CONFIG:
@@ -938,9 +938,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
         sbufWriteU8(dst, masterConfig.rxConfig.serialrx_provider);
 
-        sbufWriteU16(dst, masterConfig.boardAlignment.rollDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.pitchDegrees);
-        sbufWriteU16(dst, masterConfig.boardAlignment.yawDegrees);
+        sbufWriteU16(dst, boardAlignment()->rollDegrees);
+        sbufWriteU16(dst, boardAlignment()->pitchDegrees);
+        sbufWriteU16(dst, boardAlignment()->yawDegrees);
 
         sbufWriteU16(dst, masterConfig.batteryConfig.currentMeterScale);
         sbufWriteU16(dst, masterConfig.batteryConfig.currentMeterOffset);
@@ -1081,11 +1081,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ADVANCED_CONFIG:
-        if (masterConfig.gyroConfig.gyro_lpf) {
+        if (gyroConfig()->gyro_lpf) {
             sbufWriteU8(dst, 8); // If gyro_lpf != OFF then looptime is set to 1000
             sbufWriteU8(dst, 1);
         } else {
-            sbufWriteU8(dst, masterConfig.gyroConfig.gyro_sync_denom);
+            sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
             sbufWriteU8(dst, masterConfig.pid_process_denom);
         }
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
@@ -1094,15 +1094,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FILTER_CONFIG :
-        sbufWriteU8(dst, masterConfig.gyroConfig.gyro_soft_lpf_hz);
+        sbufWriteU8(dst, gyroConfig()->gyro_soft_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
-        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_hz_1);
-        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_cutoff_1);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_notch_cutoff);
-        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_hz_2);
-        sbufWriteU16(dst, masterConfig.gyroConfig.gyro_soft_notch_cutoff_2);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2);
+        sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2);
         break;
 
     case MSP_PID_ADVANCED:
@@ -1355,7 +1355,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.rxConfig.rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
-        masterConfig.compassConfig.mag_declination = sbufReadU16(src) * 10;
+        compassConfig()->mag_declination = sbufReadU16(src) * 10;
 
         masterConfig.batteryConfig.vbatscale = sbufReadU8(src);           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1433,7 +1433,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
-        masterConfig.gyroConfig.gyro_sync_denom = sbufReadU8(src);
+        gyroConfig()->gyro_sync_denom = sbufReadU8(src);
         masterConfig.pid_process_denom = sbufReadU8(src);
         motorConfig()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
@@ -1445,18 +1445,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_FILTER_CONFIG:
-        masterConfig.gyroConfig.gyro_soft_lpf_hz = sbufReadU8(src);
+        gyroConfig()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = sbufReadU16(src);
         currentProfile->pidProfile.yaw_lpf_hz = sbufReadU16(src);
         if (dataSize > 5) {
-            masterConfig.gyroConfig.gyro_soft_notch_hz_1 = sbufReadU16(src);
-            masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 = sbufReadU16(src);
+            gyroConfig()->gyro_soft_notch_hz_1 = sbufReadU16(src);
+            gyroConfig()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_hz = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_cutoff = sbufReadU16(src);
         }
         if (dataSize > 13) {
-            masterConfig.gyroConfig.gyro_soft_notch_hz_2 = sbufReadU16(src);
-            masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 = sbufReadU16(src);
+            gyroConfig()->gyro_soft_notch_hz_2 = sbufReadU16(src);
+            gyroConfig()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
@@ -1641,9 +1641,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_BOARD_ALIGNMENT:
-        masterConfig.boardAlignment.rollDegrees = sbufReadU16(src);
-        masterConfig.boardAlignment.pitchDegrees = sbufReadU16(src);
-        masterConfig.boardAlignment.yawDegrees = sbufReadU16(src);
+        boardAlignment()->rollDegrees = sbufReadU16(src);
+        boardAlignment()->pitchDegrees = sbufReadU16(src);
+        boardAlignment()->yawDegrees = sbufReadU16(src);
         break;
 
     case MSP_SET_VOLTAGE_METER_CONFIG:
@@ -1729,9 +1729,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
         masterConfig.rxConfig.serialrx_provider = sbufReadU8(src); // serialrx_type
 
-        masterConfig.boardAlignment.rollDegrees = sbufReadU16(src); // board_align_roll
-        masterConfig.boardAlignment.pitchDegrees = sbufReadU16(src); // board_align_pitch
-        masterConfig.boardAlignment.yawDegrees = sbufReadU16(src); // board_align_yaw
+        boardAlignment()->rollDegrees = sbufReadU16(src); // board_align_roll
+        boardAlignment()->pitchDegrees = sbufReadU16(src); // board_align_pitch
+        boardAlignment()->yawDegrees = sbufReadU16(src); // board_align_yaw
 
         masterConfig.batteryConfig.currentMeterScale = sbufReadU16(src);
         masterConfig.batteryConfig.currentMeterOffset = sbufReadU16(src);

@@ -69,6 +69,12 @@
 #define sensorSelectionConfig(x) (&masterConfig.sensorSelectionConfig)
 #define sensorAlignmentConfig(x) (&masterConfig.sensorAlignmentConfig)
 #define sensorTrims(x) (&masterConfig.sensorTrims)
+#define boardAlignment(x) (&masterConfig.boardAlignment)
+#define imuConfig(x) (&masterConfig.imuConfig)
+#define gyroConfig(x) (&masterConfig.gyroConfig)
+#define compassConfig(x) (&masterConfig.compassConfig)
+#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
+#define barometerConfig(x) (&masterConfig.barometerConfig)
 
 // System-wide
 typedef struct master_s {

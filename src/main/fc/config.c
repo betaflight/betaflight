@@ -843,7 +843,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
     setAccelerationTrims(&sensorTrims()->accZero);
-    setAccelerationFilter(masterConfig.accelerometerConfig.acc_lpf_hz);
+    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
@@ -991,16 +991,16 @@ void validateAndFixConfig(void)
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
-    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyroConfig.gyro_soft_notch_hz_1) {
-        masterConfig.gyroConfig.gyro_soft_notch_hz_1 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
+        gyroConfig()->gyro_soft_notch_hz_1 = 0;
     }
-    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyroConfig.gyro_soft_notch_hz_2) {
-        masterConfig.gyroConfig.gyro_soft_notch_hz_2 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
+        gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 
-    if (masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_256HZ && masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_NONE) {
+    if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        masterConfig.gyroConfig.gyro_sync_denom = 1;
+        gyroConfig()->gyro_sync_denom = 1;
     }
 }
 

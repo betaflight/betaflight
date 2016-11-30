@@ -424,7 +424,7 @@ void init(void)
 #endif
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
             &masterConfig.sensorSelectionConfig,
-            masterConfig.compassConfig.mag_declination,
+            compassConfig()->mag_declination,
             &masterConfig.gyroConfig,
             sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.

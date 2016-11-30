@@ -769,7 +769,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rxConfig.rssi_channel);
             bstWrite8(0);
 
-            bstWrite16(masterConfig.compassConfig.mag_declination / 10);
+            bstWrite16(compassConfig()->mag_declination / 10);
 
             bstWrite8(masterConfig.batteryConfig.vbatscale);
             bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
@@ -848,9 +848,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_BOARD_ALIGNMENT:
-            bstWrite16(masterConfig.boardAlignment.rollDegrees);
-            bstWrite16(masterConfig.boardAlignment.pitchDegrees);
-            bstWrite16(masterConfig.boardAlignment.yawDegrees);
+            bstWrite16(boardAlignment()->rollDegrees);
+            bstWrite16(boardAlignment()->pitchDegrees);
+            bstWrite16(boardAlignment()->yawDegrees);
             break;
 
         case BST_VOLTAGE_METER_CONFIG:
@@ -910,9 +910,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
             bstWrite8(masterConfig.rxConfig.serialrx_provider);
 
-            bstWrite16(masterConfig.boardAlignment.rollDegrees);
-            bstWrite16(masterConfig.boardAlignment.pitchDegrees);
-            bstWrite16(masterConfig.boardAlignment.yawDegrees);
+            bstWrite16(boardAlignment()->rollDegrees);
+            bstWrite16(boardAlignment()->pitchDegrees);
+            bstWrite16(boardAlignment()->yawDegrees);
 
             bstWrite16(masterConfig.batteryConfig.currentMeterScale);
             bstWrite16(masterConfig.batteryConfig.currentMeterOffset);
@@ -977,7 +977,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
             break;
         case BST_FC_FILTERS:
-            bstWrite16(constrain(masterConfig.gyroConfig.gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
+            bstWrite16(constrain(gyroConfig()->gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
             break;
         default:
             // we do not know how to handle the (valid) message, indicate error BST
@@ -1132,7 +1132,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rxConfig.rssi_channel = bstRead8();
             bstRead8();
 
-            masterConfig.compassConfig.mag_declination = bstRead16() * 10;
+            compassConfig()->mag_declination = bstRead16() * 10;
 
             masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
             masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1254,9 +1254,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             featureSet(bstRead32()); // features bitmap
             break;
         case BST_SET_BOARD_ALIGNMENT:
-            masterConfig.boardAlignment.rollDegrees = bstRead16();
-            masterConfig.boardAlignment.pitchDegrees = bstRead16();
-            masterConfig.boardAlignment.yawDegrees = bstRead16();
+            boardAlignment()->rollDegrees = bstRead16();
+            boardAlignment()->pitchDegrees = bstRead16();
+            boardAlignment()->yawDegrees = bstRead16();
             break;
         case BST_SET_VOLTAGE_METER_CONFIG:
             masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
@@ -1327,9 +1327,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
            masterConfig.rxConfig.serialrx_provider = bstRead8(); // serialrx_type
 
-           masterConfig.boardAlignment.rollDegrees = bstRead16(); // board_align_roll
-           masterConfig.boardAlignment.pitchDegrees = bstRead16(); // board_align_pitch
-           masterConfig.boardAlignment.yawDegrees = bstRead16(); // board_align_yaw
+           boardAlignment()->rollDegrees = bstRead16(); // board_align_roll
+           boardAlignment()->pitchDegrees = bstRead16(); // board_align_pitch
+           boardAlignment()->yawDegrees = bstRead16(); // board_align_yaw
 
            masterConfig.batteryConfig.currentMeterScale = bstRead16();
            masterConfig.batteryConfig.currentMeterOffset = bstRead16();
@@ -1404,7 +1404,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
-            masterConfig.gyroConfig.gyro_lpf = bstRead16();
+            gyroConfig()->gyro_lpf = bstRead16();
             break;
 
         default:

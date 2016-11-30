@@ -801,7 +801,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void)
 {
-    if (masterConfig.gyroConfig.gyro_soft_lpf_hz) {
+    if (gyroConfig()->gyro_soft_lpf_hz) {
         return masterConfig.pid_process_denom - 1;
     } else {
         return 1;
