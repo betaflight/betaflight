@@ -43,7 +43,7 @@ extern float rcInput[3];
 extern float setpointRate[3];
 
 uint32_t targetPidLooptime;
-static bool pidStabilisationEnabled;
+static pidStabilisationState_e pidStabilisationState;
 
 float axisPIDf[3];
 
@@ -68,9 +68,9 @@ void pidResetErrorGyroState(void)
     }
 }
 
-void pidStabilisationState(pidStabilisationState_e pidControllerState)
+void pidSetStabilisationState(pidStabilisationState_e pidStabilisationStateToUse)
 {
-    pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
+    pidStabilisationState = pidStabilisationStateToUse;
 }
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
@@ -265,6 +265,9 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         ITerm += Ki[axis] * errorRate * dT * itermScaler;;
         // limit maximum integrator value to prevent WindUp
         ITerm = constrainf(ITerm, -250.0f, 250.0f);
+        if (pidStabilisationState == PID_STABILISATION_ZERO_ITERM) {
+            ITerm = 0.0;
+        }
         errorGyroIf[axis] = ITerm;
 
         // -----calculate D component (Yaw D not yet supported)
@@ -302,7 +305,7 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         // -----calculate total PID output
         axisPIDf[axis] = PTerm + ITerm + DTerm;
         // Disable PID control at zero throttle
-        if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
+        if (pidStabilisationState == PID_STABILISATION_OFF) axisPIDf[axis] = 0;
 
 #ifdef GTUNE
         if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {

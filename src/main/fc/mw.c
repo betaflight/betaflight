@@ -515,7 +515,7 @@ void processRx(uint32_t currentTime)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -528,11 +528,11 @@ void processRx(uint32_t currentTime)
     if (throttleStatus == THROTTLE_LOW && !airmodeIsActivated) {
         pidResetErrorGyroState();
         if (currentProfile->pidProfile.pidAtMinThrottle)
-            pidStabilisationState(PID_STABILISATION_ON);
+            pidSetStabilisationState(PID_STABILISATION_ON);
         else
-            pidStabilisationState(PID_STABILISATION_OFF);
+            pidSetStabilisationState(PID_STABILISATION_ZERO_ITERM);
     } else {
-        pidStabilisationState(PID_STABILISATION_ON);
+        pidSetStabilisationState(PID_STABILISATION_ON);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
