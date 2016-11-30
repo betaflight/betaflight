@@ -123,9 +123,8 @@ typedef struct {
     timeUs_t taskLatestDeltaTime;
 
     /* Statistics */
-    timeUs_t averageExecutionTime;  // Moving average over 6 samples, used to calculate guard interval
-#ifndef SKIP_TASK_STATISTICS
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
+#ifndef SKIP_TASK_STATISTICS
     timeUs_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
 #endif

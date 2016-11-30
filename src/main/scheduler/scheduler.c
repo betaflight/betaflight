@@ -297,8 +297,9 @@ void scheduler(void)
         selectedTask->taskFunc(currentTimeBeforeTaskCall);
         const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
-#ifndef SKIP_TASK_STATISTICS
         selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+
+#ifndef SKIP_TASK_STATISTICS
         selectedTask->totalExecutionTime += taskExecutionTime;   // time consumed by scheduler + task
         selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif
