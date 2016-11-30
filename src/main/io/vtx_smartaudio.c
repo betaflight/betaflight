@@ -723,6 +723,10 @@ uint8_t  saCmsRFState;          // RF state; ACTIVE, PIR, POR XXX Not currently 
 uint8_t  saCmsBand = 0;
 uint8_t  saCmsChan = 0;
 uint8_t  saCmsPower = 0;
+
+// Frequency derived from channel table (used for reference in band/chan mode)
+uint16_t saCmsFreqRef = 0;
+
 uint16_t saCmsDeviceFreq = 0;
 
 uint8_t  saCmsDeviceStatus = 0;
@@ -746,6 +750,8 @@ void saCmsUpdate(void)
 
         saCmsBand = (saDevice.chan / 8) + 1;
         saCmsChan = (saDevice.chan % 8) + 1;
+        saCmsFreqRef = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
+
         saCmsDeviceFreq = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
 
         if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
@@ -839,13 +845,13 @@ dprintf(("saCmsConfigBand: band req %d ", saCmsBand));
     if (saCmsBand == 0) {
         // Bouce back, no going back to undef state
         saCmsBand = 1;
-dprintf(("--> %d\r\n", saCmsBand));
         return 0;
     }
-dprintf(("--> %d\r\n", saCmsBand));
 
     if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+
+    saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
 
     return 0;
 }
@@ -869,6 +875,8 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
 
     if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+
+    saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
 
     return 0;
 }
@@ -994,7 +1002,10 @@ static const char * const saCmsPowerNames[] = {
 
 static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saCmsPowerNames};
 
+// Frequency the vtx is currently transmitting at
 static OSD_UINT16_t saCmsEntFreq = { &saCmsDeviceFreq, 5600, 5900, 0 };
+
+static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 
 static const char * const saCmsOpmodelNames[] = {
     "----",
@@ -1051,7 +1062,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
             saSetFreq(saCmsUserFreq);
     }
 
-    return 0;
+    return MENU_CHAIN_BACK;
 }
 
 static long saCmsSetPORFreqOnEnter(void)
@@ -1210,7 +1221,7 @@ static OSD_Entry saCmsMenuChanModeEntries[] =
     { "",       OME_Label,   NULL,                   saCmsStatusString,  DYNAMIC },
     { "BAND",   OME_TAB,     saCmsConfigBandByGvar,  &saCmsEntBand,      0 },
     { "CHAN",   OME_TAB,     saCmsConfigChanByGvar,  &saCmsEntChan,      0 },
-    { "(FREQ)", OME_UINT16,  NULL,                   &saCmsEntFreq,      DYNAMIC },
+    { "(FREQ)", OME_UINT16,  NULL,                   &saCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     saCmsConfigPowerByGvar, &saCmsEntPower,     0 },
     { "SET",    OME_Submenu, cmsMenuChange,          &saCmsMenuCommence, 0 },
     { "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig,   0 },
