@@ -54,7 +54,7 @@ uint8_t PIDweight[3];
 int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 #endif
 
-static float errorGyroIf[3];
+static float previousGyroIf[3];
 
 static float dT;
 
@@ -67,7 +67,7 @@ void pidSetTargetLooptime(uint32_t pidLooptime)
 void pidResetErrorGyroState(void)
 {
     for (int axis = 0; axis < 3; axis++) {
-        errorGyroIf[axis] = 0.0f;
+        previousGyroIf[axis] = 0.0f;
     }
 }
 
@@ -251,11 +251,11 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         const float setpointRateScaler = constrainf(1.0f - (ABS(setpointRate[axis]) / accumulationThreshold), 0.0f, 1.0f);
         const float itermScaler = setpointRateScaler * kiThrottleGain;
 
-        float ITerm = errorGyroIf[axis];
+        float ITerm = previousGyroIf[axis];
         ITerm += Ki[axis] * errorRate * dT * itermScaler;;
         // limit maximum integrator value to prevent WindUp
         ITerm = constrainf(ITerm, -250.0f, 250.0f);
-        errorGyroIf[axis] = ITerm;
+        previousGyroIf[axis] = ITerm;
 
         // -----calculate D component (Yaw D not yet supported)
         float DTerm = 0.0;
