@@ -255,10 +255,10 @@ void fcTasksInit(void)
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
-        if (masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+        if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } else if (masterConfig.rxConfig.serialrx_provider == SERIALRX_CRSF) {
+        } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }

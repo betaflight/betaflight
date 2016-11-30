@@ -556,7 +556,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             // DEPRECATED - Use MSP_API_VERSION
         case BST_IDENT:
             bstWrite8(MW_VERSION);
-            bstWrite8(masterConfig.mixerConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
             bstWrite8(BST_PROTOCOL_VERSION);
             bstWrite32(CAP_DYNBALANCE); // "capability"
             break;
@@ -683,8 +683,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
             break;
         case BST_ARMING_CONFIG:
-            bstWrite8(masterConfig.armingConfig.auto_disarm_delay);
-            bstWrite8(masterConfig.armingConfig.disarm_kill_switch);
+            bstWrite8(armingConfig()->auto_disarm_delay);
+            bstWrite8(armingConfig()->disarm_kill_switch);
             break;
         case BST_LOOP_TIME:
             //bstWrite16(masterConfig.looptime);
@@ -749,7 +749,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             }
             break;
         case BST_MISC:
-            bstWrite16(masterConfig.rxConfig.midrc);
+            bstWrite16(rxConfig()->midrc);
 
             bstWrite16(motorConfig()->minthrottle);
             bstWrite16(motorConfig()->maxthrottle);
@@ -767,7 +767,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(0); // gps_ubx_sbas
 #endif
             bstWrite8(batteryConfig()->multiwiiCurrentMeterOutput);
-            bstWrite8(masterConfig.rxConfig.rssi_channel);
+            bstWrite8(rxConfig()->rssi_channel);
             bstWrite8(0);
 
             bstWrite16(compassConfig()->mag_declination / 10);
@@ -869,17 +869,17 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_MIXER:
-            bstWrite8(masterConfig.mixerConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
             break;
 
         case BST_RX_CONFIG:
-            bstWrite8(masterConfig.rxConfig.serialrx_provider);
-            bstWrite16(masterConfig.rxConfig.maxcheck);
-            bstWrite16(masterConfig.rxConfig.midrc);
-            bstWrite16(masterConfig.rxConfig.mincheck);
-            bstWrite8(masterConfig.rxConfig.spektrum_sat_bind);
-            bstWrite16(masterConfig.rxConfig.rx_min_usec);
-            bstWrite16(masterConfig.rxConfig.rx_max_usec);
+            bstWrite8(rxConfig()->serialrx_provider);
+            bstWrite16(rxConfig()->maxcheck);
+            bstWrite16(rxConfig()->midrc);
+            bstWrite16(rxConfig()->mincheck);
+            bstWrite8(rxConfig()->spektrum_sat_bind);
+            bstWrite16(rxConfig()->rx_min_usec);
+            bstWrite16(rxConfig()->rx_max_usec);
             break;
 
         case BST_FAILSAFE_CONFIG:
@@ -890,26 +890,26 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_RXFAIL_CONFIG:
             for (i = NON_AUX_CHANNEL_COUNT; i < rxRuntimeConfig.channelCount; i++) {
-                bstWrite8(masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
-                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
+                bstWrite8(rxConfig()->failsafe_channel_configurations[i].mode);
+                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
             }
             break;
 
         case BST_RSSI_CONFIG:
-            bstWrite8(masterConfig.rxConfig.rssi_channel);
+            bstWrite8(rxConfig()->rssi_channel);
             break;
 
         case BST_RX_MAP:
             for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++)
-                bstWrite8(masterConfig.rxConfig.rcmap[i]);
+                bstWrite8(rxConfig()->rcmap[i]);
             break;
 
         case BST_BF_CONFIG:
-            bstWrite8(masterConfig.mixerConfig.mixerMode);
+            bstWrite8(mixerConfig()->mixerMode);
 
             bstWrite32(featureMask());
 
-            bstWrite8(masterConfig.rxConfig.serialrx_provider);
+            bstWrite8(rxConfig()->serialrx_provider);
 
             bstWrite16(boardAlignment()->rollDegrees);
             bstWrite16(boardAlignment()->pitchDegrees);
@@ -1034,8 +1034,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
-            masterConfig.armingConfig.auto_disarm_delay = bstRead8();
-            masterConfig.armingConfig.disarm_kill_switch = bstRead8();
+            armingConfig()->auto_disarm_delay = bstRead8();
+            armingConfig()->disarm_kill_switch = bstRead8();
             break;
         case BST_SET_LOOP_TIME:
             //masterConfig.looptime = bstRead16();
@@ -1112,7 +1112,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_MISC:
             tmp = bstRead16();
             if (tmp < 1600 && tmp > 1400)
-                masterConfig.rxConfig.midrc = tmp;
+                rxConfig()->midrc = tmp;
 
             motorConfig()->minthrottle = bstRead16();
             motorConfig()->maxthrottle = bstRead16();
@@ -1130,7 +1130,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             bstRead8(); // gps_ubx_sbas
     #endif
             batteryConfig()->multiwiiCurrentMeterOutput = bstRead8();
-            masterConfig.rxConfig.rssi_channel = bstRead8();
+            rxConfig()->rssi_channel = bstRead8();
             bstRead8();
 
             compassConfig()->mag_declination = bstRead16() * 10;
@@ -1274,19 +1274,19 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 
 #ifndef USE_QUAD_MIXER_ONLY
         case BST_SET_MIXER:
-            masterConfig.mixerConfig.mixerMode = bstRead8();
+            mixerConfig()->mixerMode = bstRead8();
             break;
 #endif
 
         case BST_SET_RX_CONFIG:
-           masterConfig.rxConfig.serialrx_provider = bstRead8();
-           masterConfig.rxConfig.maxcheck = bstRead16();
-           masterConfig.rxConfig.midrc = bstRead16();
-           masterConfig.rxConfig.mincheck = bstRead16();
-           masterConfig.rxConfig.spektrum_sat_bind = bstRead8();
+           rxConfig()->serialrx_provider = bstRead8();
+           rxConfig()->maxcheck = bstRead16();
+           rxConfig()->midrc = bstRead16();
+           rxConfig()->mincheck = bstRead16();
+           rxConfig()->spektrum_sat_bind = bstRead8();
            if (bstReadDataSize() > 8) {
-               masterConfig.rxConfig.rx_min_usec = bstRead16();
-               masterConfig.rxConfig.rx_max_usec = bstRead16();
+               rxConfig()->rx_min_usec = bstRead16();
+               rxConfig()->rx_max_usec = bstRead16();
            }
            break;
         case BST_SET_FAILSAFE_CONFIG:
@@ -1301,18 +1301,18 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                } else {
                    for (i = NON_AUX_CHANNEL_COUNT; i < channelCount; i++) {
-                       masterConfig.rxConfig.failsafe_channel_configurations[i].mode = bstRead8();
-                       masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
+                       rxConfig()->failsafe_channel_configurations[i].mode = bstRead8();
+                       rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
                    }
                }
            }
            break;
         case BST_SET_RSSI_CONFIG:
-           masterConfig.rxConfig.rssi_channel = bstRead8();
+           rxConfig()->rssi_channel = bstRead8();
            break;
         case BST_SET_RX_MAP:
             for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-                masterConfig.rxConfig.rcmap[i] = bstRead8();
+                rxConfig()->rcmap[i] = bstRead8();
             }
             break;
         case BST_SET_BF_CONFIG:
@@ -1320,13 +1320,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
 #ifdef USE_QUAD_MIXER_ONLY
            bstRead8(); // mixerMode ignored
 #else
-           masterConfig.mixerConfig.mixerMode = bstRead8(); // mixerMode
+           mixerConfig()->mixerMode = bstRead8(); // mixerMode
 #endif
 
            featureClearAll();
            featureSet(bstRead32()); // features bitmap
 
-           masterConfig.rxConfig.serialrx_provider = bstRead8(); // serialrx_type
+           rxConfig()->serialrx_provider = bstRead8(); // serialrx_type
 
            boardAlignment()->rollDegrees = bstRead16(); // board_align_roll
            boardAlignment()->pitchDegrees = bstRead16(); // board_align_pitch

@@ -313,7 +313,7 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXFAILSAFE;
     }
 
-    if (masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXPASSTHRU;
     }
 
@@ -360,7 +360,7 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef USE_SERVOS
-    if (masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXSERVO1;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO2;
         activeBoxIds[activeBoxIdCount++] = BOXSERVO3;
@@ -563,7 +563,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     // DEPRECATED - Use MSP_API_VERSION
     case MSP_IDENT:
         sbufWriteU8(dst, MW_VERSION);
-        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
+        sbufWriteU8(dst, mixerConfig()->mixerMode);
         sbufWriteU8(dst, MSP_PROTOCOL_VERSION);
         sbufWriteU32(dst, CAP_DYNBALANCE); // "capability"
         break;
@@ -700,8 +700,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ARMING_CONFIG:
-        sbufWriteU8(dst, masterConfig.armingConfig.auto_disarm_delay);
-        sbufWriteU8(dst, masterConfig.armingConfig.disarm_kill_switch);
+        sbufWriteU8(dst, armingConfig()->auto_disarm_delay);
+        sbufWriteU8(dst, armingConfig()->disarm_kill_switch);
         break;
 
     case MSP_LOOP_TIME:
@@ -776,7 +776,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_MISC:
-        sbufWriteU16(dst, masterConfig.rxConfig.midrc);
+        sbufWriteU16(dst, rxConfig()->midrc);
 
         sbufWriteU16(dst, motorConfig()->minthrottle);
         sbufWriteU16(dst, motorConfig()->maxthrottle);
@@ -794,7 +794,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // gps_ubx_sbas
 #endif
         sbufWriteU8(dst, batteryConfig()->multiwiiCurrentMeterOutput);
-        sbufWriteU8(dst, masterConfig.rxConfig.rssi_channel);
+        sbufWriteU8(dst, rxConfig()->rssi_channel);
         sbufWriteU8(dst, 0);
 
         sbufWriteU16(dst, compassConfig()->mag_declination / 10);
@@ -886,23 +886,23 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_MIXER:
-        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
+        sbufWriteU8(dst, mixerConfig()->mixerMode);
         break;
 
     case MSP_RX_CONFIG:
-        sbufWriteU8(dst, masterConfig.rxConfig.serialrx_provider);
-        sbufWriteU16(dst, masterConfig.rxConfig.maxcheck);
-        sbufWriteU16(dst, masterConfig.rxConfig.midrc);
-        sbufWriteU16(dst, masterConfig.rxConfig.mincheck);
-        sbufWriteU8(dst, masterConfig.rxConfig.spektrum_sat_bind);
-        sbufWriteU16(dst, masterConfig.rxConfig.rx_min_usec);
-        sbufWriteU16(dst, masterConfig.rxConfig.rx_max_usec);
-        sbufWriteU8(dst, masterConfig.rxConfig.rcInterpolation);
-        sbufWriteU8(dst, masterConfig.rxConfig.rcInterpolationInterval);
-        sbufWriteU16(dst, masterConfig.rxConfig.airModeActivateThreshold);
-        sbufWriteU8(dst, masterConfig.rxConfig.rx_spi_protocol);
-        sbufWriteU32(dst, masterConfig.rxConfig.rx_spi_id);
-        sbufWriteU8(dst, masterConfig.rxConfig.rx_spi_rf_channel_count);
+        sbufWriteU8(dst, rxConfig()->serialrx_provider);
+        sbufWriteU16(dst, rxConfig()->maxcheck);
+        sbufWriteU16(dst, rxConfig()->midrc);
+        sbufWriteU16(dst, rxConfig()->mincheck);
+        sbufWriteU8(dst, rxConfig()->spektrum_sat_bind);
+        sbufWriteU16(dst, rxConfig()->rx_min_usec);
+        sbufWriteU16(dst, rxConfig()->rx_max_usec);
+        sbufWriteU8(dst, rxConfig()->rcInterpolation);
+        sbufWriteU8(dst, rxConfig()->rcInterpolationInterval);
+        sbufWriteU16(dst, rxConfig()->airModeActivateThreshold);
+        sbufWriteU8(dst, rxConfig()->rx_spi_protocol);
+        sbufWriteU32(dst, rxConfig()->rx_spi_id);
+        sbufWriteU8(dst, rxConfig()->rx_spi_rf_channel_count);
         break;
 
     case MSP_FAILSAFE_CONFIG:
@@ -916,27 +916,27 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RXFAIL_CONFIG:
         for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            sbufWriteU8(dst, masterConfig.rxConfig.failsafe_channel_configurations[i].mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(masterConfig.rxConfig.failsafe_channel_configurations[i].step));
+            sbufWriteU8(dst, rxConfig()->failsafe_channel_configurations[i].mode);
+            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
         }
         break;
 
     case MSP_RSSI_CONFIG:
-        sbufWriteU8(dst, masterConfig.rxConfig.rssi_channel);
+        sbufWriteU8(dst, rxConfig()->rssi_channel);
         break;
 
     case MSP_RX_MAP:
         for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            sbufWriteU8(dst, masterConfig.rxConfig.rcmap[i]);
+            sbufWriteU8(dst, rxConfig()->rcmap[i]);
         }
         break;
 
     case MSP_BF_CONFIG:
-        sbufWriteU8(dst, masterConfig.mixerConfig.mixerMode);
+        sbufWriteU8(dst, mixerConfig()->mixerMode);
 
         sbufWriteU32(dst, featureMask());
 
-        sbufWriteU8(dst, masterConfig.rxConfig.serialrx_provider);
+        sbufWriteU8(dst, rxConfig()->serialrx_provider);
 
         sbufWriteU16(dst, boardAlignment()->rollDegrees);
         sbufWriteU16(dst, boardAlignment()->pitchDegrees);
@@ -1247,8 +1247,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
-        masterConfig.armingConfig.auto_disarm_delay = sbufReadU8(src);
-        masterConfig.armingConfig.disarm_kill_switch = sbufReadU8(src);
+        armingConfig()->auto_disarm_delay = sbufReadU8(src);
+        armingConfig()->disarm_kill_switch = sbufReadU8(src);
         break;
 
     case MSP_SET_LOOP_TIME:
@@ -1335,7 +1335,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MISC:
         tmp = sbufReadU16(src);
         if (tmp < 1600 && tmp > 1400)
-            masterConfig.rxConfig.midrc = tmp;
+            rxConfig()->midrc = tmp;
 
         motorConfig()->minthrottle = sbufReadU16(src);
         motorConfig()->maxthrottle = sbufReadU16(src);
@@ -1353,7 +1353,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // gps_ubx_sbas
 #endif
         batteryConfig()->multiwiiCurrentMeterOutput = sbufReadU8(src);
-        masterConfig.rxConfig.rssi_channel = sbufReadU8(src);
+        rxConfig()->rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
         compassConfig()->mag_declination = sbufReadU16(src) * 10;
@@ -1664,29 +1664,29 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifndef USE_QUAD_MIXER_ONLY
     case MSP_SET_MIXER:
-        masterConfig.mixerConfig.mixerMode = sbufReadU8(src);
+        mixerConfig()->mixerMode = sbufReadU8(src);
         break;
 #endif
 
     case MSP_SET_RX_CONFIG:
-        masterConfig.rxConfig.serialrx_provider = sbufReadU8(src);
-        masterConfig.rxConfig.maxcheck = sbufReadU16(src);
-        masterConfig.rxConfig.midrc = sbufReadU16(src);
-        masterConfig.rxConfig.mincheck = sbufReadU16(src);
-        masterConfig.rxConfig.spektrum_sat_bind = sbufReadU8(src);
+        rxConfig()->serialrx_provider = sbufReadU8(src);
+        rxConfig()->maxcheck = sbufReadU16(src);
+        rxConfig()->midrc = sbufReadU16(src);
+        rxConfig()->mincheck = sbufReadU16(src);
+        rxConfig()->spektrum_sat_bind = sbufReadU8(src);
         if (dataSize > 8) {
-            masterConfig.rxConfig.rx_min_usec = sbufReadU16(src);
-            masterConfig.rxConfig.rx_max_usec = sbufReadU16(src);
+            rxConfig()->rx_min_usec = sbufReadU16(src);
+            rxConfig()->rx_max_usec = sbufReadU16(src);
         }
         if (dataSize > 12) {
-            masterConfig.rxConfig.rcInterpolation = sbufReadU8(src);
-            masterConfig.rxConfig.rcInterpolationInterval = sbufReadU8(src);
-            masterConfig.rxConfig.airModeActivateThreshold = sbufReadU16(src);
+            rxConfig()->rcInterpolation = sbufReadU8(src);
+            rxConfig()->rcInterpolationInterval = sbufReadU8(src);
+            rxConfig()->airModeActivateThreshold = sbufReadU16(src);
         }
         if (dataSize > 16) {
-            masterConfig.rxConfig.rx_spi_protocol = sbufReadU8(src);
-            masterConfig.rxConfig.rx_spi_id = sbufReadU32(src);
-            masterConfig.rxConfig.rx_spi_rf_channel_count = sbufReadU8(src);
+            rxConfig()->rx_spi_protocol = sbufReadU8(src);
+            rxConfig()->rx_spi_id = sbufReadU32(src);
+            rxConfig()->rx_spi_rf_channel_count = sbufReadU8(src);
         }
         break;
 
@@ -1702,20 +1702,20 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RXFAIL_CONFIG:
         i = sbufReadU8(src);
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            masterConfig.rxConfig.failsafe_channel_configurations[i].mode = sbufReadU8(src);
-            masterConfig.rxConfig.failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
+            rxConfig()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
+            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
         } else {
             return MSP_RESULT_ERROR;
         }
         break;
 
     case MSP_SET_RSSI_CONFIG:
-        masterConfig.rxConfig.rssi_channel = sbufReadU8(src);
+        rxConfig()->rssi_channel = sbufReadU8(src);
         break;
 
     case MSP_SET_RX_MAP:
         for (int i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
-            masterConfig.rxConfig.rcmap[i] = sbufReadU8(src);
+            rxConfig()->rcmap[i] = sbufReadU8(src);
         }
         break;
 
@@ -1723,13 +1723,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_QUAD_MIXER_ONLY
         sbufReadU8(src); // mixerMode ignored
 #else
-        masterConfig.mixerConfig.mixerMode = sbufReadU8(src); // mixerMode
+        mixerConfig()->mixerMode = sbufReadU8(src); // mixerMode
 #endif
 
         featureClearAll();
         featureSet(sbufReadU32(src)); // features bitmap
 
-        masterConfig.rxConfig.serialrx_provider = sbufReadU8(src); // serialrx_type
+        rxConfig()->serialrx_provider = sbufReadU8(src); // serialrx_type
 
         boardAlignment()->rollDegrees = sbufReadU16(src); // board_align_roll
         boardAlignment()->pitchDegrees = sbufReadU16(src); // board_align_pitch
