@@ -75,6 +75,21 @@
 #define compassConfig(x) (&masterConfig.compassConfig)
 #define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
 #define barometerConfig(x) (&masterConfig.barometerConfig)
+#define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
+#define batteryConfig(x) (&masterConfig.batteryConfig)
+#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
+#define gpsProfile(x) (&masterConfig.gpsProfile)
+#define gpsConfig(x) (&masterConfig.gpsConfig)
+#define rxConfig(x) (&masterConfig.rxConfig)
+#define armingConfig(x) (&masterConfig.armingConfig)
+#define mixerConfig(x) (&masterConfig.mixerConfig)
+#define airplaneConfig(x) (&masterConfig.airplaneConfig)
+#define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialConfig(x) (&masterConfig.serialConfig)
+#define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ppmConfig(x) (&masterConfig.ppmConfig)
+#define pwmConfig(x) (&masterConfig.pwmConfig)
+
 
 // System-wide
 typedef struct master_s {
