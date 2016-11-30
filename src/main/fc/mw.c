@@ -257,11 +257,11 @@ void mwArm(void)
     }
 }
 
-void processRx(uint32_t currentTime)
+void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
 
-    calculateRxChannelsAndUpdateFailsafe(currentTime);
+    calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
@@ -269,11 +269,11 @@ void processRx(uint32_t currentTime)
             mwDisarm();
     }
 
-    updateRSSI(currentTime);
+    updateRSSI(currentTimeUs);
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+        if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
             failsafeStartMonitoring();
         }
 
@@ -515,17 +515,17 @@ void filterRc(bool isRXDataNew)
 }
 
 // Function for loop trigger
-void taskGyro(uint32_t currentTime) {
+void taskGyro(timeUs_t currentTimeUs) {
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const timeUs_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (masterConfig.gyroConfig.gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }
@@ -537,29 +537,29 @@ void taskGyro(uint32_t currentTime) {
 
 #ifdef ASYNC_GYRO_PROCESSING
     /* Update IMU for better accuracy */
-    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTime));
+    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTimeUs));
 #endif
 }
 
-void taskMainPidLoop(uint32_t currentTime)
+void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
 #ifdef ASYNC_GYRO_PROCESSING
     if (getAsyncMode() == ASYNC_MODE_NONE) {
-        taskGyro(currentTime);
+        taskGyro(currentTimeUs);
     }
 
     if (getAsyncMode() != ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
         imuUpdateAccelerometer();
-        imuUpdateAttitude(currentTime);
+        imuUpdateAttitude(currentTimeUs);
     }
 #else
     /* Update gyroscope */
-    taskGyro(currentTime);
+    taskGyro(currentTimeUs);
     imuUpdateAccelerometer();
-    imuUpdateAttitude(currentTime);
+    imuUpdateAttitude(currentTimeUs);
 #endif
 
 
@@ -669,15 +669,15 @@ void taskMainPidLoop(uint32_t currentTime)
 
 }
 
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 
-    return updateRx(currentTime);
+    return updateRx(currentTimeUs);
 }
 
-void taskUpdateRxMain(uint32_t currentTime)
+void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    processRx(currentTime);
+    processRx(currentTimeUs);
     isRXDataNew = true;
 }

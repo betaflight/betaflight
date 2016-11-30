@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
 

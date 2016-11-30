@@ -1295,21 +1295,21 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_FINIS
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navigationFSMState_t previousState)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
     UNUSED(previousState);
 
-    resetFixedWingLaunchController(currentTime);
+    resetFixedWingLaunchController(currentTimeUs);
 
     return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_WAIT
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationFSMState_t previousState)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
     UNUSED(previousState);
 
     if (isFixedWingLaunchDetected()) {
-        enableFixedWingLaunchController(currentTime);
+        enableFixedWingLaunchController(currentTimeUs);
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_MOTOR_DELAY
     }
 
@@ -2198,7 +2198,7 @@ static void processNavigationRCAdjustments(void)
  *-----------------------------------------------------------*/
 void applyWaypointNavigationAndAltitudeHold(void)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
 #if defined(NAV_BLACKBOX)
     navFlags = 0;
@@ -2229,10 +2229,10 @@ void applyWaypointNavigationAndAltitudeHold(void)
     /* Process controllers */
     navigationFSMStateFlags_t navStateFlags = navGetStateFlags(posControl.navState);
     if (STATE(FIXED_WING)) {
-        applyFixedWingNavigationController(navStateFlags, currentTime);
+        applyFixedWingNavigationController(navStateFlags, currentTimeUs);
     }
     else {
-        applyMulticopterNavigationController(navStateFlags, currentTime);
+        applyMulticopterNavigationController(navStateFlags, currentTimeUs);
     }
 
     /* Consume position data */

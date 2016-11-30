@@ -108,7 +108,7 @@ static const uint8_t mavRates[] = {
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
+static timeUs_t lastMavlinkMessage = 0;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -273,7 +273,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(GPS)
-void mavlinkSendPosition(uint32_t currentTime)
+void mavlinkSendPosition(timeUs_t currentTimeUs)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -290,7 +290,7 @@ void mavlinkSendPosition(uint32_t currentTime)
 
     mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        currentTime,
+        currentTimeUs,
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
         gpsFixType,
         // lat Latitude in 1E7 degrees
@@ -315,7 +315,7 @@ void mavlinkSendPosition(uint32_t currentTime)
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        currentTime,
+        currentTimeUs,
         // lat Latitude in 1E7 degrees
         gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
@@ -502,7 +502,7 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(uint32_t currentTime)
+void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
@@ -515,7 +515,7 @@ void processMAVLinkTelemetry(uint32_t currentTime)
 
 #ifdef GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition(currentTime);
+        mavlinkSendPosition(currentTimeUs);
     }
 #endif
 
@@ -528,7 +528,7 @@ void processMAVLinkTelemetry(uint32_t currentTime)
     }
 }
 
-void handleMAVLinkTelemetry(uint32_t currentTime)
+void handleMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
     if (!mavlinkTelemetryEnabled) {
         return;
@@ -538,9 +538,9 @@ void handleMAVLinkTelemetry(uint32_t currentTime)
         return;
     }
 
-    if ((currentTime - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
-        processMAVLinkTelemetry(currentTime);
-        lastMavlinkMessage = currentTime;
+    if ((currentTimeUs - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+        processMAVLinkTelemetry(currentTimeUs);
+        lastMavlinkMessage = currentTimeUs;
     }
 }
 

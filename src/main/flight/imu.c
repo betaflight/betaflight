@@ -579,12 +579,12 @@ void imuUpdateAccelerometer(void)
 #endif
 }
 
-void imuUpdateAttitude(uint32_t currentTime)
+void imuUpdateAttitude(timeUs_t currentTimeUs)
 {
     /* Calculate dT */
-    static uint32_t previousIMUUpdateTime;
-    const float dT = (currentTime - previousIMUUpdateTime) * 1e-6;
-    previousIMUUpdateTime = currentTime;
+    static timeUs_t previousIMUUpdateTimeUs;
+    const float dT = (currentTimeUs - previousIMUUpdateTimeUs) * 1e-6;
+    previousIMUUpdateTimeUs = currentTimeUs;
 
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
 #ifdef HIL

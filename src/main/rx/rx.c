@@ -69,9 +69,9 @@ static bool rxFlightChannelsValid = false;
 static bool rxIsInFailsafeMode = true;
 static bool rxIsInFailsafeModeNotDataDriven = true;
 
-static uint32_t rxUpdateAt = 0;
-static uint32_t needRxSignalBefore = 0;
-static uint32_t suspendRxSignalUntil = 0;
+static timeUs_t rxUpdateAt = 0;
+static timeUs_t needRxSignalBefore = 0;
+static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
 int16_t rcRaw[MAX_SUPPORTED_RC_CHANNEL_COUNT];     // interval [1000;2000]
@@ -335,13 +335,13 @@ static bool isRxDataDriven(void) {
     return !(feature(FEATURE_RX_PARALLEL_PWM | FEATURE_RX_PPM));
 }
 
-static void resetRxSignalReceivedFlagIfNeeded(uint32_t currentTime)
+static void resetRxSignalReceivedFlagIfNeeded(timeUs_t currentTimeUs)
 {
     if (!rxSignalReceived) {
         return;
     }
 
-    if (((int32_t)(currentTime - needRxSignalBefore) >= 0)) {
+    if (((int32_t)(currentTimeUs - needRxSignalBefore) >= 0)) {
         rxSignalReceived = false;
         rxSignalReceivedNotDataDriven = false;
     }
@@ -361,9 +361,9 @@ void resumeRxSignal(void)
     failsafeOnRxResume();
 }
 
-bool updateRx(uint32_t currentTime)
+bool updateRx(timeUs_t currentTimeUs)
 {
-    resetRxSignalReceivedFlagIfNeeded(currentTime);
+    resetRxSignalReceivedFlagIfNeeded(currentTimeUs);
 
     if (isRxDataDriven()) {
         rxDataReceived = false;
@@ -377,7 +377,7 @@ bool updateRx(uint32_t currentTime)
             rxDataReceived = true;
             rxIsInFailsafeMode = (frameStatus & RX_FRAME_FAILSAFE) != 0;
             rxSignalReceived = !rxIsInFailsafeMode;
-            needRxSignalBefore = currentTime + DELAY_10_HZ;
+            needRxSignalBefore = currentTimeUs + DELAY_10_HZ;
         }
     }
 #endif
@@ -389,7 +389,7 @@ bool updateRx(uint32_t currentTime)
             rxDataReceived = true;
             rxIsInFailsafeMode = false;
             rxSignalReceived = !rxIsInFailsafeMode;
-            needRxSignalBefore = currentTime + DELAY_5_HZ;
+            needRxSignalBefore = currentTimeUs + DELAY_5_HZ;
         }
     }
 #endif
@@ -401,7 +401,7 @@ bool updateRx(uint32_t currentTime)
             rxDataReceived = true;
             rxSignalReceived = true;
             rxSignalReceived = !rxIsInFailsafeMode;
-            needRxSignalBefore = currentTime + DELAY_5_HZ;
+            needRxSignalBefore = currentTimeUs + DELAY_5_HZ;
         }
     }
 #endif
@@ -411,7 +411,7 @@ bool updateRx(uint32_t currentTime)
         if (isPPMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;
             rxIsInFailsafeModeNotDataDriven = false;
-            needRxSignalBefore = currentTime + DELAY_10_HZ;
+            needRxSignalBefore = currentTimeUs + DELAY_10_HZ;
             resetPPMDataReceivedState();
         }
     }
@@ -420,11 +420,11 @@ bool updateRx(uint32_t currentTime)
         if (isPWMDataBeingReceived()) {
             rxSignalReceivedNotDataDriven = true;
             rxIsInFailsafeModeNotDataDriven = false;
-            needRxSignalBefore = currentTime + DELAY_10_HZ;
+            needRxSignalBefore = currentTimeUs + DELAY_10_HZ;
         }
     }
 #endif
-    return rxDataReceived || ((int32_t)(currentTime - rxUpdateAt) >= 0); // data driven or 50Hz
+    return rxDataReceived || ((int32_t)(currentTimeUs - rxUpdateAt) >= 0); // data driven or 50Hz
 }
 
 static uint16_t calculateNonDataDrivenChannel(uint8_t chan, uint16_t sample)
@@ -589,13 +589,13 @@ static void detectAndApplySignalLossBehaviour(void)
 #endif
 }
 
-void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime)
+void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 {
-    rxUpdateAt = currentTime + DELAY_50_HZ;
+    rxUpdateAt = currentTimeUs + DELAY_50_HZ;
 
     // only proceed when no more samples to skip and suspend period is over
     if (skipRxSamples) {
-        if (currentTime > suspendRxSignalUntil) {
+        if (currentTimeUs > suspendRxSignalUntil) {
             skipRxSamples--;
         }
         return;
@@ -636,19 +636,19 @@ void updateRSSIPWM(void)
 #define RSSI_ADC_SAMPLE_COUNT 16
 //#define RSSI_SCALE (0xFFF / 100.0f)
 
-void updateRSSIADC(uint32_t currentTime)
+void updateRSSIADC(timeUs_t currentTimeUs)
 {
 #ifndef USE_ADC
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 #else
     static uint8_t adcRssiSamples[RSSI_ADC_SAMPLE_COUNT];
     static uint8_t adcRssiSampleIndex = 0;
-    static uint32_t rssiUpdateAt = 0;
+    static timeUs_t rssiUpdateAtUs = 0;
 
-    if ((int32_t)(currentTime - rssiUpdateAt) < 0) {
+    if ((int32_t)(currentTimeUs - rssiUpdateAtUs) < 0) {
         return;
     }
-    rssiUpdateAt = currentTime + DELAY_50_HZ;
+    rssiUpdateAtUs = currentTimeUs + DELAY_50_HZ;
 
     int16_t adcRssiMean = 0;
     uint16_t adcRssiSample = adcGetChannel(ADC_RSSI);
@@ -670,13 +670,13 @@ void updateRSSIADC(uint32_t currentTime)
 #endif
 }
 
-void updateRSSI(uint32_t currentTime)
+void updateRSSI(timeUs_t currentTimeUs)
 {
 
     if (rxConfig->rssi_channel > 0) {
         updateRSSIPWM();
     } else if (feature(FEATURE_RSSI_ADC)) {
-        updateRSSIADC(currentTime);
+        updateRSSIADC(currentTimeUs);
     }
 }
 

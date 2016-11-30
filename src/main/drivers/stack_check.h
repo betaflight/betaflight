@@ -17,7 +17,7 @@
 
 #pragma once
 
-void taskStackCheck(uint32_t currentTime);
+void taskStackCheck(timeUs_t currentTimeUs);
 uint32_t stackUsedSize(void);
 uint32_t stackTotalSize(void);
 uint32_t stackHighMem(void);

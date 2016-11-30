@@ -346,7 +346,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     return cnt;
 }
 
-static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
+static void cmsDrawMenu(displayPort_t *pDisplay, timeUs_t currentTimeUs)
 {
     if (!pageTop)
         return;
@@ -358,7 +358,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // Polled (dynamic) value display denominator.
 
     bool drawPolled = false;
-    static uint32_t lastPolledUs = 0;
+    static timeUs_t lastPolledUs = 0;
 
     if (currentTimeUs > lastPolledUs + CMS_POLL_INTERVAL_US) {
         drawPolled = true;
@@ -795,17 +795,17 @@ uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeat
     return ret;
 }
 
-static void cmsUpdate(uint32_t currentTimeUs)
+static void cmsUpdate(timeUs_t currentTimeUs)
 {
     static int16_t rcDelayMs = BUTTON_TIME;
     static int holdCount = 1;
     static int repeatCount = 1;
     static int repeatBase = 0;
 
-    static uint32_t lastCalledMs = 0;
-    static uint32_t lastCmsHeartBeatMs = 0;
+    static timeMs_t lastCalledMs = 0;
+    static timeMs_t lastCmsHeartBeatMs = 0;
 
-    const uint32_t currentTimeMs = currentTimeUs / 1000;
+    const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
     if (!cmsInMenu) {
         // Detect menu invocation
@@ -901,16 +901,16 @@ static void cmsUpdate(uint32_t currentTimeUs)
     lastCalledMs = currentTimeMs;
 }
 
-void cmsHandler(uint32_t currentTime)
+void cmsHandler(timeUs_t currentTimeUs)
 {
     if (cmsDeviceCount < 0)
         return;
 
-    static uint32_t lastCalled = 0;
+    static timeUs_t lastCalled = 0;
 
-    if (currentTime >= lastCalled + CMS_UPDATE_INTERVAL_US) {
-        lastCalled = currentTime;
-        cmsUpdate(currentTime);
+    if (currentTimeUs >= lastCalled + CMS_UPDATE_INTERVAL_US) {
+        lastCalled = currentTimeUs;
+        cmsUpdate(currentTimeUs);
     }
 }
 

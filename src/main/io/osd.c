@@ -602,7 +602,7 @@ static void osdArmMotors(void)
     osdResetStats();
 }
 
-static void osdRefresh(uint32_t currentTime)
+static void osdRefresh(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -643,7 +643,7 @@ static void osdRefresh(uint32_t currentTime)
         osdDrawElements();
 #ifdef OSD_CALLS_CMS
     } else {
-        cmsUpdate(currentTime);
+        cmsUpdate(currentTimeUs);
 #endif
     }
 #endif
@@ -652,7 +652,7 @@ static void osdRefresh(uint32_t currentTime)
 /*
  * Called periodically by the scheduler
  */
-void osdUpdate(uint32_t currentTime)
+void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -663,7 +663,7 @@ void osdUpdate(uint32_t currentTime)
 
     // redraw values in buffer
     if (counter++ % 5 == 0)
-        osdRefresh(currentTime);
+        osdRefresh(currentTimeUs);
     else // rest of time redraw screen 10 chars per idle to don't lock the main idle
         max7456DrawScreen();
 

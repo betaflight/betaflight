@@ -45,9 +45,9 @@ extern char _Min_Stack_Size; // declared in .LD file
 
 static uint32_t usedStackSize;
 
-void taskStackCheck(uint32_t currentTime)
+void taskStackCheck(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     char * const stackHighMem = &_estack;
     const uint32_t stackSize = (uint32_t)&_Min_Stack_Size;

@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 
+#include "common/time.h"
+
 typedef enum FlightLogFieldCondition {
     FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0,
     FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1,
@@ -122,7 +124,7 @@ typedef struct flightLogEvent_inflightAdjustment_s {
 
 typedef struct flightLogEvent_loggingResume_s {
     uint32_t logIteration;
-    uint32_t currentTime;
+    timeUs_t currentTimeUs;
 } flightLogEvent_loggingResume_t;
 
 #define FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT_FUNCTION_FLOAT_VALUE_FLAG 128

@@ -72,7 +72,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 #define DASHBOARD_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 
-static uint32_t nextDisplayUpdateAt = 0;
+static timeUs_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
 static const rxConfig_t *rxConfig;
@@ -374,7 +374,7 @@ static void showStatusPage(void)
 
 }
 
-void dashboardUpdate(uint32_t currentTime)
+void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
     static bool wasGrabbed = false;
@@ -394,13 +394,13 @@ void dashboardUpdate(uint32_t currentTime)
     pageChanging = false;
 #endif
 
-    bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
+    bool updateNow = (int32_t)(currentTimeUs - nextDisplayUpdateAt) >= 0L;
 
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = currentTime + DASHBOARD_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTimeUs + DASHBOARD_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -418,7 +418,7 @@ void dashboardUpdate(uint32_t currentTime)
             pageChanging = true;
         }
 
-        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(currentTime - nextPageAt) >= 0L)) {
+        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(currentTimeUs - nextPageAt) >= 0L)) {
             currentPageId = PAGE_STATUS;
             pageChanging = true;
         }

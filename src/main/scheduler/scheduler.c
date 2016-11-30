@@ -38,7 +38,7 @@ static cfTask_t *currentTask = NULL;
 
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static uint32_t realtimeGuardInterval;
+static timeUs_t realtimeGuardInterval;
 
 uint16_t averageSystemLoadPercent = 0;
 
@@ -123,9 +123,9 @@ STATIC_INLINE_UNIT_TESTED cfTask_t *queueNext(void)
     return taskQueueArray[++taskQueuePos]; // guaranteed to be NULL at end of queue
 }
 
-void taskSystem(uint32_t currentTime)
+void taskSystem(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     // Calculate system load
     if (totalWaitingTasksSamples > 0) {
@@ -135,7 +135,7 @@ void taskSystem(uint32_t currentTime)
     }
 
     // Calculate guard interval
-    uint32_t maxNonRealtimeTaskTime = 0;
+    timeUs_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
             maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, task->averageExecutionTime);
@@ -201,16 +201,16 @@ void schedulerInit(void)
 void scheduler(void)
 {
     // Cache currentTime
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
     // Check for realtime tasks
-    uint32_t timeToNextRealtimeTask = UINT32_MAX;
+    timeUs_t timeToNextRealtimeTask = TIMEUS_MAX;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
-        const uint32_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
-        if ((int32_t)(currentTime - nextExecuteAt) >= 0) {
+        const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
+        if ((int32_t)(currentTimeUs - nextExecuteAt) >= 0) {
             timeToNextRealtimeTask = 0;
         } else {
-            const uint32_t newTimeInterval = nextExecuteAt - currentTime;
+            const timeUs_t newTimeInterval = nextExecuteAt - currentTimeUs;
             timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
         }
     }
@@ -227,11 +227,11 @@ void scheduler(void)
         if (task->checkFunc != NULL) {
             // Increase priority for event driven tasks
             if (task->dynamicPriority > 0) {
-                task->taskAgeCycles = 1 + ((currentTime - task->lastSignaledAt) / task->desiredPeriod);
+                task->taskAgeCycles = 1 + ((currentTimeUs - task->lastSignaledAt) / task->desiredPeriod);
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
-            } else if (task->checkFunc(currentTime, currentTime - task->lastExecutedAt)) {
-                task->lastSignaledAt = currentTime;
+            } else if (task->checkFunc(currentTimeUs, currentTimeUs - task->lastExecutedAt)) {
+                task->lastSignaledAt = currentTimeUs;
                 task->taskAgeCycles = 1;
                 task->dynamicPriority = 1 + task->staticPriority;
                 waitingTasks++;
@@ -241,7 +241,7 @@ void scheduler(void)
         } else {
             // Task is time-driven, dynamicPriority is last execution age (measured in desiredPeriods)
             // Task age is calculated from last execution
-            task->taskAgeCycles = ((currentTime - task->lastExecutedAt) / task->desiredPeriod);
+            task->taskAgeCycles = ((currentTimeUs - task->lastExecutedAt) / task->desiredPeriod);
             if (task->taskAgeCycles > 0) {
                 task->dynamicPriority = 1 + task->staticPriority * task->taskAgeCycles;
                 waitingTasks++;
@@ -267,14 +267,14 @@ void scheduler(void)
 
     if (selectedTask != NULL) {
         // Found a task that should be run
-        selectedTask->taskLatestDeltaTime = currentTime - selectedTask->lastExecutedAt;
-        selectedTask->lastExecutedAt = currentTime;
+        selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
+        selectedTask->lastExecutedAt = currentTimeUs;
         selectedTask->dynamicPriority = 0;
 
         // Execute task
-        const uint32_t currentTimeBeforeTaskCall = micros();
+        const timeUs_t currentTimeBeforeTaskCall = micros();
         selectedTask->taskFunc(currentTimeBeforeTaskCall);
-        const uint32_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
+        const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
 
         selectedTask->averageExecutionTime = ((uint32_t)selectedTask->averageExecutionTime * 31 + taskExecutionTime) / 32;
 #ifndef SKIP_TASK_STATISTICS
@@ -282,9 +282,9 @@ void scheduler(void)
         selectedTask->maxExecutionTime = MAX(selectedTask->maxExecutionTime, taskExecutionTime);
 #endif
 #if defined SCHEDULER_DEBUG
-        debug[3] = (micros() - currentTime) - taskExecutionTime;
+        debug[3] = (micros() - currentTimeUs) - taskExecutionTime;
     } else {
-        debug[3] = (micros() - currentTime);
+        debug[3] = (micros() - currentTimeUs);
 #endif
     }
 }
