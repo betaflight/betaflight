@@ -66,6 +66,9 @@
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define sensorSelectionConfig(x) (&masterConfig.sensorSelectionConfig)
+#define sensorAlignmentConfig(x) (&masterConfig.sensorAlignmentConfig)
+#define sensorTrims(x) (&masterConfig.sensorTrims)
 
 // System-wide
 typedef struct master_s {

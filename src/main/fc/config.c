@@ -842,7 +842,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&masterConfig.sensorTrims.accZero);
+    setAccelerationTrims(&sensorTrims()->accZero);
     setAccelerationFilter(masterConfig.accelerometerConfig.acc_lpf_hz);
 
     mixerUseConfigs(

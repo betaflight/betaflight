@@ -1075,9 +1075,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.gyro_align);
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.acc_align);
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.mag_align);
+        sbufWriteU8(dst, sensorAlignmentConfig()->gyro_align);
+        sbufWriteU8(dst, sensorAlignmentConfig()->acc_align);
+        sbufWriteU8(dst, sensorAlignmentConfig()->mag_align);
         break;
 
     case MSP_ADVANCED_CONFIG:
@@ -1121,9 +1121,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_CONFIG:
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.acc_hardware);
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.baro_hardware);
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.mag_hardware);
+        sbufWriteU8(dst, sensorSelectionConfig()->acc_hardware);
+        sbufWriteU8(dst, sensorSelectionConfig()->baro_hardware);
+        sbufWriteU8(dst, sensorSelectionConfig()->mag_hardware);
         break;
 
     case MSP_REBOOT:
@@ -1427,9 +1427,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        masterConfig.sensorAlignmentConfig.gyro_align = sbufReadU8(src);
-        masterConfig.sensorAlignmentConfig.acc_align = sbufReadU8(src);
-        masterConfig.sensorAlignmentConfig.mag_align = sbufReadU8(src);
+        sensorAlignmentConfig()->gyro_align = sbufReadU8(src);
+        sensorAlignmentConfig()->acc_align = sbufReadU8(src);
+        sensorAlignmentConfig()->mag_align = sbufReadU8(src);
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
@@ -1481,9 +1481,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        masterConfig.sensorSelectionConfig.acc_hardware = sbufReadU8(src);
-        masterConfig.sensorSelectionConfig.baro_hardware = sbufReadU8(src);
-        masterConfig.sensorSelectionConfig.mag_hardware = sbufReadU8(src);
+        sensorSelectionConfig()->acc_hardware = sbufReadU8(src);
+        sensorSelectionConfig()->baro_hardware = sbufReadU8(src);
+        sensorSelectionConfig()->mag_hardware = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:
