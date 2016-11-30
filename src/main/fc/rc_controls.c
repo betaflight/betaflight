@@ -471,6 +471,16 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_D_SETPOINT,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_D_SETPOINT_TRANSITION,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
@@ -601,6 +611,14 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             controlRateConfig->rcYawRate8 = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
             break;
+        case ADJUSTMENT_D_SETPOINT:
+            newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 254); // FIXME magic numbers repeated in serial_cli.c
+            pidProfile->dtermSetpointWeight = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
+        case ADJUSTMENT_D_SETPOINT_TRANSITION:
+            newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            pidProfile->setpointRelaxRatio = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
         default:
             break;
     };
