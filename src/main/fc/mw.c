@@ -515,7 +515,7 @@ void processRx(uint32_t currentTime)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= masterConfig.rxConfig.airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -733,7 +733,7 @@ void subTaskMainSubprocesses(void)
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
     #ifndef USE_QUAD_MIXER_ONLY
     #ifdef USE_SERVOS
-                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
+                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
     #endif
                     && masterConfig.mixerConfig.mixerMode != MIXER_AIRPLANE
                     && masterConfig.mixerConfig.mixerMode != MIXER_FLYING_WING
@@ -801,7 +801,7 @@ void subTaskMotorUpdate(void)
 
 uint8_t setPidUpdateCountDown(void)
 {
-    if (masterConfig.gyroConfig.gyro_soft_lpf_hz) {
+    if (gyroConfig()->gyro_soft_lpf_hz) {
         return masterConfig.pid_process_denom - 1;
     } else {
         return 1;

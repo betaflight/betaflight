@@ -528,7 +528,7 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex)
 
 uint16_t getCurrentMinthrottle(void)
 {
-    return masterConfig.motorConfig.minthrottle;
+    return motorConfig()->minthrottle;
 }
 
 
@@ -842,8 +842,8 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&masterConfig.sensorTrims.accZero);
-    setAccelerationFilter(masterConfig.accelerometerConfig.acc_lpf_hz);
+    setAccelerationTrims(&sensorTrims()->accZero);
+    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
@@ -878,8 +878,8 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    if((masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) && (masterConfig.motorConfig.mincommand < 1000)){
-        masterConfig.motorConfig.mincommand = 1000;
+    if((motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) && (motorConfig()->mincommand < 1000)){
+        motorConfig()->mincommand = 1000;
     }
 
     if (!(featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_PPM) || featureConfigured(FEATURE_RX_SERIAL) || featureConfigured(FEATURE_RX_MSP) || featureConfigured(FEATURE_RX_SPI))) {
@@ -991,16 +991,16 @@ void validateAndFixConfig(void)
 void validateAndFixGyroConfig(void)
 {
     // Prevent invalid notch cutoff
-    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_1 >= masterConfig.gyroConfig.gyro_soft_notch_hz_1) {
-        masterConfig.gyroConfig.gyro_soft_notch_hz_1 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
+        gyroConfig()->gyro_soft_notch_hz_1 = 0;
     }
-    if (masterConfig.gyroConfig.gyro_soft_notch_cutoff_2 >= masterConfig.gyroConfig.gyro_soft_notch_hz_2) {
-        masterConfig.gyroConfig.gyro_soft_notch_hz_2 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
+        gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 
-    if (masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_256HZ && masterConfig.gyroConfig.gyro_lpf != GYRO_LPF_NONE) {
+    if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        masterConfig.gyroConfig.gyro_sync_denom = 1;
+        gyroConfig()->gyro_sync_denom = 1;
     }
 }
 

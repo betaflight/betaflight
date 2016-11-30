@@ -254,12 +254,12 @@ void init(void)
     servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-    uint16_t idlePulse = masterConfig.motorConfig.mincommand;
+    uint16_t idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
-        idlePulse = masterConfig.flight3DConfig.neutral3d;
+        idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
@@ -284,7 +284,7 @@ void init(void)
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
+        ppmRxInit(&masterConfig.ppmConfig, motorConfig()->motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(&masterConfig.pwmConfig);
     }
@@ -424,7 +424,7 @@ void init(void)
 #endif
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
             &masterConfig.sensorSelectionConfig,
-            masterConfig.compassConfig.mag_declination,
+            compassConfig()->mag_declination,
             &masterConfig.gyroConfig,
             sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.
@@ -465,7 +465,7 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
 

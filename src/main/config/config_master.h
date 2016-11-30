@@ -61,6 +61,21 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 
+#define motorConfig(x) (&masterConfig.motorConfig)
+#define flight3DConfig(x) (&masterConfig.flight3DConfig)
+#define servoConfig(x) (&masterConfig.servoConfig)
+#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define sensorSelectionConfig(x) (&masterConfig.sensorSelectionConfig)
+#define sensorAlignmentConfig(x) (&masterConfig.sensorAlignmentConfig)
+#define sensorTrims(x) (&masterConfig.sensorTrims)
+#define boardAlignment(x) (&masterConfig.boardAlignment)
+#define imuConfig(x) (&masterConfig.imuConfig)
+#define gyroConfig(x) (&masterConfig.gyroConfig)
+#define compassConfig(x) (&masterConfig.compassConfig)
+#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
+#define barometerConfig(x) (&masterConfig.barometerConfig)
+
 // System-wide
 typedef struct master_s {
     uint8_t version;
