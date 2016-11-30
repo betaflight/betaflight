@@ -749,6 +749,10 @@ static void resetConf(void)
     masterConfig.customMotorMixer[7].yaw = -1.0f;
 #endif
 
+#if defined(TARGET_CONFIG)
+    targetConfiguration(&masterConfig);
+#endif
+
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&masterConfig.profile[i], currentProfile, sizeof(profile_t));
