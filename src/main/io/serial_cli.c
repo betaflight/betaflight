@@ -703,7 +703,7 @@ const clivalue_t valueTable[] = {
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 #ifdef USE_DSHOT
-    { "digital_idle_offset",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.motorConfig.digitalIdleOffset, .config.minmax = { 0,  255} },
+    { "digital_idle_percent",       VAR_FLOAT  | MASTER_VALUE,  &masterConfig.motorConfig.digitalIdleOffsetPercent, .config.minmax = { 0,  20} },
 #endif
     { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
