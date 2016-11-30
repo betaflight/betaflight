@@ -703,18 +703,23 @@ void smartAudioProcess(uint32_t now)
 
 #ifdef CMS
 
+// Interface to CMS
+
 // Operational Model and RF modes (CMS)
 
-#define SA_OPMODEL_UNDEF        0 // Not known yet
-#define SA_OPMODEL_FREE         1 // Power up transmitting
-#define SA_OPMODEL_PIT          2 // Power up in pit mode
+#define SACMS_OPMODEL_UNDEF        0 // Not known yet
+#define SACMS_OPMODEL_FREE         1 // Freestyle model: Power up transmitting
+#define SACMS_OPMODEL_RACE         2 // Race model: Power up in pit mode
 
-#define SA_TXMODE_NODEF         0
-#define SA_TXMODE_PIT_OUTRANGE  1
-#define SA_TXMODE_PIT_INRANGE   2
-#define SA_TXMODE_ACTIVE        3
+uint8_t  saCmsOpmodel = SACMS_OPMODEL_UNDEF;
 
-uint8_t  saCmsOpmodel = SA_OPMODEL_UNDEF;
+#define SACMS_TXMODE_NODEF         0
+#define SACMS_TXMODE_PIT_OUTRANGE  1
+#define SACMS_TXMODE_PIT_INRANGE   2
+#define SACMS_TXMODE_ACTIVE        3
+
+uint8_t  saCmsRFState;          // RF state; ACTIVE, PIR, POR XXX Not currently used
+
 uint8_t  saCmsBand = 0;
 uint8_t  saCmsChan = 0;
 uint8_t  saCmsPower = 0;
@@ -731,26 +736,24 @@ uint16_t saCmsORFreqNew;        // POR frequency
 uint16_t saCmsUserFreq = 0;     // User defined frequency
 uint16_t saCmsUserFreqNew;      // User defined frequency
 
-uint8_t  saCmsRFState;          // RF state; ACTIVE, PIR, POR XXX Not currently used
-
 void saCmsUpdate(void)
 {
 // XXX Take care of pit mode update somewhere???
 
-    if (saCmsOpmodel == SA_OPMODEL_UNDEF) {
+    if (saCmsOpmodel == SACMS_OPMODEL_UNDEF) {
         // This is a first valid response to GET_SETTINGS.
-        saCmsOpmodel = (saDevice.mode & SA_MODE_GET_PITMODE) ? SA_OPMODEL_PIT : SA_OPMODEL_FREE;
+        saCmsOpmodel = (saDevice.mode & SA_MODE_GET_PITMODE) ? SACMS_OPMODEL_RACE : SACMS_OPMODEL_FREE;
 
         saCmsBand = (saDevice.chan / 8) + 1;
         saCmsChan = (saDevice.chan % 8) + 1;
         saCmsDeviceFreq = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
 
         if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
-            saCmsRFState = SA_TXMODE_ACTIVE;
+            saCmsRFState = SACMS_TXMODE_ACTIVE;
         } else if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE) {
-            saCmsRFState = SA_TXMODE_PIT_INRANGE;
+            saCmsRFState = SACMS_TXMODE_PIT_INRANGE;
         } else {
-            saCmsRFState = SA_TXMODE_PIT_OUTRANGE;
+            saCmsRFState = SACMS_TXMODE_PIT_OUTRANGE;
         }
 
         if (saDevice.version == 2) {
@@ -841,7 +844,7 @@ dprintf(("--> %d\r\n", saCmsBand));
     }
 dprintf(("--> %d\r\n", saCmsBand));
 
-    if (!(saCmsOpmodel == SA_OPMODEL_FREE && saDeferred))
+    if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     return 0;
@@ -864,7 +867,7 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    if (!(saCmsOpmodel == SA_OPMODEL_FREE && saDeferred))
+    if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     return 0;
@@ -918,11 +921,11 @@ static long saCmsConfigOpModelByGvar(displayPort_t *pDisp, const void *self)
     dprintf(("saCmsConfigOpModelByGvar: opmodel %d\r\n", opmodel));
 
 
-    if (opmodel == SA_OPMODEL_FREE) {
+    if (opmodel == SACMS_OPMODEL_FREE) {
         // VTX should power up transmitting.
         // Turn off In-Range and Out-Range bits
         saSetMode(0);
-    } else if (opmodel == SA_OPMODEL_PIT) {
+    } else if (opmodel == SACMS_OPMODEL_RACE) {
         // VTX should power up in pit mode.
         // Default PitFMode is in-range to prevent users without
         // out-range receivers from getting blinded.
@@ -996,7 +999,7 @@ static OSD_UINT16_t saCmsEntFreq = { &saCmsDeviceFreq, 5600, 5900, 0 };
 static const char * const saCmsOpmodelNames[] = {
     "----",
     "FREE",
-    "PIT ",
+    "RACE",
 };
 
 static const char * const saCmsFreqModeNames[] = {
@@ -1036,7 +1039,7 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (saCmsOpmodel == SA_OPMODEL_PIT) {
+    if (saCmsOpmodel == SACMS_OPMODEL_RACE) {
         if (saCmsPitFMode == 0)
             saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
         else
@@ -1073,6 +1076,15 @@ static char *saCmsORFreqGetString(void)
     static char pbuf[5];
 
     tfp_sprintf(pbuf, "%4d", saCmsORFreq);
+
+    return pbuf;
+}
+
+static char *saCmsUserFreqGetString(void)
+{
+    static char pbuf[5];
+
+    tfp_sprintf(pbuf, "%4d", saCmsUserFreq);
 
     return pbuf;
 }
@@ -1181,11 +1193,11 @@ static CMS_Menu saCmsMenuCommence = {
 static OSD_Entry saCmsMenuFreqModeEntries[] = {
     { "- SMARTAUDIO -", OME_Label, NULL, NULL, 0 },
 
-    { "",       OME_Label,   NULL,                   saCmsStatusString,  DYNAMIC },
-    { "FREQ",   OME_Submenu, cmsMenuChange,          &saCmsMenuUserFreq, 0 },
-    { "POWER",  OME_TAB,     saCmsConfigPowerByGvar, &saCmsEntPower,     0 },
-    { "SET",    OME_Submenu, cmsMenuChange,          &saCmsMenuCommence, 0 },
-    { "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig,   0 },
+    { "",       OME_Label,   NULL,                                     saCmsStatusString,  DYNAMIC },
+    { "FREQ",   OME_Submenu, (CMSEntryFuncPtr)saCmsUserFreqGetString,  &saCmsMenuUserFreq, OPTSTRING },
+    { "POWER",  OME_TAB,     saCmsConfigPowerByGvar,                   &saCmsEntPower,     0 },
+    { "SET",    OME_Submenu, cmsMenuChange,                            &saCmsMenuCommence, 0 },
+    { "CONFIG", OME_Submenu, cmsMenuChange,                            &saCmsMenuConfig,   0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
