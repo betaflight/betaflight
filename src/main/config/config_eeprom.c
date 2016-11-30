@@ -63,78 +63,24 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#if !defined(FLASH_SIZE)
-#error "Flash size not defined for target. (specify in KB)"
-#endif
-
-
 #ifndef FLASH_PAGE_SIZE
-    #ifdef STM32F303xC
+    #if defined(STM32F303xC)
         #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-
-    #ifdef STM32F10X_MD
+    #elif defined(STM32F10X_MD)
         #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-    #endif
-
-    #ifdef STM32F10X_HD
+    #elif defined(STM32F10X_HD)
         #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #endif
-
-    #if defined(STM32F40_41xxx)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-    #endif
-
-    #if defined (STM32F411xE)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
-    #endif
-
-#endif
-
-#if !defined(FLASH_SIZE) && !defined(FLASH_PAGE_COUNT)
-    #ifdef STM32F10X_MD
-        #define FLASH_PAGE_COUNT 128
-    #endif
-
-    #ifdef STM32F10X_HD
-        #define FLASH_PAGE_COUNT 128
+    #elif defined(STM32F40_41xxx)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+    #elif defined(STM32F411xE)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+    #else
+        #error "Flash page size not defined for target."
     #endif
 #endif
 
-#if defined(FLASH_SIZE)
-#if defined(STM32F40_41xxx)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
-#elif defined (STM32F411xE)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
-#else
-#define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
-#endif
-#endif
-
-#if !defined(FLASH_PAGE_SIZE)
-#error "Flash page size not defined for target."
-#endif
-
-#if !defined(FLASH_PAGE_COUNT)
-#error "Flash page count not defined for target."
-#endif
-
-#if FLASH_SIZE <= 128
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x800
-#else
-#define FLASH_TO_RESERVE_FOR_CONFIG 0x1000
-#endif
-
-// use the last flash pages for storage
-#ifdef CUSTOM_FLASH_MEMORY_ADDRESS
-size_t custom_flash_memory_address = 0;
-#define CONFIG_START_FLASH_ADDRESS (custom_flash_memory_address)
-#else
-// use the last flash pages for storage
-#ifndef CONFIG_START_FLASH_ADDRESS 
-#define CONFIG_START_FLASH_ADDRESS (0x08000000 + (uint32_t)((FLASH_PAGE_SIZE * FLASH_PAGE_COUNT) - FLASH_TO_RESERVE_FOR_CONFIG))
-#endif
-#endif
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
 
 void initEEPROM(void)
 {
@@ -152,7 +98,7 @@ static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
 
 bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) CONFIG_START_FLASH_ADDRESS;
+    const master_t *temp = (const master_t *) &__config_start;
     uint8_t checksum = 0;
 
     // check version number
@@ -172,10 +118,60 @@ bool isEEPROMContentValid(void)
     return true;
 }
 
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+/*
+Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
+Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
+Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
+Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
+Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
+Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
+Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
+Sector 8    0x08080000 - 0x0809FFFF 128 Kbytes
+Sector 9    0x080A0000 - 0x080BFFFF 128 Kbytes
+Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
+Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08003FFF)
+        return FLASH_Sector_0;
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_Sector_1;
+    if ((uint32_t)&__config_start <= 0x0800BFFF)
+        return FLASH_Sector_2;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_Sector_3;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_Sector_4;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_Sector_5;
+    if ((uint32_t)&__config_start <= 0x0805FFFF)
+        return FLASH_Sector_6;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return FLASH_Sector_7;
+    if ((uint32_t)&__config_start <= 0x0809FFFF)
+        return FLASH_Sector_8;
+    if ((uint32_t)&__config_start <= 0x080DFFFF)
+        return FLASH_Sector_9;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return FLASH_Sector_10;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_Sector_11;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
+#endif
+
 void writeEEPROM(void)
 {
     // Generate compile time error if the config does not fit in the reserved area of flash.
-    BUILD_BUG_ON(sizeof(master_t) > FLASH_TO_RESERVE_FOR_CONFIG);
+    BUILD_BUG_ON(sizeof(master_t) > ((uint32_t)&__config_end - (uint32_t)&__config_start));
 
     FLASH_Status status = 0;
     uint32_t wordOffset;
@@ -205,20 +201,17 @@ void writeEEPROM(void)
 #endif
         for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
             if (wordOffset % FLASH_PAGE_SIZE == 0) {
-#if defined(STM32F40_41xxx)
-                status = FLASH_EraseSector(FLASH_Sector_8, VoltageRange_3); //0x08080000 to 0x080A0000
-#elif defined (STM32F411xE)
-                status = FLASH_EraseSector(FLASH_Sector_7, VoltageRange_3); //0x08060000 to 0x08080000
+#if defined(STM32F40_41xxx) || defined(STM32F411xE)
+                status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
 #else
-                status = FLASH_ErasePage(CONFIG_START_FLASH_ADDRESS + wordOffset);
+                status = FLASH_ErasePage((uint32_t)&__config_start + wordOffset);
 #endif
                 if (status != FLASH_COMPLETE) {
                     break;
                 }
             }
 
-            status = FLASH_ProgramWord(CONFIG_START_FLASH_ADDRESS + wordOffset,
-                    *(uint32_t *) ((char *) &masterConfig + wordOffset));
+            status = FLASH_ProgramWord((uint32_t)&__config_start + wordOffset, *(uint32_t *) ((char *) &masterConfig + wordOffset));
             if (status != FLASH_COMPLETE) {
                 break;
             }
@@ -246,7 +239,7 @@ void readEEPROM(void)
     suspendRxSignal();
 
     // Read flash
-    memcpy(&masterConfig, (char *) CONFIG_START_FLASH_ADDRESS, sizeof(master_t));
+    memcpy(&masterConfig, (char *)&__config_start, sizeof(master_t));
 
     if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) // sanity check
         masterConfig.current_profile_index = 0;
