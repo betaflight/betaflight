@@ -438,7 +438,7 @@ static void applyMulticopterPositionController(timeUs_t currentTimeUs)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            uint32_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             if (!bypassPositionController) {
