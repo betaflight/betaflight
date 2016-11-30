@@ -166,7 +166,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
 void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
          const rollAndPitchTrims_t *angleTrim, uint16_t midrc)
 {
-    static float lastRateError[2];
+    static float previousRateError[2];
     static float previousSetpoint[3];
 
     float horizonLevelStrength = 1;
@@ -212,7 +212,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
             if (ABS(currentVelocity) > maxVelocity) {
                 setpointRate[axis] = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity : previousSetpoint[axis] - maxVelocity;
             }
-            previousSetpoint[axis] = setpointRate[axis];
         }
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
@@ -261,7 +260,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         // -----calculate D component (Yaw D not yet supported)
         float DTerm = 0.0;
         if (axis != FD_YAW) {
-            static float previousSetpoint[3];
             float dynC = c[axis];
             if (pidProfile->setpointRelaxRatio < 100) {
                 dynC = c[axis];
@@ -273,11 +271,10 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
                         dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
                 }
             }
-            previousSetpoint[axis] = setpointRate[axis];
             const float rD = dynC * setpointRate[axis] - PVRate;    // cr - y
             // Divide rate change by dT to get differential (ie dr/dt)
-            const float delta = (rD - lastRateError[axis]) / dT;
-            lastRateError[axis] = rD;
+            const float delta = (rD - previousRateError[axis]) / dT;
+            previousRateError[axis] = rD;
 
             DTerm = Kd[axis] * delta * tpaFactor;
             DEBUG_SET(DEBUG_DTERM_FILTER, axis, DTerm);
@@ -289,6 +286,7 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         } else {
             PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
         }
+        previousSetpoint[axis] = setpointRate[axis];
 
         // -----calculate total PID output
         axisPIDf[axis] = PTerm + ITerm + DTerm;
