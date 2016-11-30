@@ -755,7 +755,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(motorConfig()->maxthrottle);
             bstWrite16(motorConfig()->mincommand);
 
-            bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
+            bstWrite16(failsafeConfig()->failsafe_throttle);
 
 #ifdef GPS
             bstWrite8(gpsConfig()->provider); // gps_type
@@ -883,9 +883,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_FAILSAFE_CONFIG:
-            bstWrite8(masterConfig.failsafeConfig.failsafe_delay);
-            bstWrite8(masterConfig.failsafeConfig.failsafe_off_delay);
-            bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
+            bstWrite8(failsafeConfig()->failsafe_delay);
+            bstWrite8(failsafeConfig()->failsafe_off_delay);
+            bstWrite16(failsafeConfig()->failsafe_throttle);
             break;
 
         case BST_RXFAIL_CONFIG:
@@ -921,15 +921,15 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_CF_SERIAL_CONFIG:
             for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-                if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+                if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                     continue;
                 };
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].identifier);
-                bstWrite16(masterConfig.serialConfig.portConfigs[i].functionMask);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex);
-                bstWrite8(masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].identifier);
+                bstWrite16(serialConfig()->portConfigs[i].functionMask);
+                bstWrite8(serialConfig()->portConfigs[i].msp_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].gps_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].telemetry_baudrateIndex);
+                bstWrite8(serialConfig()->portConfigs[i].blackbox_baudrateIndex);
             }
             break;
 
@@ -1118,7 +1118,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             motorConfig()->maxthrottle = bstRead16();
             motorConfig()->mincommand = bstRead16();
 
-            masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
+            failsafeConfig()->failsafe_throttle = bstRead16();
 
     #ifdef GPS
             gpsConfig()->provider = bstRead8(); // gps_type
@@ -1290,9 +1290,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            }
            break;
         case BST_SET_FAILSAFE_CONFIG:
-           masterConfig.failsafeConfig.failsafe_delay = bstRead8();
-           masterConfig.failsafeConfig.failsafe_off_delay = bstRead8();
-           masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
+           failsafeConfig()->failsafe_delay = bstRead8();
+           failsafeConfig()->failsafe_off_delay = bstRead8();
+           failsafeConfig()->failsafe_throttle = bstRead16();
            break;
         case BST_SET_RXFAIL_CONFIG:
            {

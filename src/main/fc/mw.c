@@ -665,8 +665,8 @@ void processRx(uint32_t currentTime)
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
+                (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
 
             releaseSharedTelemetryPorts();
         } else {

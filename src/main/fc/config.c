@@ -965,7 +965,7 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(COLIBRI_RACE)
-    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP;
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) || featureConfigured(FEATURE_RX_MSP)) {
         featureClear(FEATURE_RX_PARALLEL_PWM);
         featureClear(FEATURE_RX_MSP);

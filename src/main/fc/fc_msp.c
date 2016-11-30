@@ -350,7 +350,7 @@ void initActiveBoxIds(void)
     }
 
 #ifdef TELEMETRY
-    if (feature(FEATURE_TELEMETRY) && masterConfig.telemetryConfig.telemetry_switch) {
+    if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
     }
 #endif
@@ -782,7 +782,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, motorConfig()->maxthrottle);
         sbufWriteU16(dst, motorConfig()->mincommand);
 
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
 
 #ifdef GPS
         sbufWriteU8(dst, gpsConfig()->provider); // gps_type
@@ -906,12 +906,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_FAILSAFE_CONFIG:
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_delay);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_off_delay);
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_kill_switch);
-        sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle_low_delay);
-        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_procedure);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_delay);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_off_delay);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_kill_switch);
+        sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
+        sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -948,15 +948,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_CF_SERIAL_CONFIG:
         for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
-            sbufWriteU8(dst, masterConfig.serialConfig.portConfigs[i].identifier);
-            sbufWriteU16(dst, masterConfig.serialConfig.portConfigs[i].functionMask);
-            sbufWriteU8(dst, masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex);
-            sbufWriteU8(dst, masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex);
-            sbufWriteU8(dst, masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex);
-            sbufWriteU8(dst, masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].identifier);
+            sbufWriteU16(dst, serialConfig()->portConfigs[i].functionMask);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].msp_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].gps_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].telemetry_baudrateIndex);
+            sbufWriteU8(dst, serialConfig()->portConfigs[i].blackbox_baudrateIndex);
         }
         break;
 
@@ -1341,7 +1341,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->maxthrottle = sbufReadU16(src);
         motorConfig()->mincommand = sbufReadU16(src);
 
-        masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
+        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
 
 #ifdef GPS
         gpsConfig()->provider = sbufReadU8(src); // gps_type
@@ -1691,12 +1691,12 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_FAILSAFE_CONFIG:
-        masterConfig.failsafeConfig.failsafe_delay = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_off_delay = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_throttle = sbufReadU16(src);
-        masterConfig.failsafeConfig.failsafe_kill_switch = sbufReadU8(src);
-        masterConfig.failsafeConfig.failsafe_throttle_low_delay = sbufReadU16(src);
-        masterConfig.failsafeConfig.failsafe_procedure = sbufReadU8(src);
+        failsafeConfig()->failsafe_delay = sbufReadU8(src);
+        failsafeConfig()->failsafe_off_delay = sbufReadU8(src);
+        failsafeConfig()->failsafe_throttle = sbufReadU16(src);
+        failsafeConfig()->failsafe_kill_switch = sbufReadU8(src);
+        failsafeConfig()->failsafe_throttle_low_delay = sbufReadU16(src);
+        failsafeConfig()->failsafe_procedure = sbufReadU8(src);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:

@@ -84,6 +84,11 @@
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define airplaneConfig(x) (&masterConfig.airplaneConfig)
+#define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialConfig(x) (&masterConfig.serialConfig)
+#define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ppmConfig(x) (&masterConfig.ppmConfig)
+#define pwmConfig(x) (&masterConfig.pwmConfig)
 
 
 // System-wide
