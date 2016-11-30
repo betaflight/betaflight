@@ -63,6 +63,9 @@
 
 #define motorConfig(x) (&masterConfig.motorConfig)
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
+#define servoConfig(x) (&masterConfig.servoConfig)
+#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define gimbalConfig(x) (&masterConfig.gimbalConfig)
 
 // System-wide
 typedef struct master_s {

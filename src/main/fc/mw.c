@@ -733,7 +733,7 @@ void subTaskMainSubprocesses(void)
         if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
     #ifndef USE_QUAD_MIXER_ONLY
     #ifdef USE_SERVOS
-                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
+                    && !((masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
     #endif
                     && masterConfig.mixerConfig.mixerMode != MIXER_AIRPLANE
                     && masterConfig.mixerConfig.mixerMode != MIXER_FLYING_WING
