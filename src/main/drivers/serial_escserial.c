@@ -27,14 +27,6 @@ typedef enum {
     BAUDRATE_CASTLE = 18880
 } escBaudRate_e;
 
-typedef enum {
-    PROTOCOL_SIMONK = 0,
-    PROTOCOL_BLHELI = 1,
-    PROTOCOL_KISS = 2,
-    PROTOCOL_KISSALL = 3,
-    PROTOCOL_CASTLE = 4
-} escProtocol_e;
-
 #if defined(USE_ESCSERIAL)
 
 #include "build/build_config.h"
