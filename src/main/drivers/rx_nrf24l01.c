@@ -128,8 +128,8 @@ void NRF24L01_Initialize(uint8_t baseConfig)
     standbyConfig = BV(NRF24L01_00_CONFIG_PWR_UP) | baseConfig;
     NRF24_CE_LO();
     // nRF24L01+ needs 100 milliseconds settling time from PowerOnReset to PowerDown mode
-    static const uint32_t settlingTimeUs = 100000;
-    const uint32_t currentTimeUs = micros();
+    static const timeUs_t settlingTimeUs = 100000;
+    const timeUs_t currentTimeUs = micros();
     if (currentTimeUs < settlingTimeUs) {
         delayMicroseconds(settlingTimeUs - currentTimeUs);
     }

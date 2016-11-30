@@ -387,7 +387,7 @@ int16_t applyFixedWingMinSpeedController(timeUs_t currentTimeUs)
     return throttleSpeedAdjustment;
 }
 
-void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
+void applyFixedWingPitchRollThrottleController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)
 {
     int16_t pitchCorrection = 0;        // >0 climb, <0 dive
     int16_t rollCorrection = 0;         // >0 right, <0 left
@@ -488,7 +488,7 @@ void resetFixedWingHeadingController(void)
     updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.actualState.yaw));
 }
 
-void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
+void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)
 {
     if (navStateFlags & NAV_CTL_LAUNCH) {
         applyFixedWingLaunchController(currentTimeUs);

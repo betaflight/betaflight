@@ -339,7 +339,7 @@ bool adjustMulticopterAltitudeFromRCInput(void);
 bool adjustMulticopterHeadingFromRCInput(void);
 bool adjustMulticopterPositionFromRCInput(void);
 
-void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs);
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs);
 
 void resetFixedWingLandingDetector(void);
 void resetMulticopterLandingDetector(void);
@@ -360,7 +360,7 @@ bool adjustFixedWingAltitudeFromRCInput(void);
 bool adjustFixedWingHeadingFromRCInput(void);
 bool adjustFixedWingPositionFromRCInput(void);
 
-void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs);
+void applyFixedWingNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs);
 
 void calculateFixedWingInitialHoldPosition(t_fp_vector * pos);
 

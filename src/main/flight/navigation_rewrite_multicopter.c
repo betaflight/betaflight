@@ -619,7 +619,7 @@ static void applyMulticopterHeadingController(void)
     updateMagHoldHeading(CENTIDEGREES_TO_DEGREES(posControl.desiredState.yaw));
 }
 
-void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, uint32_t currentTimeUs)
+void applyMulticopterNavigationController(navigationFSMStateFlags_t navStateFlags, timeUs_t currentTimeUs)
 {
     if (navStateFlags & NAV_CTL_EMERG) {
         applyMulticopterEmergencyLandingController(currentTimeUs);

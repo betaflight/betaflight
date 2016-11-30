@@ -346,7 +346,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     return cnt;
 }
 
-static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
+static void cmsDrawMenu(displayPort_t *pDisplay, timeUs_t currentTimeUs)
 {
     if (!pageTop)
         return;
@@ -358,7 +358,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // Polled (dynamic) value display denominator.
 
     bool drawPolled = false;
-    static uint32_t lastPolledUs = 0;
+    static timeUs_t lastPolledUs = 0;
 
     if (currentTimeUs > lastPolledUs + CMS_POLL_INTERVAL_US) {
         drawPolled = true;
