@@ -124,7 +124,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
@@ -197,7 +197,7 @@ static void taskTelemetry(uint32_t currentTime)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTime, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
     }
 }
 #endif

@@ -1062,16 +1062,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_3D:
-        sbufWriteU16(dst, masterConfig.flight3DConfig.deadband3d_low);
-        sbufWriteU16(dst, masterConfig.flight3DConfig.deadband3d_high);
-        sbufWriteU16(dst, masterConfig.flight3DConfig.neutral3d);
+        sbufWriteU16(dst, flight3DConfig()->deadband3d_low);
+        sbufWriteU16(dst, flight3DConfig()->deadband3d_high);
+        sbufWriteU16(dst, flight3DConfig()->neutral3d);
         break;
 
     case MSP_RC_DEADBAND:
         sbufWriteU8(dst, masterConfig.rcControlsConfig.deadband);
         sbufWriteU8(dst, masterConfig.rcControlsConfig.yaw_deadband);
         sbufWriteU8(dst, masterConfig.rcControlsConfig.alt_hold_deadband);
-        sbufWriteU16(dst, masterConfig.flight3DConfig.deadband3d_throttle);
+        sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
     case MSP_SENSOR_ALIGNMENT:
@@ -1410,16 +1410,16 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_3D:
-        masterConfig.flight3DConfig.deadband3d_low = sbufReadU16(src);
-        masterConfig.flight3DConfig.deadband3d_high = sbufReadU16(src);
-        masterConfig.flight3DConfig.neutral3d = sbufReadU16(src);
+        flight3DConfig()->deadband3d_low = sbufReadU16(src);
+        flight3DConfig()->deadband3d_high = sbufReadU16(src);
+        flight3DConfig()->neutral3d = sbufReadU16(src);
         break;
 
     case MSP_SET_RC_DEADBAND:
         masterConfig.rcControlsConfig.deadband = sbufReadU8(src);
         masterConfig.rcControlsConfig.yaw_deadband = sbufReadU8(src);
         masterConfig.rcControlsConfig.alt_hold_deadband = sbufReadU8(src);
-        masterConfig.flight3DConfig.deadband3d_throttle = sbufReadU16(src);
+        flight3DConfig()->deadband3d_throttle = sbufReadU16(src);
         break;
 
     case MSP_SET_RESET_CURR_PID:

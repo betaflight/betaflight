@@ -898,7 +898,7 @@ bool inMotorTestMode(void) {
     static uint32_t resetTime = 0;
     uint16_t inactiveMotorCommand;
     if (feature(FEATURE_3D)) {
-       inactiveMotorCommand = masterConfig.flight3DConfig.neutral3d;
+       inactiveMotorCommand = flight3DConfig()->neutral3d;
 #ifdef USE_DSHOT
     } else if (isMotorProtocolDshot()) {
        inactiveMotorCommand = DSHOT_DISARM_COMMAND;

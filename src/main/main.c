@@ -256,7 +256,7 @@ void init(void)
 
     uint16_t idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
-        idlePulse = masterConfig.flight3DConfig.neutral3d;
+        idlePulse = flight3DConfig()->neutral3d;
     }
 
     if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
@@ -465,7 +465,7 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
 

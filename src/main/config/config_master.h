@@ -62,6 +62,7 @@
 #include "sensors/compass.h"
 
 #define motorConfig(x) (&masterConfig.motorConfig)
+#define flight3DConfig(x) (&masterConfig.flight3DConfig)
 
 // System-wide
 typedef struct master_s {
