@@ -244,7 +244,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -3978,7 +3978,7 @@ static void cliResource(char *cmdline)
                 pin = atoi(pch);
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
-                    if (rec) { 
+                    if (rec) {
 #ifndef CLI_MINIMAL_VERBOSITY
                         if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
                             return;
