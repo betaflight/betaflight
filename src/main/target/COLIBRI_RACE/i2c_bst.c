@@ -708,6 +708,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
                 bstWrite8(currentProfile->pidProfile.I8[i]);
                 bstWrite8(currentProfile->pidProfile.D8[i]);
             }
+            pidInitConfig(&currentProfile->pidProfile);
             break;
         case BST_PIDNAMES:
             bstWriteNames(pidnames);
