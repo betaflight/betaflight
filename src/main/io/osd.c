@@ -508,9 +508,10 @@ static void osdResetStats(void)
 
 static void osdUpdateStats(void)
 {
-    int16_t value;
-
+    int16_t value = 0;
+#ifdef GPS
     value = GPS_speed * 36 / 1000;
+#endif
     if (stats.max_speed < value)
         stats.max_speed = value;
 
