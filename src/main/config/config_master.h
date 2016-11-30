@@ -75,6 +75,11 @@
 #define compassConfig(x) (&masterConfig.compassConfig)
 #define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
 #define barometerConfig(x) (&masterConfig.barometerConfig)
+#define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
+#define batteryConfig(x) (&masterConfig.batteryConfig)
+#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
+#define gpsProfile(x) (&masterConfig.gpsProfile)
+#define gpsConfig(x) (&masterConfig.gpsConfig)
 
 // System-wide
 typedef struct master_s {

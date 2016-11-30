@@ -284,19 +284,19 @@ void updateRcCommands(void)
 
         int32_t tmp = MIN(ABS(rcData[axis] - masterConfig.rxConfig.midrc), 500);
         if (axis == ROLL || axis == PITCH) {
-            if (tmp > masterConfig.rcControlsConfig.deadband) {
-                tmp -= masterConfig.rcControlsConfig.deadband;
+            if (tmp > rcControlsConfig()->deadband) {
+                tmp -= rcControlsConfig()->deadband;
             } else {
                 tmp = 0;
             }
             rcCommand[axis] = tmp;
         } else if (axis == YAW) {
-            if (tmp > masterConfig.rcControlsConfig.yaw_deadband) {
-                tmp -= masterConfig.rcControlsConfig.yaw_deadband;
+            if (tmp > rcControlsConfig()->yaw_deadband) {
+                tmp -= rcControlsConfig()->yaw_deadband;
             } else {
                 tmp = 0;
             }
-            rcCommand[axis] = tmp * -masterConfig.rcControlsConfig.yaw_control_direction;
+            rcCommand[axis] = tmp * -rcControlsConfig()->yaw_control_direction;
         }
         if (rcData[axis] < masterConfig.rxConfig.midrc) {
             rcCommand[axis] = -rcCommand[axis];
@@ -484,7 +484,7 @@ void updateMagHold(void)
             dif += 360;
         if (dif >= +180)
             dif -= 360;
-        dif *= -masterConfig.rcControlsConfig.yaw_control_direction;
+        dif *= -rcControlsConfig()->yaw_control_direction;
         if (STATE(SMALL_ANGLE))
             rcCommand[YAW] -= dif * currentProfile->pidProfile.P8[PIDMAG] / 30;    // 18 deg
     } else
@@ -743,8 +743,8 @@ void subTaskMainSubprocesses(void)
             setpointRate[YAW] = 0;
         }
 
-        if (masterConfig.throttleCorrectionConfig.throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(masterConfig.throttleCorrectionConfig.throttle_correction_value);
+        if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
         }
 
         processRcCommand();

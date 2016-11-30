@@ -139,8 +139,8 @@ bool escTelemetryInit(void)
 
     if (escTelemetryPort) {
         escTelemetryEnabled = true;
-        masterConfig.batteryConfig.currentMeterType = CURRENT_SENSOR_ESC;
-        masterConfig.batteryConfig.batteryMeterType = BATTERY_SENSOR_ESC;
+        batteryConfig()->currentMeterType = CURRENT_SENSOR_ESC;
+        batteryConfig()->batteryMeterType = BATTERY_SENSOR_ESC;
     }
 
     return escTelemetryPort != NULL;

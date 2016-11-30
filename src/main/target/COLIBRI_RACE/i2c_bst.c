@@ -677,7 +677,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8((uint8_t)constrain(vbat, 0, 255));
             bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
-            if(masterConfig.batteryConfig.multiwiiCurrentMeterOutput) {
+            if(batteryConfig()->multiwiiCurrentMeterOutput) {
                 bstWrite16((uint16_t)constrain(amperage * 10, 0, 0xFFFF)); // send amperage in 0.001 A steps. Negative range is truncated to zero
             } else
                 bstWrite16((int16_t)constrain(amperage, -0x8000, 0x7FFF)); // send amperage in 0.01 A steps, range is -320A to 320A
@@ -758,24 +758,24 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
 
 #ifdef GPS
-            bstWrite8(masterConfig.gpsConfig.provider); // gps_type
+            bstWrite8(gpsConfig()->provider); // gps_type
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
-            bstWrite8(masterConfig.gpsConfig.sbasMode); // gps_ubx_sbas
+            bstWrite8(gpsConfig()->sbasMode); // gps_ubx_sbas
 #else
             bstWrite8(0); // gps_type
             bstWrite8(0); // TODO gps_baudrate (an index, cleanflight uses a uint32_t
             bstWrite8(0); // gps_ubx_sbas
 #endif
-            bstWrite8(masterConfig.batteryConfig.multiwiiCurrentMeterOutput);
+            bstWrite8(batteryConfig()->multiwiiCurrentMeterOutput);
             bstWrite8(masterConfig.rxConfig.rssi_channel);
             bstWrite8(0);
 
             bstWrite16(compassConfig()->mag_declination / 10);
 
-            bstWrite8(masterConfig.batteryConfig.vbatscale);
-            bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(batteryConfig()->vbatmincellvoltage);
+            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             break;
         case BST_MOTOR_PINS:
              // FIXME This is hardcoded and should not be.
@@ -855,17 +855,17 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
 
         case BST_VOLTAGE_METER_CONFIG:
-            bstWrite8(masterConfig.batteryConfig.vbatscale);
-            bstWrite8(masterConfig.batteryConfig.vbatmincellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatmaxcellvoltage);
-            bstWrite8(masterConfig.batteryConfig.vbatwarningcellvoltage);
+            bstWrite8(batteryConfig()->vbatscale);
+            bstWrite8(batteryConfig()->vbatmincellvoltage);
+            bstWrite8(batteryConfig()->vbatmaxcellvoltage);
+            bstWrite8(batteryConfig()->vbatwarningcellvoltage);
             break;
 
         case BST_CURRENT_METER_CONFIG:
-            bstWrite16(masterConfig.batteryConfig.currentMeterScale);
-            bstWrite16(masterConfig.batteryConfig.currentMeterOffset);
-            bstWrite8(masterConfig.batteryConfig.currentMeterType);
-            bstWrite16(masterConfig.batteryConfig.batteryCapacity);
+            bstWrite16(batteryConfig()->currentMeterScale);
+            bstWrite16(batteryConfig()->currentMeterOffset);
+            bstWrite8(batteryConfig()->currentMeterType);
+            bstWrite16(batteryConfig()->batteryCapacity);
             break;
 
         case BST_MIXER:
@@ -915,8 +915,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite16(boardAlignment()->pitchDegrees);
             bstWrite16(boardAlignment()->yawDegrees);
 
-            bstWrite16(masterConfig.batteryConfig.currentMeterScale);
-            bstWrite16(masterConfig.batteryConfig.currentMeterOffset);
+            bstWrite16(batteryConfig()->currentMeterScale);
+            bstWrite16(batteryConfig()->currentMeterOffset);
             break;
 
         case BST_CF_SERIAL_CONFIG:
@@ -972,10 +972,10 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite32(0); // future exp
             break;
         case BST_DEADBAND:
-            bstWrite8(masterConfig.rcControlsConfig.alt_hold_deadband);
-            bstWrite8(masterConfig.rcControlsConfig.alt_hold_fast_change);
-            bstWrite8(masterConfig.rcControlsConfig.deadband);
-            bstWrite8(masterConfig.rcControlsConfig.yaw_deadband);
+            bstWrite8(rcControlsConfig()->alt_hold_deadband);
+            bstWrite8(rcControlsConfig()->alt_hold_fast_change);
+            bstWrite8(rcControlsConfig()->deadband);
+            bstWrite8(rcControlsConfig()->yaw_deadband);
             break;
         case BST_FC_FILTERS:
             bstWrite16(constrain(gyroConfig()->gyro_lpf, 0, 1)); // Extra safety to prevent OSD setting corrupt values
@@ -1121,24 +1121,24 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
 
     #ifdef GPS
-            masterConfig.gpsConfig.provider = bstRead8(); // gps_type
+            gpsConfig()->provider = bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
-            masterConfig.gpsConfig.sbasMode = bstRead8(); // gps_ubx_sbas
+            gpsConfig()->sbasMode = bstRead8(); // gps_ubx_sbas
     #else
             bstRead8(); // gps_type
             bstRead8(); // gps_baudrate
             bstRead8(); // gps_ubx_sbas
     #endif
-            masterConfig.batteryConfig.multiwiiCurrentMeterOutput = bstRead8();
+            batteryConfig()->multiwiiCurrentMeterOutput = bstRead8();
             masterConfig.rxConfig.rssi_channel = bstRead8();
             bstRead8();
 
             compassConfig()->mag_declination = bstRead16() * 10;
 
-            masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
-            masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+            batteryConfig()->vbatscale = bstRead8();           // actual vbatscale as intended
+            batteryConfig()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfig()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfig()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
@@ -1260,16 +1260,16 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             boardAlignment()->yawDegrees = bstRead16();
             break;
         case BST_SET_VOLTAGE_METER_CONFIG:
-            masterConfig.batteryConfig.vbatscale = bstRead8();           // actual vbatscale as intended
-            masterConfig.batteryConfig.vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
-            masterConfig.batteryConfig.vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
+            batteryConfig()->vbatscale = bstRead8();           // actual vbatscale as intended
+            batteryConfig()->vbatmincellvoltage = bstRead8();  // vbatlevel_warn1 in MWC2.3 GUI
+            batteryConfig()->vbatmaxcellvoltage = bstRead8();  // vbatlevel_warn2 in MWC2.3 GUI
+            batteryConfig()->vbatwarningcellvoltage = bstRead8();  // vbatlevel when buzzer starts to alert
             break;
         case BST_SET_CURRENT_METER_CONFIG:
-            masterConfig.batteryConfig.currentMeterScale = bstRead16();
-            masterConfig.batteryConfig.currentMeterOffset = bstRead16();
-            masterConfig.batteryConfig.currentMeterType = bstRead8();
-            masterConfig.batteryConfig.batteryCapacity = bstRead16();
+            batteryConfig()->currentMeterScale = bstRead16();
+            batteryConfig()->currentMeterOffset = bstRead16();
+            batteryConfig()->currentMeterType = bstRead8();
+            batteryConfig()->batteryCapacity = bstRead16();
             break;
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -1332,8 +1332,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            boardAlignment()->pitchDegrees = bstRead16(); // board_align_pitch
            boardAlignment()->yawDegrees = bstRead16(); // board_align_yaw
 
-           masterConfig.batteryConfig.currentMeterScale = bstRead16();
-           masterConfig.batteryConfig.currentMeterOffset = bstRead16();
+           batteryConfig()->currentMeterScale = bstRead16();
+           batteryConfig()->currentMeterOffset = bstRead16();
            break;
         case BST_SET_CF_SERIAL_CONFIG:
            {
@@ -1399,10 +1399,10 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 DISABLE_ARMING_FLAG(PREVENT_ARMING);
             break;
         case BST_SET_DEADBAND:
-            masterConfig.rcControlsConfig.alt_hold_deadband = bstRead8();
-            masterConfig.rcControlsConfig.alt_hold_fast_change = bstRead8();
-            masterConfig.rcControlsConfig.deadband = bstRead8();
-            masterConfig.rcControlsConfig.yaw_deadband = bstRead8();
+            rcControlsConfig()->alt_hold_deadband = bstRead8();
+            rcControlsConfig()->alt_hold_fast_change = bstRead8();
+            rcControlsConfig()->deadband = bstRead8();
+            rcControlsConfig()->yaw_deadband = bstRead8();
             break;
         case BST_SET_FC_FILTERS:
             gyroConfig()->gyro_lpf = bstRead16();
