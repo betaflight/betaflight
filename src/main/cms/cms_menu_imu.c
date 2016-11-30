@@ -130,6 +130,7 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
         masterConfig.profile[profileIndex].pidProfile.I8[i] = tempPid[i][1];
         masterConfig.profile[profileIndex].pidProfile.D8[i] = tempPid[i][2];
     }
+    pidInitConfig(&currentProfile->pidProfile);
 
     return 0;
 }
@@ -248,6 +249,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 
     masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
     masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio = cmsx_setpointRelaxRatio;
+    pidInitConfig(&currentProfile->pidProfile);
 
     masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = cmsx_angleStrength;
     masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = cmsx_horizonStrength;

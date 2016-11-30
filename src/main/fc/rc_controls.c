@@ -579,7 +579,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         case ADJUSTMENT_ROLL_D:
             newValue = constrain((int)pidProfile->D8[PIDROLL] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDROLL] = newValue;
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_D, newValue);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_D, newValue);
             break;
         case ADJUSTMENT_YAW_P:
             newValue = constrain((int)pidProfile->P8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
@@ -676,7 +676,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
                 continue;
             }
 
-            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            applyStepAdjustment(controlRateConfig,adjustmentFunction,delta);
+            pidInitConfig(pidProfile);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
