@@ -284,6 +284,7 @@ void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
+        activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
     }
 
 #ifdef BARO
@@ -293,9 +294,8 @@ void initActiveBoxIds(void)
 #endif
 
 #ifdef MAG
-    if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
+    if (sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
-        activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
 #endif
