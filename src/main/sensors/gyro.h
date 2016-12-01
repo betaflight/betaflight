@@ -37,7 +37,6 @@ typedef enum {
 
 extern gyro_t gyro;
 
-extern int32_t gyroADC[XYZ_AXIS_COUNT];
 extern float gyroADCf[XYZ_AXIS_COUNT];
 
 typedef struct gyroConfig_s {

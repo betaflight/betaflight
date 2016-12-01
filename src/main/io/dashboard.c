@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -495,7 +496,7 @@ void showSensorsPage(void)
     }
 
     if (sensors(SENSOR_GYRO)) {
-        tfp_sprintf(lineBuffer, format, "GYR", gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        tfp_sprintf(lineBuffer, format, "GYR", lrintf(gyroADCf[X]), lrintf(gyroADCf[Y]), lrintf(gyroADCf[Z]));
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
