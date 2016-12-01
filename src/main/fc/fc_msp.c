@@ -1204,7 +1204,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentProfile->pidProfile.D8[i] = sbufReadU8(src);
         }
         schedulePidGainsUpdate();
+#if defined(NAV)
         navigationUsePIDs(&currentProfile->pidProfile);
+#endif
         break;
 
     case MSP_SET_MODE_RANGE:
