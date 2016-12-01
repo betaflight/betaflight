@@ -208,10 +208,10 @@ void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
 
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
-        // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present. 
-        //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure, 
-        // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position, 
-        // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization, 
+        // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
+        //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
+        // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
+        // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
         // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
         onboardControlAndSensors,
         // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled

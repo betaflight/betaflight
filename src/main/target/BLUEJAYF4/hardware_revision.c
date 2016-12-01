@@ -52,9 +52,9 @@ void detectHardwareRevision(void)
     // Check hardware revision
     delayMicroseconds(10);  // allow configuration to settle
 
-    /* 
+    /*
         if both PB12 and 13 are tied to GND then it is Rev3A (mini)
-        if only PB12 is tied to GND then it is a Rev3 (full size) 
+        if only PB12 is tied to GND then it is a Rev3 (full size)
     */
     if (!IORead(pin1)) {
         if (!IORead(pin2)) {
@@ -67,10 +67,10 @@ void detectHardwareRevision(void)
         hardwareRevision = BJF4_REV2;
         return;
     }
-    
-    /* 
+
+    /*
         enable the UART1 inversion PC9
-        
+
         TODO: once param groups are in place, inverter outputs
         can be moved to be simple IO outputs, and merely set them
         HI or LO in configuration.
@@ -78,7 +78,7 @@ void detectHardwareRevision(void)
     IO_t uart1invert = IOGetByTag(IO_TAG(PC9));
     IOInit(uart1invert, OWNER_INVERTER, RESOURCE_OUTPUT, 2);
     IOConfigGPIO(uart1invert, IOCFG_AF_PP);
-    IOLo(uart1invert);    
+    IOLo(uart1invert);
 }
 
 void updateHardwareRevision(void)
@@ -86,8 +86,8 @@ void updateHardwareRevision(void)
     if (hardwareRevision != BJF4_REV2) {
         return;
     }
-    
-    /* 
+
+    /*
         if flash exists on PB3 then Rev1
     */
     if (m25p16_init(IO_TAG(PB3))) {

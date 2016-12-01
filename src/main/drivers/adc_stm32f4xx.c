@@ -37,8 +37,8 @@
 #endif
 
 const adcDevice_t adcHardware[] = {
-    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 }, 
-    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 } 
+    { .ADCx = ADC1, .rccADC = RCC_APB2(ADC1), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream4, .channel = DMA_Channel_0 },
+    //{ .ADCx = ADC2, .rccADC = RCC_APB2(ADC2), .rccDMA = RCC_AHB1(DMA2), .DMAy_Streamx = DMA2_Stream1, .channel = DMA_Channel_0 }
 };
 
 /* note these could be packed up for saving space */
@@ -126,7 +126,7 @@ void adcInit(drv_adc_config_t *init)
     if (device == ADCINVALID)
         return;
 
-    adcDevice_t adc = adcHardware[device];  
+    adcDevice_t adc = adcHardware[device];
 
     for (uint8_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
         if (!adcConfig[i].tag)

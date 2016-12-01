@@ -101,7 +101,7 @@ typedef struct navConfig_s {
             uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
             uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
             uint8_t rth_tail_first;             // Return to home tail first
-            uint8_t disarm_on_landing;          // 
+            uint8_t disarm_on_landing;          //
         } flags;
 
         uint8_t  pos_failure_timeout;           // Time to wait before switching to emergency landing (0 - disable)
@@ -134,7 +134,7 @@ typedef struct navConfig_s {
         uint8_t  pitch_to_throttle;          // Pitch angle (in deg) to throttle gain (in 1/1000's of throttle) (*10)
         uint8_t  roll_to_pitch;              // Roll to pitch compensation (in %)
         uint16_t loiter_radius;              // Loiter radius when executing PH on a fixed wing
-        
+
         uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
         uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
         uint16_t launch_throttle;            // Launch throttle

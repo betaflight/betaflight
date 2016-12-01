@@ -530,7 +530,7 @@ void blackboxWriteFloat(float value)
 
 /**
  * If there is data waiting to be written to the blackbox device, attempt to write (a portion of) that now.
- * 
+ *
  * Intended to be called regularly for the blackbox device to perform housekeeping.
  */
 void blackboxDeviceFlush(void)

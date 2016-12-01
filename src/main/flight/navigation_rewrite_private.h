@@ -202,7 +202,7 @@ typedef enum {
     NAV_STATE_EMERGENCY_LANDING_INITIALIZE,     // 29
     NAV_STATE_EMERGENCY_LANDING_IN_PROGRESS,    // 30
     NAV_STATE_EMERGENCY_LANDING_FINISHED,       // 31
-    
+
     NAV_STATE_LAUNCH_INITIALIZE,                // 32
     NAV_STATE_LAUNCH_WAIT,                      // 33
     NAV_STATE_LAUNCH_MOTOR_DELAY,               // 34

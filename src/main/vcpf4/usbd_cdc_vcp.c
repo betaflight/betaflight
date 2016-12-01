@@ -19,8 +19,8 @@
  ******************************************************************************
  */
 
-#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED 
-#pragma     data_alignment = 4 
+#ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
+#pragma     data_alignment = 4
 #endif /* USB_OTG_HS_INTERNAL_DMA_ENABLED */
 
 /* Includes ------------------------------------------------------------------*/
@@ -34,7 +34,7 @@ LINE_CODING g_lc;
 extern __IO uint8_t USB_Tx_State;
 __IO uint32_t bDeviceState = UNCONNECTED; /* USB device status */
 
-/* These are external variables imported from CDC core to be used for IN 
+/* These are external variables imported from CDC core to be used for IN
  transfer management. */
 extern uint8_t APP_Rx_Buffer[]; /* Write CDC received data in this buffer.
  These data will be sent over USB IN endpoint
@@ -105,7 +105,7 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
     assert_param(Len>=sizeof(LINE_CODING));
 
     switch (Cmd) {
-       /* Not  needed for this driver, AT modem commands */   
+       /* Not  needed for this driver, AT modem commands */
       case SEND_ENCAPSULATED_COMMAND:
       case GET_ENCAPSULATED_RESPONSE:
          break;
@@ -116,18 +116,18 @@ static uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t* Buf, uint32_t Len)
       case CLEAR_COMM_FEATURE:
          break;
 
- 
+
       //Note - hw flow control on UART 1-3 and 6 only
-      case SET_LINE_CODING: 
+      case SET_LINE_CODING:
          ust_cpy(&g_lc, plc);           //Copy into structure to save for later
          break;
- 
- 
+
+
       case GET_LINE_CODING:
          ust_cpy(plc, &g_lc);
          break;
 
- 
+
       case SET_CONTROL_LINE_STATE:
          /* Not  needed for this driver */
          //RSW - This tells how to set RTS and DTR
