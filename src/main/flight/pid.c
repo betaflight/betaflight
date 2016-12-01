@@ -134,13 +134,14 @@ Rate 20 means 200dps at full stick deflection
 */
 float pidRateToRcCommand(float rateDPS, uint8_t rate)
 {
-    const float rateDPS_10 = constrainf(rateDPS / 10.0f, (float) -rate, (float) rate);
-    return scaleRangef(rateDPS_10, (float) -rate, (float) rate, -500.0f, 500.0f);
+    const float maxRateDPS = rate * 10.0f;
+    return scaleRangef(rateDPS, -maxRateDPS, maxRateDPS, -500.0f, 500.0f);
 }
 
 float pidRcCommandToRate(int16_t stick, uint8_t rate)
 {
-    return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
+    const float maxRateDPS = rate * 10.0f;
+    return scaleRangef((float) stick, -500.0f, 500.0f, -maxRateDPS, maxRateDPS);
 }
 
 /*
