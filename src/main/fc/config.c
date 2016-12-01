@@ -503,7 +503,7 @@ void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
 #if defined(RSSI_SOFTPWM_PIN)
     rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
 #else
-    rssiSoftPwmConfig->ioTag = IO_TAG(IO_TAG_NONE);
+    rssiSoftPwmConfig->ioTag = IO_TAG(NONE);
 #endif
 
     rssiSoftPwmConfig->device = RXTYPE_FRSKY_X4R;

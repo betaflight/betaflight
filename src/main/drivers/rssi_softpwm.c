@@ -13,6 +13,7 @@
 #include "platform.h"
 
 #include "build/build_config.h"
+#include "build/atomic.h"
 #include "build/debug.h"
 
 #include "common/maths.h"
@@ -55,25 +56,26 @@ static uint16_t rspValue;
 static uint16_t pulseMin;
 static uint16_t pulseMax;
 
+static bool timerRunning = false;
+
 static void rspExtiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 
-    static bool running = false;
     static uint32_t timeStart;
 
     if (!rspInProgress)
         return;
 
-    if (!running) {
+    if (!timerRunning) {
         timeStart = micros();
-        EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Falling);
-        running = true;
+        EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Falling);
+        timerRunning = true;
     } else {
         rawWidth = micros() - timeStart;
         EXTIEnable(rspIO, false);
         rspInProgress = false;
-        running = false;
+        timerRunning = false;
     }
 }
 
@@ -168,7 +170,7 @@ bool rssiSoftPwmInit(void)
     IOConfigGPIO(rspIO, IOCFG_IN_FLOATING);
 
     EXTIHandlerInit(&rsp_extiCallbackRec, rspExtiHandler);
-    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
+    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
 
     rxtype = masterConfig.rssiSoftPwmConfig.device;
 
@@ -202,29 +204,41 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     UNUSED(currentTime);
 
     uint32_t value;
+    bool longPulse = false;
+    uint8_t longValue;
 
     if (!rspInitialized) {
         return;
     }
 
-    if (rspInProgress) {
-        // Measurement in progress
-        // XXX Check for non-interrupting case!?
-        return;
+    ATOMIC_BLOCK(NVIC_PRIO_SOFTPWM_EXTI) {
+        if (rspInProgress) {
+            // No falling edge has been detected for a scheduling interval.
+            // Remember the pin level and disable interrupt.
+            longValue = IORead(rspIO);
+            longPulse = true;
+            rspInProgress = false;
+            EXTIEnable(rspIO, false);
+            timerRunning = false;
+        }
     }
 
     if (!rspActive) {
         // Dodge the first call.
         rspActive = true;
     } else {
-        rspComputePulse();
+        if (longPulse) {
+            pulseWidth = longValue ? pulseMax : pulseMin;
+        } else {
+            rspComputePulse();
+        }
 
         if (pulseWidth >= pulseMin && pulseWidth <= pulseMax) {
 
-          // Valid duration, compute the scaled value.
+            // Valid duration, compute the scaled value.
 
           value = scaleRange(pulseWidth, pulseMin, pulseMax,
-                        RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
+                            RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
         } else {
             value = 0;
         }
@@ -246,7 +260,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     // Start a new measurement
 
     rspInProgress = true;
-    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_INTPWM_EXTI, EXTI_Trigger_Rising);
+    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(rspIO, true);
 }
 

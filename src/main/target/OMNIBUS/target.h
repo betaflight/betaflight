@@ -199,6 +199,7 @@
 
 // RSSI_PWM uses interrupt based PWM input
 #define USE_RSSI_SOFTPWM       // Interrupt based measurements
-//#define RSSI_SOFTPWM_PIN      PB2 // Requires 1K inline to be bypassed.
-//#define RSSI_SOFTPWM_PIN      PB4 // Shared with PPM
-#define RSSI_SOFTPWM_PIN      PB6 // Shared with PWM8 & I2C
+//#define RSSI_SOFTPWM_PIN      PB2 // Requires 1K inline to be bypassed?
+//#define RSSI_SOFTPWM_PIN      PB4 // Shared with PPM (OK)
+//#define RSSI_SOFTPWM_PIN      PB6 // Shared with PWM8 & I2C (OK)
+#define RSSI_SOFTPWM_PIN      NONE
