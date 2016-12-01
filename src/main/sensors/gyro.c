@@ -39,7 +39,6 @@
 gyro_t gyro;                      // gyro access functions
 
 static int32_t gyroADC[XYZ_AXIS_COUNT];
-float gyroADCf[XYZ_AXIS_COUNT];
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
@@ -190,10 +189,6 @@ void gyroUpdate(void)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        gyroADC[axis] -= gyroZero[axis];
-        // scale gyro output to degrees per second
-        gyroADCf[axis] = (float)gyroADC[axis] * gyro.dev.scale;
-
         gyroADC[axis] -= gyroZero[axis];
         // scale gyro output to degrees per second
         gyro.gyroADCf[axis] = (float)gyroADC[axis] * gyro.dev.scale;
