@@ -1,7 +1,7 @@
 /* Copyright spell goes here */
 
 //
-// Interrupt based FrSky PWM RSSI
+// Interrupt based (sloppy) FrSky PWM RSSI
 //
 
 #include <stdbool.h>
