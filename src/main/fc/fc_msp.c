@@ -963,7 +963,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef LED_STRIP
     case MSP_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
+            hsvColor_t *color = &ledStripConfig()->colors[i];
             sbufWriteU16(dst, color->h);
             sbufWriteU8(dst, color->s);
             sbufWriteU8(dst, color->v);
@@ -972,7 +972,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_LED_STRIP_CONFIG:
         for (int i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
             sbufWriteU32(dst, *ledConfig);
         }
         break;
@@ -982,19 +982,19 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             for (int j = 0; j < LED_DIRECTION_COUNT; j++) {
                 sbufWriteU8(dst, i);
                 sbufWriteU8(dst, j);
-                sbufWriteU8(dst, masterConfig.ledStripConfig.modeColors[i].color[j]);
+                sbufWriteU8(dst, ledStripConfig()->modeColors[i].color[j]);
             }
         }
 
         for (int j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
             sbufWriteU8(dst, LED_MODE_COUNT);
             sbufWriteU8(dst, j);
-            sbufWriteU8(dst, masterConfig.ledStripConfig.specialColors.color[j]);
+            sbufWriteU8(dst, ledStripConfig()->specialColors.color[j]);
         }
 
         sbufWriteU8(dst, LED_AUX_CHANNEL);
         sbufWriteU8(dst, 0);
-        sbufWriteU8(dst, masterConfig.ledStripConfig.ledstrip_aux_channel);
+        sbufWriteU8(dst, ledStripConfig()->ledstrip_aux_channel);
         break;
 #endif
 
@@ -1005,9 +1005,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_BLACKBOX_CONFIG:
 #ifdef BLACKBOX
         sbufWriteU8(dst, 1); //Blackbox supported
-        sbufWriteU8(dst, masterConfig.blackboxConfig.device);
-        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_num);
-        sbufWriteU8(dst, masterConfig.blackboxConfig.rate_denom);
+        sbufWriteU8(dst, blackboxConfig()->device);
+        sbufWriteU8(dst, blackboxConfig()->rate_num);
+        sbufWriteU8(dst, blackboxConfig()->rate_denom);
 #else
         sbufWriteU8(dst, 0); // Blackbox not supported
         sbufWriteU8(dst, 0);
@@ -1036,17 +1036,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
 #ifdef USE_MAX7456
-        sbufWriteU8(dst, masterConfig.vcdProfile.video_system);
+        sbufWriteU8(dst, vcdProfile()->video_system);
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, masterConfig.osdProfile.units);
-        sbufWriteU8(dst, masterConfig.osdProfile.rssi_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.cap_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.time_alarm);
-        sbufWriteU16(dst, masterConfig.osdProfile.alt_alarm);
+        sbufWriteU8(dst, osdProfile()->units);
+        sbufWriteU8(dst, osdProfile()->rssi_alarm);
+        sbufWriteU16(dst, osdProfile()->cap_alarm);
+        sbufWriteU16(dst, osdProfile()->time_alarm);
+        sbufWriteU16(dst, osdProfile()->alt_alarm);
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, masterConfig.osdProfile.item_pos[i]);
+            sbufWriteU16(dst, osdProfile()->item_pos[i]);
         }
 #else
         sbufWriteU8(dst, 0); // OSD not supported
@@ -1517,9 +1517,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_BLACKBOX_CONFIG:
         // Don't allow config to be updated while Blackbox is logging
         if (blackboxMayEditConfig()) {
-            masterConfig.blackboxConfig.device = sbufReadU8(src);
-            masterConfig.blackboxConfig.rate_num = sbufReadU8(src);
-            masterConfig.blackboxConfig.rate_denom = sbufReadU8(src);
+            blackboxConfig()->device = sbufReadU8(src);
+            blackboxConfig()->rate_num = sbufReadU8(src);
+            blackboxConfig()->rate_denom = sbufReadU8(src);
         }
         break;
 #endif
@@ -1544,18 +1544,18 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // set all the other settings
             if ((int8_t)addr == -1) {
 #ifdef USE_MAX7456
-                masterConfig.vcdProfile.video_system = sbufReadU8(src);
+                vcdProfile()->video_system = sbufReadU8(src);
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-                masterConfig.osdProfile.units = sbufReadU8(src);
-                masterConfig.osdProfile.rssi_alarm = sbufReadU8(src);
-                masterConfig.osdProfile.cap_alarm = sbufReadU16(src);
-                masterConfig.osdProfile.time_alarm = sbufReadU16(src);
-                masterConfig.osdProfile.alt_alarm = sbufReadU16(src);
+                osdProfile()->units = sbufReadU8(src);
+                osdProfile()->rssi_alarm = sbufReadU8(src);
+                osdProfile()->cap_alarm = sbufReadU16(src);
+                osdProfile()->time_alarm = sbufReadU16(src);
+                osdProfile()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
-                masterConfig.osdProfile.item_pos[addr] = sbufReadU16(src);
+                osdProfile()->item_pos[addr] = sbufReadU16(src);
             }
         }
         break;
@@ -1770,7 +1770,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef LED_STRIP
     case MSP_SET_LED_COLORS:
         for (int i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-            hsvColor_t *color = &masterConfig.ledStripConfig.colors[i];
+            hsvColor_t *color = &ledStripConfig()->colors[i];
             color->h = sbufReadU16(src);
             color->s = sbufReadU8(src);
             color->v = sbufReadU8(src);
@@ -1783,7 +1783,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
             }
-            ledConfig_t *ledConfig = &masterConfig.ledStripConfig.ledConfigs[i];
+            ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);
             reevaluateLedConfig();
         }

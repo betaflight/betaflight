@@ -377,9 +377,9 @@ void init(void)
 
 #ifdef USE_ADC
     /* these can be removed from features! */
-    masterConfig.adcConfig.vbat.enabled = feature(FEATURE_VBAT);
-    masterConfig.adcConfig.currentMeter.enabled = feature(FEATURE_CURRENT_METER);
-    masterConfig.adcConfig.rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
+    adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(&masterConfig.adcConfig);
 #endif
 
@@ -531,7 +531,7 @@ void init(void)
 #ifdef USE_SDCARD
     if (feature(FEATURE_SDCARD)) {
         sdcardInsertionDetectInit();
-        sdcard_init(masterConfig.sdcardConfig.useDma);
+        sdcard_init(sdcardConfig()->useDma);
         afatfs_init();
     }
 #endif
