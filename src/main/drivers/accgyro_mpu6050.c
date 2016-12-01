@@ -50,10 +50,10 @@
 
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
-static void mpu6050AccInit(acc_t *acc);
-static void mpu6050GyroInit(gyro_t *gyro);
+static void mpu6050AccInit(accDev_t *acc);
+static void mpu6050GyroInit(gyroDev_t *gyro);
 
-bool mpu6050AccDetect(acc_t *acc)
+bool mpu6050AccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_60x0) {
         return false;
@@ -66,7 +66,7 @@ bool mpu6050AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6050GyroDetect(gyro_t *gyro)
+bool mpu6050GyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_60x0) {
         return false;
@@ -81,7 +81,7 @@ bool mpu6050GyroDetect(gyro_t *gyro)
     return true;
 }
 
-static void mpu6050AccInit(acc_t *acc)
+static void mpu6050AccInit(accDev_t *acc)
 {
     switch (mpuDetectionResult.resolution) {
         case MPU_HALF_RESOLUTION:
@@ -93,7 +93,7 @@ static void mpu6050AccInit(acc_t *acc)
     }
 }
 
-static void mpu6050GyroInit(gyro_t *gyro)
+static void mpu6050GyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 

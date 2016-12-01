@@ -54,10 +54,10 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static void l3g4200dInit(gyro_t *gyro);
-static bool l3g4200dRead(gyro_t *gyro);
+static void l3g4200dInit(gyroDev_t *gyro);
+static bool l3g4200dRead(gyroDev_t *gyro);
 
-bool l3g4200dDetect(gyro_t *gyro)
+bool l3g4200dDetect(gyroDev_t *gyro)
 {
     uint8_t deviceid;
 
@@ -76,7 +76,7 @@ bool l3g4200dDetect(gyro_t *gyro)
     return true;
 }
 
-static void l3g4200dInit(gyro_t *gyro)
+static void l3g4200dInit(gyroDev_t *gyro)
 {
     bool ack;
 
@@ -109,7 +109,7 @@ static void l3g4200dInit(gyro_t *gyro)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static bool l3g4200dRead(gyro_t *gyro)
+static bool l3g4200dRead(gyroDev_t *gyro)
 {
     uint8_t buf[6];
 

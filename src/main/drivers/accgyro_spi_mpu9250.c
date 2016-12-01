@@ -96,7 +96,7 @@ bool mpu9250SlowReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu9250SpiGyroInit(gyro_t *gyro)
+void mpu9250SpiGyroInit(gyroDev_t *gyro)
 {
     mpuGyroInit(gyro);
 
@@ -114,7 +114,7 @@ void mpu9250SpiGyroInit(gyro_t *gyro)
     }
 }
 
-void mpu9250SpiAccInit(acc_t *acc)
+void mpu9250SpiAccInit(accDev_t *acc)
 {
     acc->acc_1G = 512 * 8;
 }
@@ -209,7 +209,7 @@ bool mpu9250SpiDetect(void)
     return true;
 }
 
-bool mpu9250SpiAccDetect(acc_t *acc)
+bool mpu9250SpiAccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
@@ -221,7 +221,7 @@ bool mpu9250SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu9250SpiGyroDetect(gyro_t *gyro)
+bool mpu9250SpiGyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;

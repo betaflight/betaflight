@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "io_types.h"
 #include "exti.h"
 
 // MPU6050
@@ -185,9 +184,9 @@ typedef struct mpuDetectionResult_s {
 extern mpuDetectionResult_t mpuDetectionResult;
 
 void configureMPUDataReadyInterruptHandling(void);
-struct gyro_s;
-void mpuGyroInit(struct gyro_s *gyro);
+struct gyroDev_s;
+void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuAccRead(int16_t *accData);
-bool mpuGyroRead(struct gyro_s *gyro);
+bool mpuGyroRead(struct gyroDev_s *gyro);
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-bool checkMPUDataReady(struct gyro_s *gyro);
+bool checkMPUDataReady(struct gyroDev_s *gyro);

@@ -166,16 +166,16 @@ static void sendAccel(void)
 
     for (i = 0; i < 3; i++) {
         sendDataHead(ID_ACC_X + i);
-        serialize16(((float)accSmooth[i] / acc.acc_1G) * 1000);
+        serialize16(((float)acc.accSmooth[i] / acc.dev.acc_1G) * 1000);
     }
 }
 
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(BaroAlt / 100);
+    serialize16(baro.BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(BaroAlt % 100));
+    serialize16(ABS(baro.BaroAlt % 100));
 }
 
 #ifdef GPS
@@ -212,7 +212,7 @@ static void sendTemperature1(void)
 {
     sendDataHead(ID_TEMPRATURE1);
 #ifdef BARO
-    serialize16((baroTemperature + 50)/ 100); //Airmamaf
+    serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
     serialize16(telemTemperature1 / 10);
 #endif

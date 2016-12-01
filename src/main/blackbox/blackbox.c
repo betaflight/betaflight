@@ -991,11 +991,11 @@ static void loadMainState(uint32_t currentTime)
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroADC[i] = lrintf(gyroADCf[i]);
+        blackboxCurrent->gyroADC[i] = lrintf(gyro.gyroADCf[i]);
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->accSmooth[i] = accSmooth[i];
+        blackboxCurrent->accSmooth[i] = acc.accSmooth[i];
     }
 
     for (i = 0; i < 4; i++) {
@@ -1011,12 +1011,12 @@ static void loadMainState(uint32_t currentTime)
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->magADC[i] = magADC[i];
+        blackboxCurrent->magADC[i] = mag.magADC[i];
     }
 #endif
 
 #ifdef BARO
-    blackboxCurrent->BaroAlt = BaroAlt;
+    blackboxCurrent->BaroAlt = baro.BaroAlt;
 #endif
 
 #ifdef SONAR
@@ -1176,8 +1176,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                     castFloatBytesToInt(gyro.scale));
-        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.acc_1G);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                     castFloatBytesToInt(gyro.dev.scale));
+        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
