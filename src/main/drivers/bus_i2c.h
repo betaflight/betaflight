@@ -42,25 +42,7 @@ typedef struct i2cDevice_s {
     ioTag_t sda;
     rccPeriphTag_t rcc;
     bool overClock;
-#if !defined(STM32F303xC)
-    uint8_t ev_irq;
-    uint8_t er_irq;
-#endif
 } i2cDevice_t;
-
-typedef struct i2cState_s {
-    volatile bool initialised;
-    volatile bool error;
-    volatile bool busError;
-    volatile bool busy;
-    volatile uint8_t addr;
-    volatile uint8_t reg;
-    volatile uint8_t bytes;
-    volatile uint8_t writing;
-    volatile uint8_t reading;
-    volatile uint8_t* write_p;
-    volatile uint8_t* read_p;
-} i2cState_t;
 
 void i2cSetOverclock(uint8_t overClock);
 void i2cInit(I2CDevice device);
