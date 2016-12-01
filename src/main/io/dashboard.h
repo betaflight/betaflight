@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "common/time.h"
+
 #define ENABLE_DEBUG_DASHBOARD_PAGE
 
 typedef enum {
@@ -37,11 +39,11 @@ typedef enum {
 
 struct rxConfig_s;
 void dashboardInit(struct rxConfig_s *intialRxConfig);
-void dashboardUpdate(uint32_t currentTime);
+void dashboardUpdate(timeUs_t currentTimeUs);
 
 void dashboardShowFixedPage(pageId_e pageId);
 
 void dashboardEnablePageCycling(void);
 void dashboardDisablePageCycling(void);
 void dashboardResetPageCycling(void);
-void dashboardSetNextPageChangeAt(uint32_t futureMicros);
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros);

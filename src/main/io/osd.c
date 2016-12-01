@@ -581,7 +581,7 @@ static void osdArmMotors(void)
     osdResetStats();
 }
 
-static void osdRefresh(uint32_t currentTime)
+static void osdRefresh(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -598,7 +598,7 @@ static void osdRefresh(uint32_t currentTime)
 
     osdUpdateStats();
 
-    sec = currentTime / 1000000;
+    sec = currentTimeUs / 1000000;
 
     if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
@@ -614,7 +614,7 @@ static void osdRefresh(uint32_t currentTime)
         return;
     }
 
-    blinkState = (currentTime / 200000) % 2;
+    blinkState = (currentTimeUs / 200000) % 2;
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
@@ -623,7 +623,7 @@ static void osdRefresh(uint32_t currentTime)
         displayHeartbeat(osdDisplayPort); // heartbeat to stop Minim OSD going back into native mode
 #ifdef OSD_CALLS_CMS
     } else {
-        cmsUpdate(currentTime);
+        cmsUpdate(currentTimeUs);
 #endif
     }
 #endif
@@ -632,7 +632,7 @@ static void osdRefresh(uint32_t currentTime)
 /*
  * Called periodically by the scheduler
  */
-void osdUpdate(uint32_t currentTime)
+void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -649,7 +649,7 @@ void osdUpdate(uint32_t currentTime)
 #define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud
 #endif
     if (counter++ % DRAW_FREQ_DENOM == 0) {
-        osdRefresh(currentTime);
+        osdRefresh(currentTimeUs);
     } else { // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
         displayDrawScreen(osdDisplayPort);
     }
