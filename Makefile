@@ -506,6 +506,7 @@ COMMON_SRC = \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
+            drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
