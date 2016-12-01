@@ -82,7 +82,7 @@ int16_t magHoldTargetHeading;
 static pt1Filter_t magHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
-static bool shouldUpdatePIDCoeffs = false;
+static bool pidGainsUpdateRequired = false;
 static float tpaFactor;
 int16_t axisPID[FLIGHT_DYNAMICS_INDEX_COUNT];
 
@@ -152,9 +152,9 @@ FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
 #define FP_PID_LEVEL_P_MULTIPLIER   65.6f
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
-void signalRequiredPIDCoefficientsUpdate(void)
+void schedulePidGainsUpdate(void)
 {
-    shouldUpdatePIDCoeffs = true;
+    pidGainsUpdateRequired = true;
 }
 
 void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const struct motorConfig_s *motorConfig)
@@ -164,11 +164,11 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
     // Check if throttle changed
     if (rcCommand[THROTTLE] != prevThrottle) {
         prevThrottle = rcCommand[THROTTLE];
-        signalRequiredPIDCoefficientsUpdate();
+        pidGainsUpdateRequired = true;
     }
 
     // If nothing changed - don't waste time recalculating coefficients
-    if (!shouldUpdatePIDCoeffs) {
+    if (!pidGainsUpdateRequired) {
         return;
     }
 
@@ -235,7 +235,7 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         }
     }
 
-    shouldUpdatePIDCoeffs = false;
+    pidGainsUpdateRequired = false;
 }
 
 static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidState)

@@ -150,6 +150,8 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidPitch, PIDPITCH);
     cmsx_WritebackPidFromArray(cmsx_pidYaw, PIDYAW);
 
+    schedulePidGainsUpdate();
+
     return 0;
 }
 
@@ -203,6 +205,8 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidVel, PIDVEL);
     masterConfig.profile[profileIndex].pidProfile.P8[PIDMAG] = cmsx_pidMag[0];
 
+    navigationUsePIDs(&masterConfig.profile[profileIndex].pidProfile);
+
     return 0;
 }
 
@@ -250,6 +254,8 @@ static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidPos, PIDPOS);
     cmsx_WritebackPidFromArray(cmsx_pidPosR, PIDPOSR);
     cmsx_WritebackPidFromArray(cmsx_pidNavR, PIDNAVR);
+
+    navigationUsePIDs(&masterConfig.profile[profileIndex].pidProfile);
 
     return 0;
 }

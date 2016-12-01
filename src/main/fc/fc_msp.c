@@ -1198,12 +1198,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_PID:
-        signalRequiredPIDCoefficientsUpdate();
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
             currentProfile->pidProfile.P8[i] = sbufReadU8(src);
             currentProfile->pidProfile.I8[i] = sbufReadU8(src);
             currentProfile->pidProfile.D8[i] = sbufReadU8(src);
         }
+        schedulePidGainsUpdate();
+        navigationUsePIDs(&currentProfile->pidProfile);
         break;
 
     case MSP_SET_MODE_RANGE:
@@ -1269,7 +1270,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
             }
 
-            signalRequiredPIDCoefficientsUpdate();
+            schedulePidGainsUpdate();
         } else {
             return MSP_RESULT_ERROR;
         }
