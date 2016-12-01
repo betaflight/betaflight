@@ -375,6 +375,7 @@ void mwDisarm(void)
 
 #define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
 
+#ifdef TELEMETRY
 static void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     while (sharedPort) {
@@ -382,6 +383,7 @@ static void releaseSharedTelemetryPorts(void) {
         sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
     }
 }
+#endif
 
 void mwArm(void)
 {
