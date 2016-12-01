@@ -286,15 +286,19 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
     }
 
+#ifdef BARO
     if (sensors(SENSOR_BARO)) {
         activeBoxIds[activeBoxIdCount++] = BOXBARO;
     }
+#endif
 
+#ifdef MAG
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
         activeBoxIds[activeBoxIdCount++] = BOXHEADFREE;
         activeBoxIds[activeBoxIdCount++] = BOXHEADADJ;
     }
+#endif
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
