@@ -58,6 +58,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/stack_check.h"
 #include "drivers/vcd.h"
 
 #include "fc/config.h"
@@ -3599,6 +3600,11 @@ static void cliStatus(char *cmdline)
 #else
     uint16_t i2cErrorCounter = 0;
 #endif
+
+#ifdef STACK_CHECK
+    cliPrintf("Stack used: %d, ", stackUsedSize());
+#endif
+    cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 

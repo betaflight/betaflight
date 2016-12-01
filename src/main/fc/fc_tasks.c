@@ -31,6 +31,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/serial.h"
+#include "drivers/stack_check.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -286,6 +287,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -461,6 +465,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = cmsHandler,
         .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 };

@@ -85,6 +85,9 @@ typedef enum {
 #ifdef TRANSPONDER
     TASK_TRANSPONDER,
 #endif
+#ifdef STACK_CHECK
+    TASK_STACK_CHECK,
+#endif
 #ifdef OSD
     TASK_OSD,
 #endif
