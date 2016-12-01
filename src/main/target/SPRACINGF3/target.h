@@ -17,9 +17,9 @@
 
 #pragma once
 
-#ifdef RMDO 
+#ifdef RMDO
 #define TARGET_BOARD_IDENTIFIER "RMDO"
-#else 
+#else
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 #endif
 

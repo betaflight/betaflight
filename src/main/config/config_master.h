@@ -172,7 +172,7 @@ typedef struct master_s {
 #ifdef USE_PPM
     ppmConfig_t ppmConfig;
 #endif
-    
+
 #ifdef USE_PWM
     pwmConfig_t pwmConfig;
 #endif
@@ -209,7 +209,7 @@ typedef struct master_s {
 #ifdef USE_MAX7456
     vcdProfile_t vcdProfile;
 #endif
-    
+
 #ifdef USE_SDCARD
     sdcardConfig_t sdcardConfig;
 #endif

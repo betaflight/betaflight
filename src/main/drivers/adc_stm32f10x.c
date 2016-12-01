@@ -119,7 +119,7 @@ void adcInit(adcConfig_t *config)
         adcOperatingConfig[i].sampleTime = ADC_SampleTime_239Cycles5;
         adcOperatingConfig[i].enabled = true;
     }
-    
+
     if (!adcActive) {
         return;
     }
