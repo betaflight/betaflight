@@ -75,6 +75,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#ifdef USE_BST
+void taskBstMasterProcess(uint32_t currentTime);
+#endif
+
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
 #define TASK_PERIOD_US(us) (us)
@@ -123,7 +127,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
@@ -156,7 +160,7 @@ static void taskUpdateRxMain(uint32_t currentTime)
 static void taskUpdateCompass(uint32_t currentTime)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTime, &masterConfig.sensorTrims.magZero);
+        compassUpdate(currentTime, &sensorTrims()->magZero);
     }
 }
 #endif
@@ -196,7 +200,7 @@ static void taskTelemetry(uint32_t currentTime)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTime, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
     }
 }
 #endif
@@ -262,10 +266,10 @@ void fcTasksInit(void)
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
-        if (masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+        if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } else if (masterConfig.rxConfig.serialrx_provider == SERIALRX_CRSF) {
+        } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }
@@ -309,7 +313,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoopCheck,
+        .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },

@@ -31,3 +31,4 @@ void processRx(uint32_t currentTime);
 void updateLEDs(void);
 void updateRcCommands(void);
 
+void taskMainPidLoop(uint32_t currentTime);

@@ -756,7 +756,11 @@ ifeq ($(DEBUG),GDB)
 OPTIMIZE    = -O0
 LTO_FLAGS   = $(OPTIMIZE)
 else
+ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMIZE    = -Os
+else
+OPTIMIZE    = -Ofast
+endif
 LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 

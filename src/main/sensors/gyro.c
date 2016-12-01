@@ -74,7 +74,7 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
                 softLpfFilter[axis] = &gyroFilterLPF[axis];
                 biquadFilterInitLPF(softLpfFilter[axis], gyroConfig->gyro_soft_lpf_hz, gyro.targetLooptime);
             }
-        } else if (gyroConfig->gyro_soft_lpf_type == FILTER_BIQUAD) {
+        } else if (gyroConfig->gyro_soft_lpf_type == FILTER_PT1) {
             softLpfFilterApplyFn = (filterApplyFnPtr)pt1FilterApply;
             const float gyroDt = (float) gyro.targetLooptime * 0.000001f;
             for (int axis = 0; axis < 3; axis++) {

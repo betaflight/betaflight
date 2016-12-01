@@ -52,6 +52,11 @@ typedef union rollAndPitchTrims_u {
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
+
+typedef struct accelerometerConfig_s {
+    uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+} accelerometerConfig_t;
+
 void accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
