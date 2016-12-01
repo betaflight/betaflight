@@ -244,7 +244,7 @@ static void showTitle(void)
         i2c_OLED_set_line(0);
         i2c_OLED_send_string(pageTitles[currentPageId]);
     }
-#else 
+#else
     i2c_OLED_set_line(0);
     i2c_OLED_send_string(pageTitles[currentPageId]);
 #endif
@@ -354,7 +354,7 @@ static void showStatusPage(void)
 #endif
 
 #ifdef MAG
-    if (sensors(SENSOR_MAG)) {  
+    if (sensors(SENSOR_MAG)) {
         tfp_sprintf(lineBuffer, "HDG: %d", DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         padHalfLineBuffer();
         i2c_OLED_set_line(rowIndex);
@@ -363,7 +363,7 @@ static void showStatusPage(void)
 #endif
 
 #ifdef BARO
-    if (sensors(SENSOR_BARO)) {  
+    if (sensors(SENSOR_BARO)) {
         int32_t alt = baroCalculateAltitude();
         tfp_sprintf(lineBuffer, "Alt: %d", alt / 100);
         padHalfLineBuffer();

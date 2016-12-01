@@ -115,7 +115,7 @@ bool bmp280Detect(baro_t *baro)
 
         return true;
     }
-    
+
     return false;
 }
 

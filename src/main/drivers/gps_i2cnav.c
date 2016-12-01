@@ -33,7 +33,7 @@
 #define GPS_I2C_INSTANCE I2CDEV_1
 #endif
 
-#define I2C_GPS_ADDRESS               0x20 //7 bits   
+#define I2C_GPS_ADDRESS               0x20 //7 bits
 
 #define I2C_GPS_STATUS_00             00    //(Read only)
   #define I2C_GPS_STATUS_NEW_DATA       0x01  // New data is available (after every GGA frame)
@@ -54,7 +54,7 @@ bool i2cnavGPSModuleDetect(void)
 
     ack = i2cRead(GPS_I2C_INSTANCE, I2C_GPS_ADDRESS, I2C_GPS_STATUS_00, 1, &i2cGpsStatus); /* status register */
 
-    if (ack) 
+    if (ack)
         return true;
 
     return false;
@@ -78,7 +78,7 @@ void i2cnavGPSModuleRead(gpsDataI2CNAV_t * gpsMsg)
     if (i2cGpsStatus & I2C_GPS_STATUS_3DFIX) {
         gpsMsg->flags.fix3D = 1;
 
-        if (i2cGpsStatus & I2C_GPS_STATUS_NEW_DATA) {   
+        if (i2cGpsStatus & I2C_GPS_STATUS_NEW_DATA) {
             i2cRead(GPS_I2C_INSTANCE, I2C_GPS_ADDRESS, I2C_GPS_LOCATION,      4, (uint8_t*)&gpsMsg->latitude);
             i2cRead(GPS_I2C_INSTANCE, I2C_GPS_ADDRESS, I2C_GPS_LOCATION + 4,  4, (uint8_t*)&gpsMsg->longitude);
             i2cRead(GPS_I2C_INSTANCE, I2C_GPS_ADDRESS, I2C_GPS_GROUND_SPEED,  2, (uint8_t*)&gpsMsg->speed);

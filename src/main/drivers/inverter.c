@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifdef INVERTER 
+#ifdef INVERTER
 
 #include "io.h"
 #include "io_impl.h"

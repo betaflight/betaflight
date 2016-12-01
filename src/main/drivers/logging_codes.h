@@ -21,7 +21,7 @@ typedef enum {
     BOOT_EVENT_FLAGS_NONE           = 0,
     BOOT_EVENT_FLAGS_WARNING        = 1 << 0,
     BOOT_EVENT_FLAGS_ERROR          = 1 << 1,
-    
+
     BOOT_EVENT_FLAGS_PARAM16        = 1 << 14,
     BOOT_EVENT_FLAGS_PARAM32        = 1 << 15
 } bootLogFlags_e;

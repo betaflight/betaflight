@@ -100,7 +100,7 @@ int getPrimaryAxisIndex(int32_t sample[3])
         //Y-axis
         return (sample[Y] > 0) ? 4 : 5;
     }
-    else 
+    else
         return -1;
 }
 

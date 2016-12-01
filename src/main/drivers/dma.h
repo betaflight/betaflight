@@ -65,7 +65,7 @@ typedef struct dmaChannelDescriptor_s {
 #define DMA_IT_TEIF                         ((uint32_t)0x00000008)
 #define DMA_IT_DMEIF                        ((uint32_t)0x00000004)
 #define DMA_IT_FEIF                         ((uint32_t)0x00000001)
-   
+
 #else
 
 typedef enum {
