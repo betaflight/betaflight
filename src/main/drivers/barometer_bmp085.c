@@ -155,7 +155,7 @@ void bmp085Disable(const bmp085Config_t *config)
 }
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool bmp085Detect(const bmp085Config_t *config, baro_t *baro)
+bool bmp085Detect(const bmp085Config_t *config, baroDev_t *baro)
 {
     uint8_t data;
     bool ack;

@@ -30,8 +30,6 @@
 #include "flight/hil.h"
 
 baro_t baro;                        // barometer access functions
-int32_t baroTemperature = 0;
-int32_t BaroAlt = 0;
 
 #ifdef BARO
 
@@ -88,7 +86,8 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-bool isBaroReady(void) {
+bool isBaroReady(void)
+{
     return baroReady;
 }
 
@@ -99,21 +98,21 @@ uint32_t baroUpdate(void)
     switch (state) {
         default:
         case BAROMETER_NEEDS_SAMPLES:
-            baro.get_ut();
-            baro.start_up();
+            baro.dev.get_ut();
+            baro.dev.start_up();
             state = BAROMETER_NEEDS_CALCULATION;
-            return baro.up_delay;
+            return baro.dev.up_delay;
         break;
 
         case BAROMETER_NEEDS_CALCULATION:
-            baro.get_up();
-            baro.start_ut();
-            baro.calculate(&baroPressure, &baroTemperature);
+            baro.dev.get_up();
+            baro.dev.start_ut();
+            baro.dev.calculate(&baroPressure, &baro.baroTemperature);
             if (barometerConfig->use_median_filtering) {
                 baroPressure = applyBarometerMedianFilter(baroPressure);
             }
             state = BAROMETER_NEEDS_SAMPLES;
-            return baro.ut_delay;
+            return baro.dev.ut_delay;
         break;
     }
 }
@@ -131,22 +130,22 @@ int32_t baroCalculateAltitude(void)
 {
     if (!isBaroCalibrationComplete()) {
         performBaroCalibrationCycle();
-        BaroAlt = 0;
+        baro.BaroAlt = 0;
     }
     else {
 #ifdef HIL
         if (hilActive) {
-            BaroAlt = hilToFC.baroAlt;
-            return BaroAlt;
+            baro.BaroAlt = hilToFC.baroAlt;
+            return baro.BaroAlt;
         }
 #endif
         // calculates height from ground via baro readings
         // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-        BaroAlt = lrintf((1.0f - powf((float)(baroPressure) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
-        BaroAlt -= baroGroundAltitude;
+        baro.BaroAlt = lrintf((1.0f - powf((float)(baroPressure) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+        baro.BaroAlt -= baroGroundAltitude;
     }
 
-    return BaroAlt;
+    return baro.BaroAlt;
 }
 
 #endif /* BARO */
