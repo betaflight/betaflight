@@ -27,6 +27,7 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/config.h"
 #include "config/feature.h"

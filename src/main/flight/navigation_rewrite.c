@@ -22,12 +22,12 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 

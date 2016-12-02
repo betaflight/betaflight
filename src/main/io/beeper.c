@@ -20,8 +20,8 @@
 #include "stdlib.h"
 
 #include "platform.h"
-#include "build/build_config.h"
 
+#include "common/utils.h"
 
 #include "drivers/sound_beeper.h"
 #include "drivers/system.h"

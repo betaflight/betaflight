@@ -27,6 +27,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <stdbool.h>
+
 #include "stm32_it.h"
 #include "platform.h"
 #include "usb_lib.h"
@@ -35,11 +37,10 @@
 #include "hw_config.h"
 #include "usb_pwr.h"
 
-#include <stdbool.h>
+#include "common/utils.h"
+
 #include "drivers/system.h"
 #include "drivers/nvic.h"
-
-#include "build/build_config.h"
 
 
 

@@ -22,11 +22,10 @@
 #include <math.h>
 
 #include "platform.h"
-#include "build/build_config.h"
-
 
 #if defined(GPS) && defined(GPS_PROTO_NMEA)
 
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/maths.h"

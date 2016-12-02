@@ -38,11 +38,13 @@
 
 #include "build/build_config.h"
 
+#include "common/utils.h"
+
 #include "drivers/serial.h"
+#include "printf.h"
 
 #include "io/serial.h"
 
-#include "printf.h"
 
 #ifdef REQUIRE_PRINTF_LONG_SUPPORT
 #include "typeconversion.h"

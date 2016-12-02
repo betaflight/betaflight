@@ -20,12 +20,11 @@
 
 #include <platform.h>
 
-#include "build/build_config.h"
-
-#include "pitotmeter.h"
-
-#include "system.h"
 #include "bus_i2c.h"
+#include "pitotmeter.h"
+#include "system.h"
+
+#include "common/utils.h"
 
 // MS4525, Standard address 0x28
 #define MS4525_ADDR                 0x28

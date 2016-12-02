@@ -30,6 +30,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/typeconversion.h"
+#include "common/utils.h"
 
 #include "drivers/light_ws2811strip.h"
 #include "drivers/serial.h"

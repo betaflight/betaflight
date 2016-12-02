@@ -24,7 +24,6 @@
 
 #include "blackbox/blackbox.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
 #include "build/version.h"
 
@@ -32,6 +31,7 @@
 #include "common/color.h"
 #include "common/maths.h"
 #include "common/streambuf.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/accgyro.h"

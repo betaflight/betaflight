@@ -29,7 +29,7 @@
 
 #ifdef USE_SERIALRX_SUMH
 
-#include "build/build_config.h"
+#include "common/utils.h"
 
 #include "drivers/serial.h"
 #include "drivers/system.h"

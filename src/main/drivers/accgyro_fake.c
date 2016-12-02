@@ -20,9 +20,8 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
-
 #include "common/axis.h"
+#include "common/utils.h"
 
 #include "accgyro.h"
 #include "accgyro_fake.h"

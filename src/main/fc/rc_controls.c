@@ -23,12 +23,11 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
-
 #include "blackbox/blackbox.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/config.h"
 #include "config/feature.h"
