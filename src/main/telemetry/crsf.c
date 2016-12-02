@@ -330,7 +330,7 @@ bool checkCrsfTelemetryState(void)
 /*
  * Called periodically by the scheduler
  */
-void handleCrsfTelemetry(uint32_t currentTime)
+void handleCrsfTelemetry(timeUs_t currentTimeUs)
 {
     static uint32_t crsfLastCycleTime;
 
@@ -343,8 +343,8 @@ void handleCrsfTelemetry(uint32_t currentTime)
     crsfRxSendTelemetryData();
 
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
-    if (currentTime >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
-        crsfLastCycleTime = currentTime;
+    if (currentTimeUs >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
+        crsfLastCycleTime = currentTimeUs;
         processCrsf();
     }
 }

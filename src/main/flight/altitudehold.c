@@ -204,9 +204,9 @@ int32_t calculateAltHoldThrottleAdjustment(int32_t vel_tmp, float accZ_tmp, floa
     return result;
 }
 
-void calculateEstimatedAltitude(uint32_t currentTime)
+void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTime;
+    static timeUs_t previousTimeUs;
     uint32_t dTime;
     int32_t baroVel;
     float dt;
@@ -224,11 +224,11 @@ void calculateEstimatedAltitude(uint32_t currentTime)
     float sonarTransition;
 #endif
 
-    dTime = currentTime - previousTime;
+    dTime = currentTimeUs - previousTimeUs;
     if (dTime < BARO_UPDATE_FREQUENCY_40HZ)
         return;
 
-    previousTime = currentTime;
+    previousTimeUs = currentTimeUs;
 
 #ifdef BARO
     if (!isBaroCalibrationComplete()) {

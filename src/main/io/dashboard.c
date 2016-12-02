@@ -586,7 +586,7 @@ void showDebugPage(void)
 }
 #endif
 
-void dashboardUpdate(uint32_t currentTime)
+void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
 
@@ -596,12 +596,12 @@ void dashboardUpdate(uint32_t currentTime)
     }
 #endif
 
-    const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
+    const bool updateNow = (int32_t)(currentTimeUs - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = currentTime + DISPLAY_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTimeUs + DISPLAY_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -621,7 +621,7 @@ void dashboardUpdate(uint32_t currentTime)
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(currentTime - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
+                (((int32_t)(currentTimeUs - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
@@ -631,7 +631,7 @@ void dashboardUpdate(uint32_t currentTime)
 
     if (pageState.pageChanging) {
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-        pageState.nextPageAt = currentTime + PAGE_CYCLE_FREQUENCY;
+        pageState.nextPageAt = currentTimeUs + PAGE_CYCLE_FREQUENCY;
 
         // Some OLED displays do not respond on the first initialisation so refresh the display
         // when the page changes in the hopes the hardware responds.  This also allows the
@@ -730,7 +730,7 @@ void dashboardShowFixedPage(pageId_e pageId)
     dashboardDisablePageCycling();
 }
 
-void dashboardSetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     pageState.nextPageAt = futureMicros;
 }

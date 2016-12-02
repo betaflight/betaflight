@@ -489,33 +489,33 @@ void checkHoTTTelemetryState(void)
         freeHoTTTelemetryPort();
 }
 
-void handleHoTTTelemetry(uint32_t currentTime)
+void handleHoTTTelemetry(timeUs_t currentTimeUs)
 {
-    static uint32_t serialTimer;
+    static timeUs_t serialTimer;
 
     if (!hottTelemetryEnabled) {
         return;
     }
 
-    if (shouldPrepareHoTTMessages(currentTime)) {
+    if (shouldPrepareHoTTMessages(currentTimeUs)) {
         hottPrepareMessages();
-        lastMessagesPreparedAt = currentTime;
+        lastMessagesPreparedAt = currentTimeUs;
     }
 
     if (shouldCheckForHoTTRequest()) {
-        hottCheckSerialData(currentTime);
+        hottCheckSerialData(currentTimeUs);
     }
 
     if (!hottMsg)
         return;
 
     if (hottIsSending) {
-        if(currentTime - serialTimer < HOTT_TX_DELAY_US) {
+        if(currentTimeUs - serialTimer < HOTT_TX_DELAY_US) {
             return;
         }
     }
     hottSendTelemetryData();
-    serialTimer = currentTime;
+    serialTimer = currentTimeUs;
 }
 
 #endif
