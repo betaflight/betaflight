@@ -66,6 +66,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/time.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
