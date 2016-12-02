@@ -78,6 +78,7 @@
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #ifdef OMNIBUSF4SD
+  #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
   #define USE_SDCARD
   #define USE_SDCARD_SPI2
 
@@ -96,6 +97,7 @@
   #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
   #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 #else
+  #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
   #define M25P16_CS_PIN           SPI3_NSS_PIN
   #define M25P16_SPI_INSTANCE     SPI3
   #define USE_FLASHFS
