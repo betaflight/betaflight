@@ -35,10 +35,14 @@ typedef enum {
     GYRO_MAX = GYRO_FAKE
 } gyroSensor_e;
 
-extern gyro_t gyro;
+typedef struct gyro_s {
+    gyroDev_t dev;
+    uint32_t targetLooptime;
+    sensor_align_e gyroAlign;
+    float gyroADCf[XYZ_AXIS_COUNT];
+} gyro_t;
 
-extern int32_t gyroADC[XYZ_AXIS_COUNT];
-extern float gyroADCf[XYZ_AXIS_COUNT];
+extern gyro_t gyro;
 
 typedef struct gyroConfig_s {
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.

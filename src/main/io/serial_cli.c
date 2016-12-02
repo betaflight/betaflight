@@ -58,6 +58,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/stack_check.h"
 #include "drivers/vcd.h"
 
 #include "fc/config.h"
@@ -244,7 +245,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64)
+#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -3589,8 +3590,8 @@ static void cliStatus(char *cmdline)
 
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
 
-            if (mask == SENSOR_ACC && acc.revisionCode) {
-                cliPrintf(".%c", acc.revisionCode);
+            if (mask == SENSOR_ACC && acc.dev.revisionCode) {
+                cliPrintf(".%c", acc.dev.revisionCode);
             }
         }
     }
@@ -3602,6 +3603,11 @@ static void cliStatus(char *cmdline)
 #else
     uint16_t i2cErrorCounter = 0;
 #endif
+
+#ifdef STACK_CHECK
+    cliPrintf("Stack used: %d, ", stackUsedSize());
+#endif
+    cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
     cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
 
@@ -3991,7 +3997,7 @@ static void cliResource(char *cmdline)
                 pin = atoi(pch);
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
-                    if (rec) { 
+                    if (rec) {
 #ifndef CLI_MINIMAL_VERBOSITY
                         if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
                             return;

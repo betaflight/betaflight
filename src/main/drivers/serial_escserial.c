@@ -119,7 +119,7 @@ static void escSerialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polari
 
 void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
 {
-    if((escSerial->mode == PROTOCOL_KISSALL))
+    if(escSerial->mode == PROTOCOL_KISSALL)
     {
         for (volatile uint8_t i = 0; i < escSerial->outputCount; i++) {
             uint8_t state_temp = state;

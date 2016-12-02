@@ -234,7 +234,7 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
             }
         }
 
-        const float PVRate = gyroADCf[axis] / 16.4f; // Process variable from gyro output in deg/sec
+        const float PVRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
 
         // --------low-level gyro-based PID based on 2DOF PID controller. ----------
         //  ---------- 2-DOF PID controller with optional filter on derivative term. b = 1 and only c can be tuned (amount derivative on measurement or error).  ----------

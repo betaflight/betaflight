@@ -28,7 +28,7 @@
 #endif
 
 /****************************
-  STM32 F4 specific settings. 
+  STM32 F4 specific settings.
 ****************************/
 #ifdef STM32F4
 #define STM_FAST_TARGET

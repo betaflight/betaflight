@@ -75,8 +75,6 @@ static float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
 
-static float gyroScale;
-
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
     float q1q1 = sq(q1);
@@ -122,8 +120,7 @@ void imuConfigure(
 void imuInit(void)
 {
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
-    accVelScale = 9.80665f / acc.acc_1G / 10000.0f;
+    accVelScale = 9.80665f / acc.dev.acc_1G / 10000.0f;
 
     imuComputeRotationMatrix();
 }
@@ -175,9 +172,9 @@ void imuCalculateAcceleration(uint32_t deltaT)
     // deltaT is measured in us ticks
     dT = (float)deltaT * 1e-6f;
 
-    accel_ned.V.X = accSmooth[0];
-    accel_ned.V.Y = accSmooth[1];
-    accel_ned.V.Z = accSmooth[2];
+    accel_ned.V.X = acc.accSmooth[X];
+    accel_ned.V.Y = acc.accSmooth[Y];
+    accel_ned.V.Z = acc.accSmooth[Z];
 
     imuTransformVectorBodyToEarth(&accel_ned);
 
@@ -188,7 +185,7 @@ void imuCalculateAcceleration(uint32_t deltaT)
         }
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
-        accel_ned.V.Z -= acc.acc_1G;
+        accel_ned.V.Z -= acc.dev.acc_1G;
 
     accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
@@ -358,10 +355,10 @@ static bool imuIsAccelerometerHealthy(void)
     int32_t accMagnitude = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
+        accMagnitude += (int32_t)acc.accSmooth[axis] * acc.accSmooth[axis];
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.acc_1G));
+    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
 
     // Accept accel readings only in range 0.90g - 1.10g
     return (81 < accMagnitude) && (accMagnitude < 121);
@@ -369,7 +366,7 @@ static bool imuIsAccelerometerHealthy(void)
 
 static bool isMagnetometerHealthy(void)
 {
-    return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
+    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
 }
 
 static void imuCalculateEstimatedAttitude(uint32_t currentTime)
@@ -399,9 +396,9 @@ static void imuCalculateEstimatedAttitude(uint32_t currentTime)
 #endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        gyroADC[X] * gyroScale, gyroADC[Y] * gyroScale, gyroADC[Z] * gyroScale,
-                        useAcc, accSmooth[X], accSmooth[Y], accSmooth[Z],
-                        useMag, magADC[X], magADC[Y], magADC[Z],
+                        DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
+                        useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
+                        useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useYaw, rawYawError);
 
     imuUpdateEulerAngles();
@@ -422,9 +419,9 @@ void imuUpdateAttitude(uint32_t currentTime)
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
         imuCalculateEstimatedAttitude(currentTime);
     } else {
-        accSmooth[X] = 0;
-        accSmooth[Y] = 0;
-        accSmooth[Z] = 0;
+        acc.accSmooth[X] = 0;
+        acc.accSmooth[Y] = 0;
+        acc.accSmooth[Z] = 0;
     }
 }
 

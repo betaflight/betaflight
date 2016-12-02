@@ -115,7 +115,7 @@ int32_t accelSummedSamples100Hz[3];
 
 int32_t accelSummedSamples500Hz[3];
 
-void lsm303dlhcAccInit(acc_t *acc)
+void lsm303dlhcAccInit(accDev_t *acc)
 {
     i2cWrite(MPU_I2C_INSTANCE, LSM303DLHC_ACCEL_ADDRESS, CTRL_REG5_A, BOOT);
 
@@ -157,7 +157,7 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
     return true;
 }
 
-bool lsm303dlhcAccDetect(acc_t *acc)
+bool lsm303dlhcAccDetect(accDev_t *acc)
 {
     bool ack;
     uint8_t status;

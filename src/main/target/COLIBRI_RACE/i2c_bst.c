@@ -608,14 +608,17 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
         case BST_RAW_IMU:
             {
                 // Hack scale due to choice of units for sensor data in multiwii
-                uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
+                uint8_t scale = (acc.dev.acc_1G > 1024) ? 8 : 1;
 
-                for (i = 0; i < 3; i++)
-                    bstWrite16(accSmooth[i] / scale);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(gyroADC[i]);
-                for (i = 0; i < 3; i++)
-                    bstWrite16(magADC[i]);
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(acc.accSmooth[i] / scale);
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(lrintf(gyro.gyroADCf[i] /gyro.dev.scale));
+                }
+                for (i = 0; i < 3; i++) {
+                    bstWrite16(mag.magADC[i]);
+                }
             }
             break;
 #ifdef USE_SERVOS

@@ -298,11 +298,13 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
 #endif
-#ifdef STACK_CHECK
-    setTaskEnabled(TASK_STACK_CHECK, true);
-#endif
+<<<<<<< HEAD
 #ifdef USE_RSSI_SOFTPWM
     setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
+=======
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
+>>>>>>> betaflight/master
 #endif
 }
 
@@ -482,21 +484,21 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef STACK_CHECK
-    [TASK_STACK_CHECK] = {
-        .taskName = "STACKCHECK",
-        .taskFunc = taskStackCheck,
-        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
+<<<<<<< HEAD
 #ifdef USE_RSSI_SOFTPWM
     [TASK_RSSI_SOFTPWM] = {
         .taskName = "RSSIPWM",
         .taskFunc = taskRssiSoftPwm,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+=======
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+>>>>>>> betaflight/master
     },
 #endif
 };

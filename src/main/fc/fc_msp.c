@@ -607,15 +607,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_RAW_IMU:
         {
             // Hack scale due to choice of units for sensor data in multiwii
-            const uint8_t scale = (acc.acc_1G > 512) ? 4 : 1;
+            const uint8_t scale = (acc.dev.acc_1G > 512) ? 4 : 1;
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, accSmooth[i] / scale);
+                sbufWriteU16(dst, acc.accSmooth[i] / scale);
             }
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, gyroADC[i]);
+                sbufWriteU16(dst, lrintf(gyro.gyroADCf[i] / gyro.dev.scale));
             }
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, magADC[i]);
+                sbufWriteU16(dst, mag.magADC[i]);
             }
         }
         break;

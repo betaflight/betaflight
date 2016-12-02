@@ -56,16 +56,16 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(acc_t *acc);
+static void adxl345Init(accDev_t *acc);
 static bool adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
 
-bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
+bool adxl345Detect(drv_adxl345_config_t *init, accDev_t *acc)
 {
     uint8_t sig = 0;
     bool ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
-    
+
     if (!ack || sig != 0xE5)
         return false;
 
@@ -77,7 +77,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     return true;
 }
 
-static void adxl345Init(acc_t *acc)
+static void adxl345Init(accDev_t *acc)
 {
     if (useFifo) {
         uint8_t fifoDepth = 16;
