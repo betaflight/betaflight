@@ -24,7 +24,7 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
-    ADC_CHANNEL_MAX = ADC_CURRENT
+    ADC_CHANNEL_MAX = ADC_RSSI
 } AdcChannel;
 
 #define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)
