@@ -21,17 +21,16 @@
 
 #include <string.h>
 
-#include "build/build_config.h"
-
-
 #include "platform.h"
 
 #ifndef SKIP_RX_PWM_PPM
 
-#include "drivers/pwm_rx.h"
+#include "common/utils.h"
 
 #include "config/config.h"
 #include "config/feature.h"
+
+#include "drivers/pwm_rx.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

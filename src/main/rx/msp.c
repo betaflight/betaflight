@@ -20,10 +20,11 @@
 
 #include "platform.h"
 
+#ifndef SKIP_RX_MSP
+
 #include "build/build_config.h"
 
-
-#ifndef SKIP_RX_MSP
+#include "common/utils.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"

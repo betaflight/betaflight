@@ -23,10 +23,12 @@
 #include <stdlib.h>
 
 #include <platform.h>
-#include "build/build_config.h"
-
 
 #ifdef USE_RX_V202
+
+#include "build/build_config.h"
+
+#include "common/utils.h"
 
 #include "drivers/rx_nrf24l01.h"
 #include "drivers/system.h"
