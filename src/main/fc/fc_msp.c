@@ -537,7 +537,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_RAW_IMU:
         {
             // Hack scale due to choice of units for sensor data in multiwii
-            const uint8_t scale = (acc.acc_1G > 1024) ? 8 : 1;
+            const uint8_t scale = (acc.dev.acc_1G > 1024) ? 8 : 1;
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, accADC[i] / scale);
             }

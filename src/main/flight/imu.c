@@ -30,7 +30,6 @@
 
 #include "build/build_config.h"
 
-
 #include "common/axis.h"
 #include "common/filter.h"
 
@@ -155,7 +154,7 @@ void imuInit(void)
     int axis;
 
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
-    gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
+    gyroScale = gyro.dev.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = 0;
@@ -417,7 +416,7 @@ static int imuCalculateAccelerometerConfidence(void)
     }
 
     // Magnitude^2 in percent of G^2
-    accMagnitude = accMagnitude * 100 / ((int32_t)acc.acc_1G * acc.acc_1G);
+    accMagnitude = accMagnitude * 100 / ((int32_t)acc.dev.acc_1G * acc.dev.acc_1G);
 
     int32_t nearness = ABS(100 - accMagnitude);
 
@@ -521,7 +520,7 @@ static void imuUpdateMeasuredAcceleration(void)
 #else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
+        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
 #endif
@@ -573,7 +572,7 @@ void imuUpdateAccelerometer(void)
 
 #ifdef ASYNC_GYRO_PROCESSING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccumulatedAcc[axis] += accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
+        imuAccumulatedAcc[axis] += accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
     }
     imuAccumulatedAccCount++;
 #endif

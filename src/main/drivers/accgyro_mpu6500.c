@@ -34,7 +34,7 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
-bool mpu6500AccDetect(acc_t *acc)
+bool mpu6500AccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -46,7 +46,7 @@ bool mpu6500AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro)
+bool mpu6500GyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -62,16 +62,14 @@ bool mpu6500GyroDetect(gyro_t *gyro)
     return true;
 }
 
-void mpu6500AccInit(acc_t *acc)
+void mpu6500AccInit(accDev_t *acc)
 {
-    mpuIntExtiInit();
-
-    acc->acc_1G = 512 * 8;
+    acc->acc_1G = 512 * 4;
 }
 
-void mpu6500GyroInit(uint8_t lpf)
+void mpu6500GyroInit(gyroDev_t *gyro)
 {
-    mpuIntExtiInit();
+    mpuGyroInit(gyro);
 
 #ifdef NAZE
     // FIXME target specific code in driver code.
@@ -98,7 +96,7 @@ void mpu6500GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
+    mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
     delay(100);

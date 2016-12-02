@@ -1313,8 +1313,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        masterConfig.motorConfig.minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        masterConfig.motorConfig.maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.scale));
-        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.acc_1G);
+        BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.dev.scale));
+        BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
@@ -1336,7 +1336,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.dev.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrMid8);

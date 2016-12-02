@@ -17,10 +17,8 @@
 
 #pragma once
 
-struct acc_s;
-bool fakeAccDetect(struct acc_s *acc);
+bool fakeAccDetect(accDev_t *acc);
 void fakeAccSet(int16_t x, int16_t y, int16_t z);
 
-struct gyro_s;
-bool fakeGyroDetect(struct gyro_s *gyro);
+bool fakeGyroDetect(gyroDev_t *gyro);
 void fakeGyroSet(int16_t x, int16_t y, int16_t z);

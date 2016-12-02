@@ -81,10 +81,10 @@
 
 static uint8_t device_id;
 
-static void mma8452Init(acc_t *acc);
+static void mma8452Init(accDev_t *acc);
 static bool mma8452Read(int16_t *accelData);
 
-bool mma8452Detect(acc_t *acc)
+bool mma8452Detect(accDev_t *acc)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -114,7 +114,7 @@ static inline void mma8451ConfigureInterrupt(void)
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG5, 0); // DRDY routed to INT2
 }
 
-static void mma8452Init(acc_t *acc)
+static void mma8452Init(accDev_t *acc)
 {
 
     i2cWrite(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_CTRL_REG1, 0); // Put device in standby to configure stuff

@@ -407,7 +407,7 @@ uint32_t getPidUpdateRate(void) {
 }
 
 uint32_t getGyroUpdateRate(void) {
-    return gyro.targetLooptime;
+    return gyro.dev.targetLooptime;
 }
 
 uint16_t getAccUpdateRate(void) {

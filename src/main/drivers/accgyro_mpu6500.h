@@ -20,6 +20,7 @@
 #define MPU6500_WHO_AM_I_CONST              (0x70)
 #define MPU9250_WHO_AM_I_CONST              (0x71)
 #define ICM20608G_WHO_AM_I_CONST            (0xAF)
+#define ICM20602_WHO_AM_I_CONST             (0x12)
 
 #define MPU6500_BIT_RESET                   (0x80)
 #define MPU6500_BIT_INT_ANYRD_2CLEAR        (1 << 4)
@@ -27,8 +28,8 @@
 #define MPU6500_BIT_I2C_IF_DIS              (1 << 4)
 #define MPU6500_BIT_RAW_RDY_EN              (0x01)
 
-bool mpu6500AccDetect(acc_t *acc);
-bool mpu6500GyroDetect(gyro_t *gyro);
+bool mpu6500AccDetect(accDev_t *acc);
+bool mpu6500GyroDetect(gyroDev_t *gyro);
 
-void mpu6500AccInit(acc_t *acc);
-void mpu6500GyroInit(uint8_t lpf);
+void mpu6500AccInit(accDev_t *acc);
+void mpu6500GyroInit(gyroDev_t *gyro);

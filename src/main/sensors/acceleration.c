@@ -53,6 +53,8 @@ static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
 void accInit(uint32_t targetLooptime)
 {
+    acc.dev.acc_1G = 256; // set default
+    acc.dev.init(&acc.dev);
     accTargetLooptime = targetLooptime;
     if (accLpfCutHz) {
         for (int axis = 0; axis < 3; axis++) {
@@ -159,7 +161,7 @@ void performAcclerationCalibration(void)
             accSample[Y] = accSamples[axis][Y] / CALIBRATING_ACC_CYCLES - accZero->raw[Y];
             accSample[Z] = accSamples[axis][Z] / CALIBRATING_ACC_CYCLES - accZero->raw[Z];
 
-            sensorCalibrationPushSampleForScaleCalculation(&calState, axis / 2, accSample, acc.acc_1G);
+            sensorCalibrationPushSampleForScaleCalculation(&calState, axis / 2, accSample, acc.dev.acc_1G);
         }
 
         sensorCalibrationSolveForScale(&calState, accTmp);
@@ -183,7 +185,7 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
 
 void updateAccelerationReadings(void)
 {
-    if (!acc.read(accADCRaw)) {
+    if (!acc.dev.read(accADCRaw)) {
         return;
     }
 
