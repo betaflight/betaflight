@@ -60,7 +60,7 @@
 #define MAG3110_MAG_REG_CTRL_REG2    0x11
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool mag3110detect(mag_t *mag)
+bool mag3110detect(magDev_t *mag)
 {
     for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
         uint8_t sig = 0;

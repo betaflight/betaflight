@@ -287,7 +287,7 @@ void onNewGPSData(void)
         /* Automatic magnetic declination calculation - do this once */
         static bool magDeclinationSet = false;
         if (posControl.navConfig->estimation.automatic_mag_declination && !magDeclinationSet && (gpsSol.numSat >= posControl.navConfig->estimation.gps_min_sats)) {
-            magneticDeclination = geoCalculateMagDeclination(&newLLH) * 10.0f; // heading is in 0.1deg units
+            mag.magneticDeclination = geoCalculateMagDeclination(&newLLH) * 10.0f; // heading is in 0.1deg units
             magDeclinationSet = true;
         }
 #endif

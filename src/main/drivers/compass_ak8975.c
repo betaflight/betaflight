@@ -60,7 +60,7 @@
 #define AK8975_MAG_REG_ASCT         0x0c // self test
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool ak8975Detect(mag_t *mag)
+bool ak8975Detect(magDev_t *mag)
 {
     for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
         uint8_t sig = 0;

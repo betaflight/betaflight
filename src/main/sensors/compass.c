@@ -41,12 +41,10 @@
 #endif
 
 mag_t mag;                   // mag access functions
-float magneticDeclination = 0.0f;       // calculated at startup from config
 
-int16_t magADCRaw[XYZ_AXIS_COUNT];
-int32_t magADC[XYZ_AXIS_COUNT];
-sensor_align_e magAlign = 0;
 #ifdef MAG
+
+static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 static uint8_t magUpdatedAtLeastOnce = 0;
 
@@ -54,12 +52,12 @@ bool compassInit(int16_t magDeclinationFromConfig)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    const bool ret = mag.init();
+    const bool ret = mag.dev.init();
     LED1_OFF;
     if (ret) {
         const int deg = magDeclinationFromConfig / 100;
         const int min = magDeclinationFromConfig % 100;
-        magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
+        mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
         magInit = 1;
     }
     return ret;
@@ -77,15 +75,15 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
     static timeUs_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];
 
-    if (!mag.read(magADCRaw)) {
-        magADC[X] = 0;
-        magADC[Y] = 0;
-        magADC[Z] = 0;
+    if (!mag.dev.read(magADCRaw)) {
+        mag.magADC[X] = 0;
+        mag.magADC[Y] = 0;
+        mag.magADC[Z] = 0;
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+        mag.magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
     }
 
     if (STATE(CALIBRATE_MAG)) {
@@ -101,9 +99,9 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[X] -= magZero->raw[X];
-        magADC[Y] -= magZero->raw[Y];
-        magADC[Z] -= magZero->raw[Z];
+        mag.magADC[X] -= magZero->raw[X];
+        mag.magADC[Y] -= magZero->raw[Y];
+        mag.magADC[Z] -= magZero->raw[Z];
     }
 
     if (calStartedAt != 0) {
@@ -114,16 +112,16 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
             float avgMag = 0;
 
             for (int axis = 0; axis < 3; axis++) {
-                diffMag += (magADC[axis] - magPrev[axis]) * (magADC[axis] - magPrev[axis]);
-                avgMag += (magADC[axis] + magPrev[axis]) * (magADC[axis] + magPrev[axis]) / 4.0f;
+                diffMag += (mag.magADC[axis] - magPrev[axis]) * (mag.magADC[axis] - magPrev[axis]);
+                avgMag += (mag.magADC[axis] + magPrev[axis]) * (mag.magADC[axis] + magPrev[axis]) / 4.0f;
             }
 
             // sqrtf(diffMag / avgMag) is a rough approximation of tangent of angle between magADC and magPrev. tan(8 deg) = 0.14
             if ((avgMag > 0.01f) && ((diffMag / avgMag) > (0.14f * 0.14f))) {
-                sensorCalibrationPushSampleForOffsetCalculation(&calState, magADC);
+                sensorCalibrationPushSampleForOffsetCalculation(&calState, mag.magADC);
 
                 for (int axis = 0; axis < 3; axis++) {
-                    magPrev[axis] = magADC[axis];
+                    magPrev[axis] = mag.magADC[axis];
                 }
             }
         } else {
@@ -140,7 +138,7 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
         }
     }
 
-    alignSensors(magADC, magAlign);
+    alignSensors(mag.magADC, mag.magAlign);
 
     magUpdatedAtLeastOnce = 1;
 }

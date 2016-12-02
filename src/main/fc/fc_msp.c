@@ -545,7 +545,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
                 sbufWriteU16(dst, gyroADC[i]);
             }
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, magADC[i]);
+                sbufWriteU16(dst, mag.magADC[i]);
             }
         }
         break;

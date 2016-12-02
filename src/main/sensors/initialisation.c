@@ -506,7 +506,7 @@ static bool detectPitot(uint8_t pitotHardwareToUse)
 #endif
 
 #ifdef MAG
-static bool detectMag(magSensor_e magHardwareToUse)
+static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
 {
     magSensor_e magHardware = MAG_NONE;
 
@@ -537,7 +537,7 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
 #endif
 
-    magAlign = ALIGN_DEFAULT;
+    mag.magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
         case MAG_DEFAULT:
@@ -545,9 +545,9 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-            if (hmc5883lDetect(&mag, hmc5883Config)) {
+            if (hmc5883lDetect(dev, hmc5883Config)) {
 #ifdef MAG_HMC5883_ALIGN
-                magAlign = MAG_HMC5883_ALIGN;
+                mag.magAlign = MAG_HMC5883_ALIGN;
 #endif
                 magHardware = MAG_HMC5883;
                 break;
@@ -557,9 +557,9 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-            if (ak8975Detect(&mag)) {
+            if (ak8975Detect(dev)) {
 #ifdef MAG_AK8975_ALIGN
-                magAlign = MAG_AK8975_ALIGN;
+                mag.magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
                 break;
@@ -569,9 +569,9 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_AK8963:
 #ifdef USE_MAG_AK8963
-            if (ak8963Detect(&mag)) {
+            if (ak8963Detect(dev)) {
 #ifdef MAG_AK8963_ALIGN
-                magAlign = MAG_AK8963_ALIGN;
+                mag.magAlign = MAG_AK8963_ALIGN;
 #endif
                 magHardware = MAG_AK8963;
                 break;
@@ -581,9 +581,9 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_GPS:
 #ifdef GPS
-            if (gpsMagDetect(&mag)) {
+            if (gpsMagDetect(dev)) {
 #ifdef MAG_GPS_ALIGN
-                magAlign = MAG_GPS_ALIGN;
+                mag.magAlign = MAG_GPS_ALIGN;
 #endif
                 magHardware = MAG_GPS;
                 break;
@@ -593,9 +593,9 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_MAG3110:
 #ifdef USE_MAG_MAG3110
-            if (mag3110detect(&mag)) {
+            if (mag3110detect(dev)) {
 #ifdef MAG_MAG3110_ALIGN
-                magAlign = MAG_MAG3110_ALIGN;
+                mag.magAlign = MAG_MAG3110_ALIGN;
 #endif
                 magHardware = MAG_MAG3110;
                 break;
@@ -605,7 +605,7 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_FAKE:
 #ifdef USE_FAKE_MAG
-            if (fakeMagDetect(&mag)) {
+            if (fakeMagDetect(dev)) {
                 magHardware = MAG_FAKE;
                 break;
             }
@@ -670,7 +670,7 @@ static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentC
         accAlign = sensorAlignmentConfig->acc_align;
     }
     if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
-        magAlign = sensorAlignmentConfig->mag_align;
+        mag.magAlign = sensorAlignmentConfig->mag_align;
     }
 }
 
@@ -710,9 +710,9 @@ bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
+    mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (detectMag(sensorSelectionConfig->mag_hardware)) {
+    if (detectMag(&mag.dev, sensorSelectionConfig->mag_hardware)) {
         // calculate magnetic declination
         if (!compassInit(magDeclinationFromConfig)) {
             addBootlogEvent2(BOOT_EVENT_MAG_INIT_FAILED, BOOT_EVENT_FLAGS_ERROR);

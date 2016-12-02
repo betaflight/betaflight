@@ -392,7 +392,7 @@ STATIC_UNIT_TESTED void imuUpdateEulerAngles(void)
     /* Compute pitch/roll angles */
     attitude.values.roll = RADIANS_TO_DECIDEGREES(atan2_approx(rMat[2][1], rMat[2][2]));
     attitude.values.pitch = RADIANS_TO_DECIDEGREES((0.5f * M_PIf) - acos_approx(-rMat[2][0]));
-    attitude.values.yaw = RADIANS_TO_DECIDEGREES(-atan2_approx(rMat[1][0], rMat[0][0])) + magneticDeclination;
+    attitude.values.yaw = RADIANS_TO_DECIDEGREES(-atan2_approx(rMat[1][0], rMat[0][0])) + mag.magneticDeclination;
 
     if (attitude.values.yaw < 0)
         attitude.values.yaw += 3600;
@@ -425,7 +425,7 @@ static int imuCalculateAccelerometerConfidence(void)
 
 static bool isMagnetometerHealthy(void)
 {
-    return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
+    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
 }
 
 static void imuCalculateEstimatedAttitude(float dT)
@@ -480,7 +480,7 @@ static void imuCalculateEstimatedAttitude(float dT)
 
     imuMahonyAHRSupdate(dT,     imuMeasuredRotationBF.A[X], imuMeasuredRotationBF.A[Y], imuMeasuredRotationBF.A[Z],
                         accWeight, imuMeasuredGravityBF.A[X], imuMeasuredGravityBF.A[Y], imuMeasuredGravityBF.A[Z],
-                        useMag, magADC[X], magADC[Y], magADC[Z],
+                        useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useCOG, courseOverGround);
 
     imuUpdateEulerAngles();
