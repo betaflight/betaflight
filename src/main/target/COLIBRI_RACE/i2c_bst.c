@@ -1482,10 +1482,10 @@ void bstProcessInCommand(void)
     }
 }
 
-static void resetBstChecker(uint32_t currentTime)
+static void resetBstChecker(timeUs_t currentTimeUs)
 {
     if(needResetCheck) {
-        if(currentTime >= (resetBstTimer + BST_RESET_TIME))
+        if(currentTimeUs >= (resetBstTimer + BST_RESET_TIME))
         {
             bstTimeoutUserCallback();
             needResetCheck = false;
@@ -1502,14 +1502,14 @@ static uint32_t next20hzUpdateAt_1 = 0;
 
 static uint8_t sendCounter = 0;
 
-void taskBstMasterProcess(uint32_t currentTime)
+void taskBstMasterProcess(timeUs_t currentTimeUs)
 {
     if(coreProReady) {
-        if(currentTime >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next02hzUpdateAt_1 && !bstWriteBusy()) {
             writeFCModeToBST();
-            next02hzUpdateAt_1 = currentTime + UPDATE_AT_02HZ;
+            next02hzUpdateAt_1 = currentTimeUs + UPDATE_AT_02HZ;
         }
-        if(currentTime >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTimeUs >= next20hzUpdateAt_1 && !bstWriteBusy()) {
             if(sendCounter == 0)
                 writeRCChannelToBST();
             else if(sendCounter == 1)
@@ -1517,7 +1517,7 @@ void taskBstMasterProcess(uint32_t currentTime)
             sendCounter++;
             if(sendCounter > 1)
                 sendCounter = 0;
-            next20hzUpdateAt_1 = currentTime + UPDATE_AT_20HZ;
+            next20hzUpdateAt_1 = currentTimeUs + UPDATE_AT_20HZ;
         }
 
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
@@ -1529,7 +1529,7 @@ void taskBstMasterProcess(uint32_t currentTime)
         stopMotors();
         systemReset();
     }
-    resetBstChecker(currentTime);
+    resetBstChecker(currentTimeUs);
 }
 
 /*************************************************************************************************/

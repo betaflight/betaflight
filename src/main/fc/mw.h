@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 extern int16_t magHold;
 extern bool isRXDataNew;
 
@@ -27,8 +29,8 @@ void handleInflightCalibrationStickPosition();
 void mwDisarm(void);
 void mwArm(void);
 
-void processRx(uint32_t currentTime);
+void processRx(timeUs_t currentTimeUs);
 void updateLEDs(void);
 void updateRcCommands(void);
 
-void taskMainPidLoop(uint32_t currentTime);
+void taskMainPidLoop(timeUs_t currentTimeUs);

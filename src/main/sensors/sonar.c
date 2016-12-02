@@ -88,9 +88,9 @@ static int32_t applySonarMedianFilter(int32_t newSonarReading)
         return newSonarReading;
 }
 
-void sonarUpdate(uint32_t currentTime)
+void sonarUpdate(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
     hcsr04_start_reading();
 }
 

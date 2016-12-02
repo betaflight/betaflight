@@ -77,7 +77,7 @@
 #include "config/config_master.h"
 
 #ifdef USE_BST
-void taskBstMasterProcess(uint32_t currentTime);
+void taskBstMasterProcess(timeUs_t currentTimeUs);
 #endif
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
@@ -90,16 +90,16 @@ void taskBstMasterProcess(uint32_t currentTime);
 #define IBATINTERVAL (6 * 3500)
 
 
-static void taskUpdateAccelerometer(uint32_t currentTime)
+static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
 }
 
-static void taskHandleSerial(uint32_t currentTime)
+static void taskHandleSerial(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
@@ -110,13 +110,13 @@ static void taskHandleSerial(uint32_t currentTime)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-static void taskUpdateBattery(uint32_t currentTime)
+static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
 #ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
     if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTime;
+        if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
+            vbatLastServiced = currentTimeUs;
             updateBattery();
         }
     }
@@ -124,18 +124,18 @@ static void taskUpdateBattery(uint32_t currentTime)
 
     static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
+        const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
+            ibatLastServiced = currentTimeUs;
             updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
 
-static void taskUpdateRxMain(uint32_t currentTime)
+static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    processRx(currentTime);
+    processRx(currentTimeUs);
     isRXDataNew = true;
 
 #if !defined(BARO) && !defined(SONAR)
@@ -158,18 +158,18 @@ static void taskUpdateRxMain(uint32_t currentTime)
 }
 
 #ifdef MAG
-static void taskUpdateCompass(uint32_t currentTime)
+static void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTime, &sensorTrims()->magZero);
+        compassUpdate(currentTimeUs, &sensorTrims()->magZero);
     }
 }
 #endif
 
 #ifdef BARO
-static void taskUpdateBaro(uint32_t currentTime)
+static void taskUpdateBaro(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     if (sensors(SENSOR_BARO)) {
         const uint32_t newDeadline = baroUpdate();
@@ -181,7 +181,7 @@ static void taskUpdateBaro(uint32_t currentTime)
 #endif
 
 #if defined(BARO) || defined(SONAR)
-static void taskCalculateAltitude(uint32_t currentTime)
+static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
 #if defined(BARO)
@@ -191,26 +191,26 @@ static void taskCalculateAltitude(uint32_t currentTime)
         || sensors(SENSOR_SONAR)
 #endif
         ) {
-        calculateEstimatedAltitude(currentTime);
+        calculateEstimatedAltitude(currentTimeUs);
     }}
 #endif
 
 #ifdef TELEMETRY
-static void taskTelemetry(uint32_t currentTime)
+static void taskTelemetry(timeUs_t currentTimeUs)
 {
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+        telemetryProcess(currentTimeUs, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
     }
 }
 #endif
 
 #ifdef USE_ESC_TELEMETRY
-static void taskEscTelemetry(uint32_t currentTime)
+static void taskEscTelemetry(timeUs_t currentTimeUs)
 {
     if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryProcess(currentTime);
+        escTelemetryProcess(currentTimeUs);
      }
  }
 #endif

@@ -494,12 +494,12 @@ void updateMagHold(void)
         magHold = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
 }
 
-void processRx(uint32_t currentTime)
+void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
     static bool airmodeIsActivated;
 
-    calculateRxChannelsAndUpdateFailsafe(currentTime);
+    calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
@@ -507,11 +507,11 @@ void processRx(uint32_t currentTime)
             mwDisarm();
     }
 
-    updateRSSI(currentTime);
+    updateRSSI(currentTimeUs);
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+        if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
             failsafeStartMonitoring();
         }
 
@@ -812,9 +812,9 @@ uint8_t setPidUpdateCountDown(void)
 }
 
 // Function for loop trigger
-void taskMainPidLoop(uint32_t currentTime)
+void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;

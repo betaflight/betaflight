@@ -116,7 +116,7 @@ typedef struct {
     /* Configuration */
     const char * taskName;
     const char * subTaskName;
-    bool (*checkFunc)(timeUs_t currentTimeUs, uint32_t currentDeltaTimeUs);
+    bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
     uint32_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero

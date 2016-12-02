@@ -369,7 +369,7 @@ static bool isMagnetometerHealthy(void)
     return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
 }
 
-static void imuCalculateEstimatedAttitude(uint32_t currentTime)
+static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
@@ -377,8 +377,8 @@ static void imuCalculateEstimatedAttitude(uint32_t currentTime)
     bool useMag = false;
     bool useYaw = false;
 
-    uint32_t deltaT = currentTime - previousIMUUpdateTime;
-    previousIMUUpdateTime = currentTime;
+    uint32_t deltaT = currentTimeUs - previousIMUUpdateTime;
+    previousIMUUpdateTime = currentTimeUs;
 
     if (imuIsAccelerometerHealthy()) {
         useAcc = true;
@@ -414,10 +414,10 @@ void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
     }
 }
 
-void imuUpdateAttitude(uint32_t currentTime)
+void imuUpdateAttitude(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
-        imuCalculateEstimatedAttitude(currentTime);
+        imuCalculateEstimatedAttitude(currentTimeUs);
     } else {
         acc.accSmooth[X] = 0;
         acc.accSmooth[Y] = 0;
