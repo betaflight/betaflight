@@ -557,6 +557,12 @@ COMMON_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
+NON_RT_SRC = \
+            io/serial_cli.c \
+            io/serial_4way.c \
+            io/serial_4way_avrootloader.c \
+            io/serial_4way_stk500v2.c
+
 HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
@@ -762,13 +768,14 @@ OPTIMIZE    = -Os
 else
 OPTIMIZE    = -Ofast
 endif
-LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
+LTO_BASE   = -flto -fuse-linker-plugin
+LTO_FLAGS   = $(LTO_BASE) $(OPTIMIZE)
+NON_RT_LTO_FLAGS   = $(LTO_BASE) -Os
 endif
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
 CFLAGS      += $(ARCH_FLAGS) \
-              $(LTO_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
@@ -848,8 +855,11 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
+	$(V1) $(if $(findstring $(subst ./src/main/,,$<), $(NON_RT_SRC)), \
+	echo "%% (unoptimised) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(NON_RT_LTO_FLAGS) $<, \
+	echo "%% $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(LTO_FLAGS) $<)
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
