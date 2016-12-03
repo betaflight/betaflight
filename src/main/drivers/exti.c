@@ -184,6 +184,58 @@ void EXTIEnable(IO_t io, bool enable)
 #endif
 }
 
+void EXTISetTrigger(IO_t io, EXTITrigger_TypeDef trigger)
+{
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
+
+    uint32_t extiLine = IO_EXTI_Line(io);
+
+    if (!extLine)
+        return;
+
+    switch (trigger) {
+    case EXTI_Trigger_Rising:
+        EXTI->RTSR |= extiLine;
+        EXTI->FTSR &= extiLine;
+        break;
+
+    case EXTI_Trigger_Falling:
+        EXTI->FTSR |= extiLine;
+        EXTI->RTSR &= extiLine;
+        break;
+
+    case EXTI_Trigger_Rising_Falling:
+        EXTI->FTSR |= extiLine;
+        EXTI->RTSR |= extiLine;
+    }
+
+#elif defined(STM32F303xC)
+
+    int extiLine = IO_EXTI_Line(io);
+
+    if (extiLine < 0)
+        return;
+    switch (trigger) {
+    case EXTI_Trigger_Rising:
+        EXTI->RTSR |= ~(1 << extiLine);
+        EXTI->FTSR &= ~(1 << extiLine);
+        break;
+
+    case EXTI_Trigger_Falling:
+        EXTI->FTSR |= ~(1 << extiLine);
+        EXTI->RTSR &= ~(1 << extiLine);
+        break;
+
+    case EXTI_Trigger_Rising_Falling:
+        EXTI->FTSR |= ~(1 << extiLine);
+        EXTI->RTSR |= ~(1 << extiLine);
+    }
+
+#else
+# error "Unsupported target"
+#endif
+}
+
 void EXTI_IRQHandler(void)
 {
     uint32_t exti_active = EXTI->IMR & EXTI->PR;
