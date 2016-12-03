@@ -176,7 +176,7 @@ typedef enum {
 } mspSDCardState_e;
 
 typedef enum {
-    MSP_SDCARD_FLAG_SUPPORTTED   = 1,
+    MSP_SDCARD_FLAG_SUPPORTTED   = 1
 } mspSDCardFlags_e;
 
 #define RATEPROFILE_MASK (1 << 7)

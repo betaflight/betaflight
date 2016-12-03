@@ -43,7 +43,7 @@ typedef enum {
     PASSTHRU_MODE   = (1 << 8),
     SONAR_MODE      = (1 << 9),
     FAILSAFE_MODE   = (1 << 10),
-    GTUNE_MODE      = (1 << 11),
+    GTUNE_MODE      = (1 << 11)
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;
@@ -57,7 +57,7 @@ typedef enum {
     GPS_FIX        = (1 << 1),
     CALIBRATE_MAG  = (1 << 2),
     SMALL_ANGLE    = (1 << 3),
-    FIXED_WING     = (1 << 4),                   // set when in flying_wing or airplane mode. currently used by althold selection code
+    FIXED_WING     = (1 << 4)                    // set when in flying_wing or airplane mode. currently used by althold selection code
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))

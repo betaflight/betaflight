@@ -32,8 +32,7 @@ typedef enum {
     ACC_MPU6000 = 7,
     ACC_MPU6500 = 8,
     ACC_ICM20689 = 9,
-    ACC_FAKE = 10,
-    ACC_MAX = ACC_FAKE
+    ACC_FAKE = 10
 } accelerationSensor_e;
 
 typedef struct acc_s {

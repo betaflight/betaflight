@@ -28,8 +28,7 @@ typedef enum {
     MAG_NONE = 1,
     MAG_HMC5883 = 2,
     MAG_AK8975 = 3,
-    MAG_AK8963 = 4,
-    MAG_MAX = MAG_AK8963
+    MAG_AK8963 = 4
 } magSensor_e;
 
 typedef struct mag_s {

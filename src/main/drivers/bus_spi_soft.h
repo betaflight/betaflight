@@ -20,8 +20,7 @@
 #include "io_types.h"
 
 typedef enum softSPIDevice {
-    SOFT_SPIDEV_1   = 0,
-    SOFT_SPIDEV_MAX = SOFT_SPIDEV_1,
+    SOFT_SPIDEV_1   = 0
 } softSPIDevice_e;
 
 typedef struct softSPIDevice_s {

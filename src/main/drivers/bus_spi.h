@@ -46,17 +46,17 @@ typedef enum {
     SPI_CLOCK_SLOW          = 128, //00.65625 MHz
     SPI_CLOCK_STANDARD      = 8,   //10.50000 MHz
     SPI_CLOCK_FAST          = 4,   //21.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //42.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //42.00000 MHz
 #elif defined(STM32F7)
     SPI_CLOCK_SLOW          = 256, //00.42188 MHz
     SPI_CLOCK_STANDARD      = 16,  //06.57500 MHz
     SPI_CLOCK_FAST          = 4,   //27.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //54.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //54.00000 MHz
 #else
     SPI_CLOCK_SLOW          = 128, //00.56250 MHz
     SPI_CLOCK_STANDARD      = 4,   //09.00000 MHz
     SPI_CLOCK_FAST          = 2,   //18.00000 MHz
-    SPI_CLOCK_ULTRAFAST     = 2,   //18.00000 MHz
+    SPI_CLOCK_ULTRAFAST     = 2    //18.00000 MHz
 #endif
 } SPIClockDivider_e;
 
@@ -65,8 +65,7 @@ typedef enum SPIDevice {
     SPIDEV_1   = 0,
     SPIDEV_2,
     SPIDEV_3,
-    SPIDEV_4,
-    SPIDEV_MAX = SPIDEV_4,
+    SPIDEV_4
 } SPIDevice;
 
 typedef struct SPIDevice_s {
