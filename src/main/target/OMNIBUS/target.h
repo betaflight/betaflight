@@ -29,8 +29,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI PC13
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready (mag disabled)
-#define EXTI15_10_CALLBACK_HANDLER_COUNT 3 // MPU_INT, SDCardDetect
 
 #define MPU6000_SPI_INSTANCE    SPI1
 #define MPU6000_CS_PIN          PA4
@@ -78,7 +76,7 @@
 #define UART3_TX_PIN            PB10 // PB10 (AF7)
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
-//#define USE_I2C
+#define USE_I2C
 #define I2C_DEVICE (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_ESCSERIAL

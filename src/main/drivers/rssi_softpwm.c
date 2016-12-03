@@ -21,7 +21,7 @@
 #ifdef USE_RSSI_SOFTPWM
 
 #ifndef USE_EXTI
-Configuration problem: USE_RSSI_SOFTPWM requires USE_EXTI
+# error Configuration problem: USE_RSSI_SOFTPWM requires USE_EXTI
 #endif
 
 #include "system.h"
@@ -39,12 +39,11 @@ Configuration problem: USE_RSSI_SOFTPWM requires USE_EXTI
 static IO_t rspIO;
 static extiCallbackRec_t rsp_extiCallbackRec;
 
-static bool rspInitialized = false;
 static bool rspActive = false;
 static volatile bool rspInProgress = false;
 
 static volatile uint32_t rawWidth;
-static volatile uint32_t pulseWidth;
+static uint32_t pulseWidth;
 
 static uint8_t rxtype;
 
@@ -81,7 +80,7 @@ static void rspExtiHandler(extiCallbackRec_t* cb)
 
 // Measurement for min and max pulse width.
 // Should eventually be gone.
-static uint32_t tmin = 0xFFFFFFFF;
+static uint32_t tmin = UINT32_MAX;
 static uint32_t tmax = 0;
 
 static void rspComputePulse(void)
@@ -90,13 +89,7 @@ static void rspComputePulse(void)
 
     switch (rxtype) {
     case RXTYPE_FRSKY_TFR4:
-        if (rawWidth > pulseMax) {
-            pulseWidth = pulseMax;
-        } else if (rawWidth < pulseMin) {
-            pulseWidth = pulseMin;
-        } else {
-            pulseWidth = rawWidth;
-        }
+        constrain(rawWidth, pulseMin, pulseMax);
         break;
 
     case RXTYPE_FRSKY_X4R: // Probably all X series
@@ -148,26 +141,13 @@ static int rspFilterPos;
 
 bool rssiSoftPwmInit(void)
 {
-    // Nothing special, standard spell.
-    // XXX Are these done in exti.c already?
-#ifdef STM32F10X
-    // enable AFIO for EXTI support
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-#endif
+    rspIO = IOGetByTag(masterConfig.rssiSoftPwmConfig.ioTag);
 
-#if defined(STM32F3) || defined(STM32F4)
-    /* Enable SYSCFG clock otherwise the EXTI irq handlers are not called */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif
-
-    ioTag_t tag = masterConfig.rssiSoftPwmConfig.ioTag;
-    if (tag == IO_TAG_NONE)
+    if (!rspIO)
         return false;
 
-    rspIO = IOGetByTag(tag);
-
     IOInit(rspIO, OWNER_RSSIPWM, 0);
-    IOConfigGPIO(rspIO, IOCFG_IN_FLOATING);
+    IOConfigGPIO(rspIO, IOCFG_IPD);
 
     EXTIHandlerInit(&rsp_extiCallbackRec, rspExtiHandler);
     EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
@@ -186,7 +166,6 @@ bool rssiSoftPwmInit(void)
         break;
     }
 
-    rspInitialized = true;
     rspActive = false;
 
     for (int i = 0 ; i < 5 ; i++)
@@ -197,7 +176,9 @@ bool rssiSoftPwmInit(void)
     return true;
 }
 
+//
 // rssiSoftPwmUpdate: Scheduler task
+//
 
 void rssiSoftPwmUpdate(uint32_t currentTime)
 {
@@ -206,10 +187,6 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     uint32_t value;
     bool longPulse = false;
     uint8_t longValue;
-
-    if (!rspInitialized) {
-        return;
-    }
 
     ATOMIC_BLOCK(NVIC_PRIO_SOFTPWM_EXTI) {
         if (rspInProgress) {

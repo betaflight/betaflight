@@ -1,5 +1,7 @@
 #pragma once
 
+#include "drivers/io_types.h" // For ioTag_t
+
 bool rssiSoftPwmInit(void);
 void rssiSoftPwmUpdate(uint32_t currentTime);
 uint16_t rssiSoftPwmRead(void);

@@ -500,12 +500,11 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 #ifdef USE_RSSI_SOFTPWM
 void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
 {
-#if defined(RSSI_SOFTPWM_PIN)
-    rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
-#else
-    rssiSoftPwmConfig->ioTag = IO_TAG(NONE);
+#ifndef RSSI_SOFTPWM_PIN
+# define RSSI_SOFTPWM_PIN NONE
 #endif
 
+    rssiSoftPwmConfig->ioTag = IO_TAG(RSSI_SOFTPWM_PIN);
     rssiSoftPwmConfig->device = RXTYPE_FRSKY_X4R;
 }
 #endif

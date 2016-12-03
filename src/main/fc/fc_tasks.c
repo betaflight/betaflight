@@ -32,8 +32,6 @@
 #include "drivers/compass.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
-
-#include "drivers/io_types.h" // XXX Temprary, for ioTag_t
 #include "drivers/rssi_softpwm.h"
 
 #include "fc/config.h"
