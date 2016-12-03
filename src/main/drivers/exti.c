@@ -190,7 +190,7 @@ void EXTISetTrigger(IO_t io, EXTITrigger_TypeDef trigger)
 
     uint32_t extiLine = IO_EXTI_Line(io);
 
-    if (!extLine)
+    if (!extiLine)
         return;
 
     switch (trigger) {
