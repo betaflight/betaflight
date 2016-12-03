@@ -184,59 +184,37 @@ void EXTIEnable(IO_t io, bool enable)
 #endif
 }
 
-#if !defined(STM32F7) // For now
 void EXTISetTrigger(IO_t io, EXTITrigger_TypeDef trigger)
 {
-#if defined(STM32F1) || defined(STM32F4)
+uint32_t extiMask;
 
-    uint32_t extiLine = IO_EXTI_Line(io);
-
-    if (!extiLine)
-        return;
-
-    switch (trigger) {
-    case EXTI_Trigger_Rising:
-        EXTI->RTSR |= extiLine;
-        EXTI->FTSR &= extiLine;
-        break;
-
-    case EXTI_Trigger_Falling:
-        EXTI->FTSR |= extiLine;
-        EXTI->RTSR &= extiLine;
-        break;
-
-    case EXTI_Trigger_Rising_Falling:
-        EXTI->FTSR |= extiLine;
-        EXTI->RTSR |= extiLine;
-    }
-
+#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
+    extiMask = IO_EXTI_Line(io);
 #elif defined(STM32F303xC)
-
-    int extiLine = IO_EXTI_Line(io);
-
-    if (extiLine < 0)
-        return;
-    switch (trigger) {
-    case EXTI_Trigger_Rising:
-        EXTI->RTSR |= ~(1 << extiLine);
-        EXTI->FTSR &= ~(1 << extiLine);
-        break;
-
-    case EXTI_Trigger_Falling:
-        EXTI->FTSR |= ~(1 << extiLine);
-        EXTI->RTSR &= ~(1 << extiLine);
-        break;
-
-    case EXTI_Trigger_Rising_Falling:
-        EXTI->FTSR |= ~(1 << extiLine);
-        EXTI->RTSR |= ~(1 << extiLine);
-    }
-
+    extiMask = 1 << IO_EXTI_Line(io); // Negative (or huge) shift!? Zero anyway?
 #else
 # error "Unsupported target"
 #endif
+
+    if (!extiMask)
+        return;
+
+    switch (trigger) {
+    case EXTI_Trigger_Rising:
+        EXTI->RTSR |= extiMask;
+        EXTI->FTSR &= ~extiMask;
+        break;
+
+    case EXTI_Trigger_Falling:
+        EXTI->FTSR |= extiMask;
+        EXTI->RTSR &= ~extiMask;
+        break;
+
+    case EXTI_Trigger_Rising_Falling:
+        EXTI->FTSR |= extiMask;
+        EXTI->RTSR |= ~extiMask;
+    }
 }
-#endif // !F7
 
 void EXTI_IRQHandler(void)
 {

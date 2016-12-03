@@ -32,6 +32,17 @@ struct extiCallbackRec_s {
     extiHandlerCallback *fn;
 };
 
+#ifdef STM32F7
+// EXTITrigger_TypeDef, copied from STM32F4xx_StdPeriph_Driver/inc/stm32f4xx_exti.h
+
+typedef enum
+{
+  EXTI_Trigger_Rising = 0x08,
+  EXTI_Trigger_Falling = 0x0C,
+  EXTI_Trigger_Rising_Falling = 0x10
+}EXTITrigger_TypeDef;
+#endif
+
 void EXTIInit(void);
 
 void EXTIHandlerInit(extiCallbackRec_t *cb, extiHandlerCallback *fn);
