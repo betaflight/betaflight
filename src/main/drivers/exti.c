@@ -184,9 +184,10 @@ void EXTIEnable(IO_t io, bool enable)
 #endif
 }
 
+#if !defined(STM32F7) // For now
 void EXTISetTrigger(IO_t io, EXTITrigger_TypeDef trigger)
 {
-#if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F1) || defined(STM32F4)
 
     uint32_t extiLine = IO_EXTI_Line(io);
 
@@ -235,6 +236,7 @@ void EXTISetTrigger(IO_t io, EXTITrigger_TypeDef trigger)
 # error "Unsupported target"
 #endif
 }
+#endif // !F7
 
 void EXTI_IRQHandler(void)
 {
