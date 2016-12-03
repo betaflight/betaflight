@@ -29,8 +29,6 @@ typedef enum {
     BARO_MAX = BARO_FAKE
 } baroSensor_e;
 
-#define BARO_SAMPLE_COUNT_MAX   48
-
 typedef struct barometerConfig_s {
     uint8_t use_median_filtering;       // Use 3-point median filtering
 } barometerConfig_t;

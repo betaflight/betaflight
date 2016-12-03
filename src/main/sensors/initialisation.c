@@ -381,7 +381,7 @@ retry:
 }
 
 #ifdef BARO
-static bool detectBaro(baroSensor_e baroHardwareToUse)
+static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
@@ -413,7 +413,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
 
         case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-            if (bmp085Detect(bmp085Config, &baro.dev)) {
+            if (bmp085Detect(bmp085Config, dev)) {
                 baroHardware = BARO_BMP085;
                 break;
             }
@@ -421,7 +421,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
         ; // fallthough
         case BARO_MS5611:
 #ifdef USE_BARO_MS5611
-            if (ms5611Detect(&baro.dev)) {
+            if (ms5611Detect(dev)) {
                 baroHardware = BARO_MS5611;
                 break;
             }
@@ -429,7 +429,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             ; // fallthough
         case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
-            if (bmp280Detect(&baro.dev)) {
+            if (bmp280Detect(dev)) {
                 baroHardware = BARO_BMP280;
                 break;
             }
@@ -437,7 +437,7 @@ static bool detectBaro(baroSensor_e baroHardwareToUse)
             ; // fallthrough
         case BARO_FAKE:
 #ifdef USE_FAKE_BARO
-            if (fakeBaroDetect(&baro.dev)) {
+            if (fakeBaroDetect(dev)) {
                 baroHardware = BARO_FAKE;
                 break;
             }
@@ -702,7 +702,7 @@ bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
     }
 
 #ifdef BARO
-    detectBaro(sensorSelectionConfig->baro_hardware);
+    detectBaro(&baro.dev, sensorSelectionConfig->baro_hardware);
 #endif
 
 #ifdef PITOT
