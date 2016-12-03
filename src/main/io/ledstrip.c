@@ -518,7 +518,7 @@ typedef enum {
     WARNING_FAILSAFE,
 } warningFlags_e;
 
-static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
+static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t warningFlashCounter = 0;
     static uint8_t warningFlags = 0;          // non-zero during blinks
@@ -564,7 +564,7 @@ static void applyLedWarningLayer(bool updateNow, uint32_t *timer)
     }
 }
 
-static void applyLedBatteryLayer(bool updateNow, uint32_t *timer)
+static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
@@ -601,7 +601,7 @@ static void applyLedBatteryLayer(bool updateNow, uint32_t *timer)
     }
 }
 
-static void applyLedRssiLayer(bool updateNow, uint32_t *timer)
+static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
@@ -632,7 +632,7 @@ static void applyLedRssiLayer(bool updateNow, uint32_t *timer)
 }
 
 #ifdef GPS
-static void applyLedGpsLayer(bool updateNow, uint32_t *timer)
+static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t gpsFlashCounter = 0;
     static uint8_t gpsPauseCounter = 0;
@@ -671,7 +671,7 @@ static void applyLedGpsLayer(bool updateNow, uint32_t *timer)
 
 #define INDICATOR_DEADBAND 25
 
-static void applyLedIndicatorLayer(bool updateNow, uint32_t *timer)
+static void applyLedIndicatorLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = 0;
 
@@ -734,7 +734,7 @@ static void updateLedRingCounts(void)
     ledCounts.ringSeqLen = seqLen;
 }
 
-static void applyLedThrustRingLayer(bool updateNow, uint32_t *timer)
+static void applyLedThrustRingLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t rotationPhase;
     int ledRingIndex = 0;
@@ -804,7 +804,7 @@ static void larsonScannerNextStep(larsonParameters_t *larsonParameters, int delt
     }
 }
 
-static void applyLarsonScannerLayer(bool updateNow, uint32_t *timer)
+static void applyLarsonScannerLayer(bool updateNow, timeUs_t *timer)
 {
     static larsonParameters_t larsonParameters = { 0, 0, 1 };
 
@@ -829,7 +829,7 @@ static void applyLarsonScannerLayer(bool updateNow, uint32_t *timer)
 }
 
 // blink twice, then wait ; either always or just when landing
-static void applyLedBlinkLayer(bool updateNow, uint32_t *timer)
+static void applyLedBlinkLayer(bool updateNow, timeUs_t *timer)
 {
     const uint16_t blinkPattern = 0x8005; // 0b1000000000000101;
     static uint16_t blinkMask;
@@ -856,7 +856,7 @@ static void applyLedBlinkLayer(bool updateNow, uint32_t *timer)
 }
 
 #ifdef USE_LED_ANIMATION
-static void applyLedAnimationLayer(bool updateNow, uint32_t *timer)
+static void applyLedAnimationLayer(bool updateNow, timeUs_t *timer)
 {
     static uint8_t frameCounter = 0;
     const int animationFrames = ledGridHeight;
@@ -904,14 +904,14 @@ typedef enum {
     timTimerCount
 } timId_e;
 
-static uint32_t timerVal[timTimerCount];
+static timeUs_t timerVal[timTimerCount];
 
 // function to apply layer.
 // function must replan self using timer pointer
 // when updateNow is true (timer triggered), state must be updated first,
 //  before calculating led state. Otherwise update started by different trigger
 //  may modify LED state.
-typedef void applyLayerFn_timed(bool updateNow, uint32_t *timer);
+typedef void applyLayerFn_timed(bool updateNow, timeUs_t *timer);
 
 static applyLayerFn_timed* layerTable[] = {
     [timBlink] = &applyLedBlinkLayer,
@@ -929,7 +929,7 @@ static applyLayerFn_timed* layerTable[] = {
     [timRing] = &applyLedThrustRingLayer
 };
 
-void ledStripUpdate(uint32_t currentTime)
+void ledStripUpdate(timeUs_t currentTimeUs)
 {
     if (!(ledStripInitialised && isWS2811LedStripReady())) {
         return;
@@ -944,13 +944,13 @@ void ledStripUpdate(uint32_t currentTime)
     }
     ledStripEnabled = true;
 
-    const uint32_t now = currentTime;
+    const uint32_t now = currentTimeUs;
 
     // test all led timers, setting corresponding bits
     uint32_t timActive = 0;
     for (timId_e timId = 0; timId < timTimerCount; timId++) {
         // sanitize timer value, so that it can be safely incremented. Handles inital timerVal value.
-        int32_t delta = cmp32(now, timerVal[timId]);
+        const timeDelta_t delta = cmpTimeUs(now, timerVal[timId]);
         // max delay is limited to 5s
         if (delta < 0 && delta > -MAX_TIMER_DELAY)
             continue;  // not ready yet

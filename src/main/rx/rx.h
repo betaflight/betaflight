@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define STICK_CHANNEL_COUNT 4
 
 #define PWM_RANGE_ZERO 0 // FIXME should all usages of this be changed to use PWM_RANGE_MIN?
@@ -155,14 +157,14 @@ extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only need
 struct modeActivationCondition_s;
 void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(const rxConfig_t *rxConfigToUse);
-bool rxUpdateCheck(uint32_t currentTime, uint32_t currentDeltaTime);
+bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
+void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
-void updateRSSI(uint32_t currentTime);
+void updateRSSI(timeUs_t currentTimeUs);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
 void suspendRxSignal(void);

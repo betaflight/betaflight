@@ -200,9 +200,9 @@ uint8_t escTelemetryFrameStatus(void)
     return frameStatus;
 }
 
-void escTelemetryProcess(uint32_t currentTime)
+void escTelemetryProcess(timeUs_t currentTimeUs)
 {
-    uint32_t currentTimeMs = currentTime / 1000;
+    const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
     if (!escTelemetryEnabled) {
         return;
