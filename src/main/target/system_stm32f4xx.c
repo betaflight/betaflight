@@ -316,6 +316,7 @@
 
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
+#include "platform.h"
 
 uint32_t hse_value = HSE_VALUE;
 
@@ -354,19 +355,19 @@ uint32_t hse_value = HSE_VALUE;
 /******************************************************************************/
 
 /************************* PLL Parameters *************************************/
+#if defined(TARGET_XTAL_MHZ)
+ #define PLL_M      TARGET_XTAL_MHZ
+#else
 #if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F401xx) || defined(STM32F469_479xx)
  /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
-#if defined(COLIBRI)
- #define PLL_M      16
-#else
  #define PLL_M      8
-#endif
 #elif defined (STM32F446xx)
  #define PLL_M      8
 #elif defined (STM32F410xx) || defined (STM32F411xE)
  #define PLL_M      8
 #else
 #endif /* STM32F40_41xxx || STM32F427_437xx || STM32F429_439xx || STM32F401xx || STM32F469_479xx */
+#endif
 
 #if defined(STM32F446xx)
 /* PLL division factor for I2S, SAI, SYSTEM and SPDIF: Clock =  PLL_VCO / PLLR */
@@ -422,22 +423,8 @@ uint32_t hse_value = HSE_VALUE;
 /** @addtogroup STM32F4xx_System_Private_Variables
   * @{
   */
-
-#if defined(STM32F40_41xxx)
-  uint32_t SystemCoreClock = 168000000;
-#endif /* STM32F40_41xxx */
-
-#if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F469_479xx)
-  uint32_t SystemCoreClock = 180000000;
-#endif /* STM32F427_437x || STM32F429_439xx || STM32F446xx || STM32F469_479xx */
-
-#if defined(STM32F401xx)
-  uint32_t SystemCoreClock = 84000000;
-#endif /* STM32F401xx */
-
-#if defined(STM32F410xx) || defined(STM32F411xE)
-  uint32_t SystemCoreClock = 96000000;
-#endif /* STM32F410xx || STM32F401xE */
+/* core clock is simply a mhz of PLL_N / PLL_P */
+uint32_t SystemCoreClock = (PLL_N / PLL_P) * 1000000;
 
 __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 

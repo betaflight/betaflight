@@ -26,8 +26,7 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
-#define PLL_M                   16
-#define PLL_N                   336
+#define TARGET_XTAL_MHZ         16
 
 #define LED0                    PC14
 #define LED1                    PC13
