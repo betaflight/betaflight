@@ -359,7 +359,6 @@ uint32_t hse_value = HSE_VALUE;
  #define PLL_M      TARGET_XTAL_MHZ
 #else
 #if defined(STM32F40_41xxx) || defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F401xx) || defined(STM32F469_479xx)
- /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
  #define PLL_M      8
 #elif defined (STM32F446xx)
  #define PLL_M      8
