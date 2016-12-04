@@ -615,23 +615,11 @@ LOW_PRIO_SRC = \
             cms/cms_menu_vtx.c \
             flight/gtune.c \
             flight/gps_conversion.c \
-            io/dashboard.c \
-            io/displayport_max7456.c \
-            io/displayport_msp.c \
-            io/displayport_oled.c \
             io/gps.c \
             io/ledstrip.c \
             io/osd.c \
             sensors/sonar.c \
             sensors/barometer.c \
-            telemetry/telemetry.c \
-            telemetry/crsf.c \
-            telemetry/frsky.c \
-            telemetry/hott.c \
-            telemetry/smartport.c \
-            telemetry/ltm.c \
-            telemetry/mavlink.c \
-            telemetry/esc_telemetry.c \
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -801,14 +789,20 @@ else
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMISE                 = -Os
 OPTIMISE_LOW_PRIO        = -Os
-else
+OPTIMISE_NON_RT          = -Os
+else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 OPTIMISE                 = -Ofast
 OPTIMISE_LOW_PRIO        = -O2
+OPTIMISE_NON_RT          = -Os
+else
+OPTIMISE                 = -Ofast
+OPTIMISE_LOW_PRIO        = -Ofast
+OPTIMISE_NON_RT          = -Ofast
 endif
 OPTIMISATION_BASE        = -flto -fuse-linker-plugin -ffast-math
 CC_OPTIMISATION          = $(OPTIMISATION_BASE) $(OPTIMISE)
 LOW_PRIO_CC_OPTIMISATION = $(OPTIMISATION_BASE) $(OPTIMISE_LOW_PRIO)
-NON_RT_CC_OPTIMISATION   = $(OPTIMISATION_BASE) -Os
+NON_RT_CC_OPTIMISATION   = $(OPTIMISATION_BASE) $(OPTIMISE_NON_RT)
 LTO_FLAGS                = $(OPTIMISATION_BASE) $(OPTIMIZE)
 endif
 
