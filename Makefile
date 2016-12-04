@@ -770,7 +770,7 @@ OPTIMIZE    = -Ofast
 endif
 LTO_BASE   = -flto -fuse-linker-plugin
 LTO_FLAGS   = $(LTO_BASE) $(OPTIMIZE)
-NON_RT_LTO_FLAGS   = $(LTO_BASE) -Os
+NON_RT_LTO_FLAGS   = $(LTO_BASE) -Os -ffast-math
 endif
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
