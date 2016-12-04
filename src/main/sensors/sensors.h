@@ -52,12 +52,6 @@ typedef enum {
     SENSOR_GPSMAG = 1 << 6
 } sensors_e;
 
-typedef struct sensorSelectionConfig_s {
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
-    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-} sensorSelectionConfig_t;
-
 typedef struct sensorTrims_s {
     flightDynamicsTrims_t accZero;
     flightDynamicsTrims_t magZero;

@@ -1271,9 +1271,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("gyro_notch_cutoff:%d,%d",             gyroConfig()->gyro_soft_notch_cutoff_1,
                                                                           gyroConfig()->gyro_soft_notch_cutoff_2);
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                 (int)(accelerometerConfig()->acc_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     sensorSelectionConfig()->acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    sensorSelectionConfig()->baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     sensorSelectionConfig()->mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     accelerometerConfig()->acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    barometerConfig()->baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     compassConfig()->mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            armingConfig()->gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation:%d",                 rxConfig()->rcInterpolation);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        rxConfig()->rcInterpolationInterval);

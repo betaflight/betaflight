@@ -623,10 +623,10 @@ static bool detectSonar(void)
 }
 #endif
 
-bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
-        const gyroConfig_t *gyroConfig,
-        const accelerometerConfig_t *accConfig,
+bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
+        const accelerometerConfig_t *accelerometerConfig,
         const compassConfig_t *compassConfig,
+        const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
     memset(&acc, 0, sizeof(acc));
@@ -651,7 +651,7 @@ bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
     gyro.dev.init(&gyro.dev); // driver initialisation
     gyroInit(gyroConfig); // sensor initialisation
 
-    if (detectAcc(sensorSelectionConfig->acc_hardware)) {
+    if (detectAcc(accelerometerConfig->acc_hardware)) {
         acc.dev.acc_1G = 256; // set default
         acc.dev.init(&acc.dev); // driver initialisation
         accInit(gyro.targetLooptime); // sensor initialisation
@@ -661,7 +661,7 @@ bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
-    if (detectMag(sensorSelectionConfig->mag_hardware)) {
+    if (detectMag(compassConfig->mag_hardware)) {
         // calculate magnetic declination
         const int16_t deg = compassConfig->mag_declination / 100;
         const int16_t min = compassConfig->mag_declination % 100;
@@ -673,7 +673,9 @@ bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
 #endif
 
 #ifdef BARO
-    detectBaro(sensorSelectionConfig->baro_hardware);
+    detectBaro(barometerConfig->baro_hardware);
+#else
+    UNUSED(barometerConfig);
 #endif
 
 #ifdef SONAR
@@ -687,8 +689,8 @@ bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
     if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
         gyro.dev.gyroAlign = gyroConfig->gyro_align;
     }
-    if (accConfig->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accConfig->acc_align;
+    if (accelerometerConfig->acc_align != ALIGN_DEFAULT) {
+        acc.dev.accAlign = accelerometerConfig->acc_align;
     }
     if (compassConfig->mag_align != ALIGN_DEFAULT) {
         mag.dev.magAlign = compassConfig->mag_align;

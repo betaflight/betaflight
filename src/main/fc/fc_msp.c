@@ -1125,9 +1125,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_CONFIG:
-        sbufWriteU8(dst, sensorSelectionConfig()->acc_hardware);
-        sbufWriteU8(dst, sensorSelectionConfig()->baro_hardware);
-        sbufWriteU8(dst, sensorSelectionConfig()->mag_hardware);
+        sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+        sbufWriteU8(dst, barometerConfig()->baro_hardware);
+        sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
 
     case MSP_REBOOT:
@@ -1487,9 +1487,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        sensorSelectionConfig()->acc_hardware = sbufReadU8(src);
-        sensorSelectionConfig()->baro_hardware = sbufReadU8(src);
-        sensorSelectionConfig()->mag_hardware = sbufReadU8(src);
+        accelerometerConfig()->acc_hardware = sbufReadU8(src);
+        barometerConfig()->baro_hardware = sbufReadU8(src);
+        compassConfig()->mag_hardware = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:

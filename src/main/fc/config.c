@@ -589,15 +589,15 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->rcControlsConfig.yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
-    config->sensorSelectionConfig.mag_hardware = 1;
+    config->compassConfig.mag_hardware = 1;
 
-    config->sensorSelectionConfig.baro_hardware = 1;
+    config->barometerConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
