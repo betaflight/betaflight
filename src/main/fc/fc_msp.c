@@ -1079,9 +1079,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, sensorAlignmentConfig()->gyro_align);
-        sbufWriteU8(dst, sensorAlignmentConfig()->acc_align);
-        sbufWriteU8(dst, sensorAlignmentConfig()->mag_align);
+        sbufWriteU8(dst, gyroConfig()->gyro_align);
+        sbufWriteU8(dst, accelerometerConfig()->acc_align);
+        sbufWriteU8(dst, compassConfig()->mag_align);
         break;
 
     case MSP_ADVANCED_CONFIG:
@@ -1432,9 +1432,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        sensorAlignmentConfig()->gyro_align = sbufReadU8(src);
-        sensorAlignmentConfig()->acc_align = sbufReadU8(src);
-        sensorAlignmentConfig()->mag_align = sbufReadU8(src);
+        gyroConfig()->gyro_align = sbufReadU8(src);
+        accelerometerConfig()->acc_align = sbufReadU8(src);
+        compassConfig()->mag_align = sbufReadU8(src);
         break;
 
     case MSP_SET_ADVANCED_CONFIG:

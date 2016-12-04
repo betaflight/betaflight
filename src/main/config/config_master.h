@@ -67,7 +67,6 @@
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
 #define sensorSelectionConfig(x) (&masterConfig.sensorSelectionConfig)
-#define sensorAlignmentConfig(x) (&masterConfig.sensorAlignmentConfig)
 #define sensorTrims(x) (&masterConfig.sensorTrims)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
@@ -124,7 +123,6 @@ typedef struct master_s {
 
     // global sensor-related stuff
     sensorSelectionConfig_t sensorSelectionConfig;
-    sensorAlignmentConfig_t sensorAlignmentConfig;
     sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 

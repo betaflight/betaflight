@@ -161,7 +161,7 @@ bool detectGyro(void)
 {
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
-    gyro.gyroAlign = ALIGN_DEFAULT;
+    gyro.dev.gyroAlign = ALIGN_DEFAULT;
 
     switch(gyroHardware) {
         case GYRO_DEFAULT:
@@ -171,7 +171,7 @@ bool detectGyro(void)
             if (mpu6050GyroDetect(&gyro.dev)) {
                 gyroHardware = GYRO_MPU6050;
 #ifdef GYRO_MPU6050_ALIGN
-                gyro.gyroAlign = GYRO_MPU6050_ALIGN;
+                gyro.dev.gyroAlign = GYRO_MPU6050_ALIGN;
 #endif
                 break;
             }
@@ -182,7 +182,7 @@ bool detectGyro(void)
             if (l3g4200dDetect(&gyro.dev)) {
                 gyroHardware = GYRO_L3G4200D;
 #ifdef GYRO_L3G4200D_ALIGN
-                gyro.gyroAlign = GYRO_L3G4200D_ALIGN;
+                gyro.dev.gyroAlign = GYRO_L3G4200D_ALIGN;
 #endif
                 break;
             }
@@ -194,7 +194,7 @@ bool detectGyro(void)
             if (mpu3050Detect(&gyro.dev)) {
                 gyroHardware = GYRO_MPU3050;
 #ifdef GYRO_MPU3050_ALIGN
-                gyro.gyroAlign = GYRO_MPU3050_ALIGN;
+                gyro.dev.gyroAlign = GYRO_MPU3050_ALIGN;
 #endif
                 break;
             }
@@ -206,7 +206,7 @@ bool detectGyro(void)
             if (l3gd20Detect(&gyro.dev)) {
                 gyroHardware = GYRO_L3GD20;
 #ifdef GYRO_L3GD20_ALIGN
-                gyro.gyroAlign = GYRO_L3GD20_ALIGN;
+                gyro.dev.gyroAlign = GYRO_L3GD20_ALIGN;
 #endif
                 break;
             }
@@ -218,7 +218,7 @@ bool detectGyro(void)
             if (mpu6000SpiGyroDetect(&gyro.dev)) {
                 gyroHardware = GYRO_MPU6000;
 #ifdef GYRO_MPU6000_ALIGN
-                gyro.gyroAlign = GYRO_MPU6000_ALIGN;
+                gyro.dev.gyroAlign = GYRO_MPU6000_ALIGN;
 #endif
                 break;
             }
@@ -235,7 +235,7 @@ bool detectGyro(void)
             {
                 gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
-                gyro.gyroAlign = GYRO_MPU6500_ALIGN;
+                gyro.dev.gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
 
                 break;
@@ -250,7 +250,7 @@ bool detectGyro(void)
         {
             gyroHardware = GYRO_MPU9250;
 #ifdef GYRO_MPU9250_ALIGN
-            gyro.gyroAlign = GYRO_MPU9250_ALIGN;
+            gyro.dev.gyroAlign = GYRO_MPU9250_ALIGN;
 #endif
 
             break;
@@ -264,7 +264,7 @@ bool detectGyro(void)
             {
                 gyroHardware = GYRO_ICM20689;
 #ifdef GYRO_ICM20689_ALIGN
-                gyro.gyroAlign = GYRO_ICM20689_ALIGN;
+                gyro.dev.gyroAlign = GYRO_ICM20689_ALIGN;
 #endif
 
                 break;
@@ -303,7 +303,7 @@ static bool detectAcc(accelerationSensor_e accHardwareToUse)
 #endif
 
 retry:
-    acc.accAlign = ALIGN_DEFAULT;
+    acc.dev.accAlign = ALIGN_DEFAULT;
 
     switch (accHardwareToUse) {
         case ACC_DEFAULT:
@@ -318,7 +318,7 @@ retry:
             if (adxl345Detect(&acc_params, &acc.dev)) {
 #endif
 #ifdef ACC_ADXL345_ALIGN
-                acc.accAlign = ACC_ADXL345_ALIGN;
+                acc.dev.accAlign = ACC_ADXL345_ALIGN;
 #endif
                 accHardware = ACC_ADXL345;
                 break;
@@ -329,7 +329,7 @@ retry:
 #ifdef USE_ACC_LSM303DLHC
             if (lsm303dlhcAccDetect(&acc.dev)) {
 #ifdef ACC_LSM303DLHC_ALIGN
-                acc.accAlign = ACC_LSM303DLHC_ALIGN;
+                acc.dev.accAlign = ACC_LSM303DLHC_ALIGN;
 #endif
                 accHardware = ACC_LSM303DLHC;
                 break;
@@ -340,7 +340,7 @@ retry:
 #ifdef USE_ACC_MPU6050
             if (mpu6050AccDetect(&acc.dev)) {
 #ifdef ACC_MPU6050_ALIGN
-                acc.accAlign = ACC_MPU6050_ALIGN;
+                acc.dev.accAlign = ACC_MPU6050_ALIGN;
 #endif
                 accHardware = ACC_MPU6050;
                 break;
@@ -356,7 +356,7 @@ retry:
             if (mma8452Detect(&acc.dev)) {
 #endif
 #ifdef ACC_MMA8452_ALIGN
-                acc.accAlign = ACC_MMA8452_ALIGN;
+                acc.dev.accAlign = ACC_MMA8452_ALIGN;
 #endif
                 accHardware = ACC_MMA8452;
                 break;
@@ -367,7 +367,7 @@ retry:
 #ifdef USE_ACC_BMA280
             if (bma280Detect(&acc.dev)) {
 #ifdef ACC_BMA280_ALIGN
-                acc.accAlign = ACC_BMA280_ALIGN;
+                acc.dev.accAlign = ACC_BMA280_ALIGN;
 #endif
                 accHardware = ACC_BMA280;
                 break;
@@ -378,7 +378,7 @@ retry:
 #ifdef USE_ACC_SPI_MPU6000
             if (mpu6000SpiAccDetect(&acc.dev)) {
 #ifdef ACC_MPU6000_ALIGN
-                acc.accAlign = ACC_MPU6000_ALIGN;
+                acc.dev.accAlign = ACC_MPU6000_ALIGN;
 #endif
                 accHardware = ACC_MPU6000;
                 break;
@@ -394,7 +394,7 @@ retry:
 #endif
             {
 #ifdef ACC_MPU6500_ALIGN
-                acc.accAlign = ACC_MPU6500_ALIGN;
+                acc.dev.accAlign = ACC_MPU6500_ALIGN;
 #endif
                 accHardware = ACC_MPU6500;
                 break;
@@ -407,7 +407,7 @@ retry:
             if (icm20689SpiAccDetect(&acc.dev))
             {
 #ifdef ACC_ICM20689_ALIGN
-                acc.accAlign = ACC_ICM20689_ALIGN;
+                acc.dev.accAlign = ACC_ICM20689_ALIGN;
 #endif
                 accHardware = ACC_ICM20689;
                 break;
@@ -547,7 +547,7 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
 retry:
 
-    mag.magAlign = ALIGN_DEFAULT;
+    mag.dev.magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
         case MAG_DEFAULT:
@@ -557,7 +557,7 @@ retry:
 #ifdef USE_MAG_HMC5883
             if (hmc5883lDetect(&mag.dev, hmc5883Config)) {
 #ifdef MAG_HMC5883_ALIGN
-                mag.magAlign = MAG_HMC5883_ALIGN;
+                mag.dev.magAlign = MAG_HMC5883_ALIGN;
 #endif
                 magHardware = MAG_HMC5883;
                 break;
@@ -569,7 +569,7 @@ retry:
 #ifdef USE_MAG_AK8975
             if (ak8975Detect(&mag.dev)) {
 #ifdef MAG_AK8975_ALIGN
-                mag.magAlign = MAG_AK8975_ALIGN;
+                mag.dev.magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
                 break;
@@ -581,7 +581,7 @@ retry:
 #ifdef USE_MAG_AK8963
             if (ak8963Detect(&mag.dev)) {
 #ifdef MAG_AK8963_ALIGN
-                mag.magAlign = MAG_AK8963_ALIGN;
+                mag.dev.magAlign = MAG_AK8963_ALIGN;
 #endif
                 magHardware = MAG_AK8963;
                 break;
@@ -623,23 +623,10 @@ static bool detectSonar(void)
 }
 #endif
 
-static void reconfigureAlignment(const sensorAlignmentConfig_t *sensorAlignmentConfig)
-{
-    if (sensorAlignmentConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.gyroAlign = sensorAlignmentConfig->gyro_align;
-    }
-    if (sensorAlignmentConfig->acc_align != ALIGN_DEFAULT) {
-        acc.accAlign = sensorAlignmentConfig->acc_align;
-    }
-    if (sensorAlignmentConfig->mag_align != ALIGN_DEFAULT) {
-        mag.magAlign = sensorAlignmentConfig->mag_align;
-    }
-}
-
-bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
-        const sensorSelectionConfig_t *sensorSelectionConfig,
-        int16_t magDeclinationFromConfig,
+bool sensorsAutodetect(const sensorSelectionConfig_t *sensorSelectionConfig,
         const gyroConfig_t *gyroConfig,
+        const accelerometerConfig_t *accConfig,
+        const compassConfig_t *compassConfig,
         const sonarConfig_t *sonarConfig)
 {
     memset(&acc, 0, sizeof(acc));
@@ -676,13 +663,13 @@ bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     if (detectMag(sensorSelectionConfig->mag_hardware)) {
         // calculate magnetic declination
-        const int16_t deg = magDeclinationFromConfig / 100;
-        const int16_t min = magDeclinationFromConfig % 100;
+        const int16_t deg = compassConfig->mag_declination / 100;
+        const int16_t min = compassConfig->mag_declination % 100;
         mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
         compassInit();
     }
 #else
-    UNUSED(magDeclinationFromConfig);
+    UNUSED(compassConfig);
 #endif
 
 #ifdef BARO
@@ -697,7 +684,15 @@ bool sensorsAutodetect(const sensorAlignmentConfig_t *sensorAlignmentConfig,
     UNUSED(sonarConfig);
 #endif
 
-    reconfigureAlignment(sensorAlignmentConfig);
+    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
+        gyro.dev.gyroAlign = gyroConfig->gyro_align;
+    }
+    if (accConfig->acc_align != ALIGN_DEFAULT) {
+        acc.dev.accAlign = accConfig->acc_align;
+    }
+    if (compassConfig->mag_align != ALIGN_DEFAULT) {
+        mag.dev.magAlign = compassConfig->mag_align;
+    }
 
     return true;
 }

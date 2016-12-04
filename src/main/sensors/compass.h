@@ -33,7 +33,6 @@ typedef enum {
 
 typedef struct mag_s {
     magDev_t dev;
-    sensor_align_e magAlign;
     int32_t magADC[XYZ_AXIS_COUNT];
     float magneticDeclination;
 } mag_t;
@@ -43,6 +42,7 @@ extern mag_t mag;
 typedef struct compassConfig_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    sensor_align_e mag_align;               // mag alignment
 } compassConfig_t;
 
 void compassInit(void);

@@ -230,13 +230,6 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
 }
 #endif
 
-void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
-{
-    sensorAlignmentConfig->gyro_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->acc_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
-}
-
 #ifdef LED_STRIP
 void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
 {
@@ -589,7 +582,9 @@ void createDefaultConfig(master_t *config)
 
     resetAccelerometerTrims(&config->sensorTrims.accZero);
 
-    resetSensorAlignment(&config->sensorAlignmentConfig);
+    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
+    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
+    config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
@@ -1004,13 +999,6 @@ void validateAndFixGyroConfig(void)
     }
 }
 
-void readEEPROMAndNotify(void)
-{
-    // re-read written data
-    readEEPROM();
-    beeperConfirmationBeeps(1);
-}
-
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
@@ -1029,7 +1017,8 @@ void resetEEPROM(void)
 void saveConfigAndNotify(void)
 {
     writeEEPROM();
-    readEEPROMAndNotify();
+    readEEPROM();
+    beeperConfirmationBeeps(1);
 }
 
 void changeProfile(uint8_t profileIndex)
