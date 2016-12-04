@@ -580,7 +580,7 @@ void createDefaultConfig(master_t *config)
 
     config->debug_mode = DEBUG_MODE;
 
-    resetAccelerometerTrims(&config->sensorTrims.accZero);
+    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
     config->gyroConfig.gyro_align = ALIGN_DEFAULT;
     config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
@@ -837,7 +837,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&sensorTrims()->accZero);
+    setAccelerationTrims(&accelerometerConfig()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerUseConfigs(
