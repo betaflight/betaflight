@@ -89,7 +89,7 @@ static void rspComputePulse(void)
 
     switch (rxtype) {
     case RXTYPE_FRSKY_TFR4:
-        constrain(rawWidth, pulseMin, pulseMax);
+        pulseWidth = constrain(rawWidth, pulseMin, pulseMax);
         break;
 
     case RXTYPE_FRSKY_X4R: // Probably all X series
