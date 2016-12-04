@@ -15,22 +15,30 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
+#include <stdbool.h>
 #include <stdint.h>
-#include "drivers/io_types.h"
 
-typedef struct flashGeometry_s {
-    uint16_t sectors; // Count of the number of erasable blocks on the device
+#include "platform.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "io/serial.h"
+#include "hardware_revision.h"
 
-    uint16_t pagesPerSector;
-    const uint16_t pageSize; // In bytes
+void targetBusInit(void)
+{
+    #ifdef USE_SPI
+    #ifdef USE_SPI_DEVICE_2
+        spiInit(SPIDEV_2);
+    #endif
+    #endif
 
-    uint32_t sectorSize; // This is just pagesPerSector * pageSize
-
-    uint32_t totalSize;  // This is just sectorSize * sectors
-} flashGeometry_t;
-
-typedef struct flashConfig_s {
-	ioTag_t csTag;
-} flashConfig_t;
+    if (hardwareRevision != NAZE32_SP) {
+        i2cInit(I2C_DEVICE);
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
+    } else {
+        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+            serialRemovePort(SERIAL_PORT_USART3);
+            i2cInit(I2C_DEVICE);
+        }		
+    }
+}

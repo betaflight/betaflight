@@ -490,6 +490,46 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
+{
+    for (int i = 0; i < LED_NUMBER; i++) {
+        statusLedConfig->ledTags[i] = IO_TAG_NONE;
+    }
+
+#ifdef LED0
+    statusLedConfig->ledTags[0] = IO_TAG(LED0);
+#endif
+#ifdef LED1
+    statusLedConfig->ledTags[1] = IO_TAG(LED1);
+#endif
+#ifdef LED2
+    statusLedConfig->ledTags[2] = IO_TAG(LED2);
+#endif
+
+    statusLedConfig->polarity = 0
+#ifdef LED0_INVERTED
+    | BIT(0)
+#endif
+#ifdef LED1_INVERTED
+    | BIT(1)
+#endif
+#ifdef LED2_INVERTED
+    | BIT(2)
+#endif
+    ;    
+}
+
+#ifdef USE_FLASHFS
+void resetFlashConfig(flashConfig_t *flashConfig)
+{
+#ifdef M25P16_CS_PIN
+    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
+#else
+    flashConfig->csTag = IO_TAG_NONE;
+#endif
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -788,6 +828,12 @@ void createDefaultConfig(master_t *config)
         }
     }
 #endif
+
+#ifdef USE_FLASHFS
+    resetFlashConfig(&config->flashConfig);
+#endif
+
+    resetStatusLedConfig(&config->statusLedConfig);
 
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
