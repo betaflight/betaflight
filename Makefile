@@ -557,12 +557,6 @@ COMMON_SRC = \
             $(CMSIS_SRC) \
             $(DEVICE_STDPERIPH_SRC)
 
-NON_RT_SRC = \
-            io/serial_cli.c \
-            io/serial_4way.c \
-            io/serial_4way_avrootloader.c \
-            io/serial_4way_stk500v2.c
-
 HIGHEND_SRC = \
             blackbox/blackbox.c \
             blackbox/blackbox_io.c \
@@ -582,6 +576,44 @@ HIGHEND_SRC = \
             drivers/sonar_hcsr04.c \
             flight/gtune.c \
             flight/navigation.c \
+            flight/gps_conversion.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
+            io/gps.c \
+            io/ledstrip.c \
+            io/osd.c \
+            sensors/sonar.c \
+            sensors/barometer.c \
+            telemetry/telemetry.c \
+            telemetry/crsf.c \
+            telemetry/frsky.c \
+            telemetry/hott.c \
+            telemetry/smartport.c \
+            telemetry/ltm.c \
+            telemetry/mavlink.c \
+            telemetry/esc_telemetry.c \
+
+NON_RT_SRC = \
+            drivers/serial_escserial.c \
+            io/serial_cli.c \
+            io/serial_4way.c \
+            io/serial_4way_avrootloader.c \
+            io/serial_4way_stk500v2.c \
+            msp/msp_serial.c \
+
+LOW_PRIO_SRC = \
+            msp/msp_serial.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
+            cms/cms_menu_vtx.c \
+            flight/gtune.c \
             flight/gps_conversion.c \
             io/dashboard.c \
             io/displayport_max7456.c \
@@ -760,17 +792,24 @@ SIZE        := $(ARM_SDK_PREFIX)size
 #
 
 ifeq ($(DEBUG),GDB)
-OPTIMIZE    = -O0
-LTO_FLAGS   = $(OPTIMIZE)
+OPTIMIZE                 = -O0
+CC_OPTIMISATION          = $(OPTIMISE)
+LOW_PRIO_CC_OPTIMISATION = $(OPTIMISE)
+NON_RT_CC_OPTIMISATION   = $(OPTIMISE)
+LTO_FLAGS                = $(OPTIMIZE)
 else
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-OPTIMIZE    = -Os
+OPTIMISE                 = -Os
+OPTIMISE_LOW_PRIO        = -Os
 else
-OPTIMIZE    = -Ofast
+OPTIMISE                 = -Ofast
+OPTIMISE_LOW_PRIO        = -O2
 endif
-LTO_BASE   = -flto -fuse-linker-plugin
-LTO_FLAGS   = $(LTO_BASE) $(OPTIMIZE)
-NON_RT_LTO_FLAGS   = $(LTO_BASE) -Os -ffast-math
+OPTIMISATION_BASE        = -flto -fuse-linker-plugin -ffast-math
+CC_OPTIMISATION          = $(OPTIMISATION_BASE) $(OPTIMISE)
+LOW_PRIO_CC_OPTIMISATION = $(OPTIMISATION_BASE) $(OPTIMISE_LOW_PRIO)
+NON_RT_CC_OPTIMISATION   = $(OPTIMISATION_BASE) -Os
+LTO_FLAGS                = $(OPTIMISATION_BASE) $(OPTIMIZE)
 endif
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
@@ -856,10 +895,13 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
 	$(V1) $(if $(findstring $(subst ./src/main/,,$<), $(NON_RT_SRC)), \
-	echo "%% (unoptimised) $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(NON_RT_LTO_FLAGS) $<, \
+	echo "%% (non-realtime) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(NON_RT_CC_OPTIMISATION) $<, \
+	$(if $(findstring $(subst ./src/main/,,$<), $(LOW_PRIO_SRC)), \
+	echo "%% (low priority) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(LOW_PRIO_CC_OPTIMISATION) $<, \
 	echo "%% $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(LTO_FLAGS) $<)
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_OPTIMISATION) $<))
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
