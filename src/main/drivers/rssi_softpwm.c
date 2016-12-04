@@ -68,7 +68,7 @@ static void rspExtiHandler(extiCallbackRec_t* cb)
 
     if (!timerRunning) {
         timeStart = micros();
-        EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Falling);
+        EXTISetTrigger(rspIO, EXTI_Trigger_Falling);
         timerRunning = true;
     } else {
         rawWidth = micros() - timeStart;
@@ -237,7 +237,7 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
     // Start a new measurement
 
     rspInProgress = true;
-    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
+    EXTISetTrigger(rspIO, EXTI_Trigger_Rising);
     EXTIEnable(rspIO, true);
 }
 
