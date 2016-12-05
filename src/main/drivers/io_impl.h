@@ -50,6 +50,8 @@ uint16_t IO_Pin(IO_t io);
 
 #define IO_GPIOBYTAG(tag) IO_GPIO(IOGetByTag(tag))
 #define IO_PINBYTAG(tag) IO_Pin(IOGetByTag(tag))
+#define IO_GPIOPortIdxByTag(tag) DEFIO_TAG_GPIOID(tag)
+#define IO_GPIOPinIdxByTag(tag) DEFIO_TAG_PIN(tag)
 
 uint32_t IO_EXTI_Line(IO_t io);
 ioRec_t *IO_Rec(IO_t io);

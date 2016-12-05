@@ -60,6 +60,9 @@ typedef struct batteryConfig_s {
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
     uint16_t batteryCapacity;               // mAh
     uint8_t batterynotpresentlevel;         // Below this level battery is considered as not present
+    bool useVBatAlerts;                     // Issue alerts based on VBat readings
+    bool useConsumptionAlerts;              // Issue alerts based on total power consumption
+    uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
 } batteryConfig_t;
 
 typedef enum {
@@ -90,4 +93,3 @@ int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
-uint8_t calculateBatteryCapacityRemainingPercentage(void);

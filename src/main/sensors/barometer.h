@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/barometer.h"
+
 typedef enum {
     BARO_DEFAULT = 0,
     BARO_NONE = 1,
@@ -35,8 +37,13 @@ typedef struct barometerConfig_s {
     float baro_cf_alt;                      // apply CF to use ACC for height estimation
 } barometerConfig_t;
 
-extern int32_t BaroAlt;
-extern int32_t baroTemperature;             // Use temperature for telemetry
+typedef struct baro_s {
+    baroDev_t dev;
+    int32_t BaroAlt;
+    int32_t baroTemperature;             // Use temperature for telemetry
+} baro_t;
+
+extern baro_t baro;
 
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);

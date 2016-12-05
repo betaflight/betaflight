@@ -17,9 +17,9 @@
 
 #pragma once
 
-#ifdef RMDO 
+#ifdef RMDO
 #define TARGET_BOARD_IDENTIFIER "RMDO"
-#else 
+#else
 #define TARGET_BOARD_IDENTIFIER "SRF3"
 #endif
 
@@ -55,10 +55,10 @@
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
 
-#define MAG
-#define USE_MAG_AK8975
-#define USE_MAG_HMC5883
-#define MAG_HMC5883_ALIGN       CW270_DEG
+//#define MAG
+//#define USE_MAG_AK8975
+//#define USE_MAG_HMC5883
+//#define MAG_HMC5883_ALIGN       CW270_DEG
 
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
@@ -69,9 +69,9 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define SONAR
-#define SONAR_TRIGGER_PIN       PB0
-#define SONAR_ECHO_PIN          PB1
+//#define SONAR
+//#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR_ECHO_PIN          PB1
 
 #define USE_UART1
 #define USE_UART2

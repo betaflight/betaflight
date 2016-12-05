@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/color.h"
+#include "common/time.h"
 #include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32
@@ -178,7 +179,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledStripConfig_t *ledStripConfig);
 void ledStripEnable(void);
-void ledStripUpdate(uint32_t currentTime);
+void ledStripUpdate(timeUs_t currentTimeUs);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 

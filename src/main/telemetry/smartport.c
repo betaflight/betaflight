@@ -654,7 +654,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -700,15 +700,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * accSmooth[X] / acc.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
+                smartPortSendPackage(id, 100 * acc.accSmooth[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * accSmooth[Y] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accSmooth[Y] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * accSmooth[Z] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accSmooth[Z] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :

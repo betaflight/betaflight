@@ -32,7 +32,7 @@
 #define CROSSFIRE_RSSI_FRAME_ID             0x14
 #define CLEANFLIGHT_MODE_FRAME_ID           0x20
 
-#define DATA_BUFFER_SIZE                      64
+#define DATA_BUFFER_SIZE                    128
 
 typedef enum BSTDevice {
     BSTDEV_1,

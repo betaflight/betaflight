@@ -109,7 +109,7 @@ static displayPort_t *osdDisplayPort;
  */
 static char osdGetAltitudeSymbol()
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return 0xF;
         default:
@@ -123,7 +123,7 @@ static char osdGetAltitudeSymbol()
  */
 static int32_t osdGetAltitude(int32_t alt)
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return (alt * 328) / 100; // Convert to feet / 100
         default:
@@ -133,11 +133,11 @@ static int32_t osdGetAltitude(int32_t alt)
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(masterConfig.osdProfile.item_pos[item]) || BLINK(masterConfig.osdProfile.item_pos[item]))
+    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(osdProfile()->item_pos[item]))
         return;
 
-    uint8_t elemPosX = OSD_X(masterConfig.osdProfile.item_pos[item]);
-    uint8_t elemPosY = OSD_Y(masterConfig.osdProfile.item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdProfile()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdProfile()->item_pos[item]);
     char buff[32];
 
     switch(item) {
@@ -190,7 +190,7 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
-            int32_t alt = osdGetAltitude(BaroAlt);
+            int32_t alt = osdGetAltitude(baro.BaroAlt);
             sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
@@ -449,9 +449,9 @@ void osdUpdateAlarms(void)
     osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
 
     // This is overdone?
-    // uint16_t *itemPos = masterConfig.osdProfile.item_pos;
+    // uint16_t *itemPos = osdProfile()->item_pos;
 
-    int32_t alt = osdGetAltitude(BaroAlt) / 100;
+    int32_t alt = osdGetAltitude(baro.BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < pOsdProfile->rssi_alarm)
@@ -508,9 +508,10 @@ static void osdResetStats(void)
 
 static void osdUpdateStats(void)
 {
-    int16_t value;
-
+    int16_t value = 0;
+#ifdef GPS
     value = GPS_speed * 36 / 1000;
+#endif
     if (stats.max_speed < value)
         stats.max_speed = value;
 
@@ -524,8 +525,8 @@ static void osdUpdateStats(void)
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
 
-    if (stats.max_altitude < BaroAlt)
-        stats.max_altitude = BaroAlt;
+    if (stats.max_altitude < baro.BaroAlt)
+        stats.max_altitude = baro.BaroAlt;
 }
 
 static void osdShowStats(void)
@@ -580,7 +581,7 @@ static void osdArmMotors(void)
     osdResetStats();
 }
 
-static void osdRefresh(uint32_t currentTime)
+static void osdRefresh(timeUs_t currentTimeUs)
 {
     static uint8_t lastSec = 0;
     uint8_t sec;
@@ -597,7 +598,7 @@ static void osdRefresh(uint32_t currentTime)
 
     osdUpdateStats();
 
-    sec = currentTime / 1000000;
+    sec = currentTimeUs / 1000000;
 
     if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
@@ -613,7 +614,7 @@ static void osdRefresh(uint32_t currentTime)
         return;
     }
 
-    blinkState = (currentTime / 200000) % 2;
+    blinkState = (currentTimeUs / 200000) % 2;
 
 #ifdef CMS
     if (!displayIsGrabbed(osdDisplayPort)) {
@@ -622,7 +623,7 @@ static void osdRefresh(uint32_t currentTime)
         displayHeartbeat(osdDisplayPort); // heartbeat to stop Minim OSD going back into native mode
 #ifdef OSD_CALLS_CMS
     } else {
-        cmsUpdate(currentTime);
+        cmsUpdate(currentTimeUs);
 #endif
     }
 #endif
@@ -631,7 +632,7 @@ static void osdRefresh(uint32_t currentTime)
 /*
  * Called periodically by the scheduler
  */
-void osdUpdate(uint32_t currentTime)
+void osdUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t counter = 0;
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -648,7 +649,7 @@ void osdUpdate(uint32_t currentTime)
 #define DRAW_FREQ_DENOM 10 // MWOSD @ 115200 baud
 #endif
     if (counter++ % DRAW_FREQ_DENOM == 0) {
-        osdRefresh(currentTime);
+        osdRefresh(currentTimeUs);
     } else { // rest of time redraw screen 10 chars per idle so it doesn't lock the main idle
         displayDrawScreen(osdDisplayPort);
     }

@@ -17,8 +17,11 @@
 
 #pragma once
 
-#include "sensors/battery.h"
+#include "common/time.h"
+
 #include "drivers/sonar_hcsr04.h"
+
+#include "sensors/battery.h"
 
 #define SONAR_OUT_OF_RANGE (-1)
 
@@ -27,7 +30,7 @@ extern int16_t sonarCfAltCm;
 extern int16_t sonarMaxAltWithTiltCm;
 
 void sonarInit(const sonarConfig_t *sonarConfig);
-void sonarUpdate(uint32_t currentTime);
+void sonarUpdate(timeUs_t currentTimeUs);
 int32_t sonarRead(void);
 int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);
 int32_t sonarGetLatestAltitude(void);

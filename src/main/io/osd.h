@@ -64,4 +64,4 @@ struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
-void osdUpdate(uint32_t currentTime);
+void osdUpdate(timeUs_t currentTimeUs);

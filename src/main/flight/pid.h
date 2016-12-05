@@ -104,5 +104,7 @@ extern uint8_t PIDweight[3];
 
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void setTargetPidLooptime(uint32_t pidLooptime);
+void pidSetTargetLooptime(uint32_t pidLooptime);
+void pidInitFilters(const pidProfile_t *pidProfile);
+void pidInitConfig(const pidProfile_t *pidProfile);
 
