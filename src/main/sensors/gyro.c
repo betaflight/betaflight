@@ -181,7 +181,7 @@ void gyroUpdate(void)
     gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
     gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
 
-    alignSensors(gyroADC, gyro.gyroAlign);
+    alignSensors(gyroADC, gyro.dev.gyroAlign);
 
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (!calibrationComplete) {

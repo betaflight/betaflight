@@ -37,7 +37,6 @@ typedef enum {
 
 typedef struct acc_s {
     accDev_t dev;
-    sensor_align_e accAlign;
     uint32_t accSamplingInterval;
     int32_t accSmooth[XYZ_AXIS_COUNT];
 } acc_t;
@@ -57,6 +56,9 @@ typedef union rollAndPitchTrims_u {
 
 typedef struct accelerometerConfig_s {
     uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    sensor_align_e acc_align;               // acc alignment
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    flightDynamicsTrims_t accZero;
 } accelerometerConfig_t;
 
 void accInit(uint32_t gyroTargetLooptime);

@@ -30,6 +30,7 @@ typedef enum {
 #define BARO_SAMPLE_COUNT_MAX   48
 
 typedef struct barometerConfig_s {
+    uint8_t baro_hardware;                  // Barometer hardware to use
     uint8_t baro_sample_count;              // size of baro filter array
     float baro_noise_lpf;                   // additional LPF to reduce baro noise
     float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)

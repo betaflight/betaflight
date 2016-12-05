@@ -42,6 +42,7 @@ typedef struct gyroDev_s {
     volatile bool dataReady;
     uint16_t lpf;
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    sensor_align_e gyroAlign;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -49,4 +50,5 @@ typedef struct accDev_s {
     sensorReadFuncPtr read;                                 // read 3 axis data function
     uint16_t acc_1G;
     char revisionCode;                                      // a revision code for the sensor, if known
+    sensor_align_e accAlign;
 } accDev_t;
