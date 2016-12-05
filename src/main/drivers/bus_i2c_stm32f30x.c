@@ -117,8 +117,8 @@ static void i2cResetInterface(i2cBusState_t * i2cBusState)
     IO_t sda = IOGetByTag(i2c->sda);
 
     i2cErrorCount++;
-    i2cUnstick(scl, sda);
-    i2cInit(i2cBusState->device);
+    //i2cUnstick(scl, sda);
+    //i2cInit(i2cBusState->device);
 }
 
 static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentTimeUs)
@@ -233,7 +233,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
 
         case I2C_STATE_W_ADDR:
             /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-            I2C_TransferHandling(I2Cx, i2cBusState->addr, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+            I2C_TransferHandling(I2Cx, i2cBusState->addr, 1, I2C_Reload_Mode, I2C_Generate_Start_Write);
             i2cBusState->state = I2C_STATE_W_ADDR_WAIT;
             i2cBusState->timeout = currentTimeUs;
             // Fallthrough
@@ -257,7 +257,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             // Fallthrough
 
         case I2C_STATE_W_REGISTER_WAIT:
-            if (I2C_GetFlagStatus(I2Cx, I2C_ISR_TC) != RESET) {
+            if (I2C_GetFlagStatus(I2Cx, I2C_ISR_TCR) != RESET) {
                 if (i2cBusState->len == 0) {
                     I2C_TransferHandling(I2Cx, i2cBusState->addr, 0, I2C_AutoEnd_Mode, I2C_Generate_Stop);
                     i2cBusState->state = I2C_STATE_STOPPING;
