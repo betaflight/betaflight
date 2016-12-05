@@ -39,19 +39,15 @@
 static IO_t rspIO;
 static extiCallbackRec_t rsp_extiCallbackRec;
 
-static bool rspActive = false;
 static volatile bool rspInProgress = false;
 
 static volatile uint32_t rawWidth;
 static uint32_t pulseWidth;
-
-static uint8_t rxtype;
-
 static uint16_t rspValue;
-
 #define RSSI_OUTPUT_MIN     0
 #define RSSI_OUTPUT_MAX  1023
 
+static uint8_t rxtype;
 static uint16_t pulseMin;
 static uint16_t pulseMax;
 
@@ -136,7 +132,9 @@ static void rspComputePulse(void)
     debug[4] = tmax;
 }
 
-static int32_t rspFilterArray[5];
+#define MEDIAN_TAPCOUNT 3
+#define QUICKMEDIANFILTER quickMedianFilter3
+static int32_t rspFilterArray[MEDIAN_TAPCOUNT];
 static int rspFilterPos;
 
 bool rssiSoftPwmInit(void)
@@ -150,7 +148,6 @@ bool rssiSoftPwmInit(void)
     IOConfigGPIO(rspIO, IOCFG_IPD);
 
     EXTIHandlerInit(&rsp_extiCallbackRec, rspExtiHandler);
-    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
 
     rxtype = masterConfig.rssiSoftPwmConfig.device;
 
@@ -166,12 +163,14 @@ bool rssiSoftPwmInit(void)
         break;
     }
 
-    rspActive = false;
-
-    for (int i = 0 ; i < 5 ; i++)
+    for (int i = 0 ; i < MEDIAN_TAPCOUNT ; i++)
         rspFilterArray[i] = 0;
 
     rspFilterPos = 0;
+    rspInProgress = true;
+
+    // Configure EXTI; will trigger on the first rising edge.
+    EXTIConfig(rspIO, &rsp_extiCallbackRec, NVIC_PRIO_SOFTPWM_EXTI, EXTI_Trigger_Rising);
 
     return true;
 }
@@ -200,44 +199,39 @@ void rssiSoftPwmUpdate(uint32_t currentTime)
         }
     }
 
-    if (!rspActive) {
-        // Dodge the first call.
-        rspActive = true;
+    if (longPulse) {
+        pulseWidth = longValue ? pulseMax : pulseMin;
     } else {
-        if (longPulse) {
-            pulseWidth = longValue ? pulseMax : pulseMin;
-        } else {
-            rspComputePulse();
-        }
+        rspComputePulse();
+    }
 
-        if (pulseWidth >= pulseMin && pulseWidth <= pulseMax) {
+    if (pulseWidth >= pulseMin && pulseWidth <= pulseMax) {
 
-            // Valid duration, compute the scaled value.
+        // Valid duration, compute the scaled value.
 
-          value = scaleRange(pulseWidth, pulseMin, pulseMax,
+      value = scaleRange(pulseWidth, pulseMin, pulseMax,
                             RSSI_OUTPUT_MIN, RSSI_OUTPUT_MAX);
-        } else {
-            value = 0;
-        }
+    } else {
+        value = 0;
+    }
 
 #if 1
-        if (value > 800) {
-            debug[3] = rawWidth;
-        }
+    if (value > 800) {
+        debug[3] = rawWidth;
+    }
 #endif
 
-        // Apply 5 position median filter to filter out occasional spikes
-        rspFilterArray[rspFilterPos] = value;
-        rspFilterPos = (rspFilterPos + 1) % 5;
-        rspValue = (uint16_t)quickMedianFilter5(rspFilterArray);
+    // Apply 5 position median filter to filter out occasional spikes
+    rspFilterArray[rspFilterPos] = value;
+    rspFilterPos = (rspFilterPos + 1) % MEDIAN_TAPCOUNT;
+    rspValue = (uint16_t)QUICKMEDIANFILTER(rspFilterArray);
 
-        debug[2] = rspValue;
-    }
+    debug[2] = rspValue;
 
     // Start a new measurement
 
-    rspInProgress = true;
     EXTISetTrigger(rspIO, EXTI_Trigger_Rising);
+    rspInProgress = true;
     EXTIEnable(rspIO, true);
 }
 
