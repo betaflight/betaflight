@@ -103,6 +103,8 @@
 
 #define VIN_IS_NTSC_alt(val)  (!STAT_IS_LOS(val) && !STAT_IS_PAL(val))
 
+#define MAX7456_SIGNAL_CHECK_INTERVAL_MS 1000 // msec
+
 // DMM special bits
 #define CLEAR_DISPLAY 0x04
 #define CLEAR_DISPLAY_VERT 0x06
@@ -450,6 +452,8 @@ void max7456DrawScreen(void)
 {
     uint8_t stallCheck;
     uint8_t videoSense;
+    static uint32_t lastSigCheckMs = 0;
+    uint32_t nowMs;
     static uint32_t videoDetectTimeMs = 0;
     static uint16_t pos = 0;
     int k = 0, buff_len=0;
@@ -463,10 +467,13 @@ void max7456DrawScreen(void)
         stallCheck = max7456Send(MAX7456ADD_VM0|MAX7456ADD_READ, 0x00);
         DISABLE_MAX7456;
 
+        nowMs = millis();
+
         if (stallCheck != videoSignalReg) {
             max7456ReInit();
 
-        } else if (videoSignalCfg == VIDEO_SYSTEM_AUTO) {
+        } else if ((videoSignalCfg == VIDEO_SYSTEM_AUTO)
+                  && ((nowMs - lastSigCheckMs) > MAX7456_SIGNAL_CHECK_INTERVAL_MS)) {
 
             // Adjust output format based on the current input format.
 
@@ -474,9 +481,11 @@ void max7456DrawScreen(void)
             videoSense = max7456Send(MAX7456ADD_STAT, 0x00);
             DISABLE_MAX7456;
 
+#ifdef DEBUG_MAX7456_SIGNAL
             debug[0] = videoSignalReg & VIDEO_MODE_MASK;
             debug[1] = videoSense & 0x7;
             debug[3] = max7456GetRowsCount();
+#endif
 
             if (videoSense & STAT_LOS) {
                 videoDetectTimeMs = 0;
@@ -486,7 +495,9 @@ void max7456DrawScreen(void)
                     if (videoDetectTimeMs) {
                         if (millis() - videoDetectTimeMs > VIDEO_SIGNAL_DEBOUNCE_MS) {
                             max7456ReInit();
+#ifdef DEBUG_MAX7456_SIGNAL
                             debug[2]++;
+#endif
                         }
                     } else {
                         // Wait for signal to stabilize
@@ -494,6 +505,8 @@ void max7456DrawScreen(void)
                     }
                 }
             }
+
+            lastSigCheckMs = nowMs;
         }
 
         //------------   end of (re)init-------------------------------------
