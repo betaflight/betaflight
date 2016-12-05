@@ -1,4 +1,4 @@
-# Board - Seriously Pro SP Racing F3
+# Board - Seriously Pro SP Racing F3 (Acro/Deluxe)
 
 The Seriously Pro Racing F3 board (SPRacingF3) is the first board designed specifically for Cleanflight.
 

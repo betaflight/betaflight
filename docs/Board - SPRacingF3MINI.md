@@ -1,4 +1,4 @@
-# Board - Seriously Pro SP Racing F3 Mini
+# Board - Seriously Pro SP Racing F3 MINI
 
 The Seriously Pro Racing F3 Mini (SPRacingF3Mini) is the second flight controller board designed specifically for Cleanflight.  It is the only FC that supports all the latest Cleanflight features and the ONLY mini board with a full feature set that can also be mounted in mini frames as well as in standard 36x36mm mounting holes.  With the new transponder feature it is the only truly race ready board available.
 
