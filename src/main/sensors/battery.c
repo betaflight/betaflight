@@ -269,9 +269,11 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
             updateCurrentDrawn(lastUpdateAt);
 
+            updateConsumptionWarning();
+
             break;
         case CURRENT_SENSOR_VIRTUAL:
-            amperage = (int32_t)batteryConfig->currentMeterOffset;
+            amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
                 int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
@@ -279,24 +281,30 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
                     throttleOffset = 0;
                 }
                 int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-                amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
+                amperageLatest += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
             }
+            amperage = amperageLatest;
 
             updateCurrentDrawn(lastUpdateAt);
+
+            updateConsumptionWarning();
 
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_SENSOR
-            if (feature(FEATURE_ESC_SENSOR))
-            {
-                amperage = getEscSensorCurrent();
+            if (feature(FEATURE_ESC_SENSOR)) {
+                amperageLatest = getEscSensorCurrent();
+                amperage = amperageLatest;
                 mAhDrawn = getEscSensorConsumption();
+
+                updateConsumptionWarning();
             }
-            #endif
 
             break;
+            #endif
         case CURRENT_SENSOR_NONE:
             amperage = 0;
+            amperageLatest = 0;
 
             break;
     }
