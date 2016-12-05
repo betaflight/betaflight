@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define LAT 0
 #define LON 1
 
@@ -119,5 +121,5 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 
 struct serialConfig_s;
 void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
-void gpsUpdate(uint32_t currentTime);
+void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);

@@ -27,12 +27,6 @@
 #include "drivers/io.h"
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "AlienFlight F4 V1",
-        "AlienFlight F4 V2"
-};
-
 uint8_t hardwareRevision = AFF4_UNKNOWN;
 uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 

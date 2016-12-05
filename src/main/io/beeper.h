@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
@@ -47,7 +49,7 @@ typedef enum {
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
-void beeperUpdate(uint32_t currentTime);
+void beeperUpdate(timeUs_t currentTimeUs);
 void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);

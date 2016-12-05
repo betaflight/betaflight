@@ -37,9 +37,9 @@ void targetConfiguration(master_t *config)
     }
 
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
-    	intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
+        intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
     }
-    
+
     if (hardwareRevision == BJF4_MINI_REV3A) {
         config->adcConfig.vbat.ioTag = IO_TAG(PA4);
     }
@@ -50,7 +50,7 @@ void targetValidateConfiguration(master_t *config)
     /* make sure the SDCARD cannot be turned on */
     if (hardwareRevision == BJF4_MINI_REV3A || hardwareRevision == BJF4_REV1) {
         intFeatureClear(FEATURE_SDCARD, &config->enabledFeatures);
-        
+ 
         if (config->blackboxConfig.device == BLACKBOX_DEVICE_SDCARD) {
             config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
         }

@@ -37,12 +37,12 @@ static bool transponderInitialised = false;
 static bool transponderRepeat = false;
 
 // timers
-static uint32_t nextUpdateAt = 0;
+static timeUs_t nextUpdateAtUs = 0;
 
 #define JITTER_DURATION_COUNT (sizeof(jitterDurations) / sizeof(uint8_t))
 static uint8_t jitterDurations[] = {0,9,4,8,3,9,6,7,1,6,9,7,8,2,6};
 
-void transponderUpdate(uint32_t currentTime)
+void transponderUpdate(timeUs_t currentTimeUs)
 {
     static uint32_t jitterIndex = 0;
 
@@ -50,7 +50,7 @@ void transponderUpdate(uint32_t currentTime)
         return;
     }
 
-    const bool updateNow = (int32_t)(currentTime - nextUpdateAt) >= 0L;
+    const bool updateNow = (timeDelta_t)(currentTimeUs - nextUpdateAtUs) >= 0L;
     if (!updateNow) {
         return;
     }
@@ -61,12 +61,12 @@ void transponderUpdate(uint32_t currentTime)
         jitterIndex = 0;
     }
 
-    nextUpdateAt = currentTime + 4500 + jitter;
+    nextUpdateAtUs = currentTimeUs + 4500 + jitter;
 
 #ifdef REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
     // reduce current draw when USB cable is plugged in by decreasing the transponder transmit rate.
     if (usbCableIsInserted()) {
-        nextUpdateAt = currentTime + (1000 * 1000) / 10; // 10 hz.
+        nextUpdateAtUs = currentTimeUs + (1000 * 1000) / 10; // 10 hz.
     }
 #endif
 

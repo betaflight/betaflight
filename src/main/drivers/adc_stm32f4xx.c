@@ -136,7 +136,7 @@ void adcInit(adcConfig_t *config)
     if (!adcActive) {
         return;
     }
-    
+
     RCC_ClockCmd(adc.rccADC, ENABLE);
 
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);

@@ -130,6 +130,7 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
         masterConfig.profile[profileIndex].pidProfile.I8[i] = tempPid[i][1];
         masterConfig.profile[profileIndex].pidProfile.D8[i] = tempPid[i][2];
     }
+    pidInitConfig(&currentProfile->pidProfile);
 
     return 0;
 }
@@ -248,6 +249,7 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 
     masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
     masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio = cmsx_setpointRelaxRatio;
+    pidInitConfig(&currentProfile->pidProfile);
 
     masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL] = cmsx_angleStrength;
     masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL] = cmsx_horizonStrength;
@@ -282,11 +284,11 @@ static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
 
-    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &masterConfig.gyroConfig.gyro_soft_lpf_hz,         0, 255, 1 }, 0 },
-    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyroConfig.gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
-    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyroConfig.gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
-    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyroConfig.gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
-    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &masterConfig.gyroConfig.gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
+    { "GYRO LPF",   OME_UINT8,  NULL, &(OSD_UINT8_t)  { &gyroConfig()->gyro_soft_lpf_hz,         0, 255, 1 }, 0 },
+    { "GYRO NF1",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig()->gyro_soft_notch_hz_1,     0, 500, 1 }, 0 },
+    { "GYRO NF1C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig()->gyro_soft_notch_cutoff_1, 0, 500, 1 }, 0 },
+    { "GYRO NF2",   OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig()->gyro_soft_notch_hz_2,     0, 500, 1 }, 0 },
+    { "GYRO NF2C",  OME_UINT16, NULL, &(OSD_UINT16_t) { &gyroConfig()->gyro_soft_notch_cutoff_2, 0, 500, 1 }, 0 },
 
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }

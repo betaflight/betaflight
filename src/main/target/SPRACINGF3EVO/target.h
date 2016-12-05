@@ -35,7 +35,6 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define USE_DSHOT
 #define USE_ESC_TELEMETRY
 
 #define GYRO
@@ -50,8 +49,8 @@
 #define BARO
 #define USE_BARO_BMP280
 
-#define MAG
-#define USE_MAG_AK8963
+//#define MAG
+//#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP

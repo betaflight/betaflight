@@ -36,8 +36,6 @@
 #endif
 
 mag_t mag;                   // mag access functions
-int32_t magADC[XYZ_AXIS_COUNT];
-sensor_align_e magAlign = 0;
 
 #ifdef MAG
 
@@ -48,7 +46,7 @@ void compassInit(void)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
-    mag.init();
+    mag.dev.init();
     LED1_OFF;
     magInit = 1;
 }
@@ -60,34 +58,34 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     static flightDynamicsTrims_t magZeroTempMax;
     uint32_t axis;
 
-    mag.read(magADCRaw);
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
-    alignSensors(magADC, magAlign);
+    mag.dev.read(magADCRaw);
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) mag.magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    alignSensors(mag.magADC, mag.magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;
         for (axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
-            magZeroTempMin.raw[axis] = magADC[axis];
-            magZeroTempMax.raw[axis] = magADC[axis];
+            magZeroTempMin.raw[axis] = mag.magADC[axis];
+            magZeroTempMax.raw[axis] = mag.magADC[axis];
         }
         DISABLE_STATE(CALIBRATE_MAG);
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        magADC[X] -= magZero->raw[X];
-        magADC[Y] -= magZero->raw[Y];
-        magADC[Z] -= magZero->raw[Z];
+        mag.magADC[X] -= magZero->raw[X];
+        mag.magADC[Y] -= magZero->raw[Y];
+        mag.magADC[Z] -= magZero->raw[Z];
     }
 
     if (tCal != 0) {
         if ((currentTime - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
             for (axis = 0; axis < 3; axis++) {
-                if (magADC[axis] < magZeroTempMin.raw[axis])
-                    magZeroTempMin.raw[axis] = magADC[axis];
-                if (magADC[axis] > magZeroTempMax.raw[axis])
-                    magZeroTempMax.raw[axis] = magADC[axis];
+                if (mag.magADC[axis] < magZeroTempMin.raw[axis])
+                    magZeroTempMin.raw[axis] = mag.magADC[axis];
+                if (mag.magADC[axis] > magZeroTempMax.raw[axis])
+                    magZeroTempMax.raw[axis] = mag.magADC[axis];
             }
         } else {
             tCal = 0;

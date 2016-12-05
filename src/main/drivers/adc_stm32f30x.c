@@ -128,7 +128,7 @@ void adcInit(adcConfig_t *config)
     if (config->currentMeter.enabled) {
         adcOperatingConfig[ADC_CURRENT].tag = config->currentMeter.ioTag;  //CURRENT_METER_ADC_CHANNEL;
     }
-    
+
     ADCDevice device = adcDeviceByInstance(ADC_INSTANCE);
     if (device == ADCINVALID)
         return;
@@ -155,7 +155,7 @@ void adcInit(adcConfig_t *config)
     if (!adcActive) {
         return;
     }
-    
+
     if ((device == ADCDEV_1) || (device == ADCDEV_2)) {
         // enable clock for ADC1+2
         RCC_ADCCLKConfig(RCC_ADC12PLLCLK_Div256);  // 72 MHz divided by 256 = 281.25 kHz

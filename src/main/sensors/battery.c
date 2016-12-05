@@ -235,16 +235,31 @@ static void updateBatteryCurrent(void)
     }
 
     uint16_t iBatSample = adcGetChannel(ADC_CURRENT);
-    amperage = currentSensorToCentiamps(biquadFilterApply(&iBatFilter, iBatSample));
     amperageLatest = currentSensorToCentiamps(iBatSample);
+    amperage = currentSensorToCentiamps(biquadFilterApply(&iBatFilter, iBatSample));
 }
 
 static void updateCurrentDrawn(int32_t lastUpdateAt)
 {
     static float mAhDrawnF = 0.0f; // used to get good enough resolution
 
-    mAhDrawnF = mAhDrawnF + (amperage * lastUpdateAt / (100.0f * 1000 * 3600));
+    mAhDrawnF = mAhDrawnF + (amperageLatest * lastUpdateAt / (100.0f * 1000 * 3600));
     mAhDrawn = mAhDrawnF;
+}
+
+void updateConsumptionWarning(void)
+{
+    if (batteryConfig->useConsumptionAlerts && batteryConfig->batteryCapacity > 0 && getBatteryState() != BATTERY_NOT_PRESENT) {
+        if (calculateBatteryPercentage() == 0) {
+            vBatState = BATTERY_CRITICAL;
+        } else if (calculateBatteryPercentage() <= batteryConfig->consumptionWarningPercentage) {
+            consumptionState = BATTERY_WARNING;
+        } else {
+            consumptionState = BATTERY_OK;
+        }
+
+        updateBatteryAlert();
+    }
 }
 
 void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -255,9 +270,11 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
             updateCurrentDrawn(lastUpdateAt);
 
+            updateConsumptionWarning();
+
             break;
         case CURRENT_SENSOR_VIRTUAL:
-            amperage = (int32_t)batteryConfig->currentMeterOffset;
+            amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
                 throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
                 int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
@@ -265,47 +282,32 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
                     throttleOffset = 0;
                 }
                 int throttleFactor = throttleOffset + (throttleOffset * throttleOffset / 50);
-                amperage += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
+                amperageLatest += throttleFactor * (int32_t)batteryConfig->currentMeterScale  / 1000;
             }
+            amperage = amperageLatest;
 
             updateCurrentDrawn(lastUpdateAt);
+
+            updateConsumptionWarning();
 
             break;
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_TELEMETRY
             if (isEscTelemetryActive()) {
-                amperage = getEscTelemetryCurrent();
+                amperageLatest = getEscTelemetryCurrent();
+                amperage = amperageLatest;
                 mAhDrawn = getEscTelemetryConsumption();
+
+                updateConsumptionWarning();
             }
 
             break;
             #endif
         case CURRENT_SENSOR_NONE:
             amperage = 0;
+            amperageLatest = 0;
 
             break;
-    }
-
-    if (batteryConfig->useConsumptionAlerts) {
-        switch(consumptionState) {
-            case BATTERY_OK:
-                if (calculateBatteryCapacityRemainingPercentage() <= batteryConfig->consumptionWarningPercentage) {
-                    consumptionState = BATTERY_WARNING;
-                }
-
-                break;
-            case BATTERY_WARNING:
-                if (calculateBatteryCapacityRemainingPercentage() == 0) {
-                    vBatState = BATTERY_CRITICAL;
-                }
-
-                break;
-            case BATTERY_CRITICAL:
-            case BATTERY_NOT_PRESENT:
-                break;
-        }
-
-        updateBatteryAlert();
     }
 }
 
@@ -320,12 +322,15 @@ float calculateVbatPidCompensation(void) {
 
 uint8_t calculateBatteryPercentage(void)
 {
-    return batteryCellCount > 0 ? constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100) : 0;
-}
+    uint8_t batteryPercentage = 0;
+    if (batteryCellCount > 0) {
+        uint16_t batteryCapacity = batteryConfig->batteryCapacity;
+        if (batteryCapacity > 0) {
+            batteryPercentage = constrain(((float)batteryCapacity - mAhDrawn)  * 100 / batteryCapacity, 0, 100);
+        } else {
+            batteryPercentage = constrain((((uint32_t)vbat - (batteryConfig->vbatmincellvoltage * batteryCellCount)) * 100) / ((batteryConfig->vbatmaxcellvoltage - batteryConfig->vbatmincellvoltage) * batteryCellCount), 0, 100);
+        }
+    }
 
-uint8_t calculateBatteryCapacityRemainingPercentage(void)
-{
-    uint16_t batteryCapacity = batteryConfig->batteryCapacity;
-
-    return constrain((batteryCapacity - constrain(mAhDrawn, 0, 0xFFFF)) * 100.0f / batteryCapacity , 0, 100);
+    return batteryPercentage;
 }

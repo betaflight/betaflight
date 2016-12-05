@@ -94,17 +94,17 @@ bool mpu6500SpiDetect(void)
     return false;
 }
 
-void mpu6500SpiAccInit(acc_t *acc)
+void mpu6500SpiAccInit(accDev_t *acc)
 {
     mpu6500AccInit(acc);
 }
 
-void mpu6500SpiGyroInit(uint8_t lpf)
+void mpu6500SpiGyroInit(gyroDev_t *gyro)
 {
     spiSetDivisor(MPU6500_SPI_INSTANCE, SPI_CLOCK_SLOW);
     delayMicroseconds(1);
 
-    mpu6500GyroInit(lpf);
+    mpu6500GyroInit(gyro);
 
     // Disable Primary I2C Interface
     mpu6500WriteRegister(MPU_RA_USER_CTRL, MPU6500_BIT_I2C_IF_DIS);
@@ -114,7 +114,7 @@ void mpu6500SpiGyroInit(uint8_t lpf)
     delayMicroseconds(1);
 }
 
-bool mpu6500SpiAccDetect(acc_t *acc)
+bool mpu6500SpiAccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_SPI) {
         return false;
@@ -126,7 +126,7 @@ bool mpu6500SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500SpiGyroDetect(gyro_t *gyro)
+bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_SPI) {
         return false;

@@ -31,9 +31,9 @@ void uli2a(unsigned long int num, unsigned int base, int uc, char *bf)
 
     while (d != 0) {
         int dgt = num / d;
-	*bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
+    *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 
-	// Next digit
+    // Next digit
         num %= d;
         d /= base;
     }
@@ -60,9 +60,9 @@ void ui2a(unsigned int num, unsigned int base, int uc, char *bf)
 
     while (d != 0) {
         int dgt = num / d;
-	*bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
+    *bf++ = dgt + (dgt < 10 ? '0' : (uc ? 'A' : 'a') - 10);
 
-	// Next digit
+    // Next digit
         num %= d;
         d /= base;
     }
