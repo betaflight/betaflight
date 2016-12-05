@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 typedef enum {
     CRSF_FRAME_START = 0,
     CRSF_FRAME_ATTITUDE = CRSF_FRAME_START,
@@ -30,7 +32,7 @@ typedef enum {
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
-void handleCrsfTelemetry(uint32_t currentTime);
+void handleCrsfTelemetry(timeUs_t currentTimeUs);
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 

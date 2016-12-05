@@ -236,8 +236,8 @@ const mixer_t mixers[] = {
 
 static motorMixer_t *customMixers;
 
-static uint16_t disarmMotorOutput, minMotorOutputNormal, maxMotorOutputNormal, deadbandMotor3dHigh, deadbandMotor3dLow;
-static float rcCommandThrottleRange;
+static uint16_t disarmMotorOutput, motorOutputHigh, motorOutputLow, deadbandMotor3dHigh, deadbandMotor3dLow;
+static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount() {
     return motorCount;
@@ -257,21 +257,26 @@ void initEscEndpoints(void) {
 #ifdef USE_DSHOT
     if (isMotorProtocolDshot()) {
         disarmMotorOutput = DSHOT_DISARM_COMMAND;
-        minMotorOutputNormal = DSHOT_MIN_THROTTLE + motorConfig->digitalIdleOffset;
-        maxMotorOutputNormal = DSHOT_MAX_THROTTLE;
-        deadbandMotor3dHigh = DSHOT_3D_MIN_NEGATIVE; // TODO - Not working yet !! Mixer requires some throttle rescaling changes
-        deadbandMotor3dLow = DSHOT_3D_MAX_POSITIVE;  // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        if (feature(FEATURE_3D))
+            motorOutputLow = DSHOT_MIN_THROTTLE + lrintf(((DSHOT_3D_DEADBAND_LOW - DSHOT_MIN_THROTTLE) / 100.0f) * motorConfig->digitalIdleOffsetPercent);
+        else
+            motorOutputLow = DSHOT_MIN_THROTTLE + lrintf(((DSHOT_MAX_THROTTLE - DSHOT_MIN_THROTTLE) / 100.0f) * motorConfig->digitalIdleOffsetPercent);
+        motorOutputHigh = DSHOT_MAX_THROTTLE;
+        deadbandMotor3dHigh = DSHOT_3D_DEADBAND_HIGH + lrintf(((DSHOT_MAX_THROTTLE - DSHOT_3D_DEADBAND_HIGH) / 100.0f) * motorConfig->digitalIdleOffsetPercent); // TODO - Not working yet !! Mixer requires some throttle rescaling changes
+        deadbandMotor3dLow = DSHOT_3D_DEADBAND_LOW;
     } else
 #endif
     {
         disarmMotorOutput = (feature(FEATURE_3D)) ? flight3DConfig->neutral3d : motorConfig->mincommand;
-        minMotorOutputNormal = motorConfig->minthrottle;
-        maxMotorOutputNormal = motorConfig->maxthrottle;
+        motorOutputLow = motorConfig->minthrottle;
+        motorOutputHigh = motorConfig->maxthrottle;
         deadbandMotor3dHigh = flight3DConfig->deadband3d_high;
         deadbandMotor3dLow = flight3DConfig->deadband3d_low;
     }
 
-    rcCommandThrottleRange = (2000 - rxConfig->mincheck);
+    rcCommandThrottleRange = (PWM_RANGE_MAX - rxConfig->mincheck);
+    rcCommandThrottleRange3dLow = rxConfig->midrc - rxConfig->mincheck - flight3DConfig->deadband3d_throttle;
+    rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig->midrc - flight3DConfig->deadband3d_throttle;
 }
 
 void mixerUseConfigs(
@@ -286,7 +291,6 @@ void mixerUseConfigs(
     mixerConfig = mixerConfigToUse;
     airplaneConfig = airplaneConfigToUse;
     rxConfig = rxConfigToUse;
-    initEscEndpoints();
 }
 
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
@@ -294,6 +298,8 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
     currentMixerMode = mixerMode;
 
     customMixers = initialCustomMixers;
+
+    initEscEndpoints();
 }
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -412,11 +418,11 @@ void mixTable(pidProfile_t *pidProfile)
 
     // Scale roll/pitch/yaw uniformly to fit within throttle range
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
-    float motorMix[MAX_SUPPORTED_MOTORS], motorMixMax = 0, motorMixMin = 0;
-    float throttleRange = 0, throttle = 0;
-    float motorOutputRange, motorMixRange;
+    float motorMix[MAX_SUPPORTED_MOTORS];
+    float motorOutputRange = 0, throttle = 0, currentThrottleInputRange = 0, motorMixRange = 0, motorMixMax = 0, motorMixMin = 0;
     uint16_t motorOutputMin, motorOutputMax;
     static uint16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
+    bool mixerInversion = false;
 
     // Find min and max throttle based on condition.
     if (feature(FEATURE_3D)) {
@@ -424,30 +430,38 @@ void mixTable(pidProfile_t *pidProfile)
 
         if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             motorOutputMax = deadbandMotor3dLow;
-            motorOutputMin = minMotorOutputNormal;
+            motorOutputMin = motorOutputLow;
             throttlePrevious = rcCommand[THROTTLE];
-            throttle = rcCommand[THROTTLE] + flight3DConfig->deadband3d_throttle;
+            throttle = rcCommand[THROTTLE] - rxConfig->mincheck;
+            currentThrottleInputRange = rcCommandThrottleRange3dLow;
+            if(isMotorProtocolDshot()) mixerInversion = true;
         } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
-            motorOutputMax = maxMotorOutputNormal;
+            motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             throttlePrevious = rcCommand[THROTTLE];
-            throttle = rcCommand[THROTTLE] - flight3DConfig->deadband3d_throttle;
+            throttle = rcCommand[THROTTLE] - rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+            currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
-            throttle = deadbandMotor3dLow;
-            motorOutputMin = motorOutputMax = minMotorOutputNormal;
+            motorOutputMax = deadbandMotor3dLow;
+            motorOutputMin = motorOutputLow;
+            throttle = rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+            currentThrottleInputRange = rcCommandThrottleRange3dLow;
+            if(isMotorProtocolDshot()) mixerInversion = true;
         } else {  // Deadband handling from positive to negative
-            motorOutputMax = maxMotorOutputNormal;
-            throttle = motorOutputMin = deadbandMotor3dHigh;
+            motorOutputMax = motorOutputHigh;
+            motorOutputMin = deadbandMotor3dHigh;
+            throttle = 0;
+            currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
     } else {
-        throttle = rcCommand[THROTTLE];
-        motorOutputMin = minMotorOutputNormal;
-        motorOutputMax = maxMotorOutputNormal;
+        throttle = rcCommand[THROTTLE] - rxConfig->mincheck;
+        currentThrottleInputRange = rcCommandThrottleRange;
+        motorOutputMin = motorOutputLow;
+        motorOutputMax = motorOutputHigh;
     }
 
+    throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
     motorOutputRange = motorOutputMax - motorOutputMin;
-    throttle = constrainf((throttle - rxConfig->mincheck) / rcCommandThrottleRange, 0.0f, 1.0f);
-    throttleRange = motorOutputMax - motorOutputMin;
 
     float scaledAxisPIDf[3];
     // Limit the PIDsum
@@ -486,7 +500,12 @@ void mixTable(pidProfile_t *pidProfile)
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
     for (i = 0; i < motorCount; i++) {
-        motor[i] = lrintf( motorOutputMin + (motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle))) );
+        motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
+
+        // Dshot works exactly opposite in lower 3D section.
+        if (mixerInversion) {
+            motor[i] = motorOutputMin + (motorOutputMax - motor[i]);
+        }
 
         if (failsafeIsActive()) {
             if (isMotorProtocolDshot())
@@ -510,7 +529,7 @@ void mixTable(pidProfile_t *pidProfile)
         const int16_t maxThrottleStep = constrain(motorConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
 
         // Only makes sense when it's within the range
-        if (maxThrottleStep < throttleRange) {
+        if (maxThrottleStep < motorOutputRange) {
             static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
 
             motor[i] = constrain(motor[i], motorOutputMin, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation

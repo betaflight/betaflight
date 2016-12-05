@@ -17,6 +17,9 @@
 
 #pragma once
 
+//#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
+#define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
+
 #define I2C1_OVERCLOCK true
 #define I2C2_OVERCLOCK true
 
@@ -25,12 +28,13 @@
 #endif
 
 /****************************
-  STM32 F4 specific settings. 
+  STM32 F4 specific settings.
 ****************************/
 #ifdef STM32F4
 #define STM_FAST_TARGET
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
+#define GPS
 #endif
 
 #ifdef STM32F3
@@ -67,7 +71,6 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
-#define GPS
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT

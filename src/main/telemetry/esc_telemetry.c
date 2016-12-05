@@ -139,8 +139,8 @@ bool escTelemetryInit(void)
 
     if (escTelemetryPort) {
         escTelemetryEnabled = true;
-        masterConfig.batteryConfig.currentMeterType = CURRENT_SENSOR_ESC;
-        masterConfig.batteryConfig.batteryMeterType = BATTERY_SENSOR_ESC;
+        batteryConfig()->currentMeterType = CURRENT_SENSOR_ESC;
+        batteryConfig()->batteryMeterType = BATTERY_SENSOR_ESC;
     }
 
     return escTelemetryPort != NULL;
@@ -200,9 +200,9 @@ uint8_t escTelemetryFrameStatus(void)
     return frameStatus;
 }
 
-void escTelemetryProcess(uint32_t currentTime)
+void escTelemetryProcess(timeUs_t currentTimeUs)
 {
-    uint32_t currentTimeMs = currentTime / 1000;
+    const timeMs_t currentTimeMs = currentTimeUs / 1000;
 
     if (!escTelemetryEnabled) {
         return;

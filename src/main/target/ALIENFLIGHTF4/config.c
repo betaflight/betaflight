@@ -58,14 +58,13 @@ void targetConfiguration(master_t *config)
 {
     config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
     config->batteryConfig.currentMeterScale = CURRENTSCALE;
-    config->gyro_sync_denom = 1;
     config->sensorSelectionConfig.mag_hardware = MAG_NONE;            // disabled by default
-    config->pid_process_denom = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.minthrottle = 1000;
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        config->pid_process_denom = 1;
         config->motorConfig.useUnsyncedPwm = true;
     }
 
@@ -78,7 +77,7 @@ void targetConfiguration(master_t *config)
         config->rxConfig.sbus_inversion = 0;
         config->serialConfig.portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
-        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
+        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY, &config->enabledFeatures);
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 53;

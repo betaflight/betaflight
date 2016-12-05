@@ -28,11 +28,6 @@
 #include "drivers/exti.h"
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "AlienFlight F1 V1",
-};
-
 uint8_t hardwareRevision = AFF1_REV_1;
 uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 

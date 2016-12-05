@@ -471,6 +471,16 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
         .adjustmentFunction = ADJUSTMENT_RC_RATE_YAW,
         .mode = ADJUSTMENT_MODE_STEP,
         .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_D_SETPOINT,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
+    },
+    {
+        .adjustmentFunction = ADJUSTMENT_D_SETPOINT_TRANSITION,
+        .mode = ADJUSTMENT_MODE_STEP,
+        .data = { .stepConfig = { .step = 1 }}
     }
 };
 
@@ -579,7 +589,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
         case ADJUSTMENT_ROLL_D:
             newValue = constrain((int)pidProfile->D8[PIDROLL] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->D8[PIDROLL] = newValue;
-                blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_D, newValue);
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_ROLL_D, newValue);
             break;
         case ADJUSTMENT_YAW_P:
             newValue = constrain((int)pidProfile->P8[PIDYAW] + delta, 0, 200); // FIXME magic numbers repeated in serial_cli.c
@@ -601,6 +611,14 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             controlRateConfig->rcYawRate8 = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_RC_RATE_YAW, newValue);
             break;
+        case ADJUSTMENT_D_SETPOINT:
+            newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 254); // FIXME magic numbers repeated in serial_cli.c
+            pidProfile->dtermSetpointWeight = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
+        case ADJUSTMENT_D_SETPOINT_TRANSITION:
+            newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
+            pidProfile->setpointRelaxRatio = newValue;
+            blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
         default:
             break;
     };
@@ -676,7 +694,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
                 continue;
             }
 
-            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            applyStepAdjustment(controlRateConfig,adjustmentFunction,delta);
+            pidInitConfig(pidProfile);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;

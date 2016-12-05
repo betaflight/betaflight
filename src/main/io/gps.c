@@ -395,16 +395,16 @@ void gpsInitHardware(void)
     }
 }
 
-static void updateGpsIndicator(uint32_t currentTime)
+static void updateGpsIndicator(timeUs_t currentTimeUs)
 {
     static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
-        GPSLEDTime = currentTime + 150000;
+    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && (GPS_numSat >= 5)) {
+        GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
 }
 
-void gpsUpdate(uint32_t currentTime)
+void gpsUpdate(timeUs_t currentTimeUs)
 {
     // read out available GPS bytes
     if (gpsPort) {
@@ -429,7 +429,7 @@ void gpsUpdate(uint32_t currentTime)
                 gpsData.baudrateIndex++;
                 gpsData.baudrateIndex %= GPS_INIT_ENTRIES;
             }
-            gpsData.lastMessage = currentTime / 1000;
+            gpsData.lastMessage = currentTimeUs / 1000;
             // TODO - move some / all of these into gpsData
             GPS_numSat = 0;
             DISABLE_STATE(GPS_FIX);
@@ -438,7 +438,7 @@ void gpsUpdate(uint32_t currentTime)
 
         case GPS_RECEIVING_DATA:
             // check for no data/gps timeout/cable disconnection etc
-            if (currentTime / 1000 - gpsData.lastMessage > GPS_TIMEOUT) {
+            if (currentTimeUs / 1000 - gpsData.lastMessage > GPS_TIMEOUT) {
                 // remove GPS from capability
                 sensorsClear(SENSOR_GPS);
                 gpsSetState(GPS_LOST_COMMUNICATION);
@@ -446,7 +446,7 @@ void gpsUpdate(uint32_t currentTime)
             break;
     }
     if (sensors(SENSOR_GPS)) {
-        updateGpsIndicator(currentTime);
+        updateGpsIndicator(currentTimeUs);
     }
 }
 

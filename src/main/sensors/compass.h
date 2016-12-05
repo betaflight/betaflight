@@ -19,6 +19,8 @@
 
 #include "drivers/compass.h"
 
+#include "sensors/sensors.h"
+
 
 // Type of magnetometer used/detected
 typedef enum {
@@ -30,6 +32,15 @@ typedef enum {
     MAG_MAX = MAG_AK8963
 } magSensor_e;
 
+typedef struct mag_s {
+    magDev_t dev;
+    sensor_align_e magAlign;
+    int32_t magADC[XYZ_AXIS_COUNT];
+    float magneticDeclination;
+} mag_t;
+
+extern mag_t mag;
+
 typedef struct compassConfig_s {
     int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
@@ -39,7 +50,3 @@ void compassInit(void);
 union flightDynamicsTrims_u;
 void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
 
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern mag_t mag;
