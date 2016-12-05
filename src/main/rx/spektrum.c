@@ -248,7 +248,7 @@ void spektrumBind(rxConfig_t *rxConfig)
 		case SERIAL_PORT_USART8:
 			BindPin = IOGetByTag(IO_TAG(UART8_RX_PIN));
 		break;
-	#endif
+#endif
 		default:
 			return;
 	}
