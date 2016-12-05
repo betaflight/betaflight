@@ -48,7 +48,7 @@
  *
  */
 
-STATIC_UNIT_TESTED volatile int32_t hcsr04SonarPulseTravelTime = 0;
+STATIC_UNIT_TESTED volatile timeDelta_t hcsr04SonarPulseTravelTime = 0;
 sonarHcsr04Hardware_t sonarHcsr04Hardware;
 
 #ifdef USE_EXTI
@@ -61,13 +61,13 @@ static IO_t triggerIO;
 #if !defined(UNIT_TEST)
 void hcsr04_extiHandler(extiCallbackRec_t* cb)
 {
-    static uint32_t timing_start;
+    static timeUs_t timing_start;
     UNUSED(cb);
 
     if (IORead(echoIO) != 0) {
         timing_start = micros();
     } else {
-        const uint32_t timing_stop = micros();
+        const timeUs_t timing_stop = micros();
         if (timing_stop > timing_start) {
             hcsr04SonarPulseTravelTime = timing_stop - timing_start;
         }
@@ -125,11 +125,11 @@ void hcsr04_init(rangefinder_t *rangefinder)
 void hcsr04_start_reading(void)
 {
 #if !defined(UNIT_TEST)
-     static uint32_t timeOfLastMeasurementMs = 0;
+     static timeMs_t timeOfLastMeasurementMs = 0;
     // the firing interval of the trigger signal should be greater than 60ms
     // to avoid interference between consecutive measurements.
     #define HCSR04_MinimumFiringIntervalMs 60
-    const uint32_t timeNowMs = millis();
+    const timeMs_t timeNowMs = millis();
     if (timeNowMs > timeOfLastMeasurementMs + HCSR04_MinimumFiringIntervalMs) {
         timeOfLastMeasurementMs = timeNowMs;
         IOHi(triggerIO);
