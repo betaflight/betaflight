@@ -22,7 +22,7 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_LONG_TIMEOUT
 */
-#define I2C_TIMEOUT                 100     // 100us
+#define I2C_TIMEOUT                 250     // 250us
 
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
