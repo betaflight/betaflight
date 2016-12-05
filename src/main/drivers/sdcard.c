@@ -67,7 +67,7 @@ typedef enum {
     SDCARD_STATE_SENDING_WRITE,
     SDCARD_STATE_WAITING_FOR_WRITE,
     SDCARD_STATE_WRITING_MULTIPLE_BLOCKS,
-    SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE,
+    SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE
 } sdcardState_e;
 
 typedef struct sdcard_t {
@@ -352,7 +352,7 @@ static bool sdcard_readOCRRegister(uint32_t *result)
 typedef enum {
     SDCARD_RECEIVE_SUCCESS,
     SDCARD_RECEIVE_BLOCK_IN_PROGRESS,
-    SDCARD_RECEIVE_ERROR,
+    SDCARD_RECEIVE_ERROR
 } sdcardReceiveBlockStatus_e;
 
 /**

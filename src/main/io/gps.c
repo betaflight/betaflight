@@ -175,7 +175,7 @@ typedef enum {
     GPS_CHANGE_BAUD,
     GPS_CONFIGURE,
     GPS_RECEIVING_DATA,
-    GPS_LOST_COMMUNICATION,
+    GPS_LOST_COMMUNICATION
 } gpsState_e;
 
 gpsData_t gpsData;

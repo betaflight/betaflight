@@ -25,4 +25,8 @@ typedef struct vcdProfile_s {
     int8_t v_offset;
 } vcdProfile_t;
 
-enum VIDEO_SYSTEMS { VIDEO_SYSTEM_AUTO = 0, VIDEO_SYSTEM_PAL, VIDEO_SYSTEM_NTSC };
+enum VIDEO_SYSTEMS {
+    VIDEO_SYSTEM_AUTO = 0,
+    VIDEO_SYSTEM_PAL,
+    VIDEO_SYSTEM_NTSC
+};

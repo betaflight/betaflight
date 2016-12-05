@@ -35,7 +35,6 @@ enum {
     INPUT_RC_AUX4,
     INPUT_GIMBAL_PITCH,
     INPUT_GIMBAL_ROLL,
-
     INPUT_SOURCE_COUNT
 } inputSource_e;
 
@@ -59,8 +58,7 @@ typedef enum {
     SERVO_SINGLECOPTER_1 = 3,
     SERVO_SINGLECOPTER_2 = 4,
     SERVO_SINGLECOPTER_3 = 5,
-    SERVO_SINGLECOPTER_4 = 6,
-
+    SERVO_SINGLECOPTER_4 = 6
 } servoIndex_e; // FIXME rename to servoChannel_e
 
 #define SERVO_PLANE_INDEX_MIN SERVO_FLAPS

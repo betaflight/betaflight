@@ -65,7 +65,7 @@ enum
     SPSTATE_UNINITIALIZED,
     SPSTATE_INITIALIZED,
     SPSTATE_WORKING,
-    SPSTATE_TIMEDOUT,
+    SPSTATE_TIMEDOUT
 };
 
 enum
@@ -83,7 +83,7 @@ enum
     FSSP_SENSOR_ID1 = 0x1B,
     FSSP_SENSOR_ID2 = 0x0D,
     FSSP_SENSOR_ID3 = 0x34,
-    FSSP_SENSOR_ID4 = 0x67,
+    FSSP_SENSOR_ID4 = 0x67
     // there are 32 ID's polled by smartport master
     // remaining 3 bits are crc (according to comments in openTx code)
 };
@@ -112,7 +112,7 @@ enum
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
     FSSP_DATAID_A3         = 0x0900 ,
-    FSSP_DATAID_A4         = 0x0910 ,
+    FSSP_DATAID_A4         = 0x0910
 };
 
 const uint16_t frSkyDataIdTable[] = {

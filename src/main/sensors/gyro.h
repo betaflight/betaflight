@@ -31,8 +31,7 @@ typedef enum {
     GYRO_MPU6500,
     GYRO_MPU9250,
     GYRO_ICM20689,
-    GYRO_FAKE,
-    GYRO_MAX = GYRO_FAKE
+    GYRO_FAKE
 } gyroSensor_e;
 
 typedef struct gyro_s {

@@ -210,7 +210,7 @@ typedef enum {
     DUMP_ALL = (1 << 3),
     DO_DIFF = (1 << 4),
     SHOW_DEFAULTS = (1 << 5),
-    HIDE_UNUSED = (1 << 6),
+    HIDE_UNUSED = (1 << 6)
 } dumpFlags_e;
 
 static const char* const emptyName = "-";

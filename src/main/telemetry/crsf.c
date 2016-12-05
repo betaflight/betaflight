@@ -196,13 +196,13 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
-    CRSF_ACTIVE_ANTENNA2 = 1,
+    CRSF_ACTIVE_ANTENNA2 = 1
 } crsfActiveAntenna_e;
 
 typedef enum {
     CRSF_RF_MODE_4_HZ = 0,
     CRSF_RF_MODE_50_HZ = 1,
-    CRSF_RF_MODE_150_HZ = 2,
+    CRSF_RF_MODE_150_HZ = 2
 } crsrRfMode_e;
 
 typedef enum {
@@ -212,7 +212,7 @@ typedef enum {
     CRSF_RF_POWER_100_mW = 3,
     CRSF_RF_POWER_500_mW = 4,
     CRSF_RF_POWER_1000_mW = 5,
-    CRSF_RF_POWER_2000_mW = 6,
+    CRSF_RF_POWER_2000_mW = 6
 } crsrRfPower_e;
 
 /*

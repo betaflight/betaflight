@@ -55,7 +55,7 @@ typedef enum {
     HOTT_EAM_ALARM1_FLAG_TEMPERATURE_2 = (1 << 4),
     HOTT_EAM_ALARM1_FLAG_ALTITUDE = (1 << 5),
     HOTT_EAM_ALARM1_FLAG_CURRENT = (1 << 6),
-    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = (1 << 7),
+    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = (1 << 7)
 } hottEamAlarm1Flag_e;
 
 typedef enum {
@@ -67,7 +67,7 @@ typedef enum {
     HOTT_EAM_ALARM2_FLAG_M3S_DUPLICATE = (1 << 4),
     HOTT_EAM_ALARM2_FLAG_UNKNOWN_1 = (1 << 5),
     HOTT_EAM_ALARM2_FLAG_UNKNOWN_2 = (1 << 6),
-    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = (1 << 7),
+    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = (1 << 7)
 } hottEamAlarm2Flag_e;
 
 
