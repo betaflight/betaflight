@@ -35,6 +35,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_fake.h"
 #include "drivers/accgyro_l3g4200d.h"
 #include "drivers/accgyro_mma845x.h"
 #include "drivers/accgyro_mpu.h"
@@ -54,12 +55,14 @@
 #include "drivers/barometer.h"
 #include "drivers/barometer_bmp085.h"
 #include "drivers/barometer_bmp280.h"
+#include "drivers/barometer_fake.h"
 #include "drivers/barometer_ms5611.h"
 
 #include "drivers/compass.h"
-#include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
+#include "drivers/compass_fake.h"
+#include "drivers/compass_hmc5883l.h"
 
 #include "drivers/sonar_hcsr04.h"
 
@@ -93,69 +96,6 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return NULL;
 #endif
 }
-
-#ifdef USE_FAKE_GYRO
-int16_t fake_gyro_values[XYZ_AXIS_COUNT] = { 0,0,0 };
-static void fakeGyroInit(gyroDev_t *gyro)
-{
-    UNUSED(gyro);
-}
-
-static bool fakeGyroRead(gyroDev_t *gyro)
-{
-    for (int i = 0; i < XYZ_AXIS_COUNT; ++i) {
-        gyro->gyroADCRaw[X] = fake_gyro_values[i];
-    }
-
-    return true;
-}
-
-static bool fakeGyroReadTemp(int16_t *tempData)
-{
-    UNUSED(tempData);
-    return true;
-}
-
-
-static bool fakeGyroInitStatus(gyroDev_t *gyro)
-{
-    UNUSED(gyro);
-    return true;
-}
-
-bool fakeGyroDetect(gyroDev_t *gyro)
-{
-    gyro->init = fakeGyroInit;
-    gyro->intStatus = fakeGyroInitStatus;
-    gyro->read = fakeGyroRead;
-    gyro->temperature = fakeGyroReadTemp;
-    gyro->scale = 1.0f / 16.4f;
-    return true;
-}
-#endif
-
-#ifdef USE_FAKE_ACC
-int16_t fake_acc_values[XYZ_AXIS_COUNT] = {0,0,0};
-
-static void fakeAccInit(accDev_t *acc) {UNUSED(acc);}
-
-static bool fakeAccRead(int16_t *accData) {
-    for(int i=0;i<XYZ_AXIS_COUNT;++i) {
-        accData[i] = fake_acc_values[i];
-    }
-
-    return true;
-}
-
-bool fakeAccDetect(accDev_t *acc)
-{
-    acc->init = fakeAccInit;
-    acc->read = fakeAccRead;
-    acc->acc_1G = 512*8;
-    acc->revisionCode = 0;
-    return true;
-}
-#endif
 
 bool gyroDetect(gyroDev_t *dev)
 {
