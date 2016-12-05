@@ -142,7 +142,6 @@ static i2cDevice_t i2cHardwareMap[] = {
 
 static i2cBusState_t busState[] = { { 0 } };
 
-
 static void i2cResetInterface(i2cBusState_t * i2cBusState)
 {
     const i2cDevice_t * i2c = &(i2cHardwareMap[i2cBusState->device]);
@@ -475,9 +474,8 @@ void i2cInit(I2CDevice device)
     i2cInit.I2C_ClockSpeed = (i2c->overClock ? 800000 : 400000);
 
     I2C_Init(i2c->dev, &i2cInit);
-    I2C_Cmd(i2c->dev, ENABLE);
-
     I2C_StretchClockCmd(i2c->dev, ENABLE);
+    I2C_Cmd(i2c->dev, ENABLE);
 
     busState[device].device = device;
     busState[device].initialized = true;
