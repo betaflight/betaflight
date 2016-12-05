@@ -180,16 +180,16 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             // Fallthrough
 
         case I2C_STATE_STARTING_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT) != ERROR) {
                 if (i2cBusState->rw == I2C_TXN_READ) {
                     i2cBusState->state = I2C_STATE_R_ADDR;
                 }
                 else {
                     i2cBusState->state = I2C_STATE_W_ADDR;
                 }
+            }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
 
@@ -200,14 +200,14 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             // Fallthrough
 
         case I2C_STATE_R_ADDR_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) != ERROR) {
                 i2cBusState->state = I2C_STATE_R_REGISTER;
             }
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
+            }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
 
@@ -218,10 +218,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             /* Fallthrough */
 
         case I2C_STATE_R_REGISTER_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED) != ERROR) {
                 if (i2cBusState->len == 0) {
                     I2C_GenerateSTOP(I2Cx, ENABLE);
                     i2cBusState->state = I2C_STATE_STOPPING;
@@ -233,6 +230,9 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_R_RESTARTING:
@@ -242,11 +242,11 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             // Fallthrough
 
         case I2C_STATE_R_RESTARTING_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT) != ERROR) {
                 i2cBusState->state = I2C_STATE_R_RESTART_ADDR;
+            }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
 
@@ -257,10 +257,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             // Fallthrough
 
         case I2C_STATE_R_RESTART_ADDR_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) != ERROR) {
                 if (i2cBusState->len == 1) {
                     // This TXN is 1-byte, disable ACK and generate stop early
                     I2C_AcknowledgeConfig(I2Cx, DISABLE);
@@ -292,13 +289,13 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_R_TRANSFER_EQ1:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_RXNE) != RESET) {
+            if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_RXNE) != RESET) {
                 *i2cBusState->buf++ = I2C_ReceiveData(I2Cx);
                 i2cBusState->len--;
 
@@ -306,13 +303,13 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
                 i2cBusState->txnOk = true;
                 i2cBusState->state = I2C_STATE_STOPPING;
             }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_R_TRANSFER_EQ2:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_BTF) != RESET) {
+            if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_BTF) != RESET) {
                 ATOMIC_BLOCK(NVIC_PRIO_MAX) {
                     I2C_GenerateSTOP(I2Cx,ENABLE);
                     *i2cBusState->buf++ = I2C_ReceiveData(I2Cx);
@@ -325,13 +322,13 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
                 i2cBusState->txnOk = true;
                 i2cBusState->state = I2C_STATE_STOPPING;
             }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_R_TRANSFER_GE2:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_BTF) != RESET) {
+            if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_BTF) != RESET) {
                 if (i2cBusState->len == 3) {
                     I2C_AcknowledgeConfig(I2Cx, DISABLE);           // clear ack bit
 
@@ -365,6 +362,9 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
                     i2cBusState->timeout = I2C_LONG_TIMEOUT;
                 }
             }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_W_ADDR:
@@ -375,14 +375,14 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             // Fallthrough
 
         case I2C_STATE_W_ADDR_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) != ERROR) {
                 i2cBusState->state = I2C_STATE_W_REGISTER;
             }
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
+            }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
 
@@ -393,14 +393,14 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState)
             /* Fallthrough */
 
         case I2C_STATE_W_TRANSFER_WAIT:
-            if ((i2cBusState->timeout--) == 0) {
-                i2cBusState->state = I2C_STATE_BUS_ERROR;
-            }
-            else if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED) != ERROR) {
+            if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED) != ERROR) {
                 i2cBusState->state = I2C_STATE_W_TRANSFER;
             }
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
+            }
+            else if ((i2cBusState->timeout--) == 0) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
 
