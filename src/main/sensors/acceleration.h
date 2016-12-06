@@ -23,8 +23,8 @@
 
 // Type of accelerometer used/detected
 typedef enum {
-    ACC_DEFAULT = 0,
-    ACC_NONE = 1,
+    ACC_NONE = 0,
+    ACC_AUTODETECT = 1,
     ACC_ADXL345 = 2,
     ACC_MPU6050 = 3,
     ACC_MMA8452 = 4,

@@ -20,10 +20,9 @@
 #include "drivers/pitotmeter.h"
 
 typedef enum {
-    PITOT_DEFAULT = 0,
-    PITOT_NONE = 1,
-    PITOT_MS4525 = 2,
-    PITOT_FAKE = 3,
+    PITOT_NONE = 0,
+    PITOT_MS4525 = 1,
+    PITOT_FAKE = 2,
 } pitotSensor_e;
 
 #define PITOT_MAX  PITOT_FAKE

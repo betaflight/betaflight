@@ -246,17 +246,17 @@ static const char * const hardwareSensorStatusNames[] = {
 };
 
 // sync with gyroSensor_e
-static const char * const gyroNames[] = { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
+static const char * const gyroNames[] = { "NONE", "AUTO", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
 // sync with accelerationSensor_e
-static const char * const accNames[] = { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
+static const char * const accNames[] = { "NONE", "AUTO", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
 // sync with baroSensor_e
-static const char * const baroNames[] = { "", "None", "BMP085", "MS5611", "BMP280", "FAKE"};
+static const char * const baroNames[] = { "NONE", "BMP085", "MS5611", "BMP280", "FAKE"};
 // sync with magSensor_e
-static const char * const magNames[] = { "", "None", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963", "FAKE"};
+static const char * const magNames[] = { "NONE", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963", "FAKE"};
 // sycn with rangefinderType_e
-static const char * const rangefinderNames[] = { "None", "HCSR04", "SRF10"};
+static const char * const rangefinderNames[] = { "NONE", "HCSR04", "SRF10"};
 // sync with pitotSensor_e
-static const char * const pitotmeterNames[] = { "Auto", "None", "MS4525", "FAKE"};
+static const char * const pitotmeterNames[] = { "NONE", "MS4525", "FAKE"};
 
 static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames, pitotmeterNames};
 
@@ -539,6 +539,11 @@ typedef enum {
 #ifdef OSD
     TABLE_OSD,
 #endif
+    TABLE_HW_ACC,
+    TABLE_HW_BARO,
+    TABLE_HW_MAG,
+    TABLE_HW_RANGEFINDER,   // currently not used
+    TABLE_HW_PITOT,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -577,6 +582,11 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
+    { accNames, sizeof(accNames) / sizeof(char *) },
+    { baroNames, sizeof(baroNames) / sizeof(char *) },
+    { magNames, sizeof(magNames) / sizeof(char *) },
+    { rangefinderNames, sizeof(rangefinderNames) / sizeof(char *) },
+    { pitotmeterNames, sizeof(pitotmeterNames) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0

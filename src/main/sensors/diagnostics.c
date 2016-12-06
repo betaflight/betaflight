@@ -6,6 +6,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "config/config.h"
 #include "config/feature.h"

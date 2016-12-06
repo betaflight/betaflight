@@ -90,7 +90,7 @@
 #include "hardware_revision.h"
 #endif
 
-uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_DEFAULT, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
+uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_AUTODETECT, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
@@ -108,12 +108,12 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 
 static bool detectGyro(gyroDev_t *dev)
 {
-    gyroSensor_e gyroHardware = GYRO_DEFAULT;
+    gyroSensor_e gyroHardware = GYRO_AUTODETECT;
 
     dev->gyroAlign = ALIGN_DEFAULT;
 
     switch(gyroHardware) {
-        case GYRO_DEFAULT:
+        case GYRO_AUTODETECT:
             ; // fallthrough
         case GYRO_MPU6050:
 #ifdef USE_GYRO_MPU6050
@@ -242,7 +242,7 @@ retry:
     requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
 
     switch (accHardwareToUse) {
-        case ACC_DEFAULT:
+        case ACC_AUTODETECT:
             ; // fallthrough
         case ACC_ADXL345: // ADXL345
 #ifdef USE_ACC_ADXL345
@@ -361,9 +361,9 @@ retry:
     }
 
     // Found anything? Check if error or ACC is really missing.
-    if (accHardware == ACC_NONE && accHardwareToUse != ACC_DEFAULT && accHardwareToUse != ACC_NONE) {
+    if (accHardware == ACC_NONE && accHardwareToUse != ACC_AUTODETECT && accHardwareToUse != ACC_NONE) {
         // Nothing was found and we have a forced sensor that isn't present.
-        accHardwareToUse = ACC_DEFAULT;
+        accHardwareToUse = ACC_AUTODETECT;
         goto retry;
     }
 
@@ -383,7 +383,7 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 {
     // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
 
-    baroSensor_e baroHardware = baroHardwareToUse;
+    baroSensor_e baroHardware = BARO_NONE;
     requestedSensors[SENSOR_INDEX_BARO] = baroHardwareToUse;
 
 #ifdef USE_BARO_BMP085
@@ -406,42 +406,39 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 
 #endif
 
-    switch (baroHardware) {
-        case BARO_DEFAULT:
-            ; // fallthough
-
+    switch (baroHardwareToUse) {
         case BARO_BMP085:
 #ifdef USE_BARO_BMP085
             if (bmp085Detect(bmp085Config, dev)) {
                 baroHardware = BARO_BMP085;
-                break;
             }
 #endif
-        ; // fallthough
+            break;
+
         case BARO_MS5611:
 #ifdef USE_BARO_MS5611
             if (ms5611Detect(dev)) {
                 baroHardware = BARO_MS5611;
-                break;
             }
 #endif
-            ; // fallthough
+            break;
+
         case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
             if (bmp280Detect(dev)) {
                 baroHardware = BARO_BMP280;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
+
         case BARO_FAKE:
 #ifdef USE_FAKE_BARO
             if (fakeBaroDetect(dev)) {
                 baroHardware = BARO_FAKE;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
+
         case BARO_NONE:
             baroHardware = BARO_NONE;
             break;
@@ -450,6 +447,7 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     addBootlogEvent6(BOOT_EVENT_BARO_DETECTION, BOOT_EVENT_FLAGS_NONE, baroHardware, 0, 0, 0);
 
     if (baroHardware == BARO_NONE) {
+        sensorsClear(SENSOR_BARO);
         return false;
     }
 
@@ -462,30 +460,25 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #ifdef PITOT
 static bool detectPitot(pitotDev_t *dev, uint8_t pitotHardwareToUse)
 {
-    pitotSensor_e pitotHardware = pitotHardwareToUse;
-    requestedSensors[SENSOR_INDEX_PITOT] = pitotHardwareToUse;   // FIXME
+    pitotSensor_e pitotHardware = PITOT_NONE;
+    requestedSensors[SENSOR_INDEX_PITOT] = pitotHardwareToUse;
 
-    switch (pitotHardware) {
-        case PITOT_DEFAULT:
-            ; // Fallthrough
-
+    switch (pitotHardwareToUse) {
         case PITOT_MS4525:
 #ifdef USE_PITOT_MS4525
             if (ms4525Detect(dev)) {
                 pitotHardware = PITOT_MS4525;
-                break;
             }
 #endif
-            ; // Fallthrough
+            break;
 
         case PITOT_FAKE:
 #ifdef USE_PITOT_FAKE
             if (fakePitotDetect(&pitot)) {
                 pitotHardware = PITOT_FAKE;
-                break;
             }
 #endif
-            ; // Fallthrough
+            break;
 
         case PITOT_NONE:
             pitotHardware = PITOT_NONE;
@@ -541,9 +534,6 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
     dev->magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
-        case MAG_DEFAULT:
-            ; // fallthrough
-
         case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
             if (hmc5883lDetect(dev, hmc5883Config)) {
@@ -551,10 +541,9 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
                 dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
                 magHardware = MAG_HMC5883;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_AK8975:
 #ifdef USE_MAG_AK8975
@@ -563,10 +552,9 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
                 dev->magAlign = MAG_AK8975_ALIGN;
 #endif
                 magHardware = MAG_AK8975;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_AK8963:
 #ifdef USE_MAG_AK8963
@@ -575,10 +563,9 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
                 dev->magAlign = MAG_AK8963_ALIGN;
 #endif
                 magHardware = MAG_AK8963;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_GPS:
 #ifdef GPS
@@ -587,10 +574,9 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
                 dev->magAlign = MAG_GPS_ALIGN;
 #endif
                 magHardware = MAG_GPS;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_MAG3110:
 #ifdef USE_MAG_MAG3110
@@ -599,19 +585,17 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
                 dev->magAlign = MAG_MAG3110_ALIGN;
 #endif
                 magHardware = MAG_MAG3110;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_FAKE:
 #ifdef USE_FAKE_MAG
             if (fakeMagDetect(dev)) {
                 magHardware = MAG_FAKE;
-                break;
             }
 #endif
-            ; // fallthrough
+            break;
 
         case MAG_NONE:
             magHardware = MAG_NONE;
@@ -620,8 +604,8 @@ static bool detectMag(magDev_t *dev, magSensor_e magHardwareToUse)
 
     addBootlogEvent6(BOOT_EVENT_MAG_DETECTION, BOOT_EVENT_FLAGS_NONE, magHardware, 0, 0, 0);
 
-    // If not in autodetect mode and detected the wrong chip - disregard the compass even if detected
-    if ((magHardwareToUse != MAG_DEFAULT && magHardware != magHardwareToUse) || (magHardware == MAG_NONE)) {
+    if (magHardware == MAG_NONE) {
+        sensorsClear(SENSOR_MAG);
         return false;
     }
 

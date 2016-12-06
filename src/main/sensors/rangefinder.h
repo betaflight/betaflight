@@ -20,10 +20,9 @@
 #include <stdint.h>
 
 typedef enum {
-    RANGEFINDER_DEFAULT = 0,
-    RANGEFINDER_NONE = 1,
-    RANGEFINDER_HCSR04,
-    RANGEFINDER_SRF10
+    RANGEFINDER_NONE    = 0,
+    RANGEFINDER_HCSR04  = 1,
+    RANGEFINDER_SRF10   = 2,
 } rangefinderType_e;
 
 struct rangefinder_s;
