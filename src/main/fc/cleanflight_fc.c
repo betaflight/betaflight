@@ -1101,7 +1101,8 @@ void osdUpdateFCState(void)
 {
     fcStatus.vbat = vbat;
     fcStatus.fcState = packFlightModeFlags();
-    fcStatus.rssi = rssi;
+    fcStatus.rssi = scaleRange(rssi, 0, 1023, 0, 1000);
+
 }
 
 void taskDrawScreen(void)
