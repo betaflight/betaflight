@@ -68,54 +68,6 @@
 TEXT_SCREEN_CHAR textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
-#ifdef STM32F303
-#ifdef MAX7456_LOS_GPIO
-static const extiConfig_t max7456LOSExtiConfig = {
-        .gpioAHBPeripherals = MAX7456_LOS_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_LOS_GPIO,
-        .gpioPin = MAX7456_LOS_PIN,
-        .io = IO_TAG(MAX7456_LOS_IO),
-};
-#endif
-
-static const extiConfig_t max7456VSYNCExtiConfig = {
-        .gpioAHBPeripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_VSYNC_GPIO,
-        .gpioPin = MAX7456_VSYNC_PIN,
-        .io = IO_TAG(MAX7456_VSYNC_IO),
-};
-
-static const extiConfig_t max7456HSYNCExtiConfig = {
-        .gpioAHBPeripherals = MAX7456_HSYNC_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_HSYNC_GPIO,
-        .gpioPin = MAX7456_HSYNC_PIN,
-        .io = IO_TAG(MAX7456_HSYNC_IO),
-};
-#endif
-
-#ifdef STM32F10X
-static const extiConfig_t max7456LOSExtiConfig = {
-        .gpioAPB2Peripherals = MAX7456_LOS_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_LOS_GPIO,
-        .gpioPin = MAX7456_LOS_PIN,
-        .io = IO_TAG(MAX7456_LOS_IO),
-};
-
-static const extiConfig_t max7456VSYNCExtiConfig = {
-        .gpioAPB2Peripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_VSYNC_GPIO,
-        .gpioPin = MAX7456_VSYNC_PIN,
-        .io = IO_TAG(MAX7456_VSYNC_IO),
-};
-
-static const extiConfig_t max7456HSYNCExtiConfig = {
-        .gpioAPB2Peripherals = MAX7456_HSYNC_GPIO_PERIPHERAL,
-        .gpioPort = MAX7456_HSYNC_GPIO,
-        .gpioPin = MAX7456_HSYNC_PIN,
-        .io = IO_TAG(MAX7456_HSYNC_IO),
-};
-#endif
-
 void osdHardwareApplyConfiguration(videoMode_e videoMode)
 {
     max7456_init(videoMode);
@@ -133,14 +85,16 @@ void osdHardwareInit(void)
 
     osdHardwareApplyConfiguration(osdVideoConfig()->videoMode);
 
-    memset(&max7456ExtiConfig, 0, sizeof(max7456ExtiConfig));
-#ifdef MAX7456_LOS_GPIO
-    max7456ExtiConfig.los = &max7456LOSExtiConfig;
+    memset(&max7456IOConfig, 0, sizeof(max7456IOConfig));
+#ifdef MAX7456_LOS_IO
+    max7456IOConfig.los = IO_TAG(MAX7456_LOS_IO);
+#else
+    max7456IOConfig.los = DEFIO_TAG(NONE);
 #endif
-    max7456ExtiConfig.vsync = &max7456VSYNCExtiConfig;
-    max7456ExtiConfig.hsync = &max7456HSYNCExtiConfig;
+    max7456IOConfig.vsync =IO_TAG(MAX7456_VSYNC_IO);
+    max7456IOConfig.hsync = IO_TAG(MAX7456_HSYNC_IO);
 
-    max7456_extiConfigure();
+    max7456_ioConfigure();
 
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
