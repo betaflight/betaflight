@@ -888,6 +888,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_kill_switch);
         sbufWriteU16(dst, masterConfig.failsafeConfig.failsafe_throttle_low_delay);
         sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_procedure);
+        sbufWriteU8(dst, masterConfig.failsafeConfig.failsafe_recovery_delay);
         break;
 
     case MSP_RXFAIL_CONFIG:
@@ -1701,6 +1702,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.failsafeConfig.failsafe_kill_switch = sbufReadU8(src);
         masterConfig.failsafeConfig.failsafe_throttle_low_delay = sbufReadU16(src);
         masterConfig.failsafeConfig.failsafe_procedure = sbufReadU8(src);
+        masterConfig.failsafeConfig.failsafe_recovery_delay = sbufReadU8(src);
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
