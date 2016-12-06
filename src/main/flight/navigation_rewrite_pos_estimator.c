@@ -115,7 +115,6 @@ typedef struct {
     timeUs_t    lastUpdateTime; // Last update time (us)
     t_fp_vector pos;
     t_fp_vector vel;
-    float       baroOffset;
     float       surface;
     float       surfaceVel;
     float       eph;
@@ -578,14 +577,14 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
     /* We might be experiencing air cushion effect - use sonar or baro groung altitude to detect it */
     bool isAirCushionEffectDetected = ARMING_FLAG(ARMED) &&
                                         ((isSonarValid && posEstimator.sonar.alt < 20.0f && posEstimator.state.isBaroGroundValid) ||
-                                         (isBaroValid && posEstimator.state.isBaroGroundValid && (posEstimator.baro.alt - posEstimator.est.baroOffset) < posEstimator.state.baroGroundAlt));
+                                         (isBaroValid && posEstimator.state.isBaroGroundValid && posEstimator.baro.alt < posEstimator.state.baroGroundAlt));
 
 #if defined(NAV_GPS_GLITCH_DETECTION)
     //isGPSValid = isGPSValid && !posEstimator.gps.glitchDetected;
 #endif
 
     /* Apply GPS altitude corrections only on fixed wing aircrafts */
-    bool useGpsZPos = STATE(FIXED_WING) && isGPSValid;
+    bool useGpsZPos = STATE(FIXED_WING) && isGPSValid && !sensors(SENSOR_BARO);
 
     /* GPS correction for velocity might be used on all aircrafts */
     bool useGpsZVel = isGPSValid;
@@ -611,11 +610,6 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
         if (!isEstZValid && useGpsZPos) {
             posEstimator.est.pos.V.Z = posEstimator.gps.pos.V.Z;
             posEstimator.est.vel.V.Z = posEstimator.gps.vel.V.Z;
-
-            if (isBaroValid) {
-                posEstimator.est.baroOffset = posEstimator.baro.alt - posEstimator.gps.pos.V.Z;
-            }
-
             newEPV = posEstimator.gps.epv;
             positionWasReset = true;
         }
@@ -663,12 +657,7 @@ static void updateEstimatedTopic(timeUs_t currentTimeUs)
 
     if (isBaroValid) {
         /* If we are going to use GPS Z-position - calculate and apply barometer offset */
-        if (useGpsZPos) {
-            const float currentGpsBaroAltitudeOffset = posEstimator.baro.alt - posEstimator.gps.pos.V.Z;
-            posEstimator.est.baroOffset += (currentGpsBaroAltitudeOffset - posEstimator.est.baroOffset) * posControl.navConfig->estimation.w_z_gps_p * dt;
-        }
-
-        baroResidual = (isAirCushionEffectDetected ? posEstimator.state.baroGroundAlt : (posEstimator.baro.alt - posEstimator.est.baroOffset)) - posEstimator.est.pos.V.Z;
+        baroResidual = (isAirCushionEffectDetected ? posEstimator.state.baroGroundAlt : posEstimator.baro.alt) - posEstimator.est.pos.V.Z;
     }
 
     /* Correction step: Z-axis */
@@ -862,7 +851,6 @@ void initializePositionEstimator(void)
 
     posEstimator.est.surface = 0;
     posEstimator.est.surfaceVel = 0;
-    posEstimator.est.baroOffset = 0;
 
     posEstimator.history.index = 0;
 
