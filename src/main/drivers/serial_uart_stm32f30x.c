@@ -37,51 +37,7 @@
 #include "serial.h"
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
-
-#ifdef USE_UART1
-#ifndef UART1_TX_PIN
-#define UART1_TX_PIN        PA9  // PA9
-#endif
-#ifndef UART1_RX_PIN
-#define UART1_RX_PIN        PA10 // PA10
-#endif
-#endif
-
-#ifdef USE_UART2
-#ifndef UART2_TX_PIN
-#define UART2_TX_PIN        PD5 // PD5
-#endif
-#ifndef UART2_RX_PIN
-#define UART2_RX_PIN        PD6 // PD6
-#endif
-#endif
-
-#ifdef USE_UART3
-#ifndef UART3_TX_PIN
-#define UART3_TX_PIN        PB10 // PB10 (AF7)
-#endif
-#ifndef UART3_RX_PIN
-#define UART3_RX_PIN        PB11 // PB11 (AF7)
-#endif
-#endif
-
-#ifdef USE_UART4
-#ifndef UART4_TX_PIN
-#define UART4_TX_PIN        PC10 // PC10 (AF5)
-#endif
-#ifndef UART4_RX_PIN
-#define UART4_RX_PIN        PC11 // PC11 (AF5)
-#endif
-#endif
-
-#ifdef USE_UART5
-#ifndef UART5_TX_PIN             // The real UART5_RX is on PD2, no board is using.
-#define UART5_TX_PIN        PC12 // PC12 (AF5)
-#endif
-#ifndef UART5_RX_PIN
-#define UART5_RX_PIN        PC12 // PC12 (AF5)
-#endif
-#endif
+#include "serial_uart_pins.h"
 
 #ifdef USE_UART1
 static uartPort_t uartPort1;
