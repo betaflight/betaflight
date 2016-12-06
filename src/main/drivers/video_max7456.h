@@ -41,19 +41,19 @@ typedef struct max7456State_s {
     bool useSync;
 } max7456State_t;
 
-typedef struct max7456ExtiConfig_s {
-    const extiConfig_t *los;
-    const extiConfig_t *vsync;
-    const extiConfig_t *hsync;
-} max7456ExtiConfig_t;
+typedef struct max7456IOConfig_s {
+    ioTag_t los;
+    ioTag_t vsync;
+    ioTag_t hsync;
+} max7456IOConfig_t;
 
-extern max7456ExtiConfig_t max7456ExtiConfig;
+extern max7456IOConfig_t max7456IOConfig;
 
 extern max7456State_t max7456State;
 
 void max7456_hardwareReset(void);
 void max7456_init(videoMode_e videoMode);
-void max7456_extiConfigure(void);
+void max7456_ioConfigure(void);
 void max7456_resetFont(void);
 void max7456_updateLOSState(void);
 void max7456_updateStatus(void);

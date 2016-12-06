@@ -137,7 +137,7 @@ uint8_t max7456_videoModeMask;
 
 textScreen_t max7456Screen;
 max7456State_t max7456State;
-max7456ExtiConfig_t max7456ExtiConfig;
+max7456IOConfig_t max7456IOConfig;
 
 static extiCallbackRec_t losExtiCallbackRec;
 static IO_t losIO;
@@ -220,23 +220,23 @@ void HSYNC_EXTI_Handler(extiCallbackRec_t* cb)
 typedef void (*handlerFuncPtr)(void);
 
 
-void max7456_extiConfigure(void)
+void max7456_ioConfigure(void)
 {
-    if (max7456ExtiConfig.los) {
-        losIO = IOGetByTag(max7456ExtiConfig.los->io);
+    losIO = IOGetByTag(max7456IOConfig.los);
+    if (losIO != IO_NONE) {
         IOConfigGPIO(losIO, IOCFG_IN_FLOATING);
         EXTIHandlerInit(&losExtiCallbackRec, LOS_EXTI_Handler);
         EXTIConfig(losIO, &losExtiCallbackRec, NVIC_PRIO_OSD_LOS_EXTI, EXTI_Trigger_Rising_Falling);
         EXTIEnable(losIO, true);
     }
 
-    vsyncIO = IOGetByTag(max7456ExtiConfig.vsync->io);
+    vsyncIO = IOGetByTag(max7456IOConfig.vsync);
     IOConfigGPIO(vsyncIO, IOCFG_IN_FLOATING);
     EXTIHandlerInit(&vsyncExtiCallbackRec, VSYNC_EXTI_Handler);
     EXTIConfig(vsyncIO, &vsyncExtiCallbackRec, NVIC_PRIO_OSD_VSYNC_EXTI, EXTI_Trigger_Falling);
     EXTIEnable(vsyncIO, true);
 
-    hsyncIO = IOGetByTag(max7456ExtiConfig.hsync->io);
+    hsyncIO = IOGetByTag(max7456IOConfig.hsync);
     IOConfigGPIO(hsyncIO, IOCFG_IN_FLOATING);
     EXTIHandlerInit(&hsyncExtiCallbackRec, HSYNC_EXTI_Handler);
     EXTIConfig(hsyncIO, &hsyncExtiCallbackRec, NVIC_PRIO_OSD_HSYNC_EXTI, EXTI_Trigger_Falling);
