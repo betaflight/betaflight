@@ -36,6 +36,7 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 #include "config/feature.h"
+#include "osd/feature.h"
 
 #include "drivers/nvic.h"
 

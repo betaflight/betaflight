@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 #include "build/debug.h"
@@ -57,17 +58,25 @@
 
 #include "osd/osd.h"
 
+#ifdef FC
+#include "fc/fc_debug.h"
+#else
+#include "osd/osd_debug.h"
+#endif
+
 
 TEXT_SCREEN_CHAR textScreenBuffer[MAX7456_PAL_CHARACTER_COUNT]; // PAL has more characters than NTSC.
 const uint8_t *asciiToFontMapping = &font_max7456_12x18_asciiToFontMapping[0];
 
 #ifdef STM32F303
+#ifdef MAX7456_LOS_GPIO
 static const extiConfig_t max7456LOSExtiConfig = {
         .gpioAHBPeripherals = MAX7456_LOS_GPIO_PERIPHERAL,
         .gpioPort = MAX7456_LOS_GPIO,
         .gpioPin = MAX7456_LOS_PIN,
         .io = IO_TAG(MAX7456_LOS_IO),
 };
+#endif
 
 static const extiConfig_t max7456VSYNCExtiConfig = {
         .gpioAHBPeripherals = MAX7456_VSYNC_GPIO_PERIPHERAL,
@@ -124,11 +133,19 @@ void osdHardwareInit(void)
 
     osdHardwareApplyConfiguration(osdVideoConfig()->videoMode);
 
-    max7456_extiConfigure(&max7456LOSExtiConfig, &max7456VSYNCExtiConfig, &max7456HSYNCExtiConfig);
+    memset(&max7456ExtiConfig, 0, sizeof(max7456ExtiConfig));
+#ifdef MAX7456_LOS_GPIO
+    max7456ExtiConfig.los = &max7456LOSExtiConfig;
+#endif
+    max7456ExtiConfig.vsync = &max7456VSYNCExtiConfig;
+    max7456ExtiConfig.hsync = &max7456HSYNCExtiConfig;
+
+    max7456_extiConfigure();
 
     if (osdFontConfig()->fontVersion != FONT_VERSION) {
         // before
         max7456_showFont();
+
         delay(5000); // give the user a chance to power off before changing
 
         max7456_resetFont();
@@ -140,8 +157,8 @@ void osdHardwareInit(void)
         osdFontConfig()->fontVersion = FONT_VERSION;
         writeEEPROM();
 
-    	max7456_clearScreen();
-    	max7456_ensureDisplayClearIsComplete();
+        max7456_clearScreen();
+        max7456_ensureDisplayClearIsComplete();
     }
 }
 
@@ -157,8 +174,16 @@ void osdHardwareUpdate(void)
 
 void osdHardwareCheck(void)
 {
+    const uint32_t startTime = micros();
+
+    if (max7456_isBusy()) {
+        if (debugMode == DEBUG_OSD_WATCHDOG) {debug[1]++;}
+        return;
+    }
+
     videoMode_e desiredVideoMode = osdVideoConfig()->videoMode;
     if (!max7456_isOSDEnabled()) {
+        if (debugMode == DEBUG_OSD_WATCHDOG) {debug[2]++;}
         max7456_init(desiredVideoMode);
     }
 
@@ -175,6 +200,7 @@ void osdHardwareCheck(void)
     if (!max7456State.los && max7456State.detectedVideoMode != VIDEO_AUTO) {
         // there is a valid video mode
         if (desiredVideoMode == VIDEO_AUTO && !correctVideoMode) {
+            if (debugMode == DEBUG_OSD_WATCHDOG) {debug[3]++;}
             osdHardwareApplyConfiguration(max7456State.detectedVideoMode);
         };
     }
@@ -188,6 +214,7 @@ void osdHardwareCheck(void)
         max7456_init(desiredVideoMode);
     }
 #endif
+    if (debugMode == DEBUG_OSD_WATCHDOG) {debug[0] = micros() - startTime;}
 }
 
 static const uint8_t logoElement[] = {

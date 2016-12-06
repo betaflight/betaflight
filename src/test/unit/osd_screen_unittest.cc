@@ -52,6 +52,7 @@ extern "C" {
     #include "sensors/amperage.h"
     #include "sensors/voltage.h"
     #include "sensors/battery.h"
+    #include "io/vtx.h"
     #include "osd/fc_state.h"
     #include "osd/osd_element.h"
     #include "osd/osd_element_render.h"
@@ -83,6 +84,8 @@ extern "C" {
     amperageMeter_t amperageMeter;
 
     PG_REGISTER(batteryConfig_t, batteryConfig, PG_BATTERY_CONFIG, 0);
+
+    vtxState_t vtxState;
 }
 
 #include "unittest_macros.h"
@@ -489,6 +492,63 @@ TEST_F(OsdScreenTest, TestOsdElement_RSSIFC)
     compareScreenCharacterAtPosition(3, 0, TEST_FONT_CHARACTER_RSSI);
 }
 
+
+TEST_F(OsdScreenTest, TestOsdElement_VTX_CHANNEL)
+{
+    // given
+    vtxState.channel = 1;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VTX_CHANNEL
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "2";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_VTX_BAND)
+{
+    // given
+    vtxState.band = 4;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VTX_BAND
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "R";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
+
+TEST_F(OsdScreenTest, TestOsdElement_VTX_RFPOWER)
+{
+    // given
+    vtxState.rfPower = 0;
+
+    element_t element = {
+        0, 0, true, OSD_ELEMENT_VTX_RFPOWER
+    };
+
+    // when
+    osdDrawTextElement(&element);
+
+    // then
+    char expectedAscii[] = "0";
+    uint8_t *expectedContent = asciiToFontMap(expectedAscii);
+
+    compareScreen(0, 0, expectedContent, strlen(expectedAscii));
+}
 
 
 // STUBS

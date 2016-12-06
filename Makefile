@@ -38,13 +38,13 @@ FORKNAME			 = cleanflight
 
 64K_TARGETS  = CJMCU
 128K_TARGETS = ALIENFLIGHTF1 CC3D NAZE RMDO SPRACINGF1OSD
-256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB PORT103R RCEXPLORERF3 SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
+256K_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB PORT103R RCEXPLORERF3 SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI SPRACINGF3NEO STM32F3DISCOVERY SPRACINGF3OSD
 
-F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB RCEXPLORERF3 RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF3OSD
+F3_TARGETS = ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE IRCFUSIONF3 LUX_RACE MOTOLAB RCEXPLORERF3 RMDO SPARKY SPRACINGF3 SPRACINGF3EVO SPRACINGF3MINI SPRACINGF3NEO STM32F3DISCOVERY SPRACINGF3OSD
 
 VALID_TARGETS = $(64K_TARGETS) $(128K_TARGETS) $(256K_TARGETS)
 
-VCP_TARGETS = CC3D ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB RCEXPLORERF3 SPARKY SPRACINGF3EVO SPRACINGF3MINI STM32F3DISCOVERY SPRACINGF1OSD SPRACINGF3OSD
+VCP_TARGETS = CC3D ALIENFLIGHTF3 CHEBUZZF3 COLIBRI_RACE LUX_RACE MOTOLAB RCEXPLORERF3 SPARKY SPRACINGF3EVO SPRACINGF3MINI SPRACINGF3NEO STM32F3DISCOVERY SPRACINGF1OSD SPRACINGF3OSD
 OSD_TARGETS = SPRACINGF1OSD SPRACINGF3OSD
 
 # Configure default flash sizes for the targets
@@ -231,6 +231,8 @@ endif
 # OSDs
 ifeq ($(TARGET),$(filter $(TARGET),$(OSD_TARGETS)))
 TARGET_FLAGS := $(TARGET_FLAGS) -DOSD
+else
+TARGET_FLAGS := $(TARGET_FLAGS) -DFC
 endif
 
 
@@ -330,24 +332,28 @@ FC_COMMON_SRC = \
 		   sensors/gyro.c \
 		   sensors/initialisation.c
 
-OSD_COMMON_SRC = \
+OSD_SYSTEM_SRC = \
 		   config/feature.c \
 		   osd/boot.c \
 		   osd/cleanflight_osd.c \
 		   osd/fc_state.c \
 		   osd/config.c \
-		   osd/osd.c \
-		   osd/osd_screen.c \
-		   osd/osd_element.c \
-		   osd/osd_element_render.c \
 		   osd/osd_serial.c \
 		   osd/msp_server_osd.c \
 		   osd/msp_client_osd.c \
 		   osd/osd_tasks.c \
+		   osd/osd_debug.c \
 		   sensors/battery.c \
 		   sensors/voltage.c \
 		   sensors/amperage.c \
 		   io/beeper.c
+
+OSD_COMMON_SRC = \
+		   osd/fc_state.c \
+		   osd/osd.c \
+		   osd/osd_screen.c \
+		   osd/osd_element.c \
+		   osd/osd_element_render.c
 
 HIGHEND_SRC = \
 		   flight/gtune.c \
@@ -721,6 +727,40 @@ SPRACINGF3EVO_SRC	 = \
 		   $(SYSTEM_SRC) \
 		   $(VCP_SRC)
 
+SPRACINGF3NEO_SRC	 = \
+		   $(STM32F30x_COMMON_SRC) \
+		   $(STM32F30x_FC_COMMON_SRC) \
+		   drivers/accgyro_mpu.c \
+		   drivers/accgyro_mpu6500.c \
+		   drivers/accgyro_spi_mpu6500.c \
+		   drivers/barometer_bmp280.c \
+		   drivers/barometer_ms5611.c \
+		   drivers/compass_ak8975.c \
+		   drivers/compass_hmc5883l.c \
+		   drivers/display_ug2864hsweg01.h \
+		   drivers/light_ws2811strip.c \
+		   drivers/light_ws2811strip_stm32f30x.c \
+		   drivers/serial_usb_vcp.c \
+		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
+		   drivers/transponder_ir.c \
+		   drivers/transponder_ir_stm32f30x.c \
+		   drivers/video_max7456.c \
+		   drivers/vtx_rtc6705.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
+		   io/transponder_ir.c \
+		   io/flashfs.c \
+		   io/vtx_rtc6705.c \
+		   io/vtx.c \
+		   osd/fonts/font_max7456_12x18.c \
+		   osd/osd_max7456.c \
+		   $(HIGHEND_SRC) \
+		   $(FC_COMMON_SRC) \
+		   $(OSD_COMMON_SRC) \
+		   $(SYSTEM_SRC) \
+		   $(VCP_SRC)
+
 MOTOLAB_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   $(STM32F30x_FC_COMMON_SRC) \
@@ -791,8 +831,9 @@ SPRACINGF1OSD_SRC = \
 		   io/flashfs.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
-		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
+		   $(OSD_SYSTEM_SRC) \
+		   $(OSD_COMMON_SRC) \
 		   $(VCP_SRC)
 
 SPRACINGF3OSD_SRC = \
@@ -808,8 +849,9 @@ SPRACINGF3OSD_SRC = \
 		   io/transponder_ir.c \
 		   osd/fonts/font_max7456_12x18.c \
 		   osd/osd_max7456.c \
-		   $(OSD_COMMON_SRC) \
 		   $(SYSTEM_SRC) \
+		   $(OSD_SYSTEM_SRC) \
+		   $(OSD_COMMON_SRC) \
 		   $(VCP_SRC)
 
 # Search path and source files for the ST stdperiph library

@@ -49,6 +49,8 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
+#include "drivers/video.h"
+#include "drivers/video_textscreen.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -74,6 +76,7 @@
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_4way.h"
+#include "io/vtx.h"
 
 #include "telemetry/telemetry.h"
 
@@ -97,6 +100,12 @@
 #include "flight/altitudehold.h"
 
 #include "blackbox/blackbox.h"
+
+#include "osd/osd_element.h"
+#include "osd/osd.h"
+#include "osd/osd_serial.h"
+#include "osd/osd_screen.h"
+#include "osd/msp_server_osd.h"
 
 #include "fc/cleanflight_fc.h"
 
@@ -156,6 +165,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { "BLACKBOX",  BOXBLACKBOX,  26 },
     { "FAILSAFE",  BOXFAILSAFE,  27 },
     { "AIR MODE",  BOXAIRMODE,   28 },
+    { "VTX",       BOXVTX,       29 },
 };
 
 // mask of enabled IDs, calculated on start based on enabled features. boxId_e is used as bit index.
@@ -223,6 +233,12 @@ void mspRebootFn(mspPort_t *msp)
 
     // control should never return here.
     while(1) ;
+}
+
+void mspApplyVideoConfigurationFn(mspPort_t *msp)
+{
+    waitForSerialPortToFinishTransmitting(msp->port);
+    osdApplyConfiguration();
 }
 
 static const box_t *findBoxByBoxId(uint8_t boxId)
@@ -354,6 +370,10 @@ static void initActiveBoxIds(void)
     ena |= 1 << BOXGTUNE;
 #endif
 
+#ifdef VTX
+    ena |= 1 << BOXVTX;
+#endif
+
     // check that all enabled IDs are in boxes array (check is skipped when using findBoxBy<id>() functions
     for(boxId_e boxId = 0;  boxId < CHECKBOX_ITEM_COUNT; boxId++)
         if((ena & (1 << boxId))
@@ -364,7 +384,7 @@ static void initActiveBoxIds(void)
 
 #define IS_ENABLED(mask) (mask == 0 ? 0 : 1)
 
-static uint32_t packFlightModeFlags(void)
+uint32_t packFlightModeFlags(void)
 {
     // Serialize the flags in the order we delivered them, ignoring BOXNAMES and BOXINDEXES
     // Requires new Multiwii protocol version to fix
@@ -389,7 +409,7 @@ static uint32_t packFlightModeFlags(void)
 #define BM(x) (1 << (x))
     const uint32_t rcModeCopyMask = BM(BOXHEADADJ) | BM(BOXCAMSTAB) | BM(BOXCAMTRIG) | BM(BOXBEEPERON)
         | BM(BOXLEDMAX) | BM(BOXLEDLOW) | BM(BOXLLIGHTS) | BM(BOXCALIB) | BM(BOXGOV) | BM(BOXOSD)
-        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) ;
+        | BM(BOXTELEMETRY) | BM(BOXGTUNE) | BM(BOXBLACKBOX)  | BM(BOXAIRMODE) | BM(BOXVTX);
     for(unsigned i = 0; i < sizeof(rcModeCopyMask) * 8; i++) {
         if((rcModeCopyMask & BM(i)) == 0)
             continue;
@@ -400,6 +420,7 @@ static uint32_t packFlightModeFlags(void)
     // copy ARM state
     if(ARMING_FLAG(ARMED))
         boxEnabledMask |= 1 << BOXARM;
+
 
     // map boxId_e enabled bits to MSP status indexes
     // only active boxIds are sent in status over MSP, other bits are not counted
@@ -520,15 +541,21 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sbufWriteU8(dst, FC_VERSION_PATCH_LEVEL);
             break;
 
-        case MSP_BOARD_INFO:
+        case MSP_BOARD_INFO: {
             sbufWriteData(dst, boardIdentifier, BOARD_IDENTIFIER_LENGTH);
 #ifdef USE_HARDWARE_REVISION_DETECTION
             sbufWriteU16(dst, hardwareRevision);
 #else
             sbufWriteU16(dst, 0); // No hardware revision available.
 #endif
-            sbufWriteU8(dst, 0);  // 0 == FC, 1 == OSD, 2 == FC with OSD
+#ifdef OSD
+            uint8_t board = 2;
+#else
+            uint8_t board = 0;
+#endif
+            sbufWriteU8(dst, board);  // 0 == FC, 1 == OSD, 2 == FC with OSD
             break;
+        }
 
         case MSP_BUILD_INFO:
             sbufWriteData(dst, buildDate, BUILD_DATE_LENGTH);
@@ -1232,6 +1259,110 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             sensorAlignmentConfig()->mag_align = sbufReadU8(src);
             break;
 
+#ifdef OSD
+        case MSP_PILOT: {
+            uint8_t *callsign = pilotConfig()->callsign;
+            sbufWriteU8(dst, strlen((char *)callsign));
+            sbufWriteString(dst, (char *)pilotConfig()->callsign);
+            break;
+        }
+        case MSP_SET_PILOT: {
+            uint8_t callsignMessageBytesRemaining = sbufReadU8(src);
+            uint8_t *callsign = pilotConfig()->callsign;
+            uint8_t callsignBytesToRemaining = MIN(callsignMessageBytesRemaining, CALLSIGN_LENGTH);
+
+            while(sbufBytesRemaining(src) && callsignMessageBytesRemaining--) {
+                uint8_t c = sbufReadU8(src);
+                if (callsignBytesToRemaining > 0) {
+                    callsignBytesToRemaining--;
+                    *callsign++ = c;
+                }
+            };
+            *callsign = 0;
+            break;
+        }
+        case MSP_OSD_VIDEO_CONFIG:
+            sbufWriteU8(dst, osdVideoConfig()->videoMode); // 0 = NTSC, 1 = PAL
+            break;
+
+        case MSP_OSD_VIDEO_STATUS:
+            sbufWriteU8(dst, osdState.videoMode);
+            sbufWriteU8(dst, osdState.cameraConnected);
+            sbufWriteU8(dst, osdTextScreen.width);
+            sbufWriteU8(dst, osdTextScreen.height);
+            break;
+
+        case MSP_OSD_ELEMENT_SUMMARY: {
+            for (int i = 0; i < osdSupportedElementIdsCount; i++) {
+                sbufWriteU16(dst, osdSupportedElementIds[i]);
+            }
+            break;
+        }
+
+        case MSP_OSD_LAYOUT_CONFIG:
+            sbufWriteU8(dst, MAX_OSD_ELEMENT_COUNT);
+            for (int i = 0; i < MAX_OSD_ELEMENT_COUNT; i++) {
+                element_t *element = &osdElementConfig()->elements[i];
+
+                // use 16bit to allow for current and future element IDs
+                sbufWriteU16(dst, element->id);
+
+                // use 16bit to allow for current future flags
+                sbufWriteU16(dst, element->flags);
+
+                sbufWriteU8(dst, element->x);
+                sbufWriteU8(dst, element->y);
+            }
+            break;
+
+        case MSP_SET_OSD_LAYOUT_CONFIG: {
+            uint8_t elementIndex = sbufReadU8(src);
+            if (elementIndex >= MAX_OSD_ELEMENT_COUNT) {
+                return -1;
+            }
+
+            element_t *element = &osdElementConfig()->elements[elementIndex];
+
+            element->id = sbufReadU16(src);
+            element->flags = sbufReadU16(src);
+            element->x = sbufReadU8(src);
+            element->y = sbufReadU8(src);;
+            break;
+        }
+
+        case MSP_SET_OSD_VIDEO_CONFIG:
+            osdVideoConfig()->videoMode = sbufReadU8(src);
+            mspPostProcessFn = mspApplyVideoConfigurationFn;
+            break;
+
+        case MSP_OSD_CHAR_WRITE: {
+            uint8_t address = sbufReadU8(src);
+
+            osdSetFontCharacter(address, src);
+            break;
+        }
+#endif
+        case MSP_VTX: {
+#ifdef VTX
+            uint8_t flags = 0;
+            flags |= (1 << 0);
+            flags |= vtxState.enabled ? (1 << 1) : (0 << 1);
+            sbufWriteU8(dst, flags);
+            sbufWriteU8(dst, vtxState.channel);
+            sbufWriteU8(dst, vtxState.band);
+            sbufWriteU8(dst, vtxState.rfPower);
+
+            sbufWriteU8(dst, vtxConfig()->channel);
+            sbufWriteU8(dst, vtxConfig()->band);
+            sbufWriteU8(dst, vtxConfig()->rfPower);
+            sbufWriteU8(dst, vtxConfig()->enabledOnBoot);
+#else
+            for (uint8_t i = 0; i < 8; i ++) {
+                sbufWriteU8(dst, 0);
+            }
+#endif
+            break;
+        }
         case MSP_RESET_CONF:
             if (!ARMING_FLAG(ARMED)) {
                 resetEEPROM();

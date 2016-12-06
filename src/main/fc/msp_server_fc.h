@@ -16,3 +16,5 @@
  */
 
 #pragma once
+
+uint32_t packFlightModeFlags(void);

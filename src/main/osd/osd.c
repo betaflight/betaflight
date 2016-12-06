@@ -47,12 +47,21 @@
 
 #include "osd/config.h"
 
-#include "osd/fc_state.h"
+#ifdef USE_MSP_CLIENT
 #include "osd/msp_client_osd.h"
+#endif
+
+#include "osd/fc_state.h"
 
 #include "osd/osd_screen.h"
 #include "osd/osd_element.h"
 #include "osd/osd.h"
+
+#ifdef FC
+#include "fc/fc_debug.h"
+#else
+#include "osd/osd_debug.h"
+#endif
 
 PG_REGISTER(osdFontConfig_t, osdFontConfig, PG_OSD_FONT_CONFIG, 0);
 PG_REGISTER_WITH_RESET_TEMPLATE(osdVideoConfig_t, osdVideoConfig, PG_OSD_VIDEO_CONFIG, 0);
@@ -82,6 +91,11 @@ const uint16_t osdSupportedElementIds[] = {
     OSD_ELEMENT_RSSI_FC,
     OSD_ELEMENT_CALLSIGN,
     OSD_ELEMENT_MOTORS,
+#if defined(FC) && defined(VTX)
+    OSD_ELEMENT_VTX_CHANNEL,
+    OSD_ELEMENT_VTX_BAND,
+    OSD_ELEMENT_VTX_RFPOWER,
+#endif
 };
 
 const uint8_t osdSupportedElementIdsCount = ARRAYLEN(osdSupportedElementIds);
@@ -101,6 +115,11 @@ static const element_t osdDefaultElements[] = {
     { 22, -1, EF_ENABLED, OSD_ELEMENT_MAH_DRAWN },
     {  8, -1, EF_ENABLED, OSD_ELEMENT_CALLSIGN },
     { 13, -5, EF_ENABLED, OSD_ELEMENT_MOTORS },
+#if defined(FC) && defined(VTX)
+    {  2, -5, EF_ENABLED, OSD_ELEMENT_VTX_BAND },
+    {  3, -5, EF_ENABLED, OSD_ELEMENT_VTX_CHANNEL },
+    {  5, -5, EF_ENABLED, OSD_ELEMENT_VTX_RFPOWER },
+#endif
 };
 
 void pgResetFn_osdElementConfig(osdElementConfig_t *osdElementConfig) {
@@ -172,7 +191,7 @@ bool osdIsCameraConnected(void)
 
 void osdUpdate(void)
 {
-    TIME_SECTION_BEGIN(0);
+    const uint32_t startTime = micros();
 
     uint32_t now = micros();
 
@@ -224,7 +243,11 @@ void osdUpdate(void)
         timerState[timId].val += timerTable[i].delay;
     }
 
-    bool showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
+    bool showNowOrFlashWhenFCTimeoutOccured = true;
+
+#ifdef USE_MSP_CLIENT
+    showNowOrFlashWhenFCTimeoutOccured = !mspClientStatus.timeoutOccured || (mspClientStatus.timeoutOccured && timerState[tim10Hz].toggle);
+#endif
 
     osdSetElementFlashOnDisconnectState(showNowOrFlashWhenFCTimeoutOccured);
 
@@ -260,9 +283,11 @@ void osdUpdate(void)
         }
     }
 
-    TIME_SECTION_END(0);
+    if (debugMode == DEBUG_OSD) {debug[0] = micros() - startTime;}
 
     osdHardwareUpdate();
+
+    if (debugMode == DEBUG_OSD) {debug[1] = micros() - startTime;}
 
 }
 

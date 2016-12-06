@@ -53,6 +53,7 @@
 #include "rx/rx.h"
 
 #include "sensors/voltage.h"
+#include "sensors/amperage.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
@@ -76,6 +77,8 @@
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
+
+void initVTXState(void);
 
 
 // Default settings
@@ -180,6 +183,10 @@ static void activateConfig(void)
     recalculateMagneticDeclination();
 #endif
 
+#ifdef VTX
+    initVTXState();
+#endif
+
     static imuRuntimeConfig_t imuRuntimeConfig;
     imuRuntimeConfig.dcm_kp = imuConfig()->dcm_kp / 10000.0f;
     imuRuntimeConfig.dcm_ki = imuConfig()->dcm_ki / 10000.0f;
@@ -277,6 +284,16 @@ static void validateAndFixConfig(void)
     serialConfig()->portConfigs[0].functionMask = FUNCTION_MSP_SERVER;
     if (featureConfigured(FEATURE_RX_SERIAL)) {
         serialConfig()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+    }
+#endif
+
+#if defined(SPRACINGF3NEO_REV) && (SPRACINGF3NEO_REV < 5)
+    if (featureConfigured(FEATURE_OSD) && featureConfigured(FEATURE_TRANSPONDER)) {
+        featureClear(FEATURE_TRANSPONDER);
+    }
+
+    if (featureConfigured(FEATURE_OSD) && featureConfigured(FEATURE_LED_STRIP)) {
+        featureClear(FEATURE_LED_STRIP);
     }
 #endif
 

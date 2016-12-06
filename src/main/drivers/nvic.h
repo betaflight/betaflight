@@ -35,6 +35,7 @@
 #define NVIC_PRIO_OSD_HSYNC_EXTI           NVIC_BUILD_PRIORITY(4, 0)
 #define NVIC_PRIO_OSD_VSYNC_EXTI           NVIC_BUILD_PRIORITY(4, 1)
 #define NVIC_PRIO_OSD_LOS_EXTI             NVIC_BUILD_PRIORITY(4, 2)
+#define NVIC_PRIO_EXT_DATA_READY           NVIC_BUILD_PRIORITY(4, 0)
 #define NVIC_PRIO_CALLBACK                 NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 
 // utility macros to join/split priority
