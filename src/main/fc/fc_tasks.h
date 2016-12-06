@@ -27,6 +27,7 @@ typedef enum {
     TASK_RX,
     TASK_SERIAL,
     TASK_BATTERY,
+    TASK_HARDWARE_WATCHDOG,
 #ifdef BEEPER
     TASK_BEEPER,
 #endif
@@ -57,6 +58,9 @@ typedef enum {
 #ifdef TRANSPONDER
     TASK_TRANSPONDER,
 #endif
+#ifdef OSD
+    TASK_DRAW_SCREEN,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT
@@ -72,6 +76,7 @@ void taskUpdateAttitude(void);
 bool taskUpdateRxCheck(uint32_t currentDeltaTime);
 void taskUpdateRxMain(void);
 void taskHandleSerial(void);
+void taskHardwareWatchdog(void);
 void taskUpdateBeeper(void);
 void taskUpdateBattery(void);
 void taskUpdateRxMain(void);
@@ -84,3 +89,4 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskTransponder(void);
+void taskDrawScreen(void);

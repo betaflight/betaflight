@@ -87,6 +87,13 @@ cfTask_t cfTasks[] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
+    [TASK_HARDWARE_WATCHDOG] = {
+        .taskName = "HW_WATCHDOG",
+        .taskFunc = taskHardwareWatchdog,
+        .desiredPeriod = TASK_PERIOD_HZ(1),
+        .staticPriority = TASK_PRIORITY_MEDIUM,
+    },
+
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
@@ -155,6 +162,15 @@ cfTask_t cfTasks[] = {
         .taskFunc = taskTransponder,
         .desiredPeriod = TASK_PERIOD_MS(4),
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef OSD
+    [TASK_DRAW_SCREEN] = {
+        .taskName = "DRAW_SCREEN",
+        .taskFunc = taskDrawScreen,
+        .desiredPeriod = 1000000 / 30,           // 30 Hz
+        .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
 

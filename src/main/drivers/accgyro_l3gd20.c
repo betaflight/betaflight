@@ -83,7 +83,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
 
     GPIO_SetBits(L3GD20_CS_GPIO, L3GD20_CS_PIN);
 
-    spiSetDivisor(L3GD20_SPI, SPI_9MHZ_CLOCK_DIVIDER);
+    spiSetDivisor(L3GD20_SPI, SPI_CLOCK_STANDARD);
 }
 
 static void l3gd20GyroInit(gyro_t *gyro, uint8_t lpf)

@@ -47,7 +47,7 @@ dmaChannel_t dmaChannels[] = {
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel5, 16, DMA1_Channel5_IRQn, RCC_AHBPeriph_DMA1),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel6, 20, DMA1_Channel6_IRQn, RCC_AHBPeriph_DMA1),
     DEFINE_DMA_CHANNEL(DMA1, DMA1_Channel7, 24, DMA1_Channel7_IRQn, RCC_AHBPeriph_DMA1),
-#if defined(STM32F3) || defined(STM32F10X_CL)
+#if defined(STM32F303xC) || defined(STM32F10X_CL)
     DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel1,  0, DMA2_Channel1_IRQn, RCC_AHBPeriph_DMA2),
     DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel2,  4, DMA2_Channel2_IRQn, RCC_AHBPeriph_DMA2),
     DEFINE_DMA_CHANNEL(DMA2, DMA2_Channel3,  8, DMA2_Channel3_IRQn, RCC_AHBPeriph_DMA2),
@@ -77,7 +77,7 @@ DEFINE_DMA_IRQ_HANDLER(1, 5, DMA1Channel5Descriptor);
 DEFINE_DMA_IRQ_HANDLER(1, 6, DMA1Channel6Descriptor);
 DEFINE_DMA_IRQ_HANDLER(1, 7, DMA1Channel7Descriptor);
 
-#if defined(STM32F3) || defined(STM32F10X_CL)
+#if defined(STM32F303xC) || defined(STM32F10X_CL)
 DEFINE_DMA_IRQ_HANDLER(2, 1, DMA2Channel1Descriptor);
 DEFINE_DMA_IRQ_HANDLER(2, 2, DMA2Channel2Descriptor);
 DEFINE_DMA_IRQ_HANDLER(2, 3, DMA2Channel3Descriptor);

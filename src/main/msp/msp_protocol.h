@@ -190,8 +190,8 @@
 #define MSP_OSD_CHAR_READ               86 //out message         Read a font character.
 #define MSP_OSD_CHAR_WRITE              87 //in message          Write a font character.
 
-#define MSP_VTX_CONFIG                  88 //out message         Get vtx settings - betaflight
-#define MSP_SET_VTX_CONFIG              89 //in message          Set vtx settings - betaflight
+#define MSP_VTX                         88 //out message
+#define MSP_SET_VTX                     89 //in message
 
 // Betaflight Additional Commands
 // DEPRECATED - for reference only, 'ADVANCED' is like 'MISC' or 'UTIL' it's a garbage bin for random stuff. A bad idea.

@@ -15,10 +15,18 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-void initEEPROM(void);
-void resetEEPROM(void);
-void readEEPROM(void);
-void writeEEPROM();
-void ensureEEPROMContainsValidData(void);
+#include <platform.h>
+
+#include "build/build_config.h"
+#include "build/debug.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
+#include "fc/fc_debug.h"
+
+PG_REGISTER(debugConfig_t, debugConfig, PG_DEBUG_CONFIG, 0);

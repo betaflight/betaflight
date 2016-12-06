@@ -39,11 +39,12 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
-
 #include "drivers/gpio.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/video.h"
+#include "drivers/video_textscreen.h"
 
 #include "fc/rc_controls.h"
 #include "fc/rate_profile.h"
@@ -74,6 +75,7 @@
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
 
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
@@ -92,6 +94,12 @@
 #include "flight/failsafe.h"
 #include "flight/gtune.h"
 #include "flight/navigation.h"
+
+#include "osd/osd_element.h"
+#include "osd/osd.h"
+#include "osd/fc_state.h"
+
+#include "fc/msp_server_fc.h"
 
 #include "fc/runtime_config.h"
 #include "fc/config.h"
@@ -127,6 +135,10 @@ extern uint8_t PIDweight[3];
 extern uint8_t dynP8[3], dynI8[3], dynD8[3];
 
 static bool isRXDataNew;
+
+#ifdef VTX
+bool canUpdateVTX(void);
+#endif
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -607,6 +619,11 @@ void processRx(void)
     }
 #endif
 
+#ifdef VTX
+    if (canUpdateVTX()) {
+        updateVTXState();
+    }
+#endif
 }
 
 void filterRc(void){
@@ -644,6 +661,7 @@ void filterRc(void){
         factor = 0;
     }
 }
+
 
 void processRcCommand(void)
 {
@@ -856,6 +874,13 @@ void taskPid(void)
         debug[2] = pidDeltaUs;
         debug[3]++;
     }
+
+#ifdef VTX
+    if (canUpdateVTX()) {
+        handleVTXControlButton();
+    }
+#endif
+
 }
 
 void taskUpdateAccelerometer(void)
@@ -1048,5 +1073,29 @@ void taskTransponder(void)
     if (feature(FEATURE_TRANSPONDER)) {
         updateTransponder();
     }
+}
+#endif
+
+void taskHardwareWatchdog(void)
+{
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdHardwareCheck();
+    }
+#endif
+}
+
+#ifdef OSD
+void osdUpdateFCState(void)
+{
+    fcStatus.vbat = vbat;
+    fcStatus.fcState = packFlightModeFlags();
+    fcStatus.rssi = rssi;
+}
+
+void taskDrawScreen(void)
+{
+    osdUpdateFCState();
+    osdUpdate();
 }
 #endif

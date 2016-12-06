@@ -15,10 +15,17 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef enum {
+    // NOTE: only add new ones to the end of this list (before DEBUG_MODE_COUNT), otherwise a PG version bump is required.
+    DEBUG_NONE,
+    DEBUG_OSD,
+    DEBUG_OSD_WATCHDOG,
 
-void initEEPROM(void);
-void resetEEPROM(void);
-void readEEPROM(void);
-void writeEEPROM();
-void ensureEEPROMContainsValidData(void);
+    DEBUG_MODE_COUNT
+} debugMode_e;
+
+typedef struct debugConfig_s {
+    uint8_t debug_mode;
+} debugConfig_t;
+
+PG_DECLARE(debugConfig_t, debugConfig);

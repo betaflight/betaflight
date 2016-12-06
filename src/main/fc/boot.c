@@ -65,6 +65,12 @@
 #include "drivers/gyro_sync.h"
 #include "drivers/exti.h"
 #include "drivers/io.h"
+#include "drivers/video.h"
+#include "drivers/video_textscreen.h"
+
+#ifdef MAX7456_SPI_INSTANCE
+#include "drivers/video_max7456.h"
+#endif
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -83,6 +89,8 @@
 #include "io/display.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/transponder_ir.h"
+#include "io/vtx.h"
+
 #include "fc/msp_server_fc.h"
 #include "msp/msp.h"
 #include "msp/msp_serial.h"
@@ -110,6 +118,9 @@
 #include "flight/failsafe.h"
 #include "flight/navigation.h"
 
+#include "osd/osd_element.h"
+#include "osd/osd.h"
+
 #include "fc/runtime_config.h"
 #include "fc/config.h"
 #include "config/config_system.h"
@@ -128,6 +139,7 @@ extern uint8_t motorControlEnable;
 serialPort_t *loopbackPort;
 #endif
 
+bool isUsingVTXSwitch(void);
 void mixerUsePWMIOConfiguration(pwmIOConfiguration_t *pwmIOConfiguration);
 void rxInit(modeActivationCondition_t *modeActivationConditions);
 
@@ -187,29 +199,48 @@ void flashLedsAndBeep(void)
     LED1_OFF;
 }
 
+#ifdef VTX
+bool canUpdateVTX(void)
+{
+#if defined(MAX7456_SPI_INSTANCE) && defined(RTC6705_SPI_INSTANCE) && defined(SPI_SHARED_MAX7456_AND_RTC6705)
+    if (feature(FEATURE_OSD)) {
+        return !max7456_isBusy();
+    }
+#endif
+    return true;
+}
+#endif
+
 #ifdef BUTTONS
 void buttonsInit(void)
 {
 
+#ifdef BUTTON_A_PIN
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
         Mode_IPU,
         Speed_2MHz
     };
     gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+#endif
 
+#ifdef BUTTON_B_PIN
     gpio_config_t buttonBGpioConfig = {
         BUTTON_B_PIN,
         Mode_IPU,
         Speed_2MHz
     };
     gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+#endif
 
     delayMicroseconds(10);  // allow GPIO configuration to settle
 }
 
 void buttonsHandleColdBootButtonPresses(void)
 {
+#if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
+    // two buttons required
+
     uint8_t secondsRemaining = 10;
     bool bothButtonsHeld;
     do {
@@ -241,6 +272,7 @@ void buttonsHandleColdBootButtonPresses(void)
 
         systemResetToBootloader();
     }
+#endif
 }
 
 #endif
@@ -345,6 +377,12 @@ void init(void)
                 break;
         }
     }
+#endif
+
+#ifdef VTX
+    // This must be done early to ensure that the VTX does not power up.  We do not fully initialise the VTX at this stage
+    // because it takes some time - we don't want to delay other time critical initialisation.
+    vtxIOInit();
 #endif
 
     delay(100);
@@ -462,6 +500,11 @@ void init(void)
     updateHardwareRevision();
 #endif
 
+#ifdef VTX
+    while (!canUpdateVTX()) {};
+    vtxInit();
+#endif
+
 #if defined(NAZE)
     if (hardwareRevision == NAZE32_SP) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
@@ -481,7 +524,6 @@ void init(void)
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
 #endif
-
 
 #ifdef USE_I2C
 #if defined(NAZE)
@@ -664,6 +706,12 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
+    }
+#endif
+
     // start all timers
     // TODO - not implemented yet
     timerStart();
@@ -748,6 +796,7 @@ void configureScheduler(void)
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+    setTaskEnabled(TASK_HARDWARE_WATCHDOG, true);
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
 #endif
@@ -783,6 +832,9 @@ void configureScheduler(void)
 #endif
 #ifdef TRANSPONDER
     setTaskEnabled(TASK_TRANSPONDER, feature(FEATURE_TRANSPONDER));
+#endif
+#ifdef OSD
+    setTaskEnabled(TASK_DRAW_SCREEN, feature(FEATURE_OSD));
 #endif
 }
 

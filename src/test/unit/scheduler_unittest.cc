@@ -46,7 +46,8 @@ enum {
     updateDisplayTime = 10,
     telemetryTime = 10,
     ledStripTime = 10,
-    transponderTime = 10
+    transponderTime = 10,
+    hardwareWatchdogTime = 10
 };
 
 extern "C" {
@@ -70,6 +71,7 @@ extern "C" {
     void taskHandleSerial(void) {simulatedTime+=handleSerialTime;}
     void taskUpdateBeeper(void) {simulatedTime+=updateBeeperTime;}
     void taskUpdateBattery(void) {simulatedTime+=updateBatteryTime;}
+    void taskHardwareWatchdog(void) {simulatedTime+=hardwareWatchdogTime;}
     bool taskUpdateRxCheck(uint32_t currentDeltaTime) {UNUSED(currentDeltaTime);simulatedTime+=updateRxCheckTime;return false;}
     void taskUpdateRxMain(void) {simulatedTime+=updateRxMainTime;}
     void taskProcessGPS(void) {simulatedTime+=processGPSTime;}
@@ -93,8 +95,9 @@ extern "C" {
 
 TEST(SchedulerUnittest, TestPriorites)
 {
-    EXPECT_EQ(16, taskCount);
-          // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
+    EXPECT_EQ(17, taskCount);
+
+    // if any of these fail then task priorities have changed and ordering in TestQueue needs to be re-checked
     EXPECT_EQ(TASK_PRIORITY_HIGH, cfTasks[TASK_SYSTEM].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_GYRO].staticPriority);
     EXPECT_EQ(TASK_PRIORITY_REALTIME, cfTasks[TASK_PID].staticPriority);
