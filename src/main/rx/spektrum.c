@@ -29,7 +29,6 @@
 #include "drivers/io_impl.h"
 #include "drivers/system.h"
 #include "drivers/light_led.h"
-#include "drivers/serial_uart_pins.h"
 
 #include "io/serial.h"
 
@@ -207,52 +206,12 @@ void spektrumBind(rxConfig_t *rxConfig)
 		return;
 	}
 
-	LED1_ON;
-
-	switch(portConfig->identifier){
-#ifdef USE_UART1
-		case SERIAL_PORT_USART1:
-			BindPin = IOGetByTag(IO_TAG(UART1_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART2
-		case SERIAL_PORT_USART2:
-			BindPin = IOGetByTag(IO_TAG(UART2_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART3
-		case SERIAL_PORT_USART3:
-			BindPin = IOGetByTag(IO_TAG(UART3_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART4
-		case SERIAL_PORT_USART4:
-			BindPin = IOGetByTag(IO_TAG(UART4_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART5
-		case SERIAL_PORT_USART5:
-			BindPin = IOGetByTag(IO_TAG(UART5_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART6
-		case SERIAL_PORT_USART6:
-			BindPin = IOGetByTag(IO_TAG(UART6_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART7
-		case SERIAL_PORT_USART7:
-			BindPin = IOGetByTag(IO_TAG(UART7_RX_PIN));
-		break;
-#endif
-#ifdef USE_UART8
-		case SERIAL_PORT_USART8:
-			BindPin = IOGetByTag(IO_TAG(UART8_RX_PIN));
-		break;
-#endif
-		default:
-			return;
+	BindPin = serialGetRxPin(portConfig);
+	if (BindPin == DEFIO_IO(NONE)) {
+		return;
 	}
+
+	LED1_ON;
 
     IOInit(BindPin, OWNER_RX_BIND, 0);
     IOConfigGPIO(BindPin, IOCFG_OUT_PP);
