@@ -21,6 +21,9 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
+// Safe ESC/Motor protocol default, not to spin the motors on some FC when config is reset.
+#define BRUSHED_MOTORS
+
 #define LED0                    PB8
 
 #define BEEPER                  PC15
