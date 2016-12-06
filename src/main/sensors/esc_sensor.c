@@ -128,7 +128,7 @@ int16_t getEscSensorConsumption(void)
 
 bool escSensorInit(void)
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_ESC);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_ESC_SENSOR);
     if (!portConfig) {
         return false;
     }
@@ -136,7 +136,7 @@ bool escSensorInit(void)
     portOptions_t options = (SERIAL_NOT_INVERTED);
 
     // Initialize serial port
-    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_ESC, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);
+    escSensorPort = openSerialPort(portConfig->identifier, FUNCTION_ESC_SENSOR, escSensorDataReceive, ESC_SENSOR_BAUDRATE, MODE_RX, options);
 
     if (escSensorPort) {
         escSensorEnabled = true;
