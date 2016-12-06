@@ -208,6 +208,11 @@ void spektrumBind(rxConfig_t *rxConfig)
 
 	LED1_ON;
 
+#ifdef STM32F10X
+#define UART1_RX_PIN	PA10
+#define UART2_RX_PIN	PA3
+#endif
+
 	switch(portConfig->identifier){
 #ifdef USE_UART1
 		case SERIAL_PORT_USART1:
