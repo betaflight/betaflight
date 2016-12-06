@@ -413,7 +413,8 @@ void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
     }
 }
 
-void processServoTilt(void) {
+void processServoTilt(void)
+{
     // center at fixed position, or vary either pitch or roll by RC channel
     servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
     servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
@@ -429,12 +430,75 @@ void processServoTilt(void) {
     }
 }
 
+#define SERVO_AUTOTRIM_TIMER_MS     1000
+
+typedef enum {
+    AUTOTRIM_IDLE,
+    AUTOTRIM_COLLECTING,
+    AUTOTRIM_DONE,
+} servoAutotrimState_e;
+
+void processServoAutotrim(void)
+{
+    static servoAutotrimState_e trimState = AUTOTRIM_IDLE;
+    static timeMs_t trimStartedAt;
+    
+    static int16_t servoMiddleBackup[MAX_SUPPORTED_SERVOS];
+    static int32_t servoMiddleAccum[MAX_SUPPORTED_SERVOS];
+    static int32_t servoMiddleAccumCount;
+    
+    if (IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) {
+        switch (trimState) {
+            case AUTOTRIM_IDLE:
+                // We are activating servo trim - backup current middles and prepare to average the data
+                for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                    servoMiddleBackup[servoIndex] = servoConf[servoIndex].middle;
+                    servoMiddleAccum[servoIndex] = 0;
+                }
+
+                trimStartedAt = millis();
+                servoMiddleAccumCount = 0;
+                trimState = AUTOTRIM_COLLECTING;
+                // Fallthru
+
+            case AUTOTRIM_COLLECTING:
+                servoMiddleAccumCount++;
+
+                for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                    servoMiddleAccum[servoIndex] += servo[servoIndex];
+                }
+
+                if ((millis() - trimStartedAt) > SERVO_AUTOTRIM_TIMER_MS) {
+                    for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                        servoConf[servoIndex].middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
+                    }
+                    trimState = AUTOTRIM_DONE;
+                }
+                break;
+
+            case AUTOTRIM_DONE:
+                break;
+        }
+    }
+    else {
+        // We are deactivating servo trim - restore servo midpoints
+        if (trimState == AUTOTRIM_DONE) {
+            for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                servoConf[servoIndex].middle = servoMiddleBackup[servoIndex];
+            }
+        }
+
+        trimState = AUTOTRIM_IDLE;
+    }
+}
+
 bool isServoOutputEnabled(void)
 {
     return servoOutputEnabled;
 }
 
-bool isMixerUsingServos(void) {
+bool isMixerUsingServos(void)
+{
     return mixerUsesServos;
 }
 
