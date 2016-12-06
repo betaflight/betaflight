@@ -64,6 +64,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/time.h"
 
 #include "drivers/system.h"
 
@@ -73,9 +74,11 @@
 
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
+#include "sensors/barometer.h"
 
 #include "flight/pid.h"
 #include "flight/navigation.h"
+#include "flight/altitudehold.h"
 #include "io/gps.h"
 
 #include "telemetry/telemetry.h"
@@ -193,15 +196,25 @@ void hottPrepareGPSResponse(HOTT_GPS_MSG_t *hottGPSMessage)
 
     addGPSCoordinates(hottGPSMessage, GPS_coord[LAT], GPS_coord[LON]);
 
-    // GPS Speed is returned in cm/s (from io/gps.c) and must be sent in km/h (Hott requirement)
-    const uint16_t speed = (GPS_speed * 36) / 1000;
+    uint16_t speed = GPS_speed;
+    if (!STATE(GPS_FIX)) {
+        speed = vario;
+    }
+
+    // Speed is returned in cm/s and must be sent in km/h (Hott requirement)
+    speed = (speed * 36) / 1000;
     hottGPSMessage->gps_speed_L = speed & 0x00FF;
     hottGPSMessage->gps_speed_H = speed >> 8;
 
     hottGPSMessage->home_distance_L = GPS_distanceToHome & 0x00FF;
     hottGPSMessage->home_distance_H = GPS_distanceToHome >> 8;
 
-    const uint16_t hottGpsAltitude = (GPS_altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
+    uint16_t altitude = GPS_altitude;
+    if (!STATE(GPS_FIX)) {
+        altitude = baro.BaroAlt / 100;
+    }
+
+    const uint16_t hottGpsAltitude = (altitude) + HOTT_GPS_ALTITUDE_OFFSET; // GPS_altitude in m ; offset = 500 -> O m
 
     hottGPSMessage->altitude_L = hottGpsAltitude & 0x00FF;
     hottGPSMessage->altitude_H = hottGpsAltitude >> 8;
