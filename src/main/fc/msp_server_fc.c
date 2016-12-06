@@ -1267,18 +1267,13 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
         }
         case MSP_SET_PILOT: {
-            uint8_t callsignMessageBytesRemaining = sbufReadU8(src);
-            uint8_t *callsign = pilotConfig()->callsign;
-            uint8_t callsignBytesToRemaining = MIN(callsignMessageBytesRemaining, CALLSIGN_LENGTH);
+            int slen = sbufReadU8(src);
+            slen = MAX(slen, sbufBytesRemaining(src));
+            int copy = MAX(slen, CALLSIGN_LENGTH - 1);
+            memcpy(pilotConfig()->callsign, sbufPtr(src), copy);
+            sbufAdvance(src, slen);  // for completeness, other fields may follow
+            pilotConfig()->callsign[copy] = 0;
 
-            while(sbufBytesRemaining(src) && callsignMessageBytesRemaining--) {
-                uint8_t c = sbufReadU8(src);
-                if (callsignBytesToRemaining > 0) {
-                    callsignBytesToRemaining--;
-                    *callsign++ = c;
-                }
-            };
-            *callsign = 0;
             break;
         }
         case MSP_OSD_VIDEO_CONFIG:
