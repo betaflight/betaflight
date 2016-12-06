@@ -1559,7 +1559,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdProfile()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
-                osdProfile()->item_pos[addr] = sbufReadU16(src);
+                const uint16_t pos  = sbufReadU16(src);
+                if (addr < OSD_ITEM_COUNT) {
+                    osdProfile()->item_pos[addr] = pos;
+                }
             }
         }
         break;
