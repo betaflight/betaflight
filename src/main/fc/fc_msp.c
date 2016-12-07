@@ -370,6 +370,21 @@ static uint32_t packFlightModeFlags(void)
     return ret;
 }
 
+static uint16_t packSensorStatus(void)
+{
+    uint16_t sensorStatus =
+            IS_ENABLED(sensors(SENSOR_ACC))     << 0 |
+            IS_ENABLED(sensors(SENSOR_BARO))    << 1 |
+            IS_ENABLED(sensors(SENSOR_MAG))     << 2 |
+            IS_ENABLED(sensors(SENSOR_GPS))     << 3 |
+            IS_ENABLED(sensors(SENSOR_SONAR))   << 4 |
+            //IS_ENABLED(sensors(SENSOR_OPFLOW))  << 5 |
+            IS_ENABLED(sensors(SENSOR_PITOT))   << 6 |
+            IS_ENABLED(isHardwareHealthy())     << 15;          // Bit 15 of sensor bit field indicates general hardware health
+
+    return sensorStatus;
+}
+
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_SDCARD
@@ -529,7 +544,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_PITOT) << 6);
+        sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
         sbufWriteU16(dst, averageSystemLoadPercent);
@@ -542,7 +557,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_PITOT) << 6);
+        sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
         break;

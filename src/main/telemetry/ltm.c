@@ -53,6 +53,7 @@
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 #include "sensors/boardalignment.h"
+#include "sensors/diagnostics.h"
 #include "sensors/battery.h"
 
 #include "io/serial.h"
@@ -245,9 +246,12 @@ void ltm_oframe(sbuf_t *dst)
  */
 void ltm_xframe(sbuf_t *dst)
 {
+    uint8_t sensorStatus =
+        (isHardwareHealthy() ? 1 : 0) << 0;     // bit 0 - hardware health indication
+
     sbufWriteU8(dst, 'X');
     ltm_serialise_16(dst, gpsSol.hdop);
-    ltm_serialise_8(dst, 0);
+    ltm_serialise_8(dst, sensorStatus);
     ltm_serialise_8(dst, 0);
     ltm_serialise_8(dst, 0);
     ltm_serialise_8(dst, 0);
