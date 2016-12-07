@@ -619,7 +619,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
 
     osdUpdateStats();
 
-    sec = currentTime / 1000000;
+    sec = currentTimeUs / 1000000;
 
     if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
@@ -635,7 +635,7 @@ static void osdRefresh(timeUs_t currentTimeUs)
         return;
     }
 
-    blinkState = (currentTime / 200000) % 2;
+    blinkState = (currentTimeUs / 200000) % 2;
 
 #ifdef CMS
     if (!displayIsGrabbed(osd7456DisplayPort)) {
