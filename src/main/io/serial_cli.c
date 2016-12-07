@@ -233,18 +233,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64)
-// sync this with sensors_e
-static const char * const sensorTypeNames[] = {
-    "GYRO", "ACC", "BARO", "MAG", "SONAR", "PITOT", "GPS", "GPS+MAG", NULL
-};
-
-#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
-
-static const char * const hardwareSensorStatusNames[] = {
-    "NONE", "OK", "UNAVAILABLE", "FAILING"
-};
-
+/* Sensor names (used in lookup tables for *_hardware settings and in status command output) */
 // sync with gyroSensor_e
 static const char * const gyroNames[] = { "NONE", "AUTO", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
 // sync with accelerationSensor_e
@@ -258,8 +247,19 @@ static const char * const rangefinderNames[] = { "NONE", "HCSR04", "SRF10"};
 // sync with pitotSensor_e
 static const char * const pitotmeterNames[] = { "NONE", "MS4525", "FAKE"};
 
-static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames, pitotmeterNames};
+#if (FLASH_SIZE > 64)
+// sync this with sensors_e
+static const char * const sensorTypeNames[] = {
+    "GYRO", "ACC", "BARO", "MAG", "SONAR", "PITOT", "GPS", "GPS+MAG", NULL
+};
 
+#define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
+
+static const char * const hardwareSensorStatusNames[] = {
+    "NONE", "OK", "UNAVAILABLE", "FAILING"
+};
+
+static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames, pitotmeterNames};
 #endif
 
 #ifdef OSD
