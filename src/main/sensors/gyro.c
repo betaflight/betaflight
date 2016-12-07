@@ -25,6 +25,8 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "drivers/gyro_sync.h"
+
 #include "io/beeper.h"
 #include "io/statusindicator.h"
 
@@ -48,17 +50,20 @@ static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
 
 void gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
-    /*
-     * After refactoring this function is always called after gyro sampling rate is known, so
-     * no additional condition is required
-     */
     gyroConfig = gyroConfigToUse;
+    // After refactoring this function is always called after gyro sampling rate is known, so
+    // no additional condition is required
+    // Set gyro sample rate before driver initialisation
+    gyro.dev.lpf = gyroConfig->gyro_lpf;
+    gyro.dev.targetLooptime = gyroSetSampleRate(gyroConfig->looptime, gyroConfig->gyro_lpf, gyroConfig->gyroSync, gyroConfig->gyroSyncDenominator);
+    // driver initialisation
+    gyro.dev.init(&gyro.dev);
     if (gyroConfig->gyro_soft_lpf_hz) {
         for (int axis = 0; axis < 3; axis++) {
         #ifdef ASYNC_GYRO_PROCESSING
             biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, getGyroUpdateRate());
         #else
-            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, gyro.targetLooptime);
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, gyro.dev.targetLooptime);
         #endif
         }
     }
@@ -125,17 +130,15 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
 
 void gyroUpdate(void)
 {
-    int16_t gyroADCRaw[XYZ_AXIS_COUNT];
-
     // range: +/- 8192; +/- 2000 deg/sec
-    if (!gyro.read(gyroADCRaw)) {
+    if (!gyro.dev.read(&gyro.dev)) {
         return;
     }
 
     // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
-    gyroADC[X] = gyroADCRaw[X];
-    gyroADC[Y] = gyroADCRaw[Y];
-    gyroADC[Z] = gyroADCRaw[Z];
+    gyroADC[X] = gyro.dev.gyroADCRaw[X];
+    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
+    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
 
     if (gyroConfig->gyro_soft_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {

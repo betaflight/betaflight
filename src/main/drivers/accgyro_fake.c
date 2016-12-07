@@ -31,9 +31,9 @@
 
 static int16_t fakeGyroADC[XYZ_AXIS_COUNT];
 
-static void fakeGyroInit(uint8_t lpf)
+static void fakeGyroInit(gyroDev_t *gyro)
 {
-    UNUSED(lpf);
+    UNUSED(gyro);
 }
 
 void fakeGyroSet(int16_t x, int16_t y, int16_t z)
@@ -43,11 +43,11 @@ void fakeGyroSet(int16_t x, int16_t y, int16_t z)
     fakeGyroADC[Z] = z;
 }
 
-static bool fakeGyroRead(int16_t *gyroADC)
+static bool fakeGyroRead(gyroDev_t *gyro)
 {
-    gyroADC[X] = fakeGyroADC[X];
-    gyroADC[Y] = fakeGyroADC[Y];
-    gyroADC[Z] = fakeGyroADC[Z];
+    gyro->gyroADCRaw[X] = fakeGyroADC[X];
+    gyro->gyroADCRaw[Y] = fakeGyroADC[Y];
+    gyro->gyroADCRaw[Z] = fakeGyroADC[Z];
     return true;
 }
 
@@ -57,12 +57,13 @@ static bool fakeGyroReadTemp(int16_t *tempData)
     return true;
 }
 
-static bool fakeGyroInitStatus(void)
+static bool fakeGyroInitStatus(gyroDev_t *gyro)
 {
+    UNUSED(gyro);
     return true;
 }
 
-bool fakeGyroDetect(gyro_t *gyro)
+bool fakeGyroDetect(gyroDev_t *gyro)
 {
     gyro->init = fakeGyroInit;
     gyro->intStatus = fakeGyroInitStatus;
@@ -78,7 +79,7 @@ bool fakeGyroDetect(gyro_t *gyro)
 
 static int16_t fakeAccData[XYZ_AXIS_COUNT];
 
-static void fakeAccInit(acc_t *acc)
+static void fakeAccInit(accDev_t *acc)
 {
     UNUSED(acc);
 }
@@ -98,7 +99,7 @@ static bool fakeAccRead(int16_t *accData)
     return true;
 }
 
-bool fakeAccDetect(acc_t *acc)
+bool fakeAccDetect(accDev_t *acc)
 {
     acc->init = fakeAccInit;
     acc->read = fakeAccRead;

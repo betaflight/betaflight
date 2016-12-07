@@ -182,8 +182,8 @@ void annexCode(void)
     }
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
+    if (gyro.dev.temperature)
+        gyro.dev.temperature(&telemTemperature1);
 }
 
 void mwDisarm(void)
@@ -485,7 +485,7 @@ void filterRc(bool isRXDataNew)
     #ifdef ASYNC_GYRO_PROCESSING
         biquadFilterInitLPF(&filteredCycleTimeState, 1, getPidUpdateRate());
     #else
-        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.dev.targetLooptime);
     #endif
         filterInitialised = true;
     }
@@ -523,9 +523,9 @@ void taskGyro(timeUs_t currentTimeUs) {
     if (masterConfig.gyroConfig.gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.dev.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }

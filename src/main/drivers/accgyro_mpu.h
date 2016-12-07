@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "io_types.h"
 #include "exti.h"
 
 // MPU6050
@@ -168,7 +167,8 @@ typedef enum {
     MPU_60x0_SPI,
     MPU_65xx_I2C,
     MPU_65xx_SPI,
-    MPU_9250_SPI
+    MPU_9250_SPI,
+    ICM_20689_SPI
 } detectedMPUSensor_e;
 
 typedef enum {
@@ -184,8 +184,9 @@ typedef struct mpuDetectionResult_s {
 extern mpuDetectionResult_t mpuDetectionResult;
 
 void configureMPUDataReadyInterruptHandling(void);
-void mpuIntExtiInit(void);
+struct gyroDev_s;
+void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuAccRead(int16_t *accData);
-bool mpuGyroRead(int16_t *gyroADC);
+bool mpuGyroRead(struct gyroDev_s *gyro);
 mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-bool checkMPUDataReady(void);
+bool checkMPUDataReady(struct gyroDev_s *gyro);

@@ -37,6 +37,10 @@ typedef enum {
     ACC_MAX = ACC_FAKE
 } accelerationSensor_e;
 
+typedef struct acc_s {
+    accDev_t dev;
+} acc_t;
+
 extern sensor_align_e accAlign;
 extern acc_t acc;
 

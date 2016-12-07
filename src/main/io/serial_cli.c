@@ -2900,8 +2900,8 @@ static void cliStatus(char *cmdline)
 
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
 
-            if (mask == SENSOR_ACC && acc.revisionCode) {
-                cliPrintf(".%c", acc.revisionCode);
+            if (mask == SENSOR_ACC && acc.dev.revisionCode) {
+                cliPrintf(".%c", acc.dev.revisionCode);
             }
         }
     }

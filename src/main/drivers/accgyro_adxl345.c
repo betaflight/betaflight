@@ -56,12 +56,12 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(acc_t *acc);
+static void adxl345Init(accDev_t *acc);
 static bool adxl345Read(int16_t *accelData);
 
 static bool useFifo = false;
 
-bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
+bool adxl345Detect(accDev_t *acc, drv_adxl345_config_t *init)
 {
     bool ack = false;
     uint8_t sig = 0;
@@ -78,7 +78,7 @@ bool adxl345Detect(drv_adxl345_config_t *init, acc_t *acc)
     return true;
 }
 
-static void adxl345Init(acc_t *acc)
+static void adxl345Init(accDev_t *acc)
 {
     if (useFifo) {
         uint8_t fifoDepth = 16;
