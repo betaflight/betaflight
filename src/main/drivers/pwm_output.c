@@ -24,6 +24,7 @@
 #include "io.h"
 #include "timer.h"
 #include "pwm_output.h"
+#include "system.h"
 
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
@@ -279,4 +280,29 @@ void servoInit(const servoConfig_t *servoConfig)
     }
 }
 
+#endif
+
+#ifdef BRUSHED_ESC_AUTODETECT
+uint8_t hardwareMotorType = MOTOR_UNKNOWN;
+
+void detectBrushedESC(void)
+{
+    int i = 0;
+    while (!(timerHardware[i].usageFlags & TIM_USE_MOTOR) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
+        i++;
+    }
+
+    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
+    IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
+
+    delayMicroseconds(10);  // allow configuration to settle
+
+    // Check presence of brushed ESC's
+    if (IORead(MotorDetectPin)) {
+        hardwareMotorType = MOTOR_BRUSHLESS;
+    } else {
+        hardwareMotorType = MOTOR_BRUSHED;
+    }
+}
 #endif

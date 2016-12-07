@@ -22,14 +22,7 @@ typedef enum awf3HardwareRevision_t {
     AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
 } awf3HardwareRevision_e;
 
-typedef enum awf4HardwareMotorType_t {
-    MOTOR_UNKNOWN = 0,
-    MOTOR_BRUSHED,
-    MOTOR_BRUSHLESS
-} awf4HardwareMotorType_e;
-
 extern uint8_t hardwareRevision;
-extern uint8_t hardwareMotorType;
 
 void updateHardwareRevision(void);
 void detectHardwareRevision(void);

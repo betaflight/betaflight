@@ -21,6 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
+#define BRUSHED_ESC_AUTODETECT
+
 #define LED0                    PB8
 
 #define BEEPER                  PC15
