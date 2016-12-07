@@ -1101,6 +1101,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); //reserved
         break;
 
+    case MSP_SENSOR_CONFIG:
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.acc_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.baro_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.mag_hardware);
+        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.pitot_hardware);
+        sbufWriteU8(dst, 0);    // rangefinder hardware
+        sbufWriteU8(dst, 0);    // optical flow hardware
+        break;
+
     case MSP_REBOOT:
         if (mspPostProcessFn) {
             *mspPostProcessFn = mspRebootFn;
@@ -1483,6 +1492,15 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
+        break;
+
+    case MSP_SET_SENSOR_CONFIG:
+        masterConfig.sensorSelectionConfig.acc_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.baro_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.mag_hardware = sbufReadU8(src);
+        masterConfig.sensorSelectionConfig.pitot_hardware = sbufReadU8(src);
+        sbufReadU8(src);        // rangefinder hardware
+        sbufReadU8(src);        // optical flow hardware
         break;
 
     case MSP_RESET_CONF:
