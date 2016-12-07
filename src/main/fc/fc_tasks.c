@@ -91,7 +91,7 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+    accUpdate(&accelerometerConfig()->accelerometerTrims);
 }
 
 static void taskHandleSerial(timeUs_t currentTimeUs)

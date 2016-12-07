@@ -128,8 +128,6 @@ typedef struct master_s {
 
     imuConfig_t imuConfig;
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-
     pidConfig_t pidConfig;
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
