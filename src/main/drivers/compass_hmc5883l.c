@@ -41,6 +41,9 @@
 
 #include "compass_hmc5883l.h"
 
+void hmc5883lInit(void);
+bool hmc5883lRead(int16_t *magData);
+
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
 // HMC5883L, default address 0x1E

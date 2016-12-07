@@ -81,7 +81,7 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 
 retry:
 
-    mag.dev.magAlign = ALIGN_DEFAULT;
+    dev->magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
     case MAG_DEFAULT:
@@ -91,7 +91,7 @@ retry:
 #ifdef USE_MAG_HMC5883
         if (hmc5883lDetect(dev, hmc5883Config)) {
 #ifdef MAG_HMC5883_ALIGN
-            mag.dev.magAlign = MAG_HMC5883_ALIGN;
+            dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
             magHardware = MAG_HMC5883;
             break;
@@ -103,7 +103,7 @@ retry:
 #ifdef USE_MAG_AK8975
         if (ak8975Detect(dev)) {
 #ifdef MAG_AK8975_ALIGN
-            mag.dev.magAlign = MAG_AK8975_ALIGN;
+            dev->magAlign = MAG_AK8975_ALIGN;
 #endif
             magHardware = MAG_AK8975;
             break;
@@ -115,7 +115,7 @@ retry:
 #ifdef USE_MAG_AK8963
         if (ak8963Detect(dev)) {
 #ifdef MAG_AK8963_ALIGN
-            mag.dev.magAlign = MAG_AK8963_ALIGN;
+            dev->magAlign = MAG_AK8963_ALIGN;
 #endif
             magHardware = MAG_AK8963;
             break;
@@ -161,15 +161,16 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     static uint32_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
     static flightDynamicsTrims_t magZeroTempMax;
-    uint32_t axis;
 
     mag.dev.read(magADCRaw);
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) mag.magADC[axis] = magADCRaw[axis];  // int32_t copy to work with
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        mag.magADC[axis] = magADCRaw[axis];
+    }
     alignSensors(mag.magADC, mag.dev.magAlign);
 
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;
-        for (axis = 0; axis < 3; axis++) {
+        for (int axis = 0; axis < 3; axis++) {
             magZero->raw[axis] = 0;
             magZeroTempMin.raw[axis] = mag.magADC[axis];
             magZeroTempMax.raw[axis] = mag.magADC[axis];
@@ -186,7 +187,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     if (tCal != 0) {
         if ((currentTime - tCal) < 30000000) {    // 30s: you have 30s to turn the multi in all directions
             LED0_TOGGLE;
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 if (mag.magADC[axis] < magZeroTempMin.raw[axis])
                     magZeroTempMin.raw[axis] = mag.magADC[axis];
                 if (mag.magADC[axis] > magZeroTempMax.raw[axis])
@@ -194,7 +195,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
             }
         } else {
             tCal = 0;
-            for (axis = 0; axis < 3; axis++) {
+            for (int axis = 0; axis < 3; axis++) {
                 magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
             }
 

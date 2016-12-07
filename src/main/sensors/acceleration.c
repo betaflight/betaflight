@@ -84,7 +84,7 @@ bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 #endif
 
 retry:
-    acc.dev.accAlign = ALIGN_DEFAULT;
+    dev->accAlign = ALIGN_DEFAULT;
 
     switch (accHardwareToUse) {
     case ACC_DEFAULT:
@@ -99,7 +99,7 @@ retry:
         if (adxl345Detect(&acc_params, dev)) {
 #endif
 #ifdef ACC_ADXL345_ALIGN
-            acc.dev.accAlign = ACC_ADXL345_ALIGN;
+            dev->accAlign = ACC_ADXL345_ALIGN;
 #endif
             accHardware = ACC_ADXL345;
             break;
@@ -110,7 +110,7 @@ retry:
 #ifdef USE_ACC_LSM303DLHC
         if (lsm303dlhcAccDetect(dev)) {
 #ifdef ACC_LSM303DLHC_ALIGN
-            acc.dev.accAlign = ACC_LSM303DLHC_ALIGN;
+            dev->accAlign = ACC_LSM303DLHC_ALIGN;
 #endif
             accHardware = ACC_LSM303DLHC;
             break;
@@ -121,7 +121,7 @@ retry:
 #ifdef USE_ACC_MPU6050
         if (mpu6050AccDetect(dev)) {
 #ifdef ACC_MPU6050_ALIGN
-            acc.dev.accAlign = ACC_MPU6050_ALIGN;
+            dev->accAlign = ACC_MPU6050_ALIGN;
 #endif
             accHardware = ACC_MPU6050;
             break;
@@ -137,7 +137,7 @@ retry:
         if (mma8452Detect(dev)) {
 #endif
 #ifdef ACC_MMA8452_ALIGN
-            acc.dev.accAlign = ACC_MMA8452_ALIGN;
+            dev->accAlign = ACC_MMA8452_ALIGN;
 #endif
             accHardware = ACC_MMA8452;
             break;
@@ -148,7 +148,7 @@ retry:
 #ifdef USE_ACC_BMA280
         if (bma280Detect(dev)) {
 #ifdef ACC_BMA280_ALIGN
-            acc.dev.accAlign = ACC_BMA280_ALIGN;
+            dev->accAlign = ACC_BMA280_ALIGN;
 #endif
             accHardware = ACC_BMA280;
             break;
@@ -159,7 +159,7 @@ retry:
 #ifdef USE_ACC_SPI_MPU6000
         if (mpu6000SpiAccDetect(dev)) {
 #ifdef ACC_MPU6000_ALIGN
-            acc.dev.accAlign = ACC_MPU6000_ALIGN;
+            dev->accAlign = ACC_MPU6000_ALIGN;
 #endif
             accHardware = ACC_MPU6000;
             break;
@@ -175,7 +175,7 @@ retry:
 #endif
         {
 #ifdef ACC_MPU6500_ALIGN
-            acc.dev.accAlign = ACC_MPU6500_ALIGN;
+            dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
             accHardware = ACC_MPU6500;
             break;
@@ -188,7 +188,7 @@ retry:
         if (icm20689SpiAccDetect(dev))
         {
 #ifdef ACC_ICM20689_ALIGN
-            acc.dev.accAlign = ACC_ICM20689_ALIGN;
+            dev->accAlign = ACC_ICM20689_ALIGN;
 #endif
             accHardware = ACC_ICM20689;
             break;
@@ -380,7 +380,7 @@ void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];
+        DEBUG_SET(DEBUG_ACCELEROMETER, axis, accADCRaw[axis]);
         acc.accSmooth[axis] = accADCRaw[axis];
     }
 

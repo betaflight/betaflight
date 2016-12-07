@@ -75,7 +75,7 @@ bool gyroDetect(gyroDev_t *dev)
 {
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
-    gyro.dev.gyroAlign = ALIGN_DEFAULT;
+    dev->gyroAlign = ALIGN_DEFAULT;
 
     switch(gyroHardware) {
     case GYRO_DEFAULT:
@@ -85,7 +85,7 @@ bool gyroDetect(gyroDev_t *dev)
         if (mpu6050GyroDetect(dev)) {
             gyroHardware = GYRO_MPU6050;
 #ifdef GYRO_MPU6050_ALIGN
-            gyro.dev.gyroAlign = GYRO_MPU6050_ALIGN;
+            dev->gyroAlign = GYRO_MPU6050_ALIGN;
 #endif
             break;
         }
@@ -96,7 +96,7 @@ bool gyroDetect(gyroDev_t *dev)
         if (l3g4200dDetect(dev)) {
             gyroHardware = GYRO_L3G4200D;
 #ifdef GYRO_L3G4200D_ALIGN
-            gyro.dev.gyroAlign = GYRO_L3G4200D_ALIGN;
+            dev->gyroAlign = GYRO_L3G4200D_ALIGN;
 #endif
             break;
         }
@@ -108,7 +108,7 @@ bool gyroDetect(gyroDev_t *dev)
         if (mpu3050Detect(dev)) {
             gyroHardware = GYRO_MPU3050;
 #ifdef GYRO_MPU3050_ALIGN
-            gyro.dev.gyroAlign = GYRO_MPU3050_ALIGN;
+            dev->gyroAlign = GYRO_MPU3050_ALIGN;
 #endif
             break;
         }
@@ -120,7 +120,7 @@ bool gyroDetect(gyroDev_t *dev)
         if (l3gd20Detect(dev)) {
             gyroHardware = GYRO_L3GD20;
 #ifdef GYRO_L3GD20_ALIGN
-            gyro.dev.gyroAlign = GYRO_L3GD20_ALIGN;
+            dev->gyroAlign = GYRO_L3GD20_ALIGN;
 #endif
             break;
         }
@@ -132,7 +132,7 @@ bool gyroDetect(gyroDev_t *dev)
         if (mpu6000SpiGyroDetect(dev)) {
             gyroHardware = GYRO_MPU6000;
 #ifdef GYRO_MPU6000_ALIGN
-            gyro.dev.gyroAlign = GYRO_MPU6000_ALIGN;
+            dev->gyroAlign = GYRO_MPU6000_ALIGN;
 #endif
             break;
         }
@@ -149,7 +149,7 @@ bool gyroDetect(gyroDev_t *dev)
         {
             gyroHardware = GYRO_MPU6500;
 #ifdef GYRO_MPU6500_ALIGN
-            gyro.dev.gyroAlign = GYRO_MPU6500_ALIGN;
+            dev->gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
 
             break;
@@ -164,7 +164,7 @@ case GYRO_MPU9250:
     {
         gyroHardware = GYRO_MPU9250;
 #ifdef GYRO_MPU9250_ALIGN
-        gyro.dev.gyroAlign = GYRO_MPU9250_ALIGN;
+        dev->gyroAlign = GYRO_MPU9250_ALIGN;
 #endif
 
         break;
@@ -178,7 +178,7 @@ case GYRO_MPU9250:
         {
             gyroHardware = GYRO_ICM20689;
 #ifdef GYRO_ICM20689_ALIGN
-            gyro.dev.gyroAlign = GYRO_ICM20689_ALIGN;
+            dev->gyroAlign = GYRO_ICM20689_ALIGN;
 #endif
 
             break;
