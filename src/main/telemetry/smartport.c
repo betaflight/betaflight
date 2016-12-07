@@ -380,15 +380,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * accADC[X] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * accADC[X] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * accADC[Y] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * accADC[Y] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * accADC[Z] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * accADC[Z] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :
