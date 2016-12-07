@@ -818,7 +818,6 @@ const clivalue_t valueTable[] = {
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &boardAlignment()->pitchDegrees, .config.minmax = { -180,  360 } },
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment()->yawDegrees, .config.minmax = { -180,  360 } },
 
-    { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_soft_lpf_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
@@ -844,6 +843,7 @@ const clivalue_t valueTable[] = {
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &mixerConfig()->yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
+    { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &pidConfig()->max_angle_inclination, .config.minmax = { 100,  900 } },
 #ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
@@ -911,7 +911,7 @@ const clivalue_t valueTable[] = {
     { "accum_threshold",            VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_accum_threshold",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
-    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &pidConfig()->pid_process_denom, .config.minmax = { 1,  8 } },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 } },
@@ -3658,8 +3658,8 @@ static void cliTasks(char *cmdline)
             int subTaskFrequency;
             if (taskId == TASK_GYROPID) {
                 subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
-                taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-                if (masterConfig.pid_process_denom > 1) {
+                taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
+                if (pidConfig()->pid_process_denom > 1) {
                     cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
@@ -3678,7 +3678,7 @@ static void cliTasks(char *cmdline)
             cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
                     taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
-            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
+            if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }

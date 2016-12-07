@@ -1093,7 +1093,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, 1);
         } else {
             sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
-            sbufWriteU8(dst, masterConfig.pid_process_denom);
+            sbufWriteU8(dst, pidConfig()->pid_process_denom);
         }
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
@@ -1442,7 +1442,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_ADVANCED_CONFIG:
         gyroConfig()->gyro_sync_denom = sbufReadU8(src);
-        masterConfig.pid_process_denom = sbufReadU8(src);
+        pidConfig()->pid_process_denom = sbufReadU8(src);
         motorConfig()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);

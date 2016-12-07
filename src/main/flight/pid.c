@@ -163,8 +163,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
-         const rollAndPitchTrims_t *angleTrim, uint16_t midrc)
+void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination, const rollAndPitchTrims_t *angleTrim, uint16_t midrc)
 {
     static float previousRateError[2];
     static float previousSetpoint[3];
@@ -217,13 +216,12 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
             // calculate error angle and limit the angle to the max inclination
+            float errorAngle = pidProfile->levelSensitivity * rcCommand[axis];
 #ifdef GPS
-                const float errorAngle = (constrainf(pidProfile->levelSensitivity * rcCommand[axis] + GPS_angle[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
-#else
-                const float errorAngle = (constrainf(pidProfile->levelSensitivity * rcCommand[axis], -((int) max_angle_inclination),
-                    +max_angle_inclination) - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f; // 16 bits is ok here
+            errorAngle += GPS_angle[axis];
 #endif
+            errorAngle = constrainf(errorAngle, -max_angle_inclination, max_angle_inclination);
+            errorAngle = (errorAngle - attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f;
             if (FLIGHT_MODE(ANGLE_MODE)) {
                 // ANGLE mode - control is angle based, so control loop is needed
                 setpointRate[axis] = errorAngle * pidProfile->P8[PIDLEVEL] / 10.0f;
