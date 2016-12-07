@@ -135,6 +135,7 @@ typedef struct navConfig_s {
         uint8_t  roll_to_pitch;              // Roll to pitch compensation (in %)
         uint16_t loiter_radius;              // Loiter radius when executing PH on a fixed wing
 
+        uint16_t launch_velocity_thresh;     // Velocity threshold for swing launch detection
         uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
         uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
         uint16_t launch_throttle;            // Launch throttle
