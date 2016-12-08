@@ -56,9 +56,13 @@ uint32_t cachedRccCsrValue;
 
 void cycleCounterInit(void)
 {
+#if defined(USE_HAL_DRIVER)
+    usTicks = HAL_RCC_GetSysClockFreq() / 1000000;
+#else
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
     usTicks = clocks.SYSCLK_Frequency / 1000000;
+#endif
 }
 
 // SysTick
@@ -72,6 +76,10 @@ void SysTick_Handler(void)
         sysTickPending = 0;
         (void)(SysTick->CTRL);
     }
+#ifdef USE_HAL_DRIVER
+    // used by the HAL for some timekeeping and timeouts, should always be 1ms
+    HAL_IncTick();
+#endif
 }
 
 // Return system uptime in microseconds (rollover in 70minutes)
