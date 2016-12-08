@@ -36,8 +36,7 @@ typedef enum {
 } currentSensor_e;
 
 typedef enum {
-    BATTERY_SENSOR_NONE = 0,
-    BATTERY_SENSOR_ADC,
+    BATTERY_SENSOR_ADC = 0,
     BATTERY_SENSOR_ESC
 } batterySensor_e;
 

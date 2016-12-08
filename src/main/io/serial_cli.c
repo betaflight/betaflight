@@ -419,7 +419,7 @@ static const char * const lookupTableCurrentSensor[] = {
 };
 
 static const char * const lookupTableBatterySensor[] = {
-    "NONE", "ADC", "ESC"
+    "ADC", "ESC"
 };
 
 #ifdef USE_SERVOS
