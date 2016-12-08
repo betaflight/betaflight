@@ -2256,13 +2256,19 @@ static void cliFlashInfo(char *cmdline)
 static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
-    uint32_t i;
 
+#ifndef CLI_MINIMAL_VERBOSITY
+    uint32_t i;
     cliPrintf("Erasing, please wait ... \r\n");
+#else
+    cliPrintf("Erasing,\r\n");
+#endif
+
     bufWriterFlush(cliWriter);
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrintf(".");
         if (i++ > 120) {
 	    i=0;
@@ -2270,6 +2276,7 @@ static void cliFlashErase(char *cmdline)
 	}
 
 	bufWriterFlush(cliWriter);
+#endif
         delay(100);
     }
 
