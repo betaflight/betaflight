@@ -176,7 +176,7 @@ typedef enum {
 } mspSDCardState_e;
 
 typedef enum {
-    MSP_SDCARD_FLAG_SUPPORTTED   = 1,
+    MSP_SDCARD_FLAG_SUPPORTTED   = 1
 } mspSDCardFlags_e;
 
 #define RATEPROFILE_MASK (1 << 7)
@@ -606,6 +606,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+        sbufWriteU16(dst, 0); // gyro cycle time
         break;
 
     case MSP_RAW_IMU:
@@ -1079,9 +1081,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, sensorAlignmentConfig()->gyro_align);
-        sbufWriteU8(dst, sensorAlignmentConfig()->acc_align);
-        sbufWriteU8(dst, sensorAlignmentConfig()->mag_align);
+        sbufWriteU8(dst, gyroConfig()->gyro_align);
+        sbufWriteU8(dst, accelerometerConfig()->acc_align);
+        sbufWriteU8(dst, compassConfig()->mag_align);
         break;
 
     case MSP_ADVANCED_CONFIG:
@@ -1125,9 +1127,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_CONFIG:
-        sbufWriteU8(dst, sensorSelectionConfig()->acc_hardware);
-        sbufWriteU8(dst, sensorSelectionConfig()->baro_hardware);
-        sbufWriteU8(dst, sensorSelectionConfig()->mag_hardware);
+        sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+        sbufWriteU8(dst, barometerConfig()->baro_hardware);
+        sbufWriteU8(dst, compassConfig()->mag_hardware);
         break;
 
     case MSP_REBOOT:
@@ -1432,9 +1434,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        sensorAlignmentConfig()->gyro_align = sbufReadU8(src);
-        sensorAlignmentConfig()->acc_align = sbufReadU8(src);
-        sensorAlignmentConfig()->mag_align = sbufReadU8(src);
+        gyroConfig()->gyro_align = sbufReadU8(src);
+        accelerometerConfig()->acc_align = sbufReadU8(src);
+        compassConfig()->mag_align = sbufReadU8(src);
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
@@ -1487,9 +1489,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        sensorSelectionConfig()->acc_hardware = sbufReadU8(src);
-        sensorSelectionConfig()->baro_hardware = sbufReadU8(src);
-        sensorSelectionConfig()->mag_hardware = sbufReadU8(src);
+        accelerometerConfig()->acc_hardware = sbufReadU8(src);
+        barometerConfig()->baro_hardware = sbufReadU8(src);
+        compassConfig()->mag_hardware = sbufReadU8(src);
         break;
 
     case MSP_RESET_CONF:
@@ -1559,7 +1561,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdProfile()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
-                osdProfile()->item_pos[addr] = sbufReadU16(src);
+                const uint16_t pos  = sbufReadU16(src);
+                if (addr < OSD_ITEM_COUNT) {
+                    osdProfile()->item_pos[addr] = pos;
+                }
             }
         }
         break;

@@ -24,10 +24,8 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
-    ADC_CHANNEL_MAX = ADC_RSSI
+    ADC_CHANNEL_COUNT
 } AdcChannel;
-
-#define ADC_CHANNEL_COUNT (ADC_CHANNEL_MAX + 1)
 
 typedef struct adc_config_s {
     ioTag_t tag;

@@ -89,7 +89,7 @@
 enum {
     RATE_LOW = 0,
     RATE_MID = 1,
-    RATE_HIGH = 2,
+    RATE_HIGH = 2
 };
 
 enum {
@@ -97,7 +97,7 @@ enum {
     FLAG_PICTURE  = 0x02,
     FLAG_VIDEO    = 0x04,
     FLAG_RTH      = 0x08,
-    FLAG_HEADLESS = 0x10,
+    FLAG_HEADLESS = 0x10
 };
 
 typedef enum {

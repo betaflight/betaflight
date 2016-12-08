@@ -108,7 +108,7 @@ typedef enum {
     LED_FUNCTION_BATTERY,
     LED_FUNCTION_RSSI,
     LED_FUNCTION_GPS,
-    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_THRUST_RING
 } ledBaseFunctionId_e;
 
 typedef enum {
@@ -117,7 +117,7 @@ typedef enum {
     LED_OVERLAY_BLINK,
     LED_OVERLAY_LANDING_FLASH,
     LED_OVERLAY_INDICATOR,
-    LED_OVERLAY_WARNING,
+    LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
 typedef struct modeColorIndexes_s {

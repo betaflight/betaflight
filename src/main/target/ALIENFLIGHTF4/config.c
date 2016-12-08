@@ -58,7 +58,7 @@ void targetConfiguration(master_t *config)
 {
     config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
     config->batteryConfig.currentMeterScale = CURRENTSCALE;
-    config->sensorSelectionConfig.mag_hardware = MAG_NONE;            // disabled by default
+    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.minthrottle = 1000;

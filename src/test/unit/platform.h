@@ -35,7 +35,7 @@
 typedef enum
 {
     Mode_TEST = 0x0,
-    Mode_Out_PP = 0x10,
+    Mode_Out_PP = 0x10
 } GPIO_Mode;
 
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;

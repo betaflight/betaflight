@@ -114,7 +114,7 @@ typedef enum {
     COLOR_BLUE,
     COLOR_DARK_VIOLET,
     COLOR_MAGENTA,
-    COLOR_DEEP_PINK,
+    COLOR_DEEP_PINK
 } colorId_e;
 
 const hsvColor_t hsv[] = {

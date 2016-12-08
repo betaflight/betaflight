@@ -49,34 +49,5 @@ typedef enum {
     SENSOR_MAG = 1 << 3,
     SENSOR_SONAR = 1 << 4,
     SENSOR_GPS = 1 << 5,
-    SENSOR_GPSMAG = 1 << 6,
+    SENSOR_GPSMAG = 1 << 6
 } sensors_e;
-
-typedef enum {
-    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
-    CW0_DEG = 1,
-    CW90_DEG = 2,
-    CW180_DEG = 3,
-    CW270_DEG = 4,
-    CW0_DEG_FLIP = 5,
-    CW90_DEG_FLIP = 6,
-    CW180_DEG_FLIP = 7,
-    CW270_DEG_FLIP = 8
-} sensor_align_e;
-
-typedef struct sensorAlignmentConfig_s {
-    sensor_align_e gyro_align;              // gyro alignment
-    sensor_align_e acc_align;               // acc alignment
-    sensor_align_e mag_align;               // mag alignment
-} sensorAlignmentConfig_t;
-
-typedef struct sensorSelectionConfig_s {
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
-    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-} sensorSelectionConfig_t;
-
-typedef struct sensorTrims_s {
-    flightDynamicsTrims_t accZero;
-    flightDynamicsTrims_t magZero;
-} sensorTrims_t;

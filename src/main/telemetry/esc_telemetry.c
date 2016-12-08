@@ -75,7 +75,7 @@ typedef enum {
 typedef enum {
     ESC_TLM_TRIGGER_WAIT = 0,
     ESC_TLM_TRIGGER_READY = 1 << 0,     // 1
-    ESC_TLM_TRIGGER_PENDING = 1 << 1,   // 2
+    ESC_TLM_TRIGGER_PENDING = 1 << 1    // 2
 } escTlmTriggerState_t;
 
 #define ESC_TLM_BAUDRATE 115200

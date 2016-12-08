@@ -23,7 +23,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 
-#include "sensors.h"
+#include "drivers/sensor.h"
 
 #include "boardalignment.h"
 
