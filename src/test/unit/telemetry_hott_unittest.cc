@@ -174,7 +174,6 @@ int32_t mAhDrawn;
 uint32_t fixedMillis = 0;
 
 baro_t baro;
-uint16_t vario;
 
 uint32_t millis(void) {
     return fixedMillis;
