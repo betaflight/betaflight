@@ -19,19 +19,19 @@
 
 #pragma once
 
+#include "common/time.h"
+
 typedef enum {
     CRSF_FRAME_START = 0,
     CRSF_FRAME_ATTITUDE = CRSF_FRAME_START,
     CRSF_FRAME_BATTERY_SENSOR,
-    CRSF_FRAME_LINK_STATISTICS,
     CRSF_FRAME_FLIGHT_MODE,
-    CRSF_FRAME_GPS,
-    CRSF_FRAME_COUNT
+    CRSF_FRAME_GPS
 } crsfFrameType_e;
 
 void initCrsfTelemetry(void);
 bool checkCrsfTelemetryState(void);
-void handleCrsfTelemetry(uint32_t currentTime);
+void handleCrsfTelemetry(timeUs_t currentTimeUs);
 
 int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
 

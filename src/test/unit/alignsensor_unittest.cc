@@ -21,6 +21,7 @@
 
 extern "C" {
 #include "common/axis.h"
+#include "drivers/sensor.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 }

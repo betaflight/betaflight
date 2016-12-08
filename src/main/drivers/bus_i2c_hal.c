@@ -80,7 +80,7 @@ static i2cDevice_t i2cHardwareMap[] = {
 typedef struct{
     I2C_HandleTypeDef Handle;
 }i2cHandle_t;
-static i2cHandle_t i2cHandle[I2CDEV_MAX+1];
+static i2cHandle_t i2cHandle[I2CDEV_COUNT];
 
 void I2C1_ER_IRQHandler(void)
 {

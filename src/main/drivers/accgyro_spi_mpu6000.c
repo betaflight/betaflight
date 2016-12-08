@@ -124,32 +124,29 @@ bool mpu6000ReadRegister(uint8_t reg, uint8_t length, uint8_t *data)
     return true;
 }
 
-void mpu6000SpiGyroInit(uint8_t lpf)
+void mpu6000SpiGyroInit(gyroDev_t *gyro)
 {
-    mpuIntExtiInit();
+    mpuGyroInit(gyro);
 
     mpu6000AccAndGyroInit();
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
     // Accel and Gyro DLPF Setting
-    mpu6000WriteRegister(MPU6000_CONFIG, lpf);
+    mpu6000WriteRegister(MPU6000_CONFIG, gyro->lpf);
     delayMicroseconds(1);
 
     spiSetDivisor(MPU6000_SPI_INSTANCE, SPI_CLOCK_FAST);  // 18 MHz SPI clock
 
-    int16_t data[3];
-    mpuGyroRead(data);
+    mpuGyroRead(gyro);
 
-    if (((int8_t)data[1]) == -1 && ((int8_t)data[0]) == -1) {
+    if (((int8_t)gyro->gyroADCRaw[1]) == -1 && ((int8_t)gyro->gyroADCRaw[0]) == -1) {
         failureMode(FAILURE_GYRO_INIT_FAILED);
     }
 }
 
-void mpu6000SpiAccInit(acc_t *acc)
+void mpu6000SpiAccInit(accDev_t *acc)
 {
-    mpuIntExtiInit();
-
     acc->acc_1G = 512 * 4;
 }
 
@@ -257,7 +254,7 @@ static void mpu6000AccAndGyroInit(void)
     mpuSpi6000InitDone = true;
 }
 
-bool mpu6000SpiAccDetect(acc_t *acc)
+bool mpu6000SpiAccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_60x0_SPI) {
         return false;
@@ -269,7 +266,7 @@ bool mpu6000SpiAccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6000SpiGyroDetect(gyro_t *gyro)
+bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
 {
     if (mpuDetectionResult.sensor != MPU_60x0_SPI) {
         return false;

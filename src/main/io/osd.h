@@ -40,6 +40,9 @@ typedef enum {
     OSD_GPS_SPEED,
     OSD_GPS_SATS,
     OSD_ALTITUDE,
+    OSD_ROLL_PIDS,
+    OSD_PITCH_PIDS,
+    OSD_YAW_PIDS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
@@ -64,4 +67,4 @@ struct displayPort_s;
 void osdInit(struct displayPort_s *osdDisplayPort);
 void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
-void osdUpdate(uint32_t currentTime);
+void osdUpdate(timeUs_t currentTimeUs);

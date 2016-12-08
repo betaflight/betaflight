@@ -32,15 +32,16 @@ typedef enum {
     ACC_MPU6000 = 7,
     ACC_MPU6500 = 8,
     ACC_ICM20689 = 9,
-    ACC_FAKE = 10,
-    ACC_MAX = ACC_FAKE
+    ACC_FAKE = 10
 } accelerationSensor_e;
 
-extern sensor_align_e accAlign;
-extern acc_t acc;
-extern uint32_t accSamplingInterval;
+typedef struct acc_s {
+    accDev_t dev;
+    uint32_t accSamplingInterval;
+    int32_t accSmooth[XYZ_AXIS_COUNT];
+} acc_t;
 
-extern int32_t accSmooth[XYZ_AXIS_COUNT];
+extern acc_t acc;
 
 typedef struct rollAndPitchTrims_s {
     int16_t roll;
@@ -51,6 +52,14 @@ typedef union rollAndPitchTrims_u {
     int16_t raw[2];
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
+
+
+typedef struct accelerometerConfig_s {
+    uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
+    sensor_align_e acc_align;               // acc alignment
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    flightDynamicsTrims_t accZero;
+} accelerometerConfig_t;
 
 void accInit(uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);

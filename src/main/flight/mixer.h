@@ -43,8 +43,8 @@
 #define DSHOT_DISARM_COMMAND      0
 #define DSHOT_MIN_THROTTLE       48
 #define DSHOT_MAX_THROTTLE     2047
-#define DSHOT_3D_MAX_POSITIVE  1047 // TODO - Not working yet!! Mixer requires some throttle rescaling changes
-#define DSHOT_3D_MIN_NEGATIVE  1048//  TODO - Not working yet!! Mixer requires some throttle rescaling changes
+#define DSHOT_3D_DEADBAND_LOW  1047
+#define DSHOT_3D_DEADBAND_HIGH 1048
 
 // Note: this is called MultiType/MULTITYPE_* in baseflight.
 typedef enum mixerMode
@@ -93,6 +93,7 @@ typedef struct mixer_s {
 } mixer_t;
 
 typedef struct mixerConfig_s {
+    uint8_t mixerMode;
     int8_t yaw_motor_direction;
 } mixerConfig_t;
 

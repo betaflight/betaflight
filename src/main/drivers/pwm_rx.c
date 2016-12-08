@@ -55,7 +55,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity);
 
 typedef enum {
     INPUT_MODE_PPM,
-    INPUT_MODE_PWM,
+    INPUT_MODE_PWM
 } pwmInputMode_t;
 
 typedef struct {

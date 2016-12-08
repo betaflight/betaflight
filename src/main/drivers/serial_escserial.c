@@ -24,7 +24,7 @@
 typedef enum {
     BAUDRATE_NORMAL = 19200,
     BAUDRATE_KISS   = 38400,
-    BAUDRATE_CASTLE = 18880,
+    BAUDRATE_CASTLE = 18880
 } escBaudRate_e;
 
 typedef enum {
@@ -32,7 +32,7 @@ typedef enum {
     PROTOCOL_BLHELI = 1,
     PROTOCOL_KISS = 2,
     PROTOCOL_KISSALL = 3,
-    PROTOCOL_CASTLE = 4,
+    PROTOCOL_CASTLE = 4
 } escProtocol_e;
 
 #if defined(USE_ESCSERIAL)
@@ -119,7 +119,7 @@ static void escSerialICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polari
 
 void setTxSignalEsc(escSerial_t *escSerial, uint8_t state)
 {
-    if((escSerial->mode == PROTOCOL_KISSALL))
+    if(escSerial->mode == PROTOCOL_KISSALL)
     {
         for (volatile uint8_t i = 0; i < escSerial->outputCount; i++) {
             uint8_t state_temp = state;

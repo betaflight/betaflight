@@ -20,7 +20,7 @@
 #include <stdbool.h>
 
 #define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 1000.0f
+#define PID_MIXER_SCALING 900.0f
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define PIDSUM_LIMIT 0.5f
@@ -104,5 +104,7 @@ extern uint8_t PIDweight[3];
 
 void pidResetErrorGyroState(void);
 void pidStabilisationState(pidStabilisationState_e pidControllerState);
-void setTargetPidLooptime(uint32_t pidLooptime);
+void pidSetTargetLooptime(uint32_t pidLooptime);
+void pidInitFilters(const pidProfile_t *pidProfile);
+void pidInitConfig(const pidProfile_t *pidProfile);
 

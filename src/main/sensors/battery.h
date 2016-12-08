@@ -31,15 +31,13 @@ typedef enum {
     CURRENT_SENSOR_NONE = 0,
     CURRENT_SENSOR_ADC,
     CURRENT_SENSOR_VIRTUAL,
-    CURRENT_SENSOR_ESC,
-    CURRENT_SENSOR_MAX = CURRENT_SENSOR_ESC
+    CURRENT_SENSOR_ESC
 } currentSensor_e;
 
 typedef enum {
     BATTERY_SENSOR_NONE = 0,
     BATTERY_SENSOR_ADC,
-    BATTERY_SENSOR_ESC,
-    BATTERY_SENSOR_MAX = BATTERY_SENSOR_ESC
+    BATTERY_SENSOR_ESC
 } batterySensor_e;
 
 typedef struct batteryConfig_s {
@@ -53,13 +51,16 @@ typedef struct batteryConfig_s {
     batterySensor_e batteryMeterType;       // type of battery meter uses, either ADC or ESC
 
     int16_t currentMeterScale;             // scale the current sensor output voltage to milliamps. Value in 1/10th mV/A
-    uint16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
+    int16_t currentMeterOffset;            // offset of the current sensor in millivolt steps
     currentSensor_e  currentMeterType;      // type of current meter used, either ADC, Virtual or ESC
 
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
     uint16_t batteryCapacity;               // mAh
     uint8_t batterynotpresentlevel;         // Below this level battery is considered as not present
+    bool useVBatAlerts;                     // Issue alerts based on VBat readings
+    bool useConsumptionAlerts;              // Issue alerts based on total power consumption
+    uint8_t consumptionWarningPercentage;   // Percentage of remaining capacity that should trigger a battery warning
 } batteryConfig_t;
 
 typedef enum {
@@ -90,4 +91,3 @@ int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
-uint8_t calculateBatteryCapacityRemainingPercentage(void);

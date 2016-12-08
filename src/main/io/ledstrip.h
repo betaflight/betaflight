@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/color.h"
+#include "common/time.h"
 #include "drivers/io_types.h"
 
 #define LED_MAX_STRIP_LENGTH           32
@@ -107,7 +108,7 @@ typedef enum {
     LED_FUNCTION_BATTERY,
     LED_FUNCTION_RSSI,
     LED_FUNCTION_GPS,
-    LED_FUNCTION_THRUST_RING,
+    LED_FUNCTION_THRUST_RING
 } ledBaseFunctionId_e;
 
 typedef enum {
@@ -116,7 +117,7 @@ typedef enum {
     LED_OVERLAY_BLINK,
     LED_OVERLAY_LANDING_FLASH,
     LED_OVERLAY_INDICATOR,
-    LED_OVERLAY_WARNING,
+    LED_OVERLAY_WARNING
 } ledOverlayId_e;
 
 typedef struct modeColorIndexes_s {
@@ -178,7 +179,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledStripConfig_t *ledStripConfig);
 void ledStripEnable(void);
-void ledStripUpdate(uint32_t currentTime);
+void ledStripUpdate(timeUs_t currentTimeUs);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 

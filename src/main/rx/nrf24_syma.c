@@ -73,7 +73,7 @@
 enum {
     RATE_LOW = 0,
     RATE_MID = 1,
-    RATE_HIGH= 2,
+    RATE_HIGH= 2
 };
 
 #define FLAG_PICTURE    0x40

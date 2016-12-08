@@ -41,12 +41,11 @@
 
 #endif
 
-#define USE_DSHOT
 #define USE_ESC_TELEMETRY
 
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
-#if defined(AIRBOTF4) 
+#if defined(AIRBOTF4)
     #define BEEPER                  PB4
     #define BEEPER_INVERTED
 #elif defined(REVOLT)

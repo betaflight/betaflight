@@ -64,9 +64,7 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     configTimeBase(timerHardware->tim, period, mhz);
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output);
 
-    if (timerHardware->output & TIMER_OUTPUT_ENABLED) {
-        TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
-    }
+    TIM_CtrlPWMOutputs(timerHardware->tim, ENABLE);
     TIM_Cmd(timerHardware->tim, ENABLE);
 
     port->ccr = timerChCCR(timerHardware);

@@ -110,8 +110,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 int findSerialPortIndexByIdentifier(serialPortIdentifier_e identifier)
 {
     for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
-        const serialPortUsage_t *candidate = &serialPortUsageList[index];
-        if (candidate->identifier == identifier) {
+        if (serialPortIdentifiers[index] == identifier) {
             return index;
         }
     }
@@ -209,7 +208,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 }
 
 #ifdef TELEMETRY
-#define ALL_TELEMETRY_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_MAVLINK)
+#define ALL_TELEMETRY_FUNCTIONS_MASK (TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT)
 #else
 #define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK)
 #endif
@@ -222,7 +221,7 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
      * rules:
      * - 1 MSP port minimum, max MSP ports is defined and must be adhered to.
      * - MSP is allowed to be shared with EITHER any telemetry OR blackbox.
-     * - serial RX and FrSky / LTM telemetry can be shared
+     * - serial RX and FrSky / LTM / MAVLink telemetry can be shared
      * - No other sharing combinations are valid.
      */
     uint8_t mspPortCount = 0;
