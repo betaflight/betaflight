@@ -20,7 +20,7 @@
 
 typedef enum {
     RX_SPI_SOFTSPI,
-    RX_SPI_HARDSPI,
+    RX_SPI_HARDSPI
 } rx_spi_type_e;
 
 #define RX_SPI_MAX_PAYLOAD_SIZE 32

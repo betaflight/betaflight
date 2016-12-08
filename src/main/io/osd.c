@@ -333,6 +333,27 @@ static void osdDrawSingleElement(uint8_t item)
             return;
         }
 
+        case OSD_ROLL_PIDS:
+        {
+            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
+            break;
+        }
+
+        case OSD_PITCH_PIDS:
+        {
+            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
+            break;
+        }
+
+        case OSD_YAW_PIDS:
+        {
+            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
+            sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
+            break;
+        }
+
         default:
             return;
     }
@@ -372,6 +393,9 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_MAH_DRAWN);
     osdDrawSingleElement(OSD_CRAFT_NAME);
     osdDrawSingleElement(OSD_ALTITUDE);
+    osdDrawSingleElement(OSD_ROLL_PIDS);
+    osdDrawSingleElement(OSD_PITCH_PIDS);
+    osdDrawSingleElement(OSD_YAW_PIDS);
 
 #ifdef GPS
 #ifdef CMS
@@ -403,6 +427,9 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
     osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
     osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
+    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;

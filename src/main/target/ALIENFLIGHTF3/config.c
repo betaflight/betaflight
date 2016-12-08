@@ -47,7 +47,7 @@ void targetConfiguration(master_t *config)
 {
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->sensorSelectionConfig.mag_hardware = MAG_NONE;            // disabled by default
+    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.minthrottle = 1000;

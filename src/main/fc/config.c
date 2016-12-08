@@ -230,13 +230,6 @@ void resetBarometerConfig(barometerConfig_t *barometerConfig)
 }
 #endif
 
-void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
-{
-    sensorAlignmentConfig->gyro_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->acc_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
-}
-
 #ifdef LED_STRIP
 void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
 {
@@ -599,22 +592,24 @@ void createDefaultConfig(master_t *config)
 
     config->debug_mode = DEBUG_MODE;
 
-    resetAccelerometerTrims(&config->sensorTrims.accZero);
+    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
-    resetSensorAlignment(&config->sensorAlignmentConfig);
+    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
+    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
+    config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->max_angle_inclination = 700;    // 70 degrees
     config->rcControlsConfig.yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
-    config->sensorSelectionConfig.mag_hardware = 1;
+    config->compassConfig.mag_hardware = 1;
 
-    config->sensorSelectionConfig.baro_hardware = 1;
+    config->barometerConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
@@ -858,7 +853,7 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&sensorTrims()->accZero);
+    setAccelerationTrims(&accelerometerConfig()->accZero);
     setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
 
     mixerUseConfigs(
@@ -1020,13 +1015,6 @@ void validateAndFixGyroConfig(void)
     }
 }
 
-void readEEPROMAndNotify(void)
-{
-    // re-read written data
-    readEEPROM();
-    beeperConfirmationBeeps(1);
-}
-
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
@@ -1045,7 +1033,8 @@ void resetEEPROM(void)
 void saveConfigAndNotify(void)
 {
     writeEEPROM();
-    readEEPROMAndNotify();
+    readEEPROM();
+    beeperConfirmationBeeps(1);
 }
 
 void changeProfile(uint8_t profileIndex)

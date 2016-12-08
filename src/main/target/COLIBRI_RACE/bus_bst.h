@@ -36,8 +36,7 @@
 
 typedef enum BSTDevice {
     BSTDEV_1,
-    BSTDEV_2,
-    BSTDEV_MAX = BSTDEV_2,
+    BSTDEV_2
 } BSTDevice;
 
 void bstInit(BSTDevice index);
