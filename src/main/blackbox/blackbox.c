@@ -1139,7 +1139,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 #endif
 
 #ifdef BARO
-    blackboxCurrent->BaroAlt = BaroAlt;
+    blackboxCurrent->BaroAlt = baro.BaroAlt;
 #endif
 
 #ifdef PITOT
