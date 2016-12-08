@@ -372,6 +372,7 @@ static uint32_t packFlightModeFlags(void)
 
 static uint16_t packSensorStatus(void)
 {
+    // Sensor bits
     uint16_t sensorStatus =
             IS_ENABLED(sensors(SENSOR_ACC))     << 0 |
             IS_ENABLED(sensors(SENSOR_BARO))    << 1 |
@@ -379,8 +380,12 @@ static uint16_t packSensorStatus(void)
             IS_ENABLED(sensors(SENSOR_GPS))     << 3 |
             IS_ENABLED(sensors(SENSOR_SONAR))   << 4 |
             //IS_ENABLED(sensors(SENSOR_OPFLOW))  << 5 |
-            IS_ENABLED(sensors(SENSOR_PITOT))   << 6 |
-            IS_ENABLED(isHardwareHealthy())     << 15;          // Bit 15 of sensor bit field indicates general hardware health
+            IS_ENABLED(sensors(SENSOR_PITOT))   << 6;
+
+    // Hardware failure indication bit
+    if (!isHardwareHealthy()) {
+        sensorStatus |= 1 << 15;        // Bit 15 of sensor bit field indicates hardware failure
+    }
 
     return sensorStatus;
 }
