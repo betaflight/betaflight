@@ -435,6 +435,7 @@ void processServoTilt(void)
 typedef enum {
     AUTOTRIM_IDLE,
     AUTOTRIM_COLLECTING,
+    AUTOTRIM_SAVE_PENDING,
     AUTOTRIM_DONE,
 } servoAutotrimState_e;
 
@@ -472,6 +473,14 @@ void processServoAutotrim(void)
                     for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
                         servoConf[servoIndex].middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
                     }
+                    trimState = AUTOTRIM_SAVE_PENDING;
+                }
+                break;
+
+            case AUTOTRIM_SAVE_PENDING:
+                // Wait for disarm and save to EEPROM
+                if (!ARMING_FLAG(ARMED)) {
+                    saveConfigAndNotify();
                     trimState = AUTOTRIM_DONE;
                 }
                 break;
@@ -482,7 +491,7 @@ void processServoAutotrim(void)
     }
     else {
         // We are deactivating servo trim - restore servo midpoints
-        if (trimState == AUTOTRIM_DONE) {
+        if (trimState > AUTOTRIM_COLLECTING) {
             for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
                 servoConf[servoIndex].middle = servoMiddleBackup[servoIndex];
             }
