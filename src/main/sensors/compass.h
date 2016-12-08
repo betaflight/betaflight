@@ -19,6 +19,8 @@
 
 #include "common/time.h"
 
+#include "drivers/compass.h"
+
 #include "sensors/sensors.h"
 
 // Type of magnetometer used/detected
@@ -31,16 +33,19 @@ typedef enum {
     MAG_MAG3110 = 5,
     MAG_AK8963 = 6,
     MAG_FAKE = 7,
+    MAG_MAX = MAG_FAKE
 } magSensor_e;
 
-#define MAG_MAX  MAG_FAKE
+typedef struct mag_s {
+    magDev_t dev;
+    sensor_align_e magAlign;
+    float magneticDeclination;
+    int32_t magADC[XYZ_AXIS_COUNT];
+} mag_t;
+
+extern mag_t mag;
 
 bool compassInit(int16_t magDeclinationFromConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
-
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern float magneticDeclination;

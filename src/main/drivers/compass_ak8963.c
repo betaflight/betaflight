@@ -192,7 +192,7 @@ bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 #endif
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool ak8963Detect(mag_t *mag)
+bool ak8963Detect(magDev_t *mag)
 {
     for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
         bool ack = false;

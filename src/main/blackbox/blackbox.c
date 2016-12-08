@@ -1134,7 +1134,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 
 #ifdef MAG
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->magADC[i] = magADC[i];
+        blackboxCurrent->magADC[i] = mag.magADC[i];
     }
 #endif
 

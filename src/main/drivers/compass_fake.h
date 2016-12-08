@@ -18,5 +18,5 @@
 #pragma once
 
 struct mag_s;
-bool fakeMagDetect(struct mag_s *mag);
+bool fakeMagDetect(struct magDev_s *mag);
 void fakeMagSet(int16_t x, int16_t y, int16_t z);

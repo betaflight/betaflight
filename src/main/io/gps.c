@@ -446,7 +446,7 @@ bool gpsMagRead(int16_t *magData)
     return gpsSol.flags.validMag;
 }
 
-bool gpsMagDetect(mag_t *mag)
+bool gpsMagDetect(magDev_t *mag)
 {
     if (!(feature(FEATURE_GPS) && gpsProviders[gpsState.gpsConfig->provider].hasCompass))
         return false;
