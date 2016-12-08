@@ -2252,18 +2252,28 @@ static void cliFlashInfo(char *cmdline)
             layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
 }
 
+
 static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
+    uint32_t i;
 
-    cliPrintf("Erasing...\r\n");
+    cliPrintf("Erasing, please wait ... \r\n");
+    bufWriterFlush(cliWriter);
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
+        cliPrintf(".");
+        if (i++ > 120) {
+	    i=0;
+	    cliPrintf("\r\n");
+	}
+
+	bufWriterFlush(cliWriter);
         delay(100);
     }
 
-    cliPrintf("Done.\r\n");
+    cliPrintf("\r\nDone.\r\n");
 }
 
 #ifdef USE_FLASH_TOOLS
