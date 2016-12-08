@@ -55,7 +55,6 @@ bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(void);
 union flightDynamicsTrims_u;
-void setAccelerationZero(union flightDynamicsTrims_u * accZeroToUse);
-void setAccelerationGain(union flightDynamicsTrims_u * accGainToUse);
+void setAccelerationCalibrationValues(union flightDynamicsTrims_u * accZeroToUse, union flightDynamicsTrims_u * accGainToUse);
 void setAccelerationFilter(uint8_t initialAccLpfCutHz);
 bool isAccelerometerHealthy(void);

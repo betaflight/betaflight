@@ -127,6 +127,45 @@ int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
     return rcLookup(stickDeflection, rate);
 }
 
+static void updatePreArmingChecks(void)
+{
+    DISABLE_ARMING_FLAG(BLOCKED_ALL_FLAGS);
+
+    if (!STATE(SMALL_ANGLE)) {
+        ENABLE_ARMING_FLAG(BLOCKED_UAV_NOT_LEVEL);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+    if (isCalibrating()) {
+        ENABLE_ARMING_FLAG(BLOCKED_SENSORS_CALIBRATING);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+    if (isSystemOverloaded()) {
+        ENABLE_ARMING_FLAG(BLOCKED_SYSTEM_OVERLOADED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+#if defined(NAV)
+    if (naivationBlockArming()) {
+        ENABLE_ARMING_FLAG(BLOCKED_NAVIGATION_SAFETY);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+#endif
+
+#if defined(MAG)
+    if (sensors(SENSOR_MAG) && !STATE(COMPASS_CALIBRATED)) {
+        ENABLE_ARMING_FLAG(BLOCKED_COMPASS_NOT_CALIBRATED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+#endif
+
+    if (sensors(SENSOR_ACC) && !STATE(ACCELEROMETER_CALIBRATED)) {
+        ENABLE_ARMING_FLAG(BLOCKED_ACCELEROMETER_NOT_CALIBRATED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+}
+
 void annexCode(void)
 {
 
@@ -158,20 +197,7 @@ void annexCode(void)
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
-        if (!STATE(SMALL_ANGLE)) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-        if (isCalibrating() || isSystemOverloaded() || !isHardwareHealthy()) {
-            warningLedFlash();
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-#if defined(NAV)
-        if (naivationBlockArming()) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-#endif
+        updatePreArmingChecks();
 
         if (ARMING_FLAG(OK_TO_ARM)) {
             warningLedDisable();

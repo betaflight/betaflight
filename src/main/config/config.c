@@ -467,7 +467,6 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     mixerConfig()->mixerMode = MIXER_QUADX;
     featureClearAll();
-    persistentFlagClearAll();
     featureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE);
 #ifdef DEFAULT_FEATURES
     featureSet(DEFAULT_FEATURES);
@@ -781,8 +780,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
 
-    setAccelerationZero(&masterConfig.sensorTrims.accZero);
-    setAccelerationGain(&masterConfig.sensorTrims.accGain);
+    setAccelerationCalibrationValues(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
@@ -1072,26 +1070,6 @@ void changeControlRateProfile(uint8_t profileIndex)
     }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();
-}
-
-void persistentFlagClearAll()
-{
-    masterConfig.persistentFlags = 0;
-}
-
-bool persistentFlag(uint8_t mask)
-{
-    return masterConfig.persistentFlags & mask;
-}
-
-void persistentFlagSet(uint8_t mask)
-{
-    masterConfig.persistentFlags |= mask;
-}
-
-void persistentFlagClear(uint8_t mask)
-{
-    masterConfig.persistentFlags &= ~(mask);
 }
 
 void beeperOffSet(uint32_t mask)

@@ -615,7 +615,7 @@ bool isImuReady(void)
 
 bool isImuHeadingValid(void)
 {
-    return (sensors(SENSOR_MAG) && persistentFlag(FLAG_MAG_CALIBRATION_DONE)) || (STATE(FIXED_WING) && gpsHeadingInitialized);
+    return (sensors(SENSOR_MAG) && STATE(COMPASS_CALIBRATED)) || (STATE(FIXED_WING) && gpsHeadingInitialized);
 }
 
 float calculateCosTiltAngle(void)
