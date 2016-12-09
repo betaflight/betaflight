@@ -46,7 +46,7 @@
 void targetConfiguration(master_t *config)
 {
     /* depending on revision ... depends on the LEDs to be utilised. */
-    if (hardwareRevision == AFF3_REV_1) {
+    if (hardwareRevision == AFF3_REV_2) {
         config->statusLedConfig.polarity = 0
 #ifdef LED0_A_INVERTED
             | BIT(0)
