@@ -47,7 +47,8 @@ typedef struct compassConfig_s {
     flightDynamicsTrims_t magZero;
 } compassConfig_t;
 
-void compassInit(void);
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
+void compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
 

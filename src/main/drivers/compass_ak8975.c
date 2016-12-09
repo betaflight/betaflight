@@ -37,6 +37,9 @@
 
 #include "compass_ak8975.h"
 
+void ak8975Init(void);
+bool ak8975Read(int16_t *magData);
+
 // This sensor is available in MPU-9150.
 
 // AK8975, mag sensor address
