@@ -760,7 +760,8 @@ else
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMIZE    = -Os
 else
-OPTIMIZE    = -Ofast
+#OPTIMIZE    = -Ofast
+OPTIMIZE    = -O2
 endif
 LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif

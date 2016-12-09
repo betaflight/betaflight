@@ -29,7 +29,7 @@
 
 #include "build/build_config.h"
 
-#define SMARTAUDIO_DPRINTF
+//#define SMARTAUDIO_DPRINTF
 //#define SMARTAUDIO_DEBUG_MONITOR
 
 #ifdef SMARTAUDIO_DPRINTF
