@@ -49,13 +49,13 @@ void targetConfiguration(master_t *config)
     if (hardwareRevision == AFF3_REV_1) {
         config->statusLedConfig.polarity = 0
 #ifdef LED0_A_INVERTED
-            | BIT(3)
+            | BIT(0)
 #endif
 #ifdef LED1_A_INVERTED
-            | BIT(4)
+            | BIT(1)
 #endif
 #ifdef LED2_A_INVERTED
-            | BIT(5)
+            | BIT(2)
 #endif
             ;
 
