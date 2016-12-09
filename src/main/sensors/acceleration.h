@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "common/axis.h"
 #include "drivers/accgyro.h"
-
 #include "sensors/sensors.h"
 
 // Type of accelerometer used/detected
@@ -39,12 +39,16 @@ typedef enum {
 
 typedef struct acc_s {
     accDev_t dev;
+    uint32_t accTargetLooptime;
+    int32_t accADC[XYZ_AXIS_COUNT];
 } acc_t;
 
-extern sensor_align_e accAlign;
 extern acc_t acc;
 
-extern int32_t accADC[XYZ_AXIS_COUNT];
+typedef struct accelerometerConfig_s {
+    sensor_align_e acc_align;               // acc alignment
+    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+} accelerometerConfig_t;
 
 void accInit(uint32_t accTargetLooptime);
 bool isAccelerationCalibrationComplete(void);

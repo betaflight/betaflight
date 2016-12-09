@@ -1114,11 +1114,11 @@ static void loadMainState(timeUs_t currentTimeUs)
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->gyroADC[i] = gyroADC[i];
+        blackboxCurrent->gyroADC[i] = gyro.gyroADC[i];
     }
 
     for (i = 0; i < XYZ_AXIS_COUNT; i++) {
-        blackboxCurrent->accADC[i] = accADC[i];
+        blackboxCurrent->accADC[i] = acc.accADC[i];
     }
 
     blackboxCurrent->attitude[0] = attitude.values.roll;
@@ -1336,7 +1336,7 @@ static bool blackboxWriteSysinfo()
             }
             );
 
-        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.dev.targetLooptime);
+        BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcYawExpo8);
         BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrMid8);
@@ -1382,9 +1382,9 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyroConfig.gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.sensorSelectionConfig.acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.sensorSelectionConfig.baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.sensorSelectionConfig.mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.accelerometerConfig.acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.barometerConfig.baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.compassConfig.mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
 
         default:

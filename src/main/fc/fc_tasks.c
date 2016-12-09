@@ -274,7 +274,7 @@ void fcTasksInit(void)
     }
 
 #else
-    rescheduleTask(TASK_GYROPID, gyro.dev.targetLooptime);
+    rescheduleTask(TASK_GYROPID, gyro.targetLooptime);
     setTaskEnabled(TASK_GYROPID, true);
 #endif
 

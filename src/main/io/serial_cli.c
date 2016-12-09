@@ -787,9 +787,9 @@ const clivalue_t valueTable[] = {
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR }, 0 },
 
-    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
-    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
-    { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.accelerometerConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.compassConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
 
     { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.rollDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.pitchDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
@@ -853,23 +853,23 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.accelerometerConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
 
 #ifdef BARO
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.barometerConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.barometerConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
 #endif
 
 #ifdef PITOT
-    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.pitot_hardware, .config.minmax = { 0,  PITOT_MAX }, 0 },
+    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.pitotmeterConfig.pitot_hardware, .config.minmax = { 0,  PITOT_MAX }, 0 },
     { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.pitotmeterConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
     { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_scale, .config.minmax = { 0, 100 }, 0 },
 #endif
 
 #ifdef MAG
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.sensorSelectionConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
-    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].mag_declination, .config.minmax = { -18000,  18000 }, 0 },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.compassConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
+    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.compassConfig.mag_declination, .config.minmax = { -18000,  18000 }, 0 },
     { "mag_hold_rate_limit",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.mag_hold_rate_limit, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, 0 },
 #endif
 
