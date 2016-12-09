@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool fakePitotDetect(pitot_t *pitot);
+bool fakePitotDetect(pitotDev_t *pitot);

@@ -39,7 +39,7 @@ static uint16_t ms4525_ut;  // static result of temperature measurement
 static uint16_t ms4525_up;  // static result of pressure measurement
 static uint8_t rxbuf[4];
 
-bool ms4525Detect(pitot_t *pitot)
+bool ms4525Detect(pitotDev_t *pitot)
 {
     bool ack = false;
 

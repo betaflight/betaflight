@@ -339,7 +339,7 @@ typedef struct blackboxMainState_s {
     int32_t BaroAlt;
 #endif
 #ifdef PITOT
-    int32_t AirSpeed;
+    int32_t airSpeed;
 #endif
 #ifdef MAG
     int16_t magADC[XYZ_AXIS_COUNT];
@@ -625,7 +625,7 @@ static void writeIntraframe(void)
 
 #ifdef PITOT
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
-            blackboxWriteSignedVB(blackboxCurrent->AirSpeed);
+            blackboxWriteSignedVB(blackboxCurrent->airSpeed);
         }
 #endif
 
@@ -795,7 +795,7 @@ static void writeInterframe(void)
 
 #ifdef PITOT
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_PITOT)) {
-        deltas[optionalFieldCount++] = blackboxCurrent->AirSpeed - blackboxLast->AirSpeed;
+        deltas[optionalFieldCount++] = blackboxCurrent->airSpeed - blackboxLast->airSpeed;
     }
 #endif
 
@@ -1143,7 +1143,7 @@ static void loadMainState(timeUs_t currentTimeUs)
 #endif
 
 #ifdef PITOT
-    blackboxCurrent->AirSpeed = AirSpeed;
+    blackboxCurrent->airSpeed = pitot.airSpeed;
 #endif
 
 #ifdef SONAR

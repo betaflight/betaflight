@@ -456,7 +456,7 @@ static bool detectBaro(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #endif // BARO
 
 #ifdef PITOT
-static bool detectPitot(uint8_t pitotHardwareToUse)
+static bool detectPitot(pitotDev_t *dev, uint8_t pitotHardwareToUse)
 {
     pitotSensor_e pitotHardware = pitotHardwareToUse;
 
@@ -466,7 +466,7 @@ static bool detectPitot(uint8_t pitotHardwareToUse)
 
         case PITOT_MS4525:
 #ifdef USE_PITOT_MS4525
-            if (ms4525Detect(&pitot)) {
+            if (ms4525Detect(dev)) {
                 pitotHardware = PITOT_MS4525;
                 break;
             }
@@ -686,10 +686,12 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 
 #ifdef BARO
     detectBaro(&baro.dev, baroConfig->baro_hardware);
+#else
+    UNUSED(baroConfig);
 #endif
 
 #ifdef PITOT
-    detectPitot(pitotConfig->pitot_hardware);
+    detectPitot(&pitot.dev, pitotConfig->pitot_hardware);
 #else
     UNUSED(pitotConfig);
 #endif

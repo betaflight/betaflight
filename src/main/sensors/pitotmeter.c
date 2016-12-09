@@ -21,6 +21,7 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
 #include "common/maths.h"
 
 #include "drivers/pitotmeter.h"
@@ -28,10 +29,7 @@
 
 #include "sensors/pitotmeter.h"
 
-extern int16_t debug[4];
-
-pitot_t pitot;                  // pitotmeter access functions
-int32_t AirSpeed = 0;
+pitot_t pitot;
 
 #ifdef PITOT
 
@@ -101,19 +99,19 @@ uint32_t pitotUpdate(void)
     switch (state) {
         default:
         case PITOTMETER_NEEDS_SAMPLES:
-            pitot.start();
+            pitot.dev.start();
             state = PITOTMETER_NEEDS_CALCULATION;
-            return pitot.delay;
+            return pitot.dev.delay;
         break;
 
         case PITOTMETER_NEEDS_CALCULATION:
-            pitot.get();
-            pitot.calculate(&pitotPressure, &pitotTemperature);
+            pitot.dev.get();
+            pitot.dev.calculate(&pitotPressure, &pitotTemperature);
             if (pitotmeterConfig->use_median_filtering) {
                 pitotPressure = applyPitotmeterMedianFilter(pitotPressure);
             }
             state = PITOTMETER_NEEDS_SAMPLES;
-           return pitot.delay;
+           return pitot.dev.delay;
         break;
     }
 }
@@ -134,7 +132,7 @@ int32_t pitotCalculateAirSpeed(void)
 {
     if (!isPitotCalibrationComplete()) {
         performPitotCalibrationCycle();
-        AirSpeed = 0;
+        pitot.airSpeed = 0;
     }
     else {
         float CalibratedAirspeed_tmp;
@@ -142,13 +140,13 @@ int32_t pitotCalculateAirSpeed(void)
         CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig->pitot_noise_lpf); // additional LPF to reduce baro noise
         float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
 
-        AirSpeed = TrueAirspeed*100;
+        pitot.airSpeed = TrueAirspeed*100;
         //debug[0] = (int16_t)(CalibratedAirspeed*100);
         //debug[1] = (int16_t)(TrueAirspeed*100);
         //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
         //debug[3] = AirSpeed;
     }
-    return AirSpeed;
+    return pitot.airSpeed;
 }
 
 #endif /* PITOT */

@@ -455,7 +455,7 @@ void handleSmartPortTelemetry(void)
 #ifdef PITOT
             case FSSP_DATAID_ASPD    :
                 if (sensors(SENSOR_PITOT)) {
-                    smartPortSendPackage(id, AirSpeed*0.194384449f); // cm/s to knots*10
+                    smartPortSendPackage(id, pitot.airSpeed*0.194384449f); // cm/s to knots*10
                     smartPortHasRequest = 0;
                 }
                 break;

@@ -500,7 +500,7 @@ static void imuUpdateMeasuredRotationRate(void)
     imuAccumulatedRateTime = 0.0f;
 #else
     for (axis = 0; axis < 3; axis++) {
-        imuMeasuredRotationBF.A[axis] = gyroADC[axis] * gyroScale;
+        imuMeasuredRotationBF.A[axis] = gyro.gyroADC[axis] * gyroScale;
     }
 #endif
 }
@@ -520,7 +520,7 @@ static void imuUpdateMeasuredAcceleration(void)
 #else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
+        imuAccelInBodyFrame.A[axis] = acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
 #endif

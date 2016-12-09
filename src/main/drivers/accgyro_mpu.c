@@ -228,6 +228,7 @@ mpuIntRec_t mpuIntRec;
 /*
  * Gyro interrupt service routine
  */
+#if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
     mpuIntRec_t *rec = container_of(cb, mpuIntRec_t, exti);
@@ -242,6 +243,7 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     lastCalledAt = now;
 #endif
 }
+#endif
 
 static void mpuIntExtiInit(gyroDev_t *gyro)
 {
