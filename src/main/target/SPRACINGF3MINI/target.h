@@ -147,10 +147,8 @@
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
 #define BUTTONS
-#define BUTTON_A_PORT           GPIOB
-#define BUTTON_A_PIN            Pin_1
-#define BUTTON_B_PORT           GPIOB
-#define BUTTON_B_PIN            Pin_0
+#define BUTTON_A_PIN            PB1
+#define BUTTON_B_PIN            PB0
 
 #define SPEKTRUM_BIND
 // USART3,

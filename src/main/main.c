@@ -35,7 +35,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -188,28 +187,22 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
-    gpio_config_t buttonAGpioConfig = {
-        BUTTON_A_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+    IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
+    IOInit(buttonAPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonAPin, IOCFG_IPU);
 
-    gpio_config_t buttonBGpioConfig = {
-        BUTTON_B_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+    IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
+    IOInit(buttonBPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonBPin, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow GPIO configuration to settle
+    delayMicroseconds(10);  // allow configuration to settle
 
     if (!isMPUSoftReset()) {
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
-            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+            bothButtonsHeld = !IORead(buttonAPin) && !IORead(buttonBPin);
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
