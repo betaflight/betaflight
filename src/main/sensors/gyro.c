@@ -216,10 +216,10 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
     static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT];
     static biquadFilter_t gyroFilterNotch_2[XYZ_AXIS_COUNT];
 
+    gyroConfig = gyroConfigToUse;
     gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
     gyro.dev.lpf = gyroConfig->gyro_lpf;
     gyro.dev.init(&gyro.dev);
-    gyroConfig = gyroConfigToUse;
 
     softLpfFilterApplyFn = nullFilterApply;
     notchFilter1ApplyFn = nullFilterApply;
