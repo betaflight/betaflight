@@ -27,7 +27,27 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "drivers/accgyro.h"
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_fake.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_l3gd20.h"
+#include "drivers/accgyro_lsm303dlhc.h"
+#include "drivers/bus_spi.h"
+#include "drivers/accgyro_spi_icm20689.h"
+#include "drivers/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/gyro_sync.h"
 #include "drivers/system.h"
+
+#include "fc/runtime_config.h"
 
 #include "io/beeper.h"
 #include "io/statusindicator.h"
@@ -51,6 +71,143 @@ static void *notchFilter1[3];
 static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
+bool gyroDetect(gyroDev_t *dev)
+{
+    gyroSensor_e gyroHardware = GYRO_DEFAULT;
+
+    dev->gyroAlign = ALIGN_DEFAULT;
+
+    switch(gyroHardware) {
+    case GYRO_DEFAULT:
+        ; // fallthrough
+    case GYRO_MPU6050:
+#ifdef USE_GYRO_MPU6050
+        if (mpu6050GyroDetect(dev)) {
+            gyroHardware = GYRO_MPU6050;
+#ifdef GYRO_MPU6050_ALIGN
+            dev->gyroAlign = GYRO_MPU6050_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
+    case GYRO_L3G4200D:
+#ifdef USE_GYRO_L3G4200D
+        if (l3g4200dDetect(dev)) {
+            gyroHardware = GYRO_L3G4200D;
+#ifdef GYRO_L3G4200D_ALIGN
+            dev->gyroAlign = GYRO_L3G4200D_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
+
+    case GYRO_MPU3050:
+#ifdef USE_GYRO_MPU3050
+        if (mpu3050Detect(dev)) {
+            gyroHardware = GYRO_MPU3050;
+#ifdef GYRO_MPU3050_ALIGN
+            dev->gyroAlign = GYRO_MPU3050_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
+
+    case GYRO_L3GD20:
+#ifdef USE_GYRO_L3GD20
+        if (l3gd20Detect(dev)) {
+            gyroHardware = GYRO_L3GD20;
+#ifdef GYRO_L3GD20_ALIGN
+            dev->gyroAlign = GYRO_L3GD20_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
+
+    case GYRO_MPU6000:
+#ifdef USE_GYRO_SPI_MPU6000
+        if (mpu6000SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_MPU6000;
+#ifdef GYRO_MPU6000_ALIGN
+            dev->gyroAlign = GYRO_MPU6000_ALIGN;
+#endif
+            break;
+        }
+#endif
+        ; // fallthrough
+
+    case GYRO_MPU6500:
+#if defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
+#ifdef USE_GYRO_SPI_MPU6500
+        if (mpu6500GyroDetect(dev) || mpu6500SpiGyroDetect(dev))
+#else
+        if (mpu6500GyroDetect(dev))
+#endif
+        {
+            gyroHardware = GYRO_MPU6500;
+#ifdef GYRO_MPU6500_ALIGN
+            dev->gyroAlign = GYRO_MPU6500_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
+
+case GYRO_MPU9250:
+#ifdef USE_GYRO_SPI_MPU9250
+
+    if (mpu9250SpiGyroDetect(dev))
+    {
+        gyroHardware = GYRO_MPU9250;
+#ifdef GYRO_MPU9250_ALIGN
+        dev->gyroAlign = GYRO_MPU9250_ALIGN;
+#endif
+
+        break;
+    }
+#endif
+    ; // fallthrough
+
+    case GYRO_ICM20689:
+#ifdef USE_GYRO_SPI_ICM20689
+        if (icm20689SpiGyroDetect(dev))
+        {
+            gyroHardware = GYRO_ICM20689;
+#ifdef GYRO_ICM20689_ALIGN
+            dev->gyroAlign = GYRO_ICM20689_ALIGN;
+#endif
+
+            break;
+        }
+#endif
+        ; // fallthrough
+
+    case GYRO_FAKE:
+#ifdef USE_FAKE_GYRO
+        if (fakeGyroDetect(dev)) {
+            gyroHardware = GYRO_FAKE;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case GYRO_NONE:
+        gyroHardware = GYRO_NONE;
+    }
+
+    if (gyroHardware == GYRO_NONE) {
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_GYRO] = gyroHardware;
+    sensorsSet(SENSOR_GYRO);
+
+    return true;
+}
+
 void gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
     static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
@@ -60,6 +217,9 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
     static biquadFilter_t gyroFilterNotch_2[XYZ_AXIS_COUNT];
 
     gyroConfig = gyroConfigToUse;
+    gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
+    gyro.dev.lpf = gyroConfig->gyro_lpf;
+    gyro.dev.init(&gyro.dev);
 
     softLpfFilterApplyFn = nullFilterApply;
     notchFilter1ApplyFn = nullFilterApply;
