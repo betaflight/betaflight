@@ -595,6 +595,98 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             telemetry/esc_telemetry.c \
 
+SPEED_OPTIMISED_SRC = \
+            common/encoding.c \
+            common/filter.c \
+            common/maths.c \
+            common/typeconversion.c \
+            drivers/adc.c \
+            drivers/buf_writer.c \
+            drivers/bus_i2c_soft.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_soft.c \
+            drivers/exti.c \
+            drivers/gyro_sync.c \
+            drivers/io.c \
+            drivers/light_led.c \
+            drivers/resource.c \
+            drivers/rx_nrf24l01.c \
+            drivers/rx_spi.c \
+            drivers/rx_xn297.c \
+            drivers/pwm_output.c \
+            drivers/pwm_rx.c \
+            drivers/rcc.c \
+            drivers/serial.c \
+            drivers/serial_uart.c \
+            drivers/sound_beeper.c \
+            drivers/stack_check.c \
+            drivers/system.c \
+            drivers/timer.c \
+            fc/fc_tasks.c \
+            fc/mw.c \
+            fc/rc_controls.c \
+            fc/rc_curves.c \
+            fc/runtime_config.c \
+            flight/altitudehold.c \
+            flight/failsafe.c \
+            flight/imu.c \
+            flight/mixer.c \
+            flight/pid.c \
+            flight/servos.c \
+            io/beeper.c \
+            io/serial.c \
+            io/statusindicator.c \
+            rx/ibus.c \
+            rx/jetiexbus.c \
+            rx/msp.c \
+            rx/nrf24_cx10.c \
+            rx/nrf24_inav.c \
+            rx/nrf24_h8_3d.c \
+            rx/nrf24_syma.c \
+            rx/nrf24_v202.c \
+            rx/pwm.c \
+            rx/rx.c \
+            rx/rx_spi.c \
+            rx/crsf.c \
+            rx/sbus.c \
+            rx/spektrum.c \
+            rx/sumd.c \
+            rx/sumh.c \
+            rx/xbus.c \
+            scheduler/scheduler.c \
+            sensors/acceleration.c \
+            sensors/boardalignment.c \
+            sensors/gyro.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC) \
+            blackbox/blackbox.c \
+            blackbox/blackbox_io.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/light_ws2811strip.c \
+            drivers/serial_softserial.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
+            io/ledstrip.c \
+            io/osd.c \
+            telemetry/telemetry.c \
+            telemetry/crsf.c \
+            telemetry/frsky.c \
+            telemetry/hott.c \
+            telemetry/smartport.c \
+            telemetry/ltm.c \
+            telemetry/mavlink.c \
+            telemetry/esc_telemetry.c \
+
+SIZE_OPTIMISED_SRC = \
+            drivers/serial_escserial.c \
+            io/serial_cli.c \
+            io/serial_4way.c \
+            io/serial_4way_avrootloader.c \
+            io/serial_4way_stk500v2.c \
+            msp/msp_serial.c \
+
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
             vcpf4/stm32f4xx_it.c \
@@ -754,21 +846,35 @@ SIZE        := $(ARM_SDK_PREFIX)size
 #
 
 ifeq ($(DEBUG),GDB)
-OPTIMIZE    = -O0
-LTO_FLAGS   = $(OPTIMIZE)
+OPTIMISE              = -O0
+CC_SPEED_OPTIMISATION = $(OPTIMISE)
+CC_OPTIMISATION       = $(OPTIMISE)
+CC_SIZE_OPTIMISATION  = $(OPTIMISE)
+LTO_FLAGS             = $(OPTIMISE)
 else
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-OPTIMIZE    = -Os
+OPTIMISE_SPEED        = -Os
+OPTIMISE              = -Os
+OPTIMISE_SIZE         = -Os
+else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+OPTIMISE_SPEED        = -Ofast
+OPTIMISE              = -O2
+OPTIMISE_SIZE         = -Os
 else
-OPTIMIZE    = -Ofast
+OPTIMISE_SPEED        = -Ofast
+OPTIMISE              = -Ofast
+OPTIMISE_SIZE         = -Ofast
 endif
-LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
+OPTIMISATION_BASE     = -flto -fuse-linker-plugin -ffast-math
+CC_SPEED_OPTIMISATION = $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+CC_OPTIMISATION       = $(OPTIMISATION_BASE) $(OPTIMISE)
+CC_SIZE_OPTIMISATION  = $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
+LTO_FLAGS             = $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 endif
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
 CFLAGS      += $(ARCH_FLAGS) \
-              $(LTO_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
@@ -851,8 +957,14 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
+	$(V1) $(if $(findstring $(subst ./src/main/,,$<), $(SPEED_OPTIMISED_SRC)), \
+	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
+	$(if $(findstring $(subst ./src/main/,,$<), $(SIZE_OPTIMISED_SRC)), \
+	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
+	echo "%% $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_OPTIMISATION) $<))
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
