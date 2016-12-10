@@ -686,6 +686,15 @@ SIZE_OPTIMISED_SRC = \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
             msp/msp_serial.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
+            cms/cms_menu_vtx.c \
+            io/vtx_smartaudio.c 
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
