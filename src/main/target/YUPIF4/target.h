@@ -17,7 +17,6 @@
 
 #pragma once
 #define TARGET_BOARD_IDENTIFIER "YPF4"
-#define TARGET_CONFIG
 
 #define USBD_PRODUCT_STRING     "YupiF4"
 
