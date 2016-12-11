@@ -45,6 +45,34 @@
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
+    /* depending on revision ... depends on the LEDs to be utilised. */
+    if (hardwareRevision == AFF3_REV_2) {
+        config->statusLedConfig.polarity = 0
+#ifdef LED0_A_INVERTED
+            | BIT(0)
+#endif
+#ifdef LED1_A_INVERTED
+            | BIT(1)
+#endif
+#ifdef LED2_A_INVERTED
+            | BIT(2)
+#endif
+            ;
+
+        for (int i = 0; i < LED_NUMBER; i++) {
+            config->statusLedConfig.ledTags[i] = IO_TAG_NONE;
+        }
+#ifdef LED0_A
+        config->statusLedConfig.ledTags[0] = IO_TAG(LED0_A);
+#endif
+#ifdef LED1_A
+        config->statusLedConfig.ledTags[1] = IO_TAG(LED1_A);
+#endif
+#ifdef LED2_A
+        config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
+#endif
+    }
+
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
     config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
