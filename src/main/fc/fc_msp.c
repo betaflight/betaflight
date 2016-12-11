@@ -1107,10 +1107,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_CONFIG:
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.acc_hardware);
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.baro_hardware);
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.mag_hardware);
-        sbufWriteU8(dst, masterConfig.sensorSelectionConfig.pitot_hardware);
+        sbufWriteU8(dst, masterConfig.accelerometerConfig.acc_hardware);
+        sbufWriteU8(dst, masterConfig.barometerConfig.baro_hardware);
+        sbufWriteU8(dst, masterConfig.compassConfig.mag_hardware);
+        sbufWriteU8(dst, masterConfig.pitotmeterConfig.pitot_hardware);
         sbufWriteU8(dst, 0);    // rangefinder hardware
         sbufWriteU8(dst, 0);    // optical flow hardware
         break;
@@ -1500,10 +1500,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_CONFIG:
-        masterConfig.sensorSelectionConfig.acc_hardware = sbufReadU8(src);
-        masterConfig.sensorSelectionConfig.baro_hardware = sbufReadU8(src);
-        masterConfig.sensorSelectionConfig.mag_hardware = sbufReadU8(src);
-        masterConfig.sensorSelectionConfig.pitot_hardware = sbufReadU8(src);
+        masterConfig.accelerometerConfig.acc_hardware = sbufReadU8(src);
+        masterConfig.barometerConfig.baro_hardware = sbufReadU8(src);
+        masterConfig.compassConfig.mag_hardware = sbufReadU8(src);
+        masterConfig.pitotmeterConfig.pitot_hardware = sbufReadU8(src);
         sbufReadU8(src);        // rangefinder hardware
         sbufReadU8(src);        // optical flow hardware
         break;
