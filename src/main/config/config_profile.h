@@ -28,9 +28,6 @@ typedef struct profile_s {
 
     uint8_t defaultRateProfileIndex;
 
-    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
-                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
-
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     modeActivationOperator_e modeActivationOperator;
 

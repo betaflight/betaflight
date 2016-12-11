@@ -45,7 +45,7 @@ static void fakePitotCalculate(float *pressure, float *temperature)
         *temperature = fakeTemperature; // K
 }
 
-bool fakePitotDetect(pitot_t *pitot)
+bool fakePitotDetect(pitotDev_t *pitot)
 {
     fakePressure = 0;           // 0Pa
     fakeTemperature = 273;      // 0C

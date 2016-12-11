@@ -105,7 +105,7 @@ void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs)
     const float gyroUpdateDelta = gyroUpdateDeltaUs * 1e-6f;
 
     for (int axis = 0; axis < 3; axis++) {
-        imuAccumulatedRate[axis] += gyroADC[axis] * gyroScale * gyroUpdateDelta;
+        imuAccumulatedRate[axis] += gyro.gyroADC[axis] * gyroScale * gyroUpdateDelta;
     }
 
     imuAccumulatedRateTime += gyroUpdateDelta;
@@ -412,7 +412,7 @@ static int imuCalculateAccelerometerConfidence(void)
     int32_t accMagnitude = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)accADC[axis] * accADC[axis];
+        accMagnitude += (int32_t)acc.accADC[axis] * acc.accADC[axis];
     }
 
     // Magnitude^2 in percent of G^2
@@ -500,7 +500,7 @@ static void imuUpdateMeasuredRotationRate(void)
     imuAccumulatedRateTime = 0.0f;
 #else
     for (axis = 0; axis < 3; axis++) {
-        imuMeasuredRotationBF.A[axis] = gyroADC[axis] * gyroScale;
+        imuMeasuredRotationBF.A[axis] = gyro.gyroADC[axis] * gyroScale;
     }
 #endif
 }
@@ -520,7 +520,7 @@ static void imuUpdateMeasuredAcceleration(void)
 #else
     /* Convert acceleration to cm/s/s */
     for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
+        imuAccelInBodyFrame.A[axis] = acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
         imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
     }
 #endif
@@ -572,7 +572,7 @@ void imuUpdateAccelerometer(void)
 
 #ifdef ASYNC_GYRO_PROCESSING
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        imuAccumulatedAcc[axis] += accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
+        imuAccumulatedAcc[axis] += acc.accADC[axis] * (GRAVITY_CMSS / acc.dev.acc_1G);
     }
     imuAccumulatedAccCount++;
 #endif
@@ -602,9 +602,9 @@ void imuUpdateAttitude(timeUs_t currentTimeUs)
             imuCalculateEstimatedAttitude(dT);  // Update attitude estimate
 #endif
     } else {
-        accADC[X] = 0;
-        accADC[Y] = 0;
-        accADC[Z] = 0;
+        acc.accADC[X] = 0;
+        acc.accADC[Y] = 0;
+        acc.accADC[Z] = 0;
     }
 }
 

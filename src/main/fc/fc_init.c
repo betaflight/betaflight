@@ -99,6 +99,7 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/initialisation.h"
 #include "sensors/sonar.h"
 
@@ -479,10 +480,13 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            &masterConfig.sensorSelectionConfig,
-            currentProfile->mag_declination,
-            &masterConfig.gyroConfig)) {
+    if (!sensorsAutodetect(
+            &masterConfig.gyroConfig,
+            &masterConfig.accelerometerConfig,
+            &masterConfig.compassConfig,
+            &masterConfig.barometerConfig,
+            &masterConfig.pitotmeterConfig
+            )) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);

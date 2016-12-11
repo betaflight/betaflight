@@ -17,4 +17,4 @@
 
 #pragma once
 
-bool ms4525Detect(pitot_t *pitot);
+bool ms4525Detect(pitotDev_t *pitot);

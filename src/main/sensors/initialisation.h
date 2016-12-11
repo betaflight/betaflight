@@ -17,10 +17,8 @@
 
 #pragma once
 
-struct sensorAlignmentConfig_s;
-struct sensorSelectionConfig_s;
-struct gyroConfig_s;
-bool sensorsAutodetect(const struct sensorAlignmentConfig_s *sensorAlignmentConfig,
-        const struct sensorSelectionConfig_s *sensorSelectionConfig,
-        int16_t magDeclinationFromConfig,
-        const struct gyroConfig_s *gyroConfig);
+bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
+                const accelerometerConfig_t *accConfig,
+                const compassConfig_t *compassConfig,
+                const barometerConfig_t *baroConfig,
+                const pitotmeterConfig_t *pitotConfig);

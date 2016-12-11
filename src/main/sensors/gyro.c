@@ -37,9 +37,6 @@
 #include "config/config.h"
 
 gyro_t gyro;                      // gyro access functions
-sensor_align_e gyroAlign = 0;
-
-int32_t gyroADC[XYZ_AXIS_COUNT];
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
@@ -55,7 +52,7 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
     // no additional condition is required
     // Set gyro sample rate before driver initialisation
     gyro.dev.lpf = gyroConfig->gyro_lpf;
-    gyro.dev.targetLooptime = gyroSetSampleRate(gyroConfig->looptime, gyroConfig->gyro_lpf, gyroConfig->gyroSync, gyroConfig->gyroSyncDenominator);
+    gyro.targetLooptime = gyroSetSampleRate(gyroConfig->looptime, gyroConfig->gyro_lpf, gyroConfig->gyroSync, gyroConfig->gyroSyncDenominator);
     // driver initialisation
     gyro.dev.init(&gyro.dev);
     if (gyroConfig->gyro_soft_lpf_hz) {
@@ -63,7 +60,7 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
         #ifdef ASYNC_GYRO_PROCESSING
             biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, getGyroUpdateRate());
         #else
-            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, gyro.dev.targetLooptime);
+            biquadFilterInitLPF(&gyroFilterLPF[axis], gyroConfig->gyro_soft_lpf_hz, gyro.targetLooptime);
         #endif
         }
     }
@@ -103,11 +100,11 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
         }
 
         // Sum up CALIBRATING_GYRO_CYCLES readings
-        g[axis] += gyroADC[axis];
-        devPush(&var[axis], gyroADC[axis]);
+        g[axis] += gyro.gyroADC[axis];
+        devPush(&var[axis], gyro.gyroADC[axis]);
 
         // Reset global variables to prevent other code from using un-calibrated data
-        gyroADC[axis] = 0;
+        gyro.gyroADC[axis] = 0;
         gyroZero[axis] = 0;
 
         if (isOnFinalGyroCalibrationCycle()) {
@@ -136,13 +133,13 @@ void gyroUpdate(void)
     }
 
     // Prepare a copy of int32_t gyroADC for mangling to prevent overflow
-    gyroADC[X] = gyro.dev.gyroADCRaw[X];
-    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
-    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
+    gyro.gyroADC[X] = gyro.dev.gyroADCRaw[X];
+    gyro.gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
+    gyro.gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
 
     if (gyroConfig->gyro_soft_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterLPF[axis], (float) gyroADC[axis]));
+            gyro.gyroADC[axis] = lrintf(biquadFilterApply(&gyroFilterLPF[axis], (float)gyro.gyroADC[axis]));
         }
     }
 
@@ -150,9 +147,9 @@ void gyroUpdate(void)
         performAcclerationCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
-    gyroADC[X] -= gyroZero[X];
-    gyroADC[Y] -= gyroZero[Y];
-    gyroADC[Z] -= gyroZero[Z];
+    gyro.gyroADC[X] -= gyroZero[X];
+    gyro.gyroADC[Y] -= gyroZero[Y];
+    gyro.gyroADC[Z] -= gyroZero[Z];
 
-    alignSensors(gyroADC, gyroAlign);
+    alignSensors(gyro.gyroADC, gyro.dev.gyroAlign);
 }

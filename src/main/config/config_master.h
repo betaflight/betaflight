@@ -56,6 +56,7 @@
 #include "sensors/boardalignment.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
 
@@ -93,8 +94,6 @@ typedef struct master_s {
 #endif
 
     // global sensor-related stuff
-    sensorSelectionConfig_t sensorSelectionConfig;
-    sensorAlignmentConfig_t sensorAlignmentConfig;
     sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 
@@ -102,7 +101,11 @@ typedef struct master_s {
 
     gyroConfig_t gyroConfig;
 
+    accelerometerConfig_t accelerometerConfig;
+
     barometerConfig_t barometerConfig;
+
+    compassConfig_t compassConfig;
 
     pitotmeterConfig_t pitotmeterConfig;
 

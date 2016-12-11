@@ -38,9 +38,6 @@
 #include "sensors/acceleration.h"
 
 acc_t acc;                       // acc access functions
-int32_t accADC[XYZ_AXIS_COUNT];
-sensor_align_e accAlign = 0;
-uint32_t accTargetLooptime;
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 static int16_t accADCRaw[XYZ_AXIS_COUNT];
@@ -55,10 +52,10 @@ void accInit(uint32_t targetLooptime)
 {
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev);
-    accTargetLooptime = targetLooptime;
+    acc.accTargetLooptime = targetLooptime;
     if (accLpfCutHz) {
         for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
         }
     }
 }
@@ -108,7 +105,7 @@ int getPrimaryAxisIndex(int32_t sample[3])
 
 void performAcclerationCalibration(void)
 {
-    int axisIndex = getPrimaryAxisIndex(accADC);
+    int axisIndex = getPrimaryAxisIndex(acc.accADC);
 
     // Check if sample is usable
     if (axisIndex < 0) {
@@ -129,10 +126,10 @@ void performAcclerationCalibration(void)
     }
 
     if (!calibratedAxis[axisIndex]) {
-        sensorCalibrationPushSampleForOffsetCalculation(&calState, accADC);
-        accSamples[axisIndex][X] += accADC[X];
-        accSamples[axisIndex][Y] += accADC[Y];
-        accSamples[axisIndex][Z] += accADC[Z];
+        sensorCalibrationPushSampleForOffsetCalculation(&calState, acc.accADC);
+        accSamples[axisIndex][X] += acc.accADC[X];
+        accSamples[axisIndex][Y] += acc.accADC[Y];
+        accSamples[axisIndex][Z] += acc.accADC[Z];
 
         if (isOnFinalAccelerationCalibrationCycle()) {
             calibratedAxis[axisIndex] = true;
@@ -178,9 +175,9 @@ void performAcclerationCalibration(void)
 
 static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const flightDynamicsTrims_t * accGain)
 {
-    accADC[X] = (accADC[X] - accZero->raw[X]) * accGain->raw[X] / 4096;
-    accADC[Y] = (accADC[Y] - accZero->raw[Y]) * accGain->raw[Y] / 4096;
-    accADC[Z] = (accADC[Z] - accZero->raw[Z]) * accGain->raw[Z] / 4096;
+    acc.accADC[X] = (acc.accADC[X] - accZero->raw[X]) * accGain->raw[X] / 4096;
+    acc.accADC[Y] = (acc.accADC[Y] - accZero->raw[Y]) * accGain->raw[Y] / 4096;
+    acc.accADC[Z] = (acc.accADC[Z] - accZero->raw[Z]) * accGain->raw[Z] / 4096;
 }
 
 void updateAccelerationReadings(void)
@@ -190,12 +187,12 @@ void updateAccelerationReadings(void)
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        accADC[axis] = accADCRaw[axis];
+        acc.accADC[axis] = accADCRaw[axis];
     }
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float) accADC[axis]));
+            acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
         }
     }
 
@@ -205,7 +202,7 @@ void updateAccelerationReadings(void)
 
     applyAccelerationZero(accZero, accGain);
 
-    alignSensors(accADC, accAlign);
+    alignSensors(acc.accADC, acc.dev.accAlign);
 }
 
 void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse)
@@ -221,9 +218,9 @@ void setAccelerationGain(flightDynamicsTrims_t * accGainToUse)
 void setAccelerationFilter(uint8_t initialAccLpfCutHz)
 {
     accLpfCutHz = initialAccLpfCutHz;
-    if (accTargetLooptime) {
+    if (acc.accTargetLooptime) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accTargetLooptime);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
         }
     }
 }

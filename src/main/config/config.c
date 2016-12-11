@@ -251,13 +251,6 @@ void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
     pitotmeterConfig->pitot_scale = 1.00f;
 }
 
-void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
-{
-    sensorAlignmentConfig->gyro_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->acc_align = ALIGN_DEFAULT;
-    sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
-}
-
 void resetMotorConfig(motorConfig_t *motorConfig)
 {
 #ifdef BRUSHED_MOTORS
@@ -407,7 +400,7 @@ uint32_t getPidUpdateRate(void) {
 }
 
 uint32_t getGyroUpdateRate(void) {
-    return gyro.dev.targetLooptime;
+    return gyro.targetLooptime;
 }
 
 uint16_t getAccUpdateRate(void) {
@@ -500,16 +493,18 @@ static void resetConf(void)
 
     resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
 
-    resetSensorAlignment(&masterConfig.sensorAlignmentConfig);
+    masterConfig.gyroConfig.gyro_align = ALIGN_DEFAULT;
+    masterConfig.accelerometerConfig.acc_align = ALIGN_DEFAULT;
+    masterConfig.compassConfig.mag_align = ALIGN_DEFAULT;
 
     masterConfig.boardAlignment.rollDeciDegrees = 0;
     masterConfig.boardAlignment.pitchDeciDegrees = 0;
     masterConfig.boardAlignment.yawDeciDegrees = 0;
-    masterConfig.sensorSelectionConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
+    masterConfig.accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     masterConfig.gyroConfig.gyroMovementCalibrationThreshold = 32;
 
-    masterConfig.sensorSelectionConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
-    masterConfig.sensorSelectionConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
+    masterConfig.compassConfig.mag_hardware = MAG_DEFAULT;     // default/autodetect
+    masterConfig.barometerConfig.baro_hardware = BARO_DEFAULT;   // default/autodetect
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
@@ -590,7 +585,7 @@ static void resetConf(void)
     // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
 
-    currentProfile->mag_declination = 0;
+    masterConfig.compassConfig.mag_declination = 0;
 
     currentProfile->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 

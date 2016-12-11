@@ -38,14 +38,20 @@ typedef enum {
 
 typedef struct mag_s {
     magDev_t dev;
-    sensor_align_e magAlign;
     float magneticDeclination;
     int32_t magADC[XYZ_AXIS_COUNT];
 } mag_t;
 
 extern mag_t mag;
 
-bool compassInit(int16_t magDeclinationFromConfig);
+typedef struct compassConfig_s {
+    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
+                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    sensor_align_e mag_align;               // mag alignment
+    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+} compassConfig_t;
+
+bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);

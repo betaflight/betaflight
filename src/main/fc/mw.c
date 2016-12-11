@@ -485,7 +485,7 @@ void filterRc(bool isRXDataNew)
     #ifdef ASYNC_GYRO_PROCESSING
         biquadFilterInitLPF(&filteredCycleTimeState, 1, getPidUpdateRate());
     #else
-        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.dev.targetLooptime);
+        biquadFilterInitLPF(&filteredCycleTimeState, 1, gyro.targetLooptime);
     #endif
         filterInitialised = true;
     }
@@ -525,7 +525,7 @@ void taskGyro(timeUs_t currentTimeUs) {
         #ifdef ASYNC_GYRO_PROCESSING
             if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.dev.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }

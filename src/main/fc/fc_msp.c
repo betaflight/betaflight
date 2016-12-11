@@ -539,10 +539,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             // Hack scale due to choice of units for sensor data in multiwii
             const uint8_t scale = (acc.dev.acc_1G > 1024) ? 8 : 1;
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, accADC[i] / scale);
+                sbufWriteU16(dst, acc.accADC[i] / scale);
             }
             for (int i = 0; i < 3; i++) {
-                sbufWriteU16(dst, gyroADC[i]);
+                sbufWriteU16(dst, gyro.gyroADC[i]);
             }
             for (int i = 0; i < 3; i++) {
                 sbufWriteU16(dst, mag.magADC[i]);
@@ -725,7 +725,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, masterConfig.rxConfig.rssi_channel);
         sbufWriteU8(dst, 0);
 
-        sbufWriteU16(dst, currentProfile->mag_declination / 10);
+        sbufWriteU16(dst, masterConfig.compassConfig.mag_declination / 10);
 
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatscale);
         sbufWriteU8(dst, masterConfig.batteryConfig.vbatmincellvoltage);
@@ -996,9 +996,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_SENSOR_ALIGNMENT:
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.gyro_align);
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.acc_align);
-        sbufWriteU8(dst, masterConfig.sensorAlignmentConfig.mag_align);
+        sbufWriteU8(dst, masterConfig.gyroConfig.gyro_align);
+        sbufWriteU8(dst, masterConfig.accelerometerConfig.acc_align);
+        sbufWriteU8(dst, masterConfig.compassConfig.mag_align);
         break;
 
     case MSP_ADVANCED_CONFIG:
@@ -1302,7 +1302,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         masterConfig.rxConfig.rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
-        currentProfile->mag_declination = sbufReadU16(src) * 10;
+        masterConfig.compassConfig.mag_declination = sbufReadU16(src) * 10;
 
         masterConfig.batteryConfig.vbatscale = sbufReadU8(src);           // actual vbatscale as intended
         masterConfig.batteryConfig.vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1377,9 +1377,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
-        masterConfig.sensorAlignmentConfig.gyro_align = sbufReadU8(src);
-        masterConfig.sensorAlignmentConfig.acc_align = sbufReadU8(src);
-        masterConfig.sensorAlignmentConfig.mag_align = sbufReadU8(src);
+        masterConfig.gyroConfig.gyro_align = sbufReadU8(src);
+        masterConfig.accelerometerConfig.acc_align = sbufReadU8(src);
+        masterConfig.compassConfig.mag_align = sbufReadU8(src);
         break;
 
     case MSP_SET_ADVANCED_CONFIG:

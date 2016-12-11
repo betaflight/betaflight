@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "drivers/pitotmeter.h"
+
 typedef enum {
     PITOT_DEFAULT = 0,
     PITOT_NONE = 1,
@@ -28,12 +30,18 @@ typedef enum {
 #define PITOT_SAMPLE_COUNT_MAX   48
 
 typedef struct pitotmeterConfig_s {
-    uint8_t use_median_filtering;            // Use 3-point median filtering
-    float pitot_noise_lpf;                   // additional LPF to reduce pitot noise
-    float pitot_scale;                       // scale value
+    uint8_t use_median_filtering;           // Use 3-point median filtering
+    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
+    float pitot_noise_lpf;                  // additional LPF to reduce pitot noise
+    float pitot_scale;                      // scale value
 } pitotmeterConfig_t;
 
-extern int32_t AirSpeed;
+typedef struct pito_s {
+    pitotDev_t dev;
+    int32_t airSpeed;
+} pitot_t;
+
+extern pitot_t pitot;
 
 #ifdef PITOT
 void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse);

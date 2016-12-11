@@ -30,13 +30,14 @@ typedef enum {
 } baroSensor_e;
 
 typedef struct barometerConfig_s {
+    uint8_t baro_hardware;              // Barometer hardware to use
     uint8_t use_median_filtering;       // Use 3-point median filtering
 } barometerConfig_t;
 
 typedef struct baro_s {
     baroDev_t dev;
     int32_t BaroAlt;
-    int32_t baroTemperature;             // Use temperature for telemetry
+    int32_t baroTemperature;            // Use temperature for telemetry
 } baro_t;
 
 extern baro_t baro;

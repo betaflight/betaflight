@@ -48,15 +48,15 @@ static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 static uint8_t magUpdatedAtLeastOnce = 0;
 
-bool compassInit(int16_t magDeclinationFromConfig)
+bool compassInit(const compassConfig_t *compassConfig)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     LED1_ON;
     const bool ret = mag.dev.init();
     LED1_OFF;
     if (ret) {
-        const int deg = magDeclinationFromConfig / 100;
-        const int min = magDeclinationFromConfig % 100;
+        const int deg = compassConfig->mag_declination / 100;
+        const int min = compassConfig->mag_declination   % 100;
         mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
         magInit = 1;
     }
@@ -138,7 +138,7 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
         }
     }
 
-    alignSensors(mag.magADC, mag.magAlign);
+    alignSensors(mag.magADC, mag.dev.magAlign);
 
     magUpdatedAtLeastOnce = 1;
 }

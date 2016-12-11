@@ -380,15 +380,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * accADC[X] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[X] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * accADC[Y] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Y] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * accADC[Z] / acc.dev.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accADC[Z] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :
@@ -455,7 +455,7 @@ void handleSmartPortTelemetry(void)
 #ifdef PITOT
             case FSSP_DATAID_ASPD    :
                 if (sensors(SENSOR_PITOT)) {
-                    smartPortSendPackage(id, AirSpeed*0.194384449f); // cm/s to knots*10
+                    smartPortSendPackage(id, pitot.airSpeed*0.194384449f); // cm/s to knots*10
                     smartPortHasRequest = 0;
                 }
                 break;
