@@ -78,6 +78,16 @@
     #define USE_GYRO_SPI_MPU6000
     #define ACC_MPU6000_ALIGN       CW180_DEG
 
+#elif defined(REVOLT)
+
+    #define USE_ACC_MPU6500
+    #define USE_ACC_SPI_MPU6500
+    #define ACC_MPU6500_ALIGN       CW0_DEG
+
+    #define USE_GYRO_MPU6500
+    #define USE_GYRO_SPI_MPU6500
+    #define GYRO_MPU6500_ALIGN      CW0_DEG
+
 #else
     #define ACC
     #define USE_ACC_SPI_MPU6000
