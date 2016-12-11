@@ -664,7 +664,7 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 {
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250)
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-    detectMpu(extiConfig);
+    mpuDetect(extiConfig);
 #endif
 
     memset(&gyro, 0, sizeof(gyro));

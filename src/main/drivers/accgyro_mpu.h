@@ -183,10 +183,9 @@ typedef struct mpuDetectionResult_s {
 
 extern mpuDetectionResult_t mpuDetectionResult;
 
-void configureMPUDataReadyInterruptHandling(void);
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuAccRead(int16_t *accData);
 bool mpuGyroRead(struct gyroDev_s *gyro);
-mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-bool checkMPUDataReady(struct gyroDev_s *gyro);
+mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse);
+bool mpuCheckDataReady(struct gyroDev_s *gyro);
