@@ -133,7 +133,8 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-#define USE_ESC_TELEMETRY
+#define USE_DSHOT
+#define USE_ESC_SENSOR
 
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT
@@ -176,10 +177,8 @@
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX)
 
 #define BUTTONS
-#define BUTTON_A_PORT           GPIOB
-#define BUTTON_A_PIN            Pin_1
-#define BUTTON_B_PORT           GPIOB
-#define BUTTON_B_PIN            Pin_0
+#define BUTTON_A_PIN            PB1
+#define BUTTON_B_PIN            PB0
 
 //#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 

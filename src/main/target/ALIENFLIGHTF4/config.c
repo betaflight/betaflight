@@ -61,11 +61,8 @@ void targetConfiguration(master_t *config)
     config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.minthrottle = 1000;
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
         config->pid_process_denom = 1;
-        config->motorConfig.useUnsyncedPwm = true;
     }
 
     if (hardwareRevision == AFF4_REV_1) {

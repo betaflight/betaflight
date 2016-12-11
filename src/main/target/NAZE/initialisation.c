@@ -17,43 +17,28 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "platform.h"
-
-#include "build/build_config.h"
-
-#include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "io/serial.h"
 #include "hardware_revision.h"
 
-uint8_t hardwareRevision = AFF1_REV_1;
-uint8_t hardwareMotorType = MOTOR_UNKNOWN;
-
-static IO_t MotorDetectPin = IO_NONE;
-
-void detectHardwareRevision(void)
+void targetBusInit(void)
 {
-    MotorDetectPin = IOGetByTag(IO_TAG(MOTOR_PIN));
-    IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
-    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
+    #ifdef USE_SPI
+    #ifdef USE_SPI_DEVICE_2
+        spiInit(SPIDEV_2);
+    #endif
+    #endif
 
-    delayMicroseconds(10);  // allow configuration to settle
-
-    // Check presence of brushed ESC's
-    if (IORead(MotorDetectPin)) {
-        hardwareMotorType = MOTOR_BRUSHLESS;
+    if (hardwareRevision != NAZE32_SP) {
+        i2cInit(I2C_DEVICE);
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     } else {
-        hardwareMotorType = MOTOR_BRUSHED;
+        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+            serialRemovePort(SERIAL_PORT_USART3);
+            i2cInit(I2C_DEVICE);
+        }		
     }
-}
-
-void updateHardwareRevision(void)
-{
-}
-
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
-{
-    return NULL;
 }

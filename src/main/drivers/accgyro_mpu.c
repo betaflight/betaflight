@@ -75,7 +75,7 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_INQUIRY_MASK   0x7E
 
-mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
+mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
     memset(&mpuConfiguration, 0, sizeof(mpuConfiguration));
@@ -334,7 +334,7 @@ void mpuGyroInit(gyroDev_t *gyro)
     mpuIntExtiInit(gyro);
 }
 
-bool checkMPUDataReady(gyroDev_t* gyro)
+bool mpuCheckDataReady(gyroDev_t* gyro)
 {
     bool ret;
     if (gyro->dataReady) {

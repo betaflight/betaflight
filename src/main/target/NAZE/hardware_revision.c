@@ -127,3 +127,4 @@ const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
     }
 #endif
 }
+

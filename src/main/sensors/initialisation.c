@@ -91,7 +91,7 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
 
-    mpuDetectionResult_t *mpuDetectionResult = detectMpu(extiConfig);
+    mpuDetectionResult_t *mpuDetectionResult = mpuDetect(extiConfig);
     UNUSED(mpuDetectionResult);
 #endif
 

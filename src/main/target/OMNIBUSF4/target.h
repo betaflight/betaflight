@@ -160,7 +160,8 @@
 #define VBAT_ADC_PIN            PC2
 //#define RSSI_ADC_PIN            PA0
 
-#define USE_ESC_TELEMETRY
+#define USE_DSHOT
+#define USE_ESC_SENSOR
 
 #define LED_STRIP
 

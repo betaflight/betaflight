@@ -22,7 +22,6 @@
 #include <platform.h>
 
 #include "cms/cms.h"
-#include "cms/cms_types.h"
 
 #include "common/axis.h"
 #include "common/color.h"
@@ -65,11 +64,11 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sonar.h"
+#include "sensors/esc_sensor.h"
 
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/esc_telemetry.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
@@ -111,9 +110,9 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 
 static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
-#ifdef USE_ADC
+#if defined(USE_ADC) || defined(USE_ESC_SENSOR)
     static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
         if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTimeUs;
             updateBattery();
@@ -122,7 +121,7 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
 #endif
 
     static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
+    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
@@ -205,15 +204,6 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-static void taskEscTelemetry(timeUs_t currentTimeUs)
-{
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryProcess(currentTimeUs);
-     }
- }
-#endif
-
 #ifdef VTX_CONTROL
 // Everything that listens to VTX devices
 void taskVtxControl(uint32_t currentTime)
@@ -292,8 +282,8 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-#ifdef USE_ESC_TELEMETRY
-    setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
+#ifdef USE_ESC_SENSOR
+    setTaskEnabled(TASK_ESC_SENSOR, feature(FEATURE_ESC_SENSOR));
 #endif
 #ifdef CMS
 #ifdef USE_MSP_DISPLAYPORT
@@ -470,11 +460,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-    [TASK_ESC_TELEMETRY] = {
-        .taskName = "ESC_TELEMETRY",
-        .taskFunc = taskEscTelemetry,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
+#ifdef USE_ESC_SENSOR
+    [TASK_ESC_SENSOR] = {
+        .taskName = "ESC_SENSOR",
+        .taskFunc = escSensorProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz every 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif

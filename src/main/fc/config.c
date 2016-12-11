@@ -274,9 +274,19 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->useUnsyncedPwm = true;
 #else
-    motorConfig->minthrottle = 1070;
-    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-    motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+#ifdef BRUSHED_ESC_AUTODETECT
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfig->minthrottle = 1000;
+        motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
+        motorConfig->useUnsyncedPwm = true;
+    } else
+#endif
+    {
+        motorConfig->minthrottle = 1070;
+        motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+    }
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
@@ -487,6 +497,46 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
     pVcdProfile->video_system = VIDEO_SYSTEM_AUTO;
     pVcdProfile->h_offset = 0;
     pVcdProfile->v_offset = 0;
+}
+#endif
+
+void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
+{
+    for (int i = 0; i < LED_NUMBER; i++) {
+        statusLedConfig->ledTags[i] = IO_TAG_NONE;
+    }
+
+#ifdef LED0
+    statusLedConfig->ledTags[0] = IO_TAG(LED0);
+#endif
+#ifdef LED1
+    statusLedConfig->ledTags[1] = IO_TAG(LED1);
+#endif
+#ifdef LED2
+    statusLedConfig->ledTags[2] = IO_TAG(LED2);
+#endif
+
+    statusLedConfig->polarity = 0
+#ifdef LED0_INVERTED
+    | BIT(0)
+#endif
+#ifdef LED1_INVERTED
+    | BIT(1)
+#endif
+#ifdef LED2_INVERTED
+    | BIT(2)
+#endif
+    ;    
+}
+
+#ifdef USE_FLASHFS
+void resetFlashConfig(flashConfig_t *flashConfig)
+{
+#ifdef M25P16_CS_PIN
+    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
+#else
+    flashConfig->csTag = IO_TAG_NONE;
+#endif
 }
 #endif
 
@@ -788,6 +838,12 @@ void createDefaultConfig(master_t *config)
         }
     }
 #endif
+
+#ifdef USE_FLASHFS
+    resetFlashConfig(&config->flashConfig);
+#endif
+
+    resetStatusLedConfig(&config->statusLedConfig);
 
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);

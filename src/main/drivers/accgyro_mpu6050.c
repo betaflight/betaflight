@@ -50,8 +50,17 @@
 
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
-static void mpu6050AccInit(accDev_t *acc);
-static void mpu6050GyroInit(gyroDev_t *gyro);
+static void mpu6050AccInit(accDev_t *acc)
+{
+    switch (mpuDetectionResult.resolution) {
+        case MPU_HALF_RESOLUTION:
+            acc->acc_1G = 256 * 4;
+            break;
+        case MPU_FULL_RESOLUTION:
+            acc->acc_1G = 512 * 4;
+            break;
+    }
+}
 
 bool mpu6050AccDetect(accDev_t *acc)
 {
@@ -64,33 +73,6 @@ bool mpu6050AccDetect(accDev_t *acc)
     acc->revisionCode = (mpuDetectionResult.resolution == MPU_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
 
     return true;
-}
-
-bool mpu6050GyroDetect(gyroDev_t *gyro)
-{
-    if (mpuDetectionResult.sensor != MPU_60x0) {
-        return false;
-    }
-    gyro->init = mpu6050GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
-static void mpu6050AccInit(accDev_t *acc)
-{
-    switch (mpuDetectionResult.resolution) {
-        case MPU_HALF_RESOLUTION:
-            acc->acc_1G = 256 * 4;
-            break;
-        case MPU_FULL_RESOLUTION:
-            acc->acc_1G = 512 * 4;
-            break;
-    }
 }
 
 static void mpu6050GyroInit(gyroDev_t *gyro)
@@ -115,4 +97,19 @@ static void mpu6050GyroInit(gyroDev_t *gyro)
 #ifdef USE_MPU_DATA_READY_SIGNAL
     mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
 #endif
+}
+
+bool mpu6050GyroDetect(gyroDev_t *gyro)
+{
+    if (mpuDetectionResult.sensor != MPU_60x0) {
+        return false;
+    }
+    gyro->init = mpu6050GyroInit;
+    gyro->read = mpuGyroRead;
+    gyro->intStatus = mpuCheckDataReady;
+
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = 1.0f / 16.4f;
+
+    return true;
 }

@@ -882,6 +882,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+        sbufWriteU8(dst, batteryConfig()->batteryMeterType);
         break;
 
     case MSP_CURRENT_METER_CONFIG:
@@ -1662,6 +1663,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        if (dataSize > 4) {
+            batteryConfig()->batteryMeterType = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:

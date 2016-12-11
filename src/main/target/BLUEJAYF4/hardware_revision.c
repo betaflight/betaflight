@@ -85,7 +85,8 @@ void updateHardwareRevision(void)
     /*
         if flash exists on PB3 then Rev1
     */
-    if (m25p16_init(IO_TAG(PB3))) {
+    flashConfig_t flashConfig = { .csTag = IO_TAG(PB3) };
+    if (m25p16_init(&flashConfig)) {
         hardwareRevision = BJF4_REV1;
     } else {
         IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, 0);

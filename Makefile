@@ -123,7 +123,7 @@ endif
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
-F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS)
+F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
@@ -136,7 +136,7 @@ endif
 128K_TARGETS  = $(F1_TARGETS)
 256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS) $(F7X5XE_TARGETS)
-1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS)
+1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
 2048K_TARGETS = $(F7X5XI_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
@@ -376,6 +376,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
+DEVICE_FLAGS    = -DSTM32F746xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f746.ld
 else
 $(error Unknown MCU for F7 target)
 endif
@@ -593,7 +596,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
-            telemetry/esc_telemetry.c \
+            sensors/esc_sensor.c \
 
 SPEED_OPTIMISED_SRC = \
             common/encoding.c \

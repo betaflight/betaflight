@@ -646,7 +646,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
+                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
                     smartPortSendPackage(id, amperage / 10); // given in 10mA steps, unknown requested unit
                     smartPortHasRequest = 0;
                 }
@@ -659,7 +659,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
+                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
                     smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
                     smartPortHasRequest = 0;
                 }

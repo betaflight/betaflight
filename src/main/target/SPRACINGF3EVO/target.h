@@ -21,6 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
+#define BRUSHED_ESC_AUTODETECT
+
 #define LED0                    PB8
 
 #define BEEPER                  PC15
@@ -35,7 +37,8 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define USE_ESC_TELEMETRY
+#define USE_DSHOT
+#define USE_ESC_SENSOR
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500

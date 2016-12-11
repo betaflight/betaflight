@@ -19,6 +19,7 @@
 
 #define TARGET_CONFIG
 #define USE_HARDWARE_REVISION_DETECTION
+#define TARGET_BUS_INIT
 
 #define CLI_MINIMAL_VERBOSITY
 
@@ -65,19 +66,14 @@
 #define USE_SPI_DEVICE_2
 
 #define NAZE_SPI_INSTANCE       SPI2
-#define NAZE_SPI_CS_GPIO        GPIOB
 #define NAZE_SPI_CS_PIN         PB12
-#define NAZE_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
-#define M25P16_CS_GPIO          NAZE_SPI_CS_GPIO
 #define M25P16_CS_PIN           NAZE_SPI_CS_PIN
 #define M25P16_SPI_INSTANCE     NAZE_SPI_INSTANCE
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL  NAZE_CS_GPIO_CLK_PERIPHERAL
-#define MPU6500_CS_GPIO                 NAZE_SPI_CS_GPIO
-#define MPU6500_CS_PIN                  NAZE_SPI_CS_PIN
-#define MPU6500_SPI_INSTANCE            NAZE_SPI_INSTANCE
+#define MPU6500_CS_PIN          NAZE_SPI_CS_PIN
+#define MPU6500_SPI_INSTANCE    NAZE_SPI_INSTANCE
 
 #define USE_FLASHFS
 #define USE_FLASH_M25P16

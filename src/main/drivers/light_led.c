@@ -22,82 +22,23 @@
 
 #include "light_led.h"
 
-static const IO_t leds[] = {
-#ifdef LED0
-    DEFIO_IO(LED0),
-#else
-    DEFIO_IO(NONE),
-#endif
-#ifdef LED1
-    DEFIO_IO(LED1),
-#else
-    DEFIO_IO(NONE),
-#endif
-#ifdef LED2
-    DEFIO_IO(LED2),
-#else
-    DEFIO_IO(NONE),
-#endif
-#if defined(LED0_A) || defined(LED1_A) || defined(LED2_A)
-#ifdef LED0_A
-    DEFIO_IO(LED0_A),
-#else
-    DEFIO_IO(NONE),
-#endif
-#ifdef LED1_A
-    DEFIO_IO(LED1_A),
-#else
-    DEFIO_IO(NONE),
-#endif
-#ifdef LED2_A
-    DEFIO_IO(LED2_A),
-#else
-    DEFIO_IO(NONE),
-#endif
-#endif
-};
+static IO_t leds[LED_NUMBER];
+static uint8_t ledPolarity = 0;
 
-uint8_t ledPolarity = 0
-#ifdef LED0_INVERTED
-    | BIT(0)
-#endif
-#ifdef LED1_INVERTED
-    | BIT(1)
-#endif
-#ifdef LED2_INVERTED
-    | BIT(2)
-#endif
-#ifdef LED0_A_INVERTED
-    | BIT(3)
-#endif
-#ifdef LED1_A_INVERTED
-    | BIT(4)
-#endif
-#ifdef LED2_A_INVERTED
-    | BIT(5)
-#endif
-    ;
-
-static uint8_t ledOffset = 0;
-
-void ledInit(bool alternative_led)
+void ledInit(statusLedConfig_t *statusLedConfig)
 {
-#if defined(LED0_A) || defined(LED1_A) || defined(LED2_A)
-    if (alternative_led) {
-        ledOffset = LED_NUMBER;
-    }
-#else
-    UNUSED(alternative_led);
-#endif
-
     LED0_OFF;
     LED1_OFF;
     LED2_OFF;
 
+    ledPolarity = statusLedConfig->polarity;
     for (int i = 0; i < LED_NUMBER; i++) {
-        if (leds[i + ledOffset]) {
-            IOInit(leds[i + ledOffset], OWNER_LED, RESOURCE_INDEX(i));
-            IOConfigGPIO(leds[i + ledOffset], IOCFG_OUT_PP);
+        if (statusLedConfig->ledTags[i]) {
+            leds[i] = IOGetByTag(statusLedConfig->ledTags[i]);
+            IOInit(leds[i], OWNER_LED, RESOURCE_INDEX(i));
+            IOConfigGPIO(leds[i], IOCFG_OUT_PP);
+        } else {
+            leds[i] = IO_NONE;
         }
     }
 
@@ -108,11 +49,11 @@ void ledInit(bool alternative_led)
 
 void ledToggle(int led)
 {
-    IOToggle(leds[led + ledOffset]);
+    IOToggle(leds[led]);
 }
 
 void ledSet(int led, bool on)
 {
-    const bool inverted = (1 << (led + ledOffset)) & ledPolarity;
-    IOWrite(leds[led + ledOffset], on ? inverted : !inverted);
+    const bool inverted = (1 << (led)) & ledPolarity;
+    IOWrite(leds[led], on ? inverted : !inverted);
 }

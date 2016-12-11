@@ -17,54 +17,53 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "ANY7"
+#define TARGET_BOARD_IDENTIFIER "NUC7"
 
 #define CONFIG_START_FLASH_ADDRESS (0x080C0000)
 
-#define USBD_PRODUCT_STRING "AnyFCF7"
+#define USBD_PRODUCT_STRING "NucleoF7"
 
-#define USE_DSHOT
-#define USE_ESC_SENSOR
+//#define USE_DSHOT
+//#define USE_ESC_TELEMETRY
 
 #define LED0   PB7
-#define LED1   PB6
+#define LED1   PB14
 
 //#define BEEPER   PB2
 //#define BEEPER_INVERTED
 
-#define MPU6000_CS_PIN        PA4
-#define MPU6000_SPI_INSTANCE  SPI1
-
 #define ACC
-#define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN CW270_DEG
+#define USE_FAKE_ACC
+#define USE_ACC_MPU6050
+#define ACC_MPU6050_ALIGN CW270_DEG
 
 #define GYRO
-#define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN CW270_DEG
+#define USE_FAKE_GYRO
+#define USE_GYRO_MPU6050
+#define GYRO_MPU6050_ALIGN CW270_DEG
 
-// MPU6000 interrupts
+// MPU6050 interrupts
 #define USE_MPU_DATA_READY_SIGNAL
-#define MPU_INT_EXTI PC4
+#define MPU_INT_EXTI PB15
 #define USE_EXTI
 
 #define MAG
-//#define USE_MAG_HMC5883
-//#define HMC5883_BUS I2C_DEVICE_EXT
-//#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
-//#define MAG_HMC5883_ALIGN CW90_DEG
+#define USE_FAKE_MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
 
 #define BARO
+#define USE_FAKE_BARO
 #define USE_BARO_MS5611
 
 #define USABLE_TIMER_CHANNEL_COUNT 16
 
 #define USE_VCP
-#define VBUS_SENSING_PIN PA8
+#define VBUS_SENSING_PIN PA9
 
-#define USE_UART1
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
+//#define USE_UART1
+//#define UART1_RX_PIN PA10
+//#define UART1_TX_PIN PA9
 
 #define USE_UART2
 #define UART2_RX_PIN PD6
@@ -94,7 +93,7 @@
 #define UART8_RX_PIN PE0
 #define UART8_TX_PIN PE1
 
-#define SERIAL_PORT_COUNT 9 //VCP, USART1, USART2, USART3, UART4, UART5, USART6, USART7, USART8
+#define SERIAL_PORT_COUNT 8 //VCP, USART2, USART3, UART4, UART5, USART6, USART7, USART8
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1
@@ -112,11 +111,11 @@
 
 #define USE_SDCARD
 #define SDCARD_DETECT_INVERTED
-#define SDCARD_DETECT_PIN                   PD3
-#define SDCARD_DETECT_EXTI_LINE             EXTI_Line3
-#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource3
-#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOD
-#define SDCARD_DETECT_EXTI_IRQn             EXTI3_IRQn
+#define SDCARD_DETECT_PIN                   PF14
+#define SDCARD_DETECT_EXTI_LINE             EXTI_Line14
+#define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource14
+#define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOF
+#define SDCARD_DETECT_EXTI_IRQn             EXTI9_15_IRQn
 
 #define SDCARD_SPI_INSTANCE                 SPI4
 #define SDCARD_SPI_CS_PIN                   SPI4_NSS_PIN
@@ -131,15 +130,18 @@
 #define SDCARD_DMA_CHANNEL                  DMA_CHANNEL_4
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_4)
+#define I2C_DEVICE (I2CDEV_1)
+#define I2C1_SCL PB8
+#define I2C1_SDA PB9
+
 //#define I2C_DEVICE_EXT (I2CDEV_2)
 
 #define SENSORS_SET (SENSOR_ACC|SENSOR_MAG|SENSOR_BARO)
 
 #define USE_ADC
-#define VBAT_ADC_PIN                PC0
-#define CURRENT_METER_ADC_PIN       PC1
-#define RSSI_ADC_GPIO_PIN           PC2
+#define VBAT_ADC_PIN                PA3
+#define CURRENT_METER_ADC_PIN       PC0
+#define RSSI_ADC_GPIO_PIN           PC3
 
 #define LED_STRIP
 
@@ -156,5 +158,6 @@
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
 
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) | TIM_N(10) | TIM_N(11))

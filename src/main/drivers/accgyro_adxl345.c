@@ -56,26 +56,7 @@
 #define ADXL345_RANGE_16G   0x03
 #define ADXL345_FIFO_STREAM 0x80
 
-static void adxl345Init(accDev_t *acc);
-static bool adxl345Read(int16_t *accelData);
-
 static bool useFifo = false;
-
-bool adxl345Detect(drv_adxl345_config_t *init, accDev_t *acc)
-{
-    uint8_t sig = 0;
-    bool ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
-
-    if (!ack || sig != 0xE5)
-        return false;
-
-    // use ADXL345's fifo to filter data or not
-    useFifo = init->useFifo;
-
-    acc->init = adxl345Init;
-    acc->read = adxl345Read;
-    return true;
-}
 
 static void adxl345Init(accDev_t *acc)
 {
@@ -133,5 +114,21 @@ static bool adxl345Read(int16_t *accelData)
         accelData[2] = buf[4] + (buf[5] << 8);
     }
 
+    return true;
+}
+
+bool adxl345Detect(drv_adxl345_config_t *init, accDev_t *acc)
+{
+    uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, ADXL345_ADDRESS, 0x00, 1, &sig);
+
+    if (!ack || sig != 0xE5)
+        return false;
+
+    // use ADXL345's fifo to filter data or not
+    useFifo = init->useFifo;
+
+    acc->init = adxl345Init;
+    acc->read = adxl345Read;
     return true;
 }
