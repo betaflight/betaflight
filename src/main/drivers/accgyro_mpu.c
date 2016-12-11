@@ -221,21 +221,13 @@ static void mpu6050FindRevision(void)
     }
 }
 
-typedef struct mpuIntRec_s {
-   extiCallbackRec_t exti;
-   gyroDev_t *gyro;
-} mpuIntRec_t;
-
-mpuIntRec_t mpuIntRec;
-
 /*
  * Gyro interrupt service routine
  */
 #if defined(MPU_INT_EXTI)
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-    mpuIntRec_t *rec = container_of(cb, mpuIntRec_t, exti);
-    gyroDev_t *gyro = rec->gyro;
+    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -250,7 +242,6 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 
 static void mpuIntExtiInit(gyroDev_t *gyro)
 {
-    mpuIntRec.gyro = gyro;
 #if defined(MPU_INT_EXTI)
     static bool mpuExtiInitDone = false;
 
@@ -269,19 +260,21 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 
 #if defined (STM32F7)
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    EXTIHandlerInit(&mpuIntRec.exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntRec.exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
 
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
-    EXTIHandlerInit(&mpuIntRec.exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntRec.exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(mpuIntIO, true);
 #endif
 
     mpuExtiInitDone = true;
+#else
+    UNUSED(gyro);
 #endif
 }
 

@@ -39,12 +39,13 @@
 #include "drivers/accgyro_mpu6500.h"
 #include "drivers/accgyro_l3gd20.h"
 #include "drivers/accgyro_lsm303dlhc.h"
-#include "drivers/bus_spi.h"
 #include "drivers/accgyro_spi_icm20689.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/bus_spi.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 
 #include "fc/runtime_config.h"
@@ -55,6 +56,10 @@
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
 
 gyro_t gyro;                      // gyro access functions
 
@@ -71,8 +76,25 @@ static void *notchFilter1[3];
 static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
+static const extiConfig_t *selectMPUIntExtiConfig(void)
+{
+#if defined(MPU_INT_EXTI)
+    static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
+    return &mpuIntExtiConfig;
+#elif defined(USE_HARDWARE_REVISION_DETECTION)
+    return selectMPUIntExtiConfigByHardwareRevision();
+#else
+    return NULL;
+#endif
+}
+
 bool gyroDetect(gyroDev_t *dev)
 {
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
+    mpuDetect(extiConfig);
+#endif
+
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
     dev->gyroAlign = ALIGN_DEFAULT;
