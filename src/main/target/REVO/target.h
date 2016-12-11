@@ -70,6 +70,9 @@
 #define MPU6500_CS_PIN          PA4
 #define MPU6500_SPI_INSTANCE    SPI1
 
+#define MPU9250_CS_PIN          PA4
+#define MPU9250_SPI_INSTANCE    SPI1
+
 #if defined(SOULF4)
     #define ACC
     #define USE_ACC_SPI_MPU6000
@@ -82,19 +85,30 @@
 #else
     #define ACC
     #define USE_ACC_SPI_MPU6000
-    #define GYRO_MPU6000_ALIGN      CW270_DEG
+    #define ACC_MPU6000_ALIGN      CW270_DEG
 
     #define USE_ACC_MPU6500
     #define USE_ACC_SPI_MPU6500
     #define ACC_MPU6500_ALIGN       CW270_DEG
 
+    #define USE_ACC_MPU9250
+    #define USE_ACC_SPI_MPU9250
+    #define ACC_MPU9250_ALIGN       CW270_DEG
+
     #define GYRO
     #define USE_GYRO_SPI_MPU6000
-    #define ACC_MPU6000_ALIGN       CW270_DEG
+    #define GYRO_MPU6000_ALIGN       CW270_DEG
 
     #define USE_GYRO_MPU6500
     #define USE_GYRO_SPI_MPU6500
     #define GYRO_MPU6500_ALIGN      CW270_DEG
+
+    #define USE_GYRO_SPI_MPU9250
+    #define GYRO_MPU9250_ALIGN       CW270_DEG
+
+    #define MAG
+    #define USE_MAG_AK8963
+    #define MAG_AK8963_ALIGN        CW270_DEG
 
 #endif
 
