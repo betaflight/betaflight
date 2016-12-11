@@ -54,28 +54,6 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static void l3g4200dInit(gyroDev_t *gyro);
-static bool l3g4200dRead(gyroDev_t *gyro);
-
-bool l3g4200dDetect(gyroDev_t *gyro)
-{
-    uint8_t deviceid;
-
-    delay(25);
-
-    i2cRead(MPU_I2C_INSTANCE, L3G4200D_ADDRESS, L3G4200D_WHO_AM_I, 1, &deviceid);
-    if (deviceid != L3G4200D_ID)
-        return false;
-
-    gyro->init = l3g4200dInit;
-    gyro->read = l3g4200dRead;
-
-    // 14.2857dps/lsb scalefactor
-    gyro->scale = 1.0f / 14.2857f;
-
-    return true;
-}
-
 static void l3g4200dInit(gyroDev_t *gyro)
 {
     bool ack;
@@ -120,6 +98,25 @@ static bool l3g4200dRead(gyroDev_t *gyro)
     gyro->gyroADCRaw[X] = (int16_t)((buf[0] << 8) | buf[1]);
     gyro->gyroADCRaw[Y] = (int16_t)((buf[2] << 8) | buf[3]);
     gyro->gyroADCRaw[Z] = (int16_t)((buf[4] << 8) | buf[5]);
+
+    return true;
+}
+
+bool l3g4200dDetect(gyroDev_t *gyro)
+{
+    uint8_t deviceid;
+
+    delay(25);
+
+    i2cRead(MPU_I2C_INSTANCE, L3G4200D_ADDRESS, L3G4200D_WHO_AM_I, 1, &deviceid);
+    if (deviceid != L3G4200D_ID)
+        return false;
+
+    gyro->init = l3g4200dInit;
+    gyro->read = l3g4200dRead;
+
+    // 14.2857dps/lsb scalefactor
+    gyro->scale = 1.0f / 14.2857f;
 
     return true;
 }
