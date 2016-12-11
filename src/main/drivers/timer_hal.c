@@ -872,7 +872,7 @@ const timerHardware_t *timerGetByTag(ioTag_t tag, timerUsageFlag_e flag)
 {
     for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
         if (timerHardware[i].tag == tag) {
-            if (timerHardware[i].output & flag) {
+            if (timerHardware[i].usageFlags & flag || flag == 0) {
                 return &timerHardware[i];
             }
         }
