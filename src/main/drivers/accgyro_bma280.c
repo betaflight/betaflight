@@ -32,22 +32,6 @@
 #define BMA280_PMU_BW      0x10
 #define BMA280_PMU_RANGE   0x0F
 
-static void bma280Init(accDev_t *acc);
-static bool bma280Read(int16_t *accelData);
-
-bool bma280Detect(accDev_t *acc)
-{
-    uint8_t sig = 0;
-    bool ack = i2cRead(MPU_I2C_INSTANCE, BMA280_ADDRESS, 0x00, 1, &sig);
-
-    if (!ack || sig != 0xFB)
-        return false;
-
-    acc->init = bma280Init;
-    acc->read = bma280Read;
-    return true;
-}
-
 static void bma280Init(accDev_t *acc)
 {
     i2cWrite(MPU_I2C_INSTANCE, BMA280_ADDRESS, BMA280_PMU_RANGE, 0x08); // +-8g range
@@ -69,5 +53,18 @@ static bool bma280Read(int16_t *accelData)
     accelData[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
     accelData[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
 
+    return true;
+}
+
+bool bma280Detect(accDev_t *acc)
+{
+    uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, BMA280_ADDRESS, 0x00, 1, &sig);
+
+    if (!ack || sig != 0xFB)
+        return false;
+
+    acc->init = bma280Init;
+    acc->read = bma280Read;
     return true;
 }
