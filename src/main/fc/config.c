@@ -274,9 +274,19 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->useUnsyncedPwm = true;
 #else
-    motorConfig->minthrottle = 1070;
-    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-    motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+#ifdef BRUSHED_ESC_AUTODETECT
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfig->minthrottle = 1000;
+        motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
+        motorConfig->useUnsyncedPwm = true;
+    } else
+#endif
+    {
+        motorConfig->minthrottle = 1070;
+        motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+    }
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;

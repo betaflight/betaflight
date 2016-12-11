@@ -42,6 +42,8 @@
 
 #include "hardware_revision.h"
 
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
@@ -78,11 +80,8 @@ void targetConfiguration(master_t *config)
     config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.minthrottle = 1000;
-        config->motorConfig.motorPwmRate = 32000;
-        config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
+        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
         config->pid_process_denom = 2;
-        config->motorConfig.useUnsyncedPwm = true;
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 90;
