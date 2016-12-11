@@ -655,24 +655,6 @@ static void resetConf(void)
     masterConfig.blackboxConfig.rate_denom = 1;
 #endif
 
-    // alternative defaults settings for COLIBRI RACE targets
-#if defined(COLIBRI_RACE)
-    masterConfig.looptime = 1000;
-
-    masterConfig.rxConfig.rcmap[0] = 1;
-    masterConfig.rxConfig.rcmap[1] = 2;
-    masterConfig.rxConfig.rcmap[2] = 3;
-    masterConfig.rxConfig.rcmap[3] = 0;
-    masterConfig.rxConfig.rcmap[4] = 4;
-    masterConfig.rxConfig.rcmap[5] = 5;
-    masterConfig.rxConfig.rcmap[6] = 6;
-    masterConfig.rxConfig.rcmap[7] = 7;
-
-    featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_LED_STRIP);
-    featureSet(FEATURE_FAILSAFE);
-#endif
-
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
 #ifdef ALIENFLIGHTF1
 #ifdef ALIENFLIGHTF3
@@ -979,13 +961,6 @@ void validateAndFixConfig(void)
 
 #ifndef USE_PMW_SERVO_DRIVER
     featureClear(FEATURE_PWM_SERVO_DRIVER);
-#endif
-
-#if defined(COLIBRI_RACE)
-    masterConfig.serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
-        masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    }
 #endif
 
     useRxConfig(&masterConfig.rxConfig);
