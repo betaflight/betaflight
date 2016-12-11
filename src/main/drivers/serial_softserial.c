@@ -181,10 +181,26 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
+    ioTag_t tagTx;
+    ioTag_t tagRx;
+
 #ifdef USE_SOFTSERIAL1
     if (portIndex == SOFTSERIAL1) {
+
+// Transitional measure
+#if defined(SOFTSERIAL_1_TIMER_TX_HARDWARE) && defined(SOFTSERIAL_1_TIMER_RX_HARDWARE)
         softSerial->rxTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_RX_HARDWARE]);
         softSerial->txTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_TX_HARDWARE]);
+#else
+        tagTx = IOGetByTag(IO_TAG(SOFTSERIAL1_TX_PIN));
+        tagRx = IOGetByTag(IO_TAG(SOFTSERIAL1_RX_PIN));
+
+        if (!(tagTx && tagRx))
+            return NULL;
+
+        softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
+        softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
+#endif
     }
 #endif
 
@@ -213,11 +229,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    softSerial->txIO = IOGetByTag(softSerial->txTimerHardware->tag);
-    serialOutputPortConfig(softSerial->txTimerHardware->tag, portIndex);
+    softSerial->txIO = IOGetByTag(tagTx);
+    serialOutputPortConfig(tagTx, portIndex);
 
-    softSerial->rxIO = IOGetByTag(softSerial->rxTimerHardware->tag);
-    serialInputPortConfig(softSerial->rxTimerHardware->tag, portIndex);
+    softSerial->rxIO = IOGetByTag(tagRx);
+    serialInputPortConfig(tagRx, portIndex);
 
     setTxSignal(softSerial, ENABLE);
     delay(50);
