@@ -154,6 +154,7 @@ static void padLineBufferToChar(uint8_t toChar)
     lineBuffer[length] = 0;
 }
 
+#ifdef GPS
 static void padLineBuffer(void)
 {
     padLineBufferToChar(sizeof(lineBuffer));
@@ -164,6 +165,7 @@ static void padHalfLineBuffer(void)
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
     padLineBufferToChar(halfLineIndex);
 }
+#endif
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
 static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {

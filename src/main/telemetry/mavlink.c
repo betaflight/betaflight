@@ -33,6 +33,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -504,6 +505,7 @@ void mavlinkSendHUDAndHeartbeat(void)
 
 void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
         mavlinkSendSystemStatus();
