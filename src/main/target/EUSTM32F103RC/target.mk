@@ -6,6 +6,7 @@ DEVICE_FLAGS    = -DSTM32F10X_HD
 TARGET_SRC = \
             drivers/accgyro_adxl345.c \
             drivers/accgyro_bma280.c \
+            drivers/accgyro_fake.c \
             drivers/accgyro_l3g4200d.c \
             drivers/accgyro_mma845x.c \
             drivers/accgyro_mpu.c \
