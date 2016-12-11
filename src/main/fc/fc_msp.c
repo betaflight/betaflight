@@ -1074,20 +1074,24 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_REBOOT:
-        if (mspPostProcessFn) {
-            *mspPostProcessFn = mspRebootFn;
+        if (!ARMING_FLAG(ARMED)) {
+            if (mspPostProcessFn) {
+                *mspPostProcessFn = mspRebootFn;
+            }
         }
         break;
 
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
     case MSP_SET_4WAY_IF:
-        // get channel number
-        // switch all motor lines HI
-        // reply with the count of ESC found
-        sbufWriteU8(dst, esc4wayInit());
-        if (mspPostProcessFn) {
-            *mspPostProcessFn = msp4WayIfFn;
+        if (!ARMING_FLAG(ARMED)) {
+            // get channel number
+            // switch all motor lines HI
+            // reply with the count of ESC found
+            sbufWriteU8(dst, esc4wayInit());
+            if (mspPostProcessFn) {
+                *mspPostProcessFn = msp4WayIfFn;
+            }
         }
         break;
 #endif
