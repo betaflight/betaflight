@@ -872,22 +872,22 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.accelerometerConfig.acc_hardware, .config.minmax = { 0,  ACC_MAX }, 0 },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.accelerometerConfig.acc_hardware, .config.lookup = { TABLE_HW_ACC } },
 
 #ifdef BARO
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.barometerConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE,  &masterConfig.barometerConfig.baro_hardware, .config.minmax = { 0,  BARO_MAX }, 0 },
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.barometerConfig.baro_hardware, .config.lookup = { TABLE_HW_BARO } },
 #endif
 
 #ifdef PITOT
-    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.pitotmeterConfig.pitot_hardware, .config.minmax = { 0,  PITOT_MAX }, 0 },
+    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.pitotmeterConfig.pitot_hardware, .config.lookup = { TABLE_HW_PITOT } },
     { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.pitotmeterConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
     { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_scale, .config.minmax = { 0, 100 }, 0 },
 #endif
 
 #ifdef MAG
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.compassConfig.mag_hardware, .config.minmax = { 0,  MAG_MAX }, 0 },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.compassConfig.mag_hardware, .config.lookup = { TABLE_HW_MAG } },
     { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.compassConfig.mag_declination, .config.minmax = { -18000,  18000 }, 0 },
     { "mag_hold_rate_limit",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.mag_hold_rate_limit, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, 0 },
 #endif
