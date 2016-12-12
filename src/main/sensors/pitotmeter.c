@@ -22,12 +22,19 @@
 #include "platform.h"
 
 #include "build/debug.h"
+
 #include "common/maths.h"
 
-#include "drivers/pitotmeter.h"
 #include "config/config.h"
 
+#include "drivers/logging.h"
+#include "drivers/pitotmeter.h"
+#include "drivers/pitotmeter_ms4525.h"
+
+#include "fc/runtime_config.h"
+
 #include "sensors/pitotmeter.h"
+#include "sensors/sensors.h"
 
 pitot_t pitot;
 
@@ -40,6 +47,45 @@ static float pitotTemperature = 0;
 static float CalibratedAirspeed = 0;
 
 pitotmeterConfig_t *pitotmeterConfig;
+
+bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
+{
+    pitotSensor_e pitotHardware = PITOT_NONE;
+    requestedSensors[SENSOR_INDEX_PITOT] = pitotHardwareToUse;
+
+    switch (pitotHardwareToUse) {
+        case PITOT_MS4525:
+#ifdef USE_PITOT_MS4525
+            if (ms4525Detect(dev)) {
+                pitotHardware = PITOT_MS4525;
+            }
+#endif
+            break;
+
+        case PITOT_FAKE:
+#ifdef USE_PITOT_FAKE
+            if (fakePitotDetect(&pitot)) {
+                pitotHardware = PITOT_FAKE;
+            }
+#endif
+            break;
+
+        case PITOT_NONE:
+            pitotHardware = PITOT_NONE;
+            break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_PITOT_DETECTION, BOOT_EVENT_FLAGS_NONE, pitotHardware, 0, 0, 0);
+
+    if (pitotHardware == PITOT_NONE) {
+        sensorsClear(SENSOR_PITOT);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_PITOT] = pitotHardware;
+    sensorsSet(SENSOR_PITOT);
+    return true;
+}
 
 void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse)
 {

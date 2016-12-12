@@ -36,6 +36,7 @@ typedef struct rangefinderFunctionPointers_s {
     rangefinderReadFunctionPtr read;
 } rangefinderFunctionPointers_t;
 
+rangefinderType_e rangefinderDetect(void);
 int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltAngle);
 int32_t rangefinderGetLatestAltitude(void);
 rangefinderType_e rangefinderDetect(void);

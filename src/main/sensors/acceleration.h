@@ -50,7 +50,7 @@ typedef struct accelerometerConfig_s {
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
 } accelerometerConfig_t;
 
-void accInit(uint32_t accTargetLooptime);
+bool accInit(const accelerometerConfig_t *accConfig, uint32_t accTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(void);
