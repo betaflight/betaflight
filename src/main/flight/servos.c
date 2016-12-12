@@ -451,29 +451,39 @@ void processServoAutotrim(void)
     if (IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) {
         switch (trimState) {
             case AUTOTRIM_IDLE:
-                // We are activating servo trim - backup current middles and prepare to average the data
-                for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                    servoMiddleBackup[servoIndex] = servoConf[servoIndex].middle;
-                    servoMiddleAccum[servoIndex] = 0;
-                }
+                if (ARMING_FLAG(ARMED)) {
+                    // We are activating servo trim - backup current middles and prepare to average the data
+                    for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                        servoMiddleBackup[servoIndex] = servoConf[servoIndex].middle;
+                        servoMiddleAccum[servoIndex] = 0;
+                    }
 
-                trimStartedAt = millis();
-                servoMiddleAccumCount = 0;
-                trimState = AUTOTRIM_COLLECTING;
+                    trimStartedAt = millis();
+                    servoMiddleAccumCount = 0;
+                    trimState = AUTOTRIM_COLLECTING;
+                }
+                else {
+                    break;
+                }
                 // Fallthru
 
             case AUTOTRIM_COLLECTING:
-                servoMiddleAccumCount++;
+                if (ARMING_FLAG(ARMED)) {
+                    servoMiddleAccumCount++;
 
-                for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                    servoMiddleAccum[servoIndex] += servo[servoIndex];
-                }
-
-                if ((millis() - trimStartedAt) > SERVO_AUTOTRIM_TIMER_MS) {
                     for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                        servoConf[servoIndex].middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
+                        servoMiddleAccum[servoIndex] += servo[servoIndex];
                     }
-                    trimState = AUTOTRIM_SAVE_PENDING;
+
+                    if ((millis() - trimStartedAt) > SERVO_AUTOTRIM_TIMER_MS) {
+                        for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
+                            servoConf[servoIndex].middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
+                        }
+                        trimState = AUTOTRIM_SAVE_PENDING;
+                    }
+                }
+                else {
+                    trimState = AUTOTRIM_IDLE;
                 }
                 break;
 
@@ -491,7 +501,7 @@ void processServoAutotrim(void)
     }
     else {
         // We are deactivating servo trim - restore servo midpoints
-        if (trimState > AUTOTRIM_COLLECTING) {
+        if (trimState == AUTOTRIM_SAVE_PENDING) {
             for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
                 servoConf[servoIndex].middle = servoMiddleBackup[servoIndex];
             }
