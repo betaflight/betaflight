@@ -202,7 +202,11 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
+#ifdef NAV
+            int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z));
+#else
             int32_t alt = osdGetAltitude(baro.BaroAlt);
+#endif
             sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
@@ -471,7 +475,11 @@ void osdUpdateAlarms(void)
     // This is overdone?
     // uint16_t *itemPos = masterConfig.osdProfile.item_pos;
 
+#ifdef NAV
+    int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z)) / 100;
+#else
     int32_t alt = osdGetAltitude(baro.BaroAlt) / 100;
+#endif
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < pOsdProfile->rssi_alarm)
@@ -546,8 +554,13 @@ static void osdUpdateStats(void)
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
 
+#ifdef NAV
+    if (stats.max_altitude < getEstimatedActualPosition(Z))
+        stats.max_altitude = getEstimatedActualPosition(Z);
+#else
     if (stats.max_altitude < baro.BaroAlt)
         stats.max_altitude = baro.BaroAlt;
+#endif
 }
 
 static void osdShowStats(void)
