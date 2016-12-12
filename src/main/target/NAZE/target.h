@@ -21,8 +21,6 @@
 #define USE_HARDWARE_REVISION_DETECTION
 #define TARGET_BUS_INIT
 
-#define CLI_MINIMAL_VERBOSITY
-
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define LED0                    PB3
