@@ -124,6 +124,7 @@ void mixTable(void);
 void writeMotors(void);
 void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted);
 void processServoTilt(void);
+void processServoAutotrim(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
 
