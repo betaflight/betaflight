@@ -37,6 +37,26 @@ SERIAL_DEVICE   ?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
 # Flash size (KB).  Some low-end chips actually have more flash than advertised, use this to override.
 FLASH_SIZE ?=
 
+## V                 : Set verbosity level based on the V= parameter
+##                     V=0 Low
+##                     V=1 High
+export AT := @
+
+ifndef V
+export V0    :=
+export V1    := $(AT)
+export STDOUT   :=
+else ifeq ($(V), 0)
+export V0    := $(AT)
+export V1    := $(AT)
+export STDOUT:= "> /dev/null"
+export MAKE  := $(MAKE) --no-print-directory
+else ifeq ($(V), 1)
+export V0    :=
+export V1    :=
+export STDOUT   :=
+endif
+
 ###############################################################################
 # Things that need to be maintained as the source changes
 #
@@ -686,72 +706,78 @@ CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
+	$(V0) $(OBJCOPY) -O ihex --set-start 0x8000000 $< $@
 
 $(TARGET_BIN): $(TARGET_ELF)
-	$(OBJCOPY) -O binary $< $@
+	$(V0) $(OBJCOPY) -O binary $< $@
 
 $(TARGET_ELF):  $(TARGET_OBJS)
-	@echo LD $(notdir $@)
-	@$(CC) -o $@ $^ $(LDFLAGS)
-	$(SIZE) $(TARGET_ELF)
+	$(V1) echo Linking $(TARGET)
+	$(V1) $(CC) -o $@ $^ $(LDFLAGS)
+	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(CFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<) "$(STDOUT)"
+	$(V1) $(CC) -c -o $@ $(CFLAGS) $<
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<) "$(STDOUT)"
+	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 $(OBJECT_DIR)/$(TARGET)/%.o: %.S
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $<
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo %% $(notdir $<) "$(STDOUT)"
+	$(V1) $(CC) -c -o $@ $(ASFLAGS) $<
 
 
 ## all               : Build all valid targets
 all: $(VALID_TARGETS)
 
 $(VALID_TARGETS):
-		echo "" && \
-		echo "Building $@" && \
-		$(MAKE) -j TARGET=$@ && \
-		echo "Building $@ succeeded."
+	$(V0) echo "" && \
+	echo "Building $@" && \
+	$(MAKE) -j TARGET=$@ && \
+	echo "Building $@ succeeded."
 
 ## clean             : clean up all temporary / machine-generated files
 clean:
-	rm -f $(CLEAN_ARTIFACTS)
-	rm -rf $(OBJECT_DIR)/$(TARGET)
+	$(V0) echo "Cleaning $(TARGET)"
+	$(V0) rm -f $(CLEAN_ARTIFACTS)
+	$(V0) rm -rf $(OBJECT_DIR)/$(TARGET)
+	$(V0) echo "Cleaning $(TARGET) succeeded."
 
 ## clean_test        : clean up all temporary / machine-generated files (tests)
 clean_test:
-	cd src/test && $(MAKE) clean || true
+	$(V0) cd src/test && $(MAKE) clean || true
 
-## clean_all_targets : clean all valid target platforms
-clean_all:
-	for clean_target in $(VALID_TARGETS); do \
-		echo "" && \
-		echo "Cleaning $$clean_target" && \
-		$(MAKE) -j TARGET=$$clean_target clean || \
-		break; \
-		echo "Cleaning $$clean_target succeeded."; \
-	done
+## clean_<TARGET>    : clean up one specific target
+$(CLEAN_TARGETS) :
+	$(V0) $(MAKE) -j TARGET=$(subst clean_,,$@) clean
+
+## <TARGET>_clean    : clean up one specific target (alias for above)
+$(TARGETS_CLEAN) :
+	$(V0) $(MAKE) -j TARGET=$(subst _clean,,$@) clean
+
+## clean_all         : clean all valid targets
+clean_all:$(CLEAN_TARGETS)
+
+## all_clean         : clean all valid targets (alias for above)
+all_clean:$(TARGETS_CLEAN)
 
 flash_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	echo -n 'R' >$(SERIAL_DEVICE)
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	$(V0) echo -n 'R' >$(SERIAL_DEVICE)
+	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## flash             : flash firmware (.hex) onto flight controller
 flash: flash_$(TARGET)
 
 st-flash_$(TARGET): $(TARGET_BIN)
-	st-flash --reset write $< 0x08000000
+	$(V0) st-flash --reset write $< 0x08000000
 
 ## st-flash          : flash firmware (.bin) onto flight controller
 st-flash: st-flash_$(TARGET)
@@ -760,42 +786,42 @@ binary: $(TARGET_BIN)
 hex:    $(TARGET_HEX)
 
 unbrick_$(TARGET): $(TARGET_HEX)
-	stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
-	stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
+	$(V0) stty -F $(SERIAL_DEVICE) raw speed 115200 -crtscts cs8 -parenb -cstopb -ixon
+	$(V0) stm32flash -w $(TARGET_HEX) -v -g 0x0 -b 115200 $(SERIAL_DEVICE)
 
 ## unbrick           : unbrick flight controller
 unbrick: unbrick_$(TARGET)
 
 ## cppcheck          : run static analysis on C source code
 cppcheck: $(CSOURCES)
-	$(CPPCHECK)
+	$(V0) $(CPPCHECK)
 
 cppcheck-result.xml: $(CSOURCES)
-	$(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
+	$(V0) $(CPPCHECK) --xml-version=2 2> cppcheck-result.xml
 
 ## help              : print this help message and exit
 help: Makefile
-	@echo ""
-	@echo "Makefile for the $(FORKNAME) firmware"
-	@echo ""
-	@echo "Usage:"
-	@echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
-	@echo "Or:"
-	@echo "        make <target> [OPTIONS=\"<options>\"]"
-	@echo ""
-	@echo "Valid TARGET values are: $(VALID_TARGETS)"
-	@echo ""
-	@sed -n 's/^## //p' $<
+	$(V0) @echo ""
+	$(V0) @echo "Makefile for the $(FORKNAME) firmware"
+	$(V0) @echo ""
+	$(V0) @echo "Usage:"
+	$(V0) @echo "        make [TARGET=<target>] [OPTIONS=\"<options>\"]"
+	$(V0) @echo "Or:"
+	$(V0) @echo "        make <target> [OPTIONS=\"<options>\"]"
+	$(V0) @echo ""
+	$(V0) @echo "Valid TARGET values are: $(VALID_TARGETS)"
+	$(V0) @echo ""
+	$(V0) @sed -n 's/^## //p' $<
 
 ## targets           : print a list of all valid target platforms (for consumption by scripts)
 targets:
-	@echo "Valid targets: $(VALID_TARGETS)"
-	@echo "Target:        $(TARGET)"
-	@echo "Base target:   $(BASE_TARGET)"
+	$(V0) @echo "Valid targets: $(VALID_TARGETS)"
+	$(V0) @echo "Target:        $(TARGET)"
+	$(V0) @echo "Base target:   $(BASE_TARGET)"
 
 ## test              : run the cleanflight test suite
 test:
-	cd src/test && $(MAKE) test || true
+	$(V0) cd src/test && $(MAKE) test || true
 
 # rebuild everything when makefile changes
 $(TARGET_OBJS) : Makefile
