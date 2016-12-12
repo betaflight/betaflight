@@ -164,6 +164,11 @@ static void updatePreArmingChecks(void)
         ENABLE_ARMING_FLAG(BLOCKED_ACCELEROMETER_NOT_CALIBRATED);
         DISABLE_ARMING_FLAG(OK_TO_ARM);
     }
+
+    if (!isHardwareHealthy()) {
+        ENABLE_ARMING_FLAG(BLOCKED_HARDWARE_FAILURE);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
 }
 
 void annexCode(void)
