@@ -40,6 +40,7 @@ typedef struct gyroDev_s {
     sensorGyroReadFuncPtr read;                             // read 3 axis data function
     sensorGyroReadDataFuncPtr temperature;                  // read temperature if available
     sensorGyroInterruptStatusFuncPtr intStatus;
+    extiCallbackRec_t exti;
     float scale;                                            // scalefactor
     volatile bool dataReady;
     uint16_t lpf;
