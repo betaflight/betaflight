@@ -807,6 +807,8 @@ void esc4wayProcess(serialPort_t *mspPort)
 
         i=O_PARAM_LEN;
         do {
+            while (!serialTxBytesFree(port));
+
             WriteByteCrc(*O_PARAM);
             O_PARAM++;
             i--;
