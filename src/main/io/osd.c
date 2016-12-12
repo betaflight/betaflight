@@ -121,7 +121,7 @@ static displayPort_t *osd7456DisplayPort;
  */
 static char osdGetAltitudeSymbol()
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return 0xF;
         default:
@@ -135,7 +135,7 @@ static char osdGetAltitudeSymbol()
  */
 static int32_t osdGetAltitude(int32_t alt)
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return (alt * 328) / 100; // Convert to feet / 100
         default:
@@ -145,11 +145,11 @@ static int32_t osdGetAltitude(int32_t alt)
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(masterConfig.osdProfile.item_pos[item]) || BLINK(masterConfig.osdProfile.item_pos[item]))
+    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(osdProfile()->item_pos[item]))
         return;
 
-    uint8_t elemPosX = OSD_X(masterConfig.osdProfile.item_pos[item]);
-    uint8_t elemPosY = OSD_Y(masterConfig.osdProfile.item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdProfile()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdProfile()->item_pos[item]);
     char buff[32];
 
     switch(item) {
@@ -433,7 +433,7 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    max7456Init(masterConfig.osdProfile.video_system);
+    max7456Init(osdProfile()->video_system);
 
     max7456ClearScreen();
 
@@ -473,7 +473,7 @@ void osdUpdateAlarms(void)
     osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
 
     // This is overdone?
-    // uint16_t *itemPos = masterConfig.osdProfile.item_pos;
+    // uint16_t *itemPos = osdProfile()->item_pos;
 
 #ifdef NAV
     int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z)) / 100;
