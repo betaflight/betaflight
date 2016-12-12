@@ -61,3 +61,5 @@ typedef struct sensorTrims_s {
     flightDynamicsTrims_t magZero;          // Compass offset
 } sensorTrims_t;
 
+extern uint8_t requestedSensors[SENSOR_INDEX_COUNT];
+extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];

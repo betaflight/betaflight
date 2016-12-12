@@ -50,6 +50,7 @@ typedef struct compassConfig_s {
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
 } compassConfig_t;
 
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
 bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
