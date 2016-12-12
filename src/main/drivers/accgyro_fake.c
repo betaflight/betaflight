@@ -53,6 +53,7 @@ static bool fakeGyroRead(gyroDev_t *gyro)
 
 static bool fakeGyroReadTemperature(gyroDev_t *gyro, int16_t *temperatureData)
 {
+    UNUSED(gyro);
     UNUSED(temperatureData);
     return true;
 }

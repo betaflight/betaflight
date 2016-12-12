@@ -165,6 +165,7 @@ static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
     }
 #endif
 
+    UNUSED(gyro);
     return false;
 }
 #endif
