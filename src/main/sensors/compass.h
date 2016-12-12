@@ -25,14 +25,13 @@
 
 // Type of magnetometer used/detected
 typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_GPS = 4,
-    MAG_MAG3110 = 5,
-    MAG_AK8963 = 6,
-    MAG_FAKE = 7,
+    MAG_NONE = 0,
+    MAG_HMC5883 = 1,
+    MAG_AK8975 = 2,
+    MAG_GPS = 3,
+    MAG_MAG3110 = 4,
+    MAG_AK8963 = 5,
+    MAG_FAKE = 6,
     MAG_MAX = MAG_FAKE
 } magSensor_e;
 
@@ -55,3 +54,4 @@ bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
+bool isCompassHealthy(void);

@@ -23,8 +23,8 @@
 
 // Type of accelerometer used/detected
 typedef enum {
-    ACC_DEFAULT = 0,
-    ACC_NONE = 1,
+    ACC_NONE = 0,
+    ACC_AUTODETECT = 1,
     ACC_ADXL345 = 2,
     ACC_MPU6050 = 3,
     ACC_MMA8452 = 4,
@@ -58,3 +58,4 @@ union flightDynamicsTrims_u;
 void setAccelerationZero(union flightDynamicsTrims_u * accZeroToUse);
 void setAccelerationGain(union flightDynamicsTrims_u * accGainToUse);
 void setAccelerationFilter(uint8_t initialAccLpfCutHz);
+bool isAccelerometerHealthy(void);

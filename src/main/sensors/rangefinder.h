@@ -20,9 +20,9 @@
 #include <stdint.h>
 
 typedef enum {
-    RANGEFINDER_NONE = 0,
-    RANGEFINDER_HCSR04,
-    RANGEFINDER_SRF10
+    RANGEFINDER_NONE    = 0,
+    RANGEFINDER_HCSR04  = 1,
+    RANGEFINDER_SRF10   = 2,
 } rangefinderType_e;
 
 struct rangefinder_s;
@@ -42,4 +42,4 @@ rangefinderType_e rangefinderDetect(void);
 void rangefinderInit(rangefinderType_e rangefinderType);
 void rangefinderUpdate(void);
 int32_t rangefinderRead(void);
-
+bool isRangefinderHealthy(void);

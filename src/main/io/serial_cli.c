@@ -71,6 +71,7 @@
 #include "rx/spektrum.h"
 
 #include "sensors/battery.h"
+#include "sensors/diagnostics.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -232,6 +233,20 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
+/* Sensor names (used in lookup tables for *_hardware settings and in status command output) */
+// sync with gyroSensor_e
+static const char * const gyroNames[] = { "NONE", "AUTO", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
+// sync with accelerationSensor_e
+static const char * const accNames[] = { "NONE", "AUTO", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
+// sync with baroSensor_e
+static const char * const baroNames[] = { "NONE", "BMP085", "MS5611", "BMP280", "FAKE"};
+// sync with magSensor_e
+static const char * const magNames[] = { "NONE", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963", "FAKE"};
+// sycn with rangefinderType_e
+static const char * const rangefinderNames[] = { "NONE", "HCSR04", "SRF10"};
+// sync with pitotSensor_e
+static const char * const pitotmeterNames[] = { "NONE", "MS4525", "FAKE"};
+
 #if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
@@ -239,21 +254,12 @@ static const char * const sensorTypeNames[] = {
 };
 
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG | SENSOR_SONAR | SENSOR_PITOT)
-// sync with gyroSensor_e
-static const char * const gyroNames[] = { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
-// sync with accelerationSensor_e
-static const char * const accNames[] = { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE"};
-// sync with baroSensor_e
-static const char * const baroNames[] = { "", "None", "BMP085", "MS5611", "BMP280", "FAKE"};
-// sync with magSensor_e
-static const char * const magNames[] = { "", "None", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963", "FAKE"};
-// sycn with rangefinderType_e
-static const char * const rangefinderNames[] = { "None", "HCSR04", "SRF10"};
-// sync with pitotSensor_e
-static const char * const pitotmeterNames[] = { "Auto", "None", "MS4525", "FAKE"};
+
+static const char * const hardwareSensorStatusNames[] = {
+    "NONE", "OK", "UNAVAILABLE", "FAILING"
+};
 
 static const char * const *sensorHardwareNames[] = {gyroNames, accNames, baroNames, magNames, rangefinderNames, pitotmeterNames};
-
 #endif
 
 #ifdef OSD
@@ -533,6 +539,11 @@ typedef enum {
 #ifdef OSD
     TABLE_OSD,
 #endif
+    TABLE_HW_ACC,
+    TABLE_HW_BARO,
+    TABLE_HW_MAG,
+    TABLE_HW_RANGEFINDER,   // currently not used
+    TABLE_HW_PITOT,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -571,6 +582,11 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
 #endif
+    { accNames, sizeof(accNames) / sizeof(char *) },
+    { baroNames, sizeof(baroNames) / sizeof(char *) },
+    { magNames, sizeof(magNames) / sizeof(char *) },
+    { rangefinderNames, sizeof(rangefinderNames) / sizeof(char *) },
+    { pitotmeterNames, sizeof(pitotmeterNames) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -2905,8 +2921,18 @@ static void cliStatus(char *cmdline)
             }
         }
     }
-#endif
     cliPrint("\r\n");
+
+    cliPrintf("Sensor status: GYRO=%s, ACC=%s, MAG=%s, BARO=%s, SONAR=%s, GPS=%s\r\n", 
+        hardwareSensorStatusNames[getHwGyroStatus()],
+        hardwareSensorStatusNames[getHwAccelerometerStatus()],
+        hardwareSensorStatusNames[getHwCompassStatus()],
+        hardwareSensorStatusNames[getHwBarometerStatus()],
+        hardwareSensorStatusNames[getHwRangefinderStatus()],
+        hardwareSensorStatusNames[getHwGPSStatus()]
+    );
+    
+#endif
 
 #ifdef USE_I2C
     const uint16_t i2cErrorCounter = i2cGetErrorCounter();

@@ -139,3 +139,4 @@ struct serialConfig_s;
 void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
 void gpsThread(void);
 void updateGpsIndicator(timeUs_t currentTimeUs);
+bool isGPSHealthy(void);

@@ -67,6 +67,7 @@
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
+#include "sensors/diagnostics.h"
 #include "sensors/battery.h"
 #include "sensors/rangefinder.h"
 #include "sensors/acceleration.h"
@@ -369,6 +370,26 @@ static uint32_t packFlightModeFlags(void)
     return ret;
 }
 
+static uint16_t packSensorStatus(void)
+{
+    // Sensor bits
+    uint16_t sensorStatus =
+            IS_ENABLED(sensors(SENSOR_ACC))     << 0 |
+            IS_ENABLED(sensors(SENSOR_BARO))    << 1 |
+            IS_ENABLED(sensors(SENSOR_MAG))     << 2 |
+            IS_ENABLED(sensors(SENSOR_GPS))     << 3 |
+            IS_ENABLED(sensors(SENSOR_SONAR))   << 4 |
+            //IS_ENABLED(sensors(SENSOR_OPFLOW))  << 5 |
+            IS_ENABLED(sensors(SENSOR_PITOT))   << 6;
+
+    // Hardware failure indication bit
+    if (!isHardwareHealthy()) {
+        sensorStatus |= 1 << 15;        // Bit 15 of sensor bit field indicates hardware failure
+    }
+
+    return sensorStatus;
+}
+
 static void serializeSDCardSummaryReply(sbuf_t *dst)
 {
 #ifdef USE_SDCARD
@@ -509,6 +530,18 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 #endif
 
+    case MSP_SENSOR_STATUS:
+        sbufWriteU8(dst, isHardwareHealthy() ? 1 : 0);
+        sbufWriteU8(dst, getHwGyroStatus());
+        sbufWriteU8(dst, getHwAccelerometerStatus());
+        sbufWriteU8(dst, getHwCompassStatus());
+        sbufWriteU8(dst, getHwBarometerStatus());
+        sbufWriteU8(dst, getHwGPSStatus());
+        sbufWriteU8(dst, getHwRangefinderStatus());
+        sbufWriteU8(dst, getHwPitotmeterStatus());
+        sbufWriteU8(dst, HW_SENSOR_NONE);                   // Optical flow
+        break;
+
     case MSP_STATUS_EX:
         sbufWriteU16(dst, cycleTime);
 #ifdef USE_I2C
@@ -516,7 +549,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_PITOT) << 6);
+        sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
         sbufWriteU16(dst, averageSystemLoadPercent);
@@ -529,7 +562,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU16(dst, 0);
 #endif
-        sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4 | sensors(SENSOR_PITOT) << 6);
+        sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
         break;
@@ -1073,6 +1106,15 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); //reserved
         break;
 
+    case MSP_SENSOR_CONFIG:
+        sbufWriteU8(dst, masterConfig.accelerometerConfig.acc_hardware);
+        sbufWriteU8(dst, masterConfig.barometerConfig.baro_hardware);
+        sbufWriteU8(dst, masterConfig.compassConfig.mag_hardware);
+        sbufWriteU8(dst, masterConfig.pitotmeterConfig.pitot_hardware);
+        sbufWriteU8(dst, 0);    // rangefinder hardware
+        sbufWriteU8(dst, 0);    // optical flow hardware
+        break;
+
     case MSP_REBOOT:
         if (!ARMING_FLAG(ARMED)) {
             if (mspPostProcessFn) {
@@ -1459,6 +1501,15 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
+        break;
+
+    case MSP_SET_SENSOR_CONFIG:
+        masterConfig.accelerometerConfig.acc_hardware = sbufReadU8(src);
+        masterConfig.barometerConfig.baro_hardware = sbufReadU8(src);
+        masterConfig.compassConfig.mag_hardware = sbufReadU8(src);
+        masterConfig.pitotmeterConfig.pitot_hardware = sbufReadU8(src);
+        sbufReadU8(src);        // rangefinder hardware
+        sbufReadU8(src);        // optical flow hardware
         break;
 
     case MSP_RESET_CONF:

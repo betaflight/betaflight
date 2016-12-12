@@ -37,6 +37,7 @@
 #include "drivers/system.h"
 
 #include "sensors/sensors.h"
+#include "sensors/diagnostics.h"
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -153,7 +154,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (!IS_RC_MODE_ACTIVE(BOXARM)) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -161,7 +162,7 @@ void annexCode(void)
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
-        if (isCalibrating() || isSystemOverloaded()) {
+        if (isCalibrating() || isSystemOverloaded() || !isHardwareHealthy()) {
             warningLedFlash();
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         }

@@ -22,7 +22,7 @@
 
 typedef enum {
     GYRO_NONE = 0,
-    GYRO_DEFAULT,
+    GYRO_AUTODETECT,
     GYRO_MPU6050,
     GYRO_L3G4200D,
     GYRO_MPU3050,

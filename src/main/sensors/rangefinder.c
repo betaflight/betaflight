@@ -210,5 +210,10 @@ int32_t rangefinderGetLatestAltitude(void)
 {
     return calculatedAltitude;
 }
+
+bool isRangefinderHealthy(void)
+{
+    return true;
+}
 #endif
 

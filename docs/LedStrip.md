@@ -163,6 +163,7 @@ This mode simply uses the LEDs to flash when warnings occur.
 |---------|-------------|-------|
 | Arm-lock enabled | flash between green and off | occurs calibration or when unarmed and the aircraft is tilted too much |
 | Low Battery | flash red and off | battery monitoring must be enabled.  May trigger temporarily under high-throttle due to voltage drop |
+| Hardware Error | flash blue and off | indicates that at least one of hardware components is not working correctly |
 | Failsafe | flash between light blue and yellow | Failsafe must be enabled |
 
 Flash patterns appear in order, so that it's clear which warnings are enabled.

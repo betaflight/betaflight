@@ -63,6 +63,11 @@ bool compassInit(const compassConfig_t *compassConfig)
     return ret;
 }
 
+bool isCompassHealthy(void)
+{
+    return (mag.magADC[X] != 0) || (mag.magADC[Y] != 0) || (mag.magADC[Z] != 0);
+}
+
 bool isCompassReady(void)
 {
     return magUpdatedAtLeastOnce;

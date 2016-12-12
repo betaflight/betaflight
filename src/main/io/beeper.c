@@ -28,6 +28,7 @@
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/diagnostics.h"
 
 #include "rx/rx.h"
 
@@ -123,6 +124,10 @@ static const uint8_t beep_gyroCalibrated[] = {
 static const uint8_t beep_launchModeBeep[] = {
     5, 5, 5, 100, BEEPER_COMMAND_STOP
 };
+// short beeps
+static const uint8_t beep_hardwareFailure[] = {
+    10, 10, BEEPER_COMMAND_STOP
+};
 
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
@@ -160,27 +165,28 @@ typedef struct beeperTableEntry_s {
 
 /*static*/ const beeperTableEntry_t beeperTable[] = {
     { BEEPER_ENTRY(BEEPER_GYRO_CALIBRATED,       0, beep_gyroCalibrated,   "GYRO_CALIBRATED") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST,               1, beep_txLostBeep,       "RX_LOST") },
-    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       2, beep_sos,              "RX_LOST_LANDING") },
-    { BEEPER_ENTRY(BEEPER_DISARMING,             3, beep_disarmBeep,       "DISARMING") },
-    { BEEPER_ENTRY(BEEPER_ARMING,                4, beep_armingBeep,       "ARMING")  },
-    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        5, beep_armedGpsFix,      "ARMING_GPS_FIX") },
-    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          6, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
-    { BEEPER_ENTRY(BEEPER_BAT_LOW,               7, beep_lowBatteryBeep,   "BAT_LOW") },
-    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            8, beep_multiBeeps,       "GPS_STATUS") },
-    { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
-    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
-    { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
-    { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
-    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
-    { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
-    { BEEPER_ENTRY(BEEPER_LAUNCH_MODE_ENABLED,   18, beep_launchModeBeep,  "LAUNCH_MODE") },
+    { BEEPER_ENTRY(BEEPER_HARDWARE_FAILURE ,     1, beep_hardwareFailure,  "HW_FAILURE") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST,               2, beep_txLostBeep,       "RX_LOST") },
+    { BEEPER_ENTRY(BEEPER_RX_LOST_LANDING,       3, beep_sos,              "RX_LOST_LANDING") },
+    { BEEPER_ENTRY(BEEPER_DISARMING,             4, beep_disarmBeep,       "DISARMING") },
+    { BEEPER_ENTRY(BEEPER_ARMING,                5, beep_armingBeep,       "ARMING")  },
+    { BEEPER_ENTRY(BEEPER_ARMING_GPS_FIX,        6, beep_armedGpsFix,      "ARMING_GPS_FIX") },
+    { BEEPER_ENTRY(BEEPER_BAT_CRIT_LOW,          7, beep_critBatteryBeep,  "BAT_CRIT_LOW") },
+    { BEEPER_ENTRY(BEEPER_BAT_LOW,               8, beep_lowBatteryBeep,   "BAT_LOW") },
+    { BEEPER_ENTRY(BEEPER_GPS_STATUS,            9, beep_multiBeeps,       "GPS_STATUS") },
+    { BEEPER_ENTRY(BEEPER_RX_SET,                10, beep_shortBeep,       "RX_SET") },
+    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       11, beep_2shortBeeps,     "ACC_CALIBRATION") },
+    { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  12, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
+    { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_ARMED,                 16, beep_armedBeep,       "ARMED") },
+    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
+    { BEEPER_ENTRY(BEEPER_USB,                   18, NULL,                 "ON_USB") },
+    { BEEPER_ENTRY(BEEPER_LAUNCH_MODE_ENABLED,   19, beep_launchModeBeep,  "LAUNCH_MODE") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   20, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            21, NULL,                 "PREFERED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;
@@ -300,6 +306,11 @@ void beeperUpdate(timeUs_t currentTimeUs)
 #else
         beeper(BEEPER_RX_SET);
 #endif
+    }
+
+    // Beep out hardware failure
+    if (!isHardwareHealthy()) {
+        beeper(BEEPER_HARDWARE_FAILURE);
     }
 
     // Beeper routine doesn't need to update if there aren't any sounds ongoing

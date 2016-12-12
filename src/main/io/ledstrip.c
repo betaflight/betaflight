@@ -44,6 +44,7 @@
 #include "fc/runtime_config.h"
 
 #include "sensors/acceleration.h"
+#include "sensors/diagnostics.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -512,6 +513,7 @@ typedef enum {
     WARNING_ARMING_DISABLED,
     WARNING_LOW_BATTERY,
     WARNING_FAILSAFE,
+    WARNING_HW_ERROR,
 } warningFlags_e;
 
 static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
@@ -532,6 +534,8 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                 warningFlags |= 1 << WARNING_FAILSAFE;
             if (!ARMING_FLAG(ARMED) && !ARMING_FLAG(OK_TO_ARM))
                 warningFlags |= 1 << WARNING_ARMING_DISABLED;
+            if (!isHardwareHealthy())
+                warningFlags |= 1 << WARNING_HW_ERROR;
         }
         *timer += LED_STRIP_HZ(10);
     }
@@ -551,6 +555,9 @@ static void applyLedWarningLayer(bool updateNow, timeUs_t *timer)
                     break;
                 case WARNING_FAILSAFE:
                     warningColor = colorOn ? &HSV(YELLOW) : &HSV(BLUE);
+                    break;
+                case WARNING_HW_ERROR:
+                    warningColor = colorOn ? &HSV(BLUE) : &HSV(BLACK);
                     break;
                 default:;
             }
