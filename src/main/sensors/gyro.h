@@ -31,16 +31,19 @@ typedef enum {
     GYRO_MPU6500,
     GYRO_MPU9250,
     GYRO_ICM20689,
-    GYRO_FAKE,
-    GYRO_MAX = GYRO_FAKE
+    GYRO_FAKE
 } gyroSensor_e;
+
+typedef struct gyro_s {
+    gyroDev_t dev;
+    uint32_t targetLooptime;
+    float gyroADCf[XYZ_AXIS_COUNT];
+} gyro_t;
 
 extern gyro_t gyro;
 
-extern int32_t gyroADC[XYZ_AXIS_COUNT];
-extern float gyroADCf[XYZ_AXIS_COUNT];
-
 typedef struct gyroConfig_s {
+    sensor_align_e gyro_align;              // gyro alignment
     uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
     uint8_t  gyro_sync_denom;                  // Gyro sample divider
     uint8_t  gyro_soft_lpf_type;
@@ -52,6 +55,7 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_2;
 } gyroConfig_t;
 
+bool gyroDetect(gyroDev_t *dev);
 void gyroSetCalibrationCycles(void);
 void gyroInit(const gyroConfig_t *gyroConfigToUse);
 void gyroUpdate(void);

@@ -35,6 +35,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "msp/msp_serial.h"
+
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
@@ -156,4 +158,13 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #endif
 }
 
+#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
+
+void releaseSharedTelemetryPorts(void) {
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    while (sharedPort) {
+        mspSerialReleasePortIfAllocated(sharedPort);
+        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    }
+}
 #endif

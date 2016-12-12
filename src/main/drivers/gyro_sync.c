@@ -16,11 +16,11 @@
 
 static uint8_t mpuDividerDrops;
 
-bool gyroSyncCheckUpdate(const gyro_t *gyro)
+bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 {
     if (!gyro->intStatus)
         return false;
-    return gyro->intStatus();
+    return gyro->intStatus(gyro);
 }
 
 uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator)

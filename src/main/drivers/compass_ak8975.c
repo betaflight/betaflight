@@ -37,6 +37,9 @@
 
 #include "compass_ak8975.h"
 
+void ak8975Init(void);
+bool ak8975Read(int16_t *magData);
+
 // This sensor is available in MPU-9150.
 
 // AK8975, mag sensor address
@@ -57,7 +60,7 @@
 #define AK8975_MAG_REG_CNTL         0x0a
 #define AK8975_MAG_REG_ASCT         0x0c // self test
 
-bool ak8975Detect(mag_t *mag)
+bool ak8975Detect(magDev_t *mag)
 {
     uint8_t sig = 0;
     bool ack = i2cRead(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_WHO_AM_I, 1, &sig);

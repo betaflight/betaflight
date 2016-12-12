@@ -135,7 +135,7 @@ static uint32_t beeperNextToggleTime = 0;
 // Time of last arming beep in microseconds (for blackbox)
 static uint32_t armingBeepTimeMicros = 0;
 
-static void beeperProcessCommand(uint32_t currentTime);
+static void beeperProcessCommand(timeUs_t currentTimeUs);
 
 typedef struct beeperTableEntry_s {
     uint8_t mode;
@@ -280,7 +280,7 @@ void beeperGpsStatus(void)
  * Beeper handler function to be called periodically in loop. Updates beeper
  * state via time schedule.
  */
-void beeperUpdate(uint32_t currentTime)
+void beeperUpdate(timeUs_t currentTimeUs)
 {
     // If beeper option from AUX switch has been selected
     if (IS_RC_MODE_ACTIVE(BOXBEEPERON)) {
@@ -300,7 +300,7 @@ void beeperUpdate(uint32_t currentTime)
         return;
     }
 
-    if (beeperNextToggleTime > currentTime) {
+    if (beeperNextToggleTime > currentTimeUs) {
         return;
     }
 
@@ -328,13 +328,13 @@ void beeperUpdate(uint32_t currentTime)
         }
     }
 
-    beeperProcessCommand(currentTime);
+    beeperProcessCommand(currentTimeUs);
 }
 
 /*
  * Calculates array position when next to change beeper state is due.
  */
-static void beeperProcessCommand(uint32_t currentTime)
+static void beeperProcessCommand(timeUs_t currentTimeUs)
 {
     if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_REPEAT) {
         beeperPos = 0;
@@ -342,7 +342,7 @@ static void beeperProcessCommand(uint32_t currentTime)
         beeperSilence();
     } else {
         // Otherwise advance the sequence and calculate next toggle time
-        beeperNextToggleTime = currentTime + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
+        beeperNextToggleTime = currentTimeUs + 1000 * 10 * currentBeeperEntry->sequence[beeperPos];
         beeperPos++;
     }
 }
@@ -400,7 +400,7 @@ bool isBeeperOn(void)
 void beeper(beeperMode_e mode) {UNUSED(mode);}
 void beeperSilence(void) {}
 void beeperConfirmationBeeps(uint8_t beepCount) {UNUSED(beepCount);}
-void beeperUpdate(uint32_t currentTime) {UNUSED(currentTime);}
+void beeperUpdate(timeUs_t currentTimeUs) {UNUSED(currentTimeUs);}
 uint32_t getArmingBeepTimeMicros(void) {return 0;}
 beeperMode_e beeperModeForTableIndex(int idx) {UNUSED(idx); return BEEPER_SILENCE;}
 const char *beeperNameForTableIndex(int idx) {UNUSED(idx); return NULL;}

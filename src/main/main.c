@@ -220,7 +220,7 @@ void init(void)
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
-        switch (masterConfig.rxConfig.serialrx_provider) {
+        switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 // Spektrum satellite binding if enabled on startup.
@@ -249,17 +249,17 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-    uint16_t idlePulse = masterConfig.motorConfig.mincommand;
+    uint16_t idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
-        idlePulse = masterConfig.flight3DConfig.neutral3d;
+        idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
         featureClear(FEATURE_3D);
         idlePulse = 0; // brushed motors
     }
@@ -284,7 +284,7 @@ void init(void)
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(&masterConfig.ppmConfig, masterConfig.motorConfig.motorPwmProtocol);
+        ppmRxInit(&masterConfig.ppmConfig, motorConfig()->motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
         pwmRxInit(&masterConfig.pwmConfig);
     }
@@ -377,9 +377,9 @@ void init(void)
 
 #ifdef USE_ADC
     /* these can be removed from features! */
-    masterConfig.adcConfig.vbat.enabled = feature(FEATURE_VBAT);
-    masterConfig.adcConfig.currentMeter.enabled = feature(FEATURE_CURRENT_METER);
-    masterConfig.adcConfig.rssi.enabled = feature(FEATURE_RSSI_ADC);
+    adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
+    adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
+    adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(&masterConfig.adcConfig);
 #endif
 
@@ -422,11 +422,7 @@ void init(void)
 #else
     const void *sonarConfig = NULL;
 #endif
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            &masterConfig.sensorSelectionConfig,
-            masterConfig.compassConfig.mag_declination,
-            &masterConfig.gyroConfig,
-            sonarConfig)) {
+    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -451,6 +447,7 @@ void init(void)
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
     pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
     pidInitFilters(&currentProfile->pidProfile);
+    pidInitConfig(&currentProfile->pidProfile);
 
     imuInit();
 
@@ -465,7 +462,7 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
 
@@ -530,7 +527,7 @@ void init(void)
 #ifdef USE_SDCARD
     if (feature(FEATURE_SDCARD)) {
         sdcardInsertionDetectInit();
-        sdcard_init(masterConfig.sdcardConfig.useDma);
+        sdcard_init(sdcardConfig()->useDma);
         afatfs_init();
     }
 #endif
@@ -539,7 +536,7 @@ void init(void)
     initBlackbox();
 #endif
 
-    if (masterConfig.mixerConfig.mixerMode == MIXER_GIMBAL) {
+    if (mixerConfig()->mixerMode == MIXER_GIMBAL) {
         accSetCalibrationCycles(CALIBRATING_ACC_CYCLES);
     }
     gyroSetCalibrationCycles();

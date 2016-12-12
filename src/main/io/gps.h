@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define LAT 0
 #define LON 1
 
@@ -49,7 +51,7 @@ typedef enum {
 
 typedef enum {
     GPS_AUTOCONFIG_OFF = 0,
-    GPS_AUTOCONFIG_ON,
+    GPS_AUTOCONFIG_ON
 } gpsAutoConfig_e;
 
 typedef enum {
@@ -76,10 +78,8 @@ typedef enum {
     GPS_MESSAGE_STATE_IDLE = 0,
     GPS_MESSAGE_STATE_INIT,
     GPS_MESSAGE_STATE_SBAS,
-    GPS_MESSAGE_STATE_MAX = GPS_MESSAGE_STATE_SBAS
+	GPS_MESSAGE_STATE_ENTRY_COUNT
 } gpsMessageState_e;
-
-#define GPS_MESSAGE_STATE_ENTRY_COUNT (GPS_MESSAGE_STATE_MAX + 1)
 
 typedef struct gpsData_s {
     uint8_t state;                  // GPS thread state. Used for detecting cable disconnects and configuring attached devices
@@ -119,5 +119,5 @@ extern uint8_t GPS_svinfo_cno[16];         // Carrier to Noise Ratio (Signal Str
 
 struct serialConfig_s;
 void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
-void gpsUpdate(uint32_t currentTime);
+void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);

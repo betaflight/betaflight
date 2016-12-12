@@ -28,6 +28,6 @@ typedef struct motorConfig_s {
     uint16_t motorPwmRate;                  // The update rate of motor outputs (50-498Hz)
     uint8_t  motorPwmProtocol;              // Pwm Protocol
     uint8_t  useUnsyncedPwm;
-    uint8_t  digitalIdleOffset;
+    float    digitalIdleOffsetPercent;
     ioTag_t  ioTags[MAX_SUPPORTED_MOTORS];
 } motorConfig_t;

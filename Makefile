@@ -506,6 +506,7 @@ COMMON_SRC = \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
+            drivers/stack_check.c \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
@@ -756,7 +757,11 @@ ifeq ($(DEBUG),GDB)
 OPTIMIZE    = -O0
 LTO_FLAGS   = $(OPTIMIZE)
 else
+ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
 OPTIMIZE    = -Os
+else
+OPTIMIZE    = -Ofast
+endif
 LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 
@@ -825,6 +830,9 @@ TARGET_MAP      = $(OBJECT_DIR)/$(FORKNAME)_$(TARGET).map
 CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
+
+# Make sure build date and revision is updated on every incremental build
+$(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
 
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.

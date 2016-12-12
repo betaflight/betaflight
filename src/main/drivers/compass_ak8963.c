@@ -42,6 +42,9 @@
 #include "accgyro_spi_mpu9250.h"
 #include "compass_ak8963.h"
 
+void ak8963Init(void);
+bool ak8963Read(int16_t *magData);
+
 // This sensor is available in MPU-9250.
 
 // AK8963, mag sensor address
@@ -188,7 +191,7 @@ bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 }
 #endif
 
-bool ak8963Detect(mag_t *mag)
+bool ak8963Detect(magDev_t *mag)
 {
     uint8_t sig = 0;
 
