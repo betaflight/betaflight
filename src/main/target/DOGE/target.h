@@ -126,7 +126,7 @@
 
 #define LED_STRIP
 #define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

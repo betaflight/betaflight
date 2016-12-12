@@ -83,9 +83,9 @@ static OSD_Entry menuMiscEntries[]=
 {
     { "-- MISC --", OME_Label, NULL, NULL, 0 },
 
-    { "MIN THR",    OME_UINT16,  NULL,          &(OSD_UINT16_t){ &masterConfig.motorConfig.minthrottle,         1000, 2000, 1 }, 0 },
-    { "VBAT SCALE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatscale,             1, 250, 1 }, 0 },
-    { "VBAT CLMAX", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &masterConfig.batteryConfig.vbatmaxcellvoltage,   10,  50, 1 }, 0 },
+    { "MIN THR",    OME_UINT16,  NULL,          &(OSD_UINT16_t){ &motorConfig()->minthrottle,         1000, 2000, 1 }, 0 },
+    { "VBAT SCALE", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatscale,             1, 250, 1 }, 0 },
+    { "VBAT CLMAX", OME_UINT8,   NULL,          &(OSD_UINT8_t) { &batteryConfig()->vbatmaxcellvoltage,   10,  50, 1 }, 0 },
     { "RC PREV",    OME_Submenu, cmsMenuChange, &cmsx_menuRcPreview, 0},
 
     { "BACK", OME_Back, NULL, NULL, 0},

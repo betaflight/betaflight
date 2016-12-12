@@ -19,16 +19,16 @@
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM20689_BIT_RESET                  (0x80)
 
-bool icm20689AccDetect(acc_t *acc);
-bool icm20689GyroDetect(gyro_t *gyro);
+bool icm20689AccDetect(accDev_t *acc);
+bool icm20689GyroDetect(gyroDev_t *gyro);
 
-void icm20689AccInit(acc_t *acc);
-void icm20689GyroInit(uint8_t lpf);
+void icm20689AccInit(accDev_t *acc);
+void icm20689GyroInit(gyroDev_t *gyro);
 
 bool icm20689SpiDetect(void);
 
-bool icm20689SpiAccDetect(acc_t *acc);
-bool icm20689SpiGyroDetect(gyro_t *gyro);
+bool icm20689SpiAccDetect(accDev_t *acc);
+bool icm20689SpiGyroDetect(gyroDev_t *gyro);
 
 bool icm20689WriteRegister(uint8_t reg, uint8_t data);
 bool icm20689ReadRegister(uint8_t reg, uint8_t length, uint8_t *data);

@@ -148,9 +148,9 @@
 
 #define LED_STRIP
 
-#define SONAR
-#define SONAR_ECHO_PIN          PB1
-#define SONAR_TRIGGER_PIN       PB0
+//#define SONAR
+//#define SONAR_ECHO_PIN          PB1
+//#define SONAR_TRIGGER_PIN       PB0
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
@@ -162,7 +162,7 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
 #define TARGET_IO_PORTA         0xffff

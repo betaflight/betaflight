@@ -17,7 +17,7 @@
 
 #pragma once
 
-#if defined(STM32F745xx)
+#if defined(STM32F745xx) || defined(STM32F746xx)
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 

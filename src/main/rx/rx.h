@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define STICK_CHANNEL_COUNT 4
 
 #define PWM_RANGE_ZERO 0 // FIXME should all usages of this be changed to use PWM_RANGE_MIN?
@@ -53,9 +55,7 @@ typedef enum {
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
     SERIALRX_IBUS = 7,
     SERIALRX_JETIEXBUS = 8,
-    SERIALRX_CRSF = 9,
-    SERIALRX_PROVIDER_COUNT,
-    SERIALRX_PROVIDER_MAX = SERIALRX_PROVIDER_COUNT - 1
+    SERIALRX_CRSF = 9
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -87,14 +87,14 @@ typedef enum {
     RX_FAILSAFE_MODE_AUTO = 0,
     RX_FAILSAFE_MODE_HOLD,
     RX_FAILSAFE_MODE_SET,
-    RX_FAILSAFE_MODE_INVALID,
+    RX_FAILSAFE_MODE_INVALID
 } rxFailsafeChannelMode_e;
 
 #define RX_FAILSAFE_MODE_COUNT 3
 
 typedef enum {
     RX_FAILSAFE_TYPE_FLIGHT = 0,
-    RX_FAILSAFE_TYPE_AUX,
+    RX_FAILSAFE_TYPE_AUX
 } rxFailsafeChannelType_e;
 
 #define RX_FAILSAFE_TYPE_COUNT 2
@@ -155,14 +155,14 @@ extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only need
 struct modeActivationCondition_s;
 void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
 void useRxConfig(const rxConfig_t *rxConfigToUse);
-bool rxUpdateCheck(uint32_t currentTime, uint32_t currentDeltaTime);
+bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-void calculateRxChannelsAndUpdateFailsafe(uint32_t currentTime);
+void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
 void parseRcChannels(const char *input, rxConfig_t *rxConfig);
 
-void updateRSSI(uint32_t currentTime);
+void updateRSSI(timeUs_t currentTimeUs);
 void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
 
 void suspendRxSignal(void);

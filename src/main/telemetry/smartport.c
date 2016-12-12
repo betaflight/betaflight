@@ -65,7 +65,7 @@ enum
     SPSTATE_UNINITIALIZED,
     SPSTATE_INITIALIZED,
     SPSTATE_WORKING,
-    SPSTATE_TIMEDOUT,
+    SPSTATE_TIMEDOUT
 };
 
 enum
@@ -83,7 +83,7 @@ enum
     FSSP_SENSOR_ID1 = 0x1B,
     FSSP_SENSOR_ID2 = 0x0D,
     FSSP_SENSOR_ID3 = 0x34,
-    FSSP_SENSOR_ID4 = 0x67,
+    FSSP_SENSOR_ID4 = 0x67
     // there are 32 ID's polled by smartport master
     // remaining 3 bits are crc (according to comments in openTx code)
 };
@@ -112,7 +112,7 @@ enum
     FSSP_DATAID_T2         = 0x0410 ,
     FSSP_DATAID_GPS_ALT    = 0x0820 ,
     FSSP_DATAID_A3         = 0x0900 ,
-    FSSP_DATAID_A4         = 0x0910 ,
+    FSSP_DATAID_A4         = 0x0910
 };
 
 const uint16_t frSkyDataIdTable[] = {
@@ -646,7 +646,7 @@ void handleSmartPortTelemetry(void)
                 }
                 break;
             case FSSP_DATAID_CURRENT    :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
+                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
                     smartPortSendPackage(id, amperage / 10); // given in 10mA steps, unknown requested unit
                     smartPortHasRequest = 0;
                 }
@@ -654,12 +654,12 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;
             case FSSP_DATAID_FUEL       :
-                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
+                if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
                     smartPortSendPackage(id, mAhDrawn); // given in mAh, unknown requested unit
                     smartPortHasRequest = 0;
                 }
@@ -700,15 +700,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, 100 * accSmooth[X] / acc.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
+                smartPortSendPackage(id, 100 * acc.accSmooth[X] / acc.dev.acc_1G); // Multiply by 100 to show as x.xx g on Taranis
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, 100 * accSmooth[Y] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accSmooth[Y] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, 100 * accSmooth[Z] / acc.acc_1G);
+                smartPortSendPackage(id, 100 * acc.accSmooth[Z] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :

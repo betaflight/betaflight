@@ -106,7 +106,7 @@ enum {
 
     NRF24L01_1D_FEATURE_EN_DPL          = 2,
     NRF24L01_1D_FEATURE_EN_ACK_PAY      = 1,
-    NRF24L01_1D_FEATURE_EN_DYN_ACK      = 0,
+    NRF24L01_1D_FEATURE_EN_DYN_ACK      = 0
 };
 
 // Pre-shifted and combined bits
@@ -162,7 +162,7 @@ enum {
     NRF24L01_06_RF_SETUP_RF_PWR_n6dbm   = 0x04,
     NRF24L01_06_RF_SETUP_RF_PWR_0dbm    = 0x06,
 
-    NRF24L01_1C_DYNPD_ALL_PIPES         = 0x3F,
+    NRF24L01_1C_DYNPD_ALL_PIPES         = 0x3F
 };
 
 // Pipes

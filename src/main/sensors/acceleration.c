@@ -26,9 +26,27 @@
 #include "common/axis.h"
 #include "common/filter.h"
 
+#include "drivers/accgyro.h"
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_fake.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_l3gd20.h"
+#include "drivers/accgyro_lsm303dlhc.h"
+#include "drivers/bus_spi.h"
+#include "drivers/accgyro_spi_icm20689.h"
+#include "drivers/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/runtime_config.h"
 
 #include "io/beeper.h"
 
@@ -38,12 +56,12 @@
 
 #include "config/feature.h"
 
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
 
-int32_t accSmooth[XYZ_AXIS_COUNT];
 
 acc_t acc;                       // acc access functions
-sensor_align_e accAlign = 0;
-uint32_t accSamplingInterval;
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
@@ -57,27 +75,180 @@ static flightDynamicsTrims_t *accelerationTrims;
 static uint16_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
+bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
+{
+    accelerationSensor_e accHardware;
+
+#ifdef USE_ACC_ADXL345
+    drv_adxl345_config_t acc_params;
+#endif
+
+retry:
+    dev->accAlign = ALIGN_DEFAULT;
+
+    switch (accHardwareToUse) {
+    case ACC_DEFAULT:
+        ; // fallthrough
+    case ACC_ADXL345: // ADXL345
+#ifdef USE_ACC_ADXL345
+        acc_params.useFifo = false;
+        acc_params.dataRate = 800; // unused currently
+#ifdef NAZE
+        if (hardwareRevision < NAZE32_REV5 && adxl345Detect(&acc_params, dev)) {
+#else
+        if (adxl345Detect(&acc_params, dev)) {
+#endif
+#ifdef ACC_ADXL345_ALIGN
+            dev->accAlign = ACC_ADXL345_ALIGN;
+#endif
+            accHardware = ACC_ADXL345;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_LSM303DLHC:
+#ifdef USE_ACC_LSM303DLHC
+        if (lsm303dlhcAccDetect(dev)) {
+#ifdef ACC_LSM303DLHC_ALIGN
+            dev->accAlign = ACC_LSM303DLHC_ALIGN;
+#endif
+            accHardware = ACC_LSM303DLHC;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6050: // MPU6050
+#ifdef USE_ACC_MPU6050
+        if (mpu6050AccDetect(dev)) {
+#ifdef ACC_MPU6050_ALIGN
+            dev->accAlign = ACC_MPU6050_ALIGN;
+#endif
+            accHardware = ACC_MPU6050;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MMA8452: // MMA8452
+#ifdef USE_ACC_MMA8452
+#ifdef NAZE
+        // Not supported with this frequency
+        if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
+#else
+        if (mma8452Detect(dev)) {
+#endif
+#ifdef ACC_MMA8452_ALIGN
+            dev->accAlign = ACC_MMA8452_ALIGN;
+#endif
+            accHardware = ACC_MMA8452;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_BMA280: // BMA280
+#ifdef USE_ACC_BMA280
+        if (bma280Detect(dev)) {
+#ifdef ACC_BMA280_ALIGN
+            dev->accAlign = ACC_BMA280_ALIGN;
+#endif
+            accHardware = ACC_BMA280;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6000:
+#ifdef USE_ACC_SPI_MPU6000
+        if (mpu6000SpiAccDetect(dev)) {
+#ifdef ACC_MPU6000_ALIGN
+            dev->accAlign = ACC_MPU6000_ALIGN;
+#endif
+            accHardware = ACC_MPU6000;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6500:
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
+#ifdef USE_ACC_SPI_MPU6500
+        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
+#else
+        if (mpu6500AccDetect(dev))
+#endif
+        {
+#ifdef ACC_MPU6500_ALIGN
+            dev->accAlign = ACC_MPU6500_ALIGN;
+#endif
+            accHardware = ACC_MPU6500;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_ICM20689:
+#ifdef USE_ACC_SPI_ICM20689
+
+        if (icm20689SpiAccDetect(dev))
+        {
+#ifdef ACC_ICM20689_ALIGN
+            dev->accAlign = ACC_ICM20689_ALIGN;
+#endif
+            accHardware = ACC_ICM20689;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_FAKE:
+#ifdef USE_FAKE_ACC
+        if (fakeAccDetect(dev)) {
+            accHardware = ACC_FAKE;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_NONE: // disable ACC
+        accHardware = ACC_NONE;
+        break;
+
+    }
+
+    // Found anything? Check if error or ACC is really missing.
+    if (accHardware == ACC_NONE && accHardwareToUse != ACC_DEFAULT && accHardwareToUse != ACC_NONE) {
+        // Nothing was found and we have a forced sensor that isn't present.
+        accHardwareToUse = ACC_DEFAULT;
+        goto retry;
+    }
+
+
+    if (accHardware == ACC_NONE) {
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_ACC] = accHardware;
+    sensorsSet(SENSOR_ACC);
+    return true;
+}
+
 void accInit(uint32_t gyroSamplingInverval)
 {
+    acc.dev.acc_1G = 256; // set default
+    acc.dev.init(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
     switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
     case 125:
-        accSamplingInterval = 1000;
+        acc.accSamplingInterval = 1000;
         break;
     case 1000:
     default:
 #ifdef STM32F10X
-        accSamplingInterval = 1000;
+        acc.accSamplingInterval = 1000;
 #else
-        accSamplingInterval = 1000;
+        acc.accSamplingInterval = 1000;
 #endif
     }
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
     }
 }
@@ -119,10 +290,10 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
             a[axis] = 0;
 
         // Sum up CALIBRATING_ACC_CYCLES readings
-        a[axis] += accSmooth[axis];
+        a[axis] += acc.accSmooth[axis];
 
         // Reset global variables to prevent other code from using un-calibrated data
-        accSmooth[axis] = 0;
+        acc.accSmooth[axis] = 0;
         accelerationTrims->raw[axis] = 0;
     }
 
@@ -130,7 +301,7 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
         accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
         accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.acc_1G;
+        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -161,9 +332,9 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
             if (InflightcalibratingA == 50)
                 b[axis] = 0;
             // Sum up 50 readings
-            b[axis] += accSmooth[axis];
+            b[axis] += acc.accSmooth[axis];
             // Clear global variables for next reading
-            accSmooth[axis] = 0;
+            acc.accSmooth[axis] = 0;
             accelerationTrims->raw[axis] = 0;
         }
         // all values are measured
@@ -185,7 +356,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
         AccInflightCalibrationSavetoEEProm = false;
         accelerationTrims->raw[X] = b[X] / 50;
         accelerationTrims->raw[Y] = b[Y] / 50;
-        accelerationTrims->raw[Z] = b[Z] / 50 - acc.acc_1G;    // for nunchuck 200=1G
+        accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
 
         resetRollAndPitchTrims(rollAndPitchTrims);
 
@@ -195,31 +366,31 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
 
 static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
 {
-    accSmooth[X] -= accelerationTrims->raw[X];
-    accSmooth[Y] -= accelerationTrims->raw[Y];
-    accSmooth[Z] -= accelerationTrims->raw[Z];
+    acc.accSmooth[X] -= accelerationTrims->raw[X];
+    acc.accSmooth[Y] -= accelerationTrims->raw[Y];
+    acc.accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     int16_t accADCRaw[XYZ_AXIS_COUNT];
 
-    if (!acc.read(accADCRaw)) {
+    if (!acc.dev.read(accADCRaw)) {
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        if (debugMode == DEBUG_ACCELEROMETER) debug[axis] = accADCRaw[axis];
-        accSmooth[axis] = accADCRaw[axis];
+        DEBUG_SET(DEBUG_ACCELEROMETER, axis, accADCRaw[axis]);
+        acc.accSmooth[axis] = accADCRaw[axis];
     }
 
     if (accLpfCutHz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)accSmooth[axis]));
+            acc.accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accSmooth[axis]));
         }
     }
 
-    alignSensors(accSmooth, accAlign);
+    alignSensors(acc.accSmooth, acc.dev.accAlign);
 
     if (!isAccelerationCalibrationComplete()) {
         performAcclerationCalibration(rollAndPitchTrims);
@@ -240,9 +411,9 @@ void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
 void setAccelerationFilter(uint16_t initialAccLpfCutHz)
 {
     accLpfCutHz = initialAccLpfCutHz;
-    if (accSamplingInterval) {
+    if (acc.accSamplingInterval) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
     }
 }

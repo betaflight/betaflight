@@ -35,6 +35,8 @@
 
 void targetConfiguration(master_t *config)
 {
+    UNUSED(config);
+
 #ifdef BEEBRAIN
     // alternative defaults settings for Beebrain target
     config->motorConfig.motorPwmRate = 4000;
@@ -88,9 +90,8 @@ void targetConfiguration(master_t *config)
     } else {
         config->beeperConfig.isOpenDrain = true;
         config->beeperConfig.isInverted = false;
+        config->flashConfig.csTag = IO_TAG_NONE;
     }
-#else
-    UNUSED(config);
 #endif
 }
 

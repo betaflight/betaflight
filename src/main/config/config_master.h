@@ -31,6 +31,8 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/vcd.h"
+#include "drivers/light_led.h"
+#include "drivers/flash.h"
 
 #include "fc/rc_controls.h"
 
@@ -61,6 +63,43 @@
 #include "sensors/battery.h"
 #include "sensors/compass.h"
 
+#define motorConfig(x) (&masterConfig.motorConfig)
+#define flight3DConfig(x) (&masterConfig.flight3DConfig)
+#define servoConfig(x) (&masterConfig.servoConfig)
+#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define gimbalConfig(x) (&masterConfig.gimbalConfig)
+#define boardAlignment(x) (&masterConfig.boardAlignment)
+#define imuConfig(x) (&masterConfig.imuConfig)
+#define gyroConfig(x) (&masterConfig.gyroConfig)
+#define compassConfig(x) (&masterConfig.compassConfig)
+#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
+#define barometerConfig(x) (&masterConfig.barometerConfig)
+#define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
+#define batteryConfig(x) (&masterConfig.batteryConfig)
+#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
+#define gpsProfile(x) (&masterConfig.gpsProfile)
+#define gpsConfig(x) (&masterConfig.gpsConfig)
+#define rxConfig(x) (&masterConfig.rxConfig)
+#define armingConfig(x) (&masterConfig.armingConfig)
+#define mixerConfig(x) (&masterConfig.mixerConfig)
+#define airplaneConfig(x) (&masterConfig.airplaneConfig)
+#define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialConfig(x) (&masterConfig.serialConfig)
+#define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ppmConfig(x) (&masterConfig.ppmConfig)
+#define pwmConfig(x) (&masterConfig.pwmConfig)
+#define adcConfig(x) (&masterConfig.adcConfig)
+#define beeperConfig(x) (&masterConfig.beeperConfig)
+#define sonarConfig(x) (&masterConfig.sonarConfig)
+#define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define statusLedConfig(x) (&masterConfig.statusLedConfig)
+#define osdProfile(x) (&masterConfig.osdProfile)
+#define vcdProfile(x) (&masterConfig.vcdProfile)
+#define sdcardConfig(x) (&masterConfig.sdcardConfig)
+#define blackboxConfig(x) (&masterConfig.blackboxConfig)
+#define flashConfig(x) (&masterConfig.flashConfig)
+
+
 // System-wide
 typedef struct master_s {
     uint8_t version;
@@ -84,16 +123,12 @@ typedef struct master_s {
     gimbalConfig_t gimbalConfig;
 #endif
 
-    // global sensor-related stuff
-    sensorSelectionConfig_t sensorSelectionConfig;
-    sensorAlignmentConfig_t sensorAlignmentConfig;
     boardAlignment_t boardAlignment;
 
-    int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
-    uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
+    imuConfig_t imuConfig;
 
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
+    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
 
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 
@@ -102,15 +137,12 @@ typedef struct master_s {
     gyroConfig_t gyroConfig;
     compassConfig_t compassConfig;
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
+    accelerometerConfig_t accelerometerConfig;
 
-    uint16_t acc_lpf_hz;                       // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
-    accDeadband_t accDeadband;
     barometerConfig_t barometerConfig;
-    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
 
-    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
-    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
+    throttleCorrectionConfig_t throttleCorrectionConfig;
+
     batteryConfig_t batteryConfig;
 
     // Radio/ESC-related configuration
@@ -120,9 +152,6 @@ typedef struct master_s {
     gpsProfile_t gpsProfile;
     gpsConfig_t gpsConfig;
 #endif
-
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-    sensorTrims_t sensorTrims;
 
     rxConfig_t rxConfig;
     inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
@@ -137,10 +166,12 @@ typedef struct master_s {
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
+    statusLedConfig_t statusLedConfig;
+
 #ifdef USE_PPM
     ppmConfig_t ppmConfig;
 #endif
-    
+
 #ifdef USE_PWM
     pwmConfig_t pwmConfig;
 #endif
@@ -177,7 +208,7 @@ typedef struct master_s {
 #ifdef USE_MAX7456
     vcdProfile_t vcdProfile;
 #endif
-    
+
 #ifdef USE_SDCARD
     sdcardConfig_t sdcardConfig;
 #endif
@@ -199,6 +230,10 @@ typedef struct master_s {
 
 #ifdef BLACKBOX
     blackboxConfig_t blackboxConfig;
+#endif
+
+#ifdef USE_FLASHFS
+    flashConfig_t flashConfig;
 #endif
 
     uint32_t beeper_off_flags;

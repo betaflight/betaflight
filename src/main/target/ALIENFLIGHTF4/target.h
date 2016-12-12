@@ -21,7 +21,7 @@
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
-#define MOTOR_PIN               PB8
+#define BRUSHED_ESC_AUTODETECT
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 

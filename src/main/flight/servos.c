@@ -177,7 +177,7 @@ void servoMixerInit(servoMixer_t *initialCustomServoMixers)
     // enable servos for mixes that require them. note, this shifts motor counts.
     useServo = mixers[currentMixerMode].useServo;
     // if we want camstab/trig, that also enables servos, even if mixer doesn't
-    if (feature(FEATURE_SERVO_TILT))
+    if (feature(FEATURE_SERVO_TILT) || feature(FEATURE_CHANNEL_FORWARDING))
         useServo = 1;
 
     // give all servos a default command
