@@ -145,7 +145,7 @@
 #define VBAT_ADC_PIN            PC3
 
 #define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT

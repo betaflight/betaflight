@@ -185,7 +185,7 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 #else
     crsfSerialize16(dst, amperage / 10);
     const uint32_t batteryCapacity = batteryConfig->batteryCapacity;
-    const uint8_t batteryRemainingPercentage = calculateBatteryCapacityRemainingPercentage();
+    const uint8_t batteryRemainingPercentage = calculateBatteryPercentage();
 #endif
     crsfSerialize8(dst, (batteryCapacity >> 16));
     crsfSerialize8(dst, (batteryCapacity >> 8));
@@ -196,13 +196,13 @@ void crsfFrameBatterySensor(sbuf_t *dst)
 
 typedef enum {
     CRSF_ACTIVE_ANTENNA1 = 0,
-    CRSF_ACTIVE_ANTENNA2 = 1,
+    CRSF_ACTIVE_ANTENNA2 = 1
 } crsfActiveAntenna_e;
 
 typedef enum {
     CRSF_RF_MODE_4_HZ = 0,
     CRSF_RF_MODE_50_HZ = 1,
-    CRSF_RF_MODE_150_HZ = 2,
+    CRSF_RF_MODE_150_HZ = 2
 } crsrRfMode_e;
 
 typedef enum {
@@ -212,7 +212,7 @@ typedef enum {
     CRSF_RF_POWER_100_mW = 3,
     CRSF_RF_POWER_500_mW = 4,
     CRSF_RF_POWER_1000_mW = 5,
-    CRSF_RF_POWER_2000_mW = 6,
+    CRSF_RF_POWER_2000_mW = 6
 } crsrRfPower_e;
 
 /*
@@ -330,7 +330,7 @@ bool checkCrsfTelemetryState(void)
 /*
  * Called periodically by the scheduler
  */
-void handleCrsfTelemetry(uint32_t currentTime)
+void handleCrsfTelemetry(timeUs_t currentTimeUs)
 {
     static uint32_t crsfLastCycleTime;
 
@@ -343,8 +343,8 @@ void handleCrsfTelemetry(uint32_t currentTime)
     crsfRxSendTelemetryData();
 
     // Actual telemetry data only needs to be sent at a low frequency, ie 10Hz
-    if (currentTime >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
-        crsfLastCycleTime = currentTime;
+    if (currentTimeUs >= crsfLastCycleTime + CRSF_CYCLETIME_US) {
+        crsfLastCycleTime = currentTimeUs;
         processCrsf();
     }
 }

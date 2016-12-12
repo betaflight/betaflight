@@ -176,7 +176,7 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 #define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff

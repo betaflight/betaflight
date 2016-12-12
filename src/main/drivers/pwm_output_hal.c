@@ -63,11 +63,7 @@ static void pwmOutConfig(pwmOutputPort_t *port, const timerHardware_t *timerHard
     configTimeBase(timerHardware->tim, period, mhz);
     pwmOCConfig(timerHardware->tim, timerHardware->channel, value, timerHardware->output);
 
-    if (timerHardware->output & TIMER_OUTPUT_ENABLED) {
-        HAL_TIM_PWM_Start(Handle, timerHardware->channel);
-    } else {
-        HAL_TIM_PWM_Stop(Handle, timerHardware->channel);
-    }
+    HAL_TIM_PWM_Start(Handle, timerHardware->channel);
     HAL_TIM_Base_Start(Handle);
 
     switch (timerHardware->channel) {
@@ -221,7 +217,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
             break;
         }
 
-        const timerHardware_t *timerHardware = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timerHardware = timerGetByTag(tag, TIM_USE_ANY);
 
         if (timerHardware == NULL) {
             /* flag failure and disable ability to arm */
@@ -280,7 +276,7 @@ void servoInit(const servoConfig_t *servoConfig)
         IOInit(servos[servoIndex].io, OWNER_SERVO, RESOURCE_INDEX(servoIndex));
         //IOConfigGPIO(servos[servoIndex].io, IOCFG_AF_PP);
 
-        const timerHardware_t *timer = timerGetByTag(tag, TIMER_OUTPUT_ENABLED);
+        const timerHardware_t *timer = timerGetByTag(tag, TIM_USE_ANY);
         IOConfigGPIOAF(servos[servoIndex].io, IOCFG_AF_PP, timer->alternateFunction);
 
         if (timer == NULL) {

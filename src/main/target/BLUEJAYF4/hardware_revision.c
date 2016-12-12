@@ -29,14 +29,6 @@
 #include "drivers/flash_m25p16.h"
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-    "Unknown",
-    "BlueJay rev1",
-    "BlueJay rev2",
-    "BlueJay rev3",
-    "BlueJay rev3a"
-};
-
 uint8_t hardwareRevision = UNKNOWN;
 
 void detectHardwareRevision(void)
@@ -93,11 +85,10 @@ void updateHardwareRevision(void)
     /*
         if flash exists on PB3 then Rev1
     */
-    if (m25p16_init(IO_TAG(PB3))) {
+    flashConfig_t flashConfig = { .csTag = IO_TAG(PB3) };
+    if (m25p16_init(&flashConfig)) {
         hardwareRevision = BJF4_REV1;
     } else {
         IOInit(IOGetByTag(IO_TAG(PB3)), OWNER_FREE, 0);
     }
 }
-
-

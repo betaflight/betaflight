@@ -74,7 +74,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
     if (!motor->timerHardware->dmaChannel) {
         return;
     }
-    
+
     uint16_t packet = (value << 1) | (motor->requestTelemetry ? 1 : 0);
     motor->requestTelemetry = false;    // reset telemetry request to make sure it's triggered only once in a row
 

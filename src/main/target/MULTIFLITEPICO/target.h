@@ -106,7 +106,7 @@
 #define RSSI_ADC_PIN            PB2
 
 #define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
 // UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4

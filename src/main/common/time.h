@@ -14,24 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
-typedef enum awf1HardwareRevision_t {
-    AFF1_UNKNOWN = 0,
-    AFF1_REV_1, // MPU6050 (I2C)
-} awf1HardwareRevision_e;
+#include <stdint.h>
 
-typedef enum awf4HardwareMotorType_t {
-    MOTOR_UNKNOWN = 0,
-    MOTOR_BRUSHED,
-    MOTOR_BRUSHLESS
-} awf4HardwareMotorType_e;
+#include "platform.h"
 
-extern uint8_t hardwareRevision;
-extern uint8_t hardwareMotorType;
+// time difference, 32 bits always sufficient
+typedef int32_t timeDelta_t;
+// millisecond time
+typedef uint32_t timeMs_t ;
+// microsecond time
+#ifdef USE_64BIT_TIME
+typedef uint64_t timeUs_t;
+#define TIMEUS_MAX UINT64_MAX
+#else
+typedef uint32_t timeUs_t;
+#define TIMEUS_MAX UINT32_MAX
+#endif
 
-void updateHardwareRevision(void);
-void detectHardwareRevision(void);
-
-struct extiConfig_s;
-const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);
+static inline timeDelta_t cmpTimeUs(timeUs_t a, timeUs_t b) { return (timeDelta_t)(a - b); }
