@@ -531,7 +531,13 @@ static void resetConf(void)
 
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
+        if (i < NON_AUX_CHANNEL_COUNT) {
+            channelFailsafeConfiguration->mode = (i == THROTTLE) ? RX_FAILSAFE_MODE_HOLD : RX_FAILSAFE_MODE_AUTO;
+        }
+        else {
+            channelFailsafeConfiguration->mode = RX_FAILSAFE_MODE_HOLD;
+        }
+
         channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(masterConfig.rxConfig.midrc);
     }
 
@@ -608,13 +614,13 @@ static void resetConf(void)
     currentProfile->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
     // Failsafe Variables
-    masterConfig.failsafeConfig.failsafe_delay = 10;              // 1sec
-    masterConfig.failsafeConfig.failsafe_recovery_delay = 0;      // 0 seconds (plus 200ms explicit delay)
+    masterConfig.failsafeConfig.failsafe_delay = 5;               // 0.5 sec
+    masterConfig.failsafeConfig.failsafe_recovery_delay = 5;      // 0.5 seconds (plus 200ms explicit delay)
     masterConfig.failsafeConfig.failsafe_off_delay = 200;         // 20sec
     masterConfig.failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
     masterConfig.failsafeConfig.failsafe_kill_switch = 0;         // default failsafe switch action is identical to rc link loss
-    masterConfig.failsafeConfig.failsafe_throttle_low_delay = 100; // default throttle low delay for "just disarm" on failsafe condition
-    masterConfig.failsafeConfig.failsafe_procedure = 0;           // default full failsafe procedure is 0: auto-landing
+    masterConfig.failsafeConfig.failsafe_throttle_low_delay = 100;// default throttle low delay for "just disarm" on failsafe condition
+    masterConfig.failsafeConfig.failsafe_procedure = 0;           // default full failsafe procedure is 0: auto-landing, 1: drop, 2 : RTH
 
 #ifdef USE_SERVOS
     // servos
