@@ -185,7 +185,8 @@ extern mpuDetectionResult_t mpuDetectionResult;
 
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
-bool mpuAccRead(int16_t *accData);
+struct accDev_s;
+bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 mpuDetectionResult_t *mpuDetect(void);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);

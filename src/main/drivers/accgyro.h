@@ -36,7 +36,7 @@
 
 typedef struct gyroDev_s {
     sensorGyroInitFuncPtr init;                             // initialize function
-    sensorGyroReadFuncPtr read;                                 // read 3 axis data function
+    sensorGyroReadFuncPtr read;                             // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     sensorGyroInterruptStatusFuncPtr intStatus;
     float scale;                                            // scalefactor
@@ -48,9 +48,10 @@ typedef struct gyroDev_s {
 } gyroDev_t;
 
 typedef struct accDev_s {
-    sensorAccInitFuncPtr init;                                 // initialize function
-    sensorReadFuncPtr read;                                 // read 3 axis data function
+    sensorAccInitFuncPtr init;                              // initialize function
+    sensorAccReadFuncPtr read;                              // read 3 axis data function
     uint16_t acc_1G;
+    int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
     sensor_align_e accAlign;
 } accDev_t;

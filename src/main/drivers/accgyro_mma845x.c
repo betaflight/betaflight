@@ -111,7 +111,7 @@ static void mma8452Init(accDev_t *acc)
     acc->acc_1G = 256;
 }
 
-static bool mma8452Read(int16_t *accelData)
+static bool mma8452Read(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -119,9 +119,9 @@ static bool mma8452Read(int16_t *accelData)
         return false;
     }
 
-    accelData[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
-    accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
-    accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
+    acc->ADCRaw[0] = ((int16_t)((buf[0] << 8) | buf[1]) >> 2) / 4;
+    acc->ADCRaw[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
+    acc->ADCRaw[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 
     return true;
 }

@@ -62,7 +62,6 @@
 acc_t acc;                       // acc access functions
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
-static int16_t accADCRaw[XYZ_AXIS_COUNT];
 
 static flightDynamicsTrims_t * accZero;
 static flightDynamicsTrims_t * accGain;
@@ -359,12 +358,12 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
 
 void updateAccelerationReadings(void)
 {
-    if (!acc.dev.read(accADCRaw)) {
+    if (!acc.dev.read(&acc.dev)) {
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        acc.accADC[axis] = accADCRaw[axis];
+        acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
 
     if (accLpfCutHz) {

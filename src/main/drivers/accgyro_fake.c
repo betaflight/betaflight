@@ -91,11 +91,11 @@ void fakeAccSet(int16_t x, int16_t y, int16_t z)
     fakeAccData[Z] = z;
 }
 
-static bool fakeAccRead(int16_t *accData)
+static bool fakeAccRead(accDev_t *acc)
 {
-    accData[X] = fakeAccData[X];
-    accData[Y] = fakeAccData[Y];
-    accData[Z] = fakeAccData[Z];
+    acc->ADCRaw[X] = fakeAccData[X];
+    acc->ADCRaw[Y] = fakeAccData[Y];
+    acc->ADCRaw[Z] = fakeAccData[Z];
     return true;
 }
 
