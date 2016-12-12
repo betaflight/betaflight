@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/axis.h"
+#include "drivers/exti.h"
 #include "drivers/sensor.h"
 
 #ifndef MPU_I2C_INSTANCE
@@ -43,6 +44,7 @@ typedef struct gyroDev_s {
     uint16_t lpf;
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     sensor_align_e gyroAlign;
+    const extiConfig_t *mpuIntExtiConfig;
 } gyroDev_t;
 
 typedef struct accDev_s {

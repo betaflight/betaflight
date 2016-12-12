@@ -62,7 +62,6 @@ static bool detectSPISensorsAndUpdateDetectionResult(void);
 mpuDetectionResult_t mpuDetectionResult;
 
 mpuConfiguration_t mpuConfiguration;
-static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_ADDRESS             0x68
 
@@ -72,12 +71,10 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_INQUIRY_MASK   0x7E
 
-mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse)
+mpuDetectionResult_t *mpuDetect(void)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
     memset(&mpuConfiguration, 0, sizeof(mpuConfiguration));
-
-    mpuIntExtiConfig = configToUse;
 
     bool ack;
     uint8_t sig;
@@ -249,14 +246,14 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 {
     static bool mpuExtiInitDone = false;
 
-    if (mpuExtiInitDone || !mpuIntExtiConfig) {
+    if (mpuExtiInitDone || !gyro->mpuIntExtiConfig) {
         return;
     }
 
     mpuIntRec.gyro = gyro;
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
-    IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
+    IO_t mpuIntIO = IOGetByTag(gyro->mpuIntExtiConfig->tag);
 
 #ifdef ENSURE_MPU_DATA_READY_IS_LOW
     uint8_t status = IORead(mpuIntIO);

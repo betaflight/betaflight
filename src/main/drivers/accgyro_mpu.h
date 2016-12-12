@@ -187,5 +187,5 @@ struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 bool mpuAccRead(int16_t *accData);
 bool mpuGyroRead(struct gyroDev_s *gyro);
-mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse);
+mpuDetectionResult_t *mpuDetect(void);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);
