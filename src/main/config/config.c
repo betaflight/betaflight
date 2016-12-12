@@ -164,7 +164,8 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->general.flags.use_thr_mid_for_althold = 0;
     navConfig->general.flags.extra_arming_safety = 1;
     navConfig->general.flags.user_control_mode = NAV_GPS_ATTI;
-    navConfig->general.flags.rth_alt_control_style = NAV_RTH_AT_LEAST_ALT;
+    navConfig->general.flags.rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT;
+    navConfig->general.flags.rth_climb_first = 1;                         // Climb first, turn after reaching safe altitude
     navConfig->general.flags.rth_tail_first = 0;
     navConfig->general.flags.disarm_on_landing = 0;
 

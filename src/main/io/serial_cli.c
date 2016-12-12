@@ -741,8 +741,9 @@ const clivalue_t valueTable[] = {
     { "nav_land_slowdown_maxalt",   VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.land_slowdown_maxalt, .config.minmax = { 500,  4000 }, 0 },
     { "nav_emerg_landing_speed",    VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.emerg_descent_rate, .config.minmax = { 100,  2000 }, 0 },
     { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
+    { "nav_rth_climb_first",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_climb_first, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_alt_control_style, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
+    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_alt_control_mode, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
     { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.rth_altitude, .config.minmax = { 100,  65000 }, 0 },
 
     { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.mc.max_bank_angle, .config.minmax = { 15,  45 }, 0 },
