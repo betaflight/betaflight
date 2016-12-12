@@ -225,6 +225,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->fw.loiter_radius = 5000;     // 50m
 
     // Fixed wing launch
+    navConfig->fw.launch_velocity_thresh = 300;         // 3 m/s
     navConfig->fw.launch_accel_thresh = 1.9f * 981;     // cm/s/s (1.9*G)
     navConfig->fw.launch_time_thresh = 40;              // 40ms
     navConfig->fw.launch_throttle = 1700;
