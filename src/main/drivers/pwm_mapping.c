@@ -288,6 +288,12 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             if (timerIndex == PWM6 || timerIndex == PWM7)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
+
+#if defined(AIRBOTF4)
+            // remap PWM11+PWM12 as servos on multirotor mixers that use servos (i.e. Tri)
+            if (timerIndex == PWM11 || timerIndex == PWM12)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
         }
 
         if (init->useChannelForwarding && !init->airplane) {
