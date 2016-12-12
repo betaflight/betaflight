@@ -49,6 +49,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
 #include "fc/runtime_config.h"
@@ -222,6 +223,9 @@ retry:
 bool accInit(const accelerometerConfig_t *accConfig, uint32_t targetLooptime)
 {
     memset(&acc, 0, sizeof(acc));
+    // copy over the common gyro mpu settings
+    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
+    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
     if (!accDetect(&acc.dev, accConfig->acc_hardware)) {
         return false;
     }

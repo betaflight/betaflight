@@ -51,9 +51,9 @@ static bool fakeGyroRead(gyroDev_t *gyro)
     return true;
 }
 
-static bool fakeGyroReadTemp(int16_t *tempData)
+static bool fakeGyroReadTemperature(gyroDev_t *gyro, int16_t *temperatureData)
 {
-    UNUSED(tempData);
+    UNUSED(temperatureData);
     return true;
 }
 
@@ -68,7 +68,7 @@ bool fakeGyroDetect(gyroDev_t *gyro)
     gyro->init = fakeGyroInit;
     gyro->intStatus = fakeGyroInitStatus;
     gyro->read = fakeGyroRead;
-    gyro->temperature = fakeGyroReadTemp;
+    gyro->temperature = fakeGyroReadTemperature;
     gyro->scale = 1.0f / 16.4f;
     return true;
 }

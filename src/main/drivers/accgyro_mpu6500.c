@@ -41,7 +41,7 @@ void mpu6500AccInit(accDev_t *acc)
 
 bool mpu6500AccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+    if (acc->mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
     }
 
@@ -68,40 +68,40 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     }
 #endif
 
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
+    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
-    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
+    gyro->mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x07);
     delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
+    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
     delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    gyro->mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
+    gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
     delay(100);
 
     // Data ready interrupt configuration
 #ifdef USE_MPU9250_MAG
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    gyro->mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 #else
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    gyro->mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
 #endif
     delay(15);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
+    gyro->mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
     delay(15);
 }
 
 bool mpu6500GyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+    if (gyro->mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
     }
 

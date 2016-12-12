@@ -38,4 +38,5 @@ typedef bool (*sensorAccReadFuncPtr)(struct accDev_s *acc);
 struct gyroDev_s;
 typedef void (*sensorGyroInitFuncPtr)(struct gyroDev_s *gyro);
 typedef bool (*sensorGyroReadFuncPtr)(struct gyroDev_s *gyro);
+typedef bool (*sensorGyroReadDataFuncPtr)(struct gyroDev_s *gyro, int16_t *data);
 typedef bool (*sensorGyroInterruptStatusFuncPtr)(struct gyroDev_s *gyro);
