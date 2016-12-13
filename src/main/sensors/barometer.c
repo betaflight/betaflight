@@ -60,7 +60,6 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
     requestedSensors[SENSOR_INDEX_BARO] = baroHardwareToUse;
 
 #ifdef USE_BARO_BMP085
-
     const bmp085Config_t *bmp085Config = NULL;
 
 #if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
@@ -80,41 +79,41 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #endif
 
     switch (baroHardwareToUse) {
-        case BARO_BMP085:
+    case BARO_BMP085:
 #ifdef USE_BARO_BMP085
-            if (bmp085Detect(bmp085Config, dev)) {
-                baroHardware = BARO_BMP085;
-            }
+        if (bmp085Detect(bmp085Config, dev)) {
+            baroHardware = BARO_BMP085;
+        }
 #endif
-            break;
+        break;
 
-        case BARO_MS5611:
+    case BARO_MS5611:
 #ifdef USE_BARO_MS5611
-            if (ms5611Detect(dev)) {
-                baroHardware = BARO_MS5611;
-            }
+        if (ms5611Detect(dev)) {
+            baroHardware = BARO_MS5611;
+        }
 #endif
-            break;
+        break;
 
-        case BARO_BMP280:
+    case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
-            if (bmp280Detect(dev)) {
-                baroHardware = BARO_BMP280;
-            }
+        if (bmp280Detect(dev)) {
+            baroHardware = BARO_BMP280;
+        }
 #endif
-            break;
+        break;
 
-        case BARO_FAKE:
+    case BARO_FAKE:
 #ifdef USE_FAKE_BARO
-            if (fakeBaroDetect(dev)) {
-                baroHardware = BARO_FAKE;
-            }
+        if (fakeBaroDetect(dev)) {
+            baroHardware = BARO_FAKE;
+        }
 #endif
-            break;
+        break;
 
-        case BARO_NONE:
-            baroHardware = BARO_NONE;
-            break;
+    case BARO_NONE:
+        baroHardware = BARO_NONE;
+        break;
     }
 
     addBootlogEvent6(BOOT_EVENT_BARO_DETECTION, BOOT_EVENT_FLAGS_NONE, baroHardware, 0, 0, 0);

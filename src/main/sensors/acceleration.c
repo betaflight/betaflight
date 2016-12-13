@@ -84,122 +84,121 @@ retry:
     requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
 
     switch (accHardwareToUse) {
-        case ACC_AUTODETECT:
-            ; // fallthrough
-        case ACC_ADXL345: // ADXL345
+    case ACC_AUTODETECT:
+        ; // fallthrough
+    case ACC_ADXL345: // ADXL345
 #ifdef USE_ACC_ADXL345
-            acc_params.useFifo = false;
-            acc_params.dataRate = 800; // unused currently
+        acc_params.useFifo = false;
+        acc_params.dataRate = 800; // unused currently
 #ifdef NAZE
-            if (hardwareRevision < NAZE32_REV5 && adxl345Detect(dev, &acc_params)) {
+        if (hardwareRevision < NAZE32_REV5 && adxl345Detect(dev, &acc_params)) {
 #else
-            if (adxl345Detect(dev, &acc_params)) {
+        if (adxl345Detect(dev, &acc_params)) {
 #endif
 #ifdef ACC_ADXL345_ALIGN
-                dev->accAlign = ACC_ADXL345_ALIGN;
+            dev->accAlign = ACC_ADXL345_ALIGN;
 #endif
-                accHardware = ACC_ADXL345;
-                break;
-            }
+            accHardware = ACC_ADXL345;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_LSM303DLHC:
+        ; // fallthrough
+    case ACC_LSM303DLHC:
 #ifdef USE_ACC_LSM303DLHC
-            if (lsm303dlhcAccDetect(dev)) {
+        if (lsm303dlhcAccDetect(dev)) {
 #ifdef ACC_LSM303DLHC_ALIGN
-                dev->accAlign = ACC_LSM303DLHC_ALIGN;
+            dev->accAlign = ACC_LSM303DLHC_ALIGN;
 #endif
-                accHardware = ACC_LSM303DLHC;
-                break;
-            }
+            accHardware = ACC_LSM303DLHC;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_MPU6050: // MPU6050
+        ; // fallthrough
+    case ACC_MPU6050: // MPU6050
 #ifdef USE_ACC_MPU6050
-            if (mpu6050AccDetect(dev)) {
+        if (mpu6050AccDetect(dev)) {
 #ifdef ACC_MPU6050_ALIGN
-                dev->accAlign = ACC_MPU6050_ALIGN;
+            dev->accAlign = ACC_MPU6050_ALIGN;
 #endif
-                accHardware = ACC_MPU6050;
-                break;
-            }
+            accHardware = ACC_MPU6050;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_MMA8452: // MMA8452
+        ; // fallthrough
+    case ACC_MMA8452: // MMA8452
 #ifdef USE_ACC_MMA8452
 #ifdef NAZE
-            // Not supported with this frequency
-            if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
+        // Not supported with this frequency
+        if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
 #else
-            if (mma8452Detect(dev)) {
+        if (mma8452Detect(dev)) {
 #endif
 #ifdef ACC_MMA8452_ALIGN
-                dev->accAlign = ACC_MMA8452_ALIGN;
+            dev->accAlign = ACC_MMA8452_ALIGN;
 #endif
-                accHardware = ACC_MMA8452;
-                break;
-            }
+            accHardware = ACC_MMA8452;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_BMA280: // BMA280
+        ; // fallthrough
+    case ACC_BMA280: // BMA280
 #ifdef USE_ACC_BMA280
-            if (bma280Detect(dev)) {
+        if (bma280Detect(dev)) {
 #ifdef ACC_BMA280_ALIGN
-                dev->accAlign = ACC_BMA280_ALIGN;
+            dev->accAlign = ACC_BMA280_ALIGN;
 #endif
-                accHardware = ACC_BMA280;
-                break;
-            }
+            accHardware = ACC_BMA280;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_MPU6000:
+        ; // fallthrough
+    case ACC_MPU6000:
 #ifdef USE_ACC_SPI_MPU6000
-            if (mpu6000SpiAccDetect(dev)) {
+        if (mpu6000SpiAccDetect(dev)) {
 #ifdef ACC_MPU6000_ALIGN
-                dev->accAlign = ACC_MPU6000_ALIGN;
+            dev->accAlign = ACC_MPU6000_ALIGN;
 #endif
-                accHardware = ACC_MPU6000;
-                break;
-            }
+            accHardware = ACC_MPU6000;
+            break;
+        }
 #endif
-            ; // fallthrough
-        case ACC_MPU6500:
+        ; // fallthrough
+    case ACC_MPU6500:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
-            if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
+        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
 #else
-            if (mpu6500AccDetect(dev)) {
+        if (mpu6500AccDetect(dev)) {
 #endif
 #ifdef ACC_MPU6500_ALIGN
-                dev->accAlign = ACC_MPU6500_ALIGN;
+            dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
-                accHardware = ACC_MPU6500;
-                break;
-            }
-#endif
-        case ACC_MPU9250:
-#ifdef USE_ACC_SPI_MPU9250
-            if (mpu9250SpiAccDetect(dev)) {
-#ifdef ACC_MPU9250_ALIGN
-                dev->accAlign = ACC_MPU9250_ALIGN;
-#endif
-                accHardware = ACC_MPU9250;
-                break;
-            }
-#endif
-            ; // fallthrough
-        case ACC_FAKE:
-#ifdef USE_FAKE_ACC
-            if (fakeAccDetect(dev)) {
-                accHardware = ACC_FAKE;
-                break;
-            }
-#endif
-            ; // fallthrough
-        case ACC_NONE: // disable ACC
-            accHardware = ACC_NONE;
+            accHardware = ACC_MPU6500;
             break;
-
+        }
+#endif
+    case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+        if (mpu9250SpiAccDetect(dev)) {
+#ifdef ACC_MPU9250_ALIGN
+            dev->accAlign = ACC_MPU9250_ALIGN;
+#endif
+            accHardware = ACC_MPU9250;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_FAKE:
+#ifdef USE_FAKE_ACC
+        if (fakeAccDetect(dev)) {
+            accHardware = ACC_FAKE;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_NONE: // disable ACC
+        accHardware = ACC_NONE;
+        break;
     }
 
     // Found anything? Check if error or ACC is really missing.
