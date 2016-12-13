@@ -73,8 +73,8 @@
 #define USE_SPI_DEVICE_2
 #define SPI2_NSS_PIN            PB12
 #define SPI2_SCK_PIN            PB13
-#define SPI2_MISO_PIN   		PC2
-#define SPI2_MOSI_PIN   		PC3
+#define SPI2_MISO_PIN   	PC2
+#define SPI2_MOSI_PIN   	PC3
 
 #define OSD
 #define USE_MAX7456
@@ -101,10 +101,10 @@
 #define SDCARD_SPI_INSTANCE     SPI3
 #define SDCARD_SPI_CS_PIN       PB9
 
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
 // Divide to under 25MHz for normal operation:
-#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 	// 21MHz
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
 
 #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream5
 #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
@@ -123,7 +123,7 @@
 #define RSSI_ADC_PIN            PC1
 
 // *************** FEATURES ************************
-#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_OSD | FEATURE_BLACKBOX | FEATURE_LED_STRIP | FEATURE_VTX)
+#define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_OSD | FEATURE_BLACKBOX | FEATURE_VTX)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
@@ -133,7 +133,7 @@
 #define LED_STRIP
 #define OSD
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
