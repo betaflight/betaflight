@@ -604,6 +604,18 @@ static bool detectMag(magSensor_e magHardwareToUse)
 #endif
             ; // fallthrough
 
+        case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+        	if (ist8310Detect(&mag, ist8310Config)) {
+#ifdef MAG_IST8310_ALIGN
+        		magAlign = MAG_IST8310_ALIGN;
+#endif
+        		magHardware = MAG_IST8310;
+        		break;
+        	}
+#endif
+        	; // fallthrough
+
         case MAG_FAKE:
 #ifdef USE_FAKE_MAG
             if (fakeMagDetect(&mag)) {

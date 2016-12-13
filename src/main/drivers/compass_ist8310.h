@@ -17,29 +17,6 @@
 
 #pragma once
 
-#include "sensors/sensors.h"
-
-// Type of magnetometer used/detected
-typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_GPS = 4,
-    MAG_MAG3110 = 5,
-    MAG_AK8963 = 6,
-    MAG_IST8310 = 7,
-    MAG_FAKE = 8,
-} magSensor_e;
-
-#define MAG_MAX  MAG_FAKE
-
-bool compassInit(int16_t magDeclinationFromConfig);
-union flightDynamicsTrims_u;
-void updateCompass(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
-bool isCompassReady(void);
-
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern float magneticDeclination;
+bool ist8310Detect(mag_t* mag);
+bool ist8310Init(void);
+bool ist8310Read(int16_t *magData);
