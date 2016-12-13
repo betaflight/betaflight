@@ -598,7 +598,7 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             sensors/esc_sensor.c \
 
-SPEED_OPTIMISED_SRC = \
+SPEED_OPTIMISE_CANDIDATES_SRC := \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -682,7 +682,7 @@ SPEED_OPTIMISED_SRC = \
             telemetry/mavlink.c \
             telemetry/esc_telemetry.c \
 
-SIZE_OPTIMISED_SRC = \
+SIZE_OPTIMISE_CANDIDATES_SRC := \
             drivers/serial_escserial.c \
             io/serial_cli.c \
             io/serial_4way.c \
@@ -856,32 +856,50 @@ SIZE        := $(ARM_SDK_PREFIX)size
 # Tool options.
 #
 
+
 ifeq ($(DEBUG),GDB)
-OPTIMISE              = -O0
-CC_SPEED_OPTIMISATION = $(OPTIMISE)
-CC_OPTIMISATION       = $(OPTIMISE)
-CC_SIZE_OPTIMISATION  = $(OPTIMISE)
-LTO_FLAGS             = $(OPTIMISE)
+OPTIMISE_DEFAULT    := -O0
+
+SPEED_OPTIMISED_SRC := ""
+SIZE_OPTIMISED_SRC  := ""
+
+LTO_FLAGS           := $(OPTIMISE_DEFAULT)
+
 else
+
+OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
+OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
+
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-OPTIMISE_SPEED        = -Os
-OPTIMISE              = -Os
-OPTIMISE_SIZE         = -Os
+# No speed optimisated files, only size ..
+SPEED_OPTIMISED_SRC := ""
+SIZE_OPTIMISED_SRC  := $(TARGET_SRC)
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
+
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-OPTIMISE_SPEED        = -Ofast
-OPTIMISE              = -O2
-OPTIMISE_SIZE         = -Os
+# Optimize according to  optimizable file lists for F3.
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISE_CANDIDATES_SRC)
+SIZE_OPTIMISED_SRC  := $(SIZE_OPTIMISE_CANDIDATES_SRC)
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+
 else
-OPTIMISE_SPEED        = -Ofast
-OPTIMISE              = -Ofast
-OPTIMISE_SIZE         = -Ofast
-endif
-OPTIMISATION_BASE     = -flto -fuse-linker-plugin -ffast-math
-CC_SPEED_OPTIMISATION = $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-CC_OPTIMISATION       = $(OPTIMISATION_BASE) $(OPTIMISE)
-CC_SIZE_OPTIMISATION  = $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
-LTO_FLAGS             = $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
-endif
+# Optimize all files for speed only
+SPEED_OPTIMISED_SRC := $(TARGET_SRC)
+SIZE_OPTIMISED_SRC  := ""
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+
+endif #TARGETS
+
+endif #DEBUG
+
+CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
@@ -968,14 +986,14 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) $(if $(findstring $(subst ./src/main/,,$<), $(SPEED_OPTIMISED_SRC)), \
+	$(V1) $(if $(findstring $(notdir $<),$(SPEED_OPTIMISED_SRC)), \
 	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
-	$(if $(findstring $(subst ./src/main/,,$<), $(SIZE_OPTIMISED_SRC)), \
-	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(if $(findstring $(notdir $<),$(SIZE_OPTIMISED_SRC)), \
+	echo "%% (size optimised ) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
 	echo "%% $(notdir $<)" "$(STDOUT)" && \
-	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_OPTIMISATION) $<))
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $<))
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s
