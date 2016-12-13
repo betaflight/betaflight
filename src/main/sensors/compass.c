@@ -94,60 +94,60 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
     dev->magAlign = ALIGN_DEFAULT;
 
     switch(magHardwareToUse) {
-        case MAG_HMC5883:
+    case MAG_HMC5883:
 #ifdef USE_MAG_HMC5883
-            if (hmc5883lDetect(dev, hmc5883Config)) {
+        if (hmc5883lDetect(dev, hmc5883Config)) {
 #ifdef MAG_HMC5883_ALIGN
-                dev->magAlign = MAG_HMC5883_ALIGN;
+            dev->magAlign = MAG_HMC5883_ALIGN;
 #endif
-                magHardware = MAG_HMC5883;
-            }
+            magHardware = MAG_HMC5883;
+        }
 #endif
-            break;
+        break;
 
-        case MAG_AK8975:
+    case MAG_AK8975:
 #ifdef USE_MAG_AK8975
-            if (ak8975Detect(dev)) {
+        if (ak8975Detect(dev)) {
 #ifdef MAG_AK8975_ALIGN
-                dev->magAlign = MAG_AK8975_ALIGN;
+            dev->magAlign = MAG_AK8975_ALIGN;
 #endif
-                magHardware = MAG_AK8975;
-            }
+            magHardware = MAG_AK8975;
+        }
 #endif
-            break;
+        break;
 
-        case MAG_AK8963:
+    case MAG_AK8963:
 #ifdef USE_MAG_AK8963
-            if (ak8963Detect(dev)) {
+        if (ak8963Detect(dev)) {
 #ifdef MAG_AK8963_ALIGN
-                dev->magAlign = MAG_AK8963_ALIGN;
+            dev->magAlign = MAG_AK8963_ALIGN;
 #endif
-                magHardware = MAG_AK8963;
-            }
+            magHardware = MAG_AK8963;
+        }
 #endif
-            break;
+        break;
 
-        case MAG_GPS:
+    case MAG_GPS:
 #ifdef GPS
-            if (gpsMagDetect(dev)) {
+        if (gpsMagDetect(dev)) {
 #ifdef MAG_GPS_ALIGN
-                dev->magAlign = MAG_GPS_ALIGN;
+            dev->magAlign = MAG_GPS_ALIGN;
 #endif
-                magHardware = MAG_GPS;
-            }
+            magHardware = MAG_GPS;
+        }
 #endif
-            break;
+        break;
 
-        case MAG_MAG3110:
+    case MAG_MAG3110:
 #ifdef USE_MAG_MAG3110
-            if (mag3110detect(dev)) {
+        if (mag3110detect(dev)) {
 #ifdef MAG_MAG3110_ALIGN
-                dev->magAlign = MAG_MAG3110_ALIGN;
+            dev->magAlign = MAG_MAG3110_ALIGN;
 #endif
-                magHardware = MAG_MAG3110;
-            }
+            magHardware = MAG_MAG3110;
+        }
 #endif
-            break;
+        break;
 
         case MAG_IST8310:
 #ifdef USE_MAG_IST8310
@@ -158,19 +158,19 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
                 magHardware = MAG_IST8310;
             }
 #endif
-            break;
+        break;
 
-        case MAG_FAKE:
+    case MAG_FAKE:
 #ifdef USE_FAKE_MAG
-            if (fakeMagDetect(dev)) {
-                magHardware = MAG_FAKE;
-            }
+        if (fakeMagDetect(dev)) {
+            magHardware = MAG_FAKE;
+        }
 #endif
-            break;
+        break;
 
-        case MAG_NONE:
-            magHardware = MAG_NONE;
-            break;
+    case MAG_NONE:
+        magHardware = MAG_NONE;
+        break;
     }
 
     addBootlogEvent6(BOOT_EVENT_MAG_DETECTION, BOOT_EVENT_FLAGS_NONE, magHardware, 0, 0, 0);

@@ -639,10 +639,10 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
-    { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyroConfig.looptime, .config.minmax = {0, 9000}, 0 },
+    { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &gyroConfig()->looptime, .config.minmax = {0, 9000}, 0 },
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroConfig.gyroSync, .config.lookup = { TABLE_OFF_ON } },
-    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroSyncDenominator, .config.minmax = { 1,  32 } },
+    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyroSync, .config.lookup = { TABLE_OFF_ON } },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyroSyncDenominator, .config.minmax = { 1,  32 } },
 
 #ifdef ASYNC_GYRO_PROCESSING
     { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.accTaskFrequency, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX } },
@@ -650,40 +650,40 @@ const clivalue_t valueTable[] = {
     { "async_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.asyncMode, .config.lookup = { TABLE_ASYNC_MODE } },
 #endif
 
-    { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.midrc, .config.minmax = { 1200,  1700 }, 0 },
-    { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &masterConfig.rxConfig.rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT }, 0 },
-    { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX }, 0 },
-    { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rcSmoothing, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &rxConfig()->midrc, .config.minmax = { 1200,  1700 }, 0 },
+    { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &rxConfig()->rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT }, 0 },
+    { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX }, 0 },
+    { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "rc_smoothing",               VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rcSmoothing, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON }, 0 },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &motorConfig()->mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
-    { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME upper limit should match code in the mixer, 1500 currently
-    { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME lower limit should match code in the mixer, 1500 currently,
-    { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME upper limit should match code in the mixer, 1500 currently
+    { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 }, // FIXME lower limit should match code in the mixer, 1500 currently,
+    { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &flight3DConfig()->deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
 
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 50,  32000 }, 0 },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &motorConfig()->motorPwmRate, .config.minmax = { 50,  32000 }, 0 },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &motorConfig()->motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
 
-    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.armingConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.armingConfig.auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
-    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &masterConfig.imuConfig.small_angle, .config.minmax = { 0,  180 }, 0 },
+    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->disarm_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &armingConfig()->auto_disarm_delay, .config.minmax = { 0,  60 }, 0 },
+    { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &imuConfig()->small_angle, .config.minmax = { 0,  180 }, 0 },
 
-    { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.serialConfig.reboot_character, .config.minmax = { 48,  126 }, 0 },
+    { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &serialConfig()->reboot_character, .config.minmax = { 48,  126 }, 0 },
 
 #ifdef GPS
-    { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.provider, .config.lookup = { TABLE_GPS_PROVIDER }, 0 },
-    { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE }, 0 },
-    { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.dynModel, .config.lookup = { TABLE_GPS_DYN_MODEL }, 0 },
-    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoConfig, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gpsConfig.autoBaud, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->provider, .config.lookup = { TABLE_GPS_PROVIDER }, 0 },
+    { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE }, 0 },
+    { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->dynModel, .config.lookup = { TABLE_GPS_DYN_MODEL }, 0 },
+    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoConfig, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoBaud, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
 
 #ifdef NAV
@@ -706,120 +706,120 @@ const clivalue_t valueTable[] = {
     { "nav_navr_d",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDNAVR], .config.minmax = { 0,  255 }, 0 },
 
 #if defined(NAV_AUTO_MAG_DECLINATION)
-    { "inav_auto_mag_decl",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.estimation.automatic_mag_declination, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_auto_mag_decl",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->estimation.automatic_mag_declination, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
 
-    { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.estimation.accz_unarmed_cal, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.estimation.use_gps_velned, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.estimation.gps_delay_ms, .config.minmax = { 0,  500 }, 0 },
-    { "inav_gps_min_sats",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.estimation.gps_min_sats, .config.minmax = { 5,  10}, 0 },
+    { "inav_accz_unarmedcal",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->estimation.accz_unarmed_cal, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_use_gps_velned",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->estimation.use_gps_velned, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "inav_gps_delay",             VAR_UINT16 | MASTER_VALUE, &navConfig()->estimation.gps_delay_ms, .config.minmax = { 0,  500 }, 0 },
+    { "inav_gps_min_sats",          VAR_UINT8  | MASTER_VALUE, &navConfig()->estimation.gps_min_sats, .config.minmax = { 5,  10}, 0 },
 
-    { "inav_w_z_baro_p",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_z_baro_p, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_z_gps_p",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_z_gps_p, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_z_gps_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_z_gps_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_xy_gps_p",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_xy_gps_p, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_xy_gps_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_xy_gps_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_z_res_v",             VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_z_res_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_xy_res_v",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_xy_res_v, .config.minmax = { 0,  10 }, 0 },
-    { "inav_w_acc_bias",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.w_acc_bias, .config.minmax = { 0,  1 }, 0 },
+    { "inav_w_z_baro_p",            VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_z_baro_p, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_z_gps_p",             VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_z_gps_p, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_z_gps_v",             VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_z_gps_v, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_xy_gps_p",            VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_xy_gps_p, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_xy_gps_v",            VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_xy_gps_v, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_z_res_v",             VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_z_res_v, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_xy_res_v",            VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_xy_res_v, .config.minmax = { 0,  10 }, 0 },
+    { "inav_w_acc_bias",            VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.w_acc_bias, .config.minmax = { 0,  1 }, 0 },
 
-    { "inav_max_eph_epv",           VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.max_eph_epv, .config.minmax = { 0,  9999 }, 0 },
-    { "inav_baro_epv",              VAR_FLOAT  | MASTER_VALUE, &masterConfig.navConfig.estimation.baro_epv, .config.minmax = { 0,  9999 }, 0 },
+    { "inav_max_eph_epv",           VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.max_eph_epv, .config.minmax = { 0,  9999 }, 0 },
+    { "inav_baro_epv",              VAR_FLOAT  | MASTER_VALUE, &navConfig()->estimation.baro_epv, .config.minmax = { 0,  9999 }, 0 },
 
-    { "nav_disarm_on_landing",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.disarm_on_landing, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_use_midthr_for_althold", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.use_thr_mid_for_althold, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_extra_arming_safety",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.extra_arming_safety, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_user_control_mode",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.user_control_mode, .config.lookup = { TABLE_NAV_USER_CTL_MODE }, 0 },
-    { "nav_position_timeout",       VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.general.pos_failure_timeout, .config.minmax = { 0,  10 }, 0 },
-    { "nav_wp_radius",              VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.waypoint_radius, .config.minmax = { 10,  10000 }, 0 },
-    { "nav_max_speed",              VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.max_speed, .config.minmax = { 10,  2000 }, 0 },
-    { "nav_max_climb_rate",         VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.max_climb_rate, .config.minmax = { 10,  2000 }, 0 },
-    { "nav_manual_speed",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.max_manual_speed, .config.minmax = { 10,  2000 }, 0 },
-    { "nav_manual_climb_rate",      VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.max_manual_climb_rate, .config.minmax = { 10,  2000 }, 0 },
-    { "nav_landing_speed",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.land_descent_rate, .config.minmax = { 100,  2000 }, 0 },
-    { "nav_land_slowdown_minalt",   VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.land_slowdown_minalt, .config.minmax = { 50,  1000 }, 0 },
-    { "nav_land_slowdown_maxalt",   VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.land_slowdown_maxalt, .config.minmax = { 500,  4000 }, 0 },
-    { "nav_emerg_landing_speed",    VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.emerg_descent_rate, .config.minmax = { 100,  2000 }, 0 },
-    { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
-    { "nav_rth_climb_first",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_climb_first, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.navConfig.general.flags.rth_alt_control_mode, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
-    { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.general.rth_altitude, .config.minmax = { 100,  65000 }, 0 },
+    { "nav_disarm_on_landing",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.disarm_on_landing, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "nav_use_midthr_for_althold", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.use_thr_mid_for_althold, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "nav_extra_arming_safety",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.extra_arming_safety, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "nav_user_control_mode",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.user_control_mode, .config.lookup = { TABLE_NAV_USER_CTL_MODE }, 0 },
+    { "nav_position_timeout",       VAR_UINT8  | MASTER_VALUE, &navConfig()->general.pos_failure_timeout, .config.minmax = { 0,  10 }, 0 },
+    { "nav_wp_radius",              VAR_UINT16 | MASTER_VALUE, &navConfig()->general.waypoint_radius, .config.minmax = { 10,  10000 }, 0 },
+    { "nav_max_speed",              VAR_UINT16 | MASTER_VALUE, &navConfig()->general.max_speed, .config.minmax = { 10,  2000 }, 0 },
+    { "nav_max_climb_rate",         VAR_UINT16 | MASTER_VALUE, &navConfig()->general.max_climb_rate, .config.minmax = { 10,  2000 }, 0 },
+    { "nav_manual_speed",           VAR_UINT16 | MASTER_VALUE, &navConfig()->general.max_manual_speed, .config.minmax = { 10,  2000 }, 0 },
+    { "nav_manual_climb_rate",      VAR_UINT16 | MASTER_VALUE, &navConfig()->general.max_manual_climb_rate, .config.minmax = { 10,  2000 }, 0 },
+    { "nav_landing_speed",          VAR_UINT16 | MASTER_VALUE, &navConfig()->general.land_descent_rate, .config.minmax = { 100,  2000 }, 0 },
+    { "nav_land_slowdown_minalt",   VAR_UINT16 | MASTER_VALUE, &navConfig()->general.land_slowdown_minalt, .config.minmax = { 50,  1000 }, 0 },
+    { "nav_land_slowdown_maxalt",   VAR_UINT16 | MASTER_VALUE, &navConfig()->general.land_slowdown_maxalt, .config.minmax = { 500,  4000 }, 0 },
+    { "nav_emerg_landing_speed",    VAR_UINT16 | MASTER_VALUE, &navConfig()->general.emerg_descent_rate, .config.minmax = { 100,  2000 }, 0 },
+    { "nav_min_rth_distance",       VAR_UINT16 | MASTER_VALUE, &navConfig()->general.min_rth_distance, .config.minmax = { 0,  5000 }, 0 },
+    { "nav_rth_climb_first",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.rth_climb_first, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.rth_alt_control_mode, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, 0 },
+    { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, &navConfig()->general.rth_altitude, .config.minmax = { 100,  65000 }, 0 },
 
-    { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.mc.max_bank_angle, .config.minmax = { 15,  45 }, 0 },
-    { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc.hover_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "nav_mc_auto_disarm_delay",   VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.mc.auto_disarm_delay, .config.minmax = { 100,  10000 }, 0 },
+    { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, &navConfig()->mc.max_bank_angle, .config.minmax = { 15,  45 }, 0 },
+    { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, &navConfig()->mc.hover_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_mc_auto_disarm_delay",   VAR_UINT16 | MASTER_VALUE, &navConfig()->mc.auto_disarm_delay, .config.minmax = { 100,  10000 }, 0 },
 
-    { "nav_fw_cruise_thr",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.cruise_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "nav_fw_min_thr",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.min_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "nav_fw_max_thr",             VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.max_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "nav_fw_bank_angle",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.max_bank_angle, .config.minmax = { 5,  45 }, 0 },
-    { "nav_fw_climb_angle",         VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.max_climb_angle, .config.minmax = { 5,  45 }, 0 },
-    { "nav_fw_dive_angle",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.max_dive_angle, .config.minmax = { 5,  45 }, 0 },
-    { "nav_fw_pitch2thr",           VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.pitch_to_throttle, .config.minmax = { 0,  100 }, 0 },
-    { "nav_fw_roll2pitch",          VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.roll_to_pitch, .config.minmax = { 0,  200 }, 0 },
-    { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.loiter_radius, .config.minmax = { 0,  10000 }, 0 },
+    { "nav_fw_cruise_thr",          VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.cruise_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_fw_min_thr",             VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.min_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_fw_max_thr",             VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.max_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_fw_bank_angle",          VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.max_bank_angle, .config.minmax = { 5,  45 }, 0 },
+    { "nav_fw_climb_angle",         VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.max_climb_angle, .config.minmax = { 5,  45 }, 0 },
+    { "nav_fw_dive_angle",          VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.max_dive_angle, .config.minmax = { 5,  45 }, 0 },
+    { "nav_fw_pitch2thr",           VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.pitch_to_throttle, .config.minmax = { 0,  100 }, 0 },
+    { "nav_fw_roll2pitch",          VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.roll_to_pitch, .config.minmax = { 0,  200 }, 0 },
+    { "nav_fw_loiter_radius",       VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.loiter_radius, .config.minmax = { 0,  10000 }, 0 },
 
-    { "nav_fw_launch_velocity",     VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_velocity_thresh, .config.minmax = { 100,  10000 }, 0 },
-    { "nav_fw_launch_accel",        VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_accel_thresh, .config.minmax = { 1000,  20000 }, 0 },
-    { "nav_fw_launch_detect_time",  VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_time_thresh, .config.minmax = { 10,  1000 }, 0 },
-    { "nav_fw_launch_thr",          VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_throttle, .config.minmax = { 1000,  2000 }, 0 },
-    { "nav_fw_launch_motor_delay",  VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_motor_timer, .config.minmax = { 0,  5000 }, 0 },
-    { "nav_fw_launch_timeout",      VAR_UINT16 | MASTER_VALUE, &masterConfig.navConfig.fw.launch_timeout, .config.minmax = { 0,  60000 }, 0 },
-    { "nav_fw_launch_climb_angle",  VAR_UINT8  | MASTER_VALUE, &masterConfig.navConfig.fw.launch_climb_angle, .config.minmax = { 5,  45 }, 0 },
+    { "nav_fw_launch_velocity",     VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_velocity_thresh, .config.minmax = { 100,  10000 }, 0 },
+    { "nav_fw_launch_accel",        VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_accel_thresh, .config.minmax = { 1000,  20000 }, 0 },
+    { "nav_fw_launch_detect_time",  VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_time_thresh, .config.minmax = { 10,  1000 }, 0 },
+    { "nav_fw_launch_thr",          VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_throttle, .config.minmax = { 1000,  2000 }, 0 },
+    { "nav_fw_launch_motor_delay",  VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_motor_timer, .config.minmax = { 0,  5000 }, 0 },
+    { "nav_fw_launch_timeout",      VAR_UINT16 | MASTER_VALUE, &navConfig()->fw.launch_timeout, .config.minmax = { 0,  60000 }, 0 },
+    { "nav_fw_launch_climb_angle",  VAR_UINT8  | MASTER_VALUE, &navConfig()->fw.launch_climb_angle, .config.minmax = { 5,  45 }, 0 },
 #endif
 
 #ifdef SERIAL_RX
-    { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.serialrx_provider, .config.lookup = { TABLE_SERIAL_RX }, 0 },
+    { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->serialrx_provider, .config.lookup = { TABLE_SERIAL_RX }, 0 },
 #endif
 #ifdef USE_RX_SPI
-    { "rx_spi_protocol",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.rx_spi_protocol, .config.lookup = { TABLE_RX_SPI }, 0 },
-    { "rx_spi_id",                  VAR_UINT32 | MASTER_VALUE,  &masterConfig.rxConfig.rx_spi_id, .config.minmax = { 0, 0 }, 0 },
-    { "rx_spi_rf_channel_count",    VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.rx_spi_rf_channel_count, .config.minmax = { 0, 8 }, 0 },
+    { "rx_spi_protocol",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rx_spi_protocol, .config.lookup = { TABLE_RX_SPI }, 0 },
+    { "rx_spi_id",                  VAR_UINT32 | MASTER_VALUE,  &rxConfig()->rx_spi_id, .config.minmax = { 0, 0 }, 0 },
+    { "rx_spi_rf_channel_count",    VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rx_spi_rf_channel_count, .config.minmax = { 0, 8 }, 0 },
 #endif
 #ifdef SPEKTRUM_BIND
-    { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },
+    { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &rxConfig()->spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, 0 },
 #endif
 #ifdef TELEMETRY
-    { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.telemetry_inversion, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLatitude, .config.minmax = { -90.0,  90.0 }, 0 },
-    { "frsky_default_longitude",    VAR_FLOAT  | MASTER_VALUE,  &masterConfig.telemetryConfig.gpsNoFixLongitude, .config.minmax = { -180.0,  180.0 }, 0 },
-    { "frsky_coordinates_format",   VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_coordinate_format, .config.minmax = { 0,  FRSKY_FORMAT_NMEA }, 0 },
-    { "frsky_unit",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.frsky_unit, .config.lookup = { TABLE_UNIT }, 0 },
-    { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_vfas_precision, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH }, 0 },
-    { "frsky_vfas_cell_voltage",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.frsky_vfas_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
-    { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.hottAlarmSoundInterval, .config.minmax = { 0,  120 }, 0 },
+    { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_inversion, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLatitude, .config.minmax = { -90.0,  90.0 }, 0 },
+    { "frsky_default_longitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLongitude, .config.minmax = { -180.0,  180.0 }, 0 },
+    { "frsky_coordinates_format",   VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->frsky_coordinate_format, .config.minmax = { 0,  FRSKY_FORMAT_NMEA }, 0 },
+    { "frsky_unit",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->frsky_unit, .config.lookup = { TABLE_UNIT }, 0 },
+    { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->frsky_vfas_precision, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH }, 0 },
+    { "frsky_vfas_cell_voltage",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->frsky_vfas_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
+    { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->hottAlarmSoundInterval, .config.minmax = { 0,  120 }, 0 },
 #ifdef TELEMETRY_SMARTPORT
-    { "smartport_uart_unidir",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.smartportUartUnidirectional, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "smartport_uart_unidir",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->smartportUartUnidirectional, .config.lookup = { TABLE_OFF_ON }, 0 },
 #endif
 #endif
 
-    { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.batteryCapacity, .config.minmax = { 0,  20000 }, 0 },
-    { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatscale, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, 0 },
-    { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmaxcellvoltage, .config.minmax = { 10,  50 }, 0 },
-    { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmincellvoltage, .config.minmax = { 10,  50 }, 0 },
-    { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatwarningcellvoltage, .config.minmax = { 10,  50 }, 0 },
-    { "current_meter_scale",        VAR_INT16  | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterScale, .config.minmax = { -10000,  10000 }, 0 },
-    { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterOffset, .config.minmax = { 0,  3300 }, 0 },
-    { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR }, 0 },
+    { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &batteryConfig()->batteryCapacity, .config.minmax = { 0,  20000 }, 0 },
+    { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE,  &batteryConfig()->vbatscale, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, 0 },
+    { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &batteryConfig()->vbatmaxcellvoltage, .config.minmax = { 10,  50 }, 0 },
+    { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &batteryConfig()->vbatmincellvoltage, .config.minmax = { 10,  50 }, 0 },
+    { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE,  &batteryConfig()->vbatwarningcellvoltage, .config.minmax = { 10,  50 }, 0 },
+    { "current_meter_scale",        VAR_INT16  | MASTER_VALUE,  &batteryConfig()->currentMeterScale, .config.minmax = { -10000,  10000 }, 0 },
+    { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &batteryConfig()->currentMeterOffset, .config.minmax = { 0,  3300 }, 0 },
+    { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR }, 0 },
 
-    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
-    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.accelerometerConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
-    { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.compassConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &accelerometerConfig()->acc_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
+    { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &compassConfig()->mag_align, .config.lookup = { TABLE_ALIGNMENT }, 0 },
 
-    { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.rollDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
-    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.pitchDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
-    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.yawDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
+    { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &boardAlignment()->rollDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
+    { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &boardAlignment()->pitchDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
+    { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment()->yawDeciDegrees, .config.minmax = { -1800,  3600 }, 0 },
 
-    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyroConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
-    { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 }, 0 },
+    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
+    { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 }, 0 },
 
-    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_kp_acc, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_ki_acc, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_kp_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_kp_mag, .config.minmax = { 0,  65535 }, 0 },
-    { "imu_dcm_ki_mag",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.imuConfig.dcm_ki_mag, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_kp_acc, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_ki_acc, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_kp_mag",             VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_kp_mag, .config.minmax = { 0,  65535 }, 0 },
+    { "imu_dcm_ki_mag",             VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_ki_mag, .config.minmax = { 0,  65535 }, 0 },
 
     { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.deadband, .config.minmax = { 0,  32 }, 0 },
     { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 }, 0 },
@@ -828,18 +828,18 @@ const clivalue_t valueTable[] = {
 
     { "throttle_tilt_comp_str",     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].throttle_tilt_compensation_strength, .config.minmax = { 0,  100 }, 0 },
 
-    { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 }, 0 },
-    { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH }, 0 },
+    { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &mixerConfig()->yaw_motor_direction, .config.minmax = { -1,  1 }, 0 },
+    { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &mixerConfig()->yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH }, 0 },
 
 #ifdef USE_SERVOS
     { "flaperon_throw_offset",      VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].flaperon_throw_offset, .config.minmax = { FLAPERON_THROW_MIN,  FLAPERON_THROW_MAX}, 0 },
     { "flaperon_throw_inverted",    VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].flaperon_throw_inverted, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "servo_lowpass_freq",         VAR_INT16  | MASTER_VALUE, &masterConfig.servoMixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400}, 0 },
-    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "servo_lowpass_freq",         VAR_INT16  | MASTER_VALUE, &servoMixerConfig()->servo_lowpass_freq, .config.minmax = { 10,  400}, 0 },
+    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON }, 0 },
     { "gimbal_mode",                VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE }, 0 },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoPwmRate, .config.minmax = { 50,  498 }, 0 },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, 0 },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoPwmRate, .config.minmax = { 50,  498 }, 0 },
     { "fw_iterm_throw_limit",       VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.fixedWingItermThrowLimit, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX}, 0 },
 #endif
 
@@ -861,34 +861,34 @@ const clivalue_t valueTable[] = {
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX}, 0 },
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, &masterConfig.controlRateProfiles[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, 0 },
 
-    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_delay, .config.minmax = { 0,  200 }, 0 },
-    { "failsafe_recovery_delay",    VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_recovery_delay, .config.minmax = { 0,  200 }, 0 },
-    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_off_delay, .config.minmax = { 0,  200 }, 0 },
-    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX }, 0 },
-    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 }, 0 },
-    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_procedure, .config.lookup = { TABLE_FAILSAFE_PROCEDURE }, 0 },
+    { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_delay, .config.minmax = { 0,  200 }, 0 },
+    { "failsafe_recovery_delay",    VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_recovery_delay, .config.minmax = { 0,  200 }, 0 },
+    { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_off_delay, .config.minmax = { 0,  200 }, 0 },
+    { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &failsafeConfig()->failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX }, 0 },
+    { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &failsafeConfig()->failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &failsafeConfig()->failsafe_throttle_low_delay, .config.minmax = { 0,  300 }, 0 },
+    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &failsafeConfig()->failsafe_procedure, .config.lookup = { TABLE_FAILSAFE_PROCEDURE }, 0 },
 
-    { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
-    { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
+    { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
+    { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, 0 },
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.accelerometerConfig.acc_hardware, .config.lookup = { TABLE_HW_ACC } },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &accelerometerConfig()->acc_hardware, .config.lookup = { TABLE_HW_ACC } },
 
 #ifdef BARO
-    { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.barometerConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.barometerConfig.baro_hardware, .config.lookup = { TABLE_HW_BARO } },
+    { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &barometerConfig()->use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &barometerConfig()->baro_hardware, .config.lookup = { TABLE_HW_BARO } },
 #endif
 
 #ifdef PITOT
-    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.pitotmeterConfig.pitot_hardware, .config.lookup = { TABLE_HW_PITOT } },
-    { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.pitotmeterConfig.use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
-    { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
-    { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &masterConfig.pitotmeterConfig.pitot_scale, .config.minmax = { 0, 100 }, 0 },
+    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &pitotmeterConfig()->pitot_hardware, .config.lookup = { TABLE_HW_PITOT } },
+    { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &pitotmeterConfig()->use_median_filtering, .config.lookup = { TABLE_OFF_ON }, 0 },
+    { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &pitotmeterConfig()->pitot_noise_lpf, .config.minmax = { 0, 1 }, 0 },
+    { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &pitotmeterConfig()->pitot_scale, .config.minmax = { 0, 100 }, 0 },
 #endif
 
 #ifdef MAG
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.compassConfig.mag_hardware, .config.lookup = { TABLE_HW_MAG } },
-    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &masterConfig.compassConfig.mag_declination, .config.minmax = { -18000,  18000 }, 0 },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &compassConfig()->mag_hardware, .config.lookup = { TABLE_HW_MAG } },
+    { "mag_declination",            VAR_INT16  | PROFILE_VALUE, &compassConfig()->mag_declination, .config.minmax = { -18000,  18000 }, 0 },
     { "mag_hold_rate_limit",        VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.mag_hold_rate_limit, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, 0 },
 #endif
 
@@ -923,9 +923,9 @@ const clivalue_t valueTable[] = {
     { "rate_accel_limit_yaw",       VAR_UINT32 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.axisAccelerationLimitYaw, .config.minmax = {0, 500000 } },
 
 #ifdef BLACKBOX
-    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackboxConfig.rate_num, .config.minmax = { 1,  32 }, 0 },
-    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackboxConfig.rate_denom, .config.minmax = { 1,  32 }, 0 },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.blackboxConfig.device, .config.lookup = { TABLE_BLACKBOX_DEVICE }, 0 },
+    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &blackboxConfig()->rate_num, .config.minmax = { 1,  32 }, 0 },
+    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &blackboxConfig()->rate_denom, .config.minmax = { 1,  32 }, 0 },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &blackboxConfig()->device, .config.lookup = { TABLE_BLACKBOX_DEVICE }, 0 },
 #endif
 
 #ifdef MAG
@@ -941,30 +941,30 @@ const clivalue_t valueTable[] = {
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
-    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.row_shiftdown, .config.minmax = { 0, 1 } },
-    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
+    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &osdProfile()->video_system, .config.minmax = { 0, 2 } },
+    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &osdProfile()->row_shiftdown, .config.minmax = { 0, 1 } },
+    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &osdProfile()->units, .config.lookup = { TABLE_UNIT } },
 
-    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
-    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.cap_alarm, .config.minmax = { 0, 20000 } },
-    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.time_alarm, .config.minmax = { 0, 60 } },
-    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.alt_alarm, .config.minmax = { 0, 10000 } },
+    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &osdProfile()->rssi_alarm, .config.minmax = { 0, 100 } },
+    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->cap_alarm, .config.minmax = { 0, 20000 } },
+    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &osdProfile()->time_alarm, .config.minmax = { 0, 60 } },
+    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->alt_alarm, .config.minmax = { 0, 10000 } },
 
-    { "osd_main_voltage_pos",       VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, 65536 } },
-    { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, 65536 } },
-    { "osd_flytimer_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_FLYTIME], .config.minmax = { 0, 65536 } },
-    { "osd_ontime_pos",             VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ONTIME], .config.minmax = { 0, 65536 } },
-    { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_FLYMODE], .config.minmax = { 0, 65536 } },
-    { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, 65536 } },
-    { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, 65536 } },
-    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, 65536 } },
-    { "osd_artificial_horizon",     VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, 65536 } },
-    { "osd_current_draw_pos",       VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, 65536 } },
-    { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, 65536 } },
-    { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, 65536 } },
-    { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED], .config.minmax = { 0, 65536 } },
-    { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
-    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
+    { "osd_main_voltage_pos",       VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, 65536 } },
+    { "osd_rssi_pos",               VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, 65536 } },
+    { "osd_flytimer_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYTIME], .config.minmax = { 0, 65536 } },
+    { "osd_ontime_pos",             VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ONTIME], .config.minmax = { 0, 65536 } },
+    { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYMODE], .config.minmax = { 0, 65536 } },
+    { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, 65536 } },
+    { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, 65536 } },
+    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, 65536 } },
+    { "osd_artificial_horizon",     VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, 65536 } },
+    { "osd_current_draw_pos",       VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, 65536 } },
+    { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, 65536 } },
+    { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, 65536 } },
+    { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SPEED], .config.minmax = { 0, 65536 } },
+    { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
+    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
     { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[X], .config.minmax = { 1,  8192 }, 0 },
     { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[Y], .config.minmax = { 1,  8192 }, 0 },
@@ -1047,7 +1047,7 @@ static void cliRxFail(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
@@ -1233,16 +1233,16 @@ static void cliSerial(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < SERIAL_PORT_COUNT; i++) {
-            if (!serialIsPortAvailable(masterConfig.serialConfig.portConfigs[i].identifier)) {
+            if (!serialIsPortAvailable(serialConfig()->portConfigs[i].identifier)) {
                 continue;
             };
             cliPrintf("serial %d %d %ld %ld %ld %ld\r\n" ,
-                masterConfig.serialConfig.portConfigs[i].identifier,
-                masterConfig.serialConfig.portConfigs[i].functionMask,
-                baudRates[masterConfig.serialConfig.portConfigs[i].msp_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].gps_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].telemetry_baudrateIndex],
-                baudRates[masterConfig.serialConfig.portConfigs[i].blackbox_baudrateIndex]
+                serialConfig()->portConfigs[i].identifier,
+                serialConfig()->portConfigs[i].functionMask,
+                baudRates[serialConfig()->portConfigs[i].msp_baudrateIndex],
+                baudRates[serialConfig()->portConfigs[i].gps_baudrateIndex],
+                baudRates[serialConfig()->portConfigs[i].telemetry_baudrateIndex],
+                baudRates[serialConfig()->portConfigs[i].blackbox_baudrateIndex]
             );
         }
         return;
@@ -1483,11 +1483,11 @@ static void cliRxRange(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-            rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+            rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
             cliPrintf("rxrange %u %u %u\r\n", i, channelRangeConfiguration->min, channelRangeConfiguration->max);
         }
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        resetAllRxChannelRangeConfigurations(masterConfig.rxConfig.channelRanges);
+        resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -1511,7 +1511,7 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfiguration_t *channelRangeConfiguration = &masterConfig.rxConfig.channelRanges[i];
+                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
                 channelRangeConfiguration->min = rangeMin;
                 channelRangeConfiguration->max = rangeMax;
             }
@@ -2061,7 +2061,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n# mixer\r\n");
 
 #ifndef USE_QUAD_MIXER_ONLY
-        cliPrintf("mixer %s\r\n", mixerNames[masterConfig.mixerConfig.mixerMode - 1]);
+        cliPrintf("mixer %s\r\n", mixerNames[mixerConfig()->mixerMode - 1]);
 
         cliPrintf("mmix reset\r\n");
 
@@ -2142,7 +2142,7 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n\r\n# map\r\n");
 
         for (i = 0; i < 8; i++)
-            buf[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
+            buf[rxConfig()->rcmap[i]] = rcChannelLetters[i];
         buf[i] = '\0';
         cliPrintf("map %s\r\n", buf);
 
@@ -2443,7 +2443,7 @@ static void cliMap(char *cmdline)
     }
     cliPrint("Map: ");
     for (i = 0; i < 8; i++)
-        out[masterConfig.rxConfig.rcmap[i]] = rcChannelLetters[i];
+        out[rxConfig()->rcmap[i]] = rcChannelLetters[i];
     out[i] = '\0';
     cliPrintf("%s\r\n", out);
 }
@@ -2457,7 +2457,7 @@ static void cliMixer(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        cliPrintf("Mixer: %s\r\n", mixerNames[masterConfig.mixerConfig.mixerMode - 1]);
+        cliPrintf("Mixer: %s\r\n", mixerNames[mixerConfig()->mixerMode - 1]);
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
         cliPrint("Available mixers: ");
@@ -2476,7 +2476,7 @@ static void cliMixer(char *cmdline)
             return;
         }
         if (strncasecmp(cmdline, mixerNames[i], len) == 0) {
-            masterConfig.mixerConfig.mixerMode = i + 1;
+            mixerConfig()->mixerMode = i + 1;
             break;
         }
     }
