@@ -31,7 +31,7 @@
 #define BEEPER                  PC15
 
 // *************** INVERTER *****************************
-#define INVERTER                PB2 	// PB2 used as inverter select GPIO
+#define INVERTER                PB2
 #define INVERTER_USART          USART2
 
 // *************** SPI *****************************
@@ -83,7 +83,7 @@
 //#define MAX7456_SPI_INSTANCE    SPI2
 //#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 //
-//// #define MAX7456_DMA_CHANNEL_TX              DMA1_Stream4
+// #define MAX7456_DMA_CHANNEL_TX             DMA1_Stream4
 //#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream3
 //#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
 
@@ -100,7 +100,7 @@
 #define SDCARD_SPI_INSTANCE                 SPI3
 #define SDCARD_SPI_CS_PIN                   PB6
 
-// SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+// SPI3 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     4 // 21MHz
@@ -124,7 +124,7 @@
 #define UART1_RX_PIN            PA10
 #define UART1_TX_PIN            PA9
 
-// provide for BUS Receiver
+// provide for xBUS Receiver
 #define USE_UART2
 #define UART2_RX_PIN            PA3
 #define UART2_TX_PIN            PA2
@@ -165,6 +165,7 @@
 // #define SONAR
 // #define SONAR_TRIGGER_PIN       PB10
 // #define SONAR_ECHO_PIN          PB11
+// #define USE_SONAR_SRF10
 
 // *************** NAV *****************************
 #define NAV
@@ -172,15 +173,14 @@
 #define NAV_GPS_GLITCH_DETECTION
 #define NAV_MAX_WAYPOINTS       60
 
+// *************** Others *****************************
 #define DISPLAY
-
-#define SENSORS_SET (SENSOR_ACC | SENSOR_MAG | SENSOR_BARO)
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3
-#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL)
+#define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL| FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY)
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
