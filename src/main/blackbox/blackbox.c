@@ -440,7 +440,7 @@ bool blackboxMayEditConfig(void)
 
 static bool blackboxIsOnlyLoggingIntraframes()
 {
-    return masterConfig.blackboxConfig.rate_num == 1 && masterConfig.blackboxConfig.rate_denom == 32;
+    return blackboxConfig()->rate_num == 1 && blackboxConfig()->rate_denom == 32;
 }
 
 static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
@@ -460,7 +460,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return motorCount >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
 
         case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
-            return masterConfig.mixerConfig.mixerMode == MIXER_TRI || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_TRI;
+            return mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI;
 
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
@@ -492,7 +492,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
             return feature(FEATURE_VBAT);
 
         case FLIGHT_LOG_FIELD_CONDITION_AMPERAGE_ADC:
-            return feature(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+            return feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
@@ -502,10 +502,10 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 #endif
 
         case FLIGHT_LOG_FIELD_CONDITION_RSSI:
-            return masterConfig.rxConfig.rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
+            return rxConfig()->rssi_channel > 0 || feature(FEATURE_RSSI_ADC);
 
         case FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME:
-            return masterConfig.blackboxConfig.rate_num < masterConfig.blackboxConfig.rate_denom;
+            return blackboxConfig()->rate_num < blackboxConfig()->rate_denom;
 
         case FLIGHT_LOG_FIELD_CONDITION_NEVER:
             return false;
@@ -594,7 +594,7 @@ static void writeIntraframe(void)
      * Write the throttle separately from the rest of the RC data so we can apply a predictor to it.
      * Throttle lies in range [minthrottle..maxthrottle]:
      */
-    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->rcCommand[THROTTLE] - motorConfig()->minthrottle);
 
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
         /*
@@ -644,7 +644,7 @@ static void writeIntraframe(void)
     blackboxWriteSigned16VBArray(blackboxCurrent->attitude, XYZ_AXIS_COUNT);
 
     //Motors can be below minthrottle when disarmed, but that doesn't happen much
-    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - masterConfig.motorConfig.minthrottle);
+    blackboxWriteUnsignedVB(blackboxCurrent->motor[0] - motorConfig()->minthrottle);
 
     //Motors tend to be similar to each other so use the first motor's value as a predictor of the others
     for (x = 1; x < motorCount; x++) {
@@ -942,22 +942,22 @@ static void validateBlackboxConfig()
 {
     int div;
 
-    if (masterConfig.blackboxConfig.rate_num == 0 || masterConfig.blackboxConfig.rate_denom == 0
-            || masterConfig.blackboxConfig.rate_num >= masterConfig.blackboxConfig.rate_denom) {
-        masterConfig.blackboxConfig.rate_num = 1;
-        masterConfig.blackboxConfig.rate_denom = 1;
+    if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
+            || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
+        blackboxConfig()->rate_num = 1;
+        blackboxConfig()->rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
+        div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
 
-        masterConfig.blackboxConfig.rate_num /= div;
-        masterConfig.blackboxConfig.rate_denom /= div;
+        blackboxConfig()->rate_num /= div;
+        blackboxConfig()->rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
-    switch (masterConfig.blackboxConfig.device) {
+    switch (blackboxConfig()->device) {
 #ifdef USE_FLASHFS
         case BLACKBOX_DEVICE_FLASH:
 #endif
@@ -969,7 +969,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            masterConfig.blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 
@@ -1309,30 +1309,30 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("Firmware type:%s",                      "Cleanflight");
         BLACKBOX_PRINT_HEADER_LINE("Firmware revision:INAV %s (%s) %s",     FC_VERSION_STRING, shortGitRevision, targetName);
         BLACKBOX_PRINT_HEADER_LINE("Firmware date:%s %s",                   buildDate, buildTime);
-        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      masterConfig.blackboxConfig.rate_num, masterConfig.blackboxConfig.rate_denom);
+        BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                      blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                             100); //For compatibility reasons write rc_rate 100
-        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        masterConfig.motorConfig.minthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        masterConfig.motorConfig.maxthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                        motorConfig()->minthrottle);
+        BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                        motorConfig()->maxthrottle);
         BLACKBOX_PRINT_HEADER_LINE("gyro.scale:0x%x",                       castFloatBytesToInt(gyro.dev.scale));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                             acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_VBAT)) {
-                blackboxPrintfHeaderLine("vbatscale:%u", masterConfig.batteryConfig.vbatscale);
+                blackboxPrintfHeaderLine("vbatscale:%u", batteryConfig()->vbatscale);
             } else {
                 xmitState.headerIndex += 2; // Skip the next two vbat fields too
             }
             );
-        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage:%u,%u,%u",              masterConfig.batteryConfig.vbatmincellvoltage,
-                                                                            masterConfig.batteryConfig.vbatwarningcellvoltage,
-                                                                            masterConfig.batteryConfig.vbatmaxcellvoltage);
+        BLACKBOX_PRINT_HEADER_LINE("vbatcellvoltage:%u,%u,%u",              batteryConfig()->vbatmincellvoltage,
+                                                                            batteryConfig()->vbatwarningcellvoltage,
+                                                                            batteryConfig()->vbatmaxcellvoltage);
         BLACKBOX_PRINT_HEADER_LINE("vbatref:%u",                            vbatReference);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
             //Note: Log even if this is a virtual current meter, since the virtual meter uses these parameters too:
             if (feature(FEATURE_CURRENT_METER)) {
-                blackboxPrintfHeaderLine("currentMeter:%d,%d",              masterConfig.batteryConfig.currentMeterOffset,
-                                                                            masterConfig.batteryConfig.currentMeterScale);
+                blackboxPrintfHeaderLine("currentMeter:%d,%d",              batteryConfig()->currentMeterOffset,
+                                                                            batteryConfig()->currentMeterScale);
             }
             );
 
@@ -1379,12 +1379,12 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       masterConfig.profile[masterConfig.current_profile_index].rcControlsConfig.yaw_deadband);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           masterConfig.gyroConfig.gyro_lpf);
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       masterConfig.accelerometerConfig.acc_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      masterConfig.barometerConfig.baro_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       masterConfig.compassConfig.mag_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
+        BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
         BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
 
         default:
@@ -1455,10 +1455,10 @@ static void blackboxCheckAndLogArmingBeep()
  */
 static bool blackboxShouldLogPFrame(uint32_t pFrameIndex)
 {
-    /* Adding a magic shift of "masterConfig.blackboxConfig.rate_num - 1" in here creates a better spread of
+    /* Adding a magic shift of "blackboxConfig()->rate_num - 1" in here creates a better spread of
      * recorded / skipped frames when the I frame's position is considered:
      */
-    return (pFrameIndex + masterConfig.blackboxConfig.rate_num - 1) % masterConfig.blackboxConfig.rate_denom < masterConfig.blackboxConfig.rate_num;
+    return (pFrameIndex + blackboxConfig()->rate_num - 1) % blackboxConfig()->rate_denom < blackboxConfig()->rate_num;
 }
 
 static bool blackboxShouldLogIFrame() {
