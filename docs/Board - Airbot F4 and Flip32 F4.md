@@ -9,7 +9,7 @@
 * STM32F405 CPU
 * Integrated Accelerometer/Gyro MPU6000 or MPU6500 via SPI bus
 * 6 motor outputs
-* 3 UART ports (UART1, UART3, UART6)
+* 4 UART ports (UART1, UART3, UART6, Softserial1)
 * External I2C bus, pins shared with UART3, can not be used simultaneously
 * Only UART1 is equipped with inverter
 * Onboard 128Mbit (16MB) flash
@@ -20,7 +20,6 @@
 ## **NOT** supported
 
 * Sonar
-* SoftwareSerial
 * ServoTilt
 * Channel Forwarding
 
