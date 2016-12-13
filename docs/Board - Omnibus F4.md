@@ -1,8 +1,6 @@
-# Board -  Airbot F4 / Flip32 F4 / Generic F4 Flight Controller from Banggood and Aliexpress
+# Board -  Omnibus F4
 
-![Airbot F4](https://quadmeup.com/wp-content/uploads/2016/10/Flip32-F4-Flight-Controller-pinout.jpg)
-
-> This target supports both MPU6000 and MPU6500 versions of this board
+![Omnibus F4](https://quadmeup.com/wp-content/uploads/2016/11/Omnibus-F4-Pinout-Top-Full-768x447.jpg)
 
 ## Features
 
@@ -16,6 +14,7 @@
 * BLHeli Passthrough
 * Integrated voltage stabilizer
 * Buzzer connector
+* Integrated OSD
 
 ## **NOT** supported
 
@@ -78,7 +77,7 @@ Right now, LED strip is not functioning correctly on this target. It is a known 
 
 ## SoftwareSerial
 
-This board allows for single **SoftwareSerial** port on small soldering pads located next to UART3 pins. 
+This board allows for single **SoftwareSerial** port on small soldering pads located on the bottom side of the board. 
 
 | Pad   | SoftwareSerial Role   |
 | ----  | ----                  |
