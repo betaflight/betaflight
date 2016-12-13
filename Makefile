@@ -598,7 +598,11 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             sensors/esc_sensor.c \
 
-SPEED_OPTIMISE_CANDIDATES_SRC := \
+SPEED_OPTIMISED_SRC := ""
+SIZE_OPTIMISED_SRC  := ""
+
+ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -682,7 +686,7 @@ SPEED_OPTIMISE_CANDIDATES_SRC := \
             telemetry/mavlink.c \
             telemetry/esc_telemetry.c \
 
-SIZE_OPTIMISE_CANDIDATES_SRC := \
+SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
             io/serial_cli.c \
             io/serial_4way.c \
@@ -697,6 +701,7 @@ SIZE_OPTIMISE_CANDIDATES_SRC := \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c
+endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -856,45 +861,46 @@ SIZE        := $(ARM_SDK_PREFIX)size
 # Tool options.
 #
 
-
 ifeq ($(DEBUG),GDB)
 OPTIMISE_DEFAULT    := -O0
+OPTIMISE_SPEED      := -O0
+OPTIMISE_SIZE       := -O0
+DEFAULT_MSG         := (gdb optimized)
+SIZE_MSG            := (gdb optimized)
+SPEED_MSG           := (gdb optimized)
 
-SPEED_OPTIMISED_SRC := ""
-SIZE_OPTIMISED_SRC  := ""
 
 LTO_FLAGS           := $(OPTIMISE_DEFAULT)
 
 else
 
 OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
+OPTIMISE_SPEED      :=
+OPTIMISE_SIZE       :=
+DEFAULT_MSG         :=
+SIZE_MSG            := (size optimized )
+SPEED_MSG           := (speed optimized)
+
+ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
+OPTIMISE_DEFAULT    := -Os
+DEFAULT_MSG         :=
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
 OPTIMISE_DEFAULT    := -O2
 OPTIMISE_SPEED      := -Ofast
 OPTIMISE_SIZE       := -Os
 
-ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-# No speed optimisated files, only size ..
-SPEED_OPTIMISED_SRC := ""
-SIZE_OPTIMISED_SRC  := $(TARGET_SRC)
-
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
-
-else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-# Optimize according to  optimizable file lists for F3.
-SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISE_CANDIDATES_SRC)
-SIZE_OPTIMISED_SRC  := $(SIZE_OPTIMISE_CANDIDATES_SRC)
-
 LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
 
 else
-# Optimize all files for speed only
-SPEED_OPTIMISED_SRC := $(TARGET_SRC)
-SIZE_OPTIMISED_SRC  := ""
+OPTIMISE_DEFAULT    := -Ofast
+DEFAULT_MSG         :=
 
-LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
 
 endif #TARGETS
-
 endif #DEBUG
 
 CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
@@ -986,13 +992,13 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) $(if $(findstring $(notdir $<),$(SPEED_OPTIMISED_SRC)), \
-	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(V1) $(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+	echo "%% $(SPEED_MSG) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
-	$(if $(findstring $(notdir $<),$(SIZE_OPTIMISED_SRC)), \
-	echo "%% (size optimised ) $(notdir $<)" "$(STDOUT)" && \
+	$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+	echo "%% $(SIZE_MSG) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
-	echo "%% $(notdir $<)" "$(STDOUT)" && \
+	echo "%% $(DEFAULT_MSG) $(notdir $<)" "$(STDOUT)" && \
 	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $<))
 
 # Assemble
