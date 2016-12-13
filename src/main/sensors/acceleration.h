@@ -48,6 +48,8 @@ extern acc_t acc;
 typedef struct accelerometerConfig_s {
     sensor_align_e acc_align;               // acc alignment
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    flightDynamicsTrims_t accZero;          // Accelerometer offset
+    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
 } accelerometerConfig_t;
 
 bool accInit(const accelerometerConfig_t *accConfig, uint32_t accTargetLooptime);

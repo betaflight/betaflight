@@ -116,8 +116,6 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
 
-    // global sensor-related stuff
-    sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;

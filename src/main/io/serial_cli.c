@@ -928,14 +928,14 @@ const clivalue_t valueTable[] = {
 #endif
 
 #ifdef MAG
-    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[X], .config.minmax = { -32768,  32767 } },
-    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[Y], .config.minmax = { -32768,  32767 } },
-    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.magZero.raw[Z], .config.minmax = { -32768,  32767 } },
+    { "magzero_x",                  VAR_INT16  | MASTER_VALUE, &compassConfig()->magZero.raw[X], .config.minmax = { -32768,  32767 } },
+    { "magzero_y",                  VAR_INT16  | MASTER_VALUE, &compassConfig()->magZero.raw[Y], .config.minmax = { -32768,  32767 } },
+    { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &compassConfig()->magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #endif
 
-    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[X], .config.minmax = { -32768,  32767 }, },
-    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[Y], .config.minmax = { -32768,  32767 }, },
-    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accZero.raw[Z], .config.minmax = { -32768,  32767 }, },
+    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[X], .config.minmax = { -32768,  32767 } },
+    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Y], .config.minmax = { -32768,  32767 } },
+    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
@@ -965,10 +965,9 @@ const clivalue_t valueTable[] = {
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
     { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
-    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[X], .config.minmax = { 1,  8192 }, },
-    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[Y], .config.minmax = { 1,  8192 }, },
-    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, &masterConfig.sensorTrims.accGain.raw[Z], .config.minmax = { 1,  8192 }, },
-
+    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[X], .config.minmax = { 1,  8192 } },
+    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[Y], .config.minmax = { 1,  8192 } },
+    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[Z], .config.minmax = { 1,  8192 } },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))

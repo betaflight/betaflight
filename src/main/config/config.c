@@ -492,7 +492,7 @@ static void resetConf(void)
     imuConfig()->small_angle = 25;
     gyroConfig()->gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
-    resetAccelerometerTrims(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
+    resetAccelerometerTrims(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
 
     gyroConfig()->gyro_align = ALIGN_DEFAULT;
     accelerometerConfig()->acc_align = ALIGN_DEFAULT;
@@ -780,7 +780,7 @@ void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
 
-    setAccelerationCalibrationValues(&masterConfig.sensorTrims.accZero, &masterConfig.sensorTrims.accGain);
+    setAccelerationCalibrationValues(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
     setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
