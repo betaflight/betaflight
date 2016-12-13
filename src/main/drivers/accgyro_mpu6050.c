@@ -54,7 +54,7 @@ static void mpu6050AccInit(accDev_t *acc)
 {
     switch (mpuDetectionResult.resolution) {
         case MPU_HALF_RESOLUTION:
-            acc->acc_1G = 256 * 4;
+            acc->acc_1G = 256 * 8;
             break;
         case MPU_FULL_RESOLUTION:
             acc->acc_1G = 512 * 8;

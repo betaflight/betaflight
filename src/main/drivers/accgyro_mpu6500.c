@@ -36,7 +36,7 @@
 
 void mpu6500AccInit(accDev_t *acc)
 {
-    acc->acc_1G = 512 * 4;
+    acc->acc_1G = 512 * 8;
 }
 
 bool mpu6500AccDetect(accDev_t *acc)
