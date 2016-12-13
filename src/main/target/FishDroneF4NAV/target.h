@@ -72,20 +72,18 @@
 #define MS5611_I2C_INSTANCE     I2CDEV_1
 
 // *************** OSD *****************************
-//#define USE_SPI_DEVICE_2
-//#define SPI2_NSS_PIN    PB12
-//#define SPI2_SCK_PIN    PB13
-//#define SPI2_MISO_PIN   PC2
-//#define SPI2_MOSI_PIN   PC3
-//
-//#define OSD
-//#define USE_MAX7456
-//#define MAX7456_SPI_INSTANCE    SPI2
-//#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
-//
-// #define MAX7456_DMA_CHANNEL_TX             DMA1_Stream4
-//#define MAX7456_DMA_CHANNEL_RX              DMA1_Stream3
-//#define MAX7456_DMA_IRQ_HANDLER_ID          DMA1_ST0_HANDLER
+#define USE_SPI_DEVICE_2
+#define SPI2_NSS_PIN    PB12
+#define SPI2_SCK_PIN    PB13
+#define SPI2_MISO_PIN   PC2
+#define SPI2_MOSI_PIN   PC3
+
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI2
+#define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 // *************** TF Support *****************************
 #define USE_SPI_DEVICE_3
