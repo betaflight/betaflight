@@ -67,6 +67,7 @@
 #include "drivers/compass_fake.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_mag3110.h"
+#include "drivers/compass_ist8310.h"
 
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
@@ -606,7 +607,7 @@ static bool detectMag(magSensor_e magHardwareToUse)
 
         case MAG_IST8310:
 #ifdef USE_MAG_IST8310
-        	if (ist8310Detect(&mag, ist8310Config)) {
+        	if (ist8310Detect(&mag)) {
 #ifdef MAG_IST8310_ALIGN
         		magAlign = MAG_IST8310_ALIGN;
 #endif
