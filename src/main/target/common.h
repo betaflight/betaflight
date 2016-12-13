@@ -45,6 +45,8 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
+
+#define CLI_MINIMAL_VERBOSITY
 #endif
 
 #define SERIAL_RX
