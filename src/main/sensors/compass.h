@@ -31,7 +31,8 @@ typedef enum {
     MAG_GPS = 3,
     MAG_MAG3110 = 4,
     MAG_AK8963 = 5,
-    MAG_FAKE = 6,
+	MAG_IST8310 = 6,
+    MAG_FAKE = 7,
     MAG_MAX = MAG_FAKE
 } magSensor_e;
 
