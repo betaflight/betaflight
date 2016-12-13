@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -88,13 +89,8 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 }
 
-bool gyroDetect(gyroDev_t *dev)
+static bool gyroDetect(gyroDev_t *dev)
 {
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-    mpuDetect(extiConfig);
-#endif
-
     gyroSensor_e gyroHardware = GYRO_DEFAULT;
 
     dev->gyroAlign = ALIGN_DEFAULT;
@@ -230,7 +226,7 @@ case GYRO_MPU9250:
     return true;
 }
 
-void gyroInit(const gyroConfig_t *gyroConfigToUse)
+bool gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
     static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
     static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
@@ -239,6 +235,15 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
     static biquadFilter_t gyroFilterNotch_2[XYZ_AXIS_COUNT];
 
     gyroConfig = gyroConfigToUse;
+    memset(&gyro, 0, sizeof(gyro));
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
+    mpuDetect(extiConfig);
+#endif
+
+    if (!gyroDetect(&gyro.dev)) {
+        return false;
+    }
     gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
     gyro.dev.lpf = gyroConfig->gyro_lpf;
     gyro.dev.init(&gyro.dev);
@@ -286,6 +291,7 @@ void gyroInit(const gyroConfig_t *gyroConfigToUse)
             biquadFilterInit(notchFilter2[axis], gyroConfig->gyro_soft_notch_hz_2, gyro.targetLooptime, gyroSoftNotchQ2, FILTER_NOTCH);
         }
     }
+    return true;
 }
 
 bool isGyroCalibrationComplete(void)
