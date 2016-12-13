@@ -104,22 +104,7 @@
 #define IST8310_CNTRL2_DRPOL 0x04
 #define IST8310_CNTRL2_DRENA 0x08
 
-bool ist8310Detect(magDev_t* mag)
-{
-    bool ack = false;
-    uint8_t sig = 0;
-
-    ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_WHOAMI, 1, &sig);
-    if (!ack || (sig != IST8310_CHIP_ID))
-        return false;
-
-    mag->init = ist8310Init;
-    mag->read = ist8310Read;
-
-    return true;
-}
-
-bool ist8310Init(void)
+static bool ist8310Init(void)
 {
     i2cWrite(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_CNTRL1, IST8310_ODR_50_HZ);
     delay(5);
@@ -129,7 +114,7 @@ bool ist8310Init(void)
     return true;
 }
 
-bool ist8310Read(int16_t *magData)
+static bool ist8310Read(int16_t *magData)
 {
     uint8_t buf[6];
     uint8_t LSB2FSV = 3; // 3mG - 14 bit
@@ -151,4 +136,20 @@ bool ist8310Read(int16_t *magData)
 
     return true;
 }
+
+bool ist8310Detect(magDev_t* mag)
+{
+    bool ack = false;
+    uint8_t sig = 0;
+
+    ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_WHOAMI, 1, &sig);
+    if (!ack || (sig != IST8310_CHIP_ID))
+        return false;
+
+    mag->init = ist8310Init;
+    mag->read = ist8310Read;
+
+    return true;
+}
+
 #endif

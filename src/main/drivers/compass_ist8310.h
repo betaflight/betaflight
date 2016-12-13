@@ -18,5 +18,3 @@
 #pragma once
 
 bool ist8310Detect(magDev_t* mag);
-bool ist8310Init(void);
-bool ist8310Read(int16_t *magData);
