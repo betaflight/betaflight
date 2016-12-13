@@ -104,7 +104,7 @@
 #define IST8310_CNTRL2_DRPOL 0x04
 #define IST8310_CNTRL2_DRENA 0x08
 
-bool ist8310Detect(mag_t* mag)
+bool ist8310Detect(magDev_t* mag)
 {
     bool ack = false;
     uint8_t sig = 0;
