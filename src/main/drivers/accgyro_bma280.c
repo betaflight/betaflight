@@ -40,7 +40,7 @@ static void bma280Init(accDev_t *acc)
     acc->acc_1G = 512 * 8;
 }
 
-static bool bma280Read(int16_t *accelData)
+static bool bma280Read(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -49,9 +49,9 @@ static bool bma280Read(int16_t *accelData)
     }
 
     // Data format is lsb<5:0><crap><new_data_bit> | msb<13:6>
-    accelData[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
-    accelData[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
-    accelData[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
+    acc->ADCRaw[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
+    acc->ADCRaw[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
+    acc->ADCRaw[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
 
     return true;
 }

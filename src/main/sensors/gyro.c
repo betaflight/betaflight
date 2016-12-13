@@ -81,8 +81,10 @@ static const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 }
 
-static bool gyroDetect(gyroDev_t *dev)
+static bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
 {
+    dev->mpuIntExtiConfig =  extiConfig;
+
     gyroSensor_e gyroHardware = GYRO_AUTODETECT;
 
     dev->gyroAlign = ALIGN_DEFAULT;
@@ -206,13 +208,14 @@ static bool gyroDetect(gyroDev_t *dev)
 bool gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
     gyroConfig = gyroConfigToUse;
+    memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250)
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-    mpuDetect(extiConfig);
+    mpuDetect(&gyro.dev);
+    mpuReset = gyro.dev.mpuConfiguration.reset;
 #endif
 
-    memset(&gyro, 0, sizeof(gyro));
-    if (!gyroDetect(&gyro.dev)) {
+    if (!gyroDetect(&gyro.dev, extiConfig)) {
         return false;
     }
     // After refactoring this function is always called after gyro sampling rate is known, so

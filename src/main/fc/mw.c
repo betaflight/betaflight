@@ -183,8 +183,9 @@ void annexCode(void)
     }
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature)
-        gyro.dev.temperature(&telemTemperature1);
+    if (gyro.dev.temperature) {
+        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
+    }
 }
 
 void mwDisarm(void)

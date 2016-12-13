@@ -76,7 +76,7 @@ static void adxl345Init(accDev_t *acc)
 
 uint8_t acc_samples = 0;
 
-static bool adxl345Read(int16_t *accelData)
+static bool adxl345Read(accDev_t *acc)
 {
     uint8_t buf[8];
 
@@ -99,9 +99,9 @@ static bool adxl345Read(int16_t *accelData)
             z += (int16_t)(buf[4] + (buf[5] << 8));
             samples_remaining = buf[7] & 0x7F;
         } while ((i < 32) && (samples_remaining > 0));
-        accelData[0] = x / i;
-        accelData[1] = y / i;
-        accelData[2] = z / i;
+        acc->ADCRaw[0] = x / i;
+        acc->ADCRaw[1] = y / i;
+        acc->ADCRaw[2] = z / i;
         acc_samples = i;
     } else {
 
@@ -109,9 +109,9 @@ static bool adxl345Read(int16_t *accelData)
             return false;
         }
 
-        accelData[0] = buf[0] + (buf[1] << 8);
-        accelData[1] = buf[2] + (buf[3] << 8);
-        accelData[2] = buf[4] + (buf[5] << 8);
+        acc->ADCRaw[0] = buf[0] + (buf[1] << 8);
+        acc->ADCRaw[1] = buf[2] + (buf[3] << 8);
+        acc->ADCRaw[2] = buf[4] + (buf[5] << 8);
     }
 
     return true;
