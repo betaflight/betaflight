@@ -489,9 +489,9 @@ uint16_t i2cGetErrorCounter(void)
 
 static void i2cWaitForCompletion(I2CDevice device)
 {
+    timeUs_t fakeClock = 0;
     do {
-        const timeUs_t currentTimeUs = micros();
-        i2cStateMachine(&busState[device], currentTimeUs);
+        i2cStateMachine(&busState[device], fakeClock++);
     } while (busState[device].state != I2C_STATE_STOPPED);
 }
 
