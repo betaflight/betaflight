@@ -114,3 +114,4 @@ pwmOutputPort_t *pwmGetMotors(void);
 bool pwmIsSynced(void);
 void pwmDisableMotors(void);
 void pwmEnableMotors(void);
+bool pwmAreMotorsEnabled(void);

@@ -101,7 +101,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (index < MAX_SUPPORTED_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
+    if (motors[index].pwmWritePtr) {
         motors[index].pwmWritePtr(index, value);
     }
 }
@@ -125,6 +125,11 @@ void pwmDisableMotors(void)
 void pwmEnableMotors(void)
 {
     pwmMotorsEnabled = true;
+}
+
+bool pwmAreMotorsEnabled(void)
+{
+    return pwmMotorsEnabled;
 }
 
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
