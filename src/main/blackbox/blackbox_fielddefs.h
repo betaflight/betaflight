@@ -80,7 +80,10 @@ typedef enum FlightLogFieldPredictor {
     FLIGHT_LOG_FIELD_PREDICTOR_VBATREF        = 9,
 
     //Predict the last time value written in the main stream
-    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10
+    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10,
+
+    //Predict that this field is the minimum motor output
+    FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR       = 11
 
 } FlightLogFieldPredictor;
 
