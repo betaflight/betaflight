@@ -62,7 +62,8 @@ void cycleCounterInit(void)
 
     // Enable DWT for precision time measurement
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;}
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
 
 // SysTick
 
