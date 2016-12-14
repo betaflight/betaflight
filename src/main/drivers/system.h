@@ -28,7 +28,7 @@ timeUs_t microsISR(void);
 timeMs_t millis(void);
 
 uint32_t ticks(void);
-timeUs_t ticks_diff_us(uint32_t begin, uint32_t end);
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end);
 
 typedef enum {
     FAILURE_DEVELOPER = 0,

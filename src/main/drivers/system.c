@@ -83,7 +83,7 @@ uint32_t ticks(void)
     return DWT->CYCCNT;
 }
 
-timeUs_t ticks_diff_us(uint32_t begin, uint32_t end)
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end)
 {
     return (end - begin) / usTicks;
 }
