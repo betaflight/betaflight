@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
 #include "fc/rc_controls.h"

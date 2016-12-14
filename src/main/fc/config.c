@@ -41,6 +41,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/vcd.h"
 #include "drivers/max7456.h"
