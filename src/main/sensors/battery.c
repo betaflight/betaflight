@@ -85,7 +85,8 @@ static void updateBatteryVoltage(void)
 
     #ifdef USE_ESC_SENSOR
     if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
-        vbatLatest = getEscSensorVbat();
+        escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
+        vbatLatest = escData.stale ? 0 : escData.voltage / 10;
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
@@ -293,9 +294,15 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
         case CURRENT_SENSOR_ESC:
             #ifdef USE_ESC_SENSOR
             if (feature(FEATURE_ESC_SENSOR)) {
-                amperageLatest = getEscSensorCurrent();
+                escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
+                if (!escData.stale) {
+                    amperageLatest = escData.current;
+                    mAhDrawn = escData.consumption;
+                } else {
+                    amperageLatest = 0;
+                    mAhDrawn = 0;
+                }
                 amperage = amperageLatest;
-                mAhDrawn = getEscSensorConsumption();
 
                 updateConsumptionWarning();
             }
