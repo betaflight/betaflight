@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "flight/pid.h"
+#include "fc/rc_controls.h"
+
 #ifdef USE_SERVOS
 #include "flight/mixer.h"
 #include "flight/servos.h"
