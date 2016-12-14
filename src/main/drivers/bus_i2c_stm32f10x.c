@@ -153,7 +153,7 @@ static void i2cResetInterface(i2cBusState_t * i2cBusState)
     i2cInit(i2cBusState->device);
 }
 
-static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentTimeUs)
+static void i2cStateMachine(i2cBusState_t * i2cBusState, const uint32_t currentTicks)
 {
     I2C_TypeDef * I2Cx = i2cHardwareMap[i2cBusState->device].dev;
 
@@ -164,7 +164,15 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             break;
 
         case I2C_STATE_STOPPING:
-            i2cBusState->state = I2C_STATE_STOPPED;
+            // Wait for stop bit to clear
+            // RM0090: When the STOP, START or PEC bit is set, the software must not perform any write access 
+            // to I2C_CR1 before this bit is cleared by hardware. Otherwise there is a risk of setting a second STOP, START or PEC request.
+            if ((I2Cx->CR1 & I2C_CR1_STOP) == 0) {
+                i2cBusState->state = I2C_STATE_STOPPED;
+            }
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
+                i2cBusState->state = I2C_STATE_BUS_ERROR;
+            }
             break;
 
         case I2C_STATE_STOPPED:
@@ -176,7 +184,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             I2C_AcknowledgeConfig(I2Cx, ENABLE);
             I2C_GenerateSTART(I2Cx, ENABLE);
             i2cBusState->state = I2C_STATE_STARTING_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             // Fallthrough
 
         case I2C_STATE_STARTING_WAIT:
@@ -188,7 +196,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
                     i2cBusState->state = I2C_STATE_W_ADDR;
                 }
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -196,7 +204,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
         case I2C_STATE_R_ADDR:
             I2C_Send7bitAddress(I2Cx, i2cBusState->addr, I2C_Direction_Transmitter);
             i2cBusState->state = I2C_STATE_R_ADDR_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             // Fallthrough
 
         case I2C_STATE_R_ADDR_WAIT:
@@ -206,7 +214,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -214,13 +222,14 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
         case I2C_STATE_R_REGISTER:      /* Send Register address */
             I2C_SendData(I2Cx, i2cBusState->reg);
             i2cBusState->state = I2C_STATE_R_REGISTER_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             /* Fallthrough */
 
         case I2C_STATE_R_REGISTER_WAIT:
             if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED) != ERROR) {
                 if (i2cBusState->len == 0) {
                     I2C_GenerateSTOP(I2Cx, ENABLE);
+                    i2cBusState->timeout = currentTicks;
                     i2cBusState->state = I2C_STATE_STOPPING;
                 }
                 else {
@@ -230,7 +239,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -238,14 +247,14 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
         case I2C_STATE_R_RESTARTING:
             I2C_GenerateSTART(I2Cx, ENABLE);
             i2cBusState->state = I2C_STATE_R_RESTARTING_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             // Fallthrough
 
         case I2C_STATE_R_RESTARTING_WAIT:
             if (I2C_CheckEvent(I2Cx, I2C_EVENT_MASTER_MODE_SELECT) != ERROR) {
                 i2cBusState->state = I2C_STATE_R_RESTART_ADDR;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -253,7 +262,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
         case I2C_STATE_R_RESTART_ADDR:
             I2C_Send7bitAddress(I2Cx, i2cBusState->addr, I2C_Direction_Receiver);
             i2cBusState->state = I2C_STATE_R_RESTART_ADDR_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             // Fallthrough
 
         case I2C_STATE_R_RESTART_ADDR_WAIT:
@@ -284,12 +293,12 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
                     i2cBusState->state = I2C_STATE_R_TRANSFER_GE2;
                 }
 
-                i2cBusState->timeout = currentTimeUs;
+                i2cBusState->timeout = currentTicks;
             }
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -301,9 +310,10 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
 
                 // This was the last successful byte
                 i2cBusState->txnOk = true;
+                i2cBusState->timeout = currentTicks;
                 i2cBusState->state = I2C_STATE_STOPPING;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -320,9 +330,10 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
 
                 // This was the last successful byte
                 i2cBusState->txnOk = true;
+                i2cBusState->timeout = currentTicks;
                 i2cBusState->state = I2C_STATE_STOPPING;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -342,7 +353,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
 
                     // Last byte remaining
                     i2cBusState->state = I2C_STATE_R_TRANSFER_EQ1;
-                    i2cBusState->timeout = currentTimeUs;
+                    i2cBusState->timeout = currentTicks;
                 }
                 else if (i2cBusState->len < 3) {
                     // Shouldn't happen - abort
@@ -351,6 +362,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
                     I2C_ReceiveData(I2Cx);
 
                     i2cBusState->txnOk = false;
+                    i2cBusState->timeout = currentTicks;
                     i2cBusState->state = I2C_STATE_STOPPING;
                 }
                 else {
@@ -359,10 +371,10 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
                     i2cBusState->len--;
 
                     // Restart timeout and stay in this state
-                    i2cBusState->timeout = currentTimeUs;
+                    i2cBusState->timeout = currentTicks;
                 }
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -371,7 +383,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             I2C_AcknowledgeConfig(I2Cx, DISABLE);
             I2C_Send7bitAddress(I2Cx, i2cBusState->addr, I2C_Direction_Transmitter);
             i2cBusState->state = I2C_STATE_W_ADDR_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             // Fallthrough
 
         case I2C_STATE_W_ADDR_WAIT:
@@ -381,7 +393,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -389,7 +401,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
         case I2C_STATE_W_REGISTER:      /* Send Register address */
             I2C_SendData(I2Cx, i2cBusState->reg);
             i2cBusState->state = I2C_STATE_W_TRANSFER_WAIT;
-            i2cBusState->timeout = currentTimeUs;
+            i2cBusState->timeout = currentTicks;
             /* Fallthrough */
 
         case I2C_STATE_W_TRANSFER_WAIT:
@@ -399,7 +411,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
             else if (I2C_GetFlagStatus(I2Cx, I2C_FLAG_AF) != RESET) {
                 i2cBusState->state = I2C_STATE_NACK;
             }
-            else if ((currentTimeUs - i2cBusState->timeout) >= I2C_TIMEOUT) {
+            else if (ticks_diff_us(i2cBusState->timeout, currentTicks) >= I2C_TIMEOUT) {
                 i2cBusState->state = I2C_STATE_BUS_ERROR;
             }
             break;
@@ -409,17 +421,20 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentT
                 I2C_SendData(I2Cx, *i2cBusState->buf);
                 i2cBusState->buf++;
                 i2cBusState->len--;
-                i2cBusState->timeout = currentTimeUs;
+                i2cBusState->timeout = currentTicks;
                 i2cBusState->state = I2C_STATE_W_TRANSFER_WAIT;
             }
             else {
                 I2C_GenerateSTOP(I2Cx, ENABLE);
+                i2cBusState->timeout = currentTicks;
                 i2cBusState->state = I2C_STATE_STOPPING;
             }
+            break;
 
         case I2C_STATE_NACK:
             I2C_GenerateSTOP(I2Cx, ENABLE);
             I2C_ClearFlag(I2Cx, I2C_FLAG_AF);
+            i2cBusState->timeout = currentTicks;
             i2cBusState->state = I2C_STATE_STOPPING;
             break;
     }
@@ -490,8 +505,8 @@ uint16_t i2cGetErrorCounter(void)
 static void i2cWaitForCompletion(I2CDevice device)
 {
     do {
-        const timeUs_t currentTimeUs = micros();
-        i2cStateMachine(&busState[device], currentTimeUs);
+        const uint32_t currentTicks = ticks();
+        i2cStateMachine(&busState[device], currentTicks);
     } while (busState[device].state != I2C_STATE_STOPPED);
 }
 
