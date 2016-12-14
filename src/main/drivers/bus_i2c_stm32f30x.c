@@ -112,13 +112,15 @@ static i2cBusState_t busState[I2CDEV_MAX] = { { 0 } };
 
 static void i2cResetInterface(i2cBusState_t * i2cBusState)
 {
+    /*
     const i2cDevice_t * i2c = &(i2cHardwareMap[i2cBusState->device]);
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
+    i2cUnstick(scl, sda);
+    i2cInit(i2cBusState->device);
+    */
     i2cErrorCount++;
-    //i2cUnstick(scl, sda);
-    //i2cInit(i2cBusState->device);
 }
 
 static void i2cStateMachine(i2cBusState_t * i2cBusState, const timeUs_t currentTimeUs)
