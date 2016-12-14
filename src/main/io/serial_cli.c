@@ -236,7 +236,7 @@ static const char * const accNames[] = { "NONE", "AUTO", "ADXL345", "MPU6050", "
 // sync with baroSensor_e
 static const char * const baroNames[] = { "NONE", "BMP085", "MS5611", "BMP280", "FAKE"};
 // sync with magSensor_e
-static const char * const magNames[] = { "NONE", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963", "FAKE"};
+static const char * const magNames[] = { "NONE", "HMC5883", "AK8975", "MAG_GPS", "MAG_MAG3110", "MAG_AK8963","MAG_IST8310", "FAKE"};
 // sycn with rangefinderType_e
 static const char * const rangefinderNames[] = { "NONE", "HCSR04", "SRF10"};
 // sync with pitotSensor_e

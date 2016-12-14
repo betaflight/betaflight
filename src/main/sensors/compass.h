@@ -25,14 +25,15 @@
 
 // Type of magnetometer used/detected
 typedef enum {
-    MAG_NONE = 0,
-    MAG_HMC5883 = 1,
-    MAG_AK8975 = 2,
-    MAG_GPS = 3,
-    MAG_MAG3110 = 4,
-    MAG_AK8963 = 5,
-    MAG_FAKE = 6,
-    MAG_MAX = MAG_FAKE
+	MAG_NONE = 0,
+	MAG_HMC5883 = 1,
+	MAG_AK8975 = 2,
+	MAG_GPS = 3,
+	MAG_MAG3110 = 4,
+	MAG_AK8963 = 5,
+	MAG_IST8310 = 6,
+	MAG_FAKE = 7,
+	MAG_MAX = MAG_FAKE
 } magSensor_e;
 
 typedef struct mag_s {
