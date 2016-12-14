@@ -379,15 +379,13 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    int16_t accADCRaw[XYZ_AXIS_COUNT];
-
-    if (!acc.dev.read(accADCRaw)) {
+    if (!acc.dev.read(&acc.dev)) {
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        DEBUG_SET(DEBUG_ACCELEROMETER, axis, accADCRaw[axis]);
-        acc.accSmooth[axis] = accADCRaw[axis];
+        DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);
+        acc.accSmooth[axis] = acc.dev.ADCRaw[axis];
     }
 
     if (accLpfCutHz) {

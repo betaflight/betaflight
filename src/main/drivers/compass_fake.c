@@ -32,12 +32,13 @@
 
 static int16_t fakeMagData[XYZ_AXIS_COUNT];
 
-static void fakeMagInit(void)
+static bool fakeMagInit(void)
 {
     // initially point north
     fakeMagData[X] = 4096;
     fakeMagData[Y] = 0;
     fakeMagData[Z] = 0;
+    return true;
 }
 
 void fakeMagSet(int16_t x, int16_t y, int16_t z)

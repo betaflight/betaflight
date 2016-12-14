@@ -61,7 +61,7 @@
 #define AK8975A_ASAY 0x11 // Fuse ROM y-axis sensitivity adjustment value
 #define AK8975A_ASAZ 0x12 // Fuse ROM z-axis sensitivity adjustment value
 
-static void ak8975Init()
+static bool ak8975Init()
 {
     uint8_t buffer[3];
     uint8_t status;
@@ -84,6 +84,7 @@ static void ak8975Init()
 
     // Trigger first measurement
     i2cWrite(MAG_I2C_INSTANCE, AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01);
+    return true;
 }
 
 #define BIT_STATUS1_REG_DATA_READY              (1 << 0)
