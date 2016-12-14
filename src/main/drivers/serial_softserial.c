@@ -181,35 +181,31 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
-    ioTag_t tagTx;
-    ioTag_t tagRx;
+    ioTag_t tagTx = DEFIO_TAG__NONE;
+    ioTag_t tagRx = DEFIO_TAG__NONE;
 
 #ifdef USE_SOFTSERIAL1
     if (portIndex == SOFTSERIAL1) {
-
-// Transitional measure
-#if defined(SOFTSERIAL_1_TIMER_TX_HARDWARE) && defined(SOFTSERIAL_1_TIMER_RX_HARDWARE)
-        softSerial->rxTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_RX_HARDWARE]);
-        softSerial->txTimerHardware = &(timerHardware[SOFTSERIAL_1_TIMER_TX_HARDWARE]);
-#else
-        tagTx = IOGetByTag(IO_TAG(SOFTSERIAL1_TX_PIN));
-        tagRx = IOGetByTag(IO_TAG(SOFTSERIAL1_RX_PIN));
-
-        if (!(tagTx && tagRx))
-            return NULL;
-
-        softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
-        softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
-#endif
+        tagTx = IO_TAG(SOFTSERIAL1_TX_PIN);
+        tagRx = IO_TAG(SOFTSERIAL1_RX_PIN);
     }
 #endif
-
 #ifdef USE_SOFTSERIAL2
     if (portIndex == SOFTSERIAL2) {
-        softSerial->rxTimerHardware = &(timerHardware[SOFTSERIAL_2_TIMER_RX_HARDWARE]);
-        softSerial->txTimerHardware = &(timerHardware[SOFTSERIAL_2_TIMER_TX_HARDWARE]);
+        tagTx = IO_TAG(SOFTSERIAL1_TX_PIN);
+        tagRx = IO_TAG(SOFTSERIAL1_RX_PIN);
     }
 #endif
+
+    if (!(tagTx && tagRx)) {
+        // Future enhancement: half duplex case
+        return NULL;
+    }
+
+    softSerial->txIO = IOGetByTag(tagTx);
+    softSerial->rxIO = IOGetByTag(tagRx);
+    softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
+    softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
 
     softSerial->port.vTable = softSerialVTable;
     softSerial->port.baudRate = baud;
@@ -229,12 +225,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    softSerial->txIO = IOGetByTag(tagTx);
     serialOutputPortConfig(tagTx, portIndex);
-
-    softSerial->rxIO = IOGetByTag(tagRx);
     serialInputPortConfig(tagRx, portIndex);
-
     setTxSignal(softSerial, ENABLE);
     delay(50);
 
