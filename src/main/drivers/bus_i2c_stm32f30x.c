@@ -55,8 +55,6 @@
 #define I2C2_SDA PA10
 #endif
 
-static void i2cUnstick(IO_t scl, IO_t sda);
-
 typedef enum {
     I2C_STATE_STOPPED = 0,
     I2C_STATE_STOPPING,
@@ -112,6 +110,7 @@ static i2cBusState_t busState[I2CDEV_MAX] = { { 0 } };
 
 static void i2cResetInterface(i2cBusState_t * i2cBusState)
 {
+    UNUSED(i2cBusState);
     /*
     const i2cDevice_t * i2c = &(i2cHardwareMap[i2cBusState->device]);
     IO_t scl = IOGetByTag(i2c->scl);
@@ -409,44 +408,6 @@ bool i2cRead(I2CDevice device, uint8_t addr, uint8_t reg, uint8_t len, uint8_t* 
     i2cWaitForCompletion(device);
 
     return busState[device].txnOk;
-}
-
-static void i2cUnstick(IO_t scl, IO_t sda)
-{
-    int i;
-
-    IOHi(scl);
-    IOHi(sda);
-
-    IOConfigGPIO(scl, IOCFG_OUT_OD);
-    IOConfigGPIO(sda, IOCFG_OUT_OD);
-
-    // Analog Devices AN-686
-    // We need 9 clock pulses + STOP condition
-    for (i = 0; i < 9; i++) {
-        // Wait for any clock stretching to finish
-        int timeout = 100;
-        while (!IORead(scl) && timeout) {
-            delayMicroseconds(5);
-            timeout--;
-        }
-
-        // Pull low
-        IOLo(scl); // Set bus low
-        delayMicroseconds(5);
-        IOHi(scl); // Set bus high
-        delayMicroseconds(5);
-    }
-
-    // Generate a stop condition in case there was none
-    IOLo(scl);
-    delayMicroseconds(5);
-    IOLo(sda);
-    delayMicroseconds(5);
-
-    IOHi(scl); // Set bus scl high
-    delayMicroseconds(5);
-    IOHi(sda); // Set bus sda high
 }
 
 #endif
