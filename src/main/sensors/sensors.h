@@ -55,11 +55,5 @@ typedef enum {
     SENSOR_GPSMAG = 1 << 7,
 } sensors_e;
 
-typedef struct sensorTrims_s {
-    flightDynamicsTrims_t accZero;          // Accelerometer offset
-    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
-    flightDynamicsTrims_t magZero;          // Compass offset
-} sensorTrims_t;
-
 extern uint8_t requestedSensors[SENSOR_INDEX_COUNT];
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
