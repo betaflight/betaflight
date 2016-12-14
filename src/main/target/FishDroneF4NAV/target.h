@@ -19,8 +19,6 @@
 
 #define TARGET_BOARD_IDENTIFIER "FDV1"
 
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
-
 #define USBD_PRODUCT_STRING "FishDroneF4NAV"
 
 // *************** LED *****************************
