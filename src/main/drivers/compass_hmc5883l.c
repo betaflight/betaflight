@@ -41,9 +41,6 @@
 
 #include "compass_hmc5883l.h"
 
-void hmc5883lInit(void);
-bool hmc5883lRead(int16_t *magData);
-
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
 
 // HMC5883L, default address 0x1E
@@ -129,7 +126,7 @@ static const hmc5883Config_t *hmc5883Config = NULL;
 static IO_t intIO;
 static extiCallbackRec_t hmc5883_extiCallbackRec;
 
-void hmc5883_extiHandler(extiCallbackRec_t* cb)
+static void hmc5883_extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
@@ -170,23 +167,24 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 #endif
 }
 
-bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+static bool hmc5883lRead(int16_t *magData)
 {
-    hmc5883Config = hmc5883ConfigToUse;
+    uint8_t buf[6];
 
-    uint8_t sig = 0;
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
-
-    if (!ack || sig != 'H')
+    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    if (!ack) {
         return false;
-
-    mag->init = hmc5883lInit;
-    mag->read = hmc5883lRead;
+    }
+    // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
+    // After calibration is done, magGain is set to calculated gain values.
+    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
+    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
+    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 
     return true;
 }
 
-void hmc5883lInit(void)
+static void hmc5883lInit(void)
 {
     int16_t magADC[3];
     int i;
@@ -258,19 +256,18 @@ void hmc5883lInit(void)
     hmc5883lConfigureDataReadyInterruptHandling();
 }
 
-bool hmc5883lRead(int16_t *magData)
+bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
 {
-    uint8_t buf[6];
+    hmc5883Config = hmc5883ConfigToUse;
 
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-    if (!ack) {
+    uint8_t sig = 0;
+    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+
+    if (!ack || sig != 'H')
         return false;
-    }
-    // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
-    // After calibration is done, magGain is set to calculated gain values.
-    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
+
+    mag->init = hmc5883lInit;
+    mag->read = hmc5883lRead;
 
     return true;
 }
