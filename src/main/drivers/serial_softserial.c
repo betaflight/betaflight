@@ -192,8 +192,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 #endif
 #ifdef USE_SOFTSERIAL2
     if (portIndex == SOFTSERIAL2) {
-        tagTx = IO_TAG(SOFTSERIAL1_TX_PIN);
-        tagRx = IO_TAG(SOFTSERIAL1_RX_PIN);
+        tagTx = IO_TAG(SOFTSERIAL2_TX_PIN);
+        tagRx = IO_TAG(SOFTSERIAL2_RX_PIN);
     }
 #endif
 
