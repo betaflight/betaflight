@@ -19,13 +19,24 @@
 
 // FIXME some of these are flight modes, some of these are general status indicators
 typedef enum {
-    OK_TO_ARM       = (1 << 0),
-    PREVENT_ARMING  = (1 << 1),
-    ARMED           = (1 << 2),
-    WAS_EVER_ARMED  = (1 << 3)
+    OK_TO_ARM                               = (1 << 0),
+    PREVENT_ARMING                          = (1 << 1),
+    ARMED                                   = (1 << 2),
+    WAS_EVER_ARMED                          = (1 << 3),
+
+    BLOCKED_UAV_NOT_LEVEL                   = (1 << 8),
+    BLOCKED_SENSORS_CALIBRATING             = (1 << 9),
+    BLOCKED_SYSTEM_OVERLOADED               = (1 << 10),
+    BLOCKED_NAVIGATION_SAFETY               = (1 << 11),
+    BLOCKED_COMPASS_NOT_CALIBRATED          = (1 << 12),
+    BLOCKED_ACCELEROMETER_NOT_CALIBRATED    = (1 << 13),
+    //                                      = (1 << 14),
+    BLOCKED_HARDWARE_FAILURE                = (1 << 15),
+    BLOCKED_ALL_FLAGS                       = (BLOCKED_UAV_NOT_LEVEL | BLOCKED_SENSORS_CALIBRATING | BLOCKED_SYSTEM_OVERLOADED | BLOCKED_NAVIGATION_SAFETY |
+                                               BLOCKED_COMPASS_NOT_CALIBRATED | BLOCKED_ACCELEROMETER_NOT_CALIBRATED | BLOCKED_HARDWARE_FAILURE)
 } armingFlag_e;
 
-extern uint8_t armingFlags;
+extern uint16_t armingFlags;
 
 #define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
 #define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
@@ -64,13 +75,15 @@ typedef enum {
     ANTI_WINDUP             = (1 << 5),
     FLAPERON_AVAILABLE      = (1 << 6),
     NAV_MOTOR_STOP_OR_IDLE  = (1 << 7),     // navigation requests MOTOR_STOP or motor idle regardless of throttle stick, will only activate if MOTOR_STOP feature is available
+    COMPASS_CALIBRATED      = (1 << 8),
+    ACCELEROMETER_CALIBRATED= (1 << 9),
 } stateFlags_t;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
 #define ENABLE_STATE(mask) (stateFlags |= (mask))
 #define STATE(mask) (stateFlags & (mask))
 
-extern uint8_t stateFlags;
+extern uint32_t stateFlags;
 
 uint32_t enableFlightMode(flightModeFlags_e mask);
 uint32_t disableFlightMode(flightModeFlags_e mask);

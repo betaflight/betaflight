@@ -556,6 +556,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
         sbufWriteU16(dst, averageSystemLoadPercent);
+        sbufWriteU16(dst, armingFlags);
         break;
 
     case MSP_STATUS:

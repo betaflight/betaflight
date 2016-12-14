@@ -198,12 +198,19 @@ bool isCompassReady(void)
     return magUpdatedAtLeastOnce;
 }
 
-static sensorCalibrationState_t calState;
-
 void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
 {
+    static sensorCalibrationState_t calState;
     static timeUs_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];
+
+    // Check magZero
+    if ((magZero->raw[X] == 0) && (magZero->raw[Y] == 0) && (magZero->raw[Z] == 0)) {
+        DISABLE_STATE(COMPASS_CALIBRATED);
+    }
+    else {
+        ENABLE_STATE(COMPASS_CALIBRATED);
+    }
 
     if (!mag.dev.read(magADCRaw)) {
         mag.magADC[X] = 0;
@@ -263,7 +270,6 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
             }
 
             calStartedAt = 0;
-            persistentFlagSet(FLAG_MAG_CALIBRATION_DONE);
             saveConfigAndNotify();
         }
     }

@@ -384,14 +384,18 @@ void updateAccelerationReadings(void)
     alignSensors(acc.accADC, acc.dev.accAlign);
 }
 
-void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse)
+void setAccelerationCalibrationValues(flightDynamicsTrims_t * accZeroToUse, flightDynamicsTrims_t * accGainToUse)
 {
     accZero = accZeroToUse;
-}
-
-void setAccelerationGain(flightDynamicsTrims_t * accGainToUse)
-{
     accGain = accGainToUse;
+
+    if ((accZero->raw[X] == 0) && (accZero->raw[Y] == 0) && (accZero->raw[Z] == 0) &&
+        (accGain->raw[X] == 4096) && (accGain->raw[Y] == 4096) &&(accGain->raw[Z] == 4096)) {
+        DISABLE_STATE(ACCELEROMETER_CALIBRATED);
+    }
+    else {
+        ENABLE_STATE(ACCELEROMETER_CALIBRATED);
+    }
 }
 
 void setAccelerationFilter(uint8_t initialAccLpfCutHz)
