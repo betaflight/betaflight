@@ -41,10 +41,10 @@ const uint16_t multiPPM[] = {
 
 const uint16_t multiPWM[] = {
     PWM1  | (MAP_TO_PWM_INPUT << 8),    // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8), 	// input #2
-    PWM3  | (MAP_TO_PWM_INPUT << 8), 	// input #3
-    PWM4  | (MAP_TO_PWM_INPUT << 8), 	// input #4
-    PWM5  | (MAP_TO_PWM_INPUT << 8), 	// input #5
+    PWM2  | (MAP_TO_PWM_INPUT << 8),     // input #2
+    PWM3  | (MAP_TO_PWM_INPUT << 8),     // input #3
+    PWM4  | (MAP_TO_PWM_INPUT << 8),     // input #4
+    PWM5  | (MAP_TO_PWM_INPUT << 8),     // input #5
     PWM6  | (MAP_TO_PWM_INPUT << 8),    // input #6
 
     PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1 or servo #1 (swap to servo if needed)
@@ -75,37 +75,37 @@ const uint16_t airPPM[] = {
 };
 
 const uint16_t airPWM[] = {
-	PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-	PWM2  | (MAP_TO_PWM_INPUT << 8),	 // input #2
-	PWM3  | (MAP_TO_PWM_INPUT << 8),	 // input #3
-	PWM4  | (MAP_TO_PWM_INPUT << 8),	 // input #4
-	PWM5  | (MAP_TO_PWM_INPUT << 8),	 // input #5
-	PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
+    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
+    PWM2  | (MAP_TO_PWM_INPUT << 8),     // input #2
+    PWM3  | (MAP_TO_PWM_INPUT << 8),     // input #3
+    PWM4  | (MAP_TO_PWM_INPUT << 8),     // input #4
+    PWM5  | (MAP_TO_PWM_INPUT << 8),     // input #5
+    PWM6  | (MAP_TO_PWM_INPUT << 8),     // input #6
 
-	PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
-	PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
-	PWM9  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
-	PWM10 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #2
-	PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #3
-	PWM12 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #4
-	0xFFFF
+    PWM7  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM8  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #2
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #3
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8), // servo #4
+    0xFFFF
 };
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-	{ TIM5,  IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM5 }, // S1_IN(PPM)
-	{ TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM5 }, // S2_IN
-	{ TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM3 }, // S3_IN
-	{ TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM2 }, // S4_IN
-	{ TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM2 }, // S5_IN
-	{ TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,0, IOCFG_AF_PP , GPIO_AF_TIM1 }, // S6_IN
+    { TIM5,  IO_TAG(PA0),  TIM_Channel_1, TIM5_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM5 }, // S1_IN(PPM)
+    { TIM5,  IO_TAG(PA1),  TIM_Channel_2, TIM5_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM5 }, // S2_IN
+    { TIM3,  IO_TAG(PB0),  TIM_Channel_3, TIM3_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM3 }, // S3_IN
+    { TIM2,  IO_TAG(PB10), TIM_Channel_3, TIM2_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM2 }, // S4_IN
+    { TIM2,  IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,   0, IOCFG_AF_PP , GPIO_AF_TIM2 }, // S5_IN
+    { TIM1,  IO_TAG(PA8),  TIM_Channel_1, TIM1_CC_IRQn,0, IOCFG_AF_PP , GPIO_AF_TIM1 }, // S6_IN
 
-	{ TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn,1, IOCFG_AF_PP, GPIO_AF_TIM12 },// S1_OUT
-	{ TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn,1, IOCFG_AF_PP, GPIO_AF_TIM12 },// S2_OUT
-	{ TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S3_OUT
-	{ TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S4_OUT
-	{ TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S5_OUT
-	{ TIM8,  IO_TAG(PC9),  TIM_Channel_4, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S6_OUT
+    { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn,1, IOCFG_AF_PP, GPIO_AF_TIM12 },// S1_OUT
+    { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn,1, IOCFG_AF_PP, GPIO_AF_TIM12 },// S2_OUT
+    { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S3_OUT
+    { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S4_OUT
+    { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S5_OUT
+    { TIM8,  IO_TAG(PC9),  TIM_Channel_4, TIM8_CC_IRQn,       1, IOCFG_AF_PP, GPIO_AF_TIM8 }, // S6_OUT
 
-	{ TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,  1, IOCFG_AF_PP , GPIO_AF_TIM3 }, // LED_STRIP
+    { TIM3,  IO_TAG(PB1),  TIM_Channel_4, TIM3_IRQn,  1, IOCFG_AF_PP , GPIO_AF_TIM3 }, // LED_STRIP
 };
 

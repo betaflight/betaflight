@@ -22,8 +22,8 @@
 #define USBD_PRODUCT_STRING "FishDroneF4NAV"
 
 // *************** LED *****************************
-#define LED0                    PC13	// Red
-#define LED1                    PC14	// Yellow
+#define LED0                    PC13    // Red
+#define LED1                    PC14    // Yellow
 
 // *************** BEEPER *****************************
 #define BEEPER                  PC15
@@ -154,8 +154,8 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC0
 #define CURRENT_METER_ADC_PIN   PC1
-#define RSSI_ADC_PIN       		PC5
-#define VBAT_SCALE_DEFAULT 		103
+#define RSSI_ADC_PIN               PC5
+#define VBAT_SCALE_DEFAULT         103
 
 // *************** SONAR *****************************
 // #define SONAR

@@ -149,16 +149,16 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
 #endif
         break;
 
-        case MAG_IST8310:
+    case MAG_IST8310:
 #ifdef USE_MAG_IST8310
-            if (ist8310Detect(dev)) {
+        if (ist8310Detect(dev)) {
 #ifdef MAG_IST8310_ALIGN
-                dev->magAlign = MAG_IST8310_ALIGN;
+            dev->magAlign = MAG_IST8310_ALIGN;
 #endif
-                magHardware = MAG_IST8310;
-            }
+            magHardware = MAG_IST8310;
+        }
 #endif
-        break;
+    break;
 
     case MAG_FAKE:
 #ifdef USE_FAKE_MAG
