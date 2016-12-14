@@ -137,19 +137,20 @@ static bool ist8310Read(int16_t *magData)
     return true;
 }
 
-bool ist8310Detect(magDev_t* mag)
+#define DETECTION_MAX_RETRY_COUNT   5
+bool ist8310Detect(magDev_t *mag)
 {
-    bool ack = false;
-    uint8_t sig = 0;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        uint8_t sig = 0;
+        bool ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_WHOAMI, 1, &sig);
+        if (ack && sig == IST8310_CHIP_ID) {
+            mag->init = ist8310Init;
+            mag->read = ist8310Read;
+            return true;
+        }
+    }
 
-    ack = i2cRead(MAG_I2C_INSTANCE, IST8310_ADDRESS, IST8310_REG_WHOAMI, 1, &sig);
-    if (!ack || (sig != IST8310_CHIP_ID))
-        return false;
-
-    mag->init = ist8310Init;
-    mag->read = ist8310Read;
-
-    return true;
+    return false;
 }
 
 #endif
