@@ -205,11 +205,11 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
     static int16_t magPrev[XYZ_AXIS_COUNT];
 
     // Check magZero
-    if ((magZero->raw[X] != 0) && (magZero->raw[Y] != 0) && (magZero->raw[Z] != 0)) {
-        ENABLE_STATE(COMPASS_CALIBRATED);
+    if ((magZero->raw[X] == 0) && (magZero->raw[Y] == 0) && (magZero->raw[Z] == 0)) {
+        DISABLE_STATE(COMPASS_CALIBRATED);
     }
     else {
-        DISABLE_STATE(COMPASS_CALIBRATED);
+        ENABLE_STATE(COMPASS_CALIBRATED);
     }
 
     if (!mag.dev.read(magADCRaw)) {

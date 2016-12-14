@@ -389,12 +389,12 @@ void setAccelerationCalibrationValues(flightDynamicsTrims_t * accZeroToUse, flig
     accZero = accZeroToUse;
     accGain = accGainToUse;
 
-    if ((accZero->raw[X] != 0) && (accZero->raw[Y] != 0) && (accZero->raw[Z] != 0) &&
-        (accGain->raw[X] != 4096) && (accGain->raw[Y] != 4096) &&(accGain->raw[Z] != 4096)) {
-        ENABLE_STATE(ACCELEROMETER_CALIBRATED);
+    if ((accZero->raw[X] == 0) && (accZero->raw[Y] == 0) && (accZero->raw[Z] == 0) &&
+        (accGain->raw[X] == 4096) && (accGain->raw[Y] == 4096) &&(accGain->raw[Z] == 4096)) {
+        DISABLE_STATE(ACCELEROMETER_CALIBRATED);
     }
     else {
-        DISABLE_STATE(ACCELEROMETER_CALIBRATED);
+        ENABLE_STATE(ACCELEROMETER_CALIBRATED);
     }
 }
 
