@@ -290,7 +290,7 @@ void updateRcCommands(void)
                 tmp = 0;
             }
             rcCommand[axis] = tmp;
-        } else if (axis == YAW) {
+        } else {
             if (tmp > rcControlsConfig()->yaw_deadband) {
                 tmp -= rcControlsConfig()->yaw_deadband;
             } else {
@@ -778,9 +778,11 @@ void subTaskMotorUpdate(void)
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
-    servoTable();
-    filterServos();
-    writeServos();
+    if (isMixerUsingServos()) {
+        servoTable();
+        filterServos();
+        writeServos();
+    }
 #endif
 
     if (motorControlEnable) {
