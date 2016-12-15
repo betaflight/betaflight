@@ -89,22 +89,22 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
 
     switch (filterType) {
-        case FILTER_LPF:
-            b0 = (1 - cs) / 2;
-            b1 = 1 - cs;
-            b2 = (1 - cs) / 2;
-            a0 = 1 + alpha;
-            a1 = -2 * cs;
-            a2 = 1 - alpha;
-            break;
-        case FILTER_NOTCH:
-            b0 =  1;
-            b1 = -2 * cs;
-            b2 =  1;
-            a0 =  1 + alpha;
-            a1 = -2 * cs;
-            a2 =  1 - alpha;
-            break;
+    case FILTER_LPF:
+        b0 = (1 - cs) / 2;
+        b1 = 1 - cs;
+        b2 = (1 - cs) / 2;
+        a0 = 1 + alpha;
+        a1 = -2 * cs;
+        a2 = 1 - alpha;
+        break;
+    case FILTER_NOTCH:
+        b0 =  1;
+        b1 = -2 * cs;
+        b2 =  1;
+        a0 =  1 + alpha;
+        a1 = -2 * cs;
+        a2 =  1 - alpha;
+        break;
     }
 
     // precompute the coefficients
