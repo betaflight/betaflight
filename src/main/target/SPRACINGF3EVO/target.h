@@ -37,7 +37,6 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 #define GYRO

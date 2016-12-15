@@ -41,7 +41,6 @@
 
 #endif
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 #define LED0                    PB5
