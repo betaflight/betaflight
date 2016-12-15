@@ -24,6 +24,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 
