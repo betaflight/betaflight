@@ -269,50 +269,50 @@ void writeServos(void)
     uint8_t servoIndex = 0;
 
     switch (currentMixerMode) {
-        case MIXER_BICOPTER:
-            pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
-            pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
-            break;
+    case MIXER_BICOPTER:
+        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_BICOPTER_RIGHT]);
+        break;
 
-        case MIXER_TRI:
-        case MIXER_CUSTOM_TRI:
-            if (servoMixerConfig->tri_unarmed_servo) {
-                // if unarmed flag set, we always move servo
+    case MIXER_TRI:
+    case MIXER_CUSTOM_TRI:
+        if (servoMixerConfig->tri_unarmed_servo) {
+            // if unarmed flag set, we always move servo
+            pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
+        } else {
+            // otherwise, only move servo when copter is armed
+            if (ARMING_FLAG(ARMED))
                 pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-            } else {
-                // otherwise, only move servo when copter is armed
-                if (ARMING_FLAG(ARMED))
-                    pwmWriteServo(servoIndex++, servo[SERVO_RUDDER]);
-                else
-                    pwmWriteServo(servoIndex++, 0); // kill servo signal completely.
-            }
-            break;
+            else
+                pwmWriteServo(servoIndex++, 0); // kill servo signal completely.
+        }
+        break;
 
-        case MIXER_FLYING_WING:
-            pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_1]);
-            pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
-            break;
+    case MIXER_FLYING_WING:
+        pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_1]);
+        pwmWriteServo(servoIndex++, servo[SERVO_FLAPPERON_2]);
+        break;
 
-        case MIXER_DUALCOPTER:
-            pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
-            pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
-            break;
+    case MIXER_DUALCOPTER:
+        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_LEFT]);
+        pwmWriteServo(servoIndex++, servo[SERVO_DUALCOPTER_RIGHT]);
+        break;
 
-        case MIXER_CUSTOM_AIRPLANE:
-        case MIXER_AIRPLANE:
-            for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
-                pwmWriteServo(servoIndex++, servo[i]);
-            }
-            break;
+    case MIXER_CUSTOM_AIRPLANE:
+    case MIXER_AIRPLANE:
+        for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
+            pwmWriteServo(servoIndex++, servo[i]);
+        }
+        break;
 
-        case MIXER_SINGLECOPTER:
-            for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
-                pwmWriteServo(servoIndex++, servo[i]);
-            }
-            break;
+    case MIXER_SINGLECOPTER:
+        for (int i = SERVO_SINGLECOPTER_INDEX_MIN; i <= SERVO_SINGLECOPTER_INDEX_MAX; i++) {
+            pwmWriteServo(servoIndex++, servo[i]);
+        }
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     // Two servos for SERVO_TILT, if enabled
@@ -410,27 +410,27 @@ void servoTable(void)
 {
     // airplane / servo mixes
     switch (currentMixerMode) {
-        case MIXER_CUSTOM_AIRPLANE:
-        case MIXER_FLYING_WING:
-        case MIXER_AIRPLANE:
-        case MIXER_BICOPTER:
-        case MIXER_CUSTOM_TRI:
-        case MIXER_TRI:
-        case MIXER_DUALCOPTER:
-        case MIXER_SINGLECOPTER:
-        case MIXER_GIMBAL:
-            servoMixer();
-            break;
+    case MIXER_CUSTOM_AIRPLANE:
+    case MIXER_FLYING_WING:
+    case MIXER_AIRPLANE:
+    case MIXER_BICOPTER:
+    case MIXER_CUSTOM_TRI:
+    case MIXER_TRI:
+    case MIXER_DUALCOPTER:
+    case MIXER_SINGLECOPTER:
+    case MIXER_GIMBAL:
+        servoMixer();
+        break;
 
-        /*
-        case MIXER_GIMBAL:
-            servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-            servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
-            break;
-        */
+    /*
+    case MIXER_GIMBAL:
+        servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+        servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+        break;
+    */
 
-        default:
-            break;
+    default:
+        break;
     }
 
     // camera stabilization
