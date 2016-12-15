@@ -154,7 +154,6 @@ typedef struct master_s {
 #endif
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
     armingConfig_t armingConfig;
 
