@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -226,8 +227,12 @@ retry:
     return true;
 }
 
-void accInit(uint32_t gyroSamplingInverval)
+bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamplingInverval)
 {
+    memset(&acc, 0, sizeof(acc));
+    if (!accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
+        return false;
+    }
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
@@ -251,6 +256,7 @@ void accInit(uint32_t gyroSamplingInverval)
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
         }
     }
+    return true;
 }
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
