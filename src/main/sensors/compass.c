@@ -33,6 +33,7 @@
 #include "drivers/compass_fake.h"
 #include "drivers/compass_hmc5883l.h"
 #include "drivers/compass_mag3110.h"
+#include "drivers/compass_ist8310.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/logging.h"
@@ -147,6 +148,17 @@ bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
         }
 #endif
         break;
+
+    case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+        if (ist8310Detect(dev)) {
+#ifdef MAG_IST8310_ALIGN
+            dev->magAlign = MAG_IST8310_ALIGN;
+#endif
+            magHardware = MAG_IST8310;
+        }
+#endif
+    break;
 
     case MAG_FAKE:
 #ifdef USE_FAKE_MAG
