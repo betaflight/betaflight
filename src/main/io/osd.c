@@ -293,7 +293,7 @@ static void osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            int rollAngle = attitude.values.roll;
+            int rollAngle = -attitude.values.roll;
             int pitchAngle = attitude.values.pitch;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
