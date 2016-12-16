@@ -568,13 +568,11 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
-    int state;
     int timerDelayUs = HZ_TO_US(1);
 
     if (updateNow) {
-       state = getBatteryState();
 
-        switch (state) {
+        switch (getBatteryState()) {
             case BATTERY_OK:
                 flash = true;
                 timerDelayUs = HZ_TO_US(1);
@@ -605,11 +603,10 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
-    int state;
     int timerDelay = HZ_TO_US(1);
 
     if (updateNow) {
-       state = (rssi * 100) / 1023;
+        int state = (rssi * 100) / 1023;
 
        if (state > 50) {
            flash = true;
@@ -634,11 +631,12 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
 #ifdef GPS
 static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
 {
-    static uint8_t gpsFlashCounter = 0;
+
     static uint8_t gpsPauseCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
     if (updateNow) {
+        static uint8_t gpsFlashCounter = 0;
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
         } else if (gpsFlashCounter >= GPS_numSat) {

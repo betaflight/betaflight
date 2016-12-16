@@ -215,9 +215,8 @@ static void serializeNames(sbuf_t *dst, const char *s)
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
     uint8_t boxIndex;
-    const box_t *candidate;
     for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->boxId == activeBoxId) {
             return candidate;
         }
@@ -228,9 +227,8 @@ static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
     uint8_t boxIndex;
-    const box_t *candidate;
     for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->permanentId == permenantId) {
             return candidate;
         }
@@ -1381,7 +1379,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_SERVOS
         if (dataSize != 1 + sizeof(servoParam_t)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         i = sbufReadU8(src);
         if (i >= MAX_SUPPORTED_SERVOS) {
@@ -1535,7 +1532,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_TRANSPONDER_CONFIG:
         if (dataSize != sizeof(masterConfig.transponderData)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             masterConfig.transponderData[i] = sbufReadU8(src);

@@ -110,8 +110,8 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
 #if defined(USE_ADC) || defined(USE_ESC_SENSOR)
-    static uint32_t vbatLastServiced = 0;
     if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
+        static uint32_t vbatLastServiced = 0;
         if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTimeUs;
             updateBattery();
@@ -119,8 +119,8 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
     }
 #endif
 
-    static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
+        static uint32_t ibatLastServiced = 0;
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
