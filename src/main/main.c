@@ -282,11 +282,10 @@ void init(void)
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(&masterConfig.ppmConfig, motorConfig()->motorPwmProtocol);
+        ppmRxInit(ppmConfig(), motorConfig()->motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);
+        pwmRxInit(pwmConfig());
     }
-    pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
     systemState |= SYSTEM_STATE_MOTORS_READY;

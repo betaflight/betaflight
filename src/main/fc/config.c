@@ -710,7 +710,9 @@ void createDefaultConfig(master_t *config)
 
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 
-    config->inputFilteringMode = INPUT_FILTERING_DISABLED;
+#ifdef USE_PWM
+    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+#endif
 
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
