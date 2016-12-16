@@ -144,10 +144,6 @@
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PB0
 
@@ -160,4 +156,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
-

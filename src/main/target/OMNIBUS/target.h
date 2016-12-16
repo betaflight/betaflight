@@ -164,10 +164,6 @@
 
 #define AVOID_UART3_FOR_PWM_PPM
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PB0
 

@@ -49,6 +49,8 @@
 #define CLI_MINIMAL_VERBOSITY
 #endif
 
+#define SPEKTRUM_BIND
+
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol

@@ -116,10 +116,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package

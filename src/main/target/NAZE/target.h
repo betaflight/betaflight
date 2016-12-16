@@ -150,10 +150,6 @@
 
 #undef GPS
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
 #if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #endif

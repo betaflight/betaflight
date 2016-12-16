@@ -154,10 +154,6 @@
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #endif
 
-#define SPEKTRUM_BIND
-// USART1, PC5
-#define BIND_PIN                PC5
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming 303 in 64pin package, TODO

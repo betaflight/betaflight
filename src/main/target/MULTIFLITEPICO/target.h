@@ -124,10 +124,6 @@
 #define SERIALRX_UART           SERIAL_PORT_USART3
 #define RX_CHANNELS_TAER
 
-#define SPEKTRUM_BIND
-// USART3,
-#define BIND_PIN                PB11
-
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PA13
 

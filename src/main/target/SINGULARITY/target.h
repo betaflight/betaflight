@@ -94,10 +94,6 @@
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_UART           SERIAL_PORT_USART2
 
-#define SPEKTRUM_BIND
-// USART2, PA15
-#define BIND_PIN                PA15
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - stm32f303cc in 48pin package
@@ -110,4 +106,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(16) |TIM_N(17))
-

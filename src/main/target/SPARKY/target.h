@@ -89,10 +89,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define SPEKTRUM_BIND
-// USART2, PA3
-#define BIND_PIN                PA3
-
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PA2
@@ -107,4 +103,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17))
-
