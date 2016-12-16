@@ -49,8 +49,6 @@
 #define CLI_MINIMAL_VERBOSITY
 #endif
 
-#define SPEKTRUM_BIND
-
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
 #define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
@@ -62,6 +60,10 @@
 #define USE_CLI
 #define USE_PWM
 #define USE_PPM
+
+#if defined(SERIAL_RX) && defined(USE_SERIALRX_SPEKTRUM)
+#define SPEKTRUM_BIND
+#endif
 
 #if defined(STM_FAST_TARGET)
 #define MAX_AUX_CHANNELS                99

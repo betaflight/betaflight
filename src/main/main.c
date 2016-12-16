@@ -234,7 +234,7 @@ void init(void)
     servoMixerInit(masterConfig.customServoMixer);
 #endif
 
-#ifdef SPEKTRUM_BIND
+#if defined(SERIAL_RX) && defined(SPEKTRUM_BIND)
     if (feature(FEATURE_RX_SERIAL)) {
         switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
