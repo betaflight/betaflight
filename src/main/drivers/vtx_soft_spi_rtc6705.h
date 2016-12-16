@@ -26,6 +26,18 @@
 
 #define PA_CONTROL_DEFAULT  0x4FBD
 
+#define PA_CONTROL_LEVEL0	0x006A		// About 0MW	1dBm
+#define PA_CONTROL_LEVEL1	0x4C7D		// About 25MW	14dBm
+#define PA_CONTROL_LEVEL2	0x4D0D		// About 200MW	23dBm
+#define PA_CONTROL_LEVEL3	0x4FBD		// About 400MW	26dBm
+
+enum PA_CONTROL_LEVEL {
+	PA_CONTROL_0 = 0,
+	PA_CONTROL_1,
+	PA_CONTROL_2,
+	PA_CONTROL_3
+};
+
 #define CHANNELS_PER_BAND   8
 #define BANDS_NUMBER        5
 
@@ -35,4 +47,3 @@ extern uint16_t current_vtx_channel;
 void rtc6705_soft_spi_init(void);
 void rtc6705_soft_spi_set_channel(uint16_t channel_freq);
 void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power);
-

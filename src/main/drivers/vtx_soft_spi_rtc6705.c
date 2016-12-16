@@ -121,9 +121,34 @@ void rtc6705_soft_spi_set_channel(uint16_t channel_freq)
     rtc6705_write_register(1, (N << 7) | A);
 }
 
-void rtc6705_soft_spi_set_rf_power(uint8_t reduce_power)
+void rtc6705_soft_spi_set_rf_power(uint8_t power_level)
 {
-    rtc6705_write_register(7, (reduce_power ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT));
+	uint32_t temp;
+
+	switch(power_level)
+	{
+		case PA_CONTROL_0:
+			temp = PA_CONTROL_LEVEL0;
+			break;
+
+		case PA_CONTROL_1:
+			temp = PA_CONTROL_LEVEL1;
+			break;
+
+		case PA_CONTROL_2:
+			temp = PA_CONTROL_LEVEL2;
+			break;
+
+		case PA_CONTROL_3:
+			temp = PA_CONTROL_LEVEL3;
+			break;
+
+		default:
+			temp = PA_CONTROL_DEFAULT;
+			break;
+	}
+
+	 rtc6705_write_register(7, temp);
 }
 
 #endif
