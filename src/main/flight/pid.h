@@ -90,9 +90,13 @@ typedef struct pidProfile_s {
 #endif
 } pidProfile_t;
 
+typedef struct pidConfig_s {
+    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+    uint16_t max_angle_inclination;
+} pidConfig_t;
+
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination,
-        const union rollAndPitchTrims_u *angleTrim, uint16_t midrc);
+void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination, const union rollAndPitchTrims_u *angleTrim, uint16_t midrc);
 
 extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];

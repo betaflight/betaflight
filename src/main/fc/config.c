@@ -614,14 +614,15 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyroConfig.gyro_sync_denom = 8;
-    config->pid_process_denom = 1;
+    config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
     config->gyroConfig.gyro_sync_denom = 1;
-    config->pid_process_denom = 4;
+    config->pidConfig.pid_process_denom = 4;
 #else
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 2;
+    config->pidConfig.pid_process_denom = 2;
 #endif
+    config->pidConfig.max_angle_inclination = 700;    // 70 degrees
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
     config->gyroConfig.gyro_soft_lpf_hz = 90;
     config->gyroConfig.gyro_soft_notch_hz_1 = 400;
@@ -641,7 +642,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
     config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    config->max_angle_inclination = 700;    // 70 degrees
     config->rcControlsConfig.yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
@@ -1051,7 +1051,7 @@ void validateAndFixGyroConfig(void)
     }
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfig()->gyro_sync_denom = 1;
     }
 }

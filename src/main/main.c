@@ -415,7 +415,7 @@ void init(void)
     LED1_OFF;
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
-    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
+    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(&currentProfile->pidProfile);
     pidInitConfig(&currentProfile->pidProfile);
 

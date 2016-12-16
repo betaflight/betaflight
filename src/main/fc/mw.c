@@ -679,7 +679,7 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
-        masterConfig.max_angle_inclination,
+        pidConfig()->max_angle_inclination,
         &masterConfig.accelerometerTrims,
         rxConfig()->midrc
     );
@@ -792,7 +792,7 @@ void subTaskMotorUpdate(void)
 uint8_t setPidUpdateCountDown(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {
-        return masterConfig.pid_process_denom - 1;
+        return pidConfig()->pid_process_denom - 1;
     } else {
         return 1;
     }
