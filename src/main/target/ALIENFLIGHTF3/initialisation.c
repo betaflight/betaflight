@@ -14,24 +14,35 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 
-typedef enum awf1HardwareRevision_t {
-    AFF1_UNKNOWN = 0,
-    AFF1_REV_1, // MPU6050 (I2C)
-} awf1HardwareRevision_e;
+#include <stdbool.h>
+#include <stdint.h>
 
-typedef enum awf4HardwareMotorType_t {
-    MOTOR_UNKNOWN = 0,
-    MOTOR_BRUSHED,
-    MOTOR_BRUSHLESS
-} awf4HardwareMotorType_e;
+#include "platform.h"
+#include "drivers/bus_i2c.h"
+#include "drivers/bus_spi.h"
+#include "hardware_revision.h"
 
-extern uint8_t hardwareRevision;
-extern uint8_t hardwareMotorType;
+void targetBusInit(void)
+{
+	#ifdef USE_SPI
+    #ifdef USE_SPI_DEVICE_1
+        spiInit(SPIDEV_1);
+    #endif
+    #ifdef USE_SPI_DEVICE_2
+        spiInit(SPIDEV_2);
+    #endif
+    #ifdef USE_SPI_DEVICE_3
+        if (hardwareRevision == AFF3_REV_2) {
+            spiInit(SPIDEV_3);
+        }
+    #endif
+    #ifdef USE_SPI_DEVICE_4
+        spiInit(SPIDEV_4);
+    #endif
+    #endif
 
-void updateHardwareRevision(void);
-void detectHardwareRevision(void);
-
-struct extiConfig_s;
-const struct extiConfig_s *selectMPUIntExtiConfigByHardwareRevision(void);
+    #ifdef USE_I2C
+        i2cInit(I2C_DEVICE);
+    #endif
+}

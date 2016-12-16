@@ -19,6 +19,7 @@
 
 #define TARGET_BOARD_IDENTIFIER "CJM1" // CJMCU
 #define USE_HARDWARE_REVISION_DETECTION
+#define TARGET_BUS_INIT
 
 #define LED0                    PC14
 #define LED1                    PC13

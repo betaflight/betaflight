@@ -606,6 +606,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+        sbufWriteU16(dst, 0); // gyro cycle time
         break;
 
     case MSP_RAW_IMU:
@@ -880,6 +882,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+        sbufWriteU8(dst, batteryConfig()->batteryMeterType);
         break;
 
     case MSP_CURRENT_METER_CONFIG:
@@ -1559,7 +1562,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 osdProfile()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
-                osdProfile()->item_pos[addr] = sbufReadU16(src);
+                const uint16_t pos  = sbufReadU16(src);
+                if (addr < OSD_ITEM_COUNT) {
+                    osdProfile()->item_pos[addr] = pos;
+                }
             }
         }
         break;
@@ -1657,6 +1663,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        if (dataSize > 4) {
+            batteryConfig()->batteryMeterType = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:

@@ -107,6 +107,11 @@ bool icm20689SpiDetect(void)
 
 }
 
+void icm20689AccInit(accDev_t *acc)
+{
+    acc->acc_1G = 512 * 4;
+}
+
 bool icm20689SpiAccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != ICM_20689_SPI) {
@@ -117,27 +122,6 @@ bool icm20689SpiAccDetect(accDev_t *acc)
     acc->read = mpuAccRead;
 
     return true;
-}
-
-bool icm20689SpiGyroDetect(gyroDev_t *gyro)
-{
-    if (mpuDetectionResult.sensor != ICM_20689_SPI) {
-        return false;
-    }
-
-    gyro->init = icm20689GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
-void icm20689AccInit(accDev_t *acc)
-{
-    acc->acc_1G = 512 * 4;
 }
 
 void icm20689GyroInit(gyroDev_t *gyro)
@@ -174,5 +158,20 @@ void icm20689GyroInit(gyroDev_t *gyro)
 #endif
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
+}
 
+bool icm20689SpiGyroDetect(gyroDev_t *gyro)
+{
+    if (mpuDetectionResult.sensor != ICM_20689_SPI) {
+        return false;
+    }
+
+    gyro->init = icm20689GyroInit;
+    gyro->read = mpuGyroRead;
+    gyro->intStatus = mpuCheckDataReady;
+
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = 1.0f / 16.4f;
+
+    return true;
 }

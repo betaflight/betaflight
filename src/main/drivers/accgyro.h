@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/axis.h"
+#include "drivers/exti.h"
 #include "drivers/sensor.h"
 
 #ifndef MPU_I2C_INSTANCE
@@ -35,9 +36,10 @@
 
 typedef struct gyroDev_s {
     sensorGyroInitFuncPtr init;                             // initialize function
-    sensorGyroReadFuncPtr read;                                 // read 3 axis data function
+    sensorGyroReadFuncPtr read;                             // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
     sensorGyroInterruptStatusFuncPtr intStatus;
+    extiCallbackRec_t exti;
     float scale;                                            // scalefactor
     volatile bool dataReady;
     uint16_t lpf;
@@ -46,7 +48,7 @@ typedef struct gyroDev_s {
 } gyroDev_t;
 
 typedef struct accDev_s {
-    sensorAccInitFuncPtr init;                                 // initialize function
+    sensorAccInitFuncPtr init;                              // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     uint16_t acc_1G;
     char revisionCode;                                      // a revision code for the sensor, if known

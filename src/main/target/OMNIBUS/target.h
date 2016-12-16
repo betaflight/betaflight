@@ -128,8 +128,7 @@
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 // DSHOT output 4 uses DMA1_Channel5, so don't use it for the SDCARD until we find an alternative
 #ifndef USE_DSHOT
@@ -152,18 +151,6 @@
 #define LED_STRIP
 
 #define TRANSPONDER
-#define TRANSPONDER_GPIO                     GPIOA
-#define TRANSPONDER_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-#define TRANSPONDER_GPIO_AF                  GPIO_AF_6
-#define TRANSPONDER_PIN                      GPIO_Pin_8
-#define TRANSPONDER_PIN_SOURCE               GPIO_PinSource8
-#define TRANSPONDER_TIMER                    TIM1
-#define TRANSPONDER_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
-#define TRANSPONDER_DMA_CHANNEL              DMA1_Channel2
-#define TRANSPONDER_IRQ                      DMA1_Channel2_IRQn
-#define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-
 #define REDUCE_TRANSPONDER_CURRENT_DRAW_WHEN_USB_CABLE_PRESENT
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
@@ -172,10 +159,8 @@
 #define DEFAULT_FEATURES        (FEATURE_VBAT | FEATURE_CURRENT_METER | FEATURE_BLACKBOX)
 
 #define BUTTONS
-#define BUTTON_A_PORT           GPIOB
-#define BUTTON_A_PIN            Pin_1
-#define BUTTON_B_PORT           GPIOB
-#define BUTTON_B_PIN            Pin_0
+#define BUTTON_A_PIN            PB1
+#define BUTTON_B_PIN            PB0
 
 #define AVOID_UART3_FOR_PWM_PPM
 

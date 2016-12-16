@@ -15,6 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -23,19 +24,22 @@
 
 #include "build/build_config.h"
 
-#include "drivers/system.h"
-#include "drivers/io.h"
-#include "drivers/exti.h"
-#include "hardware_revision.h"
+#include "system.h"
+#include "io.h"
+#include "pwm_esc_detect.h"
+#include "timer.h"
 
-uint8_t hardwareRevision = AFF1_REV_1;
+#ifdef BRUSHED_ESC_AUTODETECT
 uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
-static IO_t MotorDetectPin = IO_NONE;
-
-void detectHardwareRevision(void)
+void detectBrushedESC(void)
 {
-    MotorDetectPin = IOGetByTag(IO_TAG(MOTOR_PIN));
+    int i = 0;
+    while (!(timerHardware[i].usageFlags & TIM_USE_MOTOR) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
+        i++;
+    }
+
+    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
     IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
 
@@ -48,12 +52,4 @@ void detectHardwareRevision(void)
         hardwareMotorType = MOTOR_BRUSHED;
     }
 }
-
-void updateHardwareRevision(void)
-{
-}
-
-const extiConfig_t *selectMPUIntExtiConfigByHardwareRevision(void)
-{
-    return NULL;
-}
+#endif

@@ -81,23 +81,6 @@
 
 static uint8_t device_id;
 
-static void mma8452Init(accDev_t *acc);
-static bool mma8452Read(int16_t *accelData);
-
-bool mma8452Detect(accDev_t *acc)
-{
-    uint8_t sig = 0;
-    bool ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
-
-    if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
-        return false;
-
-    acc->init = mma8452Init;
-    acc->read = mma8452Read;
-    device_id = sig;
-    return true;
-}
-
 static inline void mma8451ConfigureInterrupt(void)
 {
 #ifdef NAZE
@@ -140,5 +123,19 @@ static bool mma8452Read(int16_t *accelData)
     accelData[1] = ((int16_t)((buf[2] << 8) | buf[3]) >> 2) / 4;
     accelData[2] = ((int16_t)((buf[4] << 8) | buf[5]) >> 2) / 4;
 
+    return true;
+}
+
+bool mma8452Detect(accDev_t *acc)
+{
+    uint8_t sig = 0;
+    bool ack = i2cRead(MPU_I2C_INSTANCE, MMA8452_ADDRESS, MMA8452_WHO_AM_I, 1, &sig);
+
+    if (!ack || (sig != MMA8452_DEVICE_SIGNATURE && sig != MMA8451_DEVICE_SIGNATURE))
+        return false;
+
+    acc->init = mma8452Init;
+    acc->read = mma8452Read;
+    device_id = sig;
     return true;
 }

@@ -123,7 +123,7 @@ endif
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
-F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS)
+F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
@@ -136,7 +136,7 @@ endif
 128K_TARGETS  = $(F1_TARGETS)
 256K_TARGETS  = $(F3_TARGETS)
 512K_TARGETS  = $(F411_TARGETS) $(F7X5XE_TARGETS)
-1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS)
+1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
 2048K_TARGETS = $(F7X5XI_TARGETS)
 
 # Configure default flash sizes for the targets (largest size specified gets hit first) if flash not specified already.
@@ -168,7 +168,7 @@ ifeq ($(DEBUG_HARDFAULTS),F7)
 CFLAGS               += -DDEBUG_HARDFAULTS
 endif
 
-REVISION = $(shell git log -1 --format="%h")
+REVISION := $(shell git log -1 --format="%h")
 
 FC_VER_MAJOR := $(shell grep " FC_VERSION_MAJOR" src/main/build/version.h | awk '{print $$3}' )
 FC_VER_MINOR := $(shell grep " FC_VERSION_MINOR" src/main/build/version.h | awk '{print $$3}' )
@@ -376,6 +376,9 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
+DEVICE_FLAGS    = -DSTM32F746xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f746.ld
 else
 $(error Unknown MCU for F7 target)
 endif
@@ -500,6 +503,7 @@ COMMON_SRC = \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
+            drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
             drivers/rcc.c \
@@ -593,7 +597,112 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            sensors/esc_sensor.c \
+
+SPEED_OPTIMISED_SRC := ""
+SIZE_OPTIMISED_SRC  := ""
+
+ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
+            common/encoding.c \
+            common/filter.c \
+            common/maths.c \
+            common/typeconversion.c \
+            drivers/adc.c \
+            drivers/buf_writer.c \
+            drivers/bus_i2c_soft.c \
+            drivers/bus_spi.c \
+            drivers/bus_spi_soft.c \
+            drivers/exti.c \
+            drivers/gyro_sync.c \
+            drivers/io.c \
+            drivers/light_led.c \
+            drivers/resource.c \
+            drivers/rx_nrf24l01.c \
+            drivers/rx_spi.c \
+            drivers/rx_xn297.c \
+            drivers/pwm_output.c \
+            drivers/pwm_rx.c \
+            drivers/rcc.c \
+            drivers/serial.c \
+            drivers/serial_uart.c \
+            drivers/sound_beeper.c \
+            drivers/stack_check.c \
+            drivers/system.c \
+            drivers/timer.c \
+            fc/fc_tasks.c \
+            fc/mw.c \
+            fc/rc_controls.c \
+            fc/rc_curves.c \
+            fc/runtime_config.c \
+            flight/altitudehold.c \
+            flight/failsafe.c \
+            flight/imu.c \
+            flight/mixer.c \
+            flight/pid.c \
+            flight/servos.c \
+            io/beeper.c \
+            io/serial.c \
+            io/statusindicator.c \
+            rx/ibus.c \
+            rx/jetiexbus.c \
+            rx/msp.c \
+            rx/nrf24_cx10.c \
+            rx/nrf24_inav.c \
+            rx/nrf24_h8_3d.c \
+            rx/nrf24_syma.c \
+            rx/nrf24_v202.c \
+            rx/pwm.c \
+            rx/rx.c \
+            rx/rx_spi.c \
+            rx/crsf.c \
+            rx/sbus.c \
+            rx/spektrum.c \
+            rx/sumd.c \
+            rx/sumh.c \
+            rx/xbus.c \
+            scheduler/scheduler.c \
+            sensors/acceleration.c \
+            sensors/boardalignment.c \
+            sensors/gyro.c \
+            $(CMSIS_SRC) \
+            $(DEVICE_STDPERIPH_SRC) \
+            blackbox/blackbox.c \
+            blackbox/blackbox_io.c \
+            drivers/display_ug2864hsweg01.c \
+            drivers/light_ws2811strip.c \
+            drivers/serial_softserial.c \
+            io/dashboard.c \
+            io/displayport_max7456.c \
+            io/displayport_msp.c \
+            io/displayport_oled.c \
+            io/ledstrip.c \
+            io/osd.c \
+            telemetry/telemetry.c \
+            telemetry/crsf.c \
+            telemetry/frsky.c \
+            telemetry/hott.c \
+            telemetry/smartport.c \
+            telemetry/ltm.c \
+            telemetry/mavlink.c \
             telemetry/esc_telemetry.c \
+
+SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
+            drivers/serial_escserial.c \
+            io/serial_cli.c \
+            io/serial_4way.c \
+            io/serial_4way_avrootloader.c \
+            io/serial_4way_stk500v2.c \
+            msp/msp_serial.c \
+            cms/cms.c \
+            cms/cms_menu_blackbox.c \
+            cms/cms_menu_builtin.c \
+            cms/cms_menu_imu.c \
+            cms/cms_menu_ledstrip.c \
+            cms/cms_menu_misc.c \
+            cms/cms_menu_osd.c \
+            cms/cms_menu_vtx.c
+endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \
@@ -753,22 +862,45 @@ SIZE        := $(ARM_SDK_PREFIX)size
 # Tool options.
 #
 
-ifeq ($(DEBUG),GDB)
-OPTIMIZE    = -O0
-LTO_FLAGS   = $(OPTIMIZE)
-else
+ifneq ($(DEBUG),GDB)
+OPTIMISATION_BASE   := -flto -fuse-linker-plugin -ffast-math
+OPTIMISE_SPEED      := ""
+OPTIMISE_SIZE       := ""
+
 ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-OPTIMIZE    = -Os
+OPTIMISE_DEFAULT    := -Os
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+
+else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
+OPTIMISE_DEFAULT    := -O2
+OPTIMISE_SPEED      := -Ofast
+OPTIMISE_SIZE       := -Os
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+
 else
-OPTIMIZE    = -Ofast
-endif
-LTO_FLAGS   = -flto -fuse-linker-plugin $(OPTIMIZE)
-endif
+OPTIMISE_DEFAULT    := -Ofast
+
+LTO_FLAGS           := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+
+endif #TARGETS
+
+CC_DEFAULT_OPTIMISATION := $(OPTIMISATION_BASE) $(OPTIMISE_DEFAULT)
+CC_SPEED_OPTIMISATION   := $(OPTIMISATION_BASE) $(OPTIMISE_SPEED)
+CC_SIZE_OPTIMISATION    := $(OPTIMISATION_BASE) $(OPTIMISE_SIZE)
+
+else #DEBUG
+OPTIMISE_DEFAULT    := -O0
+
+CC_DEBUG_OPTIMISATION := $(OPTIMISE_DEFAULT)
+
+LTO_FLAGS           := $(OPTIMISE_DEFAULT)
+endif #DEBUG
 
 DEBUG_FLAGS = -ggdb3 -DDEBUG
 
 CFLAGS      += $(ARCH_FLAGS) \
-              $(LTO_FLAGS) \
               $(addprefix -D,$(OPTIONS)) \
               $(addprefix -I,$(INCLUDE_DIRS)) \
               $(DEBUG_FLAGS) \
@@ -831,6 +963,9 @@ CLEAN_ARTIFACTS := $(TARGET_BIN)
 CLEAN_ARTIFACTS += $(TARGET_HEX)
 CLEAN_ARTIFACTS += $(TARGET_ELF) $(TARGET_OBJS) $(TARGET_MAP)
 
+# Make sure build date and revision is updated on every incremental build
+$(OBJECT_DIR)/$(TARGET)/build/version.o : $(TARGET_SRC)
+
 # List of buildable ELF files and their object dependencies.
 # It would be nice to compute these lists, but that seems to be just beyond make.
 
@@ -846,10 +981,23 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 	$(V0) $(SIZE) $(TARGET_ELF)
 
 # Compile
+ifneq ($(DEBUG),GDB)
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
 	$(V1) mkdir -p $(dir $@)
-	$(V1) echo "%% $(notdir $<)" "$(STDOUT)"
-	$(V1) $(CROSS_CC) -c -o $@ $(CFLAGS) $<
+	$(V1) $(if $(findstring $(subst ./src/main/,,$<),$(SPEED_OPTIMISED_SRC)), \
+	echo "%% (speed optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SPEED_OPTIMISATION) $<, \
+	$(if $(findstring $(subst ./src/main/,,$<),$(SIZE_OPTIMISED_SRC)), \
+	echo "%% (size optimised) $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_SIZE_OPTIMISATION) $<, \
+	echo "%% $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEFAULT_OPTIMISATION) $<))
+else
+$(OBJECT_DIR)/$(TARGET)/%.o: %.c
+	$(V1) mkdir -p $(dir $@)
+	$(V1) echo "%% $(notdir $<)" "$(STDOUT)" && \
+	$(CROSS_CC) -c -o $@ $(CFLAGS) $(CC_DEBUG_OPTIMISATION) $<
+endif
 
 # Assemble
 $(OBJECT_DIR)/$(TARGET)/%.o: %.s

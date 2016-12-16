@@ -161,8 +161,7 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
 #define TARGET_IO_PORTA         0xffff

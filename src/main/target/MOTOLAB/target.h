@@ -95,8 +95,7 @@
 #define RSSI_ADC_PIN            PB2
 
 #define LED_STRIP
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 #define SPEKTRUM_BIND
 // USART2, PB4

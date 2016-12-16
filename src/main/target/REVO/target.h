@@ -20,44 +20,43 @@
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
 #if defined(AIRBOTF4)
-    #define TARGET_BOARD_IDENTIFIER "AIR4"
-    #define USBD_PRODUCT_STRING     "AirbotF4"
+#define TARGET_BOARD_IDENTIFIER "AIR4"
+#define USBD_PRODUCT_STRING     "AirbotF4"
 
 #elif defined(REVOLT)
-    #define TARGET_BOARD_IDENTIFIER "RVLT"
-    #define USBD_PRODUCT_STRING     "Revolt"
+#define TARGET_BOARD_IDENTIFIER "RVLT"
+#define USBD_PRODUCT_STRING     "Revolt"
 
 #elif defined(SOULF4)
-    #define TARGET_BOARD_IDENTIFIER "SOUL"
-    #define USBD_PRODUCT_STRING     "DemonSoulF4"
+#define TARGET_BOARD_IDENTIFIER "SOUL"
+#define USBD_PRODUCT_STRING     "DemonSoulF4"
 
 #else
-    #define TARGET_BOARD_IDENTIFIER "REVO"
-    #define USBD_PRODUCT_STRING     "Revolution"
+#define TARGET_BOARD_IDENTIFIER "REVO"
+#define USBD_PRODUCT_STRING     "Revolution"
 
-    #ifdef OPBL
-        #define USBD_SERIALNUMBER_STRING "0x8020000"
-    #endif
+#ifdef OPBL
+#define USBD_SERIALNUMBER_STRING "0x8020000"
+#endif
 
 #endif
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
 #if defined(AIRBOTF4)
-    #define BEEPER                  PB4
-    #define BEEPER_INVERTED
+#define BEEPER                  PB4
+#define BEEPER_INVERTED
 #elif defined(REVOLT)
-    #define BEEPER                  PB4
+#define BEEPER                  PB4
 #elif defined(SOULF4)
-    #define BEEPER                  PB6
-    #define BEEPER_INVERTED
+#define BEEPER                  PB6
+#define BEEPER_INVERTED
 #else
-    #define LED1                    PB4
-    // Leave beeper here but with none as io - so disabled unless mapped.
-    #define BEEPER                  NONE
+#define LED1                    PB4
+// Leave beeper here but with none as io - so disabled unless mapped.
+#define BEEPER                  NONE
 #endif
 
 // PC0 used as inverter select GPIO
@@ -71,30 +70,40 @@
 #define MPU6500_SPI_INSTANCE    SPI1
 
 #if defined(SOULF4)
-    #define ACC
-    #define USE_ACC_SPI_MPU6000
-    #define GYRO_MPU6000_ALIGN      CW180_DEG
+#define ACC
+#define USE_ACC_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW180_DEG
 
-    #define GYRO
-    #define USE_GYRO_SPI_MPU6000
-    #define ACC_MPU6000_ALIGN       CW180_DEG
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
+
+#elif defined(REVOLT)
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW0_DEG
+
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW0_DEG
 
 #else
-    #define ACC
-    #define USE_ACC_SPI_MPU6000
-    #define GYRO_MPU6000_ALIGN      CW270_DEG
+#define ACC
+#define USE_ACC_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW270_DEG
 
-    #define USE_ACC_MPU6500
-    #define USE_ACC_SPI_MPU6500
-    #define ACC_MPU6500_ALIGN       CW270_DEG
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
-    #define GYRO
-    #define USE_GYRO_SPI_MPU6000
-    #define ACC_MPU6000_ALIGN       CW270_DEG
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW270_DEG
 
-    #define USE_GYRO_MPU6500
-    #define USE_GYRO_SPI_MPU6500
-    #define GYRO_MPU6500_ALIGN      CW270_DEG
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW270_DEG
 
 #endif
 
@@ -104,12 +113,12 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 #if !defined(AIRBOTF4) && !defined(REVOLT) && !defined(SOULF4)
-    #define MAG
-    #define USE_MAG_HMC5883
-    #define MAG_HMC5883_ALIGN       CW90_DEG
+#define MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN       CW90_DEG
 
-    #define BARO
-    #define USE_BARO_MS5611
+#define BARO
+#define USE_BARO_MS5611
 
 #endif
 

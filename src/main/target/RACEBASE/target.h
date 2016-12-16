@@ -116,8 +116,6 @@
 #define TARGET_IO_PORTC         (BIT(5))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USE_DSHOT
-
 #if defined(USE_UART3_RX_DMA) && defined(USE_DSHOT)
 #undef USE_UART3_RX_DMA
 #endif

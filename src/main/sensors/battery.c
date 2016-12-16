@@ -34,8 +34,7 @@
 #include "config/feature.h"
 
 #include "sensors/battery.h"
-
-#include "telemetry/esc_telemetry.h"
+#include "sensors/esc_sensor.h"
 
 #include "fc/rc_controls.h"
 #include "io/beeper.h"
@@ -84,9 +83,9 @@ static void updateBatteryVoltage(void)
         vBatFilterIsInitialised = true;
     }
 
-    #ifdef USE_ESC_TELEMETRY
-    if (batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC && isEscTelemetryActive()) {
-        vbatLatest = getEscTelemetryVbat();
+    #ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR) && batteryConfig->batteryMeterType == BATTERY_SENSOR_ESC) {
+        vbatLatest = getEscSensorVbat();
         if (debugMode == DEBUG_BATTERY) {
             debug[0] = -1;
         }
@@ -292,11 +291,11 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
 
             break;
         case CURRENT_SENSOR_ESC:
-            #ifdef USE_ESC_TELEMETRY
-            if (isEscTelemetryActive()) {
-                amperageLatest = getEscTelemetryCurrent();
+            #ifdef USE_ESC_SENSOR
+            if (feature(FEATURE_ESC_SENSOR)) {
+                amperageLatest = getEscSensorCurrent();
                 amperage = amperageLatest;
-                mAhDrawn = getEscTelemetryConsumption();
+                mAhDrawn = getEscSensorConsumption();
 
                 updateConsumptionWarning();
             }

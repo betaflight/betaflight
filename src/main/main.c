@@ -35,7 +35,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -45,6 +44,7 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -104,7 +104,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/esc_telemetry.h"
+#include "sensors/esc_sensor.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -123,6 +123,10 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+
+#ifdef TARGET_BUS_INIT
+void targetBusInit(void);
+#endif
 
 extern uint8_t motorControlEnable;
 
@@ -158,6 +162,10 @@ void init(void)
     detectHardwareRevision();
 #endif
 
+#ifdef BRUSHED_ESC_AUTODETECT
+    detectBrushedESC();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -172,11 +180,7 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-#ifdef ALIENFLIGHTF3
-    ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
-#else
-    ledInit(false);
-#endif
+    ledInit(&masterConfig.statusLedConfig);
     LED2_ON;
 
 #ifdef USE_EXTI
@@ -184,28 +188,22 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
-    gpio_config_t buttonAGpioConfig = {
-        BUTTON_A_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+    IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
+    IOInit(buttonAPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonAPin, IOCFG_IPU);
 
-    gpio_config_t buttonBGpioConfig = {
-        BUTTON_B_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+    IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
+    IOInit(buttonBPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonBPin, IOCFG_IPU);
 
     // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow GPIO configuration to settle
+    delayMicroseconds(10);  // allow configuration to settle
 
     if (!isMPUSoftReset()) {
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
-            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+            bothButtonsHeld = !IORead(buttonAPin) && !IORead(buttonBPin);
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
@@ -291,7 +289,6 @@ void init(void)
     pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
-
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
@@ -306,73 +303,47 @@ void init(void)
     bstInit(BST_DEVICE);
 #endif
 
-#ifdef USE_SPI
-#ifdef USE_SPI_DEVICE_1
-    spiInit(SPIDEV_1);
-#endif
-#ifdef USE_SPI_DEVICE_2
-    spiInit(SPIDEV_2);
-#endif
-#ifdef USE_SPI_DEVICE_3
-#ifdef ALIENFLIGHTF3
-    if (hardwareRevision == AFF3_REV_2) {
-        spiInit(SPIDEV_3);
-    }
+#ifdef TARGET_BUS_INIT
+    targetBusInit();
 #else
-    spiInit(SPIDEV_3);
-#endif
-#endif
-#ifdef USE_SPI_DEVICE_4
-    spiInit(SPIDEV_4);
-#endif
-#endif
+    #ifdef USE_SPI
+        #ifdef USE_SPI_DEVICE_1
+            spiInit(SPIDEV_1);
+        #endif
+        #ifdef USE_SPI_DEVICE_2
+            spiInit(SPIDEV_2);
+        #endif
+        #ifdef USE_SPI_DEVICE_3
+            spiInit(SPIDEV_3);
+        #endif
+        #ifdef USE_SPI_DEVICE_4
+            spiInit(SPIDEV_4);
+        #endif
+    #endif
 
-#ifdef VTX
-    vtxInit();
+    #ifdef USE_I2C
+        i2cInit(I2C_DEVICE);
+    #endif
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
 
-#if defined(NAZE)
-    if (hardwareRevision == NAZE32_SP) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
-    }
+#ifdef VTX
+    vtxInit();
 #endif
 
-#if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS) || defined(X_RACERSPI)
-#if defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
-#endif
-#endif
-
-#ifdef USE_I2C
-#if defined(NAZE)
-    if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
-    } else {
-        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-            i2cInit(I2C_DEVICE);
-        }
-    }
-#elif defined(CC3D)
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        i2cInit(I2C_DEVICE);
-    }
-#else
-    i2cInit(I2C_DEVICE);
-#endif
 #endif
 
 #ifdef USE_ADC
@@ -382,7 +353,6 @@ void init(void)
     adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
     adcInit(&masterConfig.adcConfig);
 #endif
-
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
@@ -493,9 +463,9 @@ void init(void)
     }
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryInit();
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escSensorInit();
     }
 #endif
 
@@ -513,12 +483,8 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-#ifdef NAZE
-    if (hardwareRevision == NAZE32_REV5) {
-        m25p16_init(IO_TAG_NONE);
-    }
-#elif defined(USE_FLASH_M25P16)
-    m25p16_init(IO_TAG_NONE);
+#if defined(USE_FLASH_M25P16)
+    m25p16_init(&masterConfig.flashConfig);
 #endif
 
     flashfsInit();

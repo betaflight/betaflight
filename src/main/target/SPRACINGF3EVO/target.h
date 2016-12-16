@@ -21,6 +21,8 @@
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
+#define BRUSHED_ESC_AUTODETECT
+
 #define LED0                    PB8
 
 #define BEEPER                  PC15
@@ -35,7 +37,7 @@
 #define USE_MAG_DATA_READY_SIGNAL
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6500
@@ -49,8 +51,8 @@
 #define BARO
 #define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MAG_AK8963
+#define MAG
+#define USE_MAG_AK8963
 //#define USE_MAG_HMC5883 // External
 
 #define MAG_AK8963_ALIGN CW90_DEG_FLIP

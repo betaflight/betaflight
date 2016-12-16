@@ -13,6 +13,7 @@
 obj/
 patches/
 startup_stm32f10x_md_gcc.s
+.idea
 
 # script-generated files
 docs/Manual.pdf
