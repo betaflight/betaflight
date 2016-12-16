@@ -24,7 +24,7 @@
 #include "drivers/timer.h"
 
 const uint16_t multiPPM[] = {
-    PWM4  | (MAP_TO_PPM_INPUT << 8),        // PPM input
+    PWM1  | (MAP_TO_PPM_INPUT << 8),        // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),     // Swap to servo if needed
     PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),     // Swap to servo if needed
     PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -61,7 +61,7 @@ const uint16_t multiPWM[] = {
 };
 
 const uint16_t airPPM[] = {
-    PWM4  | (MAP_TO_PPM_INPUT << 8),            // PPM input
+    PWM1  | (MAP_TO_PPM_INPUT << 8),            // PPM input
     PWM9  | (MAP_TO_MOTOR_OUTPUT  << 8),        // motor #1
     PWM10 | (MAP_TO_MOTOR_OUTPUT  << 8),        // motor #2
     PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),        // servo #1
