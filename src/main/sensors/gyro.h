@@ -57,5 +57,6 @@ typedef struct gyroConfig_s {
 
 void gyroSetCalibrationCycles(void);
 bool gyroInit(const gyroConfig_t *gyroConfigToUse);
+void gyroInitFilters(void);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);
