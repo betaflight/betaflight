@@ -124,6 +124,10 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#ifdef TARGET_PREINIT
+void targetPreInit(void);
+#endif
+
 #ifdef TARGET_BUS_INIT
 void targetBusInit(void);
 #endif
@@ -180,7 +184,11 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-    ledInit(&masterConfig.statusLedConfig);
+#ifdef TARGET_PREINIT
+    targetPreInit();
+#endif
+    
+    ledInit(statusLedConfig());
     LED2_ON;
 
 #ifdef USE_EXTI
@@ -268,9 +276,9 @@ void init(void)
 #endif
 
 #ifdef USE_QUAD_MIXER_ONLY
-    motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
+    motorInit(motorConfig(), idlePulse, QUAD_MOTOR_COUNT);
 #else
-    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
+    motorInit(motorConfig(), idlePulse, motorCount);
 #endif
 
 #ifdef USE_SERVOS
@@ -291,7 +299,7 @@ void init(void)
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperInit(&masterConfig.beeperConfig);
+    beeperInit(beeperConfig());
 #endif
 /* temp until PGs are implemented. */
 #ifdef INVERTER
@@ -350,10 +358,10 @@ void init(void)
     adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
     adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
     adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
-    adcInit(&masterConfig.adcConfig);
+    adcInit(adcConfig());
 #endif
 
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment(boardAlignment());
 
 #ifdef CMS
     cmsInit();
@@ -361,7 +369,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(&masterConfig.rxConfig);
+        dashboardInit(rxConfig());
     }
 #endif
 
@@ -428,12 +436,12 @@ void init(void)
 #endif
 
 #ifdef USE_CLI
-    cliInit(&masterConfig.serialConfig);
+    cliInit(serialConfig());
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
 
-    rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
+    rxInit(rxConfig(), masterConfig.modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -449,7 +457,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(&masterConfig.ledStripConfig);
+    ledStripInit(ledStripConfig());
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
