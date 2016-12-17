@@ -263,10 +263,10 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
                 dynC = c[axis];
                 if (setpointRate[axis] > 0) {
                     if ((setpointRate[axis] - previousSetpoint[axis]) < previousSetpoint[axis])
-                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                        dynC = dynC * sq(rcInput[axis]) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
                 } else if (setpointRate[axis] < 0) {
                     if ((setpointRate[axis] - previousSetpoint[axis]) > previousSetpoint[axis])
-                        dynC = dynC * powerf(rcInput[axis], 2) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
+                        dynC = dynC * sq(rcInput[axis]) * relaxFactor[axis] + dynC * (1-relaxFactor[axis]);
                 }
             }
             const float rD = dynC * setpointRate[axis] - PVRate;    // cr - y
