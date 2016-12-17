@@ -147,7 +147,6 @@ bool isCalibrating()
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
-#define RC_EXPO_POWER 3
 
 void calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
@@ -167,7 +166,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * powerf(rcInput[axis], RC_EXPO_POWER) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcInput[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -290,7 +289,7 @@ void updateRcCommands(void)
                 tmp = 0;
             }
             rcCommand[axis] = tmp;
-        } else if (axis == YAW) {
+        } else {
             if (tmp > rcControlsConfig()->yaw_deadband) {
                 tmp -= rcControlsConfig()->yaw_deadband;
             } else {
@@ -778,9 +777,11 @@ void subTaskMotorUpdate(void)
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
-    servoTable();
-    filterServos();
-    writeServos();
+    if (isMixerUsingServos()) {
+        servoTable();
+        filterServos();
+        writeServos();
+    }
 #endif
 
     if (motorControlEnable) {
