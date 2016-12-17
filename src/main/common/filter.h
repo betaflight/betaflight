@@ -25,6 +25,7 @@
 
 typedef struct pt1Filter_s {
     float state;
+    float k;
     float RC;
     float dT;
 } pt1Filter_t;
