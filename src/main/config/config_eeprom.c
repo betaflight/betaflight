@@ -183,21 +183,21 @@ Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
 static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08007FFF)
-        return 0;
+        return FLASH_SECTOR_0;
     if ((uint32_t)&__config_start <= 0x0800FFFF)
-        return 1;
+        return FLASH_SECTOR_1;
     if ((uint32_t)&__config_start <= 0x08017FFF)
-        return 2;
+        return FLASH_SECTOR_2;
     if ((uint32_t)&__config_start <= 0x0801FFFF)
-        return 3;
+        return FLASH_SECTOR_3;
     if ((uint32_t)&__config_start <= 0x0803FFFF)
-        return 4;
+        return FLASH_SECTOR_4;
     if ((uint32_t)&__config_start <= 0x0807FFFF)
-        return 5;
+        return FLASH_SECTOR_5;
     if ((uint32_t)&__config_start <= 0x080BFFFF)
-        return 6;
+        return FLASH_SECTOR_6;
     if ((uint32_t)&__config_start <= 0x080FFFFF)
-        return 7;
+        return FLASH_SECTOR_7;
 
     // Not good
     while (1) {
