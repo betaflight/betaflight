@@ -228,12 +228,6 @@ case GYRO_MPU9250:
 
 bool gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
-    static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
-    static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
-    static firFilterDenoise_t gyroDenoiseState[XYZ_AXIS_COUNT];
-    static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT];
-    static biquadFilter_t gyroFilterNotch_2[XYZ_AXIS_COUNT];
-
     gyroConfig = gyroConfigToUse;
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
@@ -247,6 +241,17 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
     gyro.dev.lpf = gyroConfig->gyro_lpf;
     gyro.dev.init(&gyro.dev);
+    gyroInitFilters();
+    return true;
+}
+
+void gyroInitFilters(void)
+{
+    static biquadFilter_t gyroFilterLPF[XYZ_AXIS_COUNT];
+    static pt1Filter_t gyroFilterPt1[XYZ_AXIS_COUNT];
+    static firFilterDenoise_t gyroDenoiseState[XYZ_AXIS_COUNT];
+    static biquadFilter_t gyroFilterNotch_1[XYZ_AXIS_COUNT];
+    static biquadFilter_t gyroFilterNotch_2[XYZ_AXIS_COUNT];
 
     softLpfFilterApplyFn = nullFilterApply;
     notchFilter1ApplyFn = nullFilterApply;
@@ -291,7 +296,6 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
             biquadFilterInit(notchFilter2[axis], gyroConfig->gyro_soft_notch_hz_2, gyro.targetLooptime, gyroSoftNotchQ2, FILTER_NOTCH);
         }
     }
-    return true;
 }
 
 bool isGyroCalibrationComplete(void)
