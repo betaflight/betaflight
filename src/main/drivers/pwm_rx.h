@@ -35,6 +35,10 @@ uint16_t ppmRead(uint8_t channel);
 bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
 
-void pwmRxInit(inputFilteringMode_e initialInputFilteringMode);
+typedef struct pwmRxConfig_s {
+    inputFilteringMode_e inputFilteringMode;
+} pwmRxConfig_t;
+
+void pwmRxInit(const pwmRxConfig_t *pwmRxConfig);
 
 bool isPWMDataBeingReceived(void);
