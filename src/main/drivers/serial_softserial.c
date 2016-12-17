@@ -27,6 +27,8 @@
 
 #include "common/utils.h"
 
+#include "config/config_master.h"
+
 #include "nvic.h"
 #include "system.h"
 #include "io.h"
@@ -177,25 +179,12 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, int index, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
-    ioTag_t tagTx = DEFIO_TAG__NONE;
-    ioTag_t tagRx = DEFIO_TAG__NONE;
-
-#ifdef USE_SOFTSERIAL1
-    if (portIndex == SOFTSERIAL1) {
-        tagTx = IO_TAG(SOFTSERIAL1_TX_PIN);
-        tagRx = IO_TAG(SOFTSERIAL1_RX_PIN);
-    }
-#endif
-#ifdef USE_SOFTSERIAL2
-    if (portIndex == SOFTSERIAL2) {
-        tagTx = IO_TAG(SOFTSERIAL2_TX_PIN);
-        tagRx = IO_TAG(SOFTSERIAL2_RX_PIN);
-    }
-#endif
+    ioTag_t tagTx = serialPinConfig()->ioTagTx[index];
+    ioTag_t tagRx = serialPinConfig()->ioTagRx[index];
 
     if (!(tagTx && tagRx)) {
         // Future enhancement: half duplex case
@@ -463,7 +452,10 @@ void softSerialWriteByte(serialPort_t *s, uint8_t ch)
 void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate)
 {
     softSerial_t *softSerial = (softSerial_t *)s;
-    openSoftSerial(softSerial->softSerialPortIndex, s->rxCallback, baudRate, softSerial->port.mode, softSerial->port.options);
+
+    softSerial->port.baudRate = baudRate;
+
+    serialTimerTxConfig(softSerial->txTimerHardware, softSerial->softSerialPortIndex, baudRate);
 }
 
 void softSerialSetMode(serialPort_t *instance, portMode_t mode)

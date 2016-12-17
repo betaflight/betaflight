@@ -33,6 +33,7 @@
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
+#include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
 
@@ -84,6 +85,7 @@
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define airplaneConfig(x) (&masterConfig.airplaneConfig)
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialPinConfig(x) (&masterConfig.serialPinConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ppmConfig(x) (&masterConfig.ppmConfig)
@@ -98,7 +100,6 @@
 #define sdcardConfig(x) (&masterConfig.sdcardConfig)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define flashConfig(x) (&masterConfig.flashConfig)
-
 
 // System-wide
 typedef struct master_s {
@@ -163,6 +164,7 @@ typedef struct master_s {
     airplaneConfig_t airplaneConfig;
 
     failsafeConfig_t failsafeConfig;
+    serialPinConfig_t serialPinConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
 
