@@ -505,9 +505,24 @@ static void resetConf(void)
     gyroConfig()->gyroMovementCalibrationThreshold = 32;
 
     accelerometerConfig()->acc_hardware = ACC_AUTODETECT;     // default/autodetect
+
+#ifdef MAG
+    compassConfig()->mag_hardware = MAG_AUTODETECT;
+#else
     compassConfig()->mag_hardware = MAG_NONE;
+#endif
+
+#ifdef BARO
+    barometerConfig()->baro_hardware = BARO_AUTODETECT;
+#else
     barometerConfig()->baro_hardware = BARO_NONE;
+#endif
+
+#ifdef PITOT
+    pitotmeterConfig()->pitot_hardware = PITOT_AUTODETECT;
+#else
     pitotmeterConfig()->pitot_hardware = PITOT_NONE;
+#endif
 
     resetBatteryConfig(&masterConfig.batteryConfig);
 
