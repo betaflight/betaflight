@@ -47,6 +47,8 @@ typedef struct i2cDevice_s {
     rccPeriphTag_t rcc;
     bool overClock;
 #if defined(STM32F7)
+    uint8_t ev_irq;
+    uint8_t er_irq;
     uint8_t af;
 #endif
 } i2cDevice_t;

@@ -78,6 +78,22 @@ static i2cDevice_t i2cHardwareMap[] = {
 
 static volatile uint16_t i2cErrorCount = 0;
 
+#define I2C_DEFAULT_TIMEOUT     10000
+
+typedef struct i2cState_s {
+    volatile bool initialised;
+    volatile bool error;
+    volatile bool busError;
+    volatile bool busy;
+    volatile uint8_t addr;
+    volatile uint8_t reg;
+    volatile uint8_t bytes;
+    volatile uint8_t writing;
+    volatile uint8_t reading;
+    volatile uint8_t* write_p;
+    volatile uint8_t* read_p;
+} i2cState_t;
+
 static i2cState_t i2cState[] = {
     { false, false, false, 0, 0, 0, 0, 0, 0, 0, 0 },
     { false, false, false, 0, 0, 0, 0, 0, 0, 0, 0 },

@@ -168,6 +168,42 @@ static uint32_t getFLASHSectorForEEPROM(void)
         failureMode(FAILURE_FLASH_WRITE_FAILED);
     }
 }
+#elif defined(STM32F7)
+/*
+Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
+Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
+Sector 2    0x08010000 - 0x08017FFF 32 Kbytes
+Sector 3    0x08018000 - 0x0801FFFF 32 Kbytes
+Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
+Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
+Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return 0;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return 1;
+    if ((uint32_t)&__config_start <= 0x08017FFF)
+        return 2;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return 3;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return 4;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return 5;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return 6;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return 7;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
 #endif
 
 #if defined(STM32F7)
@@ -201,7 +237,7 @@ void writeEEPROM(void)
         FLASH_EraseInitTypeDef EraseInitStruct = {0};
         EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
         EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_3; // 2.7-3.6V
-        EraseInitStruct.Sector        = (FLASH_SECTOR_TOTAL-1);
+        EraseInitStruct.Sector        = getFLASHSectorForEEPROM();
         EraseInitStruct.NbSectors     = 1;
         uint32_t SECTORError;
         status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
