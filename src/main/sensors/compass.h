@@ -25,13 +25,13 @@
 
 // Type of magnetometer used/detected
 typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_GPS = 4,
-    MAG_MAG3110 = 5,
-    MAG_AK8963 = 6,
+    MAG_NONE = 0,
+    MAG_HMC5883 = 1,
+    MAG_AK8975 = 2,
+    MAG_GPS = 3,
+    MAG_MAG3110 = 4,
+    MAG_AK8963 = 5,
+    MAG_IST8310 = 6,
     MAG_FAKE = 7,
     MAG_MAX = MAG_FAKE
 } magSensor_e;
@@ -49,9 +49,12 @@ typedef struct compassConfig_s {
                                             // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
     sensor_align_e mag_align;               // mag alignment
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    flightDynamicsTrims_t magZero;
 } compassConfig_t;
 
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
 bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
 void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
+bool isCompassHealthy(void);

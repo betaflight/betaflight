@@ -121,7 +121,7 @@ static displayPort_t *osd7456DisplayPort;
  */
 static char osdGetAltitudeSymbol()
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return 0xF;
         default:
@@ -131,11 +131,11 @@ static char osdGetAltitudeSymbol()
 
 /**
  * Converts altitude based on the current unit system.
- * @param alt Raw altitude (i.e. as taken from BaroAlt)
+ * @param alt Raw altitude (i.e. as taken from baro.BaroAlt)
  */
 static int32_t osdGetAltitude(int32_t alt)
 {
-    switch (masterConfig.osdProfile.units) {
+    switch (osdProfile()->units) {
         case OSD_UNIT_IMPERIAL:
             return (alt * 328) / 100; // Convert to feet / 100
         default:
@@ -145,11 +145,11 @@ static int32_t osdGetAltitude(int32_t alt)
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(masterConfig.osdProfile.item_pos[item]) || BLINK(masterConfig.osdProfile.item_pos[item]))
+    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(osdProfile()->item_pos[item]))
         return;
 
-    uint8_t elemPosX = OSD_X(masterConfig.osdProfile.item_pos[item]);
-    uint8_t elemPosY = OSD_Y(masterConfig.osdProfile.item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdProfile()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdProfile()->item_pos[item]);
     char buff[32];
 
     switch(item) {
@@ -202,7 +202,11 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
-            int32_t alt = osdGetAltitude(BaroAlt);
+#ifdef NAV
+            int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z));
+#else
+            int32_t alt = osdGetAltitude(baro.BaroAlt);
+#endif
             sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
@@ -289,7 +293,7 @@ static void osdDrawSingleElement(uint8_t item)
             elemPosX = 14;
             elemPosY = 6 - 4; // Top center of the AH area
 
-            int rollAngle = attitude.values.roll;
+            int rollAngle = -attitude.values.roll;
             int pitchAngle = attitude.values.pitch;
 
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
@@ -429,7 +433,7 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    max7456Init(masterConfig.osdProfile.video_system);
+    max7456Init(osdProfile()->video_system);
 
     max7456ClearScreen();
 
@@ -469,9 +473,13 @@ void osdUpdateAlarms(void)
     osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
 
     // This is overdone?
-    // uint16_t *itemPos = masterConfig.osdProfile.item_pos;
+    // uint16_t *itemPos = osdProfile()->item_pos;
 
-    int32_t alt = osdGetAltitude(BaroAlt) / 100;
+#ifdef NAV
+    int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z)) / 100;
+#else
+    int32_t alt = osdGetAltitude(baro.BaroAlt) / 100;
+#endif
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < pOsdProfile->rssi_alarm)
@@ -546,8 +554,13 @@ static void osdUpdateStats(void)
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
 
-    if (stats.max_altitude < BaroAlt)
-        stats.max_altitude = BaroAlt;
+#ifdef NAV
+    if (stats.max_altitude < getEstimatedActualPosition(Z))
+        stats.max_altitude = getEstimatedActualPosition(Z);
+#else
+    if (stats.max_altitude < baro.BaroAlt)
+        stats.max_altitude = baro.BaroAlt;
+#endif
 }
 
 static void osdShowStats(void)

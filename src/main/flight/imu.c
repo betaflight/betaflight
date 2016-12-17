@@ -423,14 +423,14 @@ static int imuCalculateAccelerometerConfidence(void)
     return (nearness > MAX_ACC_SQ_NEARNESS) ? 0 : MAX_ACC_SQ_NEARNESS - nearness;
 }
 
-static bool isMagnetometerHealthy(void)
-{
-    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
-}
-
 static void imuCalculateEstimatedAttitude(float dT)
 {
-    const bool canUseMAG = sensors(SENSOR_MAG) && isMagnetometerHealthy();
+#if defined(MAG)
+    const bool canUseMAG = sensors(SENSOR_MAG) && isCompassHealthy();
+#else
+    const bool canUseMAG = false;
+#endif
+
     const int accWeight = imuCalculateAccelerometerConfidence();
 
     float courseOverGround = 0;
@@ -615,7 +615,7 @@ bool isImuReady(void)
 
 bool isImuHeadingValid(void)
 {
-    return (sensors(SENSOR_MAG) && persistentFlag(FLAG_MAG_CALIBRATION_DONE)) || (STATE(FIXED_WING) && gpsHeadingInitialized);
+    return (sensors(SENSOR_MAG) && STATE(COMPASS_CALIBRATED)) || (STATE(FIXED_WING) && gpsHeadingInitialized);
 }
 
 float calculateCosTiltAngle(void)

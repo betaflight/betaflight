@@ -62,7 +62,12 @@ void cycleCounterInit(void)
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
     usTicks = clocks.SYSCLK_Frequency / 1000000;
+
 #endif
+
+    // Enable DWT for precision time measurement
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
 // SysTick
@@ -82,8 +87,18 @@ void SysTick_Handler(void)
 #endif
 }
 
-// Return system uptime in microseconds (rollover in 70minutes)
+uint32_t ticks(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    return DWT->CYCCNT;
+}
 
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end)
+{
+    return (end - begin) / usTicks;
+}
+
+// Return system uptime in microseconds (rollover in 70minutes)
 timeUs_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;

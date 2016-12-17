@@ -20,12 +20,11 @@
 #include "drivers/barometer.h"
 
 typedef enum {
-    BARO_DEFAULT = 0,
-    BARO_NONE = 1,
-    BARO_BMP085 = 2,
-    BARO_MS5611 = 3,
-    BARO_BMP280 = 4,
-    BARO_FAKE = 5,
+    BARO_NONE = 0,
+    BARO_BMP085 = 1,
+    BARO_MS5611 = 2,
+    BARO_BMP280 = 3,
+    BARO_FAKE = 4,
     BARO_MAX = BARO_FAKE
 } baroSensor_e;
 
@@ -42,11 +41,11 @@ typedef struct baro_s {
 
 extern baro_t baro;
 
-#ifdef BARO
+bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse);
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse);
 bool isBaroCalibrationComplete(void);
 void baroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t baroUpdate(void);
 bool isBaroReady(void);
 int32_t baroCalculateAltitude(void);
-#endif
+bool isBarometerHealthy(void);

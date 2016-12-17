@@ -26,17 +26,19 @@
 
 #include "build/build_config.h"
 
-
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/config.h"
-#include "fc/runtime_config.h"
-
+#include "config/feature.h"
 
 #include "drivers/io.h"
+#include "drivers/logging.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sonar_srf10.h"
 #include "drivers/rangefinder.h"
+
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/rangefinder.h"
@@ -55,6 +57,36 @@ static rangefinderFunctionPointers_t rangefinderFunctionPointers;
 static float rangefinderMaxTiltCos;
 
 static int32_t calculatedAltitude;
+
+/*
+ * Detect which rangefinder is present
+ */
+rangefinderType_e rangefinderDetect(void)
+{
+    rangefinderType_e rangefinderType = RANGEFINDER_NONE;
+    if (feature(FEATURE_SONAR)) {
+        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+        // since there is no way to detect it
+        rangefinderType = RANGEFINDER_HCSR04;
+    }
+#ifdef USE_SONAR_SRF10
+    if (srf10_detect()) {
+        // if an SFR10 sonar rangefinder is detected then use it in preference to the assumed HC-SR04
+        rangefinderType = RANGEFINDER_SRF10;
+    }
+#endif
+
+    addBootlogEvent6(BOOT_EVENT_RANGEFINDER_DETECTION, BOOT_EVENT_FLAGS_NONE, rangefinderType, 0, 0, 0);
+
+    requestedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;   // FIXME: Make rangefinder type selectable from CLI
+    detectedSensors[SENSOR_INDEX_RANGEFINDER] = rangefinderType;
+
+    if (rangefinderType != RANGEFINDER_NONE) {
+        sensorsSet(SENSOR_SONAR);
+    }
+
+    return rangefinderType;
+}
 
 static const sonarHcsr04Hardware_t *sonarGetHardwareConfigurationForHCSR04(currentSensor_e currentSensor)
 {
@@ -209,6 +241,11 @@ int32_t rangefinderCalculateAltitude(int32_t rangefinderDistance, float cosTiltA
 int32_t rangefinderGetLatestAltitude(void)
 {
     return calculatedAltitude;
+}
+
+bool isRangefinderHealthy(void)
+{
+    return true;
 }
 #endif
 

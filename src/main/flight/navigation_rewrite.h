@@ -52,7 +52,7 @@ enum {
 
 enum {
     NAV_RTH_NO_ALT          = 0,            // Maintain current altitude
-    NAX_RTH_EXTRA_ALT       = 1,            // Maintain current altitude + predefined safety margin
+    NAV_RTH_EXTRA_ALT       = 1,            // Maintain current altitude + predefined safety margin
     NAV_RTH_CONST_ALT       = 2,            // Climb/descend to predefined altitude
     NAV_RTH_MAX_ALT         = 3,            // Track maximum altitude and climb to it when RTH
     NAV_RTH_AT_LEAST_ALT    = 4,            // Climb to predefined altitude if below it
@@ -99,7 +99,8 @@ typedef struct navConfig_s {
             uint8_t use_thr_mid_for_althold;    // Don't remember throttle when althold was initiated, assume that throttle is at Thr Mid = zero climb rate
             uint8_t extra_arming_safety;        // Forcibly apply 100% throttle tilt compensation
             uint8_t user_control_mode;          // NAV_GPS_ATTI or NAV_GPS_CRUISE
-            uint8_t rth_alt_control_style;      // Controls how RTH controls altitude
+            uint8_t rth_alt_control_mode;       // Controls the logic for choosing the RTH altitude
+            uint8_t rth_climb_first;            // Controls the logic for initial RTH climbout
             uint8_t rth_tail_first;             // Return to home tail first
             uint8_t disarm_on_landing;          //
         } flags;
@@ -114,7 +115,7 @@ typedef struct navConfig_s {
         uint16_t land_slowdown_minalt;          // Altitude to stop lowering descent rate during RTH descend
         uint16_t land_slowdown_maxalt;          // Altitude to start lowering descent rate during RTH descend
         uint16_t emerg_descent_rate;            // emergency landing descent rate
-        uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_style) (cm)
+        uint16_t rth_altitude;                  // altitude to maintain when RTH is active (depends on rth_alt_control_mode) (cm)
         uint16_t min_rth_distance;              // 0 Disables. Minimal distance for RTL in cm, otherwise it will just autoland
     } general;
 
@@ -135,6 +136,7 @@ typedef struct navConfig_s {
         uint8_t  roll_to_pitch;              // Roll to pitch compensation (in %)
         uint16_t loiter_radius;              // Loiter radius when executing PH on a fixed wing
 
+        uint16_t launch_velocity_thresh;     // Velocity threshold for swing launch detection
         uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
         uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
         uint16_t launch_throttle;            // Launch throttle

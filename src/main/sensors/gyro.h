@@ -22,7 +22,7 @@
 
 typedef enum {
     GYRO_NONE = 0,
-    GYRO_DEFAULT,
+    GYRO_AUTODETECT,
     GYRO_MPU6050,
     GYRO_L3G4200D,
     GYRO_MPU3050,
@@ -52,7 +52,7 @@ typedef struct gyroConfig_s {
 } gyroConfig_t;
 
 
-void gyroInit(const gyroConfig_t *gyroConfigToUse);
+bool gyroInit(const gyroConfig_t *gyroConfigToUse);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);

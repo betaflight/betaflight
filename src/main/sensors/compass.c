@@ -28,9 +28,20 @@
 #include "config/config.h"
 
 #include "drivers/compass.h"
+#include "drivers/compass_ak8963.h"
+#include "drivers/compass_ak8975.h"
+#include "drivers/compass_fake.h"
+#include "drivers/compass_hmc5883l.h"
+#include "drivers/compass_mag3110.h"
+#include "drivers/compass_ist8310.h"
+#include "drivers/io.h"
 #include "drivers/light_led.h"
+#include "drivers/logging.h"
+#include "drivers/system.h"
 
 #include "fc/runtime_config.h"
+
+#include "io/gps.h"
 
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
@@ -48,6 +59,132 @@ static int16_t magADCRaw[XYZ_AXIS_COUNT];
 static uint8_t magInit = 0;
 static uint8_t magUpdatedAtLeastOnce = 0;
 
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse)
+{
+    magSensor_e magHardware = MAG_NONE;
+    requestedSensors[SENSOR_INDEX_MAG] = magHardwareToUse;
+
+#ifdef USE_MAG_HMC5883
+    const hmc5883Config_t *hmc5883Config = 0;
+
+#ifdef NAZE // TODO remove this target specific define
+    static const hmc5883Config_t nazeHmc5883Config_v1_v4 = {
+            .intTag = IO_TAG(PB12) /* perhaps disabled? */
+    };
+    static const hmc5883Config_t nazeHmc5883Config_v5 = {
+            .intTag = IO_TAG(MAG_INT_EXTI)
+    };
+    if (hardwareRevision < NAZE32_REV5) {
+        hmc5883Config = &nazeHmc5883Config_v1_v4;
+    } else {
+        hmc5883Config = &nazeHmc5883Config_v5;
+    }
+#endif
+
+#ifdef MAG_INT_EXTI
+    static const hmc5883Config_t extiHmc5883Config = {
+        .intTag = IO_TAG(MAG_INT_EXTI)
+    };
+
+    hmc5883Config = &extiHmc5883Config;
+#endif
+
+#endif
+
+    dev->magAlign = ALIGN_DEFAULT;
+
+    switch(magHardwareToUse) {
+    case MAG_HMC5883:
+#ifdef USE_MAG_HMC5883
+        if (hmc5883lDetect(dev, hmc5883Config)) {
+#ifdef MAG_HMC5883_ALIGN
+            dev->magAlign = MAG_HMC5883_ALIGN;
+#endif
+            magHardware = MAG_HMC5883;
+        }
+#endif
+        break;
+
+    case MAG_AK8975:
+#ifdef USE_MAG_AK8975
+        if (ak8975Detect(dev)) {
+#ifdef MAG_AK8975_ALIGN
+            dev->magAlign = MAG_AK8975_ALIGN;
+#endif
+            magHardware = MAG_AK8975;
+        }
+#endif
+        break;
+
+    case MAG_AK8963:
+#ifdef USE_MAG_AK8963
+        if (ak8963Detect(dev)) {
+#ifdef MAG_AK8963_ALIGN
+            dev->magAlign = MAG_AK8963_ALIGN;
+#endif
+            magHardware = MAG_AK8963;
+        }
+#endif
+        break;
+
+    case MAG_GPS:
+#ifdef GPS
+        if (gpsMagDetect(dev)) {
+#ifdef MAG_GPS_ALIGN
+            dev->magAlign = MAG_GPS_ALIGN;
+#endif
+            magHardware = MAG_GPS;
+        }
+#endif
+        break;
+
+    case MAG_MAG3110:
+#ifdef USE_MAG_MAG3110
+        if (mag3110detect(dev)) {
+#ifdef MAG_MAG3110_ALIGN
+            dev->magAlign = MAG_MAG3110_ALIGN;
+#endif
+            magHardware = MAG_MAG3110;
+        }
+#endif
+        break;
+
+    case MAG_IST8310:
+#ifdef USE_MAG_IST8310
+        if (ist8310Detect(dev)) {
+#ifdef MAG_IST8310_ALIGN
+            dev->magAlign = MAG_IST8310_ALIGN;
+#endif
+            magHardware = MAG_IST8310;
+        }
+#endif
+    break;
+
+    case MAG_FAKE:
+#ifdef USE_FAKE_MAG
+        if (fakeMagDetect(dev)) {
+            magHardware = MAG_FAKE;
+        }
+#endif
+        break;
+
+    case MAG_NONE:
+        magHardware = MAG_NONE;
+        break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_MAG_DETECTION, BOOT_EVENT_FLAGS_NONE, magHardware, 0, 0, 0);
+
+    if (magHardware == MAG_NONE) {
+        sensorsClear(SENSOR_MAG);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_MAG] = magHardware;
+    sensorsSet(SENSOR_MAG);
+    return true;
+}
+
 bool compassInit(const compassConfig_t *compassConfig)
 {
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
@@ -63,17 +200,29 @@ bool compassInit(const compassConfig_t *compassConfig)
     return ret;
 }
 
+bool isCompassHealthy(void)
+{
+    return (mag.magADC[X] != 0) || (mag.magADC[Y] != 0) || (mag.magADC[Z] != 0);
+}
+
 bool isCompassReady(void)
 {
     return magUpdatedAtLeastOnce;
 }
 
-static sensorCalibrationState_t calState;
-
 void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
 {
+    static sensorCalibrationState_t calState;
     static timeUs_t calStartedAt = 0;
     static int16_t magPrev[XYZ_AXIS_COUNT];
+
+    // Check magZero
+    if ((magZero->raw[X] == 0) && (magZero->raw[Y] == 0) && (magZero->raw[Z] == 0)) {
+        DISABLE_STATE(COMPASS_CALIBRATED);
+    }
+    else {
+        ENABLE_STATE(COMPASS_CALIBRATED);
+    }
 
     if (!mag.dev.read(magADCRaw)) {
         mag.magADC[X] = 0;
@@ -133,7 +282,6 @@ void compassUpdate(timeUs_t currentTimeUs, flightDynamicsTrims_t *magZero)
             }
 
             calStartedAt = 0;
-            persistentFlagSet(FLAG_MAG_CALIBRATION_DONE);
             saveConfigAndNotify();
         }
     }

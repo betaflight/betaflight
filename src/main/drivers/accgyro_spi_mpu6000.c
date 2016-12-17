@@ -256,7 +256,7 @@ static void mpu6000AccAndGyroInit(void)
 
 bool mpu6000SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_60x0_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_60x0_SPI) {
         return false;
     }
 
@@ -268,13 +268,13 @@ bool mpu6000SpiAccDetect(accDev_t *acc)
 
 bool mpu6000SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_60x0_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_60x0_SPI) {
         return false;
     }
 
     gyro->init = mpu6000SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
+    gyro->intStatus = mpuCheckDataReady;
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;
 

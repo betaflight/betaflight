@@ -199,7 +199,7 @@ void init(void)
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
-        switch (masterConfig.rxConfig.serialrx_provider) {
+        switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 // Spektrum satellite binding if enabled on startup.
@@ -229,7 +229,7 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servosInit(masterConfig.customServoMixer);
 #endif
@@ -239,7 +239,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
+        const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(batteryConfig()->currentMeterType);
         if (sonarHardware) {
             pwm_params.useSonar = true;
             pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
@@ -249,7 +249,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -270,7 +270,7 @@ void init(void)
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
@@ -278,23 +278,23 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
+    pwm_params.servoCenterPulse = servoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = servoConfig()->servoPwmRate;
 #endif
 
-    pwm_params.pwmProtocolType = masterConfig.motorConfig.motorPwmProtocol;
+    pwm_params.pwmProtocolType = motorConfig()->motorPwmProtocol;
 #ifndef BRUSHED_MOTORS
-    pwm_params.useFastPwm = (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT125) ||
-                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
-                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_MULTISHOT);
+    pwm_params.useFastPwm = (motorConfig()->motorPwmProtocol == PWM_TYPE_ONESHOT125) ||
+                            (motorConfig()->motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
+                            (motorConfig()->motorPwmProtocol == PWM_TYPE_MULTISHOT);
 #endif
-    pwm_params.motorPwmRate = masterConfig.motorConfig.motorPwmRate;
-    pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
+    pwm_params.motorPwmRate = motorConfig()->motorPwmRate;
+    pwm_params.idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+        pwm_params.idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
         pwm_params.useFastPwm = false;
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
@@ -519,7 +519,7 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig, currentProfile->modeActivationConditions);
 

@@ -23,8 +23,8 @@
 
 // Type of accelerometer used/detected
 typedef enum {
-    ACC_DEFAULT = 0,
-    ACC_NONE = 1,
+    ACC_NONE = 0,
+    ACC_AUTODETECT = 1,
     ACC_ADXL345 = 2,
     ACC_MPU6050 = 3,
     ACC_MMA8452 = 4,
@@ -48,13 +48,15 @@ extern acc_t acc;
 typedef struct accelerometerConfig_s {
     sensor_align_e acc_align;               // acc alignment
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
+    flightDynamicsTrims_t accZero;          // Accelerometer offset
+    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
 } accelerometerConfig_t;
 
-void accInit(uint32_t accTargetLooptime);
+bool accInit(const accelerometerConfig_t *accConfig, uint32_t accTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void updateAccelerationReadings(void);
 union flightDynamicsTrims_u;
-void setAccelerationZero(union flightDynamicsTrims_u * accZeroToUse);
-void setAccelerationGain(union flightDynamicsTrims_u * accGainToUse);
+void setAccelerationCalibrationValues(union flightDynamicsTrims_u * accZeroToUse, union flightDynamicsTrims_u * accGainToUse);
 void setAccelerationFilter(uint8_t initialAccLpfCutHz);
+bool isAccelerometerHealthy(void);

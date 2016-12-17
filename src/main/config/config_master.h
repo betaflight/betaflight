@@ -64,7 +64,30 @@
 
 #include "config/config.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
+
+#define motorConfig(x) (&masterConfig.motorConfig)
+#define flight3DConfig(x) (&masterConfig.flight3DConfig)
+#define servoConfig(x) (&masterConfig.servoConfig)
+#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define boardAlignment(x) (&masterConfig.boardAlignment)
+#define imuConfig(x) (&masterConfig.imuConfig)
+#define gyroConfig(x) (&masterConfig.gyroConfig)
+#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
+#define barometerConfig(x) (&masterConfig.barometerConfig)
+#define compassConfig(x) (&masterConfig.compassConfig)
+#define pitotmeterConfig(x) (&masterConfig.pitotmeterConfig)
+#define batteryConfig(x) (&masterConfig.batteryConfig)
+#define gpsConfig(x) (&masterConfig.gpsConfig)
+#define navConfig(x) (&masterConfig.navConfig)
+#define rxConfig(x) (&masterConfig.rxConfig)
+#define armingConfig(x) (&masterConfig.armingConfig)
+#define mixerConfig(x) (&masterConfig.mixerConfig)
+#define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialConfig(x) (&masterConfig.serialConfig)
+#define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define osdProfile(x) (&masterConfig.osdProfile)
+#define blackboxConfig(x) (&masterConfig.blackboxConfig)
+
 
 // System-wide
 typedef struct master_s {
@@ -93,8 +116,6 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
 
-    // global sensor-related stuff
-    sensorTrims_t sensorTrims;
     boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;

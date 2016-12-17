@@ -211,7 +211,7 @@ bool mpu9250SpiDetect(void)
 
 bool mpu9250SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 
@@ -223,13 +223,13 @@ bool mpu9250SpiAccDetect(accDev_t *acc)
 
 bool mpu9250SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 
     gyro->init = mpu9250SpiGyroInit;
     gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
+    gyro->intStatus = mpuCheckDataReady;
 
     // 16.4 dps/lsb scalefactor
     gyro->scale = 1.0f / 16.4f;

@@ -68,13 +68,18 @@ typedef struct FixedWingLaunchState_s {
 
 static FixedWingLaunchState_t   launchState;
 
-#define COS_MAX_LAUNCH_ANGLE    0.70710678f         // cos(45), just to be safe
+#define COS_MAX_LAUNCH_ANGLE                0.70710678f                 // cos(45), just to be safe
+#define SWING_LAUNCH_MIN_ROTATION_RATE      DEGREES_TO_RADIANS(100)     // expect minimum 100dps rotation rate
 static void updateFixedWingLaunchDetector(timeUs_t currentTimeUs)
 {
+    const float swingVelocity = (ABS(imuMeasuredRotationBF.A[Z]) > SWING_LAUNCH_MIN_ROTATION_RATE) ? (imuAccelInBodyFrame.A[Y] / imuMeasuredRotationBF.A[Z]) : 0;
     const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw.launch_accel_thresh);
     const bool isAircraftAlmostLevel = (calculateCosTiltAngle() >= COS_MAX_LAUNCH_ANGLE);
 
-    if (isForwardAccelerationHigh && isAircraftAlmostLevel) {
+    const bool isBungeeLaunched = isForwardAccelerationHigh && isAircraftAlmostLevel;
+    const bool isSwingLaunched = (swingVelocity > posControl.navConfig->fw.launch_velocity_thresh) && (imuAccelInBodyFrame.A[X] > 0);
+
+    if (isBungeeLaunched || isSwingLaunched) {
         launchState.launchDetectionTimeAccum += (currentTimeUs - launchState.launchDetectorPreviosUpdate);
         launchState.launchDetectorPreviosUpdate = currentTimeUs;
         if (launchState.launchDetectionTimeAccum >= MS2US((uint32_t)posControl.navConfig->fw.launch_time_thresh)) {

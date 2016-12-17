@@ -31,13 +31,6 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
-#if !defined(STM32F4) && !defined(STM32F7) /* already defined in /lib/main/CMSIS/CM4/CoreSupport/core_cmFunc.h for F4 targets */
-__attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX(uint32_t basePri)
-{
-    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) : "memory" );
-}
-#endif
-
 // cleanup BASEPRI restore function, with global memory barrier
 static inline void __basepriRestoreMem(uint8_t *val)
 {

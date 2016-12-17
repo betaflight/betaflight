@@ -20,10 +20,9 @@
 #include "drivers/pitotmeter.h"
 
 typedef enum {
-    PITOT_DEFAULT = 0,
-    PITOT_NONE = 1,
-    PITOT_MS4525 = 2,
-    PITOT_FAKE = 3,
+    PITOT_NONE = 0,
+    PITOT_MS4525 = 1,
+    PITOT_FAKE = 2,
 } pitotSensor_e;
 
 #define PITOT_MAX  PITOT_FAKE
@@ -43,11 +42,11 @@ typedef struct pito_s {
 
 extern pitot_t pitot;
 
-#ifdef PITOT
+bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse);
 void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse);
 bool isPitotCalibrationComplete(void);
 void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t pitotUpdate(void);
 bool isPitotReady(void);
 int32_t pitotCalculateAirSpeed(void);
-#endif
+bool isPitotmeterHealthy(void);

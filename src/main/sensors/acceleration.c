@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "platform.h"
@@ -25,22 +26,43 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "drivers/sensor.h"
-
-#include "sensors/battery.h"
-#include "sensors/sensors.h"
-#include "io/beeper.h"
-#include "sensors/boardalignment.h"
-#include "fc/runtime_config.h"
-
 #include "config/config.h"
 
+#include "drivers/accgyro.h"
+#include "drivers/accgyro_adxl345.h"
+#include "drivers/accgyro_bma280.h"
+#include "drivers/accgyro_fake.h"
+#include "drivers/accgyro_l3g4200d.h"
+#include "drivers/accgyro_mma845x.h"
+#include "drivers/accgyro_mpu.h"
+#include "drivers/accgyro_mpu3050.h"
+#include "drivers/accgyro_mpu6050.h"
+#include "drivers/accgyro_mpu6500.h"
+#include "drivers/accgyro_l3gd20.h"
+#include "drivers/accgyro_lsm303dlhc.h"
+#include "drivers/accgyro_spi_mpu6000.h"
+#include "drivers/accgyro_spi_mpu6500.h"
+#include "drivers/accgyro_spi_mpu9250.h"
+#include "drivers/logging.h"
+#include "drivers/sensor.h"
+
 #include "sensors/acceleration.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
+#include "fc/runtime_config.h"
+
+#include "io/beeper.h"
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
 
 acc_t acc;                       // acc access functions
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
-static int16_t accADCRaw[XYZ_AXIS_COUNT];
 
 static flightDynamicsTrims_t * accZero;
 static flightDynamicsTrims_t * accGain;
@@ -48,8 +70,164 @@ static flightDynamicsTrims_t * accGain;
 static uint8_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
-void accInit(uint32_t targetLooptime)
+static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
+    accelerationSensor_e accHardware;
+
+#ifdef USE_ACC_ADXL345
+    drv_adxl345_config_t acc_params;
+#endif
+
+retry:
+    dev->accAlign = ALIGN_DEFAULT;
+
+    requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
+
+    switch (accHardwareToUse) {
+    case ACC_AUTODETECT:
+        ; // fallthrough
+    case ACC_ADXL345: // ADXL345
+#ifdef USE_ACC_ADXL345
+        acc_params.useFifo = false;
+        acc_params.dataRate = 800; // unused currently
+#ifdef NAZE
+        if (hardwareRevision < NAZE32_REV5 && adxl345Detect(dev, &acc_params)) {
+#else
+        if (adxl345Detect(dev, &acc_params)) {
+#endif
+#ifdef ACC_ADXL345_ALIGN
+            dev->accAlign = ACC_ADXL345_ALIGN;
+#endif
+            accHardware = ACC_ADXL345;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_LSM303DLHC:
+#ifdef USE_ACC_LSM303DLHC
+        if (lsm303dlhcAccDetect(dev)) {
+#ifdef ACC_LSM303DLHC_ALIGN
+            dev->accAlign = ACC_LSM303DLHC_ALIGN;
+#endif
+            accHardware = ACC_LSM303DLHC;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6050: // MPU6050
+#ifdef USE_ACC_MPU6050
+        if (mpu6050AccDetect(dev)) {
+#ifdef ACC_MPU6050_ALIGN
+            dev->accAlign = ACC_MPU6050_ALIGN;
+#endif
+            accHardware = ACC_MPU6050;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MMA8452: // MMA8452
+#ifdef USE_ACC_MMA8452
+#ifdef NAZE
+        // Not supported with this frequency
+        if (hardwareRevision < NAZE32_REV5 && mma8452Detect(dev)) {
+#else
+        if (mma8452Detect(dev)) {
+#endif
+#ifdef ACC_MMA8452_ALIGN
+            dev->accAlign = ACC_MMA8452_ALIGN;
+#endif
+            accHardware = ACC_MMA8452;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_BMA280: // BMA280
+#ifdef USE_ACC_BMA280
+        if (bma280Detect(dev)) {
+#ifdef ACC_BMA280_ALIGN
+            dev->accAlign = ACC_BMA280_ALIGN;
+#endif
+            accHardware = ACC_BMA280;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6000:
+#ifdef USE_ACC_SPI_MPU6000
+        if (mpu6000SpiAccDetect(dev)) {
+#ifdef ACC_MPU6000_ALIGN
+            dev->accAlign = ACC_MPU6000_ALIGN;
+#endif
+            accHardware = ACC_MPU6000;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_MPU6500:
+#if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
+#ifdef USE_ACC_SPI_MPU6500
+        if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev)) {
+#else
+        if (mpu6500AccDetect(dev)) {
+#endif
+#ifdef ACC_MPU6500_ALIGN
+            dev->accAlign = ACC_MPU6500_ALIGN;
+#endif
+            accHardware = ACC_MPU6500;
+            break;
+        }
+#endif
+    case ACC_MPU9250:
+#ifdef USE_ACC_SPI_MPU9250
+        if (mpu9250SpiAccDetect(dev)) {
+#ifdef ACC_MPU9250_ALIGN
+            dev->accAlign = ACC_MPU9250_ALIGN;
+#endif
+            accHardware = ACC_MPU9250;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_FAKE:
+#ifdef USE_FAKE_ACC
+        if (fakeAccDetect(dev)) {
+            accHardware = ACC_FAKE;
+            break;
+        }
+#endif
+        ; // fallthrough
+    case ACC_NONE: // disable ACC
+        accHardware = ACC_NONE;
+        break;
+    }
+
+    // Found anything? Check if error or ACC is really missing.
+    if (accHardware == ACC_NONE && accHardwareToUse != ACC_AUTODETECT && accHardwareToUse != ACC_NONE) {
+        // Nothing was found and we have a forced sensor that isn't present.
+        accHardwareToUse = ACC_AUTODETECT;
+        goto retry;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_ACC_DETECTION, BOOT_EVENT_FLAGS_NONE, accHardware, 0, 0, 0);
+
+    if (accHardware == ACC_NONE) {
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_ACC] = accHardware;
+    sensorsSet(SENSOR_ACC);
+    return true;
+}
+
+bool accInit(const accelerometerConfig_t *accConfig, uint32_t targetLooptime)
+{
+    memset(&acc, 0, sizeof(acc));
+    // copy over the common gyro mpu settings
+    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
+    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
+    if (!accDetect(&acc.dev, accConfig->acc_hardware)) {
+        return false;
+    }
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev);
     acc.accTargetLooptime = targetLooptime;
@@ -58,6 +236,7 @@ void accInit(uint32_t targetLooptime)
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
         }
     }
+    return true;
 }
 
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
@@ -182,12 +361,12 @@ static void applyAccelerationZero(const flightDynamicsTrims_t * accZero, const f
 
 void updateAccelerationReadings(void)
 {
-    if (!acc.dev.read(accADCRaw)) {
+    if (!acc.dev.read(&acc.dev)) {
         return;
     }
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        acc.accADC[axis] = accADCRaw[axis];
+        acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
 
     if (accLpfCutHz) {
@@ -205,14 +384,18 @@ void updateAccelerationReadings(void)
     alignSensors(acc.accADC, acc.dev.accAlign);
 }
 
-void setAccelerationZero(flightDynamicsTrims_t * accZeroToUse)
+void setAccelerationCalibrationValues(flightDynamicsTrims_t * accZeroToUse, flightDynamicsTrims_t * accGainToUse)
 {
     accZero = accZeroToUse;
-}
-
-void setAccelerationGain(flightDynamicsTrims_t * accGainToUse)
-{
     accGain = accGainToUse;
+
+    if ((accZero->raw[X] == 0) && (accZero->raw[Y] == 0) && (accZero->raw[Z] == 0) &&
+        (accGain->raw[X] == 4096) && (accGain->raw[Y] == 4096) &&(accGain->raw[Z] == 4096)) {
+        DISABLE_STATE(ACCELEROMETER_CALIBRATED);
+    }
+    else {
+        ENABLE_STATE(ACCELEROMETER_CALIBRATED);
+    }
 }
 
 void setAccelerationFilter(uint8_t initialAccLpfCutHz)
@@ -223,4 +406,9 @@ void setAccelerationFilter(uint8_t initialAccLpfCutHz)
             biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
         }
     }
+}
+
+bool isAccelerometerHealthy(void)
+{
+    return true;
 }
