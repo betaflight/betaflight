@@ -42,7 +42,6 @@
 #include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/logging.h"
 #include "drivers/sensor.h"
 
@@ -72,13 +71,12 @@ static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
 static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
-    accelerationSensor_e accHardware;
+    accelerationSensor_e accHardware = ACC_NONE;
 
 #ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
 #endif
 
-retry:
     dev->accAlign = ALIGN_DEFAULT;
 
     requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
@@ -198,21 +196,6 @@ retry:
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
             accHardware = ACC_MPU6500;
-            break;
-        }
-#endif
-        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
-        if (accHardwareToUse != ACC_AUTODETECT) {
-            break;
-        }
-
-    case ACC_MPU9250:
-#ifdef USE_ACC_SPI_MPU9250
-        if (mpu9250SpiAccDetect(dev)) {
-#ifdef ACC_MPU9250_ALIGN
-            dev->accAlign = ACC_MPU9250_ALIGN;
-#endif
-            accHardware = ACC_MPU9250;
             break;
         }
 #endif
