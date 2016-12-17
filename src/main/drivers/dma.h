@@ -19,7 +19,7 @@
 struct dmaChannelDescriptor_s;
 typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channelDescriptor);
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
 
 typedef enum {
     DMA1_ST0_HANDLER = 0,
@@ -108,7 +108,7 @@ typedef struct dmaChannelDescriptor_s {
 
 #endif
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Stream_TypeDef* stream);
 #else
 dmaHandlerIdentifier_e dmaFindHandlerIdentifier(DMA_Channel_TypeDef* channel);

@@ -154,6 +154,10 @@ void flashLedsAndBeep(void)
 
 void init(void)
 {
+#ifdef USE_HAL_DRIVER
+    HAL_Init();
+#endif
+
     systemState = SYSTEM_STATE_INITIALISING;
     initBootlog();
 
@@ -211,7 +215,9 @@ void init(void)
 
     timerInit();  // timer must be initialized before any channel is allocated
 
+#if !defined(USE_HAL_DRIVER)
     dmaInit();
+#endif
 
 #if defined(AVOID_UART2_FOR_PWM_PPM)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
@@ -363,6 +369,9 @@ void init(void)
 #else
     spiInit(SPIDEV_3);
 #endif
+#endif
+#ifdef USE_SPI_DEVICE_4
+    spiInit(SPIDEV_4);
 #endif
 #endif
 
@@ -573,7 +582,7 @@ void init(void)
 
 #if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
     // Ensure the SPI Tx DMA doesn't overlap with the led strip
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_STREAM;
 #else
     sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
