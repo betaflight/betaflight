@@ -188,7 +188,7 @@ static bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 }
 #endif
 
-static void ak8963Init()
+static bool ak8963Init()
 {
     uint8_t calibration[3];
     uint8_t status;
@@ -219,6 +219,7 @@ static void ak8963Init()
 #else
     ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
 #endif
+    return true;
 }
 
 static bool ak8963Read(int16_t *magData)
