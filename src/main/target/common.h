@@ -38,6 +38,8 @@
 #define NAV
 #define TELEMETRY
 #define TELEMETRY_LTM
+#define USE_FLM_HEADLOCK
+#define USE_FLM_TURN_ASSIST
 #else
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
@@ -68,6 +70,7 @@
 #define USE_PMW_SERVO_DRIVER
 #define PWM_DRIVER_PCA9685
 #define NAV_MAX_WAYPOINTS       60
+#define MAX_BOOTLOG_ENTRIES     64
 #else
 #define CLI_MINIMAL_VERBOSITY
 #define SKIP_CLI_COMMAND_HELP
@@ -75,4 +78,5 @@
 #define SKIP_RX_MSP
 #define DISABLE_UNCOMMON_MIXERS
 #define NAV_MAX_WAYPOINTS       30
+#define MAX_BOOTLOG_ENTRIES     32
 #endif

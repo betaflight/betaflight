@@ -29,8 +29,6 @@
 
 #include "system.h"
 
-#define MAX_BOOTLOG_ENTRIES     64
-
 static bootLogEntry_t   events[MAX_BOOTLOG_ENTRIES];
 static int              eventCount;
 static bool             eventOverflow;

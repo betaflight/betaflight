@@ -256,11 +256,17 @@ static void initActiveBoxIds(void)
     if (sensors(SENSOR_ACC)) {
         activeBoxIds[activeBoxIdCount++] = BOXANGLE;
         activeBoxIds[activeBoxIdCount++] = BOXHORIZON;
+
+#ifdef USE_FLM_TURN_ASSIST
         activeBoxIds[activeBoxIdCount++] = BOXTURNASSIST;
+#endif
     }
 
     activeBoxIds[activeBoxIdCount++] = BOXAIRMODE;
+
+#ifdef USE_FLM_HEADLOCK
     activeBoxIds[activeBoxIdCount++] = BOXHEADINGLOCK;
+#endif
 
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {
         activeBoxIds[activeBoxIdCount++] = BOXMAG;
@@ -293,6 +299,7 @@ static void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXAUTOTRIM;
     }
 
+#ifdef USE_SERVOS
     /*
      * FLAPERON mode active only in case of airplane and custom airplane. Activating on
      * flying wing can cause bad thing
@@ -300,6 +307,7 @@ static void initActiveBoxIds(void)
     if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         activeBoxIds[activeBoxIdCount++] = BOXFLAPERON;
     }
+#endif
 
     activeBoxIds[activeBoxIdCount++] = BOXBEEPERON;
 
@@ -355,10 +363,16 @@ static uint32_t packFlightModeFlags(void)
         IS_ENABLED(FLIGHT_MODE(NAV_WP_MODE)) << BOXNAVWP |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAIRMODE)) << BOXAIRMODE |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGCSNAV)) << BOXGCSNAV |
+#ifdef USE_FLM_HEADLOCK
         IS_ENABLED(FLIGHT_MODE(HEADING_LOCK)) << BOXHEADINGLOCK |
+#endif
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXSURFACE)) << BOXSURFACE |
+#ifdef USE_FLM_FLAPERON
         IS_ENABLED(FLIGHT_MODE(FLAPERON)) << BOXFLAPERON |
+#endif
+#ifdef USE_FLM_TURN_ASSIST
         IS_ENABLED(FLIGHT_MODE(TURN_ASSISTANT)) << BOXTURNASSIST |
+#endif
         IS_ENABLED(FLIGHT_MODE(NAV_LAUNCH_MODE)) << BOXNAVLAUNCH |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) << BOXAUTOTRIM |
         IS_ENABLED(IS_RC_MODE_ACTIVE(BOXHOMERESET)) << BOXHOMERESET;
