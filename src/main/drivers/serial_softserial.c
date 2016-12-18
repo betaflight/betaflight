@@ -122,7 +122,7 @@ static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
     return timerPeriod > 0xFFFF;
 }
 
-static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
+static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32_t baud)
 {
     uint32_t clock = SystemCoreClock;
     uint32_t timerPeriod;
@@ -139,7 +139,13 @@ static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t
     } while (isTimerPeriodTooLarge(timerPeriod));
 
     uint8_t mhz = SystemCoreClock / 1000000;
+
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
+}
+
+static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
+{
+    serialTimerConfigure(timerHardwarePtr, baud);
     timerChCCHandlerInit(&softSerialPorts[reference].timerCb, onSerialTimer);
     timerChConfigCallbacks(timerHardwarePtr, &softSerialPorts[reference].timerCb, NULL);
 }
@@ -179,12 +185,16 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, int index, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
+serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
 
-    ioTag_t tagTx = serialPinConfig()->ioTagTx[index];
-    ioTag_t tagRx = serialPinConfig()->ioTagRx[index];
+    int pinCfgIndex;
+
+    pinCfgIndex = portIndex + RESOURCE_SOFT_OFFSET;
+
+    ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
+    ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
 
     if (!(tagTx && tagRx)) {
         // Future enhancement: half duplex case
@@ -220,6 +230,13 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, int index, serialR
     delay(50);
 
     serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
+
+    // If RX is on a different timer, initialize it as TX to set timebase,
+    // then re-initialize it as RX.
+
+    if (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim)
+        serialTimerConfigure(softSerial->rxTimerHardware, baud);
+
     serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
 
     return &softSerial->port;
