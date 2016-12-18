@@ -140,6 +140,10 @@ typedef struct modeActivationCondition_s {
     channelRange_t range;
 } modeActivationCondition_t;
 
+typedef struct modeActivationProfile_s {
+    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+} modeActivationProfile_t;
+
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
 typedef struct controlRateConfig_s {

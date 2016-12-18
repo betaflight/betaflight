@@ -820,7 +820,7 @@ void startBlackbox(void)
          */
         blackboxBuildConditionCache();
 
-        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(masterConfig.modeActivationConditions, BOXBLACKBOX);
+        blackboxModeActivationConditionPresent = isModeActivationConditionPresent(modeActivationProfile()->modeActivationConditions, BOXBLACKBOX);
 
         blackboxIteration = 0;
         blackboxPFrameIndex = 0;

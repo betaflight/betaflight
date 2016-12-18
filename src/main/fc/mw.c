@@ -576,7 +576,7 @@ void processRx(timeUs_t currentTimeUs)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(masterConfig.modeActivationConditions);
+    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);

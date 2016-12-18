@@ -1216,8 +1216,8 @@ static void printAux(uint8_t dumpMask, master_t *defaultConfig)
     modeActivationCondition_t *macDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        mac = &masterConfig.modeActivationConditions[i];
-        macDefault = &defaultConfig->modeActivationConditions[i];
+        mac = &modeActivationProfile()->modeActivationConditions[i];
+        macDefault = &defaultConfig->modeActivationProfile.modeActivationConditions[i];
         equalsDefault = mac->modeId == macDefault->modeId
             && mac->auxChannelIndex == macDefault->auxChannelIndex
             && mac->range.startStep == macDefault->range.startStep
@@ -1251,7 +1251,7 @@ static void cliAux(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
