@@ -79,37 +79,54 @@ bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
 #endif
 
     switch (baroHardwareToUse) {
+    case BARO_AUTODETECT:
     case BARO_BMP085:
 #ifdef USE_BARO_BMP085
         if (bmp085Detect(bmp085Config, dev)) {
             baroHardware = BARO_BMP085;
+            break;
         }
 #endif
-        break;
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
 
     case BARO_MS5611:
 #ifdef USE_BARO_MS5611
         if (ms5611Detect(dev)) {
             baroHardware = BARO_MS5611;
+            break;
         }
 #endif
-        break;
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
 
     case BARO_BMP280:
 #if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
         if (bmp280Detect(dev)) {
             baroHardware = BARO_BMP280;
+            break;
         }
 #endif
-        break;
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
 
     case BARO_FAKE:
 #ifdef USE_FAKE_BARO
         if (fakeBaroDetect(dev)) {
             baroHardware = BARO_FAKE;
+            break;
         }
 #endif
-        break;
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
 
     case BARO_NONE:
         baroHardware = BARO_NONE;

@@ -54,21 +54,30 @@ bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
     requestedSensors[SENSOR_INDEX_PITOT] = pitotHardwareToUse;
 
     switch (pitotHardwareToUse) {
+        case PITOT_AUTODETECT:
         case PITOT_MS4525:
 #ifdef USE_PITOT_MS4525
             if (ms4525Detect(dev)) {
                 pitotHardware = PITOT_MS4525;
+                break;
             }
 #endif
-            break;
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
 
         case PITOT_FAKE:
 #ifdef USE_PITOT_FAKE
             if (fakePitotDetect(&pitot)) {
                 pitotHardware = PITOT_FAKE;
+                break;
             }
 #endif
-            break;
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
 
         case PITOT_NONE:
             pitotHardware = PITOT_NONE;

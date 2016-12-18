@@ -505,9 +505,24 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     config->accelerometerConfig.acc_hardware = ACC_AUTODETECT;     // default/autodetect
+
+#ifdef MAG
+    config->compassConfig.mag_hardware = MAG_AUTODETECT;
+#else
     config->compassConfig.mag_hardware = MAG_NONE;
+#endif
+
+#ifdef BARO
+    config->barometerConfig.baro_hardware = BARO_AUTODETECT;
+#else
     config->barometerConfig.baro_hardware = BARO_NONE;
+#endif
+
+#ifdef PITOT
+    config->pitotmeterConfig.pitot_hardware = PITOT_AUTODETECT;
+#else
     config->pitotmeterConfig.pitot_hardware = PITOT_NONE;
+#endif
 
     resetBatteryConfig(&config->batteryConfig);
 

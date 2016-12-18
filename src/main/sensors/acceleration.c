@@ -42,7 +42,6 @@
 #include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/logging.h"
 #include "drivers/sensor.h"
 
@@ -72,13 +71,12 @@ static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
 static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
-    accelerationSensor_e accHardware;
+    accelerationSensor_e accHardware = ACC_NONE;
 
 #ifdef USE_ACC_ADXL345
     drv_adxl345_config_t acc_params;
 #endif
 
-retry:
     dev->accAlign = ALIGN_DEFAULT;
 
     requestedSensors[SENSOR_INDEX_ACC] = accHardwareToUse;
@@ -102,7 +100,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_LSM303DLHC:
 #ifdef USE_ACC_LSM303DLHC
         if (lsm303dlhcAccDetect(dev)) {
@@ -113,7 +115,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_MPU6050: // MPU6050
 #ifdef USE_ACC_MPU6050
         if (mpu6050AccDetect(dev)) {
@@ -124,7 +130,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_MMA8452: // MMA8452
 #ifdef USE_ACC_MMA8452
 #ifdef NAZE
@@ -140,7 +150,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_BMA280: // BMA280
 #ifdef USE_ACC_BMA280
         if (bma280Detect(dev)) {
@@ -151,7 +165,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_MPU6000:
 #ifdef USE_ACC_SPI_MPU6000
         if (mpu6000SpiAccDetect(dev)) {
@@ -162,7 +180,11 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_MPU6500:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
@@ -177,17 +199,11 @@ retry:
             break;
         }
 #endif
-    case ACC_MPU9250:
-#ifdef USE_ACC_SPI_MPU9250
-        if (mpu9250SpiAccDetect(dev)) {
-#ifdef ACC_MPU9250_ALIGN
-            dev->accAlign = ACC_MPU9250_ALIGN;
-#endif
-            accHardware = ACC_MPU9250;
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
             break;
         }
-#endif
-        ; // fallthrough
+
     case ACC_FAKE:
 #ifdef USE_FAKE_ACC
         if (fakeAccDetect(dev)) {
@@ -195,17 +211,14 @@ retry:
             break;
         }
 #endif
-        ; // fallthrough
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (accHardwareToUse != ACC_AUTODETECT) {
+            break;
+        }
+
     case ACC_NONE: // disable ACC
         accHardware = ACC_NONE;
         break;
-    }
-
-    // Found anything? Check if error or ACC is really missing.
-    if (accHardware == ACC_NONE && accHardwareToUse != ACC_AUTODETECT && accHardwareToUse != ACC_NONE) {
-        // Nothing was found and we have a forced sensor that isn't present.
-        accHardwareToUse = ACC_AUTODETECT;
-        goto retry;
     }
 
     addBootlogEvent6(BOOT_EVENT_ACC_DETECTION, BOOT_EVENT_FLAGS_NONE, accHardware, 0, 0, 0);

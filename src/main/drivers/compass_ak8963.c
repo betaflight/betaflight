@@ -42,7 +42,6 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
-#include "accgyro_spi_mpu9250.h"
 #include "compass_ak8963.h"
 
 // This sensor is available in MPU-9250.
@@ -85,17 +84,7 @@
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
-// FIXME pretend we have real MPU9250 support
-// Is an separate MPU9250 driver really needed? The GYRO/ACC part between MPU6500 and MPU9250 is exactly the same.
-#if defined(MPU6500_SPI_INSTANCE) && !defined(MPU9250_SPI_INSTANCE)
-#define MPU9250_SPI_INSTANCE
-#define verifympu9250WriteRegister mpu6500WriteRegister
-#define mpu9250WriteRegister mpu6500WriteRegister
-#define mpu9250ReadRegister mpu6500ReadRegister
-#endif
-
-#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
-
+#if defined(USE_SPI) && defined(MPU6500_SPI_INSTANCE)
 typedef struct queuedReadState_s {
     bool waiting;
     uint8_t len;
@@ -112,22 +101,22 @@ static queuedReadState_t queuedRead = { false, 0, 0};
 
 static bool ak8963SensorRead(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *buf)
 {
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
     delay(10);
     __disable_irq();
-    mpu9250ReadRegister(MPU_RA_EXT_SENS_DATA_00, len_, buf);               // read I2C
+    mpu6500ReadRegister(MPU_RA_EXT_SENS_DATA_00, len_, buf);               // read I2C
     __enable_irq();
     return true;
 }
 
 static bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 {
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_);               // set I2C slave address for write
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_DO, data);                  // set I2C salve value
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_CTRL, 0x81);                // write 1 byte
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_);               // set I2C slave address for write
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_DO, data);                  // set I2C salve value
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_CTRL, 0x81);                // write 1 byte
     return true;
 }
 
@@ -139,9 +128,9 @@ static bool ak8963SensorStartRead(uint8_t addr_, uint8_t reg_, uint8_t len_)
 
     queuedRead.len = len_;
 
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
-    verifympu9250WriteRegister(MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_ADDR, addr_ | READ_FLAG);   // set I2C slave address for read
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_REG, reg_);                 // set I2C slave register
+    mpu6500WriteRegister(MPU_RA_I2C_SLV0_CTRL, len_ | 0x80);         // read number of bytes
 
     queuedRead.readStartedAt = micros();
     queuedRead.waiting = true;
@@ -176,7 +165,7 @@ static bool ak8963SensorCompleteRead(uint8_t *buf)
 
     queuedRead.waiting = false;
 
-    mpu9250ReadRegister(MPU_RA_EXT_SENS_DATA_00, queuedRead.len, buf);               // read I2C buffer
+    mpu6500ReadRegister(MPU_RA_EXT_SENS_DATA_00, queuedRead.len, buf);               // read I2C buffer
     return true;
 }
 #else
@@ -219,7 +208,7 @@ static bool ak8963Init()
     ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS2, 1, &status);
 
     // Trigger first measurement
-#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+#if defined(USE_SPI) && defined(MPU6500_SPI_INSTANCE)
     ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_CONT1);
 #else
     ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
@@ -234,7 +223,7 @@ static bool ak8963Read(int16_t *magData)
 
     static bool lastReadResult = false;
 
-#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+#if defined(USE_SPI) && defined(MPU6500_SPI_INSTANCE)
     static int16_t cachedMagData[3];
 
     // set magData to latest cached value
@@ -316,7 +305,7 @@ restart:
     magData[Y] = (int16_t)(buf[3] << 8 | buf[2]) * magGain[Y];
     magData[Z] = (int16_t)(buf[5] << 8 | buf[4]) * magGain[Z];
 
-#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+#if defined(USE_SPI) && defined(MPU6500_SPI_INSTANCE)
     // cache mag data for reuse
     memcpy(cachedMagData, magData, sizeof(cachedMagData));
     state = CHECK_STATUS;
@@ -335,16 +324,16 @@ bool ak8963Detect(magDev_t *mag)
         bool ack = false;
         uint8_t sig = 0;
 
-#if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
+#if defined(USE_SPI) && defined(MPU6500_SPI_INSTANCE)
         // initialze I2C master via SPI bus (MPU9250)
 
-        ack = verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
+        ack = mpu6500WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
         delay(10);
 
-        ack = verifympu9250WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
+        ack = mpu6500WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
         delay(10);
 
-        ack = verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
+        ack = mpu6500WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
         delay(10);
 #endif
 

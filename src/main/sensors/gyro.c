@@ -42,7 +42,6 @@
 #include "drivers/accgyro_lsm303dlhc.h"
 #include "drivers/accgyro_spi_mpu6000.h"
 #include "drivers/accgyro_spi_mpu6500.h"
-#include "drivers/accgyro_spi_mpu9250.h"
 #include "drivers/gyro_sync.h"
 #include "drivers/io.h"
 #include "drivers/logging.h"
@@ -168,19 +167,6 @@ static bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
 #endif
         ; // fallthrough
 
-case GYRO_MPU9250:
-#ifdef USE_GYRO_SPI_MPU9250
-    if (mpu9250SpiGyroDetect(dev))
-    {
-        gyroHardware = GYRO_MPU9250;
-#ifdef GYRO_MPU9250_ALIGN
-        dev->gyroAlign = GYRO_MPU9250_ALIGN;
-#endif
-
-        break;
-    }
-#endif
-    ; // fallthrough
     case GYRO_FAKE:
 #ifdef USE_FAKE_GYRO
         if (fakeGyroDetect(dev)) {
@@ -209,7 +195,7 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
 {
     gyroConfig = gyroConfigToUse;
     memset(&gyro, 0, sizeof(gyro));
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250)
+#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
     const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
     mpuDetect(&gyro.dev);
     mpuReset = gyro.dev.mpuConfiguration.reset;
