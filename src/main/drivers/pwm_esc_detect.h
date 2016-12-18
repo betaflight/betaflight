@@ -14,22 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include "common/time.h"
-
+#ifdef BRUSHED_ESC_AUTODETECT
 typedef enum {
-    CRSF_FRAME_START = 0,
-    CRSF_FRAME_ATTITUDE = CRSF_FRAME_START,
-    CRSF_FRAME_BATTERY_SENSOR,
-    CRSF_FRAME_FLIGHT_MODE,
-    CRSF_FRAME_GPS
-} crsfFrameType_e;
+    MOTOR_UNKNOWN = 0,
+    MOTOR_BRUSHED,
+    MOTOR_BRUSHLESS
+} HardwareMotorTypes_e;
 
-void initCrsfTelemetry(void);
-bool checkCrsfTelemetryState(void);
-void handleCrsfTelemetry(timeUs_t currentTimeUs);
+extern uint8_t hardwareMotorType;
 
-int getCrsfFrame(uint8_t *frame, crsfFrameType_e frameType);
-
+void detectBrushedESC(void);
+#endif

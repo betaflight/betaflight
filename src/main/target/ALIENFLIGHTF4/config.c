@@ -24,6 +24,7 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 
@@ -62,7 +63,7 @@ void targetConfiguration(master_t *config)
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        config->pid_process_denom = 1;
+        config->pidConfig.pid_process_denom = 1;
     }
 
     if (hardwareRevision == AFF4_REV_1) {

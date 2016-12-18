@@ -45,6 +45,7 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -283,11 +284,10 @@ void init(void)
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(&masterConfig.ppmConfig, motorConfig()->motorPwmProtocol);
+        ppmRxInit(ppmConfig(), motorConfig()->motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);
+        pwmRxInit(pwmConfig());
     }
-    pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
@@ -416,7 +416,7 @@ void init(void)
     LED1_OFF;
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
-    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
+    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(&currentProfile->pidProfile);
     pidInitConfig(&currentProfile->pidProfile);
 

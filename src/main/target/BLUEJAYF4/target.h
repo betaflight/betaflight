@@ -144,7 +144,6 @@
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 #define LED_STRIP
 

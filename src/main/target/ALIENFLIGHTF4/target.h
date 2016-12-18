@@ -151,7 +151,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN  PC5
 
 // LED strip configuration using RC5 pin.
-//#define LED_STRIP
+#define LED_STRIP
 
 #define SPEKTRUM_BIND
 // USART2, PA3

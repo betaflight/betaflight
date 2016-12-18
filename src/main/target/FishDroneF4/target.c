@@ -15,17 +15,22 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include <platform.h>
+#include "drivers/io.h"
 
-#include "config/config_master.h"
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+	DEF_TIM(TIM3, CH3, PB0, TIM_USE_PPM, TIMER_INPUT_ENABLED, 0 ), 	  	// PPM IN
 
-// Motolab target supports 2 different type of boards Tornado / Cyclone.
-void targetConfiguration(master_t *config)
-{
-    config->gyroConfig.gyro_sync_denom = 4;
-    config->pidConfig.pid_process_denom = 1;
-}
+	DEF_TIM(TIM4, CH3, PB8, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED, 0 ), 	// S1_OUT - DMA1_ST7
+	DEF_TIM(TIM2, CH3, PA2, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED, 0 ), 	// S2_OUT - DMA1_ST1
+	DEF_TIM(TIM2, CH1, PA15,TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED, 0 ), 	// S3_OUT - DMA1_ST5
+	DEF_TIM(TIM2, CH4, PA3, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED, 1 ), 	// S4_OUT - DMA1_ST6
+
+	DEF_TIM(TIM5, CH1, PA0, TIM_USE_LED,   TIMER_OUTPUT_ENABLED, 0 ), 	// LED_STRIP - DMA1_ST2
+};

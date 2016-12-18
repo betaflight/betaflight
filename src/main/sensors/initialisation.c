@@ -14,27 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "platform.h"
 
-#include "build/build_config.h"
-
-#include "common/axis.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
-
-#include "drivers/accgyro_mpu.h"
-#include "drivers/io.h"
-#include "drivers/system.h"
-#include "drivers/exti.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/barometer.h"
-#include "drivers/compass.h"
-#include "drivers/sonar_hcsr04.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
@@ -47,25 +36,8 @@
 #include "sensors/sonar.h"
 #include "sensors/initialisation.h"
 
-#ifdef USE_HARDWARE_REVISION_DETECTION
-#include "hardware_revision.h"
-#endif
-
-
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
-
-const extiConfig_t *selectMPUIntExtiConfig(void)
-{
-#if defined(MPU_INT_EXTI)
-    static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
-    return &mpuIntExtiConfig;
-#elif defined(USE_HARDWARE_REVISION_DETECTION)
-    return selectMPUIntExtiConfigByHardwareRevision();
-#else
-    return NULL;
-#endif
-}
 
 #ifdef SONAR
 static bool sonarDetect(void)
@@ -86,26 +58,12 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
         const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
-
-#if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-
-    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-
-    mpuDetectionResult_t *mpuDetectionResult = mpuDetect(extiConfig);
-    UNUSED(mpuDetectionResult);
-#endif
-
-    memset(&gyro, 0, sizeof(gyro));
-    if (!gyroDetect(&gyro.dev)) {
+    // gyro must be initialised before accelerometer
+    if (!gyroInit(gyroConfig)) {
         return false;
     }
-    // gyro must be initialised before accelerometer
-    gyroInit(gyroConfig);
 
-    memset(&acc, 0, sizeof(acc));
-    if (accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
-        accInit(gyro.targetLooptime);
-    }
+    accInit(accelerometerConfig, gyro.targetLooptime);
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG

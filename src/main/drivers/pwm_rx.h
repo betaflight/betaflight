@@ -33,6 +33,7 @@ typedef struct ppmConfig_s {
 
 typedef struct pwmConfig_s {
     ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
+    inputFilteringMode_e inputFilteringMode;
 } pwmConfig_t;
 
 void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
@@ -43,7 +44,5 @@ uint16_t ppmRead(uint8_t channel);
 
 bool isPPMDataBeingReceived(void);
 void resetPPMDataReceivedState(void);
-
-void pwmRxSetInputFilteringMode(inputFilteringMode_e initialInputFilteringMode);
 
 bool isPWMDataBeingReceived(void);

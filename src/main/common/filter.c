@@ -46,11 +46,12 @@ void pt1FilterInit(pt1Filter_t *filter, uint8_t f_cut, float dT)
 {
     filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
     filter->dT = dT;
+    filter->k = filter->dT / (filter->RC + filter->dT);
 }
 
 float pt1FilterApply(pt1Filter_t *filter, float input)
 {
-    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
+    filter->state = filter->state + filter->k * (input - filter->state);
     return filter->state;
 }
 
@@ -60,9 +61,10 @@ float pt1FilterApply4(pt1Filter_t *filter, float input, uint8_t f_cut, float dT)
     if (!filter->RC) {
         filter->RC = 1.0f / ( 2.0f * M_PI_FLOAT * f_cut );
         filter->dT = dT;
+        filter->k = filter->dT / (filter->RC + filter->dT);
     }
 
-    filter->state = filter->state + filter->dT / (filter->RC + filter->dT) * (input - filter->state);
+    filter->state = filter->state + filter->k * (input - filter->state);
 
     return filter->state;
 }
@@ -89,22 +91,22 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
 
     switch (filterType) {
-        case FILTER_LPF:
-            b0 = (1 - cs) / 2;
-            b1 = 1 - cs;
-            b2 = (1 - cs) / 2;
-            a0 = 1 + alpha;
-            a1 = -2 * cs;
-            a2 = 1 - alpha;
-            break;
-        case FILTER_NOTCH:
-            b0 =  1;
-            b1 = -2 * cs;
-            b2 =  1;
-            a0 =  1 + alpha;
-            a1 = -2 * cs;
-            a2 =  1 - alpha;
-            break;
+    case FILTER_LPF:
+        b0 = (1 - cs) / 2;
+        b1 = 1 - cs;
+        b2 = (1 - cs) / 2;
+        a0 = 1 + alpha;
+        a1 = -2 * cs;
+        a2 = 1 - alpha;
+        break;
+    case FILTER_NOTCH:
+        b0 =  1;
+        b1 = -2 * cs;
+        b2 =  1;
+        a0 =  1 + alpha;
+        a1 = -2 * cs;
+        a2 =  1 - alpha;
+        break;
     }
 
     // precompute the coefficients

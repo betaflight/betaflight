@@ -15,52 +15,41 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
-#ifdef USE_FAKE_MAG
-
 #include "build/build_config.h"
 
-#include "common/axis.h"
+#include "system.h"
+#include "io.h"
+#include "pwm_esc_detect.h"
+#include "timer.h"
 
-#include "compass.h"
-#include "compass_fake.h"
+#ifdef BRUSHED_ESC_AUTODETECT
+uint8_t hardwareMotorType = MOTOR_UNKNOWN;
 
-
-static int16_t fakeMagData[XYZ_AXIS_COUNT];
-
-static bool fakeMagInit(void)
+void detectBrushedESC(void)
 {
-    // initially point north
-    fakeMagData[X] = 4096;
-    fakeMagData[Y] = 0;
-    fakeMagData[Z] = 0;
-    return true;
-}
+    int i = 0;
+    while (!(timerHardware[i].usageFlags & TIM_USE_MOTOR) && (i < USABLE_TIMER_CHANNEL_COUNT)) {
+        i++;
+    }
 
-void fakeMagSet(int16_t x, int16_t y, int16_t z)
-{
-    fakeMagData[X] = x;
-    fakeMagData[Y] = y;
-    fakeMagData[Z] = z;
-}
+    IO_t MotorDetectPin = IOGetByTag(timerHardware[i].tag);
+    IOInit(MotorDetectPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(MotorDetectPin, IOCFG_IPU);
 
-static bool fakeMagRead(int16_t *magData)
-{
-    magData[X] = fakeMagData[X];
-    magData[Y] = fakeMagData[Y];
-    magData[Z] = fakeMagData[Z];
-    return true;
-}
+    delayMicroseconds(10);  // allow configuration to settle
 
-bool fakeMagDetect(magDev_t *mag)
-{
-    mag->init = fakeMagInit;
-    mag->read = fakeMagRead;
-    return true;
+    // Check presence of brushed ESC's
+    if (IORead(MotorDetectPin)) {
+        hardwareMotorType = MOTOR_BRUSHLESS;
+    } else {
+        hardwareMotorType = MOTOR_BRUSHED;
+    }
 }
-#endif // USE_FAKE_MAG
-
+#endif

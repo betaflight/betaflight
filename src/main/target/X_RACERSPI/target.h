@@ -101,7 +101,6 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 #define REMAP_TIM17_DMA

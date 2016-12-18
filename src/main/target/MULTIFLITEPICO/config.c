@@ -72,7 +72,7 @@ void targetConfiguration(master_t *config)
     config->motorConfig.motorPwmRate = 17000;
 
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 1;
+    config->pidConfig.pid_process_denom = 1;
 
     config->profile[0].pidProfile.P8[ROLL] = 70;
     config->profile[0].pidProfile.I8[ROLL] = 62;

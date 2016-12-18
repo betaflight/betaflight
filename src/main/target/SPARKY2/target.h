@@ -35,7 +35,6 @@
 #define INVERTER                PC6
 #define INVERTER_USART          USART6
 
-#define USE_DSHOT
 #define USE_ESC_SENSOR
 
 // MPU9250 interrupt

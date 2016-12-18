@@ -598,7 +598,6 @@ HIGHEND_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             sensors/esc_sensor.c \
-            io/vtx_smartaudio.c
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -702,9 +701,13 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
+<<<<<<< HEAD
             cms/cms_menu_vtx.c \
-            io/vtx_smartaudio.c
+            io/vtx_smartaudio.c 
+=======
+            cms/cms_menu_vtx.c
 endif #F3
+>>>>>>> betaflight/master
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
 VCP_SRC = \

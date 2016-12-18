@@ -133,7 +133,7 @@ void lsm303dlhcAccInit(accDev_t *acc)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static bool lsm303dlhcAccRead(int16_t *gyroADC)
+static bool lsm303dlhcAccRead(accDev_t *acc)
 {
     uint8_t buf[6];
 
@@ -144,9 +144,9 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
     }
 
     // the values range from -8192 to +8191
-    gyroADC[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
-    gyroADC[Y] = (int16_t)((buf[3] << 8) | buf[2]) / 2;
-    gyroADC[Z] = (int16_t)((buf[5] << 8) | buf[4]) / 2;
+    acc->ADCRaw[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
+    acc->ADCRaw[Y] = (int16_t)((buf[3] << 8) | buf[2]) / 2;
+    acc->ADCRaw[Z] = (int16_t)((buf[5] << 8) | buf[4]) / 2;
 
 #if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
