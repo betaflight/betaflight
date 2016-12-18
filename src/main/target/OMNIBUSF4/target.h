@@ -125,13 +125,13 @@
 #define SOFTSERIAL1_TX_PIN      PC9 // S6_IN
 
 #define USE_SOFTSERIAL2
-// Working
-//#define SOFTSERIAL2_RX_PIN      PA1 // PWM5, LED_STRIP
-//#define SOFTSERIAL2_TX_PIN      PA8 // PWM6
+// Special case of using different timers for RX and TX
+#define SOFTSERIAL2_RX_PIN      PA1 // PWM5, LED_STRIP
+#define SOFTSERIAL2_TX_PIN      PA8 // PWM6
 
-// Experimental
-#define SOFTSERIAL2_RX_PIN      PA8 // PWM6
-#define SOFTSERIAL2_TX_PIN      PB15 // S2_IN
+// Experimental (untested)
+//#define SOFTSERIAL2_RX_PIN      PA8 // PWM6
+//#define SOFTSERIAL2_TX_PIN      PB15 // S2_IN
 
 #define SERIAL_PORT_COUNT       6 //VCP, USART1, USART3, USART6, SOFTSERIALx2
 
