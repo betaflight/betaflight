@@ -1485,8 +1485,8 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     adjustmentRange_t *arDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-        ar = &masterConfig.adjustmentRanges[i];
-        arDefault = &defaultConfig->adjustmentRanges[i];
+        ar = &adjustmentProfile()->adjustmentRanges[i];
+        arDefault = &defaultConfig->adjustmentProfile.adjustmentRanges[i];
         equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
             && ar->range.startStep == arDefault->range.startStep
             && ar->range.endStep == arDefault->range.endStep
@@ -1526,7 +1526,7 @@ static void cliAdjustmentRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *ar = &adjustmentProfile()->adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);

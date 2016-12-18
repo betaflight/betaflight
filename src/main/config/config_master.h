@@ -99,6 +99,7 @@
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define flashConfig(x) (&masterConfig.flashConfig)
 #define pidConfig(x) (&masterConfig.pidConfig)
+#define adjustmentProfile(x) (&masterConfig.adjustmentProfile)
 
 
 // System-wide
@@ -216,8 +217,7 @@ typedef struct master_s {
     uint8_t current_profile_index;
 
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-
+    adjustmentProfile_t adjustmentProfile;
 #ifdef VTX
     uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
     uint8_t vtx_channel; //1-8

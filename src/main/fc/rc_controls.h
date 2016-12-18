@@ -263,6 +263,10 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 15
 
+typedef struct adjustmentProfile_s {
+    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
+} adjustmentProfile_t;
+
 bool isAirmodeActive(void);
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);

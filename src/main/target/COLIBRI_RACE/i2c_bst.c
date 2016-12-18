@@ -730,7 +730,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_ADJUSTMENT_RANGES:
             for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
                 bstWrite8(adjRange->adjustmentIndex);
                 bstWrite8(adjRange->auxChannelIndex);
                 bstWrite8(adjRange->range.startStep);
@@ -1076,7 +1076,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_ADJUSTMENT_RANGE:
             i = bstRead8();
             if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
                 i = bstRead8();
                 if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     adjRange->adjustmentIndex = i;

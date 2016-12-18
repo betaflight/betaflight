@@ -579,8 +579,8 @@ void processRx(timeUs_t currentTimeUs)
     updateActivatedModes(masterConfig.modeActivationConditions);
 
     if (!cliMode) {
-        updateAdjustmentStates(masterConfig.adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
+        updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
+        processRcAdjustments(currentControlRateProfile, rxConfig());
     }
 
     bool canUseHorizonMode = true;
