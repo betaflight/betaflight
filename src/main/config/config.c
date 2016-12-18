@@ -662,11 +662,11 @@ static void resetConf(void)
     }
 
 #ifdef LED_STRIP
-    applyDefaultColors(masterConfig.colors);
-    applyDefaultLedStripConfig(masterConfig.ledConfigs);
-    applyDefaultModeColors(masterConfig.modeColors);
-    applyDefaultSpecialColors(&(masterConfig.specialColors));
-    masterConfig.ledstrip_visual_beeper = 0;
+    applyDefaultColors(ledStripConfig()->colors);
+    applyDefaultLedStripConfig(ledStripConfig()->ledConfigs);
+    applyDefaultModeColors(ledStripConfig()->modeColors);
+    applyDefaultSpecialColors(&(ledStripConfig()->specialColors));
+    ledStripConfig()->ledstrip_visual_beeper = 0;
 #endif
 
 #ifdef BLACKBOX

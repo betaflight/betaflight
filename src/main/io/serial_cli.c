@@ -932,7 +932,7 @@ const clivalue_t valueTable[] = {
     { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Y], .config.minmax = { -32768,  32767 } },
     { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #ifdef LED_STRIP
-    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &osdProfile()->video_system, .config.minmax = { 0, 2 } },
@@ -1523,7 +1523,7 @@ static void cliLed(char *cmdline)
 
     if (isEmpty(cmdline)) {
         for (i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-            generateLedConfig(&masterConfig.ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
+            generateLedConfig(&ledStripConfig()->ledConfigs[i], ledConfigBuffer, sizeof(ledConfigBuffer));
             cliPrintf("led %u %s\r\n", i, ledConfigBuffer);
         }
     } else {
@@ -1549,9 +1549,9 @@ static void cliColor(char *cmdline)
         for (i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
             cliPrintf("color %u %d,%u,%u\r\n",
                 i,
-                masterConfig.colors[i].h,
-                masterConfig.colors[i].s,
-                masterConfig.colors[i].v
+                ledStripConfig()->colors[i].h,
+                ledStripConfig()->colors[i].s,
+                ledStripConfig()->colors[i].v
             );
         }
     } else {
