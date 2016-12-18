@@ -41,6 +41,7 @@
 #else
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
+#define SKIP_CLI_RESOURCES
 #endif
 
 #if (FLASH_SIZE > 128)
@@ -68,6 +69,7 @@
 #define PWM_DRIVER_PCA9685
 #define NAV_MAX_WAYPOINTS       60
 #else
+#define CLI_MINIMAL_VERBOSITY
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_CLI_RESOURCES
 #define SKIP_RX_MSP
