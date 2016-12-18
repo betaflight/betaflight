@@ -839,8 +839,8 @@ const clivalue_t valueTable[] = {
 
     { "deadband",                   VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.deadband, .config.minmax = { 0,  32 }, },
     { "yaw_deadband",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 }, },
-    { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.profile[0].rcControlsConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, },
-    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.profile[0].rcControlsConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, },
+    { "pos_hold_deadband",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, },
+    { "alt_hold_deadband",          VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].rcControlsConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, },
 
     { "throttle_tilt_comp_str",     VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].throttle_tilt_compensation_strength, .config.minmax = { 0,  100 }, },
 
@@ -2648,11 +2648,6 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_SERVOS
 #ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# servo\r\n");
-#endif
-        printServo(dumpMask, &defaultConfig);
-
-#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo mix\r\n");
 #endif
         // print custom servo mixer if exists
@@ -2699,16 +2694,6 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
         printModeColor(dumpMask, &defaultConfig);
 #endif
-
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# aux\r\n");
-#endif
-        printAux(dumpMask, &defaultConfig);
-
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# adjrange\r\n");
-#endif
-        printAdjustmentRange(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# rxrange\r\n");
@@ -2776,6 +2761,23 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
     cliProfile("");
     cliPrint("\r\n");
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
+
+#ifndef CLI_MINIMAL_VERBOSITY
+    cliPrint("\r\n# aux\r\n");
+#endif
+    printAux(dumpMask, defaultConfig);
+
+#ifndef CLI_MINIMAL_VERBOSITY
+    cliPrint("\r\n# adjrange\r\n");
+#endif
+    printAdjustmentRange(dumpMask, defaultConfig);
+
+#ifdef USE_SERVOS
+#ifndef CLI_MINIMAL_VERBOSITY
+    cliPrint("\r\n# servo\r\n");
+#endif
+    printServo(dumpMask, defaultConfig);
+#endif
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
