@@ -381,7 +381,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("pflags", "get persistent flags", NULL, cliPFlags),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("smix", "servo mixer",
-        "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
+        "<rule> <servo> <source> <rate> <speed> <min> <max>\r\n"
         "\treset\r\n"
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> r|n", cliServoMix),
@@ -1883,6 +1883,23 @@ static void printServo(uint8_t dumpMask, master_t *defaultConfig)
             servoConf->forwardFromChannel
         );
     }
+
+    // print servo directions
+    for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servoParam_t *servoConf = &currentProfile->servoConf[i];
+        servoParam_t *servoConfDefault = &defaultConfig->profile[0].servoConf[i];
+        bool equalsDefault = servoConf->reversedSources == servoConfDefault->reversedSources;
+        for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
+            equalsDefault = ~(servoConf->reversedSources ^ servoConfDefault->reversedSources) & (1 << channel);
+            const char *format = "smix reverse %d %d r\r\n";
+            if (servoConfDefault->reversedSources & (1 << channel)) {
+                cliDefaultPrintf(dumpMask, equalsDefault, format, i , channel);
+            }
+            if (servoConf->reversedSources & (1 << channel)) {
+                cliDumpPrintf(dumpMask, equalsDefault, format, i , channel);
+            }
+        }
+    }
 }
 
 static void cliServo(char *cmdline)
@@ -2079,7 +2096,7 @@ static void cliServoMix(char *cmdline)
 
         cliServoMix("reverse");
     } else {
-        enum {RULE = 0, TARGET, INPUT, RATE, SPEED, MIN, MAX, BOX, ARGS_COUNT};
+        enum {RULE = 0, TARGET, INPUT, RATE, SPEED, MIN, MAX, ARGS_COUNT};
         ptr = strtok(cmdline, " ");
         while (ptr != NULL && check < ARGS_COUNT) {
             args[check++] = atoi(ptr);
@@ -2098,8 +2115,7 @@ static void cliServoMix(char *cmdline)
             args[RATE] >= -100 && args[RATE] <= 100 &&
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
             args[MIN] >= 0 && args[MIN] <= 100 &&
-            args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX] &&
-            args[BOX] >= 0 && args[BOX] <= MAX_SERVO_BOXES) {
+            args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX]) {
             masterConfig.customServoMixer[i].targetChannel = args[TARGET];
             masterConfig.customServoMixer[i].inputSource = args[INPUT];
             masterConfig.customServoMixer[i].rate = args[RATE];
@@ -3450,7 +3466,7 @@ static void cliPFlags(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# Persistent config flags: 0x%08x", masterConfig.persistentFlags );
+    cliPrintf("# Persistent config flags: 0x%08x\r\n", masterConfig.persistentFlags );
 }
 
 void cliProcess(void)
