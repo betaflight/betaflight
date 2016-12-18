@@ -51,9 +51,10 @@
 
 #include "io/beeper.h"
 
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "config/feature.h"
 
@@ -230,6 +231,9 @@ retry:
 bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
+    // copy over the common gyro mpu settings
+    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
+    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
     if (!accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
         return false;
     }
