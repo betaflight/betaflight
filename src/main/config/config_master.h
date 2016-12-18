@@ -87,6 +87,7 @@
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
+#define ledStripConfig(x) (&masterConfig.ledStripConfig)
 
 
 // System-wide
@@ -156,11 +157,7 @@ typedef struct master_s {
 
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
-    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
-    specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    ledStripConfig_t ledStripConfig;
 #endif
 
 #ifdef OSD

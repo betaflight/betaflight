@@ -537,7 +537,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
+    ledStripInit(ledStripConfig()->ledConfigs, ledStripConfig()->colors, ledStripConfig()->modeColors, &ledStripConfig()->specialColors);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

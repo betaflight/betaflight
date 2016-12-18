@@ -662,11 +662,11 @@ void createDefaultConfig(master_t *config)
     }
 
 #ifdef LED_STRIP
-    applyDefaultColors(config->colors);
-    applyDefaultLedStripConfig(config->ledConfigs);
-    applyDefaultModeColors(config->modeColors);
-    applyDefaultSpecialColors(&(config->specialColors));
-    config->ledstrip_visual_beeper = 0;
+    applyDefaultColors(config->ledStripConfig.colors);
+    applyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
+    applyDefaultModeColors(config->ledStripConfig.modeColors);
+    applyDefaultSpecialColors(&(config->ledStripConfig.specialColors));
+    config->ledStripConfig.ledstrip_visual_beeper = 0;
 #endif
 
 #ifdef BLACKBOX

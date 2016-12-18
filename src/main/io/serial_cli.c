@@ -954,7 +954,7 @@ const clivalue_t valueTable[] = {
     { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Y], .config.minmax = { -32768,  32767 } },
     { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #ifdef LED_STRIP
-    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
+    { "ledstrip_visual_beeper",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &osdProfile()->video_system, .config.minmax = { 0, 2 } },
@@ -1714,8 +1714,8 @@ static void printLed(uint8_t dumpMask, master_t *defaultConfig)
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-        ledConfig = masterConfig.ledConfigs[i];
-        ledConfigDefault = defaultConfig->ledConfigs[i];
+        ledConfig = masterConfig.ledStripConfig.ledConfigs[i];
+        ledConfigDefault = defaultConfig->ledStripConfig.ledConfigs[i];
         equalsDefault = ledConfig == ledConfigDefault;
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
@@ -1752,8 +1752,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
     hsvColor_t *colorDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
-        color = &masterConfig.colors[i];
-        colorDefault = &defaultConfig->colors[i];
+        color = &masterConfig.ledStripConfig.colors[i];
+        colorDefault = &defaultConfig->ledStripConfig.colors[i];
         equalsDefault = color->h == colorDefault->h
             && color->s == colorDefault->s
             && color->v == colorDefault->v;
@@ -1798,8 +1798,8 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
 {
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
-            int colorIndex = modeColors[i].color[j];
-            int colorIndexDefault = defaultConfig->modeColors[i].color[j];
+            int colorIndex = ledStripConfig()->modeColors[i].color[j];
+            int colorIndexDefault = defaultConfig->ledStripConfig.modeColors[i].color[j];
             const char *format = "mode_color %u %u %u\r\n";
             cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
             cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
@@ -1808,8 +1808,8 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
 
     const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
-        int colorIndex = specialColors.color[j];
-        int colorIndexDefault = defaultConfig->specialColors.color[j];
+        int colorIndex = ledStripConfig()->specialColors.color[j];
+        int colorIndexDefault = defaultConfig->ledStripConfig.specialColors.color[j];
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
