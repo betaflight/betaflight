@@ -524,7 +524,7 @@ COMMON_SRC = \
             fc/config.c \
             fc/fc_tasks.c \
             fc/fc_msp.c \
-            fc/mw.c \
+            fc/fc_main.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
@@ -586,7 +586,6 @@ HIGHEND_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
-            flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
             io/dashboard.c \

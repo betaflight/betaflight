@@ -63,7 +63,6 @@
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/failsafe.h"
-#include "flight/gtune.h"
 #include "flight/altitudehold.h"
 
 #include "config/config_profile.h"
@@ -108,30 +107,6 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 
     saveConfigAndNotify();
 }
-
-#ifdef GTUNE
-
-void updateGtuneState(void)
-{
-    static bool GTuneWasUsed = false;
-
-    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
-        if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            ENABLE_FLIGHT_MODE(GTUNE_MODE);
-            init_Gtune(&currentProfile->pidProfile);
-            GTuneWasUsed = true;
-        }
-        if (!FLIGHT_MODE(GTUNE_MODE) && !ARMING_FLAG(ARMED) && GTuneWasUsed) {
-            saveConfigAndNotify();
-            GTuneWasUsed = false;
-        }
-    } else {
-        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            DISABLE_FLIGHT_MODE(GTUNE_MODE);
-        }
-    }
-}
-#endif
 
 bool isCalibrating()
 {
@@ -199,20 +174,45 @@ void scaleRcCommandToFpvCamAngle(void) {
     rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
+#define THROTTLE_BUFFER_MAX 20
+#define THROTTLE_DELTA_MS 100
+
+ void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
+    static int index;
+    static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
+    const int rxRefreshRateMs = rxRefreshRate / 1000;
+    const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
+    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentProfile->pidProfile.itermThrottleThreshold / 2 : currentProfile->pidProfile.itermThrottleThreshold;
+
+    rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
+    if (index >= indexMax)
+        index = 0;
+
+    const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
+
+    if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
+        pidResetErrorGyroState();
+}
+
 void processRcCommand(void)
 {
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
+    static uint16_t currentRxRefreshRate;
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
 
+    if (isRXDataNew) {
+        currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
+        checkForThrottleErrorResetState(currentRxRefreshRate);
+    }
+
     if (rxConfig()->rcInterpolation || flightModeFlags) {
-        if (isRXDataNew) {
-            // Set RC refresh rate for sampling and channels to filter
-            switch (rxConfig()->rcInterpolation) {
+         // Set RC refresh rate for sampling and channels to filter
+        switch(rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):
-                rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
+                rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
                 break;
             case(RC_SMOOTHING_MANUAL):
                 rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
@@ -221,8 +221,9 @@ void processRcCommand(void)
             case(RC_SMOOTHING_DEFAULT):
             default:
                 rxRefreshRate = rxGetRefreshRate();
-            }
+        }
 
+        if (isRXDataNew) {
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {

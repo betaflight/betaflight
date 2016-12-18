@@ -35,7 +35,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"

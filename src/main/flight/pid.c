@@ -34,7 +34,6 @@
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation.h"
-#include "flight/gtune.h"
 
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
@@ -183,24 +182,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         }
     }
 
-    // Yet Highly experimental and under test and development
-    // Throttle coupled to Igain like inverted TPA // 50hz calculation (should cover all rx protocols)
-    static float kiThrottleGain = 1.0f;
-    if (pidProfile->itermThrottleGain) {
-        const uint16_t maxLoopCount = 20000 / targetPidLooptime;
-        const float throttleItermGain = (float)pidProfile->itermThrottleGain * 0.001f;
-        static int16_t previousThrottle;
-        static uint16_t loopIncrement;
-
-        if (loopIncrement >= maxLoopCount) {
-            kiThrottleGain = 1.0f + constrainf((float)(ABS(rcCommand[THROTTLE] - previousThrottle)) * throttleItermGain, 0.0f, 5.0f); // Limit to factor 5
-            previousThrottle = rcCommand[THROTTLE];
-            loopIncrement = 0;
-        } else {
-            loopIncrement++;
-        }
-    }
-
     // ----------PID controller----------
     const float tpaFactor = PIDweight[0] / 100.0f; // tpa is now float
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
@@ -247,10 +228,9 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         // Reduce strong Iterm accumulation during higher stick inputs
         const float accumulationThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
         const float setpointRateScaler = constrainf(1.0f - (ABS(setpointRate[axis]) / accumulationThreshold), 0.0f, 1.0f);
-        const float itermScaler = setpointRateScaler * kiThrottleGain;
 
         float ITerm = previousGyroIf[axis];
-        ITerm += Ki[axis] * errorRate * dT * itermScaler;;
+        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler;
         // limit maximum integrator value to prevent WindUp
         ITerm = constrainf(ITerm, -250.0f, 250.0f);
         previousGyroIf[axis] = ITerm;
@@ -290,12 +270,6 @@ void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclinatio
         axisPIDf[axis] = PTerm + ITerm + DTerm;
         // Disable PID control at zero throttle
         if (!pidStabilisationEnabled) axisPIDf[axis] = 0;
-
-#ifdef GTUNE
-        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            calculate_Gtune(axis);
-        }
-#endif
 
 #ifdef BLACKBOX
         axisPID_P[axis] = PTerm;

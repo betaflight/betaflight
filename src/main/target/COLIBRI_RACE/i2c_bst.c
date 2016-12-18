@@ -29,7 +29,7 @@
 #include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
