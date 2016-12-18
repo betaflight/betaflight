@@ -55,9 +55,8 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_2;
 } gyroConfig_t;
 
-bool gyroDetect(gyroDev_t *dev);
 void gyroSetCalibrationCycles(void);
-void gyroInit(const gyroConfig_t *gyroConfigToUse);
+bool gyroInit(const gyroConfig_t *gyroConfigToUse);
+void gyroInitFilters(void);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);
-

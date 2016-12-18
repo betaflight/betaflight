@@ -137,7 +137,6 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#define USE_DSHOT
 #define USE_ESC_TELEMETRY
 
 #define TARGET_IO_PORTA         0xffff

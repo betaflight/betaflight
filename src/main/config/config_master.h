@@ -100,6 +100,7 @@
 #define sdcardConfig(x) (&masterConfig.sdcardConfig)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define flashConfig(x) (&masterConfig.flashConfig)
+#define pidConfig(x) (&masterConfig.pidConfig)
 
 // System-wide
 typedef struct master_s {
@@ -129,9 +130,8 @@ typedef struct master_s {
     imuConfig_t imuConfig;
 
     rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
 
-    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+    pidConfig_t pidConfig;
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
 
@@ -155,7 +155,6 @@ typedef struct master_s {
 #endif
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
     armingConfig_t armingConfig;
 

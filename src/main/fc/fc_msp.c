@@ -46,6 +46,7 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
+#include "drivers/serial_escserial.h"
 
 #include "fc/config.h"
 #include "fc/mw.h"
@@ -182,14 +183,61 @@ typedef enum {
 #define RATEPROFILE_MASK (1 << 7)
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-static void msp4WayIfFn(serialPort_t *serialPort)
+#define ESC_4WAY 0xff
+
+uint8_t escMode;
+uint8_t escPortIndex = 0;
+
+#ifdef USE_ESCSERIAL
+static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
-    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-    // bootloader mode before try to connect any ESC
-    // Start to activate here
-    esc4wayProcess(serialPort);
-    // former used MSP uart is still active
-    // proceed as usual with MSP commands
+    escEnablePassthrough(serialPort, escPortIndex, escMode);
+}
+#endif
+
+static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    const unsigned int dataSize = sbufBytesRemaining(src);
+    if (dataSize == 0) {
+        // Legacy format
+
+        escMode = ESC_4WAY;
+    } else {
+        escMode = sbufReadU8(src);
+        escPortIndex = sbufReadU8(src);
+    }
+
+    switch(escMode) {
+    case ESC_4WAY:
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        sbufWriteU8(dst, esc4wayInit());
+
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = esc4wayProcess;
+        }
+
+        break;
+#ifdef USE_ESCSERIAL
+    case PROTOCOL_SIMONK:
+    case PROTOCOL_BLHELI:
+    case PROTOCOL_KISS:
+    case PROTOCOL_KISSALL:
+    case PROTOCOL_CASTLE:
+        if (escPortIndex < USABLE_TIMER_CHANNEL_COUNT || (escMode == PROTOCOL_KISS && escPortIndex == 255)) {
+            sbufWriteU8(dst, 1);
+
+            if (mspPostProcessFn) {
+                *mspPostProcessFn = mspEscPassthroughFn;
+            }
+
+            break;
+        }
+#endif
+    default:
+        sbufWriteU8(dst, 0);
+    }
 }
 #endif
 
@@ -431,21 +479,24 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
         state = MSP_SDCARD_STATE_FATAL;
     } else {
         switch (afatfs_getFilesystemState()) {
-            case AFATFS_FILESYSTEM_STATE_READY:
-                state = MSP_SDCARD_STATE_READY;
-                break;
-            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-                if (sdcard_isInitialized()) {
-                    state = MSP_SDCARD_STATE_FS_INIT;
-                } else {
-                    state = MSP_SDCARD_STATE_CARD_INIT;
-                }
-                break;
-            case AFATFS_FILESYSTEM_STATE_FATAL:
-            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-            default:
-                state = MSP_SDCARD_STATE_FATAL;
-                break;
+        case AFATFS_FILESYSTEM_STATE_READY:
+            state = MSP_SDCARD_STATE_READY;
+
+            break;
+        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+            if (sdcard_isInitialized()) {
+                state = MSP_SDCARD_STATE_FS_INIT;
+            } else {
+                state = MSP_SDCARD_STATE_CARD_INIT;
+            }
+
+            break;
+        case AFATFS_FILESYSTEM_STATE_FATAL:
+        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+        default:
+            state = MSP_SDCARD_STATE_FATAL;
+
+            break;
         }
     }
 
@@ -1093,7 +1144,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, 1);
         } else {
             sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
-            sbufWriteU8(dst, masterConfig.pid_process_denom);
+            sbufWriteU8(dst, pidConfig()->pid_process_denom);
         }
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
@@ -1138,18 +1189,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             *mspPostProcessFn = mspRebootFn;
         }
         break;
-
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        // get channel number
-        // switch all motor lines HI
-        // reply with the count of ESC found
-        sbufWriteU8(dst, esc4wayInit());
-        if (mspPostProcessFn) {
-            *mspPostProcessFn = msp4WayIfFn;
-        }
-        break;
-#endif
 
     default:
         return false;
@@ -1442,7 +1481,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_ADVANCED_CONFIG:
         gyroConfig()->gyro_sync_denom = sbufReadU8(src);
-        masterConfig.pid_process_denom = sbufReadU8(src);
+        pidConfig()->pid_process_denom = sbufReadU8(src);
         motorConfig()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
@@ -1468,7 +1507,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
-        gyroInit(&masterConfig.gyroConfig);
+        gyroInitFilters();
         // reinitialize the PID filters with the new values
         pidInitFilters(&currentProfile->pidProfile);
         break;
@@ -1842,6 +1881,11 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    } else if (cmdMSP == MSP_SET_4WAY_IF) {
+        mspFc4waySerialCommand(dst, src, mspPostProcessFn);
+        ret = MSP_RESULT_ACK;
+#endif
 #ifdef GPS
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);

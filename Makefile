@@ -503,6 +503,7 @@ COMMON_SRC = \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
+            drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
             drivers/pwm_rx.c \
             drivers/rcc.c \

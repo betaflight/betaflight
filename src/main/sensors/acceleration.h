@@ -61,8 +61,7 @@ typedef struct accelerometerConfig_s {
     flightDynamicsTrims_t accZero;
 } accelerometerConfig_t;
 
-bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse);
-void accInit(uint32_t gyroTargetLooptime);
+bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);

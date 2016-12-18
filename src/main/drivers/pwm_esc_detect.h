@@ -14,35 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include "drivers/io.h"
-
+#ifdef BRUSHED_ESC_AUTODETECT
 typedef enum {
-    INPUT_FILTERING_DISABLED = 0,
-    INPUT_FILTERING_ENABLED
-} inputFilteringMode_e;
+    MOTOR_UNKNOWN = 0,
+    MOTOR_BRUSHED,
+    MOTOR_BRUSHLESS
+} HardwareMotorTypes_e;
 
-#define PPM_RCVR_TIMEOUT            0
-#define PWM_INPUT_PORT_COUNT        8
+extern uint8_t hardwareMotorType;
 
-typedef struct ppmConfig_s {
-    ioTag_t ioTag;
-} ppmConfig_t;
-
-typedef struct pwmConfig_s {
-    ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
-    inputFilteringMode_e inputFilteringMode;
-} pwmConfig_t;
-
-void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
-void pwmRxInit(const pwmConfig_t *pwmConfig);
-
-uint16_t pwmRead(uint8_t channel);
-uint16_t ppmRead(uint8_t channel);
-
-bool isPPMDataBeingReceived(void);
-void resetPPMDataReceivedState(void);
-
-bool isPWMDataBeingReceived(void);
+void detectBrushedESC(void);
+#endif
