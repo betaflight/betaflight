@@ -438,16 +438,8 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->consumptionWarningPercentage = 10;
 }
 
-#if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
-# if defined(USE_SOFTSERIAL1) && defined(USE_SOFTSERIAL2)
-#  define SERIAL_UART_COUNT (SERIAL_PORT_COUNT - 2)
-# else
-#  define SERIAL_UART_COUNT (SERIAL_PORT_COUNT - 1)
-# endif
-#else
-# define SERIAL_UART_COUNT SERIAL_PORT_COUNT
-#endif
-
+// Default pin (NONE).
+// XXX Does this mess belong here???
 #ifdef USE_UART1
 # if !defined(UART1_RX_PIN)
 #  define UART1_RX_PIN NONE
