@@ -21,8 +21,9 @@
 
 typedef enum {
     PITOT_NONE = 0,
-    PITOT_MS4525 = 1,
-    PITOT_FAKE = 2,
+    PITOT_AUTODETECT = 1,
+    PITOT_MS4525 = 2,
+    PITOT_FAKE = 3,
 } pitotSensor_e;
 
 #define PITOT_MAX  PITOT_FAKE

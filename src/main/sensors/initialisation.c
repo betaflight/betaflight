@@ -23,6 +23,7 @@
 #include "common/utils.h"
 
 #include "config/config.h"
+#include "config/config_eeprom.h"
 
 #include "drivers/logging.h"
 
@@ -42,11 +43,13 @@ uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, 
 
 
 bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
-                const accelerometerConfig_t *accConfig,
-                const compassConfig_t *compassConfig,
-                const barometerConfig_t *baroConfig,
-                const pitotmeterConfig_t *pitotConfig)
+                accelerometerConfig_t *accConfig,
+                compassConfig_t *compassConfig,
+                barometerConfig_t *baroConfig,
+                pitotmeterConfig_t *pitotConfig)
 {
+    bool eepromUpdatePending = false;
+
     if (!gyroInit(gyroConfig)) {
         return false;
     }
@@ -97,6 +100,31 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
     }
     if (compassConfig->mag_align != ALIGN_DEFAULT) {
         mag.dev.magAlign = compassConfig->mag_align;
+    }
+
+    /* Check if sensor autodetection was requested for some sensors and */
+    if (accConfig->acc_hardware == ACC_AUTODETECT) {
+        accConfig->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
+        eepromUpdatePending = true;
+    }
+
+    if (baroConfig->baro_hardware == BARO_AUTODETECT) {
+        baroConfig->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
+        eepromUpdatePending = true;
+    }
+
+    if (compassConfig->mag_hardware == MAG_AUTODETECT) {
+        compassConfig->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
+        eepromUpdatePending = true;
+    }
+
+    if (pitotConfig->pitot_hardware == PITOT_AUTODETECT) {
+        pitotConfig->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
+        eepromUpdatePending = true;
+    }
+
+    if (eepromUpdatePending) {
+        writeEEPROM();
     }
 
     return true;
