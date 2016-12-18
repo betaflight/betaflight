@@ -1006,14 +1006,6 @@ static void cliWrite(uint8_t ch);
 static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
 
-static void cliBreak(const char *str, uint8_t len)
-{
-    for (int i = 0; i < len; i++) {
-        cliPrint(str);
-    }
-    cliPrint("\r\n");
-}
-
 static void cliPrompt(void)
 {
     cliPrint("\r\n# ");
