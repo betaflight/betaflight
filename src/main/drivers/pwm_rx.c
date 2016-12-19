@@ -122,11 +122,6 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-void pwmRxSetInputFilteringMode(inputFilteringMode_e initialInputFilteringMode)
-{
-    inputFilteringMode = initialInputFilteringMode;
-}
-
 #ifdef DEBUG_PPM_ISR
 typedef enum {
     SOURCE_OVERFLOW = 0,
@@ -366,6 +361,8 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
 void pwmRxInit(const pwmConfig_t *pwmConfig)
 {
+    inputFilteringMode = pwmConfig->inputFilteringMode;
+
     for (int channel = 0; channel < PWM_INPUT_PORT_COUNT; channel++) {
 
         pwmInputPort_t *port = &pwmInputPorts[channel];

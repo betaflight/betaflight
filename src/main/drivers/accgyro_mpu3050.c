@@ -21,6 +21,7 @@
 #include "platform.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "system.h"
 #include "exti.h"
@@ -62,8 +63,9 @@ static void mpu3050Init(gyroDev_t *gyro)
     mpuConfiguration.write(MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
-static bool mpu3050ReadTemperature(int16_t *tempData)
+static bool mpu3050ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
 {
+    UNUSED(gyro);
     uint8_t buf[2];
     if (!mpuConfiguration.read(MPU3050_TEMP_OUT, 2, buf)) {
         return false;

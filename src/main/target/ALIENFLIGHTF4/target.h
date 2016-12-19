@@ -151,7 +151,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN  PC5
 
 // LED strip configuration using RC5 pin.
-//#define LED_STRIP
+#define LED_STRIP
 
 #define HARDWARE_BIND_PLUG
 // Hardware bind plug at PB2 (Pin 28)

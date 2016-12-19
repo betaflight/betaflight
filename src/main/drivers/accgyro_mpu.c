@@ -290,7 +290,7 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
     return ack;
 }
 
-bool mpuAccRead(int16_t *accData)
+bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
@@ -299,9 +299,9 @@ bool mpuAccRead(int16_t *accData)
         return false;
     }
 
-    accData[0] = (int16_t)((data[0] << 8) | data[1]);
-    accData[1] = (int16_t)((data[2] << 8) | data[3]);
-    accData[2] = (int16_t)((data[4] << 8) | data[5]);
+    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }

@@ -147,7 +147,6 @@ bool isCalibrating()
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
-#define RC_EXPO_POWER 3
 
 void calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
@@ -167,7 +166,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * powerf(rcInput[axis], RC_EXPO_POWER) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcInput[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -290,7 +289,7 @@ void updateRcCommands(void)
                 tmp = 0;
             }
             rcCommand[axis] = tmp;
-        } else if (axis == YAW) {
+        } else {
             if (tmp > rcControlsConfig()->yaw_deadband) {
                 tmp -= rcControlsConfig()->yaw_deadband;
             } else {
@@ -679,7 +678,7 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
-        masterConfig.max_angle_inclination,
+        pidConfig()->max_angle_inclination,
         &masterConfig.accelerometerTrims,
         rxConfig()->midrc
     );
@@ -693,7 +692,7 @@ void subTaskMainSubprocesses(void)
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.dev.temperature) {
-        gyro.dev.temperature(&telemTemperature1);
+        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
     }
 
 #ifdef MAG
@@ -778,9 +777,11 @@ void subTaskMotorUpdate(void)
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
-    servoTable();
-    filterServos();
-    writeServos();
+    if (isMixerUsingServos()) {
+        servoTable();
+        filterServos();
+        writeServos();
+    }
 #endif
 
     if (motorControlEnable) {
@@ -792,7 +793,7 @@ void subTaskMotorUpdate(void)
 uint8_t setPidUpdateCountDown(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {
-        return masterConfig.pid_process_denom - 1;
+        return pidConfig()->pid_process_denom - 1;
     } else {
         return 1;
     }

@@ -184,7 +184,7 @@ static bool hmc5883lRead(int16_t *magData)
     return true;
 }
 
-static void hmc5883lInit(void)
+static bool hmc5883lInit(void)
 {
     int16_t magADC[3];
     int i;
@@ -254,6 +254,7 @@ static void hmc5883lInit(void)
     }
 
     hmc5883lConfigureDataReadyInterruptHandling();
+    return true;
 }
 
 bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)

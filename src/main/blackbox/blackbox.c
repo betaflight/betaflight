@@ -1176,7 +1176,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("P interval:%d/%d",                    blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
         BLACKBOX_PRINT_HEADER_LINE("minthrottle:%d",                      motorConfig()->minthrottle);
         BLACKBOX_PRINT_HEADER_LINE("maxthrottle:%d",                      motorConfig()->maxthrottle);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                     castFloatBytesToInt(gyro.dev.scale));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_scale:0x%x",                     castFloatBytesToInt(1.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_1G:%u",                           acc.dev.acc_1G);
 
         BLACKBOX_PRINT_HEADER_LINE_CUSTOM(
@@ -1201,7 +1201,7 @@ static bool blackboxWriteSysinfo()
 
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                         gyro.targetLooptime);
         BLACKBOX_PRINT_HEADER_LINE("gyro_sync_denom:%d",                  gyroConfig()->gyro_sync_denom);
-        BLACKBOX_PRINT_HEADER_LINE("pid_process_denom:%d",                masterConfig.pid_process_denom);
+        BLACKBOX_PRINT_HEADER_LINE("pid_process_denom:%d",                pidConfig()->pid_process_denom);
         BLACKBOX_PRINT_HEADER_LINE("rcRate:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcRate8);
         BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                           masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcExpo8);
         BLACKBOX_PRINT_HEADER_LINE("rcYawRate:%d",                        masterConfig.profile[masterConfig.current_profile_index].controlRateProfile[masterConfig.profile[masterConfig.current_profile_index].activeRateProfile].rcYawRate8);
