@@ -297,7 +297,7 @@ void init(void)
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
 #ifndef SKIP_RX_PWM_PPM
-    pwmRxInit(masterConfig.inputFilteringMode);
+    pwmRxInit(pwmRxConfig());
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER

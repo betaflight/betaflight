@@ -88,6 +88,7 @@
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
 
 
 // System-wide
@@ -142,7 +143,7 @@ typedef struct master_s {
 #endif
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
+    pwmRxConfig_t pwmRxConfig;
 
     armingConfig_t armingConfig;
 

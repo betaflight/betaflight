@@ -562,7 +562,7 @@ void createDefaultConfig(master_t *config)
 
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 
-    config->inputFilteringMode = INPUT_FILTERING_DISABLED;
+    config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
