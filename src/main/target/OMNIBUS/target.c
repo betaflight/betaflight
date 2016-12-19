@@ -71,7 +71,7 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // PB5 / TIM3 CH2 is connected to USBPresent
 
     // PWM2-PWM5
-    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // Pin PWM1 - PB8
+    { TIM8,  IO_TAG(PB8),  TIM_Channel_2, TIM8_CC_IRQn,            1, IOCFG_AF_PP, GPIO_AF_10 },// Pin PWM1 - PB8
     { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,               1, IOCFG_AF_PP, GPIO_AF_2 }, // Pin PWM2 - PB9
     { TIM15, IO_TAG(PA3),  TIM_Channel_2, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 }, // Pin PWM3 - PA3
     { TIM15, IO_TAG(PA2),  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,     1, IOCFG_AF_PP, GPIO_AF_9 }, // Pin PWM4 - PA2
