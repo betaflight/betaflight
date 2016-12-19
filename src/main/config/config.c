@@ -562,7 +562,7 @@ static void resetConf(void)
 
     resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
 
-    masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+    pwmRxConfig()->inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     armingConfig()->disarm_kill_switch = 1;
     armingConfig()->auto_disarm_delay = 5;
