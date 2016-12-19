@@ -608,23 +608,23 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
     if (updateNow) {
         int state = (rssi * 100) / 1023;
 
-       if (state > 50) {
-           flash = true;
-           timerDelay = HZ_TO_US(1);
-       } else if (state > 20) {
-           flash = !flash;
-           timerDelay = HZ_TO_US(2);
-       } else {
-           flash = !flash;
-           timerDelay = HZ_TO_US(8);
-       }
+        if (state > 50) {
+            flash = true;
+            timerDelay = HZ_TO_US(1);
+        } else if (state > 20) {
+            flash = !flash;
+            timerDelay = HZ_TO_US(2);
+        } else {
+            flash = !flash;
+            timerDelay = HZ_TO_US(8);
+        }
     }
 
     *timer += timerDelay;
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
-       applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
+        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
     }
 }
 

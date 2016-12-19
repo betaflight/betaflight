@@ -214,8 +214,7 @@ static void serializeNames(sbuf_t *dst, const char *s)
 
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
-    uint8_t boxIndex;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
         if (candidate->boxId == activeBoxId) {
             return candidate;
@@ -226,8 +225,7 @@ static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 
 static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
-    uint8_t boxIndex;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
         const box_t *candidate = &boxes[boxIndex];
         if (candidate->permanentId == permenantId) {
             return candidate;
