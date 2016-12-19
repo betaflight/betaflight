@@ -2735,8 +2735,8 @@ static void printConfig(char *cmdline, bool doDiff)
             changeProfile(activeProfile);
 #ifndef CLI_MINIMAL_VERBOSITY
             cliPrint("\r\n# restore original profile selection\r\n");
-            cliProfile("");
 #endif
+            cliProfile("");
 
             uint8_t currentRateIndex = getCurrentControlRateProfile();
             for (uint32_t rateCount = 0; rateCount<MAX_CONTROL_RATE_PROFILE_COUNT; rateCount++) {
@@ -2745,8 +2745,9 @@ static void printConfig(char *cmdline, bool doDiff)
             changeControlRateProfile(currentRateIndex);
 #ifndef CLI_MINIMAL_VERBOSITY
             cliPrint("\r\n# restore original rateprofile selection\r\n");
+#endif
             cliRateProfile("");
-
+#ifndef CLI_MINIMAL_VERBOSITY
             cliPrint("\r\n# save configuration\r\nsave\r\n");
 #endif
         } else {
