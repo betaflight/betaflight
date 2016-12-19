@@ -267,9 +267,9 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
 #if defined(SPRACINGF3EVO)
-            // remap PWM6+7 as servos
-            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3)
+            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
                 type = MAP_TO_SERVO_OUTPUT;
+            }
 #endif
 
 #if (defined(STM32F3DISCOVERY) && !defined(CHEBUZZF3))
@@ -316,6 +316,19 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
                 // remap PWM5..8 as servos when used in extended servo mode
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(SPRACINGF3EVO)
+            if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM3) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
+#endif
+
+#if defined(SPRACINGF3MINI)
+            if (((timerIndex == PWM6 || timerIndex == PWM7) && timerHardwarePtr->tim == TIM15)
+                || ((timerIndex == PWM8 || timerIndex == PWM9 || timerIndex == PWM10 || timerIndex == PWM11) && timerHardwarePtr->tim == TIM2)) {
+                type = MAP_TO_SERVO_OUTPUT;
+            }
 #endif
         }
 
