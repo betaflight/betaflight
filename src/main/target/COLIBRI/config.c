@@ -48,7 +48,7 @@ void targetConfiguration(master_t *config)
     config->boardAlignment.pitchDegrees = 10;
     //config->rcControlsConfig.deadband = 10;
     //config->rcControlsConfig.yaw_deadband = 10;
-    config->compassConfig.mag_hardware = 1;
+    compassConfig()->mag_hardware = 1;
 
     config->profile[0].controlRateProfile[0].dynThrPID = 45;
     config->profile[0].controlRateProfile[0].tpa_breakpoint = 1700;
