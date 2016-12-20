@@ -74,6 +74,9 @@ void targetConfiguration(master_t *config)
 #ifdef LED2_A
         config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
 #endif
+    } else {
+        config->gyroConfig.gyro_sync_denom = 2;
+        config->pidConfig.pid_process_denom = 2;
     }
 
     config->rxConfig.spektrum_sat_bind = 5;
@@ -82,7 +85,7 @@ void targetConfiguration(master_t *config)
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-        config->pidConfig.pid_process_denom = 2;
+        config->pidConfig.pid_process_denom = 1;
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 90;
