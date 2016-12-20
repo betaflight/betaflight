@@ -69,7 +69,10 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
+void readEEPROM(void);
+void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
@@ -80,6 +83,8 @@ void activateConfig(void);
 uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
 void setProfile(uint8_t profileIndex);
+struct profile_s;
+void resetProfile(struct profile_s *profile);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
