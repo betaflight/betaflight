@@ -60,6 +60,7 @@ uint8_t cliMode = 0;
 #include "drivers/serial_escserial.h"
 #include "drivers/stack_check.h"
 #include "drivers/vcd.h"
+#include "drivers/bus_i2c.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -3842,6 +3843,10 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
+#endif
+#ifdef USE_I2C
+    { OWNER_I2C_SCL,       &i2cPinConfig()->ioTagSCL[0], I2CDEV_MAX },
+    { OWNER_I2C_SDA,       &i2cPinConfig()->ioTagSDA[0], I2CDEV_MAX },
 #endif
 };
 

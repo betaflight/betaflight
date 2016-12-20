@@ -40,42 +40,72 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define IOCFG_I2C IOCFG_AF_OD
 #endif
 
+#define DEF_I2C1_SCL PB6
+#define DEF_I2C1_SDA PB7
+#define DEF_I2C2_SCL PB10
+#define DEF_I2C2_SDA PB11
+#define DEF_I2C3_SCL PA8
+#define DEF_I2C3_SDA PB4
+#define DEF_I2C4_SCL PD12
+#define DEF_I2C4_SDA PD13
+
 #ifndef I2C1_SCL
-#define I2C1_SCL PB6
+#define I2C1_SCL NONE
 #endif
 
 #ifndef I2C1_SDA
-#define I2C1_SDA PB7
+#define I2C1_SDA NONE
 #endif
 
 #ifndef I2C2_SCL
-#define I2C2_SCL PB10
+#define I2C2_SCL NONE
 #endif
 #ifndef I2C2_SDA
-#define I2C2_SDA PB11
+#define I2C2_SDA NONE
 #endif
 
 #ifndef I2C3_SCL
-#define I2C3_SCL PA8
+#define I2C3_SCL NONE
 #endif
 #ifndef I2C3_SDA
-#define I2C3_SDA PB4
+#define I2C3_SDA NONE
 #endif
 
 #ifndef I2C4_SCL
-#define I2C4_SCL PD12
+#define I2C4_SCL NONE
 #endif
 #ifndef I2C4_SDA
-#define I2C4_SDA PD13
+#define I2C4_SDA NONE
 #endif
 
-static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
-    { .dev = I2C4, .scl = IO_TAG(I2C4_SCL), .sda = IO_TAG(I2C4_SDA), .rcc = RCC_APB1(I2C4), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
+i2cDevice_t i2cHardwareMap[] = {
+    { .dev = I2C1, .scl = IO_TAG(DEF_I2C1_SCL), .sda = IO_TAG(DEF_I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn, .af = GPIO_AF4_I2C1 },
+    { .dev = I2C2, .scl = IO_TAG(DEF_I2C2_SCL), .sda = IO_TAG(DEF_I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn, .af = GPIO_AF4_I2C2 },
+    { .dev = I2C3, .scl = IO_TAG(DEF_I2C3_SCL), .sda = IO_TAG(DEF_I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn, .af = GPIO_AF4_I2C3 },
+    { .dev = I2C4, .scl = IO_TAG(DEF_I2C4_SCL), .sda = IO_TAG(DEF_I2C4_SDA), .rcc = RCC_APB1(I2C4), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C4_EV_IRQn, .er_irq = I2C4_ER_IRQn, .af = GPIO_AF4_I2C4 }
 };
 
+i2cDevice_t i2cHardwareConfig[I2CDEV_MAX];
+
+// Setup i2cPinConfig as specified by target.h (or default pins defined above).
+// Pins can be defined as NONE in target.h
+// XXX Invalid pins (except "NONE") should be flagged and reported at this point?
+
+void i2cPinConfigDefault(void)
+{
+#ifdef USE_I2C1
+    i2cPinConfigSet(I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA));
+#endif
+#ifdef USE_I2C2
+    i2cPinConfigSet(I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA));
+#endif
+#ifdef USE_I2C3
+    i2cPinConfigSet(I2CDEV_3, IO_TAG(I2C3_SCL), IO_TAG(I2C3_SDA));
+#endif
+#ifdef USE_I2C4
+    i2cPinConfigSet(I2CDEV_4, IO_TAG(I2C4_SCL), IO_TAG(I2C4_SDA));
+#endif
+}
 
 typedef struct{
     I2C_HandleTypeDef Handle;

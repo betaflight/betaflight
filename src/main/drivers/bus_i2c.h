@@ -37,7 +37,33 @@ typedef enum I2CDevice {
     I2CDEV_COUNT
 } I2CDevice;
 
+// Maximum device instance count; consolidate with I2CDevice enum?
+#if defined(STM32F1) || defined(STM32F3)
+# ifdef USE_I2C1
+#  define I2CDEV_MAX 1
+# endif
+# ifdef USE_I2C2
+#  undef  I2CDEV_MAX
+#  define I2CDEV_MAX 2
+# endif
+#endif
+
+#if defined(STM32F4)
+# ifdef USE_I2C3
+#  undef  I2CDEV_MAX
+#  define I2CDEV_MAX 3
+# endif
+#endif
+
+#if defined(STM32F7)
+# ifdef USE_I2C4
+#  undef  I2CDEV_MAX
+#  define I2CDEV_MAX 4
+# endif
+#endif
+
 typedef struct i2cDevice_s {
+    bool configured;
     I2C_TypeDef *dev;
     ioTag_t scl;
     ioTag_t sda;
@@ -64,9 +90,29 @@ typedef struct i2cState_s {
     volatile uint8_t* read_p;
 } i2cState_t;
 
+#ifdef STM32F1
+# define I2CDEV_MAX 2
+#endif
+#ifdef STM32F3
+# define I2CDEV_MAX 2
+#endif
+#ifdef STM32F4
+# define I2CDEV_MAX 3
+#endif
+#ifdef STM32F7
+# define I2CDEV_MAX 4
+#endif
+
+typedef struct i2cPinConfig_s {
+    ioTag_t ioTagSCL[I2CDEV_MAX];
+    ioTag_t ioTagSDA[I2CDEV_MAX];
+} i2cPinConfig_t;
+
 void i2cInit(I2CDevice device);
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
 
 uint16_t i2cGetErrorCounter(void);
+void i2cInitAll();
+void i2cPinConfigDefault(void);

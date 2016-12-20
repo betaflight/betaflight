@@ -33,6 +33,7 @@
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
+#include "drivers/bus_i2c.h"
 
 #include "fc/rc_controls.h"
 
@@ -99,6 +100,7 @@
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define flashConfig(x) (&masterConfig.flashConfig)
 #define pidConfig(x) (&masterConfig.pidConfig)
+#define i2cPinConfig(x) (&masterConfig.i2cPinConfig)
 
 
 // System-wide
@@ -237,6 +239,10 @@ typedef struct master_s {
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+
+#ifdef USE_I2C
+    i2cPinConfig_t i2cPinConfig;
+#endif
 
     char name[MAX_NAME_LENGTH + 1];
 

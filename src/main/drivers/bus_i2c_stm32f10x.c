@@ -24,6 +24,8 @@
 #include "io.h"
 #include "system.h"
 
+#include "config/config_master.h"
+
 #include "bus_i2c.h"
 #include "nvic.h"
 #include "io_impl.h"
@@ -41,55 +43,80 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 
 #ifdef STM32F4
 
-#if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
-#else
-#define IOCFG_I2C IOCFG_AF_OD
-#endif
+# if defined(USE_I2C_PULLUP)
+#  define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+# else
+#  define IOCFG_I2C    IOCFG_AF_OD
+# endif
 
-#ifndef I2C1_SCL
-#define I2C1_SCL PB8
-#endif
-#ifndef I2C1_SDA
-#define I2C1_SDA PB9
-#endif
+# define DEF_I2C1_SCL PB8
+# define DEF_I2C1_SDA PB9
 
 #else
 
+# define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
+# define DEF_I2C1_SCL PB6
+# define DEF_I2C1_SDA PB7
+
+#endif
+
+#define DEF_I2C2_SCL  PB10
+#define DEF_I2C2_SDA  PB11
+
+#ifdef STM32F4
+# define DEF_I2C3_SCL PA8
+# define DEF_I2C3_SDA PC9
+#endif
+
 #ifndef I2C1_SCL
-#define I2C1_SCL PB6
+# define I2C1_SCL     NONE
 #endif
 #ifndef I2C1_SDA
-#define I2C1_SDA PB7
-#endif
-#define IOCFG_I2C   IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
-
+# define I2C1_SDA     NONE
 #endif
 
 #ifndef I2C2_SCL
-#define I2C2_SCL PB10
+# define I2C2_SCL     NONE
 #endif
-
 #ifndef I2C2_SDA
-#define I2C2_SDA PB11
+# define I2C2_SDA     NONE
 #endif
 
-#ifdef STM32F4
 #ifndef I2C3_SCL
-#define I2C3_SCL PA8
+# define I2C3_SCL     NONE
 #endif
 #ifndef I2C3_SDA
-#define I2C3_SDA PC9
-#endif
+# define I2C3_SDA     NONE
 #endif
 
-static i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(I2C1_SCL), .sda = IO_TAG(I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
-    { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+// List of possible I2C mapping (exported to bus_i2c.c)
+i2cDevice_t i2cHardwareMap[] = {
+    { .dev = I2C1, .scl = IO_TAG(DEF_I2C1_SCL), .sda = IO_TAG(DEF_I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
+    { .dev = I2C2, .scl = IO_TAG(DEF_I2C2_SCL), .sda = IO_TAG(DEF_I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
 #ifdef STM32F4
-    { .dev = I2C3, .scl = IO_TAG(I2C3_SCL), .sda = IO_TAG(I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
+    { .dev = I2C3, .scl = IO_TAG(DEF_I2C3_SCL), .sda = IO_TAG(DEF_I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
 #endif
 };
+
+// List of configured I2C mapping (exported to bus_i2c.c)
+i2cDevice_t i2cHardwareConfig[I2CDEV_MAX];
+
+// Setup i2cPinConfig as specified by target.h (or default pins defined above).
+// Pins can be defined as NONE in target.h
+// XXX Invalid pins (except "NONE") should be flagged and reported at this point?
+
+void i2cPinConfigDefault(void)
+{
+#ifdef USE_I2C1
+    i2cPinConfigSet(I2CDEV_1, IO_TAG(I2C1_SCL), IO_TAG(I2C1_SDA));
+#endif
+#ifdef USE_I2C2
+    i2cPinConfigSet(I2CDEV_2, IO_TAG(I2C2_SCL), IO_TAG(I2C2_SDA));
+#endif
+#ifdef USE_I2C3
+    i2cPinConfigSet(I2CDEV_3, IO_TAG(I2C3_SCL), IO_TAG(I2C3_SDA));
+#endif
+}
 
 static volatile uint16_t i2cErrorCount = 0;
 
@@ -136,13 +163,13 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
 
-    if (device == I2CINVALID)
+    if (device == I2CINVALID || !i2cHardwareConfig[device].configured)
         return false;
 
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     i2cState_t *state;
     state = &(i2cState[device]);
@@ -182,13 +209,13 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-    if (device == I2CINVALID)
+    if (device == I2CINVALID || !i2cHardwareConfig[device].configured)
         return false;
 
     uint32_t timeout = I2C_DEFAULT_TIMEOUT;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     i2cState_t *state;
     state = &(i2cState[device]);
@@ -224,7 +251,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
 static void i2c_er_handler(I2CDevice device) {
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     i2cState_t *state;
     state = &(i2cState[device]);
@@ -259,7 +286,7 @@ static void i2c_er_handler(I2CDevice device) {
 void i2c_ev_handler(I2CDevice device) {
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev;
+    I2Cx = i2cHardwareConfig[device].dev;
 
     i2cState_t *state;
     state = &(i2cState[device]);
@@ -379,7 +406,10 @@ void i2cInit(I2CDevice device)
         return;
 
     i2cDevice_t *i2c;
-    i2c = &(i2cHardwareMap[device]);
+    i2c = &(i2cHardwareConfig[device]);
+
+    if (!i2c->configured) // XXX Check this to avoid init of bogus i2c bus caused by hard error handling on calls to non-initialized bus.
+        return;
 
     NVIC_InitTypeDef nvic;
     I2C_InitTypeDef i2cInit;

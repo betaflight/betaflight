@@ -491,6 +491,7 @@ COMMON_SRC = \
             config/parameter_group.c \
             drivers/adc.c \
             drivers/buf_writer.c \
+            drivers/bus_i2c.c \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
@@ -689,6 +690,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
+            drivers/bus_i2c.c \
             io/serial_cli.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -790,7 +792,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/serial_uart_hal.c
 
 F7EXCLUDES = drivers/bus_spi.c \
-            drivers/bus_i2c.c \
             drivers/timer.c \
             drivers/pwm_output.c \
             drivers/serial_uart.c

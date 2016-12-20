@@ -48,6 +48,7 @@
 #include "drivers/sound_beeper.h"
 #include "drivers/light_ws2811strip.h"
 #include "drivers/sdcard.h"
+#include "drivers/bus_i2c.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -850,6 +851,10 @@ void createDefaultConfig(master_t *config)
 
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
+#endif
+
+#ifdef USE_I2C
+    i2cPinConfigDefault();
 #endif
 
     // copy first profile into remaining profile
