@@ -30,6 +30,7 @@
 
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
@@ -47,11 +48,27 @@ float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
 
-void sonarInit(const sonarConfig_t *sonarConfig)
+#ifdef SONAR
+static bool sonarDetect(void)
 {
+    if (feature(FEATURE_SONAR)) {
+        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
+        // since there is no way to detect it
+        sensorsSet(SENSOR_SONAR);
+        return true;
+    }
+    return false;
+}
+#endif
+
+bool sonarInit(void)
+{
+    if (!sonarDetect()) {
+        return false;
+    }
     sonarRange_t sonarRange;
 
-    hcsr04_init(sonarConfig, &sonarRange);
+    hcsr04_init(&sonarRange);
 
     sensorsSet(SENSOR_SONAR);
     sonarMaxRangeCm = sonarRange.maxRangeCm;
@@ -60,6 +77,8 @@ void sonarInit(const sonarConfig_t *sonarConfig)
     sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
     sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
     calculatedAltitude = SONAR_OUT_OF_RANGE;
+
+    return true;
 }
 
 #define DISTANCE_SAMPLES_MEDIAN 5

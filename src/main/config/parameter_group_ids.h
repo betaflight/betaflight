@@ -16,7 +16,7 @@
  */
 
 // FC configuration
-#define PG_FAILSAFE_CONFIG 1 // strruct OK
+#define PG_FAILSAFE_CONFIG 1 // struct OK
 #define PG_BOARD_ALIGNMENT 2 // struct OK
 #define PG_GIMBAL_CONFIG 3 // struct OK
 #define PG_MOTOR_MIXER 4 // two structs mixerConfig_t servoMixerConfig_t
@@ -55,6 +55,7 @@
 #define PG_BAROMETER_CONFIG 38 // structs OK
 #define PG_THROTTLE_CORRECTION_CONFIG 39
 #define PG_COMPASS_CONFIGURATION 40 // structs OK
+#define PG_COMPASS_CONFIG 40 // structs OK
 #define PG_MODE_ACTIVATION_PROFILE 41 // array needs to be made into struct
 #define PG_SERVO_PROFILE 42
 #define PG_FAILSAFE_CHANNEL_CONFIG 43 // structs OK
@@ -65,6 +66,9 @@
 #define PG_MSP_SERVER_CONFIG 48 // does not exist in betaflight
 #define PG_VOLTAGE_METER_CONFIG 49 // Cleanflight has voltageMeterConfig_t, betaflight has batteryConfig_t
 #define PG_AMPERAGE_METER_CONFIG 50 // Cleanflight has amperageMeterConfig_t, betaflight has batteryConfig_t
+
+// Betaflight specific PGs start at 500
+#define PG_SONAR_CONFIG 500
 
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight

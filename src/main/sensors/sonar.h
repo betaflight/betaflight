@@ -29,7 +29,7 @@ extern int16_t sonarMaxRangeCm;
 extern int16_t sonarCfAltCm;
 extern int16_t sonarMaxAltWithTiltCm;
 
-void sonarInit(const sonarConfig_t *sonarConfig);
+bool sonarInit(void);
 void sonarUpdate(timeUs_t currentTimeUs);
 int32_t sonarRead(void);
 int32_t sonarCalculateAltitude(int32_t sonarDistance, float cosTiltAngle);

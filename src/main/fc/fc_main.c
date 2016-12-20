@@ -117,8 +117,8 @@ float getRcDeflectionAbs(int axis) {
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfig()->rollAndPitchTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfig()->rollAndPitchTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -126,14 +126,14 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 bool isCalibrating()
 {
 #ifdef BARO
-    if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
+    if (sensors(SENSOR_BARO) && !baroIsCalibrationComplete()) {
         return true;
     }
 #endif
 
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
-    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
@@ -694,10 +694,7 @@ void subTaskPidController(void)
     uint32_t startTime;
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(
-        &currentProfile->pidProfile,
-        &accelerometerConfig()->accelerometerTrims
-    );
+    pidController(&currentProfile->pidProfile, &accelerometerConfig()->rollAndPitchTrims);
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
 }
 

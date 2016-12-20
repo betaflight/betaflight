@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+#include "common/time.h"
 #include "drivers/accgyro.h"
 #include "sensors/sensors.h"
 
@@ -54,21 +56,21 @@ typedef union rollAndPitchTrims_u {
     rollAndPitchTrims_t_def values;
 } rollAndPitchTrims_t;
 
-
 typedef struct accelerometerConfig_s {
     uint16_t acc_lpf_hz;                    // cutoff frequency for the low pass filter used on the acc z-axis for althold in Hz
     sensor_align_e acc_align;               // acc alignment
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     flightDynamicsTrims_t accZero;
-    rollAndPitchTrims_t accelerometerTrims;
+    rollAndPitchTrims_t rollAndPitchTrims;
 } accelerometerConfig_t;
 
-bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
-bool isAccelerationCalibrationComplete(void);
+PG_DECLARE_PROFILE(accelerometerConfig_t, accelerometerConfig);
+
+bool accInit(void);
+bool accIsCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
-void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims);
-union flightDynamicsTrims_u;
-void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
-void setAccelerationFilter(uint16_t initialAccLpfCutHz);
+void accResetRollAndPitchTrims(void);
+void accResetFlightDynamicsTrims(void);
+void accUpdate(timeUs_t currentTimeUs);
+void accSetFilter(void);
 

@@ -70,10 +70,6 @@
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
-#define gyroConfig(x) (&masterConfig.gyroConfig)
-#define compassConfig(x) (&masterConfig.compassConfig)
-#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
-#define barometerConfig(x) (&masterConfig.barometerConfig)
 #define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
@@ -90,7 +86,6 @@
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)
 #define beeperConfig(x) (&masterConfig.beeperConfig)
-#define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define statusLedConfig(x) (&masterConfig.statusLedConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -137,13 +132,6 @@ typedef struct master_s {
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
 
-    gyroConfig_t gyroConfig;
-    compassConfig_t compassConfig;
-
-    accelerometerConfig_t accelerometerConfig;
-
-    barometerConfig_t barometerConfig;
-
     throttleCorrectionConfig_t throttleCorrectionConfig;
 
     batteryConfig_t batteryConfig;
@@ -184,10 +172,6 @@ typedef struct master_s {
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
-#endif
-
-#ifdef SONAR
-    sonarConfig_t sonarConfig;
 #endif
 
 #ifdef LED_STRIP
