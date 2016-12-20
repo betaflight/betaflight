@@ -37,7 +37,7 @@ extern sensor_align_e accAlign;
 extern acc_t acc;
 
 extern int32_t accSmooth[XYZ_AXIS_COUNT];
-uint32_t accSamplingInterval;
+extern uint32_t accSamplingInterval;
 
 typedef struct rollAndPitchTrims_s {
     int16_t roll;
