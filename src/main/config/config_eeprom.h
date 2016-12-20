@@ -19,8 +19,6 @@
 
 #define EEPROM_CONF_VERSION 147
 
-void initEEPROM(void);
-void writeEEPROM();
-void readEEPROM(void);
 bool isEEPROMContentValid(void);
-
+bool loadEEPROM(void);
+void writeConfigToEEPROM(void);
