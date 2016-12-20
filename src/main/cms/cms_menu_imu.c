@@ -43,6 +43,8 @@
 
 #include "flight/pid.h"
 
+#include "sensors/gyro.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -280,6 +282,7 @@ static CMS_Menu cmsx_menuProfileOther = {
     .entries = cmsx_menuProfileOtherEntries,
 };
 
+/*
 static OSD_Entry cmsx_menuFilterGlobalEntries[] =
 {
     { "-- FILTER GLB  --", OME_Label, NULL, NULL, 0 },
@@ -302,6 +305,7 @@ static CMS_Menu cmsx_menuFilterGlobal = {
     .onGlobalExit = NULL,
     .entries = cmsx_menuFilterGlobalEntries,
 };
+*/
 
 static uint16_t cmsx_dterm_lpf_hz;
 static uint16_t cmsx_dterm_notch_hz;
@@ -369,7 +373,7 @@ static OSD_Entry cmsx_menuImuEntries[] =
 
     {"FLT PP",    OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
-    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+//    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
