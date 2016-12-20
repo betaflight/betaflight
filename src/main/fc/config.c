@@ -90,6 +90,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -1060,12 +1061,40 @@ void validateAndFixGyroConfig(void)
     }
 }
 
+void readEEPROM(void)
+{
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+    pgActivateProfile(getCurrentProfile());
+
+//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+    setControlRateProfile(0);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
