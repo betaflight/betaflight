@@ -759,7 +759,7 @@ $(OBJECT_DIR)/parameter_groups_unittest : \
 	$(OBJECT_DIR)/config/parameter_group.o \
 	$(OBJECT_DIR)/gtest_main.a
 
-	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+	$(CXX) $(CXX_FLAGS) $(PG_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
 
 ## test        : Build and run the Unit Tests
