@@ -101,6 +101,9 @@
 #define pidConfig(x) (&masterConfig.pidConfig)
 #define adjustmentProfile(x) (&masterConfig.adjustmentProfile)
 #define modeActivationProfile(x) (&masterConfig.modeActivationProfile)
+#define servoProfile(x) (&masterConfig.servoProfile)
+#define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
+#define customServoMixer(i) (&masterConfig.customServoMixer[i])
 
 
 // System-wide
@@ -121,7 +124,7 @@ typedef struct master_s {
     servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
-    servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
+    servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
 #endif

@@ -110,6 +110,10 @@ typedef struct servoMixerConfig_s{
     int8_t servo_lowpass_enable;            // enable/disable lowpass filter
 } servoMixerConfig_t;
 
+typedef struct servoProfile_s {
+    servoParam_t servoConf[MAX_SUPPORTED_SERVOS];
+} servoProfile_t;
+
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 void servoTable(void);
