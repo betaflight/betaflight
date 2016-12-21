@@ -690,6 +690,28 @@ $(OBJECT_DIR)/cms_unittest : \
 
 	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
 
+$(OBJECT_DIR)/config/parameter_group.o : \
+	$(USER_DIR)/config/parameter_group.c \
+	$(USER_DIR)/config/parameter_group.h \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) $(TEST_CFLAGS) -c $(USER_DIR)/config/parameter_group.c -o $@
+
+$(OBJECT_DIR)/parameter_groups_unittest.o : \
+	$(TEST_DIR)/parameter_groups_unittest.cc \
+	$(GTEST_HEADERS)
+
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) $(TEST_CFLAGS) -c $(TEST_DIR)/parameter_groups_unittest.cc -o $@
+
+$(OBJECT_DIR)/parameter_groups_unittest : \
+	$(OBJECT_DIR)/parameter_groups_unittest.o \
+	$(OBJECT_DIR)/config/parameter_group.o \
+	$(OBJECT_DIR)/gtest_main.a
+
+	$(CXX) $(CXX_FLAGS) $^ -o $(OBJECT_DIR)/$@
+
 
 ## test        : Build and run the Unit Tests
 test: $(TESTS:%=test-%)
