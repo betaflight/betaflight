@@ -44,7 +44,7 @@ static I2CDevice i2cConfigFindMap(ioTag_t scl, ioTag_t sda)
 void i2cPinConfigSet(int bus, ioTag_t scl, ioTag_t sda)
 {
     if (i2cConfigFindMap(scl, sda) == I2CINVALID) {
-        // XXX Log or notify error
+        // XXX Should log or notify error
         return;
     }
 

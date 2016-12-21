@@ -28,6 +28,7 @@
 #define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
 #define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
 
+static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
 static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
 
@@ -35,7 +36,7 @@ static pwmCompleteWriteFuncPtr pwmCompleteWritePtr = NULL;
 static pwmOutputPort_t servos[MAX_SUPPORTED_SERVOS];
 #endif
 
-bool pwmMotorsEnabled = true;
+bool pwmMotorsEnabled = false;
 
 static void pwmOCConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t value, uint8_t output)
 {
@@ -101,9 +102,7 @@ static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
 {
-    if (index < MAX_SUPPORTED_MOTORS && pwmMotorsEnabled && motors[index].pwmWritePtr) {
-        motors[index].pwmWritePtr(index, value);
-    }
+    pwmWritePtr(index, value);
 }
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
@@ -125,6 +124,11 @@ void pwmDisableMotors(void)
 void pwmEnableMotors(void)
 {
     pwmMotorsEnabled = true;
+}
+
+bool pwmAreMotorsEnabled(void)
+{
+    return pwmMotorsEnabled;
 }
 
 static void pwmCompleteOneshotMotorUpdate(uint8_t motorCount)
@@ -157,7 +161,6 @@ void pwmCompleteMotorUpdate(uint8_t motorCount)
 void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t motorCount)
 {
     uint32_t timerMhzCounter = 0;
-    pwmWriteFuncPtr pwmWritePtr;
     bool useUnsyncedPwm = motorConfig->useUnsyncedPwm;
     bool isDigital = false;
 
@@ -191,6 +194,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
+        pwmWritePtr = pwmWriteDigital;
         pwmCompleteWritePtr = pwmCompleteDigitalMotorUpdate;
         isDigital = true;
         break;
@@ -220,7 +224,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
 #ifdef USE_DSHOT
         if (isDigital) {
             pwmDigitalMotorHardwareConfig(timerHardware, motorIndex, motorConfig->motorPwmProtocol);
-            motors[motorIndex].pwmWritePtr = pwmWriteDigital;
             motors[motorIndex].enabled = true;
             continue;
         }
@@ -229,7 +232,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         IOInit(motors[motorIndex].io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(motors[motorIndex].io, IOCFG_AF_PP);
 
-        motors[motorIndex].pwmWritePtr = pwmWritePtr;
         if (useUnsyncedPwm) {
             const uint32_t hz = timerMhzCounter * 1000000;
             pwmOutConfig(&motors[motorIndex], timerHardware, timerMhzCounter, hz / motorConfig->motorPwmRate, idlePulse);
@@ -238,6 +240,7 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         }
         motors[motorIndex].enabled = true;
     }
+    pwmMotorsEnabled = true;
 }
 
 pwmOutputPort_t *pwmGetMotors(void)

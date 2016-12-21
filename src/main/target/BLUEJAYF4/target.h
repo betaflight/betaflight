@@ -19,6 +19,7 @@
 #define TARGET_BOARD_IDENTIFIER "BJF4"
 #define TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
+#define TARGET_PREINIT
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -39,6 +40,8 @@
 
 #define INVERTER                PB15
 #define INVERTER_USART          USART6
+
+#define UART1_INVERTER          PC9
 
 // MPU6500 interrupt
 #define USE_EXTI

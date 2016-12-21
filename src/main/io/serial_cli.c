@@ -788,6 +788,7 @@ const clivalue_t valueTable[] = {
 #ifdef TELEMETRY
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_switch, .config.lookup = { TABLE_OFF_ON } },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_inversion, .config.lookup = { TABLE_OFF_ON } },
+    { "sport_halfduplex",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->sportHalfDuplex, .config.lookup = { TABLE_OFF_ON } },
     { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLatitude, .config.minmax = { -90.0,  90.0 } },
     { "frsky_default_longitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLongitude, .config.minmax = { -180.0,  180.0 } },
     { "frsky_coordinates_format",   VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->frsky_coordinate_format, .config.minmax = { 0,  FRSKY_FORMAT_NMEA } },
@@ -884,8 +885,8 @@ const clivalue_t valueTable[] = {
     { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.xy, .config.minmax = { 0,  100 } },
     { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.z, .config.minmax = { 0,  100 } },
     { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &imuConfig()->acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
-    { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
-    { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
+    { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
+    { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
 
 #ifdef BARO
     { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, &barometerConfig()->baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } },
@@ -1216,8 +1217,8 @@ static void printAux(uint8_t dumpMask, master_t *defaultConfig)
     modeActivationCondition_t *macDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        mac = &masterConfig.modeActivationConditions[i];
-        macDefault = &defaultConfig->modeActivationConditions[i];
+        mac = &modeActivationProfile()->modeActivationConditions[i];
+        macDefault = &defaultConfig->modeActivationProfile.modeActivationConditions[i];
         equalsDefault = mac->modeId == macDefault->modeId
             && mac->auxChannelIndex == macDefault->auxChannelIndex
             && mac->range.startStep == macDefault->range.startStep
@@ -1251,7 +1252,7 @@ static void cliAux(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1485,8 +1486,8 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     adjustmentRange_t *arDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-        ar = &masterConfig.adjustmentRanges[i];
-        arDefault = &defaultConfig->adjustmentRanges[i];
+        ar = &adjustmentProfile()->adjustmentRanges[i];
+        arDefault = &defaultConfig->adjustmentProfile.adjustmentRanges[i];
         equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
             && ar->range.startStep == arDefault->range.startStep
             && ar->range.endStep == arDefault->range.endStep
@@ -1526,7 +1527,7 @@ static void cliAdjustmentRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *ar = &adjustmentProfile()->adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);

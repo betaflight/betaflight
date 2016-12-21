@@ -102,8 +102,6 @@ i2cDevice_t i2cHardwareMap[] = {
 i2cDevice_t i2cHardwareConfig[I2CDEV_MAX];
 
 // Setup i2cPinConfig as specified by target.h (or default pins defined above).
-// Pins can be defined as NONE in target.h
-// XXX Invalid pins (except "NONE") should be flagged and reported at this point?
 
 void i2cPinConfigDefault(void)
 {
