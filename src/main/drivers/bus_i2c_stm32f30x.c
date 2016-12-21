@@ -44,7 +44,7 @@
 
 #define DEF_I2C1_SCL PB6
 #define DEF_I2C1_SDA PB7
-#define DEF_I2C2_SCL PF4
+#define DEF_I2C2_SCL PA9
 #define DEF_I2C2_SDA PA10
 
 #ifndef I2C1_SCL
