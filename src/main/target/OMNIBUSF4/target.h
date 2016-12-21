@@ -17,7 +17,12 @@
 
 #pragma once
 
+#ifdef OMNIBUSF4SD
+#define TARGET_BOARD_IDENTIFIER "OBSD"
+#else
 #define TARGET_BOARD_IDENTIFIER "OBF4"
+#endif
+
 #define USBD_PRODUCT_STRING     "Omnibus F4"
 
 #define LED0                    PB5
@@ -35,13 +40,19 @@
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW270_DEG
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW270_DEG
+
+#ifdef OMNIBUSF4SD
+  #define GYRO_MPU6000_ALIGN      CW270_DEG
+  #define ACC_MPU6000_ALIGN       CW270_DEG
+#else
+  #define GYRO_MPU6000_ALIGN      CW180_DEG
+  #define ACC_MPU6000_ALIGN       CW180_DEG
+#endif
 
 #define MAG
 #define USE_MAG_AK8963
@@ -52,18 +63,18 @@
 
 #define BARO
 #define USE_BARO_BMP085
-#define USE_BARO_BMP280
 #define USE_BARO_MS5611
+
+#ifdef OMNIBUSF4SD
+  #define USE_BARO_BMP280
+  #define USE_BARO_SPI_BMP280
+  #define BMP280_SPI_INSTANCE     SPI3
+  #define BMP280_CS_PIN           PB3 // v1
+#endif
 
 //#define PITOT
 //#define USE_PITOT_MS4525
 #define PITOT_I2C_INSTANCE      I2C_DEVICE
-
-#define M25P16_CS_PIN           PB3
-#define M25P16_SPI_INSTANCE     SPI3
-
-#define USE_FLASHFS
-#define USE_FLASH_M25P16
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PC5
@@ -90,10 +101,20 @@
 
 #define USE_SPI
 
-#define USE_SPI_DEVICE_1
+#ifdef OMNIBUSF4SD
+  #define USE_SPI_DEVICE_2
+  #define SPI2_NSS_PIN          PB12
+  #define SPI2_SCK_PIN          PB13
+  #define SPI2_MISO_PIN         PB14
+  #define SPI2_MOSI_PIN         PB15
+#endif
 
 #define USE_SPI_DEVICE_3
-#define SPI3_NSS_PIN            PB3
+#ifdef OMNIBUSF4SD
+  #define SPI3_NSS_PIN          PA15
+#else
+  #define SPI3_NSS_PIN          PB3
+#endif
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
@@ -104,6 +125,33 @@
 #define MAX7456_SPI_CS_PIN      PA15
 #define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
 #define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+
+#ifdef OMNIBUSF4SD
+  #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+  #define USE_SDCARD
+  #define USE_SDCARD_SPI2
+
+  #define SDCARD_DETECT_INVERTED
+  #define SDCARD_DETECT_PIN               PB7
+  #define SDCARD_SPI_INSTANCE             SPI2
+  #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
+
+  // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+  #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
+  // Divide to under 25MHz for normal operation:
+  #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
+
+  #define SDCARD_DMA_CHANNEL_TX               DMA1_Stream4
+  #define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF4
+  #define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA1
+  #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
+#else
+  #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+  #define M25P16_CS_PIN           SPI3_NSS_PIN
+  #define M25P16_SPI_INSTANCE     SPI3
+  #define USE_FLASHFS
+  #define USE_FLASH_M25P16
+#endif
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_2)
@@ -129,16 +177,14 @@
 #define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
 #define WS2811_DMA_IT                   DMA_IT_TCIF4
 
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#define MAG_GPS_ALIGN           CW180_DEG_FLIP
-
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DISABLE_RX_PWM_FEATURE
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_VBAT)
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11 // USART3 RX
+
+#define AVOID_UART1_FOR_PWM_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 

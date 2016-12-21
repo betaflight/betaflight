@@ -74,8 +74,13 @@ const uint16_t airPWM[] = {
 
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+#ifdef OMNIBUSF4SD
+    { TIM4,  IO_TAG(PB8),  TIM_Channel_3, TIM4_IRQn,           0, IOCFG_AF_PP_PD, GPIO_AF_TIM4}, // PPM
+    { TIM4,  IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,           0, IOCFG_AF_PP_PD, GPIO_AF_TIM4}, // S2_IN
+#else
     { TIM12, IO_TAG(PB14), TIM_Channel_1, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP_PD, GPIO_AF_TIM12 }, // PPM / S.BUS input, above MOTOR1
     { TIM12, IO_TAG(PB15), TIM_Channel_2, TIM8_BRK_TIM12_IRQn, 0, IOCFG_AF_PP_PD, GPIO_AF_TIM12 }, // Connected: small CH2 pad, not used as PWM, definition inherited from REVO target - GPIO_PartialRemap_TIM3
+#endif
     { TIM8,  IO_TAG(PC6),  TIM_Channel_1, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: UART6 TX, not used as PWM, definition inherited from REVO target
     { TIM8,  IO_TAG(PC7),  TIM_Channel_2, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: UART6 RX, not used as PWM, definition inherited from REVO target
     { TIM8,  IO_TAG(PC8),  TIM_Channel_3, TIM8_CC_IRQn,        0, IOCFG_AF_PP_PD, GPIO_AF_TIM8  }, // Connected: small CH5 pad, not used as PWM, definition inherited from REVO target
