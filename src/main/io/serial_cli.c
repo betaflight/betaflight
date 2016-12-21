@@ -1086,16 +1086,16 @@ static bool isEmpty(const char *string)
     return *string == '\0';
 }
 
-static void printRxFail(uint8_t dumpMask, master_t *defaultConfig)
+static void printRxFail(uint8_t dumpMask, const rxConfig_t *defaultRxConfig)
 {
     // print out rxConfig failsafe settings
-    rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration;
-    rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
+    const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration;
+    const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
     bool equalsDefault;
     bool requireValue;
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
-        channelFailsafeConfigurationDefault = &defaultConfig->rxConfig.failsafe_channel_configurations[channel];
+        channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
         equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
             && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
         requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
@@ -1280,17 +1280,14 @@ static void cliAux(char *cmdline)
     }
 }
 
-static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
+static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfigDefault)
 {
-    serialConfig_t *serialConfig;
-    serialConfig_t *serialConfigDefault;
+    const serialConfig_t *serialConfig = serialConfig();
     bool equalsDefault;
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
-    serialConfig = &masterConfig.serialConfig;
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-    serialConfigDefault = &defaultConfig->serialConfig;
     equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
             && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
             && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
@@ -1680,14 +1677,14 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
-static void printRxRange(uint8_t dumpMask, master_t *defaultConfig)
+static void printRxRange(uint8_t dumpMask, const rxConfig_t *defaultRxConfig)
 {
-    rxChannelRangeConfiguration_t *channelRangeConfiguration;
-    rxChannelRangeConfiguration_t *channelRangeConfigurationDefault;
+    const rxChannelRangeConfiguration_t *channelRangeConfiguration;
+    const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
         channelRangeConfiguration = &rxConfig()->channelRanges[i];
-        channelRangeConfigurationDefault = &defaultConfig->rxConfig.channelRanges[i];
+        channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
         equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
             && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
         const char *format = "rxrange %u %u %u\r\n";
@@ -1747,7 +1744,7 @@ static void cliRxRange(char *cmdline)
 }
 
 #ifdef LED_STRIP
-static void printLed(uint8_t dumpMask, master_t *defaultConfig)
+static void printLed(uint8_t dumpMask, const ledStripConfig_t *defaultLedStripConfig)
 {
     bool equalsDefault;
     ledConfig_t ledConfig;
@@ -1756,7 +1753,7 @@ static void printLed(uint8_t dumpMask, master_t *defaultConfig)
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
         ledConfig = ledStripConfig()->ledConfigs[i];
-        ledConfigDefault = defaultConfig->ledStripConfig.ledConfigs[i];
+        ledConfigDefault = defaultLedStripConfig->ledConfigs[i];
         equalsDefault = ledConfig == ledConfigDefault;
         generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
         generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
@@ -1787,14 +1784,14 @@ static void cliLed(char *cmdline)
     }
 }
 
-static void printColor(uint8_t dumpMask, master_t *defaultConfig)
+static void printColor(uint8_t dumpMask, const ledStripConfig_t *defaultLedStripConfig)
 {
-    hsvColor_t *color;
-    hsvColor_t *colorDefault;
+    const hsvColor_t *color;
+    const hsvColor_t *colorDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
         color = &ledStripConfig()->colors[i];
-        colorDefault = &defaultConfig->ledStripConfig.colors[i];
+        colorDefault = &defaultLedStripConfig->colors[i];
         equalsDefault = color->h == colorDefault->h
             && color->s == colorDefault->s
             && color->v == colorDefault->v;
@@ -1835,12 +1832,12 @@ static void cliColor(char *cmdline)
     }
 }
 
-static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
+static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *defaultLedStripConfig)
 {
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
             int colorIndex = ledStripConfig()->modeColors[i].color[j];
-            int colorIndexDefault = defaultConfig->ledStripConfig.modeColors[i].color[j];
+            int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
             const char *format = "mode_color %u %u %u\r\n";
             cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
             cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
@@ -1850,13 +1847,13 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
     const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
         int colorIndex = ledStripConfig()->specialColors.color[j];
-        int colorIndexDefault = defaultConfig->ledStripConfig.specialColors.color[j];
+        int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
 
     int ledStripAuxChannel = ledStripConfig()->ledstrip_aux_channel;
-    int ledStripAuxChannelDefault = defaultConfig->ledStripConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultLedStripConfig->ledstrip_aux_channel;
     cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
     cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
@@ -2626,7 +2623,7 @@ static void cliBeeper(char *cmdline)
 }
 #endif
 
-static void printMap(uint8_t dumpMask, master_t *defaultConfig)
+static void printMap(uint8_t dumpMask, const rxConfig_t *defaultRxConfig)
 {
     bool equalsDefault = true;
     char buf[16];
@@ -2634,8 +2631,8 @@ static void printMap(uint8_t dumpMask, master_t *defaultConfig)
     uint32_t i;
     for (i = 0; i < MAX_MAPPABLE_RX_INPUTS; i++) {
         buf[rxConfig()->rcmap[i]] = rcChannelLetters[i];
-        bufDefault[defaultConfig->rxConfig.rcmap[i]] = rcChannelLetters[i];
-        equalsDefault = equalsDefault && (rxConfig()->rcmap[i] == defaultConfig->rxConfig.rcmap[i]);
+        bufDefault[defaultRxConfig->rcmap[i]] = rcChannelLetters[i];
+        equalsDefault = equalsDefault && (rxConfig()->rcmap[i] == defaultRxConfig->rcmap[i]);
     }
     buf[i] = '\0';
 
@@ -2858,28 +2855,28 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
 #endif
-        printMap(dumpMask, &defaultConfig);
+        printMap(dumpMask, &defaultConfig.rxConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");
 #endif
-        printSerial(dumpMask, &defaultConfig);
+        printSerial(dumpMask, &defaultConfig.serialConfig);
 
 #ifdef LED_STRIP
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# led\r\n");
 #endif
-        printLed(dumpMask, &defaultConfig);
+        printLed(dumpMask, &defaultConfig.ledStripConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# color\r\n");
 #endif
-        printColor(dumpMask, &defaultConfig);
+        printColor(dumpMask, &defaultConfig.ledStripConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mode_color\r\n");
 #endif
-        printModeColor(dumpMask, &defaultConfig);
+        printModeColor(dumpMask, &defaultConfig.ledStripConfig);
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -2895,7 +2892,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# rxrange\r\n");
 #endif
-        printRxRange(dumpMask, &defaultConfig);
+        printRxRange(dumpMask, &defaultConfig.rxConfig);
 
 #ifdef VTX
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -2907,7 +2904,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# rxfail\r\n");
 #endif
-        printRxFail(dumpMask, &defaultConfig);
+        printRxFail(dumpMask, &defaultConfig.rxConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# master\r\n");
