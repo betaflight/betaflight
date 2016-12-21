@@ -747,7 +747,7 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerTrims);
+    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
 
     config->compassConfig.mag_declination = 0;
     config->accelerometerConfig.acc_lpf_hz = 10.0f;

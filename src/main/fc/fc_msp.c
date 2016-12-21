@@ -908,8 +908,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.pitch);
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.roll);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1289,8 +1289,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        masterConfig.accelerometerTrims.values.pitch = sbufReadU16(src);
-        masterConfig.accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig()->auto_disarm_delay = sbufReadU8(src);
