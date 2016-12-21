@@ -592,6 +592,7 @@ HIGHEND_SRC = \
             sensors/barometer.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
+            telemetry/srxl.c \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
