@@ -400,7 +400,7 @@ bool updateRx(timeUs_t currentTimeUs)
         const uint8_t frameStatus = rxMspFrameStatus();
         if (frameStatus & RX_FRAME_COMPLETE) {
             rxDataReceived = true;
-            rxSignalReceived = true;
+            rxIsInFailsafeMode = false;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTimeUs + DELAY_5_HZ;
         }
