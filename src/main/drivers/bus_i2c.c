@@ -21,6 +21,8 @@
     
 #include <platform.h>
 
+#ifdef USE_I2C
+
 #include "io.h"
 #include "system.h"
 
@@ -88,3 +90,4 @@ void i2cInitAll(void)
         }
     }
 }
+#endif // USE_I2C
