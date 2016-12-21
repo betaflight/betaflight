@@ -116,3 +116,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 uint16_t i2cGetErrorCounter(void);
 void i2cInitAll();
 void i2cPinConfigDefault(void);
+void i2cPinConfigSet(int bus, ioTag_t scl, ioTag_t sda);
+
+extern i2cDevice_t i2cHardwareMap[I2CDEV_MAX];
+extern i2cDevice_t i2cHardwareConfig[];

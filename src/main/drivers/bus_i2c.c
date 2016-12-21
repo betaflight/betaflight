@@ -31,9 +31,6 @@
 #include "io_impl.h"
 #include "rcc.h"
 
-extern i2cDevice_t i2cHardwareMap[I2CDEV_MAX];
-extern i2cDevice_t i2cHardwareConfig[];
-
 static I2CDevice i2cConfigFindMap(ioTag_t scl, ioTag_t sda)
 {
     for (unsigned int map = 0 ; map < ARRAYLEN(i2cHardwareMap) ; map++) {
@@ -55,7 +52,7 @@ void i2cPinConfigSet(int bus, ioTag_t scl, ioTag_t sda)
     i2cPinConfig()->ioTagSDA[bus] = sda;
 }
 
-void i2cConfig(void)
+static void i2cConfig(void)
 {
     ioTag_t tagSCL;
     ioTag_t tagSDA;
