@@ -271,17 +271,10 @@ void init(void)
     }
 
     mixerConfigureOutput();
+    motorInit(&masterConfig.motorConfig, idlePulse, getMotorCount());
+
 #ifdef USE_SERVOS
     servoConfigureOutput();
-#endif
-
-#ifdef USE_QUAD_MIXER_ONLY
-    motorInit(motorConfig(), idlePulse, QUAD_MOTOR_COUNT);
-#else
-    motorInit(motorConfig(), idlePulse, motorCount);
-#endif
-
-#ifdef USE_SERVOS
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
         servoInit(&masterConfig.servoConfig);
