@@ -31,8 +31,6 @@ extern "C" {
 
     #include "io/motors.h"
 
-}
-
 PG_DECLARE(motorConfig_t, motorConfig);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
@@ -43,6 +41,8 @@ PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
     .mincommand = 1000,
     .motorPwmRate = 400,
 );
+}
+
 
 #include "unittest_macros.h"
 #include "gtest/gtest.h"
@@ -88,6 +88,5 @@ TEST(ParameterGroupsfTest, Test_pgFind)
 // STUBS
 
 extern "C" {
-
 }
 
