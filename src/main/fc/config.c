@@ -882,7 +882,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        masterConfig.modeActivationConditions,
+        modeActivationProfile()->modeActivationConditions,
         &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );

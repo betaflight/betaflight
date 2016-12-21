@@ -797,7 +797,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
@@ -808,7 +808,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
@@ -1316,7 +1316,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MODE_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             i = sbufReadU8(src);
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1325,7 +1325,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1337,7 +1337,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             i = sbufReadU8(src);
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
