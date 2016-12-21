@@ -38,28 +38,18 @@ typedef enum I2CDevice {
 } I2CDevice;
 
 // Maximum device instance count; consolidate with I2CDevice enum?
-#if defined(STM32F1) || defined(STM32F3)
-# ifdef USE_I2C1
-#  define I2CDEV_MAX 1
-# endif
-# ifdef USE_I2C2
-#  undef  I2CDEV_MAX
-#  define I2CDEV_MAX 2
-# endif
-#endif
 
-#if defined(STM32F4)
-# ifdef USE_I2C3
-#  undef  I2CDEV_MAX
-#  define I2CDEV_MAX 3
-# endif
+#ifdef STM32F1
+# define I2CDEV_MAX 2
 #endif
-
-#if defined(STM32F7)
-# ifdef USE_I2C4
-#  undef  I2CDEV_MAX
-#  define I2CDEV_MAX 4
-# endif
+#ifdef STM32F3
+# define I2CDEV_MAX 2
+#endif
+#ifdef STM32F4
+# define I2CDEV_MAX 3
+#endif
+#ifdef STM32F7
+# define I2CDEV_MAX 4
 #endif
 
 typedef struct i2cDevice_s {
@@ -89,19 +79,6 @@ typedef struct i2cState_s {
     volatile uint8_t* write_p;
     volatile uint8_t* read_p;
 } i2cState_t;
-
-#ifdef STM32F1
-# define I2CDEV_MAX 2
-#endif
-#ifdef STM32F3
-# define I2CDEV_MAX 2
-#endif
-#ifdef STM32F4
-# define I2CDEV_MAX 3
-#endif
-#ifdef STM32F7
-# define I2CDEV_MAX 4
-#endif
 
 typedef struct i2cPinConfig_s {
     ioTag_t ioTagSCL[I2CDEV_MAX];
