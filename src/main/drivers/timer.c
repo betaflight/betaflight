@@ -509,7 +509,10 @@ volatile timCCR_t* timerChCCRLo(const timerHardware_t *timHw)
     return (volatile timCCR_t*)((volatile char*)&timHw->tim->CCR1 + (timHw->channel & ~TIM_Channel_2));
 }
 
-
+uint16_t timerGetPeriod(const timerHardware_t *timHw)
+{
+    return timHw->tim->ARR;
+}
 
 volatile timCCR_t* timerChCCR(const timerHardware_t *timHw)
 {
