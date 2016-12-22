@@ -346,7 +346,8 @@ void init(void)
         .isInverted = false
 #endif
     };
-#ifdef NAZE
+
+#if defined(NAZE) && defined(USE_HARDWARE_REVISION_DETECTION)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperConfig.isOD = false;
@@ -387,14 +388,6 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#if defined(NAZE)
-    if (hardwareRevision == NAZE32_SP) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
-    }
-#endif
-
 #if defined(SONAR) && defined(USE_SOFTSERIAL1)
 #if defined(FURYF3) || defined(OMNIBUS) || defined(SPRACINGF3MINI)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
@@ -411,13 +404,13 @@ void init(void)
 
 #ifdef USE_I2C
 #if defined(NAZE)
-    if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
-    } else {
+    #if defined(AIRHERO32)
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             i2cInit(I2C_DEVICE);
         }
-    }
+    #else
+        i2cInit(I2C_DEVICE);
+    #endif
 #elif defined(I2C_DEVICE_SHARES_UART3)
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         i2cInit(I2C_DEVICE);
@@ -446,11 +439,6 @@ void init(void)
 #ifdef OLIMEXINO
     adc_params.enableExternal1 = true;
 #endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
-#endif
-
     adcInit(&adc_params);
 #endif
 
