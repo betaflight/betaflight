@@ -266,10 +266,10 @@ void init(void)
     }
 
 
-#ifdef STM32F303xC
-    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
-    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
-#endif
+//#ifdef STM32F303xC
+//    pwm_params.useUART2 = doesConfigurationUsePort(SERIAL_PORT_USART2);
+//    pwm_params.useUART3 = doesConfigurationUsePort(SERIAL_PORT_USART3);
+//#endif
 
 #ifdef USE_QUAD_MIXER_ONLY
     motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);

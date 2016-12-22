@@ -58,9 +58,6 @@
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
 
-#define BARO
-#define USE_BARO_BMP280
-
 #define USE_SDCARD
 #define USE_SDCARD_SPI1
 
@@ -152,6 +149,7 @@
 #define WS2811_IRQ                      DMA1_Channel1_IRQn
 #define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC1
 #define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH1_HANDLER
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -193,6 +191,6 @@
 
 #define USED_TIMERS  (TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
 
-#define USABLE_TIMER_CHANNEL_COUNT 15
+#define USABLE_TIMER_CHANNEL_COUNT 11
 
 
