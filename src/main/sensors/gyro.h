@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include "drivers/accgyro.h"
+#include "common/axis.h"
+
 typedef enum {
     GYRO_NONE = 0,
     GYRO_DEFAULT,
@@ -27,6 +30,7 @@ typedef enum {
     GYRO_MPU6000,
     GYRO_MPU6500,
     GYRO_MPU9250,
+    GYRO_ICM20689,
     GYRO_FAKE,
     GYRO_MAX = GYRO_FAKE
 } gyroSensor_e;

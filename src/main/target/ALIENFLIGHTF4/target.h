@@ -35,7 +35,6 @@
 // MPU interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -118,6 +117,9 @@
 //#define UART5_TX_PIN            PC12
 
 #define SERIAL_PORT_COUNT       4
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define USE_SPI
 #define USE_SPI_DEVICE_1

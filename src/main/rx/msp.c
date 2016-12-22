@@ -22,13 +22,7 @@
 
 #ifndef SKIP_RX_MSP
 
-#include "build_config.h"
-
-#include "drivers/system.h"
-
-#include "drivers/serial.h"
-#include "drivers/serial_uart.h"
-#include "io/serial.h"
+#include "common/utils.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -36,7 +30,7 @@
 static uint16_t mspFrame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static bool rxMspFrameDone = false;
 
-static uint16_t rxMspReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t chan)
+static uint16_t rxMspReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t chan)
 {
     UNUSED(rxRuntimeConfigPtr);
     return mspFrame[chan];
@@ -56,21 +50,24 @@ void rxMspFrameReceive(uint16_t *frame, int channelCount)
     rxMspFrameDone = true;
 }
 
-bool rxMspFrameComplete(void)
+uint8_t rxMspFrameStatus(void)
 {
     if (!rxMspFrameDone) {
-        return false;
+        return RX_FRAME_PENDING;
     }
 
     rxMspFrameDone = false;
-    return true;
+    return RX_FRAME_COMPLETE;
 }
 
-void rxMspInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
+void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
+
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
-    if (callback)
-        *callback = rxMspReadRawRC;
+    rxRuntimeConfig->rxRefreshRate = 20000;
+
+    rxRuntimeConfig->rcReadRawFunc = rxMspReadRawRC;
+    rxRuntimeConfig->rcFrameStatusFunc = rxMspFrameStatus;
 }
 #endif

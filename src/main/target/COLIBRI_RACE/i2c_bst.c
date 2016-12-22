@@ -6,8 +6,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "platform.h"
 
@@ -30,8 +31,8 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
-#include "io/escservo.h"
-#include "io/rc_controls.h"
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/serial.h"
@@ -57,14 +58,16 @@
 #include "flight/navigation.h"
 #include "flight/altitudehold.h"
 
-#include "mw.h"
+#include "fc/config.h"
+#include "fc/mw.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
 
-#include "version.h"
 #ifdef NAZE
 #include "hardware_revision.h"
 #endif
@@ -72,7 +75,7 @@
 #include "bus_bst.h"
 #include "i2c_bst.h"
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse);
 
 #define BST_PROTOCOL_VERSION                0
 
@@ -267,7 +270,6 @@ static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
 extern volatile uint8_t CRC8;
 extern volatile bool coreProReady;
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern uint16_t rssi; // FIXME dependency on mw.c
 
 // this is calculated at startup based on enabled features.
 static uint8_t activeBoxIds[CHECKBOX_ITEM_COUNT];
@@ -711,7 +713,6 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWriteNames(pidnames);
             break;
         case BST_PID_CONTROLLER:
-            bstWrite8(currentProfile->pidProfile.pidController);
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
@@ -749,9 +750,9 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
         case BST_MISC:
             bstWrite16(masterConfig.rxConfig.midrc);
 
-            bstWrite16(masterConfig.escAndServoConfig.minthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.maxthrottle);
-            bstWrite16(masterConfig.escAndServoConfig.mincommand);
+            bstWrite16(masterConfig.motorConfig.minthrottle);
+            bstWrite16(masterConfig.motorConfig.maxthrottle);
+            bstWrite16(masterConfig.motorConfig.mincommand);
 
             bstWrite16(masterConfig.failsafeConfig.failsafe_throttle);
 
@@ -1040,8 +1041,6 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             cycleTime = bstRead16();
             break;
         case BST_SET_PID_CONTROLLER:
-            currentProfile->pidProfile.pidController = bstRead8();
-            pidSetController(currentProfile->pidProfile.pidController);
             break;
         case BST_SET_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1062,7 +1061,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.escAndServoConfig, &currentProfile->pidProfile);
+                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
                 } else {
                     ret = BST_FAILED;
                 }
@@ -1114,9 +1113,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             if (tmp < 1600 && tmp > 1400)
                 masterConfig.rxConfig.midrc = tmp;
 
-            masterConfig.escAndServoConfig.minthrottle = bstRead16();
-            masterConfig.escAndServoConfig.maxthrottle = bstRead16();
-            masterConfig.escAndServoConfig.mincommand = bstRead16();
+            masterConfig.motorConfig.minthrottle = bstRead16();
+            masterConfig.motorConfig.maxthrottle = bstRead16();
+            masterConfig.motorConfig.mincommand = bstRead16();
 
             masterConfig.failsafeConfig.failsafe_throttle = bstRead16();
 
@@ -1142,7 +1141,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
             break;
         case BST_SET_MOTOR:
             for (i = 0; i < 8; i++) // FIXME should this use MAX_MOTORS or MAX_SUPPORTED_MOTORS instead of 8
-                motor_disarmed[i] = bstRead16();
+                motor_disarmed[i] = convertExternalToMotor(bstRead16());
             break;
         case BST_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
@@ -1479,11 +1478,10 @@ void bstProcessInCommand(void)
     }
 }
 
-void resetBstChecker(void)
+static void resetBstChecker(uint32_t currentTime)
 {
     if(needResetCheck) {
-        uint32_t currentTimer = micros();
-        if(currentTimer >= (resetBstTimer + BST_RESET_TIME))
+        if(currentTime >= (resetBstTimer + BST_RESET_TIME))
         {
             bstTimeoutUserCallback();
             needResetCheck = false;
@@ -1500,15 +1498,14 @@ static uint32_t next20hzUpdateAt_1 = 0;
 
 static uint8_t sendCounter = 0;
 
-void taskBstMasterProcess(void)
+void taskBstMasterProcess(uint32_t currentTime)
 {
     if(coreProReady) {
-        uint32_t now = micros();
-        if(now >= next02hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTime >= next02hzUpdateAt_1 && !bstWriteBusy()) {
             writeFCModeToBST();
-            next02hzUpdateAt_1 = now + UPDATE_AT_02HZ;
+            next02hzUpdateAt_1 = currentTime + UPDATE_AT_02HZ;
         }
-        if(now >= next20hzUpdateAt_1 && !bstWriteBusy()) {
+        if(currentTime >= next20hzUpdateAt_1 && !bstWriteBusy()) {
             if(sendCounter == 0)
                 writeRCChannelToBST();
             else if(sendCounter == 1)
@@ -1516,7 +1513,7 @@ void taskBstMasterProcess(void)
             sendCounter++;
             if(sendCounter > 1)
                 sendCounter = 0;
-            next20hzUpdateAt_1 = now + UPDATE_AT_20HZ;
+            next20hzUpdateAt_1 = currentTime + UPDATE_AT_20HZ;
         }
 
         if(sensors(SENSOR_GPS) && !bstWriteBusy())
@@ -1527,7 +1524,7 @@ void taskBstMasterProcess(void)
         stopMotors();
         systemReset();
     }
-    resetBstChecker();
+    resetBstChecker(currentTime);
 }
 
 /*************************************************************************************************/

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
+#define TARGET_CONFIG
 #define USE_HARDWARE_REVISION_DETECTION
 
 #define BOARD_HAS_VOLTAGE_DIVIDER
@@ -26,19 +26,27 @@
 #define LED1                    PB4
 
 #define BEEPER                  PA12
-#ifdef AFROMINI
+
+#if defined(AFROMINI)
 #define BEEPER_INVERTED
+#define TARGET_BOARD_IDENTIFIER "AFMN"
+#elif defined(BEEBRAIN)
+#define BRUSHED_MOTORS
+#define TARGET_BOARD_IDENTIFIER "BEBR"
+#define TARGET_CONFIG
+#define DEFAULT_FEATURES FEATURE_MOTOR_STOP
+#else
+#define TARGET_BOARD_IDENTIFIER "AFNA"
 #endif
 
-#define BARO_XCLR_PIN           PC13
-#define BARO_EOC_PIN            PC14
+//#define BARO_XCLR_PIN           PC13
+//#define BARO_EOC_PIN            PC14
 
 #define INVERTER                PB2 // PB2 (BOOT1) abused as inverter select GPIO
 #define INVERTER_USART          USART2
 
 #define USE_EXTI
-#define MAG_INT_EXTI PC14
-#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
+#define MAG_INT_EXTI            PC14
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MAG_DATA_READY_INTERRUPT
@@ -110,23 +118,21 @@
 //#define SONAR_TRIGGER_PIN_PWM   PB8
 //#define SONAR_ECHO_PIN_PWM      PB9
 
-//#define DISPLAY
-
 #define USE_UART1
 #define USE_UART2
-#define USE_UART3
-#define USE_SOFTSERIAL1
-#define USE_SOFTSERIAL2
-#define SERIAL_PORT_COUNT       5
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+//#define USE_UART3
+//#define USE_SOFTSERIAL1
+//#define USE_SOFTSERIAL2
+#define SERIAL_PORT_COUNT       2
 
-#define SOFTSERIAL_1_TIMER TIM3
-#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
-#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
-#define SOFTSERIAL_2_TIMER TIM3
-#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
-#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
+//#define SOFTSERIAL_1_TIMER TIM3
+//#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // PWM 5
+//#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // PWM 6
+//#define SOFTSERIAL_2_TIMER TIM3
+//#define SOFTSERIAL_2_TIMER_RX_HARDWARE 6 // PWM 7
+//#define SOFTSERIAL_2_TIMER_TX_HARDWARE 7 // PWM 8
 
-// USART3 only on NAZE32_SP - Flex Port
 #define UART3_RX_PIN            PB11
 #define UART3_TX_PIN            PB10
 
@@ -157,9 +163,12 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+
 // IO - assuming all IOs on 48pin package
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         ( BIT(13) | BIT(14) | BIT(15) )
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) )

@@ -22,6 +22,7 @@
 typedef enum {
     OSD_RSSI_VALUE,
     OSD_MAIN_BATT_VOLTAGE,
+    OSD_CROSSHAIRS,
     OSD_ARTIFICIAL_HORIZON,
     OSD_HORIZON_SIDEBARS,
     OSD_ONTIME,
@@ -61,8 +62,9 @@ typedef struct {
     int16_t min_voltage; // /10
     int16_t max_current; // /10
     int16_t min_rssi;
+    int16_t max_altitude;
 } statistic_t;
 
+void updateOsd(uint32_t currentTime);
 void osdInit(void);
 void resetOsdConfig(osd_profile_t *osdProfile);
-void updateOsd(void);

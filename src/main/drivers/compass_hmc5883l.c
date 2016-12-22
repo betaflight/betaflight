@@ -24,7 +24,7 @@
 
 #ifdef USE_MAG_HMC5883
 
-#include "debug.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -38,8 +38,6 @@
 
 #include "sensor.h"
 #include "compass.h"
-
-#include "sensors/sensors.h"
 
 #include "compass_hmc5883l.h"
 

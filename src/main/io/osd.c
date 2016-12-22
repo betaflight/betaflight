@@ -22,69 +22,44 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <ctype.h>
 
-#include <string.h>
 #include "platform.h"
 
-#include "debug.h"
-#include "version.h"
-#include "common/maths.h"
-#include "common/axis.h"
-#include "common/color.h"
-#include "common/utils.h"
-#include "common/printf.h"
-#include "common/typeconversion.h"
+#ifdef OSD
 
-#include "drivers/gpio.h"
-#include "drivers/sensor.h"
+#include "build/version.h"
+
+#include "common/utils.h"
+
 #include "drivers/system.h"
-#include "drivers/serial.h"
-#include "drivers/compass.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/accgyro.h"
-#include "drivers/light_led.h"
-#include "drivers/light_ws2811strip.h"
-#include "drivers/sound_beeper.h"
+
+#include "io/flashfs.h"
+#include "io/osd.h"
+
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+
+#include "config/config_profile.h"
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
+
 #include "drivers/max7456.h"
 #include "drivers/max7456_symbols.h"
 
-#include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/sonar.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/gyro.h"
-#include "sensors/battery.h"
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
 
-#include "io/display.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/flashfs.h"
-#include "io/gimbal.h"
-#include "io/gps.h"
-#include "io/ledstrip.h"
-#include "io/serial.h"
-#include "io/beeper.h"
-#include "io/osd.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/altitudehold.h"
-#include "flight/failsafe.h"
-#include "flight/imu.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
+#include "common/printf.h"
 
 #define IS_HI(X)  (rcData[X] > 1750)
 #define IS_LO(X)  (rcData[X] < 1250)
@@ -106,7 +81,7 @@ uint16_t refreshTimeout = 0;
 
 #define VISIBLE_FLAG  0x0800
 #define BLINK_FLAG    0x0400
-uint8_t blinkState = 1;
+bool blinkState = true;
 
 #define OSD_POS(x,y)  (x | (y << 5))
 #define OSD_X(x)      (x & 0x001F)
@@ -166,7 +141,9 @@ bool inMenu = false;
 
 typedef void (* OSDMenuFuncPtr)(void *data);
 
-void osdUpdate(uint8_t guiKey);
+void osdUpdate(uint32_t currentTime);
+char osdGetAltitudeSymbol();
+int32_t osdGetAltitude(int32_t alt);
 void osdOpenMenu(void);
 void osdExitMenu(void * ptr);
 void osdMenuBack(void);
@@ -348,7 +325,6 @@ void applyLedColor(void * ptr)
         if (ledGetFunction(ledConfig) == LED_FUNCTION_COLOR)
             *ledConfig = DEFINE_LED(ledGetX(ledConfig), ledGetY(ledConfig), ledColor, ledGetDirection(ledConfig), ledGetFunction(ledConfig), ledGetOverlay(ledConfig), 0);
     }
-    updateLedStrip();
 }
 
 OSD_TAB_t entryLed = {&ledColor, 13, &LED_COLOR_NAMES[0]};
@@ -398,7 +374,7 @@ OSD_Entry menu_vtx[] =
 };
 #endif // VTX || USE_RTC6705
 
-OSD_UINT16_t entryMinThrottle = {&masterConfig.escAndServoConfig.minthrottle, 1020, 1300, 10};
+OSD_UINT16_t entryMinThrottle = {&masterConfig.motorConfig.minthrottle, 1020, 1300, 10};
 OSD_UINT8_t entryGyroSoftLpfHz = {&masterConfig.gyro_soft_lpf_hz, 0, 255, 1};
 OSD_UINT16_t entryDtermLpf = {&masterConfig.profile[0].pidProfile.dterm_lpf_hz, 0, 500, 5};
 OSD_UINT16_t entryYawLpf = {&masterConfig.profile[0].pidProfile.yaw_lpf_hz, 0, 500, 5};
@@ -491,8 +467,8 @@ OSD_Entry menuRateExpo[] =
     {"RC YAW EXPO", OME_FLOAT, NULL, &entryRcExpoYaw},
     {"THR. PID ATT.", OME_FLOAT, NULL, &extryTpaEntry},
     {"TPA BREAKPOINT", OME_UINT16, NULL, &entryTpaBreak},
-    {"PTERM SRATE RATIO", OME_FLOAT, NULL, &entryPSetpoint},
     {"D SETPOINT", OME_FLOAT, NULL, &entryDSetpoint},
+    {"D SETPOINT TRANSITION", OME_FLOAT, NULL, &entryPSetpoint},
     {"BACK", OME_Back, NULL, NULL},
     {NULL, OME_END, NULL, NULL}
 };
@@ -651,10 +627,36 @@ void osdInit(void)
     refreshTimeout = 4 * REFRESH_1S;
 }
 
+/**
+ * Gets the correct altitude symbol for the current unit system
+ */
+char osdGetAltitudeSymbol()
+{
+    switch (masterConfig.osdProfile.units) {
+        case OSD_UNIT_IMPERIAL:
+            return 0xF;
+        default:
+            return 0xC;
+    }
+}
+
+/**
+ * Converts altitude based on the current unit system.
+ * @param alt Raw altitude (i.e. as taken from BaroAlt)
+ */
+int32_t osdGetAltitude(int32_t alt)
+{
+    switch (masterConfig.osdProfile.units) {
+        case OSD_UNIT_IMPERIAL:
+            return (alt * 328) / 100; // Convert to feet / 100
+        default:
+            return alt;               // Already in metre / 100
+    }
+}
+
 void osdUpdateAlarms(void)
 {
-    int32_t alt = BaroAlt / 100;
-
+    int32_t alt = osdGetAltitude(BaroAlt) / 100;
     statRssi = rssi * 100 / 1024;
 
     if (statRssi < OSD_cfg.rssi_alarm)
@@ -681,10 +683,6 @@ void osdUpdateAlarms(void)
         OSD_cfg.item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
     else
         OSD_cfg.item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
-
-    if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-        alt = (alt * 328) / 100; // Convert to feet
-    }
 
     if (alt >= OSD_cfg.alt_alarm)
         OSD_cfg.item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
@@ -1071,6 +1069,7 @@ void osdResetStats(void)
     stats.min_voltage = 500;
     stats.max_current = 0;
     stats.min_rssi = 99;
+    stats.max_altitude = 0;
 }
 
 void osdUpdateStats(void)
@@ -1090,6 +1089,9 @@ void osdUpdateStats(void)
 
     if (stats.min_rssi > statRssi)
         stats.min_rssi = statRssi;
+
+    if (stats.max_altitude < BaroAlt)
+        stats.max_altitude = BaroAlt;
 }
 
 void osdShowStats(void)
@@ -1126,6 +1128,12 @@ void osdShowStats(void)
         strcat(buff, "\x07");
         max7456Write(22, top++, buff);
     }
+
+    max7456Write(2, top, "MAX ALTITUDE     :");
+    int32_t alt = osdGetAltitude(stats.max_altitude);
+    sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
+    max7456Write(22, top++, buff);
+
     refreshTimeout = 60 * REFRESH_1S;
 }
 
@@ -1138,7 +1146,7 @@ void osdArmMotors(void)
     osdResetStats();
 }
 
-void updateOsd(void)
+void updateOsd(uint32_t currentTime)
 {
     static uint32_t counter;
 #ifdef MAX7456_DMA_CHANNEL_TX
@@ -1149,7 +1157,7 @@ void updateOsd(void)
 
     // redraw values in buffer
     if (counter++ % 5 == 0)
-        osdUpdate(0);
+        osdUpdate(currentTime);
     else // rest of time redraw screen 10 chars per idle to don't lock the main idle
         max7456DrawScreen();
 
@@ -1158,10 +1166,10 @@ void updateOsd(void)
         DISABLE_ARMING_FLAG(OK_TO_ARM);
 }
 
-void osdUpdate(uint8_t guiKey)
+void osdUpdate(uint32_t currentTime)
 {
     static uint8_t rcDelay = BUTTON_TIME;
-    static uint8_t last_sec = 0;
+    static uint8_t lastSec = 0;
     uint8_t key = 0, sec;
 
     // detect enter to menu
@@ -1180,11 +1188,11 @@ void osdUpdate(uint8_t guiKey)
 
     osdUpdateStats();
 
-    sec = millis() / 1000;
+    sec = currentTime / 1000000;
 
-    if (ARMING_FLAG(ARMED) && sec != last_sec) {
+    if (ARMING_FLAG(ARMED) && sec != lastSec) {
         flyTime++;
-        last_sec = sec;
+        lastSec = sec;
     }
 
     if (refreshTimeout) {
@@ -1223,9 +1231,6 @@ void osdUpdate(uint8_t guiKey)
             key = KEY_ESC;
             rcDelay = BUTTON_TIME;
         }
-
-        if (guiKey)
-            key = guiKey;
 
         if (key && !currentElement) {
             rcDelay = osdHandleKey(key);
@@ -1436,7 +1441,10 @@ void osdDrawElements(void)
     if (currentElement)
         osdDrawElementPositioningHelp();
     else if (sensors(SENSOR_ACC) || inMenu)
+    {
         osdDrawSingleElement(OSD_ARTIFICIAL_HORIZON);
+        osdDrawSingleElement(OSD_CROSSHAIRS);
+    }
 
     osdDrawSingleElement(OSD_MAIN_BATT_VOLTAGE);
     osdDrawSingleElement(OSD_RSSI_VALUE);
@@ -1462,7 +1470,7 @@ void osdDrawElements(void)
 #define AH_MAX_ROLL 400  // Specify maximum AHI roll value displayed. Default 400 = 40.0 degrees
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
-extern uint16_t rssi; // FIXME dependency on mw.c
+
 
 void osdDrawSingleElement(uint8_t item)
 {
@@ -1523,18 +1531,8 @@ void osdDrawSingleElement(uint8_t item)
 
         case OSD_ALTITUDE:
         {
-            int32_t alt = BaroAlt; // Metre x 100
-            char unitSym = 0xC;    // m
-
-            if (!VISIBLE(OSD_cfg.item_pos[OSD_ALTITUDE]) || BLINK(OSD_cfg.item_pos[OSD_ALTITUDE]))
-                return;
-
-            if (masterConfig.osdProfile.units == OSD_UNIT_IMPERIAL) {
-                alt = (alt * 328) / 100; // Convert to feet x 100
-                unitSym = 0xF;           // ft
-            }
-
-            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), unitSym);
+            int32_t alt = osdGetAltitude(BaroAlt);
+            sprintf(buff, "%c%d.%01d%c", alt < 0 ? '-' : ' ', abs(alt / 100), abs((alt % 100) / 10), osdGetAltitudeSymbol());
             break;
         }
 
@@ -1602,6 +1600,21 @@ void osdDrawSingleElement(uint8_t item)
         }
 #endif // VTX
 
+        case OSD_CROSSHAIRS:
+        {
+            uint8_t *screenBuffer = max7456GetScreenBuffer();
+            uint16_t position = 194;
+
+            if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
+                position += 30;
+
+            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
+            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
+            screenBuffer[position] = (SYM_AH_CENTER);
+
+            return;
+        }
+
         case OSD_ARTIFICIAL_HORIZON:
         {
             uint8_t *screenBuffer = max7456GetScreenBuffer();
@@ -1613,7 +1626,6 @@ void osdDrawSingleElement(uint8_t item)
             if (maxScreenSize == VIDEO_BUFFER_CHARS_PAL)
                 position += 30;
 
-
             if (pitchAngle > AH_MAX_PITCH)
                 pitchAngle = AH_MAX_PITCH;
             if (pitchAngle < -AH_MAX_PITCH)
@@ -1624,8 +1636,6 @@ void osdDrawSingleElement(uint8_t item)
                 rollAngle = -AH_MAX_ROLL;
 
             for (uint8_t x = 0; x <= 8; x++) {
-                if (x == 4)
-                    x = 5;
                 int y = (rollAngle * (4 - x)) / 64;
                 y -= pitchAngle / 8;
                 y += 41;
@@ -1635,11 +1645,8 @@ void osdDrawSingleElement(uint8_t item)
                 }
             }
 
-            screenBuffer[position - 1] = (SYM_AH_CENTER_LINE);
-            screenBuffer[position + 1] = (SYM_AH_CENTER_LINE_RIGHT);
-            screenBuffer[position] = (SYM_AH_CENTER);
-
             osdDrawSingleElement(OSD_HORIZON_SIDEBARS);
+
             return;
         }
 
@@ -1672,3 +1679,5 @@ void osdDrawSingleElement(uint8_t item)
 
     max7456Write(elemPosX, elemPosY, buff);
 }
+
+#endif // OSD

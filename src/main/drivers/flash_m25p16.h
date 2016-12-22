@@ -18,8 +18,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "flash.h"
-#include "io.h"
+#include "io_types.h"
 
 #define M25P16_PAGESIZE 256
 
@@ -39,4 +38,5 @@ int m25p16_readBytes(uint32_t address, uint8_t *buffer, int length);
 bool m25p16_isReady();
 bool m25p16_waitForReady(uint32_t timeoutMillis);
 
-const flashGeometry_t* m25p16_getGeometry();
+struct flashGeometry_s;
+const struct flashGeometry_s* m25p16_getGeometry();

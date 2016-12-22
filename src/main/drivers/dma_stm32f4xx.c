@@ -21,8 +21,8 @@
 
 #include <platform.h>
 
-#include "drivers/nvic.h"
-#include "drivers/dma.h"
+#include "nvic.h"
+#include "dma.h"
 
 /*
  * DMA descriptors.
@@ -87,3 +87,17 @@ void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr 
     NVIC_Init(&NVIC_InitStructure);
 }
 
+#define RETURN_TCIF_FLAG(s, n) if (s == DMA1_Stream ## n || s == DMA2_Stream ## n) return DMA_IT_TCIF ## n
+
+uint32_t dmaFlag_IT_TCIF(const DMA_Stream_TypeDef *stream)
+{
+    RETURN_TCIF_FLAG(stream, 0);
+    RETURN_TCIF_FLAG(stream, 1);
+    RETURN_TCIF_FLAG(stream, 2);
+    RETURN_TCIF_FLAG(stream, 3);
+    RETURN_TCIF_FLAG(stream, 4);
+    RETURN_TCIF_FLAG(stream, 5);
+    RETURN_TCIF_FLAG(stream, 6);
+    RETURN_TCIF_FLAG(stream, 7);
+    return 0;
+}

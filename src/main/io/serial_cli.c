@@ -24,38 +24,48 @@
 #include <ctype.h>
 
 #include "platform.h"
-#include "version.h"
-#include "debug.h"
 
-#include "build_config.h"
+// FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
+// signal that we're in cli mode
+uint8_t cliMode = 0;
+
+#ifdef USE_CLI
+
+#include "build/build_config.h"
+#include "build/debug.h"
+#include "build/version.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/color.h"
+#include "common/maths.h"
+#include "common/printf.h"
 #include "common/typeconversion.h"
 
 #include "drivers/system.h"
-
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-
 #include "drivers/serial.h"
 #include "drivers/bus_i2c.h"
-#include "drivers/gpio.h"
+#include "drivers/flash.h"
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
-
 #include "drivers/buf_writer.h"
+#include "drivers/serial_escserial.h"
 
-#include "io/escservo.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "io/motors.h"
+#include "io/servos.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
-#include "io/rc_controls.h"
 #include "io/serial.h"
+#include "io/serial_cli.h"
 #include "io/ledstrip.h"
 #include "io/flashfs.h"
 #include "io/beeper.h"
@@ -65,6 +75,8 @@
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
+
+#include "scheduler/scheduler.h"
 
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
@@ -83,21 +95,10 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
-
-#include "common/printf.h"
-
-#include "io/serial_cli.h"
-#include "scheduler/scheduler.h"
-
-// FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
-// signal that we're in cli mode
-uint8_t cliMode = 0;
-
-#ifdef USE_CLI
+#include "config/feature.h"
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
@@ -146,11 +147,15 @@ static void cliTasks(char *cmdline);
 #endif
 static void cliVersion(char *cmdline);
 static void cliRxRange(char *cmdline);
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
+static void printResource(uint8_t dumpMask, master_t *defaultConfig);
 static void cliResource(char *cmdline);
 #endif
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline);
+#endif
+#ifdef USE_ESCSERIAL
+static void cliEscPassthrough(char *cmdline);
 #endif
 
 static void cliHelp(char *cmdline);
@@ -198,6 +203,7 @@ typedef enum {
     DUMP_ALL = (1 << 3),
     DO_DIFF = (1 << 4),
     SHOW_DEFAULTS = (1 << 5),
+    HIDE_UNUSED = (1 << 6),
 } dumpFlags_e;
 
 static const char* const emptyName = "-";
@@ -220,7 +226,8 @@ static const char * const featureNames[] = {
     "SERVO_TILT", "SOFTSERIAL", "GPS", "FAILSAFE",
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
-    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE", NULL
+    "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
+    " ", "VTX", "RX_SPI", "SOFTSPI", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -231,7 +238,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
 // sync this with sensors_e
 static const char * const sensorTypeNames[] = {
     "GYRO", "ACC", "BARO", "MAG", "SONAR", "GPS", "GPS+MAG", NULL
@@ -240,8 +247,8 @@ static const char * const sensorTypeNames[] = {
 #define SENSOR_NAMES_MASK (SENSOR_GYRO | SENSOR_ACC | SENSOR_BARO | SENSOR_MAG)
 
 static const char * const sensorHardwareNames[4][12] = {
-    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "FAKE", NULL },
-    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "MPU9250", "FAKE", NULL },
+    { "", "None", "MPU6050", "L3G4200D", "MPU3050", "L3GD20", "MPU6000", "MPU6500", "MPU9250", "ICM20689", "FAKE", NULL },
+    { "", "None", "ADXL345", "MPU6050", "MMA845x", "BMA280", "LSM303DLHC", "MPU6000", "MPU6500", "ICM20689", "FAKE", NULL },
     { "", "None", "BMP085", "MS5611", "BMP280", NULL },
     { "", "None", "HMC5883", "AK8975", "AK8963", NULL }
 };
@@ -303,6 +310,9 @@ const clicmd_t cmdTable[] = {
 #ifdef GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
+#ifdef USE_ESCSERIAL
+    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki]> <index>", cliEscPassthrough),
+#endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("led", "configure leds", NULL, cliLed),
@@ -322,7 +332,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
+#if (FLASH_SIZE > 64)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
@@ -411,10 +421,6 @@ static const char * const lookupTableBlackboxDevice[] = {
 };
 #endif
 
-static const char * const lookupTablePidController[] = {
-    "LEGACY", "BETAFLIGHT"
-};
-
 #ifdef SERIAL_RX
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
@@ -426,6 +432,20 @@ static const char * const lookupTableSerialRX[] = {
     "XB-B-RJ01",
     "IBUS",
     "JETIEXBUS"
+};
+#endif
+
+#ifdef USE_RX_SPI
+// sync with rx_spi_protocol_e
+static const char * const lookupTableRxSpi[] = {
+    "V202_250K",
+    "V202_1M",
+    "SYMA_X",
+    "SYMA_X5C",
+    "CX10",
+    "CX10A",
+    "H8_3D",
+    "INAV"
 };
 #endif
 
@@ -451,6 +471,7 @@ static const char * const lookupTableAccHardware[] = {
     "MPU6000",
     "MPU6500",
     "MPU9250",
+    "ICM20689",
     "FAKE"
 };
 
@@ -503,11 +524,10 @@ static const char * const lookupTableSuperExpoYaw[] = {
 };
 
 static const char * const lookupTablePwmProtocol[] = {
-    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED"
-};
-
-static const char * const lookupTableDeltaMethod[] = {
-    "ERROR", "MEASUREMENT"
+    "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED", 
+#ifdef USE_DSHOT 
+    "DSHOT600", "DSHOT300", "DSHOT150"
+#endif
 };
 
 static const char * const lookupTableRcInterpolation[] = {
@@ -515,7 +535,7 @@ static const char * const lookupTableRcInterpolation[] = {
 };
 
 static const char * const lookupTableLowpassType[] = {
-    "NORMAL", "HIGH"
+    "PT1", "BIQUAD", "FIR"
 };
 
 static const char * const lookupTableFailsafe[] = {
@@ -542,9 +562,11 @@ typedef enum {
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
-    TABLE_PID_CONTROLLER,
 #ifdef SERIAL_RX
     TABLE_SERIAL_RX,
+#endif
+#ifdef USE_RX_SPI
+    TABLE_RX_SPI,
 #endif
     TABLE_GYRO_LPF,
     TABLE_ACC_HARDWARE,
@@ -557,7 +579,6 @@ typedef enum {
     TABLE_DEBUG,
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
-    TABLE_DELTA_METHOD,
     TABLE_RC_INTERPOLATION,
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
@@ -581,9 +602,11 @@ static const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
 #endif
-    { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
 #ifdef SERIAL_RX
     { lookupTableSerialRX, sizeof(lookupTableSerialRX) / sizeof(char *) },
+#endif
+#ifdef USE_RX_SPI
+    { lookupTableRxSpi, sizeof(lookupTableRxSpi) / sizeof(char *) },
 #endif
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
@@ -596,7 +619,6 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
-    { lookupTableDeltaMethod, sizeof(lookupTableDeltaMethod) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
@@ -666,24 +688,22 @@ const clivalue_t valueTable[] = {
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
-    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.escAndServoConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
+    { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "max_throttle",               VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "min_command",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.mincommand, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+#ifdef USE_DSHOT
+    { "digital_idle_offset",        VAR_UINT8  | MASTER_VALUE,  &masterConfig.motorConfig.digitalIdleOffset, .config.minmax = { 0,  255} },
+#endif
+    { "max_esc_throttle_jump",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.maxEscThrottleJumpMs, .config.minmax = { 0,  1000 } },
 
     { "3d_deadband_low",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_low, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME upper limit should match code in the mixer, 1500 currently
     { "3d_deadband_high",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_high, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } }, // FIXME lower limit should match code in the mixer, 1500 currently,
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.neutral3d, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.flight3DConfig.deadband3d_throttle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
 
-#ifdef CC3D
-    { "enable_buzzer_p6",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.use_buzzer_p6, .config.lookup = { TABLE_OFF_ON } },
-#endif
-    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.use_unsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
-    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motor_pwm_protocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
-    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motor_pwm_rate, .config.minmax = { 200, 32000 } },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servo_pwm_rate, .config.minmax = { 50,  498 } },
+    { "use_unsynced_pwm",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.useUnsyncedPwm, .config.lookup = { TABLE_OFF_ON } },
+    { "motor_pwm_protocol",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.motorConfig.motorPwmProtocol, .config.lookup = { TABLE_MOTOR_PWM_PROTOCOL } },
+    { "motor_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.motorConfig.motorPwmRate, .config.minmax = { 200, 32000 } },
 
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "gyro_cal_on_first_arm",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_cal_on_first_arm, .config.lookup = { TABLE_OFF_ON } },
@@ -715,6 +735,7 @@ const clivalue_t valueTable[] = {
     { "nav_speed_max",              VAR_UINT16 | MASTER_VALUE, &masterConfig.gpsProfile.nav_speed_max, .config.minmax = { 10,  2000 } },
     { "nav_slew_rate",              VAR_UINT8  | MASTER_VALUE, &masterConfig.gpsProfile.nav_slew_rate, .config.minmax = { 0,  100 } },
 #endif
+
 #ifdef GTUNE
     { "gtune_loP_rll",              VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_ROLL], .config.minmax = { 10,  200 } },
     { "gtune_loP_ptch",             VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_lolimP[FD_PITCH], .config.minmax = { 10,  200 } },
@@ -727,10 +748,17 @@ const clivalue_t valueTable[] = {
     { "gtune_average_cycles",       VAR_UINT8  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.gtune_average_cycles, .config.minmax = { 8,  128 } },
 #endif
 
+#ifdef BEEPER
+    { "beeper_inverted",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isInverted, .config.lookup = { TABLE_OFF_ON } },
+    { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.beeperConfig.isOD,       .config.lookup = { TABLE_OFF_ON } },
+#endif
+
 #ifdef SERIAL_RX
     { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.serialrx_provider, .config.lookup = { TABLE_SERIAL_RX } },
 #endif
+
     { "sbus_inversion",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.rxConfig.sbus_inversion, .config.lookup = { TABLE_OFF_ON } },
+
 #ifdef SPEKTRUM_BIND
     { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX} },
     { "spektrum_sat_bind_autoreset",VAR_UINT8  | MASTER_VALUE,  &masterConfig.rxConfig.spektrum_sat_bind_autoreset, .config.minmax = { 0,  1} },
@@ -746,6 +774,7 @@ const clivalue_t valueTable[] = {
     { "frsky_vfas_precision",       VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.frsky_vfas_precision, .config.minmax = { FRSKY_VFAS_PRECISION_LOW,  FRSKY_VFAS_PRECISION_HIGH } },
     { "frsky_vfas_cell_voltage",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.frsky_vfas_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
     { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.telemetryConfig.hottAlarmSoundInterval, .config.minmax = { 0,  120 } },
+    { "pid_values_as_telemetry",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.telemetryConfig.pidValuesAsTelemetry, .config.lookup = {TABLE_OFF_ON } },
 #endif
 
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.batteryCapacity, .config.minmax = { 0,  20000 } },
@@ -758,7 +787,7 @@ const clivalue_t valueTable[] = {
     { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterOffset, .config.minmax = { 0,  3300 } },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR } },
-
+    { "battery_notpresent_level",   VAR_UINT8  | MASTER_VALUE, &masterConfig.batteryConfig.batterynotpresentlevel, .config.minmax = { 0, 200 } },
     { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.gyro_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.sensorAlignmentConfig.mag_align, .config.lookup = { TABLE_ALIGNMENT } },
@@ -768,15 +797,14 @@ const clivalue_t valueTable[] = {
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &masterConfig.boardAlignment.yawDegrees, .config.minmax = { -180,  360 } },
 
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
-    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
-    { "gyro_lowpass_level",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_soft_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
+    { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_soft_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
-    { "gyro_notch_hz_1",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz_1, .config.minmax = { 0,  1000 } },
-    { "gyro_notch_cutoff_1",        VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_cutoff_1, .config.minmax = { 1,  1000 } },
-    { "gyro_notch_hz_2",            VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz_2, .config.minmax = { 0,  1000 } },
-    { "gyro_notch_cutoff_2",        VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_cutoff_2, .config.minmax = { 1, 1000 } },
+    { "gyro_notch1_hz",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz_1, .config.minmax = { 0,  1000 } },
+    { "gyro_notch1_cutoff",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_cutoff_1, .config.minmax = { 1,  1000 } },
+    { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_hz_2, .config.minmax = { 0,  1000 } },
+    { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.gyro_soft_notch_cutoff_2, .config.minmax = { 1, 1000 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_ki, .config.minmax = { 0,  50000 } },
@@ -793,10 +821,14 @@ const clivalue_t valueTable[] = {
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
+    { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
 #ifdef USE_SERVOS
-    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
-    { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
-    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
+    { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_lowpass_freq",         VAR_UINT16 | MASTER_VALUE, &masterConfig.servoMixerConfig.servo_lowpass_freq, .config.minmax = { 10,  400} },
+    { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.servoMixerConfig.servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &masterConfig.servoConfig.servoPwmRate, .config.minmax = { 50,  498 } },
+    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
 #endif
 
     { "rc_rate",                    VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rcRate8, .config.minmax = { 0,  255 } },
@@ -822,12 +854,8 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
-#ifdef USE_SERVOS
-    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
-#endif
-
     { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.acc_hardware, .config.lookup = { TABLE_ACC_HARDWARE } },
-    { "acc_lpf_hz",                 VAR_FLOAT  | MASTER_VALUE, &masterConfig.acc_lpf_hz, .config.minmax = { 0,  400 } },
+    { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, &masterConfig.acc_lpf_hz, .config.minmax = { 0,  400 } },
     { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.xy, .config.minmax = { 0,  100 } },
     { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &masterConfig.accDeadband.z, .config.minmax = { 0,  100 } },
     { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
@@ -846,7 +874,7 @@ const clivalue_t valueTable[] = {
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
 #endif
-    { "dterm_lowpass_level",        VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dterm_filter_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
+    { "dterm_lowpass_type",         VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.dterm_filter_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
     { "dterm_lowpass",              VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
     { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_hz, .config.minmax = { 0,  500 } },
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_notch_cutoff, .config.minmax = { 1,  500 } },
@@ -862,10 +890,6 @@ const clivalue_t valueTable[] = {
     { "yaw_accum_threshold",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
     { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
-
-#ifndef SKIP_PID_FLOAT
-    { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
-#endif
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 } },
@@ -888,6 +912,8 @@ const clivalue_t valueTable[] = {
     { "p_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDVEL], .config.minmax = { 0,  200 } },
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], .config.minmax = { 0,  200 } },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
+
+    { "level_sensitivity",          VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.levelSensitivity, .config.minmax = { 0.1,  3.0 } },
 
 #ifdef BLACKBOX
     { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.blackbox_rate_num, .config.minmax = { 1,  32 } },
@@ -919,7 +945,8 @@ const clivalue_t valueTable[] = {
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.video_system, .config.minmax = { 0, 2 } },
     { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.osdProfile.units, .config.lookup = { TABLE_UNIT } },
-    { "osd_rssi_alarm",             VAR_UINT8 | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
+
+    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &masterConfig.osdProfile.rssi_alarm, .config.minmax = { 0, 100 } },
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.cap_alarm, .config.minmax = { 0, 20000 } },
     { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.time_alarm, .config.minmax = { 0, 60 } },
     { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &masterConfig.osdProfile.alt_alarm, .config.minmax = { 0, 10000 } },
@@ -931,13 +958,14 @@ const clivalue_t valueTable[] = {
     { "osd_flymode_pos",            VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_FLYMODE], .config.minmax = { 0, 65536 } },
     { "osd_throttle_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, 65536 } },
     { "osd_vtx_channel_pos",        VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, 65536 } },
+    { "osd_crosshairs",             VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, 65536 } },
     { "osd_artificial_horizon",     VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, 65536 } },
     { "osd_current_draw_pos",       VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, 65536 } },
     { "osd_mah_drawn_pos",          VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, 65536 } },
     { "osd_craft_name_pos",         VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, 65536 } },
     { "osd_gps_speed_pos",          VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SPEED], .config.minmax = { 0, 65536 } },
     { "osd_gps_sats_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_GPS_SATS], .config.minmax = { 0, 65536 } },
-    { "osd_altitude",               VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
+    { "osd_altitude_pos",           VAR_UINT16  | MASTER_VALUE, &masterConfig.osdProfile.item_pos[OSD_ALTITUDE], .config.minmax = { 0, 65536 } },
 #endif
 };
 
@@ -1025,7 +1053,7 @@ static void printRxFail(uint8_t dumpMask, master_t *defaultConfig)
         channelFailsafeConfiguration = &masterConfig.rxConfig.failsafe_channel_configurations[channel];
         channelFailsafeConfigurationDefault = &defaultConfig->rxConfig.failsafe_channel_configurations[channel];
         equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-	    && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
+            && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
         requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
@@ -1147,9 +1175,9 @@ static void printAux(uint8_t dumpMask, master_t *defaultConfig)
         mac = &masterConfig.modeActivationConditions[i];
         macDefault = &defaultConfig->modeActivationConditions[i];
         equalsDefault = mac->modeId == macDefault->modeId
-	    && mac->auxChannelIndex == macDefault->auxChannelIndex
-	    && mac->range.startStep == macDefault->range.startStep
-	    && mac->range.endStep == macDefault->range.endStep;
+            && mac->auxChannelIndex == macDefault->auxChannelIndex
+            && mac->range.startStep == macDefault->range.startStep
+            && mac->range.endStep == macDefault->range.endStep;
         const char *format = "aux %u %u %u %u %u\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
@@ -1241,7 +1269,7 @@ static void printSerial(uint8_t dumpMask, master_t *defaultConfig)
             baudRates[serialConfig->portConfigs[i].gps_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].telemetry_baudrateIndex],
             baudRates[serialConfig->portConfigs[i].blackbox_baudrateIndex]
-        );
+            );
     }
 }
 
@@ -1253,7 +1281,7 @@ static void cliSerial(char *cmdline)
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, NULL);
 
-	return;
+    return;
     }
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
@@ -1293,7 +1321,7 @@ static void cliSerial(char *cmdline)
 
         switch(i) {
             case 0:
-                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_115200) {
+                if (baudRateIndex < BAUD_9600 || baudRateIndex > BAUD_1000000) {
                     continue;
                 }
                 portConfig.msp_baudrateIndex = baudRateIndex;
@@ -1409,11 +1437,11 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         ar = &masterConfig.adjustmentRanges[i];
         arDefault = &defaultConfig->adjustmentRanges[i];
-	equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-	    && ar->range.startStep == arDefault->range.startStep
-	    && ar->range.endStep == arDefault->range.endStep
-	    && ar->adjustmentFunction == arDefault->adjustmentFunction
-	    && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
+        equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
+            && ar->range.startStep == arDefault->range.startStep
+            && ar->range.endStep == arDefault->range.endStep
+            && ar->adjustmentFunction == arDefault->adjustmentFunction
+            && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
             && ar->adjustmentIndex == arDefault->adjustmentIndex;
         const char *format = "adjrange %u %u %u %u %u %u %u\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
@@ -1497,12 +1525,13 @@ static void cliAdjustmentRange(char *cmdline)
     }
 }
 
+#ifndef USE_QUAD_MIXER_ONLY
 static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
 {
-	char buf0[8];
-	char buf1[8];
-	char buf2[8];
-	char buf3[8];
+    char buf0[8];
+    char buf1[8];
+    char buf2[8];
+    char buf3[8];
     for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         if (masterConfig.customMotorMixer[i].throttle == 0.0f)
             break;
@@ -1531,6 +1560,7 @@ static void printMotorMix(uint8_t dumpMask, master_t *defaultConfig)
             ftoa(yaw, buf3));
     }
 }
+#endif // USE_QUAD_MIXER_ONLY
 
 static void cliMotorMix(char *cmdline)
 {
@@ -1542,7 +1572,7 @@ static void cliMotorMix(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-		printMotorMix(DUMP_MASTER, NULL);
+        printMotorMix(DUMP_MASTER, NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
@@ -1591,7 +1621,7 @@ static void cliMotorMix(char *cmdline)
             if (check != 4) {
                 cliShowParseError();
             } else {
-		        printMotorMix(DUMP_MASTER, NULL);
+                printMotorMix(DUMP_MASTER, NULL);
             }
         } else {
             cliShowArgumentRangeError("index", 0, MAX_SUPPORTED_MOTORS - 1);
@@ -1716,8 +1746,8 @@ static void printColor(uint8_t dumpMask, master_t *defaultConfig)
         color = &masterConfig.colors[i];
         colorDefault = &defaultConfig->colors[i];
         equalsDefault = color->h == colorDefault->h
-	    && color->s == colorDefault->s
-	    && color->v == colorDefault->v;
+            && color->s == colorDefault->s
+            && color->v == colorDefault->v;
         const char *format = "color %u %d,%u,%u\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
@@ -1767,13 +1797,18 @@ static void printModeColor(uint8_t dumpMask, master_t *defaultConfig)
         }
     }
 
+    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
         int colorIndex = masterConfig.specialColors.color[j];
         int colorIndexDefault = defaultConfig->specialColors.color[j];
-        const char *format = "mode_color %u %u %u\r\n";
         cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
         cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
     }
+
+    int ledStripAuxChannel = masterConfig.ledstrip_aux_channel;
+    int ledStripAuxChannelDefault = defaultConfig->ledstrip_aux_channel;
+    cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
+    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
@@ -2259,11 +2294,11 @@ static void printVtx(uint8_t dumpMask, master_t *defaultConfig)
     for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
         cac = &masterConfig.vtxChannelActivationConditions[i];
         cacDefault = &defaultConfig->vtxChannelActivationConditions[i];
-	equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
+        equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
             && cac->band == cacDefault->band
-	    && cac->channel == cacDefault->channel
-	    && cac->range.startStep == cacDefault->range.startStep
-	    && cac->range.endStep == cacDefault->range.endStep;
+            && cac->channel == cacDefault->channel
+            && cac->range.startStep == cacDefault->range.startStep
+            && cac->range.endStep == cacDefault->range.endStep;
         const char *format = "vtx %u %u %u %u %u %u\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, format,
             i,
@@ -2621,7 +2656,7 @@ static bool valueEqualsDefault(const clivalue_t *value, master_t *defaultConfig)
 
         case VAR_FLOAT:
             result = *(float *)ptr == *(float *)ptrDefault;
-	    break;
+            break;
     }
     return result;
 }
@@ -2710,11 +2745,16 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
         printName(dumpMask);
 
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrint("\r\n# resources\r\n");
+#endif
+        printResource(dumpMask, &defaultConfig);
+
 #ifndef USE_QUAD_MIXER_ONLY
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# mixer\r\n");
 #endif
-		bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
+        const bool equalsDefault = masterConfig.mixerMode == defaultConfig.mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerMode - 1]);
@@ -2724,33 +2764,36 @@ static void printConfig(char *cmdline, bool doDiff)
         printMotorMix(dumpMask, &defaultConfig);
 
 #ifdef USE_SERVOS
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo\r\n");
-		printServo(dumpMask, &defaultConfig);
+#endif
+        printServo(dumpMask, &defaultConfig);
 
+#ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# servo mix\r\n");
+#endif
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-		printServoMix(dumpMask, &defaultConfig);
-
+        printServoMix(dumpMask, &defaultConfig);
 #endif
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# feature\r\n");
 #endif
-		printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &defaultConfig);
 
 #ifdef BEEPER
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# beeper\r\n");
 #endif
-		printBeeper(dumpMask, &defaultConfig);
+        printBeeper(dumpMask, &defaultConfig);
 #endif
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# map\r\n");
 #endif
-		printMap(dumpMask, &defaultConfig);
+        printMap(dumpMask, &defaultConfig);
 
 #ifndef CLI_MINIMAL_VERBOSITY
         cliPrint("\r\n# serial\r\n");
@@ -2812,8 +2855,9 @@ static void printConfig(char *cmdline, bool doDiff)
                 cliDumpProfile(profileCount, dumpMask, &defaultConfig);
 
                 uint8_t currentRateIndex = currentProfile->activeRateProfile;
-                for (uint32_t rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
+                for (uint32_t rateCount = 0; rateCount<MAX_RATEPROFILES; rateCount++) {
                     cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
+                }
 
                 changeControlRateProfile(currentRateIndex);
 #ifndef CLI_MINIMAL_VERBOSITY
@@ -2846,8 +2890,10 @@ static void printConfig(char *cmdline, bool doDiff)
 
 static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *defaultConfig)
 {
-    if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
+    if (profileIndex >= MAX_PROFILE_COUNT) {
+        // Faulty values
         return;
+    }
     changeProfile(profileIndex);
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\n# profile\r\n");
@@ -2860,8 +2906,10 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, master_t *defaultConfig)
 {
-    if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
+    if (rateProfileIndex >= MAX_RATEPROFILES) {
+        // Faulty values
         return;
+    }
     changeControlRateProfile(rateProfileIndex);
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\n# rateprofile\r\n");
@@ -2911,6 +2959,60 @@ static void cliGpsPassthrough(char *cmdline)
     UNUSED(cmdline);
 
     gpsEnablePassthrough(cliPort);
+}
+#endif
+
+#ifdef USE_ESCSERIAL
+static void cliEscPassthrough(char *cmdline)
+{
+    uint8_t mode = 0;
+    int index = 0;
+    int i = 0;
+    char *pch = NULL;
+    char *saveptr;
+
+    if (isEmpty(cmdline)) {
+        cliShowParseError();
+        return;
+    }
+
+    pch = strtok_r(cmdline, " ", &saveptr);
+    while (pch != NULL) {
+        switch (i) {
+            case 0:
+                if(strncasecmp(pch, "sk", strlen(pch)) == 0)
+                {
+                    mode = 0;
+                }
+                else if(strncasecmp(pch, "bl", strlen(pch)) == 0)
+                {
+                    mode = 1;
+                }
+                else if(strncasecmp(pch, "ki", strlen(pch)) == 0)
+                {
+                    mode = 2;
+                }
+                else
+                {
+                    cliShowParseError();
+                    return;
+                }
+                break;
+            case 1:
+                index = atoi(pch);
+                if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
+                    printf("passthru at pwm output %d enabled\r\n", index);
+                }
+                else {
+                    printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                    return;
+                }
+                break;
+        }
+        i++;
+        pch = strtok_r(NULL, " ", &saveptr);
+    }
+    escEnablePassthrough(cliPort,index,mode);
 }
 #endif
 
@@ -3005,11 +3107,11 @@ static void cliMotor(char *cmdline)
             cliShowArgumentRangeError("value", 1000, 2000);
             return;
         } else {
-            motor_disarmed[motor_index] = motor_value;
+            motor_disarmed[motor_index] = convertExternalToMotor(motor_value);
         }
     }
 
-    cliPrintf("motor %d: %d\r\n", motor_index, motor_disarmed[motor_index]);
+    cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
 static void cliPlaySound(char *cmdline)
@@ -3121,12 +3223,9 @@ static void cliDefaults(char *cmdline)
 
 static void cliPrint(const char *str)
 {
-    while (*str)
+    while (*str) {
         bufWriterAppend(cliWriter, *str++);
-
-#ifdef USE_SLOW_SERIAL_CLI
-    delay(1);
-#endif
+    }
 }
 
 static void cliPutp(void *p, char ch)
@@ -3141,10 +3240,6 @@ static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *form
         va_start(va, format);
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
-
-#ifdef USE_SLOW_SERIAL_CLI
-        delay(1);
-#endif
 
         return true;
     } else {
@@ -3162,10 +3257,6 @@ static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *f
         tfp_format(cliWriter, cliPutp, format, va);
         va_end(va);
 
-#ifdef USE_SLOW_SERIAL_CLI
-        delay(1);
-#endif
-
         return true;
     } else {
         return false;
@@ -3178,10 +3269,6 @@ static void cliPrintf(const char *fmt, ...)
     va_start(va, fmt);
     tfp_format(cliWriter, cliPutp, fmt, va);
     va_end(va);
-
-#ifdef USE_SLOW_SERIAL_CLI
-    delay(1);
-#endif
 }
 
 static void cliWrite(uint8_t ch)
@@ -3526,7 +3613,8 @@ static void cliVersion(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("# BetaFlight/%s %s %s / %s (%s)\r\n",
+    cliPrintf("# %s/%s %s %s / %s (%s)\r\n",
+        FC_FIRMWARE_NAME,
         targetName,
         FC_VERSION_STRING,
         buildDate,
@@ -3610,11 +3698,11 @@ void cliProcess(void)
                 cliBuffer[bufferIndex] = 0; // null terminate
 
                 const clicmd_t *cmd;
-		char *options;
+                char *options;
                 for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
                     if ((options = checkCommand(cliBuffer, cmd->name))) {
                         break;
-		    }
+            }
                 }
                 if(cmd < cmdTable + CMD_COUNT)
                     cmd->func(options);
@@ -3645,31 +3733,187 @@ void cliProcess(void)
     }
 }
 
-#if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
-static void cliResource(char *cmdline)
+#if (FLASH_SIZE > 64)
+
+typedef struct {
+    const uint8_t owner;
+    ioTag_t *ptr;
+    const uint8_t maxIndex;
+} cliResourceValue_t;
+
+const cliResourceValue_t resourceTable[] = {
+#ifdef BEEPER
+    { OWNER_BEEPER, &masterConfig.beeperConfig.ioTag, 0 },
+#endif 
+    { OWNER_MOTOR, &masterConfig.motorConfig.ioTags[0], MAX_SUPPORTED_MOTORS },
+#ifdef USE_SERVOS
+    { OWNER_SERVO, &masterConfig.servoConfig.ioTags[0], MAX_SUPPORTED_SERVOS },
+#endif 
+#ifndef SKIP_RX_PWM_PPM
+    { OWNER_PPMINPUT, &masterConfig.ppmConfig.ioTag, 0 },
+    { OWNER_PWMINPUT, &masterConfig.pwmConfig.ioTags[0], PWM_INPUT_PORT_COUNT },
+#endif 
+#ifdef SONAR
+    { OWNER_SONAR_TRIGGER, &masterConfig.sonarConfig.triggerTag, 0 },
+    { OWNER_SONAR_ECHO, &masterConfig.sonarConfig.echoTag, 0 },
+#endif
+};
+
+static void printResource(uint8_t dumpMask, master_t *defaultConfig)
 {
-    UNUSED(cmdline);
-    cliPrintf("IO:\r\n----------------------\r\n");
-    for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+    for (unsigned int i = 0; i < ARRAYLEN(resourceTable); i++) {
         const char* owner;
-        owner = ownerNames[ioRecs[i].owner];
+        owner = ownerNames[resourceTable[i].owner];
 
-        const char* resource;
-        resource = resourceNames[ioRecs[i].resource];
+        if (resourceTable[i].maxIndex > 0) {
+            for (int index = 0; index < resourceTable[i].maxIndex; index++) {
+                ioTag_t ioPtr = *(resourceTable[i].ptr + index);
+                ioTag_t ioPtrDefault = *(resourceTable[i].ptr + index - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
 
-        if (ioRecs[i].index > 0) {
-            cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+                IO_t io = IOGetByTag(ioPtr);
+                IO_t ioDefault = IOGetByTag(ioPtrDefault);
+                bool equalsDefault = io == ioDefault;
+                const char *format = "resource %s %d %c%02d\r\n";
+                const char *formatUnassigned = "resource %s %d NONE\r\n";
+                if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                    cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                } else {
+                    cliDefaultPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+                }
+                if (DEFIO_TAG_ISEMPTY(io)) {
+                    if (!(dumpMask & HIDE_UNUSED)) {
+                        cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner, RESOURCE_INDEX(index));
+                    }
+                } else {
+                    cliDumpPrintf(dumpMask, equalsDefault, format, owner, RESOURCE_INDEX(index), IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+                }
+            }
         } else {
-            cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+            ioTag_t ioPtr = *resourceTable[i].ptr;
+            ioTag_t ioPtrDefault = *(resourceTable[i].ptr - (uint32_t)&masterConfig + (uint32_t)defaultConfig);
+
+            IO_t io = IOGetByTag(ioPtr);
+            IO_t ioDefault = IOGetByTag(ioPtrDefault);
+            bool equalsDefault = io == ioDefault;
+            const char *format = "resource %s %c%02d\r\n";
+            const char *formatUnassigned = "resource %s NONE\r\n";
+            if (DEFIO_TAG_ISEMPTY(ioDefault)) {
+                cliDefaultPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+            } else {
+                cliDefaultPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(ioDefault) + 'A', IO_GPIOPinIdx(ioDefault));
+            }
+            if (DEFIO_TAG_ISEMPTY(io)) {
+                if (!(dumpMask & HIDE_UNUSED)) {
+                    cliDumpPrintf(dumpMask, equalsDefault, formatUnassigned, owner);
+                }
+            } else {
+                cliDumpPrintf(dumpMask, equalsDefault, format, owner, IO_GPIOPortIdx(io) + 'A', IO_GPIOPinIdx(io));
+            }
         }
     }
+}
+
+static void cliResource(char *cmdline)
+{
+    int len = strlen(cmdline);
+
+    if (len == 0) {
+        printResource(DUMP_MASTER | HIDE_UNUSED, NULL);
+
+        return;
+    } else if (strncasecmp(cmdline, "list", len) == 0) {
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n----------------------\r\n");
+#endif
+        for (uint32_t i = 0; i < DEFIO_IO_USED_COUNT; i++) {
+            const char* owner;
+            owner = ownerNames[ioRecs[i].owner];
+
+            const char* resource;
+            resource = resourceNames[ioRecs[i].resource];
+
+            if (ioRecs[i].index > 0) {
+                cliPrintf("%c%02d: %s%d %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, ioRecs[i].index, resource);
+            } else {
+                cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
+            }
+        }
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
+#endif
+
+        return;
+    }
+
+    uint8_t resourceIndex = 0;
+    int index = 0;
+    char *pch = NULL;
+    char *saveptr;
+    
+    pch = strtok_r(cmdline, " ", &saveptr);
+    for (resourceIndex = 0; ; resourceIndex++) {
+        if (resourceIndex >= ARRAYLEN(resourceTable)) {
+            cliPrint("Invalid resource\r\n");
+            return;
+        }
+        
+        if (strncasecmp(pch, ownerNames[resourceTable[resourceIndex].owner], len) == 0) {
+            break;
+        }
+    }
+
+    if (resourceTable[resourceIndex].maxIndex > 0) {
+        pch = strtok_r(NULL, " ", &saveptr);
+        index = atoi(pch);
+        
+        if (index <= 0 || index > resourceTable[resourceIndex].maxIndex) {
+            cliShowArgumentRangeError("index", 1, resourceTable[resourceIndex].maxIndex);
+            return;
+        }
+    }
+
+    pch = strtok_r(NULL, " ", &saveptr);
+    ioTag_t *tag = (ioTag_t*)(resourceTable[resourceIndex].ptr + (index == 0 ? 0 : index - 1));
+    
+    uint8_t pin = 0;
+    if (strlen(pch) > 0) {
+        if (strcasecmp(pch, "NONE") == 0) {
+            *tag = IO_TAG_NONE;
+            cliPrintf("Resource is freed!");
+            return;
+        } else {
+            uint8_t port = (*pch) - 'A';
+            if (port >= 8) {
+                port = (*pch) - 'a';
+            }
+
+            if (port < 8) {
+                pch++;
+                pin = atoi(pch);
+                if (pin < 16) {
+                    ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin))); 
+                    if (rec) {
+                        *tag = DEFIO_TAG_MAKE(port, pin);
+                        cliPrintf("Resource is set to %c%02d!", port + 'A', pin);
+                    } else {
+                        cliPrintf("Resource is invalid!");
+                    }
+                    return;
+                }
+            }
+        }
+    }
+    
+    cliShowParseError();
 }
 #endif
 
 void cliDfu(char *cmdLine)
 {
     UNUSED(cmdLine);
+#ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nRestarting in DFU mode");
+#endif
     cliRebootEx(true);
 }
 

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/color.h"
+
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
@@ -73,7 +75,8 @@ typedef enum {
     LED_MODE_ANGLE,
     LED_MODE_MAG,
     LED_MODE_BARO,
-    LED_SPECIAL
+    LED_SPECIAL,
+    LED_AUX_CHANNEL
 } ledModeIndex_e;
 
 typedef enum {
@@ -165,12 +168,9 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
-void updateLedStrip(void);
+void ledStripUpdate(uint32_t currentTime);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
-
-extern uint16_t rssi; // FIXME dependency on mw.c
-
 
 void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
 void applyDefaultColors(hsvColor_t *colors);

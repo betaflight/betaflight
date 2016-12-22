@@ -26,6 +26,8 @@
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
+#define USE_DSHOT
+
 #define LED0                    PB5
 // Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
 //#define LED1                    PB4
@@ -51,7 +53,6 @@
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -91,6 +92,9 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -111,7 +115,7 @@
 
 #define LED_STRIP
 // LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
+#define WS2811_TIMER_GPIO_AF            GPIO_AF_TIM5
 #define WS2811_PIN                      PA1 
 #define WS2811_TIMER                    TIM5
 #define WS2811_TIMER_CHANNEL            TIM_Channel_2

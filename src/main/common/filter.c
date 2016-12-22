@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 
 #include "common/filter.h"
@@ -74,7 +75,7 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     const float cs = cosf(omega);
     const float alpha = sn / (2 * Q);
 
-    float b0, b1, b2, a0, a1, a2;
+    float b0 = 0, b1 = 0, b2 = 0, a0 = 0, a1 = 0, a2 = 0;
 
     switch (filterType) {
         case FILTER_LPF:
@@ -115,25 +116,114 @@ float biquadFilterApply(biquadFilter_t *filter, float input)
     return result;
 }
 
-int32_t filterApplyAverage(int32_t input, uint8_t averageCount, int32_t averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    int32_t averageSum = 0;
-
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
-
-    return averageSum / averageCount;
+/*
+ * FIR filter
+ */
+void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength)
+{
+    filter->buf = buf;
+    filter->bufLength = bufLength;
+    filter->coeffs = coeffs;
+    filter->coeffsLength = coeffsLength;
+    filter->movingSum = 0.0f;
+    filter->index = 0;
+    filter->count = 0;
+    memset(filter->buf, 0, sizeof(float) * filter->bufLength);
 }
 
-float filterApplyAveragef(float input, uint8_t averageCount, float averageState[DELTA_MAX_SAMPLES]) {
-    int count;
-    float averageSum = 0.0f;
+/*
+ * FIR filter initialisation
+ * If the FIR filter is just to be used for averaging, then coeffs can be set to NULL
+ */
+void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs)
+{
+    firFilterInit2(filter, buf, bufLength, coeffs, bufLength);
+}
 
-    for (count = averageCount-1; count > 0; count--) averageState[count] = averageState[count-1];
-    averageState[0] = input;
-    for (count = 0; count < averageCount; count++) averageSum += averageState[count];
+void firFilterUpdate(firFilter_t *filter, float input)
+{
+    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
+    if (filter->index >= filter->bufLength) {
+        filter->index = 0;
+    }
+}
 
-    return averageSum / averageCount;
+/*
+ * Update FIR filter maintaining a moving sum for quick moving average computation
+ */
+void firFilterUpdateAverage(firFilter_t *filter, float input)
+{
+    filter->movingSum += input; // sum of the last <count> items, to allow quick moving average computation
+    filter->movingSum -=  filter->buf[filter->index]; // subtract the value that "drops off" the end of the moving sum
+    filter->buf[filter->index++] = input; // index is at the first empty buffer positon
+    if (filter->index >= filter->bufLength) {
+        filter->index = 0;
+    }
+    if (filter->count < filter->bufLength) {
+        ++filter->count;
+    }
+}
+
+float firFilterApply(const firFilter_t *filter)
+{
+    float ret = 0.0f;
+    int ii = 0;
+    int index;
+    for (index = filter->index - 1; index >= 0; ++ii, --index) {
+        ret += filter->coeffs[ii] * filter->buf[index];
+    }
+    for (index = filter->bufLength - 1; ii < filter->coeffsLength; ++ii, --index) {
+        ret += filter->coeffs[ii] * filter->buf[index];
+    }
+    return ret;
+}
+
+/*
+ * Returns average of the last <count> items.
+ */
+float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count)
+{
+    float ret = 0.0f;
+    int index = filter->index;
+    for (int ii = 0; ii < filter->coeffsLength; ++ii) {
+        --index;
+        if (index < 0) {
+            index = filter->bufLength - 1;
+        }
+        ret += filter->buf[index];
+    }
+    return ret / count;
+}
+
+float firFilterCalcMovingAverage(const firFilter_t *filter)
+{
+    return filter->movingSum / filter->count;
+}
+
+float firFilterLastInput(const firFilter_t *filter)
+{
+    // filter->index points to next empty item in buffer
+    const int index = filter->index == 0 ? filter->bufLength - 1 : filter->index - 1;
+    return filter->buf[index];
+}
+
+void firFilterDenoiseInit(firFilterDenoise_t *filter, uint8_t gyroSoftLpfHz, uint16_t targetLooptime)
+{
+    filter->targetCount = constrain(lrintf((1.0f / (0.000001f * (float)targetLooptime)) / gyroSoftLpfHz), 1, MAX_FIR_DENOISE_WINDOW_SIZE);
+}
+
+// prototype function for denoising of signal by dynamic moving average. Mainly for test purposes
+float firFilterDenoiseUpdate(firFilterDenoise_t *filter, float input)
+{
+    filter->state[filter->index] = input;
+    filter->movingSum += filter->state[filter->index++];
+    if (filter->index == filter->targetCount)
+        filter->index = 0;
+    filter->movingSum -= filter->state[filter->index];
+
+    if (filter->targetCount >= filter->filledCount)
+        return filter->movingSum / filter->targetCount;
+    else
+        return filter->movingSum / ++filter->filledCount + 1;
 }
 

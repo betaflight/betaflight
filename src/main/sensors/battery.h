@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "common/maths.h"
+#include "common/maths.h" // for fix12_t
 
 #ifndef VBAT_SCALE_DEFAULT
 #define VBAT_SCALE_DEFAULT 110
@@ -50,6 +50,7 @@ typedef struct batteryConfig_s {
     // FIXME this doesn't belong in here since it's a concern of MSP, not of the battery code.
     uint8_t multiwiiCurrentMeterOutput;     // if set to 1 output the amperage in milliamp steps instead of 0.01A steps via msp
     uint16_t batteryCapacity;               // mAh
+    uint8_t batterynotpresentlevel;         // Below this level battery is considered as not present
 } batteryConfig_t;
 
 typedef enum {
@@ -78,6 +79,6 @@ struct rxConfig_s;
 void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
-fix12_t calculateVbatPidCompensation(void);
+float calculateVbatPidCompensation(void);
 uint8_t calculateBatteryPercentage(void);
 uint8_t calculateBatteryCapacityRemainingPercentage(void);

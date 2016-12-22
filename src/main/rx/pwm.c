@@ -25,41 +25,43 @@
 
 #ifndef SKIP_RX_PWM_PPM
 
-#include "build_config.h"
+#include "build/build_config.h"
 
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 
-#include "config/config.h"
+#include "fc/config.h"
+
+#include "config/feature.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"
 
-static uint16_t pwmReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
+static uint16_t pwmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-    UNUSED(rxRuntimeConfigPtr);
+    UNUSED(rxRuntimeConfig);
     return pwmRead(channel);
 }
 
-static uint16_t ppmReadRawRC(rxRuntimeConfig_t *rxRuntimeConfigPtr, uint8_t channel)
+static uint16_t ppmReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
-    UNUSED(rxRuntimeConfigPtr);
+    UNUSED(rxRuntimeConfig);
     return ppmRead(channel);
 }
 
-void rxPwmInit(rxRuntimeConfig_t *rxRuntimeConfigPtr, rcReadRawDataPtr *callback)
+void rxPwmInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
-    UNUSED(rxRuntimeConfigPtr);
+    UNUSED(rxConfig);
+
+    rxRuntimeConfig->rxRefreshRate = 20000;
+
     // configure PWM/CPPM read function and max number of channels. serial rx below will override both of these, if enabled
     if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        rxRuntimeConfigPtr->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
-        *callback = pwmReadRawRC;
-    }
-    if (feature(FEATURE_RX_PPM)) {
-        rxRuntimeConfigPtr->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
-        *callback = ppmReadRawRC;
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT;
+        rxRuntimeConfig->rcReadRawFunc = pwmReadRawRC;
+    } else if (feature(FEATURE_RX_PPM)) {
+        rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT;
+        rxRuntimeConfig->rcReadRawFunc = ppmReadRawRC;
     }
 }
-#endif // SKIP_RX_PWM_PPM
+#endif
 

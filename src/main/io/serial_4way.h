@@ -17,7 +17,8 @@
 */
 #pragma once
 
-#include "serial_4way_impl.h"
+#include "drivers/io_types.h"
+#include "io/serial_4way_impl.h"
 
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_SERIAL_4WAY_SK_BOOTLOADER
@@ -46,5 +47,6 @@ typedef union __attribute__ ((packed)) {
 
 bool isMcuConnected(void);
 uint8_t esc4wayInit(void);
-void esc4wayProcess(serialPort_t *mspPort);
+struct serialPort_s;
+void esc4wayProcess(struct serialPort_s *mspPort);
 void esc4wayRelease(void);

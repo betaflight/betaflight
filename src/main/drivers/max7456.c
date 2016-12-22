@@ -22,17 +22,17 @@
 #include <string.h>
 
 #include "platform.h"
-#include "version.h"
 
 #ifdef USE_MAX7456
 
 #include "common/printf.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/light_led.h"
+#include "drivers/io.h"
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 
 #include "max7456.h"
 #include "max7456_symbols.h"
