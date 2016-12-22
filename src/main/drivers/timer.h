@@ -154,6 +154,8 @@ void timerForceOverflow(TIM_TypeDef *tim);
 
 void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz);  // TODO - just for migration
 
+uint16_t timerGetPeriod(const timerHardware_t *timHw);
+
 rccPeriphTag_t timerRCC(TIM_TypeDef *tim);
 
 #if defined(STM32F3) || defined(STM32F4)

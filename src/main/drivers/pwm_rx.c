@@ -327,8 +327,13 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     } else {
         pwmInputPort->fall = capture;
 
-        // compute and store capture
-        pwmInputPort->capture = pwmInputPort->fall - pwmInputPort->rise;
+        // compute and store capture and handle overflow correctly - timer may be configured for PWM output in such case overflow value is not 0xFFFF
+        if (pwmInputPort->fall >= pwmInputPort->rise) {
+            pwmInputPort->capture = pwmInputPort->fall - pwmInputPort->rise;
+        }
+        else {
+            pwmInputPort->capture = (pwmInputPort->fall + timerGetPeriod(timerHardwarePtr)) - pwmInputPort->rise;
+        }
         captures[pwmInputPort->channel] = pwmInputPort->capture;
 
         // switch state
