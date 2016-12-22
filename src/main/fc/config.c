@@ -26,6 +26,8 @@
 
 #include "blackbox/blackbox_io.h"
 
+#include "cms/cms.h"
+
 #include "common/color.h"
 #include "common/axis.h"
 #include "common/maths.h"
@@ -40,8 +42,11 @@
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
+#include "drivers/vcd.h"
 #include "drivers/max7456.h"
 #include "drivers/sound_beeper.h"
+#include "drivers/light_ws2811strip.h"
+#include "drivers/sdcard.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -98,17 +103,11 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 #endif
 
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
-
-
-void intFeatureClearAll(master_t *config);
-void intFeatureSet(uint32_t mask, master_t *config);
-void intFeatureClear(uint32_t mask, master_t *config);
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -238,6 +237,26 @@ void resetSensorAlignment(sensorAlignmentConfig_t *sensorAlignmentConfig)
     sensorAlignmentConfig->mag_align = ALIGN_DEFAULT;
 }
 
+#ifdef LED_STRIP
+void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
+{
+    applyDefaultColors(ledStripConfig->colors);
+    applyDefaultLedStripConfig(ledStripConfig->ledConfigs);
+    applyDefaultModeColors(ledStripConfig->modeColors);
+    applyDefaultSpecialColors(&(ledStripConfig->specialColors));
+    ledStripConfig->ledstrip_visual_beeper = 0;
+    ledStripConfig->ledstrip_aux_channel = THROTTLE;
+
+    for (int i = 0; i < USABLE_TIMER_CHANNEL_COUNT; i++) {
+        if (timerHardware[i].usageFlags & TIM_USE_LED) {
+            ledStripConfig->ioTag = timerHardware[i].tag;
+            return;
+        }
+    }
+    ledStripConfig->ioTag = IO_TAG_NONE;
+}
+#endif
+
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
 {
@@ -291,21 +310,59 @@ void resetSonarConfig(sonarConfig_t *sonarConfig)
 }
 #endif
 
+#ifdef USE_SDCARD
+void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
+{
+#if defined(SDCARD_DMA_CHANNEL_TX)
+    sdcardConfig->useDma = true;
+#else
+    sdcardConfig->useDma = false;
+#endif
+}
+#endif
+
+#ifdef USE_ADC
+void resetAdcConfig(adcConfig_t *adcConfig)
+{
+#ifdef VBAT_ADC_PIN
+    adcConfig->vbat.enabled = true;
+    adcConfig->vbat.ioTag = IO_TAG(VBAT_ADC_PIN);
+#endif
+
+#ifdef EXTERNAL1_ADC_PIN
+    adcConfig->external1.enabled = true;
+    adcConfig->external1.ioTag = IO_TAG(EXTERNAL1_ADC_PIN);
+#endif
+
+#ifdef CURRENT_METER_ADC_PIN
+    adcConfig->currentMeter.enabled = true;
+    adcConfig->currentMeter.ioTag = IO_TAG(CURRENT_METER_ADC_PIN);
+#endif
+
+#ifdef RSSI_ADC_PIN
+    adcConfig->rssi.enabled = true;
+    adcConfig->rssi.ioTag = IO_TAG(RSSI_ADC_PIN);
+#endif
+
+}
+#endif
+
+
 #ifdef BEEPER
 void resetBeeperConfig(beeperConfig_t *beeperConfig)
 {
 #ifdef BEEPER_INVERTED
-    beeperConfig->isOD = false;
+    beeperConfig->isOpenDrain = false;
     beeperConfig->isInverted = true;
 #else
-    beeperConfig->isOD = true;
+    beeperConfig->isOpenDrain = true;
     beeperConfig->isInverted = false;
 #endif
     beeperConfig->ioTag = IO_TAG(BEEPER);
 }
 #endif
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
 void resetPpmConfig(ppmConfig_t *ppmConfig)
 {
 #ifdef PPM_PIN
@@ -367,6 +424,7 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
     batteryConfig->vbatmincellvoltage = 33;
     batteryConfig->vbatwarningcellvoltage = 35;
     batteryConfig->vbathysteresis = 1;
+    batteryConfig->batteryMeterType = BATTERY_SENSOR_ADC;
     batteryConfig->currentMeterOffset = 0;
     batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
     batteryConfig->batteryCapacity = 0;
@@ -427,6 +485,15 @@ void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 }
 #endif
 
+#ifdef USE_MAX7456
+void resetMax7456Config(vcdProfile_t *pVcdProfile)
+{
+    pVcdProfile->video_system = VIDEO_SYSTEM_AUTO;
+    pVcdProfile->h_offset = 0;
+    pVcdProfile->v_offset = 0;
+}
+#endif
+
 uint8_t getCurrentProfile(void)
 {
     return masterConfig.current_profile_index;
@@ -467,30 +534,36 @@ void createDefaultConfig(master_t *config)
     // Clear all configuration
     memset(config, 0, sizeof(master_t));
 
-    intFeatureClearAll(config);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , config);
+    uint32_t *featuresPtr = &config->enabledFeatures;
+
+    intFeatureClearAll(featuresPtr);
+    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
 #ifdef DEFAULT_FEATURES
-    intFeatureSet(DEFAULT_FEATURES, config);
+    intFeatureSet(DEFAULT_FEATURES, featuresPtr);
+#endif
+
+#ifdef USE_MAX7456
+    resetMax7456Config(&config->vcdProfile);
 #endif
 
 #ifdef OSD
-    intFeatureSet(FEATURE_OSD, config);
-    resetOsdConfig(&config->osdProfile);
+    intFeatureSet(FEATURE_OSD, featuresPtr);
+    osdResetConfig(&config->osdProfile);
 #endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
     // the user may see incorrect readings and unexpected issues with pin mappings may occur.
-    intFeatureSet(FEATURE_VBAT, config);
+    intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
     config->version = EEPROM_CONF_VERSION;
     config->mixerMode = MIXER_QUADX;
 
     // global settings
-    config->current_profile_index = 0;     // default profile
+    config->current_profile_index = 0;    // default profile
     config->dcm_kp = 2500;                // 1.0 * 10000
-    config->dcm_ki = 0;                    // 0.003 * 10000
+    config->dcm_ki = 0;                   // 0.003 * 10000
     config->gyro_lpf = 0;                 // 256HZ default
 #ifdef STM32F10X
     config->gyro_sync_denom = 8;
@@ -530,7 +603,7 @@ void createDefaultConfig(master_t *config)
 
     resetBatteryConfig(&config->batteryConfig);
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_PWM) || defined(USE_PPM)
     resetPpmConfig(&config->ppmConfig);
     resetPwmConfig(&config->pwmConfig);
 #endif
@@ -539,14 +612,23 @@ void createDefaultConfig(master_t *config)
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
-#ifdef BEEPER 
+#ifdef USE_ADC
+    resetAdcConfig(&config->adcConfig);
+#endif
+
+#ifdef BEEPER
     resetBeeperConfig(&config->beeperConfig);
 #endif
 
 #ifdef SONAR
     resetSonarConfig(&config->sonarConfig);
 #endif
-    
+
+#ifdef USE_SDCARD
+    intFeatureSet(FEATURE_SDCARD, featuresPtr);
+    resetsdcardConfig(&config->sdcardConfig);
+#endif
+
 #ifdef SERIALRX_PROVIDER
     config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
 #else
@@ -596,6 +678,10 @@ void createDefaultConfig(master_t *config)
     resetServoConfig(&config->servoConfig);
 #endif
     resetFlight3DConfig(&config->flight3DConfig);
+
+#ifdef LED_STRIP
+    resetLedStripConfig(&config->ledStripConfig);
+#endif
 
 #ifdef GPS
     // gps/nav stuff
@@ -666,15 +752,6 @@ void createDefaultConfig(master_t *config)
         config->customMotorMixer[i].throttle = 0.0f;
     }
 
-#ifdef LED_STRIP
-    applyDefaultColors(config->colors);
-    applyDefaultLedStripConfig(config->ledConfigs);
-    applyDefaultModeColors(config->modeColors);
-    applyDefaultSpecialColors(&(config->specialColors));
-    config->ledstrip_visual_beeper = 0;
-    config->ledstrip_aux_channel = THROTTLE;
-#endif
-
 #ifdef VTX
     config->vtx_band = 4;    //Fatshark/Airwaves
     config->vtx_channel = 1; //CH1
@@ -690,10 +767,10 @@ void createDefaultConfig(master_t *config)
 
 #ifdef BLACKBOX
 #if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, config);
+    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackbox_device = BLACKBOX_DEVICE_FLASH;
 #elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
-    intFeatureSet(FEATURE_BLACKBOX, config);
+    intFeatureSet(FEATURE_BLACKBOX, featuresPtr);
     config->blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
     config->blackbox_device = BLACKBOX_DEVICE_SERIAL;
@@ -706,7 +783,10 @@ void createDefaultConfig(master_t *config)
 
 #ifdef SERIALRX_UART
     if (featureConfigured(FEATURE_RX_SERIAL)) {
-        config->serialConfig.portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+        int serialIndex = findSerialPortIndexByIdentifier(SERIALRX_UART);
+        if (serialIndex >= 0) {
+            config->serialConfig.portConfigs[serialIndex].functionMask = FUNCTION_RX_SERIAL;
+        }
     }
 #endif
 
@@ -714,7 +794,6 @@ void createDefaultConfig(master_t *config)
     targetConfiguration(config);
 #endif
 
-   
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
@@ -876,21 +955,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
-    if (featureConfigured(FEATURE_SOFTSERIAL) && (
-            0
-#ifdef USE_SOFTSERIAL1
-            || (WS2811_TIMER == SOFTSERIAL_1_TIMER)
-#endif
-#ifdef USE_SOFTSERIAL2
-            || (WS2811_TIMER == SOFTSERIAL_2_TIMER)
-#endif
-    )) {
-        // led strip needs the same timer as softserial
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-
 #if defined(NAZE) && defined(SONAR)
     if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
@@ -908,13 +972,6 @@ void validateAndFixConfig(void)
         featureClear(FEATURE_DASHBOARD);
     }
 #endif
-
-/*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
-    if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
-        featureClear(FEATURE_LED_STRIP);
-    }
-#endif
-*/
 
 #if defined(CC3D) && defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
     // shared pin
@@ -941,6 +998,10 @@ void validateAndFixConfig(void)
     if (!isSerialConfigValid(serialConfig)) {
         resetSerialConfig(serialConfig);
     }
+    
+#if defined(TARGET_VALIDATECONFIG)
+    targetValidateConfiguration(&masterConfig);
+#endif
 }
 
 void readEEPROMAndNotify(void)

@@ -387,8 +387,8 @@ void i2cInit(I2CDevice device)
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
-    IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
-    IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
+    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
     // Enable RCC
     RCC_ClockCmd(i2c->rcc, ENABLE);

@@ -1,3 +1,20 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <stdbool.h>
@@ -41,7 +58,7 @@
 #define IOCFG_AF_PP_UP       IO_CONFIG(GPIO_MODE_AF_PP,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
 #define IOCFG_AF_OD          IO_CONFIG(GPIO_MODE_AF_OD,     GPIO_SPEED_FREQ_LOW,  GPIO_NOPULL)
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLDOWN)
-#define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,  	GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
+#define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_PULLUP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_LOW,  GPIO_NOPULL)
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT,     GPIO_SPEED_FREQ_HIGH, GPIO_PULLUP)
 
@@ -84,10 +101,9 @@ void IOHi(IO_t io);
 void IOLo(IO_t io);
 void IOToggle(IO_t io);
 
-void IOInit(IO_t io, resourceOwner_t owner, resourceType_t resource, uint8_t index);
+void IOInit(IO_t io, resourceOwner_e owner, uint8_t index);
 void IORelease(IO_t io);  // unimplemented
-resourceOwner_t IOGetOwner(IO_t io);
-resourceType_t IOGetResources(IO_t io);
+resourceOwner_e IOGetOwner(IO_t io);
 IO_t IOGetByTag(ioTag_t tag);
 
 void IOConfigGPIO(IO_t io, ioConfig_t cfg);

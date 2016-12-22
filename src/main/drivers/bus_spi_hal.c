@@ -70,21 +70,11 @@
 
 
 static spiDevice_t spiHardwareMap[] = {
-    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF5_SPI1, false },
-    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = GPIO_AF5_SPI2, false },
-    { .dev = SPI3, .nss = IO_TAG(SPI3_NSS_PIN), .sck = IO_TAG(SPI3_SCK_PIN), .miso = IO_TAG(SPI3_MISO_PIN), .mosi = IO_TAG(SPI3_MOSI_PIN), .rcc = RCC_APB1(SPI3), .af = GPIO_AF5_SPI3, false },
-    { .dev = SPI4, .nss = IO_TAG(SPI4_NSS_PIN), .sck = IO_TAG(SPI4_SCK_PIN), .miso = IO_TAG(SPI4_MISO_PIN), .mosi = IO_TAG(SPI4_MOSI_PIN), .rcc = RCC_APB2(SPI4), .af = GPIO_AF5_SPI4, false }
+    { .dev = SPI1, .nss = IO_TAG(SPI1_NSS_PIN), .sck = IO_TAG(SPI1_SCK_PIN), .miso = IO_TAG(SPI1_MISO_PIN), .mosi = IO_TAG(SPI1_MOSI_PIN), .rcc = RCC_APB2(SPI1), .af = GPIO_AF5_SPI1, .leadingEdge = false, .dmaIrqHandler = DMA2_ST3_HANDLER },
+    { .dev = SPI2, .nss = IO_TAG(SPI2_NSS_PIN), .sck = IO_TAG(SPI2_SCK_PIN), .miso = IO_TAG(SPI2_MISO_PIN), .mosi = IO_TAG(SPI2_MOSI_PIN), .rcc = RCC_APB1(SPI2), .af = GPIO_AF5_SPI2, .leadingEdge = false, .dmaIrqHandler = DMA1_ST4_HANDLER },
+    { .dev = SPI3, .nss = IO_TAG(SPI3_NSS_PIN), .sck = IO_TAG(SPI3_SCK_PIN), .miso = IO_TAG(SPI3_MISO_PIN), .mosi = IO_TAG(SPI3_MOSI_PIN), .rcc = RCC_APB1(SPI3), .af = GPIO_AF5_SPI3, .leadingEdge = false, .dmaIrqHandler = DMA1_ST7_HANDLER },
+    { .dev = SPI4, .nss = IO_TAG(SPI4_NSS_PIN), .sck = IO_TAG(SPI4_SCK_PIN), .miso = IO_TAG(SPI4_MISO_PIN), .mosi = IO_TAG(SPI4_MOSI_PIN), .rcc = RCC_APB2(SPI4), .af = GPIO_AF5_SPI4, .leadingEdge = false, .dmaIrqHandler = DMA2_ST1_HANDLER }
 };
-
-typedef struct{
-    SPI_HandleTypeDef Handle;
-}spiHandle_t;
-static spiHandle_t spiHandle[SPIDEV_MAX+1];
-
-typedef struct{
-    DMA_HandleTypeDef Handle;
-}dmaHandle_t;
-static dmaHandle_t dmaHandle[SPIDEV_MAX+1];
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
@@ -105,32 +95,32 @@ SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 
 SPI_HandleTypeDef* spiHandleByInstance(SPI_TypeDef *instance)
 {
-    return &spiHandle[spiDeviceByInstance(instance)].Handle;
+    return &spiHardwareMap[spiDeviceByInstance(instance)].hspi;
 }
 
 DMA_HandleTypeDef* dmaHandleByInstance(SPI_TypeDef *instance)
 {
-    return &dmaHandle[spiDeviceByInstance(instance)].Handle;
+    return &spiHardwareMap[spiDeviceByInstance(instance)].hdma;
 }
 
 void SPI1_IRQHandler(void)
 {
-    HAL_SPI_IRQHandler(&spiHandle[SPIDEV_1].Handle);
+    HAL_SPI_IRQHandler(&spiHardwareMap[SPIDEV_1].hspi);
 }
 
 void SPI2_IRQHandler(void)
 {
-    HAL_SPI_IRQHandler(&spiHandle[SPIDEV_2].Handle);
+    HAL_SPI_IRQHandler(&spiHardwareMap[SPIDEV_2].hspi);
 }
 
 void SPI3_IRQHandler(void)
 {
-    HAL_SPI_IRQHandler(&spiHandle[SPIDEV_3].Handle);
+    HAL_SPI_IRQHandler(&spiHardwareMap[SPIDEV_3].hspi);
 }
 
 void SPI4_IRQHandler(void)
 {
-    HAL_SPI_IRQHandler(&spiHandle[SPIDEV_4].Handle);
+    HAL_SPI_IRQHandler(&spiHardwareMap[SPIDEV_4].hspi);
 }
 
 
@@ -155,9 +145,9 @@ void spiInitDevice(SPIDevice device)
     RCC_ClockCmd(spi->rcc, ENABLE);
     RCC_ResetCmd(spi->rcc, ENABLE);
 
-    IOInit(IOGetByTag(spi->sck),  OWNER_SPI, RESOURCE_SPI_SCK,  device + 1);
-    IOInit(IOGetByTag(spi->miso), OWNER_SPI, RESOURCE_SPI_MISO, device + 1);
-    IOInit(IOGetByTag(spi->mosi), OWNER_SPI, RESOURCE_SPI_MOSI, device + 1);
+    IOInit(IOGetByTag(spi->sck),  OWNER_SPI_SCK,  RESOURCE_INDEX(device));
+    IOInit(IOGetByTag(spi->miso), OWNER_SPI_MISO, RESOURCE_INDEX(device));
+    IOInit(IOGetByTag(spi->mosi), OWNER_SPI_MOSI, RESOURCE_INDEX(device));
 
 #if defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
     IOConfigGPIOAF(IOGetByTag(spi->sck),  SPI_IO_AF_CFG, spi->af);
@@ -177,10 +167,9 @@ void spiInitDevice(SPIDevice device)
         IOConfigGPIO(IOGetByTag(spi->nss), SPI_IO_CS_CFG);
     }
 #endif
-    SPI_HandleTypeDef Handle;
-    Handle.Instance = spi->dev;
+    spiHardwareMap[device].hspi.Instance = spi->dev;
     // Init SPI hardware
-    HAL_SPI_DeInit(&Handle);
+    HAL_SPI_DeInit(&spiHardwareMap[device].hspi);
 
     spiInit.Mode = SPI_MODE_MASTER;
     spiInit.Direction = SPI_DIRECTION_2LINES;
@@ -201,15 +190,10 @@ void spiInitDevice(SPIDevice device)
         spiInit.CLKPhase = SPI_PHASE_2EDGE;
     }
 
-    Handle.Init = spiInit;
-#ifdef STM32F303xC
-    // Configure for 8-bit reads.
-    SPI_RxFIFOThresholdConfig(spi->dev, SPI_RxFIFOThreshold_QF);
-#endif
+    spiHardwareMap[device].hspi.Init = spiInit;
 
-    if (HAL_SPI_Init(&Handle) == HAL_OK)
+    if (HAL_SPI_Init(&spiHardwareMap[device].hspi) == HAL_OK)
     {
-        spiHandle[device].Handle = Handle;
         if (spi->nss) {
             IOHi(IOGetByTag(spi->nss));
         }
@@ -275,7 +259,8 @@ uint8_t spiTransferByte(SPI_TypeDef *instance, uint8_t in)
  */
 bool spiIsBusBusy(SPI_TypeDef *instance)
 {
-    if(spiHandle[spiDeviceByInstance(instance)].Handle.State == HAL_SPI_STATE_BUSY)
+    SPIDevice device = spiDeviceByInstance(instance);
+    if(spiHardwareMap[device].hspi.State == HAL_SPI_STATE_BUSY)
         return true;
     else
         return false;
@@ -283,72 +268,73 @@ bool spiIsBusBusy(SPI_TypeDef *instance)
 
 bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len)
 {
+    SPIDevice device = spiDeviceByInstance(instance);
     HAL_StatusTypeDef status;
 
 #define SPI_DEFAULT_TIMEOUT 10
-    
+
     if(!out) // Tx only
     {
-        status = HAL_SPI_Transmit(&spiHandle[spiDeviceByInstance(instance)].Handle, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
-    } 
+        status = HAL_SPI_Transmit(&spiHardwareMap[device].hspi, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
+    }
     else if(!in) // Rx only
     {
-        status = HAL_SPI_Receive(&spiHandle[spiDeviceByInstance(instance)].Handle, out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_Receive(&spiHardwareMap[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
     }
     else // Tx and Rx
     {
-        status = HAL_SPI_TransmitReceive(&spiHandle[spiDeviceByInstance(instance)].Handle, (uint8_t *)in, out, len, SPI_DEFAULT_TIMEOUT);
+        status = HAL_SPI_TransmitReceive(&spiHardwareMap[device].hspi, (uint8_t *)in, out, len, SPI_DEFAULT_TIMEOUT);
     }
-    
+
     if( status != HAL_OK)
         spiTimeoutUserCallback(instance);
-    
+
     return true;
 }
 
 
 void spiSetDivisor(SPI_TypeDef *instance, uint16_t divisor)
 {
-    SPI_HandleTypeDef *Handle = &spiHandle[spiDeviceByInstance(instance)].Handle;
-    if (HAL_SPI_DeInit(Handle) == HAL_OK)
+    SPIDevice device = spiDeviceByInstance(instance);
+    if (HAL_SPI_DeInit(&spiHardwareMap[device].hspi) == HAL_OK)
     {
     }
 
     switch (divisor) {
     case 2:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
         break;
 
     case 4:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
         break;
 
     case 8:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
         break;
 
     case 16:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
         break;
 
     case 32:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
         break;
 
     case 64:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
         break;
 
     case 128:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
         break;
 
     case 256:
-        Handle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+        spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
         break;
     }
 
-    if (HAL_SPI_Init(Handle) == HAL_OK)
+    if (HAL_SPI_Init(&spiHardwareMap[device].hspi) == HAL_OK)
     {
     }
 }
@@ -370,68 +356,44 @@ void spiResetErrorCounter(SPI_TypeDef *instance)
 
 void dmaSPIIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
-    DMA_HandleTypeDef * hdma = &dmaHandle[(descriptor->userParam)].Handle;
-
-    HAL_DMA_IRQHandler(hdma);
-
-    //SCB_InvalidateDCache_by_Addr();
-
-    /*if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
-    {
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
-        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
-        {
-            DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
-        }
-    }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
-    {
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
-    }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
-    {
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
-    }*/
+    SPIDevice device = descriptor->userParam;
+    if (device != SPIINVALID)
+        HAL_DMA_IRQHandler(&spiHardwareMap[device].hdma);
 }
 
 
 DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channel, SPI_TypeDef *Instance, uint8_t *pData, uint16_t Size)
 {
-    SPI_HandleTypeDef* hspi = &spiHandle[spiDeviceByInstance(Instance)].Handle;
-    DMA_HandleTypeDef* hdma = &dmaHandle[spiDeviceByInstance(Instance)].Handle;
+    SPIDevice device = spiDeviceByInstance(Instance);
 
-    hdma->Instance = Stream;
-    hdma->Init.Channel = Channel;
-    hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
-    hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma->Init.MemInc = DMA_MINC_ENABLE;
-    hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    hdma->Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma->Init.Mode = DMA_NORMAL;
-    hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    hdma->Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
-    hdma->Init.PeriphBurst = DMA_PBURST_SINGLE;
-    hdma->Init.MemBurst = DMA_MBURST_SINGLE;
-    hdma->Init.Priority = DMA_PRIORITY_LOW;
+    spiHardwareMap[device].hdma.Instance = Stream;
+    spiHardwareMap[device].hdma.Init.Channel = Channel;
+    spiHardwareMap[device].hdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    spiHardwareMap[device].hdma.Init.PeriphInc = DMA_PINC_DISABLE;
+    spiHardwareMap[device].hdma.Init.MemInc = DMA_MINC_ENABLE;
+    spiHardwareMap[device].hdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    spiHardwareMap[device].hdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    spiHardwareMap[device].hdma.Init.Mode = DMA_NORMAL;
+    spiHardwareMap[device].hdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    spiHardwareMap[device].hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
+    spiHardwareMap[device].hdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    spiHardwareMap[device].hdma.Init.MemBurst = DMA_MBURST_SINGLE;
+    spiHardwareMap[device].hdma.Init.Priority = DMA_PRIORITY_LOW;
 
+    HAL_DMA_DeInit(&spiHardwareMap[device].hdma);
+    HAL_DMA_Init(&spiHardwareMap[device].hdma);
 
-    HAL_DMA_DeInit(hdma);
-    HAL_DMA_Init(hdma);
+    __HAL_DMA_ENABLE(&spiHardwareMap[device].hdma);
+    __HAL_SPI_ENABLE(&spiHardwareMap[device].hspi);
 
-    __HAL_DMA_ENABLE(hdma);
-    __HAL_SPI_ENABLE(hspi);
     /* Associate the initialized DMA handle to the spi handle */
-    __HAL_LINKDMA(hspi, hdmatx, (*hdma));
+    __HAL_LINKDMA(&spiHardwareMap[device].hspi, hdmatx, spiHardwareMap[device].hdma);
 
     // DMA TX Interrupt
-    dmaSetHandler(DMA2_ST1_HANDLER, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)spiDeviceByInstance(Instance));
+    dmaSetHandler(spiHardwareMap[device].dmaIrqHandler, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)device);
 
-   // SCB_CleanDCache_by_Addr((uint32_t) pData, Size);
+    // And Transmit
+    HAL_SPI_Transmit_DMA(&spiHardwareMap[device].hspi, pData, Size);
 
-    HAL_SPI_Transmit_DMA(hspi, pData, Size);
-
-    //HAL_DMA_Start(&hdma, (uint32_t) pData, (uint32_t) &(Instance->DR), Size);
-
-    return hdma;
+    return &spiHardwareMap[device].hdma;
 }

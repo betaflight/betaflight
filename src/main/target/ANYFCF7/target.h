@@ -24,6 +24,7 @@
 #define USBD_PRODUCT_STRING "AnyFCF7"
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED0   PB7
 #define LED1   PB6
@@ -141,18 +142,6 @@
 #define RSSI_ADC_GPIO_PIN           PC2
 
 #define LED_STRIP
-
-// LED Strip can run off Pin 6 (PA0) of the ESC outputs.
-#define WS2811_PIN                      PA1
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_CHANNEL_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream4
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
-#define WS2811_DMA_CHANNEL              DMA_CHANNEL_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_TIMER_GPIO_AF            GPIO_AF2_TIM5
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#include "cms/cms.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/utils.h"
@@ -64,11 +66,15 @@
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
+#include "telemetry/esc_telemetry.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#define TASK_PERIOD_HZ(hz) (1000000 / (hz))
+#define TASK_PERIOD_MS(ms) ((ms) * 1000)
+#define TASK_PERIOD_US(us) (us)
 
 /* VBAT monitoring interval (in microseconds) - 1s*/
 #define VBATINTERVAL (6 * 3500)
@@ -81,11 +87,6 @@ static void taskUpdateAccelerometer(uint32_t currentTime)
     UNUSED(currentTime);
 
     imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
-}
-
-static void taskUpdateAttitude(uint32_t currentTime)
-{
-    imuUpdateAttitude(currentTime);
 }
 
 static void taskHandleSerial(uint32_t currentTime)
@@ -101,18 +102,11 @@ static void taskHandleSerial(uint32_t currentTime)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-#ifdef BEEPER
-static void taskUpdateBeeper(uint32_t currentTime)
-{
-    beeperUpdate(currentTime);          //call periodic beeper handler
-}
-#endif
-
 static void taskUpdateBattery(uint32_t currentTime)
 {
 #ifdef USE_ADC
     static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT)) {
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
         if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTime;
             updateBattery();
@@ -121,7 +115,7 @@ static void taskUpdateBattery(uint32_t currentTime)
 #endif
 
     static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER)) {
+    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
@@ -129,12 +123,6 @@ static void taskUpdateBattery(uint32_t currentTime)
             updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
         }
     }
-}
-
-static bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
-{
-    UNUSED(currentDeltaTime);
-    return rxUpdate(currentTime);
 }
 
 static void taskUpdateRxMain(uint32_t currentTime)
@@ -161,18 +149,6 @@ static void taskUpdateRxMain(uint32_t currentTime)
 #endif
 }
 
-#ifdef GPS
-static void taskProcessGPS(uint32_t currentTime)
-{
-    // if GPS feature is enabled, gpsThread() will be called at some intervals to check for stuck
-    // hardware, wrong baud rates, init GPS if needed, etc. Don't use SENSOR_GPS here as gpsUdate() can and will
-    // change this based on available hardware
-    if (feature(FEATURE_GPS)) {
-        gpsUpdate(currentTime);
-    }
-}
-#endif
-
 #ifdef MAG
 static void taskUpdateCompass(uint32_t currentTime)
 {
@@ -196,17 +172,6 @@ static void taskUpdateBaro(uint32_t currentTime)
 }
 #endif
 
-#ifdef SONAR
-static void taskUpdateSonar(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-
-    if (sensors(SENSOR_SONAR)) {
-        sonarUpdate();
-    }
-}
-#endif
-
 #if defined(BARO) || defined(SONAR)
 static void taskCalculateAltitude(uint32_t currentTime)
 {
@@ -222,15 +187,6 @@ static void taskCalculateAltitude(uint32_t currentTime)
     }}
 #endif
 
-#ifdef USE_DASHBOARD
-static void taskUpdateDashboard(uint32_t currentTime)
-{
-    if (feature(FEATURE_DASHBOARD)) {
-        dashboardUpdate(currentTime);
-    }
-}
-#endif
-
 #ifdef TELEMETRY
 static void taskTelemetry(uint32_t currentTime)
 {
@@ -242,31 +198,13 @@ static void taskTelemetry(uint32_t currentTime)
 }
 #endif
 
-#ifdef LED_STRIP
-static void taskLedStrip(uint32_t currentTime)
+#ifdef USE_ESC_TELEMETRY
+static void taskEscTelemetry(uint32_t currentTime)
 {
-    if (feature(FEATURE_LED_STRIP)) {
-        ledStripUpdate(currentTime);
-    }
-}
-#endif
-
-#ifdef TRANSPONDER
-static void taskTransponder(uint32_t currentTime)
-{
-    if (feature(FEATURE_TRANSPONDER)) {
-        transponderUpdate(currentTime);
-    }
-}
-#endif
-
-#ifdef OSD
-static void taskUpdateOsd(uint32_t currentTime)
-{
-    if (feature(FEATURE_OSD)) {
-        updateOsd(currentTime);
-    }
-}
+    if (feature(FEATURE_ESC_TELEMETRY)) {
+        escTelemetryProcess(currentTime);
+     }
+ }
 #endif
 
 void fcTasksInit(void)
@@ -295,7 +233,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_COMPASS, sensors(SENSOR_MAG));
 #if defined(USE_SPI) && defined(USE_MAG_AK8963)
     // fixme temporary solution for AK6983 via slave I2C on MPU9250
-    rescheduleTask(TASK_COMPASS, 1000000 / 40);
+    rescheduleTask(TASK_COMPASS, TASK_PERIOD_HZ(40));
 #endif
 #endif
 #ifdef BARO
@@ -312,9 +250,14 @@ void fcTasksInit(void)
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
-    // Reschedule telemetry to 500hz for Jeti Exbus
-    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
-        rescheduleTask(TASK_TELEMETRY, 2000);
+    if (feature(FEATURE_TELEMETRY)) {
+        if (masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+            // Reschedule telemetry to 500hz for Jeti Exbus
+            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
+        } else if (masterConfig.rxConfig.serialrx_provider == SERIALRX_CRSF) {
+            // Reschedule telemetry to 500hz, 2ms for CRSF
+            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
+        }
     }
 #endif
 #ifdef LED_STRIP
@@ -329,13 +272,23 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
+#ifdef USE_ESC_TELEMETRY
+    setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
+#endif
+#ifdef CMS
+#ifdef USE_MSP_DISPLAYPORT
+    setTaskEnabled(TASK_CMS, true);
+#else
+    setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
+#endif
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
-        .desiredPeriod = 1000000 / 10,              // run every 100 ms
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
@@ -350,44 +303,44 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
         .taskFunc = taskUpdateAccelerometer,
-        .desiredPeriod = 1000000 / 1000,    // every 1ms
+        .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_ATTITUDE] = {
         .taskName = "ATTITUDE",
-        .taskFunc = taskUpdateAttitude,
-        .desiredPeriod = 1000000 / 100,
+        .taskFunc = imuUpdateAttitude,
+        .desiredPeriod = TASK_PERIOD_HZ(100),
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
     [TASK_RX] = {
         .taskName = "RX",
-        .checkFunc = taskUpdateRxCheck,
+        .checkFunc = rxUpdateCheck,
         .taskFunc = taskUpdateRxMain,
-        .desiredPeriod = 1000000 / 50,      // If event-based scheduling doesn't work, fallback to periodic scheduling
+        .desiredPeriod = TASK_PERIOD_HZ(50),        // If event-based scheduling doesn't work, fallback to periodic scheduling
         .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_SERIAL] = {
         .taskName = "SERIAL",
         .taskFunc = taskHandleSerial,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
         .taskFunc = taskUpdateBattery,
-        .desiredPeriod = 1000000 / 50,      // 50 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 
 #ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
-        .desiredPeriod = 1000000 / 100,     // 100 Hz
+        .taskFunc = beeperUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -395,8 +348,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef GPS
     [TASK_GPS] = {
         .taskName = "GPS",
-        .taskFunc = taskProcessGPS,
-        .desiredPeriod = 1000000 / 10,      // GPS usually don't go raster than 10Hz
+        .taskFunc = gpsUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // GPS usually don't go raster than 10Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
 #endif
@@ -405,7 +358,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_COMPASS] = {
         .taskName = "COMPASS",
         .taskFunc = taskUpdateCompass,
-        .desiredPeriod = 1000000 / 10,      // Compass is updated at 10 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(10),        // Compass is updated at 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -414,7 +367,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BARO] = {
         .taskName = "BARO",
         .taskFunc = taskUpdateBaro,
-        .desiredPeriod = 1000000 / 20,
+        .desiredPeriod = TASK_PERIOD_HZ(20),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -422,8 +375,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef SONAR
     [TASK_SONAR] = {
         .taskName = "SONAR",
-        .taskFunc = taskUpdateSonar,
-        .desiredPeriod = 1000000 / 20,
+        .taskFunc = sonarUpdate,
+        .desiredPeriod = TASK_PERIOD_MS(70),        // 70ms required so that SONAR pulses do not interfer with each other
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -432,7 +385,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_ALTITUDE] = {
         .taskName = "ALTITUDE",
         .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = 1000000 / 40,
+        .desiredPeriod = TASK_PERIOD_HZ(40),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -440,8 +393,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef TRANSPONDER
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",
-        .taskFunc = taskTransponder,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .taskFunc = transponderUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -449,16 +402,16 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef USE_DASHBOARD
     [TASK_DASHBOARD] = {
         .taskName = "DASHBOARD",
-        .taskFunc = taskUpdateDashboard,
-        .desiredPeriod = 1000000 / 10,
+        .taskFunc = dashboardUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(10),
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 #ifdef OSD
     [TASK_OSD] = {
         .taskName = "OSD",
-        .taskFunc = taskUpdateOsd,
-        .desiredPeriod = 1000000 / 60,          // 60 Hz
+        .taskFunc = osdUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -466,7 +419,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_TELEMETRY] = {
         .taskName = "TELEMETRY",
         .taskFunc = taskTelemetry,
-        .desiredPeriod = 1000000 / 250,         // 250 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(250),       // 250 Hz, 4ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -474,8 +427,8 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef LED_STRIP
     [TASK_LEDSTRIP] = {
         .taskName = "LEDSTRIP",
-        .taskFunc = taskLedStrip,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .taskFunc = ledStripUpdate,
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz, 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -484,8 +437,26 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_BST_MASTER_PROCESS] = {
         .taskName = "BST_MASTER_PROCESS",
         .taskFunc = taskBstMasterProcess,
-        .desiredPeriod = 1000000 / 50,          // 50 Hz
+        .desiredPeriod = TASK_PERIOD_HZ(50),        // 50 Hz, 20ms
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef USE_ESC_TELEMETRY
+    [TASK_ESC_TELEMETRY] = {
+        .taskName = "ESC_TELEMETRY",
+        .taskFunc = taskEscTelemetry,
+        .desiredPeriod = 1000000 / 100,         // 100 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef CMS
+    [TASK_CMS] = {
+        .taskName = "CMS",
+        .taskFunc = cmsHandler,
+        .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };

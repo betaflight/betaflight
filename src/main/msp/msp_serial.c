@@ -120,7 +120,7 @@ static uint8_t mspSerialChecksumBuf(uint8_t checksum, const uint8_t *data, int l
 
 #define JUMBO_FRAME_SIZE_LIMIT 255
 
-static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
+static int mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
 {
     serialBeginWrite(msp->port);
     const int len = sbufBytesRemaining(&packet->buf);
@@ -140,6 +140,7 @@ static void mspSerialEncode(mspPort_t *msp, mspPacket_t *packet)
     }
     serialWrite(msp->port, checksum);
     serialEndWrite(msp->port);
+    return sizeof(hdr) + len + 1; // header, data, and checksum
 }
 
 static mspPostProcessFnPtr mspSerialProcessReceivedCommand(mspPort_t *msp, mspProcessCommandFnPtr mspProcessCommandFn)
@@ -211,3 +212,57 @@ void mspSerialInit(void)
     mspSerialAllocatePorts();
 }
 
+int mspSerialPush(uint8_t cmd, const uint8_t *data, int datalen)
+{
+    static uint8_t pushBuf[30];
+    int ret = 0;
+
+    mspPacket_t push = {
+        .buf = { .ptr = pushBuf, .end = ARRAYEND(pushBuf), },
+        .cmd = cmd,
+        .result = 0,
+    };
+
+    for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        sbufWriteData(&push.buf, data, datalen);
+
+        sbufSwitchToReader(&push.buf, pushBuf);
+
+        ret = mspSerialEncode(mspPort, &push);
+    }
+    return ret; // return the number of bytes written
+}
+
+uint32_t mspSerialTxBytesFree()
+{
+    uint32_t ret = UINT32_MAX;
+
+    for (int portIndex = 0; portIndex < MAX_MSP_PORT_COUNT; portIndex++) {
+        mspPort_t * const mspPort = &mspPorts[portIndex];
+        if (!mspPort->port) {
+            continue;
+        }
+
+        // XXX Kludge!!! Avoid zombie VCP port (avoid VCP entirely for now)
+        if (mspPort->port->identifier == SERIAL_PORT_USB_VCP) {
+            continue;
+        }
+
+        const uint32_t bytesFree = serialTxBytesFree(mspPort->port);
+        if (bytesFree < ret) {
+            ret = bytesFree;
+        }
+    }
+
+    return ret;
+}

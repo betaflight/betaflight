@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_timebase_tim_template.c 
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V1.1.2
+  * @date    23-September-2016 
   * @brief   HAL time base based on the hardware TIM Template.
   *    
   *          This file overrides the native HAL time base functions (defined as weak)
@@ -131,7 +131,6 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 /**
   * @brief  Suspend Tick increment.
   * @note   Disable the tick increment by disabling TIM6 update interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_SuspendTick(void)
@@ -143,7 +142,6 @@ void HAL_SuspendTick(void)
 /**
   * @brief  Resume Tick increment.
   * @note   Enable the tick increment by Enabling TIM6 update interrupt.
-  * @param  None
   * @retval None
   */
 void HAL_ResumeTick(void)
@@ -167,7 +165,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 /**
   * @brief  This function handles TIM interrupt request.
-  * @param  None
   * @retval None
   */
 void TIM6_DAC_IRQHandler(void)

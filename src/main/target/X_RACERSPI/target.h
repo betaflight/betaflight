@@ -101,16 +101,16 @@
 #define CURRENT_METER_ADC_PIN   PA5
 #define RSSI_ADC_PIN            PB2
 
-#define LED_STRIP
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
+#define REMAP_TIM17_DMA
+// UART1 TX uses DMA1_Channel4, which is also used by dshot on motor 4
+#if defined(USE_UART1_TX_DMA) && defined(USE_DSHOT)
+#undef USE_UART1_TX_DMA
+#endif
+
+#define LED_STRIP
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
 
@@ -131,4 +131,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) | TIM_N(17) )
-

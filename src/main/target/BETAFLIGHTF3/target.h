@@ -45,6 +45,7 @@
 #define USE_EXTI
 
 #define USE_DSHOT
+#define USE_ESC_TELEMETRY
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 
@@ -119,15 +120,6 @@
 #define RSSI_ADC_PIN            PB2
 
 #define LED_STRIP
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_6
 
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 

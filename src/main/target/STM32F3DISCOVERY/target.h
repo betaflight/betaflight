@@ -120,6 +120,8 @@
 #define MAX7456_SPI_INSTANCE    SPI2
 #define MAX7456_SPI_CS_PIN      SPI2_NSS_PIN
 
+#define CMS
+
 //#define USE_SDCARD
 //#define USE_SDCARD_SPI2
 //
@@ -167,17 +169,10 @@
 #define RSSI_ADC_PIN            PC2
 #define EXTERNAL1_ADC_PIN       PC3
 
-#define USE_DSHOT 
+#define USE_DSHOT
+#define USE_ESC_TELEMETRY
 
 #define LED_STRIP
-#define WS2811_PIN                      PB8 // TIM16_CH1
-#define WS2811_TIMER                    TIM16
-#define WS2811_DMA_CHANNEL              DMA1_Channel3
-#define WS2811_IRQ                      DMA1_Channel3_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC3
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH3_HANDLER
-#define LED_STRIP_TIMER                 TIM16
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // USART2, PA3
@@ -198,4 +193,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 14
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) | TIM_N(17))
-

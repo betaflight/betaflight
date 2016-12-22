@@ -142,15 +142,15 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     HAL_StatusTypeDef status;
-    
+
     if(reg_ == 0xFF)
         status = HAL_I2C_Master_Transmit(&i2cHandle[device].Handle,addr_ << 1,data, len_, I2C_DEFAULT_TIMEOUT);
     else
         status = HAL_I2C_Mem_Write(&i2cHandle[device].Handle,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,data, len_, I2C_DEFAULT_TIMEOUT);
-        
+
     if(status != HAL_OK)
         return i2cHandleHardwareFailure(device);
-    
+
     return true;
 }
 
@@ -162,15 +162,15 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
     HAL_StatusTypeDef status;
-    
+
     if(reg_ == 0xFF)
         status = HAL_I2C_Master_Receive(&i2cHandle[device].Handle,addr_ << 1,buf, len, I2C_DEFAULT_TIMEOUT);
     else
         status = HAL_I2C_Mem_Read(&i2cHandle[device].Handle,addr_ << 1, reg_, I2C_MEMADD_SIZE_8BIT,buf, len, I2C_DEFAULT_TIMEOUT);
-        
+
     if(status != HAL_OK)
         return i2cHandleHardwareFailure(device);
-    
+
     return true;
 }
 
@@ -209,8 +209,8 @@ void i2cInit(I2CDevice device)
         IO_t scl = IOGetByTag(i2c->scl);
         IO_t sda = IOGetByTag(i2c->sda);
 
-        IOInit(scl, OWNER_I2C, RESOURCE_I2C_SCL, RESOURCE_INDEX(device));
-        IOInit(sda, OWNER_I2C, RESOURCE_I2C_SDA, RESOURCE_INDEX(device));
+        IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
+        IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
         // Enable RCC
         RCC_ClockCmd(i2c->rcc, ENABLE);
@@ -228,7 +228,7 @@ void i2cInit(I2CDevice device)
     #endif
     // Init I2C peripheral
     HAL_I2C_DeInit(&i2cHandle[device].Handle);
-    
+
     i2cHandle[device].Handle.Instance             = i2cHardwareMap[device].dev;
     /// TODO: HAL check if I2C timing is correct
     i2cHandle[device].Handle.Init.Timing          = 0x00B01B59;
@@ -239,12 +239,12 @@ void i2cInit(I2CDevice device)
     i2cHandle[device].Handle.Init.OwnAddress2     = 0x0;
     i2cHandle[device].Handle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
     i2cHandle[device].Handle.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
-    
-    
+
+
     HAL_I2C_Init(&i2cHandle[device].Handle);
     /* Enable the Analog I2C Filter */
     HAL_I2CEx_ConfigAnalogFilter(&i2cHandle[device].Handle,I2C_ANALOGFILTER_ENABLE);
-    
+
     HAL_NVIC_SetPriority(i2cHardwareMap[device].er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
     HAL_NVIC_EnableIRQ(i2cHardwareMap[device].er_irq);
     HAL_NVIC_SetPriority(i2cHardwareMap[device].ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));

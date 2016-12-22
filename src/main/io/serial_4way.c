@@ -365,7 +365,7 @@ static uint8_t Connect(uint8_32_u *pDeviceInfo)
 
 static serialPort_t *port;
 
-static uint8_t ReadByte(void) 
+static uint8_t ReadByte(void)
 {
     // need timeout?
     while (!serialRxBytesWaiting(port));
@@ -392,7 +392,7 @@ static void WriteByteCrc(uint8_t b)
     CRCout.word = _crc_xmodem_update(CRCout.word, b);
 }
 
-void esc4wayProcess(serialPort_t *mspPort) 
+void esc4wayProcess(serialPort_t *mspPort)
 {
 
     uint8_t ParamBuf[256];
@@ -450,16 +450,16 @@ void esc4wayProcess(serialPort_t *mspPort)
         } else {
             ACK_OUT = ACK_I_INVALID_CRC;
         }
-        
+
         TX_LED_ON;
-        
+
         if (ACK_OUT == ACK_OK)
         {
             // wtf.D_FLASH_ADDR_H=Adress_H;
             // wtf.D_FLASH_ADDR_L=Adress_L;
             ioMem.D_PTR_I = ParamBuf;
 
-            
+
             switch(CMD) {
                 // ******* Interface related stuff *******
                 case cmd_InterfaceTestAlive:
@@ -816,7 +816,7 @@ void esc4wayProcess(serialPort_t *mspPort)
         WriteByte(CRCout.bytes[1]);
         WriteByte(CRCout.bytes[0]);
         serialEndWrite(port);
-                    
+
         TX_LED_OFF;
         if (isExitScheduled) {
             esc4wayRelease();

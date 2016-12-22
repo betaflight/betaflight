@@ -37,6 +37,7 @@
 #define DEFAULT_FEATURES FEATURE_MOTOR_STOP
 #else
 #define TARGET_BOARD_IDENTIFIER "AFNA"
+// Beeper configuration is handled in 'config.c', since it is dependent on hardware revision
 #endif
 
 //#define BARO_XCLR_PIN           PC13
@@ -120,7 +121,7 @@
 
 #define USE_UART1
 #define USE_UART2
-/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */ 
+/* only 2 uarts available on the NAZE, add ifdef here if present on other boards */
 //#define USE_UART3
 //#define USE_SOFTSERIAL1
 //#define USE_SOFTSERIAL2
@@ -150,10 +151,6 @@
 #define EXTERNAL1_ADC_PIN       PA5
 
 #define LED_STRIP
-#define WS2811_TIMER                    TIM3
-#define WS2811_PIN                      PA6
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
 
 #undef GPS
 
@@ -161,7 +158,9 @@
 // USART2, PA3
 #define BIND_PIN                PA3
 
+#if !defined(BRUSHED_MOTORS)
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 

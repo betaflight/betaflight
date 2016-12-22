@@ -190,24 +190,23 @@ bool ak8963SensorWrite(uint8_t addr_, uint8_t reg_, uint8_t data)
 
 bool ak8963Detect(mag_t *mag)
 {
-    bool ack = false;
     uint8_t sig = 0;
 
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
     // initialze I2C master via SPI bus (MPU9250)
 
-    ack = verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
+    verifympu9250WriteRegister(MPU_RA_INT_PIN_CFG, 0x10);               // INT_ANYRD_2CLEAR
     delay(10);
 
-    ack = verifympu9250WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
+    verifympu9250WriteRegister(MPU_RA_I2C_MST_CTRL, 0x0D);              // I2C multi-master / 400kHz
     delay(10);
 
-    ack = verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
+    verifympu9250WriteRegister(MPU_RA_USER_CTRL, 0x30);                 // I2C master mode, SPI mode only
     delay(10);
 #endif
 
     // check for AK8963
-    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
+    bool ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_WHO_AM_I, 1, &sig);
     if (ack && sig == AK8963_Device_ID) // 0x48 / 01001000 / 'H'
     {
         mag->init = ak8963Init;
@@ -220,36 +219,34 @@ bool ak8963Detect(mag_t *mag)
 
 void ak8963Init()
 {
-    bool ack;
-    UNUSED(ack);
     uint8_t calibration[3];
     uint8_t status;
 
-    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down before entering fuse mode
     delay(20);
 
-    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_FUSE_ROM); // Enter Fuse ROM access mode
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_FUSE_ROM); // Enter Fuse ROM access mode
     delay(10);
 
-    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ASAX, sizeof(calibration), calibration); // Read the x-, y-, and z-axis calibration values
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_ASAX, sizeof(calibration), calibration); // Read the x-, y-, and z-axis calibration values
     delay(10);
 
     magGain[X] = (((((float)(int8_t)calibration[X] - 128) / 256) + 1) * 30);
     magGain[Y] = (((((float)(int8_t)calibration[Y] - 128) / 256) + 1) * 30);
     magGain[Z] = (((((float)(int8_t)calibration[Z] - 128) / 256) + 1) * 30);
 
-    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down after reading.
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_POWER_DOWN); // power down after reading.
     delay(10);
 
     // Clear status registers
-    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &status);
-    ack = ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS2, 1, &status);
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS1, 1, &status);
+    ak8963SensorRead(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_STATUS2, 1, &status);
 
     // Trigger first measurement
 #if defined(USE_SPI) && defined(MPU9250_SPI_INSTANCE)
-    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_CONT1);
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_CONT1);
 #else
-    ack = ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
+    ak8963SensorWrite(AK8963_MAG_I2C_ADDRESS, AK8963_MAG_REG_CNTL, CNTL_MODE_ONCE);
 #endif
 }
 

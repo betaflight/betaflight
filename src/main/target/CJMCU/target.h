@@ -91,14 +91,23 @@
 //#define TELEMETRY
 //#define TELEMETRY_LTM
 //#define TELEMETRY_NRF24_LTM
-#define SKIP_RX_PWM_PPM
+#ifdef USE_PWM
+#undef USE_PWM
+#endif
+
+#ifdef USE_PPM
+#undef USE_PPM
+#endif
+
+#ifdef SERIAL_RX
 #undef SERIAL_RX
+#endif
 //#undef SKIP_TASK_STATISTICS
 
 #else
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
-#undef SKIP_RX_MSP
+#define USE_RX_MSP
 #define SPEKTRUM_BIND
 #define BIND_PIN                PA3 // UART2, PA3
 
