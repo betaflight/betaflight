@@ -52,6 +52,11 @@ typedef enum I2CDevice {
 # define I2CDEV_MAX 4
 #endif
 
+#ifdef UNIT_TEST
+# define I2CDEV_MAX 1
+# define I2C_TypeDef unsigned long
+#endif
+
 typedef struct i2cDevice_s {
     bool configured;
     I2C_TypeDef *dev;
