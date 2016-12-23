@@ -46,7 +46,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 # if defined(USE_I2C_PULLUP)
 #  define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
 # else
-#  define IOCFG_I2C    IOCFG_AF_OD
+#  define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 # endif
 
 # define DEF_I2C1_SCL PB8
@@ -62,11 +62,6 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 
 #define DEF_I2C2_SCL  PB10
 #define DEF_I2C2_SDA  PB11
-
-#ifdef STM32F4
-# define DEF_I2C3_SCL PA8
-# define DEF_I2C3_SDA PC9
-#endif
 
 #ifndef I2C1_SCL
 # define I2C1_SCL     NONE
@@ -90,11 +85,16 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #endif
 
 // List of possible I2C mapping (exported to bus_i2c.c)
+// XXX Eventually consolidate and move to bus_i2c.c
 i2cDevice_t i2cHardwareMap[] = {
-    { .dev = I2C1, .scl = IO_TAG(DEF_I2C1_SCL), .sda = IO_TAG(DEF_I2C1_SDA), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
-    { .dev = I2C2, .scl = IO_TAG(DEF_I2C2_SCL), .sda = IO_TAG(DEF_I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+#ifdef STM32F1
+    { .dev = I2C1, .scl = IO_TAG(PB6), .sda = IO_TAG(PB7), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
+    { .dev = I2C2, .scl = IO_TAG(PB10), .sda = IO_TAG(PB11), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+#endif
 #ifdef STM32F4
-    { .dev = I2C3, .scl = IO_TAG(DEF_I2C3_SCL), .sda = IO_TAG(DEF_I2C3_SDA), .rcc = RCC_APB1(I2C3), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
+    { .dev = I2C1, .scl = IO_TAG(PB8), .sda = IO_TAG(PB9), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
+    { .dev = I2C2, .scl = IO_TAG(PB10), .sda = IO_TAG(PB11), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+    { .dev = I2C3, .scl = IO_TAG(PA8), .sda = IO_TAG(PC9), .rcc = RCC_APB1(I2C3), .overClock = I2C3_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
 #endif
 };
 
