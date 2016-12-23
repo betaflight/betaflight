@@ -40,6 +40,9 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
 #include "drivers/system.h"
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -49,6 +52,7 @@
 #include "io/osd.h"
 
 #include "io/vtx.h"
+
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
