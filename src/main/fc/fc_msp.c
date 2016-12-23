@@ -397,9 +397,7 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
     }
 
-    if (feature(FEATURE_OSD)) {
-        activeBoxIds[activeBoxIdCount++] = BOXOSD;
-    }
+    activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
