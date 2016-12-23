@@ -127,29 +127,11 @@
 #define BOARD_HAS_VOLTAGE_DIVIDER
 
 #define ADC_INSTANCE                ADC2
-#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA2
-#define ADC_DMA_CHANNEL             DMA2_Channel1
 
 #define VBAT_ADC_PIN           PA4
-
-#define EXTERNAL1_ADC_PIN      PA5
+#define CURRENT_METER_ADC_PIN  PA5
 
 #define LED_STRIP
-#define LED_STRIP_TIMER                 TIM17
-
-#define USE_LED_STRIP_ON_DMA1_CHANNEL1
-//#define WS2811_GPIO                     GPIOA
-//#define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
-//#define WS2811_GPIO_AF                  GPIO_AF_1
-#define WS2811_PIN                      PA7
-//#define WS2811_PIN_SOURCE               GPIO_PinSource7
-#define WS2811_TIMER                    TIM17
-//#define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM17
-#define WS2811_DMA_CHANNEL              DMA1_Channel1
-#define WS2811_IRQ                      DMA1_Channel1_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC1
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH1_HANDLER
-#define WS2811_TIMER_GPIO_AF            GPIO_AF_1
 
 #define TRANSPONDER
 #define TRANSPONDER_GPIO                     GPIOA
@@ -163,7 +145,6 @@
 #define TRANSPONDER_IRQ                      DMA1_Channel6_IRQn
 #define TRANSPONDER_DMA_TC_FLAG              DMA1_FLAG_TC6
 #define TRANSPONDER_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-#define TRANSPONDER_DMAChannelRemap          SYSCFG_DMARemap_TIM16
 #define BLACKBOX
 #define GPS
 //#define GTUNE
@@ -180,6 +161,8 @@
 #define USE_ESC_TELEMETRY
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
+#define ADC24_DMA_REMAP
+
 
 //#define USE_ESCSERIAL
 //#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
@@ -188,7 +171,7 @@
 
 #define SPEKTRUM_BIND
 
-#define BIND_PIN PD2
+#define BIND_PIN PB11
 
 // IO - stm32f303rc in 64pin package
 #define TARGET_IO_PORTA 0xffff
