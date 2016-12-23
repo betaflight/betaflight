@@ -24,6 +24,8 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
+#include "drivers/pwm_output.h"
 #include "drivers/serial.h"
 
 #include "fc/rc_controls.h"
@@ -47,10 +49,23 @@
 
 #include "hardware_revision.h"
 
+#define CURRENTOFFSET 2500                      // ACS712/714-30A - 0A = 2.5V
+#define CURRENTSCALE -667                       // ACS712/714-30A - 66.666 mV/A inverted mode
+
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
+
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
-    config->mag_hardware = MAG_NONE;            // disabled by default
+    config->batteryConfig.currentMeterOffset = CURRENTOFFSET;
+    config->batteryConfig.currentMeterScale = CURRENTSCALE;
+    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        config->pidConfig.pid_process_denom = 1;
+    }
+
     if (hardwareRevision == AFF4_REV_1) {
         config->rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
         config->rxConfig.spektrum_sat_bind = 5;
@@ -58,15 +73,11 @@ void targetConfiguration(master_t *config)
     } else {
         config->rxConfig.serialrx_provider = SERIALRX_SBUS;
         config->rxConfig.sbus_inversion = 0;
-        config->serialConfig.portConfigs[SERIAL_PORT_USART2].functionMask = FUNCTION_TELEMETRY_FRSKY;
+        config->serialConfig.portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
-        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
-        config->batteryConfig.currentMeterOffset = 2500;
-        config->batteryConfig.currentMeterScale = -667;
+        intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY, &config->enabledFeatures);
     }
-    config->motorConfig.motorPwmRate = 32000;
-    config->gyro_sync_denom = 1;
-    config->pid_process_denom = 1;
+
     config->profile[0].pidProfile.P8[ROLL] = 53;
     config->profile[0].pidProfile.I8[ROLL] = 45;
     config->profile[0].pidProfile.D8[ROLL] = 52;

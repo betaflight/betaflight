@@ -19,6 +19,7 @@
 
 #include "common/axis.h"
 #include "common/maths.h"
+#include "common/time.h"
 
 #include "sensors/acceleration.h"
 
@@ -51,12 +52,25 @@ typedef struct accDeadband_s {
     uint8_t z;                  // set the acc deadband for z-Axis, this ignores small accelerations
 } accDeadband_t;
 
+typedef struct throttleCorrectionConfig_s {
+    uint16_t throttle_correction_angle;     // the angle when the throttle correction is maximal. in 0.1 degres, ex 225 = 22.5 ,30.0, 450 = 45.0 deg
+    uint8_t throttle_correction_value;      // the correction that will be applied at throttle_correction_angle.
+} throttleCorrectionConfig_t;
+
+typedef struct imuConfig_s {
+    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
+    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
+    uint8_t small_angle;
+    uint8_t acc_unarmedcal;                 // turn automatic acc compensation on/off
+    accDeadband_t accDeadband;
+} imuConfig_t;
+
 typedef struct imuRuntimeConfig_s {
-    uint8_t acc_cut_hz;
-    uint8_t acc_unarmedcal;
     float dcm_ki;
     float dcm_kp;
+    uint8_t acc_unarmedcal;
     uint8_t small_angle;
+    accDeadband_t accDeadband;
 } imuRuntimeConfig_t;
 
 typedef enum {
@@ -77,17 +91,14 @@ typedef struct accProcessor_s {
 
 struct pidProfile_s;
 void imuConfigure(
-    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    imuConfig_t *imuConfig,
     struct pidProfile_s *initialPidProfile,
-    accDeadband_t *initialAccDeadband,
     uint16_t throttle_correction_angle
 );
 
 float getCosTiltAngle(void);
-void calculateEstimatedAltitude(uint32_t currentTime);
-union rollAndPitchTrims_u;
-void imuUpdateAccelerometer(union rollAndPitchTrims_u *accelerometerTrims);
-void imuUpdateAttitude(uint32_t currentTime);
+void calculateEstimatedAltitude(timeUs_t currentTimeUs);
+void imuUpdateAttitude(timeUs_t currentTimeUs);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_hz);
@@ -96,5 +107,4 @@ union u_fp_vector;
 int16_t imuCalculateHeading(union u_fp_vector *vec);
 
 void imuResetAccelerationSum(void);
-void imuUpdateAcc(union rollAndPitchTrims_u *accelerometerTrims);
 void imuInit(void);

@@ -44,8 +44,7 @@
 #define MPU_INT_EXTI                PC13
 #define USE_EXTI
 
-#define USE_DSHOT
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define REMAP_TIM16_DMA
 #define REMAP_TIM17_DMA
 

@@ -2,9 +2,10 @@
 
 AlienWii is now AlienFlight. This targets supports various variants of brushed and brushless flight controllers. The designs for them are released partially for public use at:
 
+http://www.alienflight.com
 http://www.alienflightng.com
 
-The legacy designs are available at:
+AlienFlight Classic and F3 Eagle files are available at:
 
 https://github.com/MJ666/Flight-Controllers
 
@@ -20,7 +21,7 @@ Here are the general hardware specifications for this boards:
 - STM32F103CBT6 MCU (ALIENFLIGHTF1)
 - STM32F303CCT6 MCU (ALIENFLIGHTF3)
 - STM32F405RGT6 MCU (ALIENFLIGHTF4)
-- MPU6050/6500/9250/ICM-20608-G accelerometer/gyro(/mag) sensor unit
+- MPU6050/6500/9250/ICM-20602 accelerometer/gyro(/mag) sensor unit
 - The MPU sensor interrupt is connected to the MCU for all new F3 and F4 designs and enabled in the firmware
 - 4-8 x 4.2A to 9.5A brushed ESCs, integrated, to run the strongest micro motors (brushed variants)
 - extra-wide traces on the PCB, for maximum power throughput (brushed variants)

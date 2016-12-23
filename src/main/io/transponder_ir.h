@@ -17,11 +17,13 @@
 
 #pragma once
 
+#include "common/time.h"
+
 void transponderInit(uint8_t* transponderCode);
 
 void transponderEnable(void);
 void transponderDisable(void);
-void transponderUpdate(uint32_t currentTime);
+void transponderUpdate(timeUs_t currentTimeUs);
 void transponderUpdateData(uint8_t* transponderData);
 void transponderTransmitOnce(void);
 void transponderStartRepeating(void);

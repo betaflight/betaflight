@@ -107,7 +107,6 @@
 //#define SONAR_TRIGGER_PIN       PB5
 
 #undef GPS
-#define CLI_MINIMAL_VERBOSITY
 #undef MAG
 
 #ifdef CC3D_OPBL

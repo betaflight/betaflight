@@ -7,7 +7,7 @@ enum rcc_reg {
     RCC_AHB,
     RCC_APB2,
     RCC_APB1,
-    RCC_AHB1,
+    RCC_AHB1
 };
 
 #define RCC_ENCODE(reg, mask) (((reg) << 5) | LOG2_32BIT(mask))

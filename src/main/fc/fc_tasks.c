@@ -31,6 +31,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
 #include "drivers/serial.h"
+#include "drivers/stack_check.h"
 
 #include "fc/config.h"
 #include "fc/fc_msp.h"
@@ -62,15 +63,19 @@
 #include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/sonar.h"
+#include "sensors/esc_sensor.h"
 
 #include "scheduler/scheduler.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/esc_telemetry.h"
 
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
+
+#ifdef USE_BST
+void taskBstMasterProcess(timeUs_t currentTimeUs);
+#endif
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
@@ -82,16 +87,16 @@
 #define IBATINTERVAL (6 * 3500)
 
 
-static void taskUpdateAccelerometer(uint32_t currentTime)
+static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
-    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+    accUpdate(&accelerometerConfig()->accelerometerTrims);
 }
 
-static void taskHandleSerial(uint32_t currentTime)
+static void taskHandleSerial(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 #ifdef USE_CLI
     // in cli mode, all serial stuff goes to here. enter cli mode by sending #
     if (cliMode) {
@@ -102,32 +107,32 @@ static void taskHandleSerial(uint32_t currentTime)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-static void taskUpdateBattery(uint32_t currentTime)
+static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
-#ifdef USE_ADC
+#if defined(USE_ADC) || defined(USE_ESC_SENSOR)
     static uint32_t vbatLastServiced = 0;
-    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_TELEMETRY)) {
-        if (cmp32(currentTime, vbatLastServiced) >= VBATINTERVAL) {
-            vbatLastServiced = currentTime;
+    if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
+        if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
+            vbatLastServiced = currentTimeUs;
             updateBattery();
         }
     }
 #endif
 
     static uint32_t ibatLastServiced = 0;
-    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_TELEMETRY)) {
-        const int32_t ibatTimeSinceLastServiced = cmp32(currentTime, ibatLastServiced);
+    if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
+        const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
-            ibatLastServiced = currentTime;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+            ibatLastServiced = currentTimeUs;
+            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
 
-static void taskUpdateRxMain(uint32_t currentTime)
+static void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    processRx(currentTime);
+    processRx(currentTimeUs);
     isRXDataNew = true;
 
 #if !defined(BARO) && !defined(SONAR)
@@ -150,18 +155,18 @@ static void taskUpdateRxMain(uint32_t currentTime)
 }
 
 #ifdef MAG
-static void taskUpdateCompass(uint32_t currentTime)
+static void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTime, &masterConfig.magZero);
+        compassUpdate(currentTimeUs, &compassConfig()->magZero);
     }
 }
 #endif
 
 #ifdef BARO
-static void taskUpdateBaro(uint32_t currentTime)
+static void taskUpdateBaro(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 
     if (sensors(SENSOR_BARO)) {
         const uint32_t newDeadline = baroUpdate();
@@ -173,7 +178,7 @@ static void taskUpdateBaro(uint32_t currentTime)
 #endif
 
 #if defined(BARO) || defined(SONAR)
-static void taskCalculateAltitude(uint32_t currentTime)
+static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
 #if defined(BARO)
@@ -183,28 +188,19 @@ static void taskCalculateAltitude(uint32_t currentTime)
         || sensors(SENSOR_SONAR)
 #endif
         ) {
-        calculateEstimatedAltitude(currentTime);
+        calculateEstimatedAltitude(currentTimeUs);
     }}
 #endif
 
 #ifdef TELEMETRY
-static void taskTelemetry(uint32_t currentTime)
+static void taskTelemetry(timeUs_t currentTimeUs)
 {
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTime, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+        telemetryProcess(currentTimeUs, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
     }
 }
-#endif
-
-#ifdef USE_ESC_TELEMETRY
-static void taskEscTelemetry(uint32_t currentTime)
-{
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryProcess(currentTime);
-     }
- }
 #endif
 
 void fcTasksInit(void)
@@ -215,7 +211,7 @@ void fcTasksInit(void)
 
     if (sensors(SENSOR_ACC)) {
         setTaskEnabled(TASK_ACCEL, true);
-        rescheduleTask(TASK_ACCEL, accSamplingInterval);
+        rescheduleTask(TASK_ACCEL, acc.accSamplingInterval);
     }
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
@@ -251,10 +247,10 @@ void fcTasksInit(void)
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
     if (feature(FEATURE_TELEMETRY)) {
-        if (masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) {
+        if (rxConfig()->serialrx_provider == SERIALRX_JETIEXBUS) {
             // Reschedule telemetry to 500hz for Jeti Exbus
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } else if (masterConfig.rxConfig.serialrx_provider == SERIALRX_CRSF) {
+        } else if (rxConfig()->serialrx_provider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }
@@ -272,8 +268,8 @@ void fcTasksInit(void)
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-#ifdef USE_ESC_TELEMETRY
-    setTaskEnabled(TASK_ESC_TELEMETRY, feature(FEATURE_ESC_TELEMETRY));
+#ifdef USE_ESC_SENSOR
+    setTaskEnabled(TASK_ESC_SENSOR, feature(FEATURE_ESC_SENSOR));
 #endif
 #ifdef CMS
 #ifdef USE_MSP_DISPLAYPORT
@@ -281,6 +277,9 @@ void fcTasksInit(void)
 #else
     setTaskEnabled(TASK_CMS, feature(FEATURE_OSD) || feature(FEATURE_DASHBOARD));
 #endif
+#endif
+#ifdef STACK_CHECK
+    setTaskEnabled(TASK_STACK_CHECK, true);
 #endif
 }
 
@@ -295,7 +294,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_GYROPID] = {
         .taskName = "PID",
         .subTaskName = "GYRO",
-        .taskFunc = taskMainPidLoopCheck,
+        .taskFunc = taskMainPidLoop,
         .desiredPeriod = TASK_GYROPID_DESIRED_PERIOD,
         .staticPriority = TASK_PRIORITY_REALTIME,
     },
@@ -442,11 +441,11 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-    [TASK_ESC_TELEMETRY] = {
-        .taskName = "ESC_TELEMETRY",
-        .taskFunc = taskEscTelemetry,
-        .desiredPeriod = 1000000 / 100,         // 100 Hz
+#ifdef USE_ESC_SENSOR
+    [TASK_ESC_SENSOR] = {
+        .taskName = "ESC_SENSOR",
+        .taskFunc = escSensorProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz every 10ms
         .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
@@ -457,6 +456,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = cmsHandler,
         .desiredPeriod = TASK_PERIOD_HZ(60),        // 60 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+#endif
+
+#ifdef STACK_CHECK
+    [TASK_STACK_CHECK] = {
+        .taskName = "STACKCHECK",
+        .taskFunc = taskStackCheck,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
 };

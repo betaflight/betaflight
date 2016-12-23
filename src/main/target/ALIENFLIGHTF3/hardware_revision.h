@@ -17,8 +17,8 @@
 #pragma once
 
 typedef enum awf3HardwareRevision_t {
-    UNKNOWN = 0,
-    AFF3_REV_1, // MPU6050 / MPU9150 (I2C)
+    AFF3_UNKNOWN = 0,
+    AFF3_REV_1, // MPU6050 (I2C)
     AFF3_REV_2  // MPU6500 / MPU9250 (SPI)
 } awf3HardwareRevision_e;
 

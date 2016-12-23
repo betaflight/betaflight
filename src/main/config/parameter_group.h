@@ -22,7 +22,7 @@ typedef uint16_t pgn_t;
 // parameter group registry flags
 typedef enum {
     PGRF_NONE = 0,
-    PGRF_CLASSIFICATON_BIT = (1 << 0),
+    PGRF_CLASSIFICATON_BIT = (1 << 0)
 } pgRegistryFlags_e;
 
 typedef enum {
@@ -30,7 +30,7 @@ typedef enum {
     PGR_PGN_VERSION_MASK =  0xf000,
     PGR_SIZE_MASK =         0x0fff,
     PGR_SIZE_SYSTEM_FLAG =  0x0000, // documentary
-    PGR_SIZE_PROFILE_FLAG = 0x8000, // start using flags from the top bit down
+    PGR_SIZE_PROFILE_FLAG = 0x8000  // start using flags from the top bit down
 } pgRegistryInternal_e;
 
 // function that resets a single parameter group instance

@@ -43,7 +43,7 @@ typedef struct sdcardMetadata_s {
 typedef enum {
     SDCARD_BLOCK_OPERATION_READ,
     SDCARD_BLOCK_OPERATION_WRITE,
-    SDCARD_BLOCK_OPERATION_ERASE,
+    SDCARD_BLOCK_OPERATION_ERASE
 } sdcardBlockOperation_e;
 
 typedef enum {

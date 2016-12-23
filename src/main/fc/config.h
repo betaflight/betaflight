@@ -55,7 +55,7 @@ typedef enum {
     FEATURE_VTX = 1 << 24,
     FEATURE_RX_SPI = 1 << 25,
     FEATURE_SOFTSPI = 1 << 26,
-    FEATURE_ESC_TELEMETRY = 1 << 27,
+    FEATURE_ESC_SENSOR = 1 << 27,
 } features_e;
 
 void beeperOffSet(uint32_t mask);
@@ -70,11 +70,11 @@ void setPreferredBeeperOffMask(uint32_t mask);
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
 void resetEEPROM(void);
-void readEEPROMAndNotify(void);
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
+void validateAndFixGyroConfig(void);
 void activateConfig(void);
 
 uint8_t getCurrentProfile(void);

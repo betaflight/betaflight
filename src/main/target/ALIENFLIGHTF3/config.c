@@ -24,6 +24,8 @@
 
 #include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
+#include "drivers/pwm_output.h"
 
 #include "fc/rc_controls.h"
 
@@ -39,16 +41,53 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "hardware_revision.h"
+
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
 {
-    config->mag_hardware = MAG_NONE;            // disabled by default
+    /* depending on revision ... depends on the LEDs to be utilised. */
+    if (hardwareRevision == AFF3_REV_2) {
+        config->statusLedConfig.polarity = 0
+#ifdef LED0_A_INVERTED
+            | BIT(0)
+#endif
+#ifdef LED1_A_INVERTED
+            | BIT(1)
+#endif
+#ifdef LED2_A_INVERTED
+            | BIT(2)
+#endif
+            ;
+
+        for (int i = 0; i < LED_NUMBER; i++) {
+            config->statusLedConfig.ledTags[i] = IO_TAG_NONE;
+        }
+#ifdef LED0_A
+        config->statusLedConfig.ledTags[0] = IO_TAG(LED0_A);
+#endif
+#ifdef LED1_A
+        config->statusLedConfig.ledTags[1] = IO_TAG(LED1_A);
+#endif
+#ifdef LED2_A
+        config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
+#endif
+    } else {
+        config->gyroConfig.gyro_sync_denom = 2;
+        config->pidConfig.pid_process_denom = 2;
+    }
+
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->motorConfig.motorPwmRate = 32000;
-    config->gyro_sync_denom = 2;
-    config->pid_process_denom = 1;
+    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        config->pidConfig.pid_process_denom = 1;
+    }
+
     config->profile[0].pidProfile.P8[ROLL] = 90;
     config->profile[0].pidProfile.I8[ROLL] = 44;
     config->profile[0].pidProfile.D8[ROLL] = 60;
@@ -63,5 +102,5 @@ void targetConfiguration(master_t *config)
     config->customMotorMixer[4] = (motorMixer_t){ 1.0f, -1.0f, -0.414178f, -1.0f };    // MIDFRONT_R
     config->customMotorMixer[5] = (motorMixer_t){ 1.0f,  1.0f, -0.414178f,  1.0f };    // MIDFRONT_L
     config->customMotorMixer[6] = (motorMixer_t){ 1.0f, -1.0f,  0.414178f,  1.0f };    // MIDREAR_R
-    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L#endif
+    config->customMotorMixer[7] = (motorMixer_t){ 1.0f,  1.0f,  0.414178f, -1.0f };    // MIDREAR_L
 }

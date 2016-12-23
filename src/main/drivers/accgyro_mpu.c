@@ -25,7 +25,9 @@
 #include "build/build_config.h"
 #include "build/debug.h"
 
+#include "common/filter.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "nvic.h"
 
@@ -52,8 +54,6 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data);
 
 static void mpu6050FindRevision(void);
 
-static volatile bool mpuDataReady;
-
 #ifdef USE_SPI
 static bool detectSPISensorsAndUpdateDetectionResult(void);
 #endif
@@ -75,7 +75,7 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_INQUIRY_MASK   0x7E
 
-mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
+mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
     memset(&mpuConfiguration, 0, sizeof(mpuConfiguration));
@@ -221,12 +221,14 @@ static void mpu6050FindRevision(void)
     }
 }
 
-extiCallbackRec_t mpuIntCallbackRec;
-
-void mpuIntExtiHandler(extiCallbackRec_t *cb)
+/*
+ * Gyro interrupt service routine
+ */
+#if defined(MPU_INT_EXTI)
+static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-    UNUSED(cb);
-    mpuDataReady = true;
+    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
+    gyro->dataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
     static uint32_t lastCalledAt = 0;
@@ -236,16 +238,16 @@ void mpuIntExtiHandler(extiCallbackRec_t *cb)
     lastCalledAt = now;
 #endif
 }
+#endif
 
-void mpuIntExtiInit(void)
+static void mpuIntExtiInit(gyroDev_t *gyro)
 {
+#if defined(MPU_INT_EXTI)
     static bool mpuExtiInitDone = false;
 
     if (mpuExtiInitDone || !mpuIntExtiConfig) {
         return;
     }
-
-#if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 
     IO_t mpuIntIO = IOGetByTag(mpuIntExtiConfig->tag);
 
@@ -258,20 +260,22 @@ void mpuIntExtiInit(void)
 
 #if defined (STM32F7)
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
 
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
-    EXTIHandlerInit(&mpuIntCallbackRec, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntCallbackRec, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(mpuIntIO, true);
-#endif
 #endif
 
     mpuExtiInitDone = true;
+#else
+    UNUSED(gyro);
+#endif
 }
 
 static bool mpuReadRegisterI2C(uint8_t reg, uint8_t length, uint8_t* data)
@@ -286,7 +290,7 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
     return ack;
 }
 
-bool mpuAccRead(int16_t *accData)
+bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
@@ -295,35 +299,40 @@ bool mpuAccRead(int16_t *accData)
         return false;
     }
 
-    accData[0] = (int16_t)((data[0] << 8) | data[1]);
-    accData[1] = (int16_t)((data[2] << 8) | data[3]);
-    accData[2] = (int16_t)((data[4] << 8) | data[5]);
+    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
 
-bool mpuGyroRead(int16_t *gyroADC)
+bool mpuGyroRead(gyroDev_t *gyro)
 {
     uint8_t data[6];
 
-    bool ack = mpuConfiguration.read(mpuConfiguration.gyroReadXRegister, 6, data);
+    const bool ack = mpuConfiguration.read(mpuConfiguration.gyroReadXRegister, 6, data);
     if (!ack) {
         return false;
     }
 
-    gyroADC[0] = (int16_t)((data[0] << 8) | data[1]);
-    gyroADC[1] = (int16_t)((data[2] << 8) | data[3]);
-    gyroADC[2] = (int16_t)((data[4] << 8) | data[5]);
+    gyro->gyroADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    gyro->gyroADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    gyro->gyroADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
 
-bool checkMPUDataReady(void)
+void mpuGyroInit(gyroDev_t *gyro)
+{
+    mpuIntExtiInit(gyro);
+}
+
+bool mpuCheckDataReady(gyroDev_t* gyro)
 {
     bool ret;
-    if (mpuDataReady) {
+    if (gyro->dataReady) {
         ret = true;
-        mpuDataReady= false;
+        gyro->dataReady= false;
     } else {
         ret = false;
     }

@@ -897,16 +897,16 @@ static void cmsUpdate(uint32_t currentTimeUs)
     lastCalledMs = currentTimeMs;
 }
 
-void cmsHandler(uint32_t currentTime)
+void cmsHandler(timeUs_t currentTimeUs)
 {
     if (cmsDeviceCount < 0)
         return;
 
-    static uint32_t lastCalled = 0;
+    static timeUs_t lastCalledUs = 0;
 
-    if (currentTime >= lastCalled + CMS_UPDATE_INTERVAL_US) {
-        lastCalled = currentTime;
-        cmsUpdate(currentTime);
+    if (currentTimeUs >= lastCalledUs + CMS_UPDATE_INTERVAL_US) {
+        lastCalledUs = currentTimeUs;
+        cmsUpdate(currentTimeUs);
     }
 }
 

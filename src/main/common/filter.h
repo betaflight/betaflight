@@ -15,6 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #ifdef STM32F10X
 #define MAX_FIR_DENOISE_WINDOW_SIZE 60
 #else
@@ -23,6 +25,7 @@
 
 typedef struct pt1Filter_s {
     float state;
+    float k;
     float RC;
     float dT;
 } pt1Filter_t;
@@ -62,6 +65,9 @@ typedef struct firFilter_s {
     uint8_t coeffsLength;
 } firFilter_t;
 
+typedef float (*filterApplyFnPtr)(void *filter, float input);
+
+float nullFilterApply(void *filter, float input);
 
 void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate);
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType);
@@ -77,6 +83,7 @@ void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const fl
 void firFilterUpdate(firFilter_t *filter, float input);
 void firFilterUpdateAverage(firFilter_t *filter, float input);
 float firFilterApply(const firFilter_t *filter);
+float firFilterUpdateAndApply(firFilter_t *filter, float input);
 float firFilterCalcPartialAverage(const firFilter_t *filter, uint8_t count);
 float firFilterCalcMovingAverage(const firFilter_t *filter);
 float firFilterLastInput(const firFilter_t *filter);

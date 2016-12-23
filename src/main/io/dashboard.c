@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -473,7 +474,7 @@ void showBatteryPage(void)
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
 
-        uint8_t capacityPercentage = calculateBatteryCapacityRemainingPercentage();
+        uint8_t capacityPercentage = calculateBatteryPercentage();
         i2c_OLED_set_line(rowIndex++);
         drawHorizonalPercentageBar(SCREEN_CHARACTER_COLUMN_COUNT, capacityPercentage);
     }
@@ -488,14 +489,14 @@ void showSensorsPage(void)
     i2c_OLED_send_string("        X     Y     Z");
 
     if (sensors(SENSOR_ACC)) {
-        tfp_sprintf(lineBuffer, format, "ACC", accSmooth[X], accSmooth[Y], accSmooth[Z]);
+        tfp_sprintf(lineBuffer, format, "ACC", acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
     }
 
     if (sensors(SENSOR_GYRO)) {
-        tfp_sprintf(lineBuffer, format, "GYR", gyroADC[X], gyroADC[Y], gyroADC[Z]);
+        tfp_sprintf(lineBuffer, format, "GYR", lrintf(gyro.gyroADCf[X]), lrintf(gyro.gyroADCf[Y]), lrintf(gyro.gyroADCf[Z]));
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
@@ -503,7 +504,7 @@ void showSensorsPage(void)
 
 #ifdef MAG
     if (sensors(SENSOR_MAG)) {
-        tfp_sprintf(lineBuffer, format, "MAG", magADC[X], magADC[Y], magADC[Z]);
+        tfp_sprintf(lineBuffer, format, "MAG", mag.magADC[X], mag.magADC[Y], mag.magADC[Z]);
         padLineBuffer();
         i2c_OLED_set_line(rowIndex++);
         i2c_OLED_send_string(lineBuffer);
@@ -585,7 +586,7 @@ void showDebugPage(void)
 }
 #endif
 
-void dashboardUpdate(uint32_t currentTime)
+void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
 
@@ -595,12 +596,12 @@ void dashboardUpdate(uint32_t currentTime)
     }
 #endif
 
-    const bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
+    const bool updateNow = (int32_t)(currentTimeUs - nextDisplayUpdateAt) >= 0L;
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = currentTime + DISPLAY_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTimeUs + DISPLAY_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -620,7 +621,7 @@ void dashboardUpdate(uint32_t currentTime)
         }
 
         pageState.pageChanging = (pageState.pageFlags & PAGE_STATE_FLAG_FORCE_PAGE_CHANGE) ||
-                (((int32_t)(currentTime - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
+                (((int32_t)(currentTimeUs - pageState.nextPageAt) >= 0L && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)));
         if (pageState.pageChanging && (pageState.pageFlags & PAGE_STATE_FLAG_CYCLE_ENABLED)) {
             pageState.cycleIndex++;
             pageState.cycleIndex = pageState.cycleIndex % CYCLE_PAGE_ID_COUNT;
@@ -630,7 +631,7 @@ void dashboardUpdate(uint32_t currentTime)
 
     if (pageState.pageChanging) {
         pageState.pageFlags &= ~PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
-        pageState.nextPageAt = currentTime + PAGE_CYCLE_FREQUENCY;
+        pageState.nextPageAt = currentTimeUs + PAGE_CYCLE_FREQUENCY;
 
         // Some OLED displays do not respond on the first initialisation so refresh the display
         // when the page changes in the hopes the hardware responds.  This also allows the
@@ -729,7 +730,7 @@ void dashboardShowFixedPage(pageId_e pageId)
     dashboardDisablePageCycling();
 }
 
-void dashboardSetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     pageState.nextPageAt = futureMicros;
 }

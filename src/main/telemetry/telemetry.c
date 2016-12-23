@@ -35,6 +35,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "msp/msp_serial.h"
+
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
@@ -45,6 +47,7 @@
 #include "telemetry/jetiexbus.h"
 #include "telemetry/mavlink.h"
 #include "telemetry/crsf.h"
+#include "telemetry/srxl.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -75,6 +78,9 @@ void telemetryInit(void)
 #endif
 #ifdef TELEMETRY_CRSF
     initCrsfTelemetry();
+#endif
+#ifdef TELEMETRY_SRXL
+    initSrxlTelemetry();
 #endif
 
     telemetryCheckState();
@@ -124,6 +130,9 @@ void telemetryCheckState(void)
 #ifdef TELEMETRY_CRSF
     checkCrsfTelemetryState();
 #endif
+#ifdef TELEMETRY_SRXL
+    checkSrxlTelemetryState();
+#endif
 }
 
 void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -154,6 +163,18 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #ifdef TELEMETRY_CRSF
     handleCrsfTelemetry(currentTime);
 #endif
+#ifdef TELEMETRY_SRXL
+    handleSrxlTelemetry(currentTime);
+#endif
 }
 
+#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
+
+void releaseSharedTelemetryPorts(void) {
+    serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    while (sharedPort) {
+        mspSerialReleasePortIfAllocated(sharedPort);
+        sharedPort = findNextSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
+    }
+}
 #endif

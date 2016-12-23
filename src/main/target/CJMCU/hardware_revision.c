@@ -32,12 +32,6 @@
 
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "R1",
-        "R2"
-};
-
 uint8_t hardwareRevision = UNKNOWN;
 
 void detectHardwareRevision(void)

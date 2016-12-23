@@ -28,13 +28,7 @@
 #include "drivers/exti.h"
 #include "hardware_revision.h"
 
-static const char * const hardwareRevisionNames[] = {
-        "Unknown",
-        "AlienFlight V1",
-        "AlienFlight V2"
-};
-
-uint8_t hardwareRevision = UNKNOWN;
+uint8_t hardwareRevision = AFF3_UNKNOWN;
 
 static IO_t HWDetectPin = IO_NONE;
 
@@ -44,9 +38,9 @@ void detectHardwareRevision(void)
     IOInit(HWDetectPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(HWDetectPin, IOCFG_IPU);
 
-    // Check hardware revision
     delayMicroseconds(10);  // allow configuration to settle
 
+    // Check hardware revision
     if (IORead(HWDetectPin)) {
         hardwareRevision = AFF3_REV_1;
     } else {

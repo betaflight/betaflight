@@ -69,7 +69,14 @@ static void uartReconfigure(uartPort_t *uartPort)
     USART_Cmd(uartPort->USARTx, DISABLE);
 
     USART_InitStructure.USART_BaudRate = uartPort->port.baudRate;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+
+    // according to the stm32 documentation wordlen has to be 9 for parity bits
+    // this does not seem to matter for rx but will give bad data on tx!
+    if (uartPort->port.options & SERIAL_PARITY_EVEN) {
+        USART_InitStructure.USART_WordLength = USART_WordLength_9b;
+    } else {
+        USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    }
 
     USART_InitStructure.USART_StopBits = (uartPort->port.options & SERIAL_STOPBITS_2) ? USART_StopBits_2 : USART_StopBits_1;
     USART_InitStructure.USART_Parity   = (uartPort->port.options & SERIAL_PARITY_EVEN) ? USART_Parity_Even : USART_Parity_No;

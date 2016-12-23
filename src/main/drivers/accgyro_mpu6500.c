@@ -34,7 +34,12 @@
 #include "accgyro_mpu.h"
 #include "accgyro_mpu6500.h"
 
-bool mpu6500AccDetect(acc_t *acc)
+void mpu6500AccInit(accDev_t *acc)
+{
+    acc->acc_1G = 512 * 4;
+}
+
+bool mpu6500AccDetect(accDev_t *acc)
 {
     if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
         return false;
@@ -46,32 +51,9 @@ bool mpu6500AccDetect(acc_t *acc)
     return true;
 }
 
-bool mpu6500GyroDetect(gyro_t *gyro)
+void mpu6500GyroInit(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
-        return false;
-    }
-
-    gyro->init = mpu6500GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
-void mpu6500AccInit(acc_t *acc)
-{
-    mpuIntExtiInit();
-
-    acc->acc_1G = 512 * 4;
-}
-
-void mpu6500GyroInit(uint8_t lpf)
-{
-    mpuIntExtiInit();
+    mpuGyroInit(gyro);
 
     mpuConfiguration.write(MPU_RA_PWR_MGMT_1, MPU6500_BIT_RESET);
     delay(100);
@@ -85,7 +67,7 @@ void mpu6500GyroInit(uint8_t lpf)
     delay(15);
     mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, lpf);
+    mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
     mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
     delay(100);
@@ -102,4 +84,20 @@ void mpu6500GyroInit(uint8_t lpf)
     mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU6500_BIT_RAW_RDY_EN); // RAW_RDY_EN interrupt enable
 #endif
     delay(15);
+}
+
+bool mpu6500GyroDetect(gyroDev_t *gyro)
+{
+    if (mpuDetectionResult.sensor != MPU_65xx_I2C) {
+        return false;
+    }
+
+    gyro->init = mpu6500GyroInit;
+    gyro->read = mpuGyroRead;
+    gyro->intStatus = mpuCheckDataReady;
+
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = 1.0f / 16.4f;
+
+    return true;
 }
