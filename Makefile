@@ -718,7 +718,7 @@ VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp_hal.c
+            drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
