@@ -135,7 +135,7 @@ static bool i2cHandleHardwareFailure(I2CDevice device)
 {
     i2cErrorCount++;
     // reinit peripheral + clock out garbage
-    i2cInit(device);
+    i2cInitBus(device);
     return false;
 }
 
@@ -250,7 +250,7 @@ static void i2c_er_handler(I2CDevice device) {
                 while (I2Cx->CR1 & I2C_CR1_START) {; }                         // wait for any start to finish sending
                 I2C_GenerateSTOP(I2Cx, ENABLE);                                 // send stop to finalise bus transaction
                 while (I2Cx->CR1 & I2C_CR1_STOP) {; }                          // wait for stop to finish sending
-                i2cInit(device);                                                // reset and configure the hardware
+                i2cInitBus(device);                                                // reset and configure the hardware
             }
             else {
                 I2C_GenerateSTOP(I2Cx, ENABLE);                                 // stop to free up the bus
@@ -379,7 +379,7 @@ void i2c_ev_handler(I2CDevice device) {
     }
 }
 
-void i2cInit(I2CDevice device)
+void i2cInitBus(I2CDevice device)
 {
     if (device == I2CINVALID)
         return;

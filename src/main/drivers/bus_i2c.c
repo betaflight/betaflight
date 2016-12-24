@@ -86,7 +86,7 @@ void i2cInitAll(void)
 
     for (I2CDevice bus = I2CDEV_1 ; bus < I2CDEV_MAX ; bus++) {
         if (i2cHardwareConfig[bus].configured) {
-            i2cInit(bus);
+            i2cInitBus(bus);
         }
     }
 }

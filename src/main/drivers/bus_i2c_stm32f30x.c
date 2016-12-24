@@ -96,7 +96,7 @@ uint32_t i2cTimeoutUserCallback(void)
     return false;
 }
 
-void i2cInit(I2CDevice device)
+void i2cInitBus(I2CDevice device)
 {
 
     i2cDevice_t *i2c;

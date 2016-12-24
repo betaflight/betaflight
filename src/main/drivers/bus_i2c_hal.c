@@ -204,7 +204,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     return true;
 }
 
-void i2cInit(I2CDevice device)
+void i2cInitBus(I2CDevice device)
 {
     /*## Configure the I2C clock source. The clock is derived from the SYSCLK #*/
 //    RCC_PeriphCLKInitTypeDef  RCC_PeriphCLKInitStruct;

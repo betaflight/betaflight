@@ -118,7 +118,7 @@ typedef struct i2cPinConfig_s {
     ioTag_t ioTagSDA[I2CDEV_MAX];
 } i2cPinConfig_t;
 
-void i2cInit(I2CDevice device);
+void i2cInitBus(I2CDevice device);
 bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
 bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
