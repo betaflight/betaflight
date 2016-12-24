@@ -1697,11 +1697,14 @@ static void printRxRange(uint8_t dumpMask, master_t *defaultConfig)
             channelRangeConfigurationDefault->min,
             channelRangeConfigurationDefault->max
         );
+	bufWriterFlush(cliWriter);
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             channelRangeConfiguration->min,
             channelRangeConfiguration->max
         );
+	bufWriterFlush(cliWriter);
+
     }
 }
 
