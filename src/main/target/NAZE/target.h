@@ -134,6 +134,9 @@
 #define UART3_TX_PIN            PB10
 
 #define USE_I2C
+#define USE_I2C2
+#define I2C2_SCL PB10
+#define I2C2_SDA PB11
 #define I2C_DEVICE (I2CDEV_2)
 
 // #define SOFT_I2C // enable to test software i2c

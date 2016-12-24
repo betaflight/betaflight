@@ -154,12 +154,12 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-//#define USE_I2C2
+#define USE_I2C2
 //#define I2C2_SCL NONE
 //#define I2C2_SDA NONE
 #define USE_I2C3
-#define I2C3_SCL NONE
-#define I2C3_SDA NONE
+#define I2C3_SCL NONE // PA8
+#define I2C3_SDA NONE // PC9
 #define I2C_DEVICE (I2CDEV_3) // For temporary backward compatibility
 
 #define OLED_I2C_INSTANCE (I2CDEV_3)

@@ -57,6 +57,34 @@ typedef enum I2CDevice {
 # define I2C_TypeDef unsigned long
 #endif
 
+#ifndef I2C1_SCL
+# define I2C1_SCL     NONE
+#endif
+#ifndef I2C1_SDA
+# define I2C1_SDA     NONE
+#endif
+
+#ifndef I2C2_SCL
+# define I2C2_SCL     NONE
+#endif
+#ifndef I2C2_SDA
+# define I2C2_SDA     NONE
+#endif
+
+#ifndef I2C3_SCL
+# define I2C3_SCL     NONE
+#endif
+#ifndef I2C3_SDA
+# define I2C3_SDA     NONE
+#endif
+
+#ifndef I2C4_SCL
+# define I2C4_SCL     NONE
+#endif
+#ifndef I2C4_SDA
+# define I2C4_SDA     NONE
+#endif
+
 typedef struct i2cDevice_s {
     bool configured;
     I2C_TypeDef *dev;

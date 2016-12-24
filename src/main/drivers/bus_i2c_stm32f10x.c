@@ -49,9 +49,6 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #  define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_NOPULL)
 # endif
 
-# define DEF_I2C1_SCL PB8
-# define DEF_I2C1_SDA PB9
-
 #else
 
 # define IOCFG_I2C    IO_CONFIG(GPIO_Mode_AF_OD, GPIO_Speed_50MHz)
@@ -60,48 +57,32 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 
 #endif
 
-#define DEF_I2C2_SCL  PB10
-#define DEF_I2C2_SDA  PB11
-
-#ifndef I2C1_SCL
-# define I2C1_SCL     NONE
-#endif
-#ifndef I2C1_SDA
-# define I2C1_SDA     NONE
-#endif
-
-#ifndef I2C2_SCL
-# define I2C2_SCL     NONE
-#endif
-#ifndef I2C2_SDA
-# define I2C2_SDA     NONE
-#endif
-
-#ifndef I2C3_SCL
-# define I2C3_SCL     NONE
-#endif
-#ifndef I2C3_SDA
-# define I2C3_SDA     NONE
-#endif
-
 // List of possible I2C mapping (exported to bus_i2c.c)
 // XXX Eventually consolidate and move to bus_i2c.c
+
+#if defined(STM32F1) || defined(STM32F4)
+#define I2C_RCC_APB1(periph) RCC_ENCODE(RCC_APB1, RCC_APB1ENR_ ## periph ## EN)
+#endif
+
+#define I2C_DEF(busid, sclpin, sdapin, rccdef) \
+    { .dev = (busid), .scl = IO_TAG(sclpin), .sda = IO_TAG(sdapin), .rcc = rccdef, .overClock = busid##_OVERCLOCK, .ev_irq = busid##_EV_IRQn, .er_irq = busid##_ER_IRQn }
+
 i2cDevice_t i2cHardwareMap[] = {
 #ifdef STM32F1
     { .dev = I2C1, .scl = IO_TAG(PB6), .sda = IO_TAG(PB7), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
-    { .dev = I2C2, .scl = IO_TAG(PB10), .sda = IO_TAG(PB11), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
+    { .dev = I2C2, .scl = IO_TAG(PB10), .sda = IO_TAG(PB11), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn }
 #endif
 #ifdef STM32F4
-    { .dev = I2C1, .scl = IO_TAG(PB8), .sda = IO_TAG(PB9), .rcc = RCC_APB1(I2C1), .overClock = I2C1_OVERCLOCK, .ev_irq = I2C1_EV_IRQn, .er_irq = I2C1_ER_IRQn },
-    { .dev = I2C2, .scl = IO_TAG(PB10), .sda = IO_TAG(PB11), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK, .ev_irq = I2C2_EV_IRQn, .er_irq = I2C2_ER_IRQn },
-    { .dev = I2C3, .scl = IO_TAG(PA8), .sda = IO_TAG(PC9), .rcc = RCC_APB1(I2C3), .overClock = I2C3_OVERCLOCK, .ev_irq = I2C3_EV_IRQn, .er_irq = I2C3_ER_IRQn }
+    I2C_DEF(I2C1, PB8,  PB9,  RCC_APB1(I2C1)),
+    I2C_DEF(I2C2, PB10, PB11, RCC_APB1(I2C2)),
+    I2C_DEF(I2C3, PA8,  PC9,  RCC_APB1(I2C3)),
 #endif
 };
 
 // List of configured I2C mapping (exported to bus_i2c.c)
 i2cDevice_t i2cHardwareConfig[I2CDEV_MAX];
 
-// Setup i2cPinConfig as specified by target.h (or default pins defined above).
+// Setup i2cPinConfig as specified by target.h
 
 void i2cPinConfigDefault(void)
 {
