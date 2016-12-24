@@ -8,37 +8,37 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics International N.V. 
+  * <h2><center>&copy; Copyright (c) 2016 STMicroelectronics International N.V.
   * All rights reserved.</center></h2>
   *
-  * Redistribution and use in source and binary forms, with or without 
+  * Redistribution and use in source and binary forms, with or without
   * modification, are permitted, provided that the following conditions are met:
   *
-  * 1. Redistribution of source code must retain the above copyright notice, 
+  * 1. Redistribution of source code must retain the above copyright notice,
   *    this list of conditions and the following disclaimer.
   * 2. Redistributions in binary form must reproduce the above copyright notice,
   *    this list of conditions and the following disclaimer in the documentation
   *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
+  * 3. Neither the name of STMicroelectronics nor the names of other
+  *    contributors to this software may be used to endorse or promote products
   *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
+  * 4. This software, including modifications and/or derivative works of this
   *    software, must execute solely and exclusively on microcontroller or
   *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
+  * 5. Redistribution and use of this software other than as permitted under
+  *    this license is void and will automatically terminate your rights under
+  *    this license.
   *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
   * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
+  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
   * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
   * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
   * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
@@ -51,6 +51,9 @@
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
+#include "stdbool.h"
+#include "drivers/system.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define APP_RX_DATA_SIZE  2048
@@ -91,7 +94,7 @@ static int8_t CDC_Itf_Receive(uint8_t* pbuf, uint32_t *Len);
 static void TIM_Config(void);
 static void Error_Handler(void);
 
-USBD_CDC_ItfTypeDef USBD_CDC_fops = 
+USBD_CDC_ItfTypeDef USBD_CDC_fops =
 {
   CDC_Itf_Init,
   CDC_Itf_DeInit,
@@ -117,7 +120,7 @@ static int8_t CDC_Itf_Init(void)
 {
   /*##-3- Configure the TIM Base generation  #################################*/
   TIM_Config();
-  
+
   /*##-4- Start the TIM Base generation in interrupt mode ####################*/
   /* Start Channel1 */
   if(HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
@@ -125,11 +128,11 @@ static int8_t CDC_Itf_Init(void)
     /* Starting Error */
     Error_Handler();
   }
-  
+
   /*##-5- Set Application Buffers ############################################*/
   USBD_CDC_SetTxBuffer(&USBD_Device, UserTxBuffer, 0);
   USBD_CDC_SetRxBuffer(&USBD_Device, UserRxBuffer);
-  
+
   return (USBD_OK);
 }
 
@@ -148,13 +151,13 @@ static int8_t CDC_Itf_DeInit(void)
 /**
   * @brief  CDC_Itf_Control
   *         Manage the CDC class requests
-  * @param  Cmd: Command code            
+  * @param  Cmd: Command code
   * @param  Buf: Buffer containing command data (request parameters)
   * @param  Len: Number of data to be sent (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
 static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
-{ 
+{
     UNUSED(length);
   switch (cmd)
   {
@@ -184,7 +187,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     LineCoding.format     = pbuf[4];
     LineCoding.paritytype = pbuf[5];
     LineCoding.datatype   = pbuf[6];
-    
+
     break;
 
   case CDC_GET_LINE_CODING:
@@ -194,7 +197,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     pbuf[3] = (uint8_t)(LineCoding.bitrate >> 24);
     pbuf[4] = LineCoding.format;
     pbuf[5] = LineCoding.paritytype;
-    pbuf[6] = LineCoding.datatype;     
+    pbuf[6] = LineCoding.datatype;
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
@@ -203,12 +206,12 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 
   case CDC_SEND_BREAK:
      /* Add your code here */
-    break;    
-    
+    break;
+
   default:
     break;
   }
-  
+
   return (USBD_OK);
 }
 
@@ -220,29 +223,29 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if(htim->Instance != TIMusb) return;
-    
+
     uint32_t buffptr;
     uint32_t buffsize;
-    
+
     if(UserTxBufPtrOut != UserTxBufPtrIn)
     {
         if(UserTxBufPtrOut > UserTxBufPtrIn) /* Roll-back */
         {
             buffsize = APP_RX_DATA_SIZE - UserTxBufPtrOut;
         }
-        else 
+        else
         {
             buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
         }
-    
+
         buffptr = UserTxBufPtrOut;
-        
+
         USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
-        
+
         if(USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
         {
             UserTxBufPtrOut += buffsize;
-            if (UserTxBufPtrOut == APP_RX_DATA_SIZE)
+            if (UserTxBufPtrOut == APP_TX_DATA_SIZE)
             {
                 UserTxBufPtrOut = 0;
             }
@@ -252,7 +255,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 /**
   * @brief  CDC_Itf_DataRx
-  *         Data received over USB OUT endpoint are sent over CDC interface 
+  *         Data received over USB OUT endpoint are sent over CDC interface
   *         through this function.
   * @param  Buf: Buffer of data to be transmitted
   * @param  Len: Number of data received (in bytes)
@@ -271,10 +274,10 @@ static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
   * @retval None
   */
 static void TIM_Config(void)
-{  
+{
   /* Set TIMusb instance */
   TimHandle.Instance = TIMusb;
-  
+
   /* Initialize TIMx peripheral as follow:
        + Period = 10000 - 1
        + Prescaler = ((SystemCoreClock/2)/10000) - 1
@@ -282,7 +285,7 @@ static void TIM_Config(void)
        + Counter direction = Up
   */
   TimHandle.Init.Period = (CDC_POLLING_INTERVAL*1000) - 1;
-  TimHandle.Init.Prescaler = 84-1;
+  TimHandle.Init.Prescaler = (SystemCoreClock / 2 / (1000000)) - 1;
   TimHandle.Init.ClockDivision = 0;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
   if(HAL_TIM_Base_Init(&TimHandle) != HAL_OK)
@@ -290,14 +293,14 @@ static void TIM_Config(void)
     /* Initialization Error */
     Error_Handler();
   }
-  
+
   /*##-6- Enable TIM peripherals Clock #######################################*/
   TIMx_CLK_ENABLE();
-  
+
   /*##-7- Configure the NVIC for TIMx ########################################*/
-  /* Set Interrupt Group Priority */ 
+  /* Set Interrupt Group Priority */
   HAL_NVIC_SetPriority(TIMx_IRQn, 6, 0);
-  
+
   /* Enable the TIMx global Interrupt */
   HAL_NVIC_EnableIRQ(TIMx_IRQn);
 }
@@ -312,26 +315,25 @@ static void Error_Handler(void)
   /* Add your own code here */
 }
 
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
-uint8_t vcpRead()
+uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
 {
-    uint8_t ch = 0;
-    if( (rxBuffPtr != NULL) && (rxAvailable > 0) )
+    uint32_t count = 0;
+    if( (rxBuffPtr != NULL))
     {
-        ch = rxBuffPtr[0];
-        rxBuffPtr++;
-        rxAvailable--;
+        while ((rxAvailable > 0) && count < len)
+        {
+            recvBuf[count] = rxBuffPtr[0];
+            rxBuffPtr++;
+            rxAvailable--;
+            count++;
+            if(rxAvailable < 1)
+                USBD_CDC_ReceivePacket(&USBD_Device);
+        }
     }
-    
-    if(rxAvailable < 1)
-        USBD_CDC_ReceivePacket(&USBD_Device);
-    
-    return ch;
+    return count;
 }
 
-uint8_t vcpAvailable()
+uint32_t CDC_Receive_BytesAvailable(void)
 {
     return rxAvailable;
 }
@@ -345,49 +347,67 @@ uint32_t CDC_Send_FreeBytes(void)
         (APP_Rx_ptr_out > APP_Rx_ptr_in ? APP_Rx_ptr_out - APP_Rx_ptr_in : APP_RX_DATA_SIZE - APP_Rx_ptr_in + APP_Rx_ptr_in)
         but without the impact of the condition check.
     */
-    return ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_RX_DATA_SIZE)) - 1;
+    return ((UserTxBufPtrOut - UserTxBufPtrIn) + (-((int)(UserTxBufPtrOut <= UserTxBufPtrIn)) & APP_TX_DATA_SIZE)) - 1;
 }
 
-
 /**
- * @brief  vcpWrite
+ * @brief  CDC_Send_DATA
  *         CDC received data to be send over USB IN endpoint are managed in
  *         this function.
  * @param  Buf: Buffer of data to be sent
  * @param  Len: Number of data to be sent (in bytes)
- * @retval Result of the opeartion: USBD_OK if all operations are OK else VCP_FAIL
+ * @retval Bytes sent
  */
-uint32_t vcpWrite(const uint8_t* Buf, uint32_t Len)
+uint32_t CDC_Send_DATA(const uint8_t* Buf, uint32_t Len)
 {
-    uint32_t ptr_head = UserTxBufPtrIn;
-    uint32_t ptr_tail = UserTxBufPtrOut;
-    uint32_t i = 0;
+    USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pClassData;
+    while(hcdc->TxState != 0);
 
-    for (i = 0; i < Len; i++)
+    for (uint32_t i = 0; i < Len; i++)
     {
-        // head reached tail
-        if(ptr_head == (ptr_tail-1))
-        {
-            break;
-        }
-
-        UserTxBuffer[ptr_head++] = Buf[i];
-        if(ptr_head == (APP_RX_DATA_SIZE))
-        {
-            ptr_head = 0;
+        UserTxBuffer[UserTxBufPtrIn] = Buf[i];
+        UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
+        while (CDC_Send_FreeBytes() == 0) {
+            delay(1);
         }
     }
-    UserTxBufPtrIn = ptr_head;
-    return i;
+    return Len;
 }
 
-uint32_t vcpBaudrate()
+
+/*******************************************************************************
+ * Function Name  : usbIsConfigured.
+ * Description    : Determines if USB VCP is configured or not
+ * Input          : None.
+ * Output         : None.
+ * Return         : True if configured.
+ *******************************************************************************/
+uint8_t usbIsConfigured(void)
+{
+    return (USBD_Device.dev_state == USBD_STATE_CONFIGURED);
+}
+
+/*******************************************************************************
+ * Function Name  : usbIsConnected.
+ * Description    : Determines if USB VCP is connected ot not
+ * Input          : None.
+ * Output         : None.
+ * Return         : True if connected.
+ *******************************************************************************/
+uint8_t usbIsConnected(void)
+{
+    return (USBD_Device.dev_state != USBD_STATE_DEFAULT);
+}
+
+/*******************************************************************************
+ * Function Name  : CDC_BaudRate.
+ * Description    : Get the current baud rate
+ * Input          : None.
+ * Output         : None.
+ * Return         : Baud rate in bps
+ *******************************************************************************/
+uint32_t CDC_BaudRate(void)
 {
     return LineCoding.bitrate;
 }
-
-uint8_t vcpIsConnected()
-{
-    return ((USBD_Device.dev_state == USBD_STATE_CONFIGURED) 
-            || (USBD_Device.dev_state == USBD_STATE_SUSPENDED));
-}
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
