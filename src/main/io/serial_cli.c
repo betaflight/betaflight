@@ -525,6 +525,7 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "ANGLERATE",
     "ESC_SENSOR",
     "SCHEDULER",
+    "STACK"
 };
 
 #ifdef OSD
