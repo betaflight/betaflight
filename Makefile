@@ -785,7 +785,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
-            drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
@@ -793,7 +792,6 @@ STM32F7xx_COMMON_SRC = \
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
-            drivers/pwm_output.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied
