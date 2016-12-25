@@ -21,6 +21,8 @@
 
 #include <platform.h>
 
+#include "build/build_config.h"
+
 #include "cms/cms.h"
 
 #include "common/axis.h"

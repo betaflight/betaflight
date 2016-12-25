@@ -22,7 +22,9 @@
 
 #include "platform.h"
 
-#ifdef USE_DASHBOARD
+// XXX Dependency on USE_OLEDI2C and USE_I2C will eventually be gone when dashboard operates on displayport.
+
+#if defined(USE_DASHBOARD) && defined(USE_OLEDI2C) && defined(USE_I2C)
 
 #include "common/utils.h"
 

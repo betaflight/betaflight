@@ -87,6 +87,7 @@
 #if (FLASH_SIZE > 128)
 #define CMS
 #define USE_DASHBOARD
+#define USE_OLEDI2C // USE_DASHBOARD implies this
 #define USE_MSP_DISPLAYPORT
 #define TELEMETRY_CRSF
 #define TELEMETRY_JETIEXBUS
