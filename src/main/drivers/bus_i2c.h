@@ -44,7 +44,7 @@ typedef enum I2CDevice {
 
 // Default pins
 
-#ifdef I2C_FULL_CONFIGURABILITY
+#ifdef I2C_DEFAULT_NONE // Fully configurable (no default pin assignment)
 
 # ifndef I2C1_SCL
 #  define I2C1_SCL  NONE
@@ -74,7 +74,7 @@ typedef enum I2CDevice {
 #  define I2C4_SDA  NONE
 # endif
 
-#else // !I2C_FULL_CONFIGURABILITY
+#else // !I2C_DEFAULT_NONE, backward compatible
 
 # ifdef STM32F1
 
@@ -230,7 +230,7 @@ typedef struct i2cTargetConfig_s {
 } i2cTargetConfig_t;
 
 // This is how i2cTargetConfig is stored in master config ... (sigh)
-// XXX PG should take care of this. Rewrite when possible.
+// XXX PG should take care of this. Rewrite when ready.
 
 typedef struct i2cPinConfig_s {
     ioTag_t ioTagSCL[I2CDEV_COUNT];
