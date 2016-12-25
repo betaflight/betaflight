@@ -33,48 +33,70 @@
 #include "io_impl.h"
 #include "rcc.h"
 
-static I2CDevice i2cConfigFindMap(ioTag_t scl, ioTag_t sda)
+/*
+ * XXX To pursue future (further) per-MCU config scheme:
+ * https://github.com/betaflight/betaflight/pull/1867#discussion_r93647427
+ * (@ledvinap) This way to find I2C device can't handle case when multiple
+ * driver instances share identical pins. It is (probably) not problem for I2C,
+ * but for example F3 ADC can connect single pin to multiple ADCs.
+ * It would be nice to use common mechanism to specify pins for all drivers ...
+ */
+
+static i2cDevice_t *i2cConfigFindMap(ioTag_t scl, ioTag_t sda)
 {
-    for (unsigned int map = 0 ; map < ARRAYLEN(i2cHardwareMap) ; map++) {
-        if ((scl == i2cHardwareMap[map].scl) && (sda == i2cHardwareMap[map].sda))
-            return (I2CDevice)map;
+    for (size_t map = 0 ; map < i2cPinMapSize() ; map++) {
+        if ((scl == i2cPinMap[map].scl) && (sda == i2cPinMap[map].sda))
+            return &i2cPinMap[map];
     }
 
-    return I2CINVALID;
+    return NULL;
 }
 
-void i2cPinConfigSet(int bus, ioTag_t scl, ioTag_t sda)
+void i2cPinConfigSet(i2cTargetConfig_t *pTargetConfig)
 {
-    if (i2cConfigFindMap(scl, sda) == I2CINVALID) {
+    if (!i2cConfigFindMap(pTargetConfig->scl, pTargetConfig->sda)) {
         // XXX Should log or notify error
         return;
     }
 
-    i2cPinConfig()->ioTagSCL[bus] = scl;
-    i2cPinConfig()->ioTagSDA[bus] = sda;
+    i2cPinConfig()->ioTagSCL[pTargetConfig->bus] = pTargetConfig->scl;
+    i2cPinConfig()->ioTagSDA[pTargetConfig->bus] = pTargetConfig->sda;
+}
+
+void i2cTargetConfigInit(void)
+{
+    for (size_t i = 0 ; i < i2cTargetConfigSize() ; i++) {
+        i2cPinConfigSet(&i2cTargetConfig[i]);
+    }
 }
 
 static void i2cConfig(void)
 {
     ioTag_t tagSCL;
     ioTag_t tagSDA;
-    I2CDevice map;
+    i2cDevice_t *map;
 
-    for (I2CDevice bus = 0 ; bus < I2CDEV_MAX ; bus++) {
+    for (I2CDevice bus = 0 ; bus < I2CDEV_COUNT ; bus++) {
         i2cHardwareConfig[bus].configured = false;
 
-        // Find valid mapping for this bus
+        // See if this bus is configured.
+
         tagSCL = i2cPinConfig()->ioTagSCL[bus];
         tagSDA = i2cPinConfig()->ioTagSDA[bus];
 
+        if (!tagSCL || !tagSDA)
+            continue;
+
+        // Find valid mapping for this bus.
+
         map = i2cConfigFindMap(tagSCL, tagSDA);
 
-        if (map == I2CINVALID) {
+        if (!map) {
             // XXX Should log config error (except NONE case)?
             continue;
         }
 
-        i2cHardwareConfig[bus] = i2cHardwareMap[map];
+        i2cHardwareConfig[bus] = *map;
         i2cHardwareConfig[bus].configured = true;
     }
 }
@@ -84,7 +106,7 @@ void i2cInitAll(void)
 
     i2cConfig(); // Setup running configuration
 
-    for (I2CDevice bus = I2CDEV_1 ; bus < I2CDEV_MAX ; bus++) {
+    for (I2CDevice bus = I2CDEV_1 ; bus < I2CDEV_COUNT ; bus++) {
         if (i2cHardwareConfig[bus].configured) {
             i2cInitBus(bus);
         }

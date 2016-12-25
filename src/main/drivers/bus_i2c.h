@@ -21,6 +21,7 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
+#include <string.h> // size_t
 #include "io_types.h"
 #include "rcc_types.h"
 
@@ -37,25 +38,11 @@ typedef enum I2CDevice {
     I2CDEV_COUNT
 } I2CDevice;
 
-// Maximum device instance count; consolidate with I2CDevice enum?
-
-#ifdef STM32F1
-# define I2CDEV_MAX 2
-#endif
-#ifdef STM32F3
-# define I2CDEV_MAX 2
-#endif
-#ifdef STM32F4
-# define I2CDEV_MAX 3
-#endif
-#ifdef STM32F7
-# define I2CDEV_MAX 4
-#endif
-
 #ifdef UNIT_TEST
-# define I2CDEV_MAX 1
 # define I2C_TypeDef unsigned long
 #endif
+
+// Default pins
 
 #ifndef I2C1_SCL
 # define I2C1_SCL     NONE
@@ -113,9 +100,20 @@ typedef struct i2cState_s {
     volatile uint8_t* read_p;
 } i2cState_t;
 
+// Target configured pins (mostly from target.h)
+
+typedef struct i2cTargetConfig_s {
+    I2CDevice bus;
+    ioTag_t scl;
+    ioTag_t sda;
+} i2cTargetConfig_t;
+
+// This is how i2cTargetConfig is stored in master config ... (sigh)
+// XXX PG should take care of this. Rewrite when possible.
+
 typedef struct i2cPinConfig_s {
-    ioTag_t ioTagSCL[I2CDEV_MAX];
-    ioTag_t ioTagSDA[I2CDEV_MAX];
+    ioTag_t ioTagSCL[I2CDEV_COUNT];
+    ioTag_t ioTagSDA[I2CDEV_COUNT];
 } i2cPinConfig_t;
 
 void i2cInitBus(I2CDevice device);
@@ -124,9 +122,12 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data);
 bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf);
 
 uint16_t i2cGetErrorCounter(void);
-void i2cInitAll();
-void i2cPinConfigDefault(void);
-void i2cPinConfigSet(int bus, ioTag_t scl, ioTag_t sda);
 
-extern i2cDevice_t i2cHardwareMap[I2CDEV_MAX];
+size_t i2cPinMapSize(void);
+size_t i2cTargetConfigSize(void);
+void i2cTargetConfigInit(void);
+void i2cInitAll();
+
+extern i2cTargetConfig_t i2cTargetConfig[];
+extern i2cDevice_t i2cPinMap[];
 extern i2cDevice_t i2cHardwareConfig[];

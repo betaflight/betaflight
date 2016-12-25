@@ -3846,8 +3846,8 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
 #endif
 #ifdef USE_I2C
-    { OWNER_I2C_SCL,       &i2cPinConfig()->ioTagSCL[0], I2CDEV_MAX },
-    { OWNER_I2C_SDA,       &i2cPinConfig()->ioTagSDA[0], I2CDEV_MAX },
+    { OWNER_I2C_SCL,       &i2cPinConfig()->ioTagSCL[0], I2CDEV_COUNT },
+    { OWNER_I2C_SDA,       &i2cPinConfig()->ioTagSDA[0], I2CDEV_COUNT },
 #endif
 };
 
