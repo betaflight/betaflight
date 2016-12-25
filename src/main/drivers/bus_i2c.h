@@ -42,38 +42,10 @@ typedef enum I2CDevice {
 # define I2C_TypeDef unsigned long
 #endif
 
-// Default pins
-
-#ifndef I2C1_SCL
-# define I2C1_SCL     NONE
-#endif
-#ifndef I2C1_SDA
-# define I2C1_SDA     NONE
-#endif
-
-#ifndef I2C2_SCL
-# define I2C2_SCL     NONE
-#endif
-#ifndef I2C2_SDA
-# define I2C2_SDA     NONE
-#endif
-
-#ifndef I2C3_SCL
-# define I2C3_SCL     NONE
-#endif
-#ifndef I2C3_SDA
-# define I2C3_SDA     NONE
-#endif
-
-#ifndef I2C4_SCL
-# define I2C4_SCL     NONE
-#endif
-#ifndef I2C4_SDA
-# define I2C4_SDA     NONE
-#endif
-
+#if 0
 // For backward compatibility
-#if I2C_DEVICE == I2CDEV_1
+
+#if STRGFY(I2C_DEVICE) == I2CDEV_1
 # define USE_I2C1
 #endif
 #if I2C_DEVICE == I2CDEV_2
@@ -86,6 +58,157 @@ typedef enum I2CDevice {
 # define USE_I2C4
 #endif
 
+#endif // 0
+
+// Default pins
+
+#ifdef I2C_FULL_CONFIGURABILITY
+
+# ifndef I2C1_SCL
+#  define I2C1_SCL  NONE
+# endif
+# ifndef I2C1_SDA
+#  define I2C1_SDA  NONE
+# endif
+
+# ifndef I2C2_SCL
+#  define I2C2_SCL  NONE
+# endif
+# ifndef I2C2_SDA
+#  define I2C2_SDA  NONE
+# endif
+
+# ifndef I2C3_SCL
+#  define I2C3_SCL  NONE
+# endif
+# ifndef I2C3_SDA
+#  define I2C3_SDA  NONE
+# endif
+
+# ifndef I2C4_SCL
+#  define I2C4_SCL  NONE
+# endif
+# ifndef I2C4_SDA
+#  define I2C4_SDA  NONE
+# endif
+
+#else // !I2C_FULL_CONFIGURABILITY
+
+# ifdef STM32F1
+
+#  ifdef USE_I2C1
+#  ifndef I2C1_SCL
+#   define I2C1_SCL PB6
+#  endif
+#  ifndef I2C1_SDA
+#   define I2C1_SDA PB7
+#  endif
+#  endif
+
+#  ifdef USE_I2C2
+#   ifndef I2C2_SCL
+#    define I2C2_SCL PB10
+#   endif
+#   ifndef I2C2_SDA
+#    define I2C2_SDA PB11
+#   endif
+
+# endif // STM32F1
+
+# ifdef STM32F3
+
+#  ifdef USE_I2C1
+#   ifndef I2C1_SCL
+#    define I2C1_SCL PB6
+#   endif
+#   ifndef I2C1_SDA
+#    define I2C1_SDA PB7
+#   endif
+#  endif
+
+#  ifdef USE_I2C2
+#   ifndef I2C2_SCL
+#    define I2C2_SCL PA9
+#   endif
+#   ifndef I2C2_SDA
+#    define I2C2_SDA PA10
+#   endif
+#  endif
+
+# endif // STM32F3
+
+# ifdef STM32F4
+
+#  ifdef USE_I2C1
+#   ifndef I2C1_SCL
+#    define I2C1_SCL PB8
+#   endif
+#   ifndef I2C1_SDA
+#    define I2C1_SDA PB9
+#   endif
+#  endif
+
+#  ifdef USE_I2C2
+#   ifndef I2C2_SCL
+#    define I2C2_SCL PB10
+#   endif
+#   ifndef I2C2_SDA
+#    define I2C2_SDA PB11
+#   endif
+#  endif
+
+#  ifdef USE_I2C3
+#   ifndef I2C3_SCL
+#    define I2C3_SCL PA8
+#   endif
+#   ifndef I2C3_SDA
+#    define I2C3_SDA PC9
+#   endif
+#  endif
+
+# endif // STM32F4
+
+# ifdef STM32F7
+
+#  ifdef USE_I2C1
+#   ifndef I2C1_SCL
+#    define I2C1_SCL PB6
+#   endif
+#   ifndef I2C1_SDA
+#    define I2C1_SDA PB7
+#   endif
+#  endif
+
+#  ifdef USE_I2C2
+#   ifndef I2C2_SCL
+#    define I2C2_SCL PB10
+#   endif
+#   ifndef I2C2_SDA
+#    define I2C2_SDA PB11
+#   endif
+#  endif
+
+#  ifdef USE_I2C3
+#   ifndef I2C3_SCL
+#    define I2C3_SCL PA8
+#   endif
+#   ifndef I2C3_SDA
+#    define I2C3_SDA PB4
+#   endif
+#  endif
+
+#  ifdef USE_I2C4
+#   ifndef I2C4_SCL
+#    define I2C4_SCL PD12
+#   endif
+#   ifndef I2C4_SDA
+#    define I2C4_SDA PD13
+#   endif
+#  endif
+
+# endif // STM32F7
+
+#endif // I2C_FULL_CONFIGURABILITY
 
 typedef struct i2cDevice_s {
     bool configured;
