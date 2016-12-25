@@ -130,6 +130,7 @@
 
 
 #define USE_I2C
+#define USE_I2C1
 #define I2C_DEVICE (I2CDEV_1) // SCL PB8 - SDA PB9
 
 // ADC inputs

@@ -80,6 +80,7 @@
 //#define USE_SPI_DEVICE_3
 
 #define USE_I2C
+#define USE_I2C3
 #define I2C_DEVICE (I2CDEV_3)
 
 #define USE_ADC

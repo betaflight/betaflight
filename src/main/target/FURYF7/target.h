@@ -121,6 +121,7 @@
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
 #define USE_I2C
+#define USE_I2C1
 #define I2C_DEVICE              (I2CDEV_1)  // PB6-SCL, PB7-SDA
 #define USE_I2C_PULLUP
 #define I2C1_SCL                PB6

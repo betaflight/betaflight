@@ -42,24 +42,6 @@ typedef enum I2CDevice {
 # define I2C_TypeDef unsigned long
 #endif
 
-#if 0
-// For backward compatibility
-
-#if STRGFY(I2C_DEVICE) == I2CDEV_1
-# define USE_I2C1
-#endif
-#if I2C_DEVICE == I2CDEV_2
-# define USE_I2C2
-#endif
-#if I2C_DEVICE == I2CDEV_3
-# define USE_I2C3
-#endif
-#if I2C_DEVICE == I2CDEV_4
-# define USE_I2C4
-#endif
-
-#endif // 0
-
 // Default pins
 
 #ifdef I2C_FULL_CONFIGURABILITY
@@ -97,12 +79,12 @@ typedef enum I2CDevice {
 # ifdef STM32F1
 
 #  ifdef USE_I2C1
-#  ifndef I2C1_SCL
-#   define I2C1_SCL PB6
-#  endif
-#  ifndef I2C1_SDA
-#   define I2C1_SDA PB7
-#  endif
+#   ifndef I2C1_SCL
+#    define I2C1_SCL PB6
+#   endif
+#   ifndef I2C1_SDA
+#    define I2C1_SDA PB7
+#   endif
 #  endif
 
 #  ifdef USE_I2C2
@@ -112,6 +94,7 @@ typedef enum I2CDevice {
 #   ifndef I2C2_SDA
 #    define I2C2_SDA PB11
 #   endif
+#  endif
 
 # endif // STM32F1
 

@@ -80,6 +80,7 @@
 #define UART3_RX_PIN            PB11 // PB11 (AF7)
 
 #define USE_I2C
+#define USE_I2C1
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
 
 #define USE_SPI

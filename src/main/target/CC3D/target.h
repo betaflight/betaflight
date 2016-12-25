@@ -35,6 +35,7 @@
 #define USE_SPI_DEVICE_2
 
 #define USE_I2C
+#define USE_I2C2
 #define I2C_DEVICE (I2CDEV_2) // Flex port - SCL/PB10, SDA/PB11
 
 #define MPU6000_CS_GPIO         GPIOA
