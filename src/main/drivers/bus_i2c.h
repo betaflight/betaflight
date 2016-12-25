@@ -72,6 +72,21 @@ typedef enum I2CDevice {
 # define I2C4_SDA     NONE
 #endif
 
+// For backward compatibility
+#if I2C_DEVICE == I2CDEV_1
+# define USE_I2C1
+#endif
+#if I2C_DEVICE == I2CDEV_2
+# define USE_I2C2
+#endif
+#if I2C_DEVICE == I2CDEV_3
+# define USE_I2C3
+#endif
+#if I2C_DEVICE == I2CDEV_4
+# define USE_I2C4
+#endif
+
+
 typedef struct i2cDevice_s {
     bool configured;
     I2C_TypeDef *dev;
