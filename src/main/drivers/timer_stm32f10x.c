@@ -15,7 +15,7 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "platform.h"
+#include <platform.h>
 
 #include "common/utils.h"
 
@@ -24,23 +24,23 @@
 #include "timer.h"
 
 const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
-    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1)  },
-    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2)  },
-    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3)  },
-    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4)  },
+    { .TIMx = TIM1,  .rcc = RCC_APB2(TIM1), .inputIrq = TIM1_CC_IRQn },
+    { .TIMx = TIM2,  .rcc = RCC_APB1(TIM2), .inputIrq = TIM2_IRQn },
+    { .TIMx = TIM3,  .rcc = RCC_APB1(TIM3), .inputIrq = TIM3_IRQn },
+    { .TIMx = TIM4,  .rcc = RCC_APB1(TIM4), .inputIrq = TIM4_IRQn },
 #if defined(STM32F10X_HD) || defined(STM32F10X_CL) || defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
-    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5)  },
-    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6)  },
-    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7)  },
+    { .TIMx = TIM5,  .rcc = RCC_APB1(TIM5), .inputIrq = TIM5_IRQn },
+    { .TIMx = TIM6,  .rcc = RCC_APB1(TIM6), .inputIrq = 0 },
+    { .TIMx = TIM7,  .rcc = RCC_APB1(TIM7), .inputIrq = 0 },
 #endif
 #if defined(STM32F10X_XL) || defined(STM32F10X_HD_VL)
-    { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8)  },
-    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9)  },
-    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10) },
-    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11) },
-    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12) },
-    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13) },
-    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14) },
+    { .TIMx = TIM8,  .rcc = RCC_APB1(TIM8),  .inputIrq = TIM8_CC_IRQn },
+    { .TIMx = TIM9,  .rcc = RCC_APB2(TIM9),  .inputIrq = TIM1_BRK_TIM9_IRQn },
+    { .TIMx = TIM10, .rcc = RCC_APB2(TIM10), .inputIrq = TIM1_UP_TIM10_IRQn },
+    { .TIMx = TIM11, .rcc = RCC_APB2(TIM11), .inputIrq = TIM1_TRG_COM_TIM11_IRQn },
+    { .TIMx = TIM12, .rcc = RCC_APB1(TIM12), .inputIrq = TIM12_IRQn },
+    { .TIMx = TIM13, .rcc = RCC_APB1(TIM13), .inputIrq = TIM13_IRQn },
+    { .TIMx = TIM14, .rcc = RCC_APB1(TIM14), .inputIrq = TIM14_IRQn },
 #endif
 };
 

@@ -196,18 +196,24 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
+#ifdef BUTTON_A_PIN
     IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
     IOInit(buttonAPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(buttonAPin, IOCFG_IPU);
+#endif
 
+#ifdef BUTTON_B_PIN
     IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
     IOInit(buttonBPin, OWNER_SYSTEM, 0);
     IOConfigGPIO(buttonBPin, IOCFG_IPU);
+#endif
 
     // Check status of bind plug and exit if not active
     delayMicroseconds(10);  // allow configuration to settle
 
     if (!isMPUSoftReset()) {
+#if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
+        // two buttons required
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
@@ -221,6 +227,7 @@ void init(void)
                 LED0_TOGGLE;
             }
         } while (bothButtonsHeld);
+#endif
     }
 #endif
 

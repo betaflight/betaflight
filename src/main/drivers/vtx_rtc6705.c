@@ -32,6 +32,7 @@
 #include "common/maths.h"
 
 #include "vtx_rtc6705.h"
+#include "io.h"
 #include "bus_spi.h"
 #include "system.h"
 
@@ -86,6 +87,12 @@
 #define DISABLE_RTC6705 GPIO_SetBits(RTC6705_CS_GPIO,   RTC6705_CS_PIN)
 #define ENABLE_RTC6705  GPIO_ResetBits(RTC6705_CS_GPIO, RTC6705_CS_PIN)
 
+static IO_t vtxPowerPin        = IO_NONE;
+
+#define ENABLE_VTX_POWER       IOLo(vtxPowerPin)
+#define DISABLE_VTX_POWER      IOHi(vtxPowerPin)
+
+
 // Define variables
 static const uint32_t channelArray[RTC6705_BAND_MAX][RTC6705_CHANNEL_MAX] = {
     { RTC6705_SET_A1, RTC6705_SET_A2, RTC6705_SET_A3, RTC6705_SET_A4, RTC6705_SET_A5, RTC6705_SET_A6, RTC6705_SET_A7, RTC6705_SET_A8 },
@@ -129,8 +136,17 @@ static uint32_t reverse32(uint32_t in)
 /**
  * Start chip if available
  */
+
 bool rtc6705Init(void)
 {
+#ifdef RTC6705_POWER_PIN
+    vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
+    IOInit(vtxPowerPin, OWNER_VTX, 0);
+    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
+    
+    ENABLE_VTX_POWER;
+#endif
+
     DISABLE_RTC6705;
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
     return rtc6705IsReady();

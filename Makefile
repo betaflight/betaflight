@@ -593,6 +593,7 @@ HIGHEND_SRC = \
             sensors/barometer.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
+            telemetry/srxl.c \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
@@ -719,7 +720,7 @@ VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp_hal.c
+            drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
@@ -786,14 +787,12 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
-            drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
 
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/timer.c \
-            drivers/pwm_output.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied

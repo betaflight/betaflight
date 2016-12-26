@@ -17,15 +17,8 @@
 
 #pragma once
 
-#define SPEKTRUM_SAT_BIND_DISABLED 	0
-#define SPEKTRUM_SAT_BIND_MAX 		10
+#include "common/time.h"
 
-#define SPEK_FRAME_SIZE         	16
-#define SRXL_FRAME_OVERHEAD     	5
-#define SRXL_FRAME_SIZE_MAX     	(SPEK_FRAME_SIZE + SRXL_FRAME_OVERHEAD)
-
-void spektrumBind(rxConfig_t *rxConfig);
-bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-
-void srxlRxWriteTelemetryData(const void *data, int len);
-bool srxlRxIsActive(void);
+void initSrxlTelemetry(void);
+bool checkSrxlTelemetryState(void);
+void handleSrxlTelemetry(timeUs_t currentTimeUs);
