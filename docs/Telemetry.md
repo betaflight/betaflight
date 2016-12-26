@@ -138,7 +138,11 @@ set telemetry_inversion = ON
 
 It is possible to use DIY UART inverter to connect SmartPort receivers to F1 and F4 based flight controllers. This method does not require hardware hack of S.Port receiver.
 
+#### SmartPort inverter using bipolar transistors
 ![Inverter](assets/images/smartport_inverter.png)
+
+#### SmartPort inverter using unipolar transistors
+![Inverter](assets/images/smartport_inverter_2n7000.png)
 
 **Warning** Chosen UART has to be 5V tolerant. If not, use 3.3V power supply instead (not tested)
 
