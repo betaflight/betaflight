@@ -15,11 +15,27 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdbool.h>
+#include <stdint.h>
 
-#define EEPROM_CONF_VERSION 147
+#include "platform.h"
 
-bool isEEPROMContentValid(void);
-bool loadEEPROM(void);
-void writeConfigToEEPROM(void);
-void activateProfile(uint8_t profileIndexToActivate);
+#include "config/parameter_group_ids.h"
+
+#include "config/profile.h"
+
+PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
+
+uint8_t getCurrentProfile(void)
+{
+    return profileSelection()->current_profile_index;
+}
+
+void setProfile(uint8_t profileIndex)
+{
+    if (profileIndex >= MAX_PROFILE_COUNT) // sanity check
+        profileIndex = 0;
+
+    profileSelection()->current_profile_index = profileIndex;
+}
+
