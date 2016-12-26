@@ -21,7 +21,7 @@
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
 #define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
 
-#include <string.h> // size_t
+#include <stddef.h> // size_t
 #include "io_types.h"
 #include "rcc_types.h"
 
@@ -37,10 +37,6 @@ typedef enum I2CDevice {
     I2CDEV_4,
     I2CDEV_COUNT
 } I2CDevice;
-
-#ifdef UNIT_TEST
-# define I2C_TypeDef unsigned long
-#endif
 
 // Default pins
 
@@ -246,8 +242,8 @@ uint16_t i2cGetErrorCounter(void);
 
 size_t i2cPinMapSize(void);
 size_t i2cTargetConfigSize(void);
-void i2cTargetConfigInit(void);
-void i2cInitAll();
+void i2cTargetConfigInit(i2cPinConfig_t *i2cPinConfig);
+void i2cInitAll(const i2cPinConfig_t *i2cPinConfig);
 
 extern i2cTargetConfig_t i2cTargetConfig[];
 extern i2cDevice_t i2cPinMap[];

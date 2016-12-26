@@ -73,4 +73,9 @@ typedef struct
 #define WS2811_DMA_TC_FLAG (void *)1
 #define WS2811_DMA_HANDLER_IDENTIFER 0
 
+typedef struct
+{
+    void* test;
+} I2C_TypeDef;
+
 #include "target.h"

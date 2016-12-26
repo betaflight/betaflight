@@ -23,6 +23,8 @@
 #include "drivers/bus_spi.h"
 #include "hardware_revision.h"
 
+#include "config/config_master.h"
+
 void targetBusInit(void)
 {
 	#ifdef USE_SPI
@@ -43,6 +45,6 @@ void targetBusInit(void)
     #endif
 
     #ifdef USE_I2C
-        i2cInitAll();
+        i2cInitAll(i2cPinConfig());
     #endif
 }

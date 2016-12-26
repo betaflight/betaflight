@@ -855,7 +855,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef USE_I2C
-    i2cTargetConfigInit();
+    i2cTargetConfigInit(i2cPinConfig());
 #endif
 
     // copy first profile into remaining profile

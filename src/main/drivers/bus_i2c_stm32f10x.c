@@ -26,8 +26,6 @@
 #include "io.h"
 #include "system.h"
 
-#include "config/config_master.h"
-
 #include "bus_i2c.h"
 #include "nvic.h"
 #include "io_impl.h"

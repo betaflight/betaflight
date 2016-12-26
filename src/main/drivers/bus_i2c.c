@@ -26,8 +26,6 @@
 #include "io.h"
 #include "system.h"
 
-#include "config/config_master.h"
-
 #include "bus_i2c.h"
 #include "nvic.h"
 #include "io_impl.h"
@@ -52,44 +50,41 @@ static i2cDevice_t *i2cConfigFindMap(ioTag_t scl, ioTag_t sda)
     return NULL;
 }
 
-void i2cPinConfigSet(i2cTargetConfig_t *pTargetConfig)
+static void i2cPinConfigSet(i2cPinConfig_t *i2cPinConfig, const i2cTargetConfig_t *pTargetConfig)
 {
     if (!i2cConfigFindMap(pTargetConfig->scl, pTargetConfig->sda)) {
         // XXX Should log or notify error
         return;
     }
 
-    i2cPinConfig()->ioTagSCL[pTargetConfig->bus] = pTargetConfig->scl;
-    i2cPinConfig()->ioTagSDA[pTargetConfig->bus] = pTargetConfig->sda;
+    i2cPinConfig->ioTagSCL[pTargetConfig->bus] = pTargetConfig->scl;
+    i2cPinConfig->ioTagSDA[pTargetConfig->bus] = pTargetConfig->sda;
 }
 
-void i2cTargetConfigInit(void)
+void i2cTargetConfigInit(i2cPinConfig_t *i2cPinConfig)
 {
     for (size_t i = 0 ; i < i2cTargetConfigSize() ; i++) {
-        i2cPinConfigSet(&i2cTargetConfig[i]);
+        i2cPinConfigSet(i2cPinConfig, &i2cTargetConfig[i]);
     }
 }
 
-static void i2cConfig(void)
+static void i2cConfig(const i2cPinConfig_t *i2cPinConfig)
 {
-    ioTag_t tagSCL;
-    ioTag_t tagSDA;
-    i2cDevice_t *map;
 
     for (I2CDevice bus = 0 ; bus < I2CDEV_COUNT ; bus++) {
         i2cHardwareConfig[bus].configured = false;
 
         // See if this bus is configured.
 
-        tagSCL = i2cPinConfig()->ioTagSCL[bus];
-        tagSDA = i2cPinConfig()->ioTagSDA[bus];
+        ioTag_t tagSCL = i2cPinConfig->ioTagSCL[bus];
+        ioTag_t tagSDA = i2cPinConfig->ioTagSDA[bus];
 
         if (!tagSCL || !tagSDA)
             continue;
 
         // Find valid mapping for this bus.
 
-        map = i2cConfigFindMap(tagSCL, tagSDA);
+        i2cDevice_t *map = i2cConfigFindMap(tagSCL, tagSDA);
 
         if (!map) {
             // XXX Should log config error (except NONE case)?
@@ -101,10 +96,10 @@ static void i2cConfig(void)
     }
 }
 
-void i2cInitAll(void)
+void i2cInitAll(const i2cPinConfig_t *i2cPinConfig)
 {
 
-    i2cConfig(); // Setup running configuration
+    i2cConfig(i2cPinConfig); // Setup running configuration
 
     for (I2CDevice bus = I2CDEV_1 ; bus < I2CDEV_COUNT ; bus++) {
         if (i2cHardwareConfig[bus].configured) {

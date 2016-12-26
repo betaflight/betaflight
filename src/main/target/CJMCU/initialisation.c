@@ -23,6 +23,8 @@
 #include "drivers/bus_spi.h"
 #include "io/serial.h"
 
+#include "config/config_master.h"
+
 void targetBusInit(void)
 {
     #if defined(USE_SPI) && defined(USE_SPI_DEVICE_1)
@@ -31,6 +33,6 @@ void targetBusInit(void)
 
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         serialRemovePort(SERIAL_PORT_USART3);
-        i2cInitAll();
+        i2cInitAll(i2cPinConfig());
     }		
 }

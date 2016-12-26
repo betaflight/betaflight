@@ -24,6 +24,8 @@
 #include "io/serial.h"
 #include "hardware_revision.h"
 
+#include "config/config_master.h"
+
 void targetBusInit(void)
 {
     #ifdef USE_SPI
@@ -43,5 +45,5 @@ void targetBusInit(void)
     // Regardless of the board revision, initialize I2C as
     // pre-configured or according to the current resource assignment.
 
-    i2cInitAll();
+    i2cInitAll(i2cPinConfig());
 }
