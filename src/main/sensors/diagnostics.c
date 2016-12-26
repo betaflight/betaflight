@@ -175,7 +175,7 @@ hardwareSensorStatus_e getHwGPSStatus(void)
         }
     }
     else {
-        if (feature(FEATURE_GPS)) {
+        if (feature(FEATURE_GPS) && gpsStats.timeouts > 3) {
             // Selected but not detected
             return HW_SENSOR_UNAVAILABLE;
         }
