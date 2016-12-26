@@ -126,9 +126,7 @@ void SPI4_IRQHandler(void)
 
 void spiInitDevice(SPIDevice device)
 {
-    static SPI_InitTypeDef spiInit;
     spiDevice_t *spi = &(spiHardwareMap[device]);
-
 
 #ifdef SDCARD_SPI_INSTANCE
     if (spi->dev == SDCARD_SPI_INSTANCE) {
@@ -173,26 +171,24 @@ void spiInitDevice(SPIDevice device)
     // Init SPI hardware
     HAL_SPI_DeInit(&spiHardwareMap[device].hspi);
 
-    spiInit.Mode = SPI_MODE_MASTER;
-    spiInit.Direction = SPI_DIRECTION_2LINES;
-    spiInit.DataSize = SPI_DATASIZE_8BIT;
-    spiInit.NSS = SPI_NSS_SOFT;
-    spiInit.FirstBit = SPI_FIRSTBIT_MSB;
-    spiInit.CRCPolynomial = 7;
-    spiInit.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-    spiInit.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-    spiInit.TIMode = SPI_TIMODE_DISABLED;
+    spiHardwareMap[device].hspi.Init.Mode = SPI_MODE_MASTER;
+    spiHardwareMap[device].hspi.Init.Direction = SPI_DIRECTION_2LINES;
+    spiHardwareMap[device].hspi.Init.DataSize = SPI_DATASIZE_8BIT;
+    spiHardwareMap[device].hspi.Init.NSS = SPI_NSS_SOFT;
+    spiHardwareMap[device].hspi.Init.FirstBit = SPI_FIRSTBIT_MSB;
+    spiHardwareMap[device].hspi.Init.CRCPolynomial = 7;
+    spiHardwareMap[device].hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+    spiHardwareMap[device].hspi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    spiHardwareMap[device].hspi.Init.TIMode = SPI_TIMODE_DISABLED;
 
     if (spi->leadingEdge) {
-        spiInit.CLKPolarity = SPI_POLARITY_LOW;
-        spiInit.CLKPhase = SPI_PHASE_1EDGE;
+        spiHardwareMap[device].hspi.Init.CLKPolarity = SPI_POLARITY_LOW;
+        spiHardwareMap[device].hspi.Init.CLKPhase = SPI_PHASE_1EDGE;
     }
     else {
-        spiInit.CLKPolarity = SPI_POLARITY_HIGH;
-        spiInit.CLKPhase = SPI_PHASE_2EDGE;
+        spiHardwareMap[device].hspi.Init.CLKPolarity = SPI_POLARITY_HIGH;
+        spiHardwareMap[device].hspi.Init.CLKPhase = SPI_PHASE_2EDGE;
     }
-
-    spiHardwareMap[device].hspi.Init = spiInit;
 
     if (HAL_SPI_Init(&spiHardwareMap[device].hspi) == HAL_OK)
     {
@@ -394,6 +390,7 @@ DMA_HandleTypeDef* spiSetDMATransmit(DMA_Stream_TypeDef *Stream, uint32_t Channe
     // DMA TX Interrupt
     dmaSetHandler(spiHardwareMap[device].dmaIrqHandler, dmaSPIIRQHandler, NVIC_BUILD_PRIORITY(3, 0), (uint32_t)device);
 
+    HAL_CLEANCACHE(pData,Size);
     // And Transmit
     HAL_SPI_Transmit_DMA(&spiHardwareMap[device].hspi, pData, Size);
 
