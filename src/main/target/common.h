@@ -25,6 +25,8 @@
 
 #ifdef STM32F7
 #define STM_FAST_TARGET
+#define I2C3_OVERCLOCK true
+#define I2C4_OVERCLOCK true
 #endif
 
 /****************************
