@@ -23,6 +23,7 @@
 
 // Own interfaces
 #include "io/vtx.h"
+#include "io/osd.h"
 
 //External dependencies
 #include "config/config_master.h"

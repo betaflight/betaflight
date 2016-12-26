@@ -71,7 +71,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"NAME", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_CRAFT_NAME], 0},
     {"THROTTLE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_THROTTLE_POS], 0},
 #ifdef VTX
-    {"VTX CHAN", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_VTX_CHANNEL]},
+    {"VTX CHAN", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_VTX_CHANNEL], 0},
 #endif // VTX
     {"CURRENT (A)", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_CURRENT_DRAW], 0},
     {"USED MAH", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_MAH_DRAWN], 0},

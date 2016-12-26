@@ -59,5 +59,6 @@ const char * const ownerNames[OWNER_TOTAL_COUNT] = {
     "INVERTER",
     "LED_STRIP",
     "TRANSPONDER"
+    "VTX",
 };
 

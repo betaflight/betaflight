@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define VISIBLE_FLAG  0x0800
 #define BLINK_FLAG    0x0400
 #define VISIBLE(x)    (x & VISIBLE_FLAG)
