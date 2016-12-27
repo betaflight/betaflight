@@ -1212,22 +1212,25 @@ static void cliRxFail(char *cmdline)
 
 static void printAux(uint8_t dumpMask, const modeActivationProfile_t *modeActivationProfile, const modeActivationProfile_t *defaultModeActivationProfile)
 {
+    const char *format = "aux %u %u %u %u %u\r\n";
     // print out aux channel settings
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         const modeActivationCondition_t *mac = &modeActivationProfile->modeActivationConditions[i];
-        const modeActivationCondition_t *macDefault = &defaultModeActivationProfile->modeActivationConditions[i];
-        const bool equalsDefault = mac->modeId == macDefault->modeId
-            && mac->auxChannelIndex == macDefault->auxChannelIndex
-            && mac->range.startStep == macDefault->range.startStep
-            && mac->range.endStep == macDefault->range.endStep;
-        const char *format = "aux %u %u %u %u %u\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            macDefault->modeId,
-            macDefault->auxChannelIndex,
-            MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
-            MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
-        );
+        bool equalsDefault = true;
+        if (defaultModeActivationProfile) {
+            const modeActivationCondition_t *macDefault = &defaultModeActivationProfile->modeActivationConditions[i];
+            equalsDefault = mac->modeId == macDefault->modeId
+                && mac->auxChannelIndex == macDefault->auxChannelIndex
+                && mac->range.startStep == macDefault->range.startStep
+                && mac->range.endStep == macDefault->range.endStep;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                macDefault->modeId,
+                macDefault->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(macDefault->range.endStep)
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             mac->modeId,
@@ -1280,25 +1283,28 @@ static void cliAux(char *cmdline)
 
 static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, const serialConfig_t *serialConfigDefault)
 {
+    const char *format = "serial %d %d %ld %ld %ld %ld\r\n";
     for (uint32_t i = 0; i < SERIAL_PORT_COUNT; i++) {
         if (!serialIsPortAvailable(serialConfig->portConfigs[i].identifier)) {
             continue;
         };
-        const bool equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
-            && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
-            && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
-            && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
-            && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
-            && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
-        const char *format = "serial %d %d %ld %ld %ld %ld\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            serialConfigDefault->portConfigs[i].identifier,
-            serialConfigDefault->portConfigs[i].functionMask,
-            baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
-            baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
-            baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
-            baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
-        );
+        bool equalsDefault = true;
+        if (serialConfigDefault) {
+            equalsDefault = serialConfig->portConfigs[i].identifier == serialConfigDefault->portConfigs[i].identifier
+                && serialConfig->portConfigs[i].functionMask == serialConfigDefault->portConfigs[i].functionMask
+                && serialConfig->portConfigs[i].msp_baudrateIndex == serialConfigDefault->portConfigs[i].msp_baudrateIndex
+                && serialConfig->portConfigs[i].gps_baudrateIndex == serialConfigDefault->portConfigs[i].gps_baudrateIndex
+                && serialConfig->portConfigs[i].telemetry_baudrateIndex == serialConfigDefault->portConfigs[i].telemetry_baudrateIndex
+                && serialConfig->portConfigs[i].blackbox_baudrateIndex == serialConfigDefault->portConfigs[i].blackbox_baudrateIndex;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                serialConfigDefault->portConfigs[i].identifier,
+                serialConfigDefault->portConfigs[i].functionMask,
+                baudRates[serialConfigDefault->portConfigs[i].msp_baudrateIndex],
+                baudRates[serialConfigDefault->portConfigs[i].gps_baudrateIndex],
+                baudRates[serialConfigDefault->portConfigs[i].telemetry_baudrateIndex],
+                baudRates[serialConfigDefault->portConfigs[i].blackbox_baudrateIndex]
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             serialConfig->portConfigs[i].identifier,
             serialConfig->portConfigs[i].functionMask,
@@ -1473,26 +1479,29 @@ static void cliSerialPassthrough(char *cmdline)
 
 static void printAdjustmentRange(uint8_t dumpMask, const adjustmentProfile_t *adjustmentProfile, const adjustmentProfile_t *defaultAdjustmentProfile)
 {
+    const char *format = "adjrange %u %u %u %u %u %u %u\r\n";
     // print out adjustment ranges channel settings
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
         const adjustmentRange_t *ar = &adjustmentProfile->adjustmentRanges[i];
-        const adjustmentRange_t *arDefault = &defaultAdjustmentProfile->adjustmentRanges[i];
-        const bool equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
-            && ar->range.startStep == arDefault->range.startStep
-            && ar->range.endStep == arDefault->range.endStep
-            && ar->adjustmentFunction == arDefault->adjustmentFunction
-            && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
-            && ar->adjustmentIndex == arDefault->adjustmentIndex;
-        const char *format = "adjrange %u %u %u %u %u %u %u\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            arDefault->adjustmentIndex,
-            arDefault->auxChannelIndex,
-            MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
-            MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
-            arDefault->adjustmentFunction,
-            arDefault->auxSwitchChannelIndex
-        );
+        bool equalsDefault = true;
+        if (defaultAdjustmentProfile) {
+            const adjustmentRange_t *arDefault = &defaultAdjustmentProfile->adjustmentRanges[i];
+            equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
+                && ar->range.startStep == arDefault->range.startStep
+                && ar->range.endStep == arDefault->range.endStep
+                && ar->adjustmentFunction == arDefault->adjustmentFunction
+                && ar->auxSwitchChannelIndex == arDefault->auxSwitchChannelIndex
+                && ar->adjustmentIndex == arDefault->adjustmentIndex;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                arDefault->adjustmentIndex,
+                arDefault->auxChannelIndex,
+                MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(arDefault->range.endStep),
+                arDefault->adjustmentFunction,
+                arDefault->auxSwitchChannelIndex
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             ar->adjustmentIndex,
@@ -1568,6 +1577,7 @@ static void cliAdjustmentRange(char *cmdline)
 #ifndef USE_QUAD_MIXER_ONLY
 static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer, const motorMixer_t *defaultCustomMotorMixer)
 {
+    const char *format = "mmix %d %s %s %s %s\r\n";
     char buf0[8];
     char buf1[8];
     char buf2[8];
@@ -1579,19 +1589,21 @@ static void printMotorMix(uint8_t dumpMask, const motorMixer_t *customMotorMixer
         const float roll = customMotorMixer[i].roll;
         const float pitch = customMotorMixer[i].pitch;
         const float yaw = customMotorMixer[i].yaw;
-        const float thrDefault = defaultCustomMotorMixer[i].throttle;
-        const float rollDefault = defaultCustomMotorMixer[i].roll;
-        const float pitchDefault = defaultCustomMotorMixer[i].pitch;
-        const float yawDefault = defaultCustomMotorMixer[i].yaw;
-        const bool equalsDefault = thr == thrDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;
+        bool equalsDefault = true;
+        if (defaultCustomMotorMixer) {
+            const float thrDefault = defaultCustomMotorMixer[i].throttle;
+            const float rollDefault = defaultCustomMotorMixer[i].roll;
+            const float pitchDefault = defaultCustomMotorMixer[i].pitch;
+            const float yawDefault = defaultCustomMotorMixer[i].yaw;
+            const bool equalsDefault = thr == thrDefault && roll == rollDefault && pitch == pitchDefault && yaw == yawDefault;
 
-        const char *format = "mmix %d %s %s %s %s\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            ftoa(thrDefault, buf0),
-            ftoa(rollDefault, buf1),
-            ftoa(pitchDefault, buf2),
-            ftoa(yawDefault, buf3));
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                ftoa(thrDefault, buf0),
+                ftoa(rollDefault, buf1),
+                ftoa(pitchDefault, buf2),
+                ftoa(yawDefault, buf3));
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             ftoa(thr, buf0),
@@ -1672,20 +1684,20 @@ static void cliMotorMix(char *cmdline)
 
 static void printRxRange(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
 {
-    const rxChannelRangeConfiguration_t *channelRangeConfiguration;
-    const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault;
-    bool equalsDefault;
+    const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        channelRangeConfiguration = &rxConfig->channelRanges[i];
-        channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
-        equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
-            && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
-        const char *format = "rxrange %u %u %u\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            channelRangeConfigurationDefault->min,
-            channelRangeConfigurationDefault->max
-        );
+        const rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig->channelRanges[i];
+        bool equalsDefault = true;
+        if (defaultRxConfig) {
+            const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
+            equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
+                && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                channelRangeConfigurationDefault->min,
+                channelRangeConfigurationDefault->max
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             channelRangeConfiguration->min,
@@ -1737,18 +1749,21 @@ static void cliRxRange(char *cmdline)
 }
 
 #ifdef LED_STRIP
-static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, , const ledConfig_t *defaultLedConfigs)
+static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledConfig_t *defaultLedConfigs)
 {
+    const char *format = "led %u %s\r\n";
     char ledConfigBuffer[20];
     char ledConfigDefaultBuffer[20];
     for (uint32_t i = 0; i < LED_MAX_STRIP_LENGTH; i++) {
-        const ledConfig_t *ledConfig = ledConfigs[i];
-        const ledConfig_t *ledConfigDefault = defaultLedConfigs[i];
-        const bool equalsDefault = *ledConfig == *ledConfigDefault;
-        generateLedConfig(ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
-        generateLedConfig(ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
-        const char *format = "led %u %s\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format, i, ledConfigDefaultBuffer);
+        ledConfig_t ledConfig = ledConfigs[i];
+        generateLedConfig(&ledConfig, ledConfigBuffer, sizeof(ledConfigBuffer));
+        bool equalsDefault = true;
+        if (defaultLedConfigs) {
+            ledConfig_t ledConfigDefault = defaultLedConfigs[i];
+            equalsDefault = ledConfig == ledConfigDefault;
+            generateLedConfig(&ledConfigDefault, ledConfigDefaultBuffer, sizeof(ledConfigDefaultBuffer));
+            cliDefaultPrintf(dumpMask, equalsDefault, format, i, ledConfigDefaultBuffer);
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format, i, ledConfigBuffer);
     }
 }
@@ -1776,25 +1791,18 @@ static void cliLed(char *cmdline)
 
 static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColor_t *defaultColors)
 {
+    const char *format = "color %u %d,%u,%u\r\n";
     for (uint32_t i = 0; i < LED_CONFIGURABLE_COLOR_COUNT; i++) {
         const hsvColor_t *color = &colors[i];
-        const hsvColor_t *colorDefault = &defaultColors[i];
-        const bool equalsDefault = color->h == colorDefault->h
-            && color->s == colorDefault->s
-            && color->v == colorDefault->v;
-        const char *format = "color %u %d,%u,%u\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            colorDefault->h,
-            colorDefault->s,
-            colorDefault->v
-        );
-        cliDumpPrintf(dumpMask, equalsDefault, format,
-            i,
-            color->h,
-            color->s,
-            color->v
-        );
+        bool equalsDefault = true;
+        if (defaultColors) {
+            const hsvColor_t *colorDefault = &defaultColors[i];
+            equalsDefault = color->h == colorDefault->h
+                && color->s == colorDefault->s
+                && color->v == colorDefault->v;
+            cliDefaultPrintf(dumpMask, equalsDefault, format, i,colorDefault->h, colorDefault->s, colorDefault->v);
+        }
+        cliDumpPrintf(dumpMask, equalsDefault, format, i, color->h, color->s, color->v);
     }
 }
 
@@ -1821,28 +1829,39 @@ static void cliColor(char *cmdline)
 
 static void printModeColor(uint8_t dumpMask, const ledStripConfig_t *ledStripConfig, const ledStripConfig_t *defaultLedStripConfig)
 {
+    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t i = 0; i < LED_MODE_COUNT; i++) {
         for (uint32_t j = 0; j < LED_DIRECTION_COUNT; j++) {
             int colorIndex = ledStripConfig->modeColors[i].color[j];
-            int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
-            const char *format = "mode_color %u %u %u\r\n";
-            cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndexDefault);
-            cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, i, j, colorIndex);
+            bool equalsDefault = true;
+            if (defaultLedStripConfig) {
+                int colorIndexDefault = defaultLedStripConfig->modeColors[i].color[j];
+                equalsDefault = colorIndex == colorIndexDefault;
+                cliDefaultPrintf(dumpMask, equalsDefault, format, i, j, colorIndexDefault);
+            }
+            cliDumpPrintf(dumpMask, equalsDefault, format, i, j, colorIndex);
         }
     }
 
-    const char *format = "mode_color %u %u %u\r\n";
     for (uint32_t j = 0; j < LED_SPECIAL_COLOR_COUNT; j++) {
         const int colorIndex = ledStripConfig->specialColors.color[j];
-        const int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
-        cliDefaultPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndexDefault);
-        cliDumpPrintf(dumpMask, colorIndex == colorIndexDefault, format, LED_SPECIAL, j, colorIndex);
+        bool equalsDefault = true;
+        if (defaultLedStripConfig) {
+            const int colorIndexDefault = defaultLedStripConfig->specialColors.color[j];
+            equalsDefault = colorIndex == colorIndexDefault;
+            cliDefaultPrintf(dumpMask, equalsDefault, format, LED_SPECIAL, j, colorIndexDefault);
+        }
+        cliDumpPrintf(dumpMask, equalsDefault, format, LED_SPECIAL, j, colorIndex);
     }
 
     const int ledStripAuxChannel = ledStripConfig->ledstrip_aux_channel;
-    const int ledStripAuxChannelDefault = defaultLedStripConfig->ledstrip_aux_channel;
-    cliDefaultPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
-    cliDumpPrintf(dumpMask, ledStripAuxChannel == ledStripAuxChannelDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
+    bool equalsDefault = true;
+    if (defaultLedStripConfig) {
+        const int ledStripAuxChannelDefault = defaultLedStripConfig->ledstrip_aux_channel;
+        equalsDefault = ledStripAuxChannel == ledStripAuxChannelDefault;
+        cliDefaultPrintf(dumpMask, equalsDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannelDefault);
+    }
+    cliDumpPrintf(dumpMask, equalsDefault, format, LED_AUX_CHANNEL, 0, ledStripAuxChannel);
 }
 
 static void cliModeColor(char *cmdline)
@@ -1881,26 +1900,29 @@ static void cliModeColor(char *cmdline)
 static void printServo(uint8_t dumpMask, servoProfile_t *defaultServoProfile)
 {
     // print out servo settings
+    const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
         const servoParam_t *servoConf = &servoProfile()->servoConf[i];
-        const servoParam_t *servoConfDefault = &defaultServoProfile->servoConf[i];
-        const bool equalsDefault = servoConf->min == servoConfDefault->min
-            && servoConf->max == servoConfDefault->max
-            && servoConf->middle == servoConfDefault->middle
-            && servoConf->angleAtMin == servoConfDefault->angleAtMax
-            && servoConf->rate == servoConfDefault->rate
-            && servoConf->forwardFromChannel == servoConfDefault->forwardFromChannel;
-        const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            servoConfDefault->min,
-            servoConfDefault->max,
-            servoConfDefault->middle,
-            servoConfDefault->angleAtMin,
-            servoConfDefault->angleAtMax,
-            servoConfDefault->rate,
-            servoConfDefault->forwardFromChannel
-        );
+        bool equalsDefault = true;
+        if (defaultServoProfile) {
+            const servoParam_t *servoConfDefault = &defaultServoProfile->servoConf[i];
+            equalsDefault = servoConf->min == servoConfDefault->min
+                && servoConf->max == servoConfDefault->max
+                && servoConf->middle == servoConfDefault->middle
+                && servoConf->angleAtMin == servoConfDefault->angleAtMax
+                && servoConf->rate == servoConfDefault->rate
+                && servoConf->forwardFromChannel == servoConfDefault->forwardFromChannel;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                servoConfDefault->min,
+                servoConfDefault->max,
+                servoConfDefault->middle,
+                servoConfDefault->angleAtMin,
+                servoConfDefault->angleAtMax,
+                servoConfDefault->rate,
+                servoConfDefault->forwardFromChannel
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             servoConf->min,
@@ -1994,32 +2016,35 @@ static void cliServo(char *cmdline)
 #ifdef USE_SERVOS
 static void printServoMix(uint8_t dumpMask, const master_t *defaultConfig)
 {
+    const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
         servoMixer_t customServoMixer = *customServoMixer(i);
-        servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
         if (customServoMixer.rate == 0) {
             break;
         }
 
-        const bool equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
-            && customServoMixer.inputSource == customServoMixerDefault.inputSource
-            && customServoMixer.rate == customServoMixerDefault.rate
-            && customServoMixer.speed == customServoMixerDefault.speed
-            && customServoMixer.min == customServoMixerDefault.min
-            && customServoMixer.max == customServoMixerDefault.max
-            && customServoMixer.box == customServoMixerDefault.box;
+        bool equalsDefault = true;
+        if (defaultConfig) {
+            servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+            equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
+                && customServoMixer.inputSource == customServoMixerDefault.inputSource
+                && customServoMixer.rate == customServoMixerDefault.rate
+                && customServoMixer.speed == customServoMixerDefault.speed
+                && customServoMixer.min == customServoMixerDefault.min
+                && customServoMixer.max == customServoMixerDefault.max
+                && customServoMixer.box == customServoMixerDefault.box;
 
-        const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            customServoMixerDefault.targetChannel,
-            customServoMixerDefault.inputSource,
-            customServoMixerDefault.rate,
-            customServoMixerDefault.speed,
-            customServoMixerDefault.min,
-            customServoMixerDefault.max,
-            customServoMixerDefault.box
-        );
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                customServoMixerDefault.targetChannel,
+                customServoMixerDefault.inputSource,
+                customServoMixerDefault.rate,
+                customServoMixerDefault.speed,
+                customServoMixerDefault.min,
+                customServoMixerDefault.max,
+                customServoMixerDefault.box
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             customServoMixer.targetChannel,
@@ -2036,17 +2061,25 @@ static void printServoMix(uint8_t dumpMask, const master_t *defaultConfig)
 
     // print servo directions
     for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        const char *format = "smix reverse %d %d r\r\n";
         const servoParam_t *servoConf = &servoProfile()->servoConf[i];
-        const servoParam_t *servoConfDefault = &defaultConfig->servoProfile.servoConf[i];
-        bool equalsDefault = servoConf->reversedSources == servoConfDefault->reversedSources;
-        for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
-            equalsDefault = ~(servoConf->reversedSources ^ servoConfDefault->reversedSources) & (1 << channel);
-            const char *format = "smix reverse %d %d r\r\n";
-            if (servoConfDefault->reversedSources & (1 << channel)) {
-                cliDefaultPrintf(dumpMask, equalsDefault, format, i , channel);
+        if (defaultConfig) {
+            const servoParam_t *servoConfDefault = &defaultConfig->servoProfile.servoConf[i];
+            bool equalsDefault = servoConf->reversedSources == servoConfDefault->reversedSources;
+            for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
+                equalsDefault = ~(servoConf->reversedSources ^ servoConfDefault->reversedSources) & (1 << channel);
+                if (servoConfDefault->reversedSources & (1 << channel)) {
+                    cliDefaultPrintf(dumpMask, equalsDefault, format, i , channel);
+                }
+                if (servoConf->reversedSources & (1 << channel)) {
+                    cliDumpPrintf(dumpMask, equalsDefault, format, i , channel);
+                }
             }
-            if (servoConf->reversedSources & (1 << channel)) {
-                cliDumpPrintf(dumpMask, equalsDefault, format, i , channel);
+        } else {
+            for (uint32_t channel = 0; channel < INPUT_SOURCE_COUNT; channel++) {
+                if (servoConf->reversedSources & (1 << channel)) {
+                    cliDumpPrintf(dumpMask, true, format, i , channel);
+                }
             }
         }
     }
@@ -2833,7 +2866,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfig()->ledConfigs, &defaultConfig.ledStripConfig.ledConfigs);
+        printLed(dumpMask, ledStripConfig()->ledConfigs, defaultConfig.ledStripConfig.ledConfigs);
 
         cliPrintHashLine("color");
         printColor(dumpMask, ledStripConfig()->colors, defaultConfig.ledStripConfig.colors);
