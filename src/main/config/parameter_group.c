@@ -71,6 +71,16 @@ void pgResetCurrent(const pgRegistry_t *reg)
     }
 }
 
+bool pgResetCopy(void *copy, pgn_t pgn)
+{
+    const pgRegistry_t *reg = pgFind(pgn);
+    if (reg) {
+        pgResetInstance(reg, copy);
+        return true;
+    }
+    return false;
+}
+
 void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int size, int version)
 {
     pgResetInstance(reg, pgOffset(reg, profileIndex));
