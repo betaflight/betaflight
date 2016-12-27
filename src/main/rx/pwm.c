@@ -27,7 +27,7 @@
 
 #include "build/build_config.h"
 
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 

@@ -505,8 +505,8 @@ COMMON_SRC = \
             drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -623,8 +623,8 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \

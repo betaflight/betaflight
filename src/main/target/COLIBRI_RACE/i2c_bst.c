@@ -26,7 +26,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 #include "fc/mw.h"
