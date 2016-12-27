@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#if defined(USE_OLEDI2C) && defined(USE_I2C)
+#ifdef USE_OLEDI2C
 
 #include "bus_i2c.h"
 #include "system.h"
