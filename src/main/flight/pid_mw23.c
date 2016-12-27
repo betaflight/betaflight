@@ -78,8 +78,6 @@ void pidMultiWii23(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 {
     UNUSED(rxConfig);
 
-    pidInitFilters(pidProfile);
-
     int axis, prop = 0;
     int32_t rc, error, errorAngle, delta, gyroError;
     int32_t PTerm, ITerm, PTermACC, ITermACC, DTerm;
