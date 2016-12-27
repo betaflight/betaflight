@@ -108,7 +108,7 @@ static void usbVcpWriteBuf(serialPort_t *instance, const void *data, int count)
 
 static bool usbVcpFlush(vcpPort_t *port)
 {
-    uint8_t count = port->txAt;
+    uint32_t count = port->txAt;
     port->txAt = 0;
 
     if (count == 0) {
