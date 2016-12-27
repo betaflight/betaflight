@@ -78,8 +78,7 @@
 #define USE_VCP
 #define USE_UART1
 #define USE_UART3
-//#define USE_SOFTSERIAL1
-#define SERIAL_PORT_COUNT 4
+#define SERIAL_PORT_COUNT 3
 
 #define USE_UART1_TX_DMA
 
