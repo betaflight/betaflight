@@ -18,8 +18,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
+#include "string.h"
 #include "platform.h"
+#include "common/maths.h"
 
 #ifdef SERIAL_RX
 
@@ -41,19 +42,20 @@
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
+#include "config/feature.h"
+
 // driver for spektrum satellite receiver / sbus
 
 #define SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT 12
-#define SPEKTRUM_2048_CHANNEL_COUNT 12
-#define SPEKTRUM_1024_CHANNEL_COUNT 7
+#define SPEKTRUM_2048_CHANNEL_COUNT     12
+#define SPEKTRUM_1024_CHANNEL_COUNT     7
 
-#define SPEK_FRAME_SIZE 16
-#define SPEKTRUM_NEEDED_FRAME_INTERVAL 5000
+#define SPEKTRUM_NEEDED_FRAME_INTERVAL  5000
 
-#define SPEKTRUM_BAUDRATE 115200
+#define SPEKTRUM_BAUDRATE               115200
 
-#define SPEKTRUM_MAX_FADE_PER_SEC 40
-#define SPEKTRUM_FADE_REPORTS_PER_SEC 2
+#define SPEKTRUM_MAX_FADE_PER_SEC       40
+#define SPEKTRUM_FADE_REPORTS_PER_SEC   2
 
 static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
@@ -70,6 +72,7 @@ static uint8_t rssi_channel; // Stores the RX RSSI channel.
 static volatile uint8_t spekFrame[SPEK_FRAME_SIZE];
 
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
+static serialPort_t *serialPort;
 
 #ifdef SPEKTRUM_BIND
 static IO_t BindPin = DEFIO_IO(NONE);
@@ -78,6 +81,10 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
+static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
+static uint8_t telemetryBufLen = 0;
+
+void srxlRxSendTelemetryData(void);
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
@@ -146,6 +153,9 @@ static uint8_t spektrumFrameStatus(void)
         }
     }
 
+    if (telemetryBufLen) {
+        srxlRxSendTelemetryData();
+    }
     return RX_FRAME_COMPLETE;
 }
 
@@ -275,15 +285,22 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
 #ifdef TELEMETRY
     bool portShared = telemetryCheckRxPortShared(portConfig);
+    bool srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared && rxConfig->serialrx_provider == SERIALRX_SPEKTRUM2048);
 #else
+    bool srxlEnabled = false;
     bool portShared = false;
 #endif
 
-    serialPort_t *spektrumPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, spektrumDataReceive, SPEKTRUM_BAUDRATE, portShared ? MODE_RXTX : MODE_RX, SERIAL_NOT_INVERTED);
+    serialPort = openSerialPort(portConfig->identifier, 
+        FUNCTION_RX_SERIAL, 
+        spektrumDataReceive, 
+        SPEKTRUM_BAUDRATE, 
+        portShared || srxlEnabled ? MODE_RXTX : MODE_RX, 
+        SERIAL_NOT_INVERTED | (srxlEnabled ? SERIAL_BIDIR : 0));
 
 #ifdef TELEMETRY
     if (portShared) {
-        telemetrySharedPort = spektrumPort;
+        telemetrySharedPort = serialPort;
     }
 #endif
 
@@ -292,7 +309,29 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
         rssi_channel = 0;
     }
 
-    return spektrumPort != NULL;
+    return serialPort != NULL;
 }
+
+void srxlRxWriteTelemetryData(const void *data, int len)
+{
+    len = MIN(len, (int)sizeof(telemetryBuf));
+    memcpy(telemetryBuf, data, len);
+    telemetryBufLen = len;
+}
+
+void srxlRxSendTelemetryData(void)
+{
+    // if there is telemetry data to write
+    if (telemetryBufLen > 0) {
+        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        telemetryBufLen = 0; // reset telemetry buffer
+    }
+}
+
+bool srxlRxIsActive(void)
+{
+    return serialPort != NULL;
+}
+
 #endif // SERIAL_RX
 

@@ -110,7 +110,6 @@ typedef struct airplaneConfig_s {
 
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
-extern uint8_t motorCount;
 extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];

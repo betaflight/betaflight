@@ -46,7 +46,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#define USE_ESC_TELEMETRY
+#define USE_ESC_SENSOR
 #define REMAP_TIM17_DMA
 
 #define USE_VCP

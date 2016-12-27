@@ -176,9 +176,10 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
 
 uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 {
-    if (taskId == TASK_SELF || taskId < TASK_COUNT) {
-        cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
-        return task->taskLatestDeltaTime;
+    if (taskId == TASK_SELF) {
+        return currentTask->taskLatestDeltaTime;
+    } else if (taskId < TASK_COUNT) {
+        return cfTasks[taskId].taskLatestDeltaTime;
     } else {
         return 0;
     }

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "io_types.h"
+
 typedef struct bmp085Config_s {
     ioTag_t xclrIO;
     ioTag_t eocIO;

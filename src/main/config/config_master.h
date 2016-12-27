@@ -31,6 +31,8 @@
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
 #include "drivers/vcd.h"
+#include "drivers/light_led.h"
+#include "drivers/flash.h"
 #include "drivers/rssi_softpwm.h"
 
 #include "fc/rc_controls.h"
@@ -91,10 +93,15 @@
 #define beeperConfig(x) (&masterConfig.beeperConfig)
 #define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define statusLedConfig(x) (&masterConfig.statusLedConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define vcdProfile(x) (&masterConfig.vcdProfile)
 #define sdcardConfig(x) (&masterConfig.sdcardConfig)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
+#define flashConfig(x) (&masterConfig.flashConfig)
+#define pidConfig(x) (&masterConfig.pidConfig)
+#define adjustmentProfile(x) (&masterConfig.adjustmentProfile)
+#define modeActivationProfile(x) (&masterConfig.modeActivationProfile)
 
 
 // System-wide
@@ -124,10 +131,7 @@ typedef struct master_s {
 
     imuConfig_t imuConfig;
 
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
-    uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
-
-    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+    pidConfig_t pidConfig;
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
 
@@ -151,7 +155,6 @@ typedef struct master_s {
 #endif
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
 
     armingConfig_t armingConfig;
 
@@ -162,6 +165,8 @@ typedef struct master_s {
     failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
     telemetryConfig_t telemetryConfig;
+
+    statusLedConfig_t statusLedConfig;
 
 #ifdef USE_PPM
     ppmConfig_t ppmConfig;
@@ -211,9 +216,8 @@ typedef struct master_s {
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
 
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-
+    modeActivationProfile_t modeActivationProfile;
+    adjustmentProfile_t adjustmentProfile;
 #ifdef VTX
     uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
     uint8_t vtx_channel; //1-8
@@ -225,6 +229,10 @@ typedef struct master_s {
 
 #ifdef BLACKBOX
     blackboxConfig_t blackboxConfig;
+#endif
+
+#ifdef USE_FLASHFS
+    flashConfig_t flashConfig;
 #endif
 
     uint32_t beeper_off_flags;

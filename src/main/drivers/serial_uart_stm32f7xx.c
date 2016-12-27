@@ -422,7 +422,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     }
 
     // DMA TX Interrupt
-    dmaInit(uart->txIrq, OWNER_SERIAL_TX, (uint32_t)uart);
+    dmaInit(uart->txIrq, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
     dmaSetHandler(uart->txIrq, dmaIRQHandler, uart->txPriority, (uint32_t)uart);
 
 

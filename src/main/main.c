@@ -35,7 +35,6 @@
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/dma.h"
-#include "drivers/gpio.h"
 #include "drivers/io.h"
 #include "drivers/light_led.h"
 #include "drivers/sound_beeper.h"
@@ -45,6 +44,7 @@
 #include "drivers/serial_uart.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/pwm_output.h"
 #include "drivers/adc.h"
@@ -105,7 +105,7 @@
 #include "sensors/initialisation.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/esc_telemetry.h"
+#include "sensors/esc_sensor.h"
 
 #include "flight/pid.h"
 #include "flight/imu.h"
@@ -124,6 +124,14 @@
 
 #include "build/build_config.h"
 #include "build/debug.h"
+
+#ifdef TARGET_PREINIT
+void targetPreInit(void);
+#endif
+
+#ifdef TARGET_BUS_INIT
+void targetBusInit(void);
+#endif
 
 extern uint8_t motorControlEnable;
 
@@ -159,6 +167,10 @@ void init(void)
     detectHardwareRevision();
 #endif
 
+#ifdef BRUSHED_ESC_AUTODETECT
+    detectBrushedESC();
+#endif
+
     initEEPROM();
 
     ensureEEPROMContainsValidData();
@@ -173,11 +185,11 @@ void init(void)
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-#ifdef ALIENFLIGHTF3
-    ledInit(hardwareRevision == AFF3_REV_1 ? false : true);
-#else
-    ledInit(false);
+#ifdef TARGET_PREINIT
+    targetPreInit();
 #endif
+    
+    ledInit(statusLedConfig());
     LED2_ON;
 
 #ifdef USE_EXTI
@@ -185,28 +197,28 @@ void init(void)
 #endif
 
 #if defined(BUTTONS)
-    gpio_config_t buttonAGpioConfig = {
-        BUTTON_A_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+#ifdef BUTTON_A_PIN
+    IO_t buttonAPin = IOGetByTag(IO_TAG(BUTTON_A_PIN));
+    IOInit(buttonAPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonAPin, IOCFG_IPU);
+#endif
 
-    gpio_config_t buttonBGpioConfig = {
-        BUTTON_B_PIN,
-        Mode_IPU,
-        Speed_2MHz
-    };
-    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+#ifdef BUTTON_B_PIN
+    IO_t buttonBPin = IOGetByTag(IO_TAG(BUTTON_B_PIN));
+    IOInit(buttonBPin, OWNER_SYSTEM, 0);
+    IOConfigGPIO(buttonBPin, IOCFG_IPU);
+#endif
 
     // Check status of bind plug and exit if not active
-    delayMicroseconds(10);  // allow GPIO configuration to settle
+    delayMicroseconds(10);  // allow configuration to settle
 
     if (!isMPUSoftReset()) {
+#if defined(BUTTON_A_PIN) && defined(BUTTON_B_PIN)
+        // two buttons required
         uint8_t secondsRemaining = 5;
         bool bothButtonsHeld;
         do {
-            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+            bothButtonsHeld = !IORead(buttonAPin) && !IORead(buttonBPin);
             if (bothButtonsHeld) {
                 if (--secondsRemaining == 0) {
                     resetEEPROM();
@@ -216,6 +228,7 @@ void init(void)
                 LED0_TOGGLE;
             }
         } while (bothButtonsHeld);
+#endif
     }
 #endif
 
@@ -227,7 +240,7 @@ void init(void)
                 // Spektrum satellite binding if enabled on startup.
                 // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
                 // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(&masterConfig.rxConfig);
+                spektrumBind(rxConfig());
                 break;
         }
     }
@@ -238,16 +251,16 @@ void init(void)
     timerInit();  // timer must be initialized before any channel is allocated
 
 #if defined(AVOID_UART1_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART1 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(serialConfig(), feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
     mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
@@ -266,37 +279,28 @@ void init(void)
     }
 
     mixerConfigureOutput();
+    motorInit(motorConfig(), idlePulse, getMotorCount());
+
 #ifdef USE_SERVOS
     servoConfigureOutput();
-#endif
-
-#ifdef USE_QUAD_MIXER_ONLY
-    motorInit(&masterConfig.motorConfig, idlePulse, QUAD_MOTOR_COUNT);
-#else
-    motorInit(&masterConfig.motorConfig, idlePulse, motorCount);
-#endif
-
-#ifdef USE_SERVOS
     if (isMixerUsingServos()) {
         //pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-        servoInit(&masterConfig.servoConfig);
+        servoInit(servoConfig());
     }
 #endif
 
 #if defined(USE_PWM) || defined(USE_PPM)
     if (feature(FEATURE_RX_PPM)) {
-        ppmRxInit(&masterConfig.ppmConfig, motorConfig()->motorPwmProtocol);
+        ppmRxInit(ppmConfig(), motorConfig()->motorPwmProtocol);
     } else if (feature(FEATURE_RX_PARALLEL_PWM)) {
-        pwmRxInit(&masterConfig.pwmConfig);
+        pwmRxInit(pwmConfig());
     }
-    pwmRxSetInputFilteringMode(masterConfig.inputFilteringMode);
 #endif
-
 
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperInit(&masterConfig.beeperConfig);
+    beeperInit(beeperConfig());
 #endif
 /* temp until PGs are implemented. */
 #ifdef INVERTER
@@ -307,73 +311,47 @@ void init(void)
     bstInit(BST_DEVICE);
 #endif
 
-#ifdef USE_SPI
-#ifdef USE_SPI_DEVICE_1
-    spiInit(SPIDEV_1);
-#endif
-#ifdef USE_SPI_DEVICE_2
-    spiInit(SPIDEV_2);
-#endif
-#ifdef USE_SPI_DEVICE_3
-#ifdef ALIENFLIGHTF3
-    if (hardwareRevision == AFF3_REV_2) {
-        spiInit(SPIDEV_3);
-    }
+#ifdef TARGET_BUS_INIT
+    targetBusInit();
 #else
-    spiInit(SPIDEV_3);
-#endif
-#endif
-#ifdef USE_SPI_DEVICE_4
-    spiInit(SPIDEV_4);
-#endif
-#endif
+    #ifdef USE_SPI
+        #ifdef USE_SPI_DEVICE_1
+            spiInit(SPIDEV_1);
+        #endif
+        #ifdef USE_SPI_DEVICE_2
+            spiInit(SPIDEV_2);
+        #endif
+        #ifdef USE_SPI_DEVICE_3
+            spiInit(SPIDEV_3);
+        #endif
+        #ifdef USE_SPI_DEVICE_4
+            spiInit(SPIDEV_4);
+        #endif
+    #endif
 
-#ifdef VTX
-    vtxInit();
+    #ifdef USE_I2C
+        i2cInit(I2C_DEVICE);
+    #endif
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
 #endif
 
-#if defined(NAZE)
-    if (hardwareRevision == NAZE32_SP) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
-    }
+#ifdef VTX
+    vtxInit();
 #endif
 
-#if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
+#if defined(SONAR_SOFTSERIAL2_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
     }
 #endif
 
-#if defined(SPRACINGF3MINI) || defined(OMNIBUS) || defined(X_RACERSPI)
-#if defined(SONAR) && defined(USE_SOFTSERIAL1)
+#if defined(SONAR_SOFTSERIAL1_EXCLUSIVE) && defined(SONAR) && defined(USE_SOFTSERIAL1)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
-#endif
-#endif
-
-#ifdef USE_I2C
-#if defined(NAZE)
-    if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
-    } else {
-        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-            i2cInit(I2C_DEVICE);
-        }
-    }
-#elif defined(CC3D)
-    if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
-        i2cInit(I2C_DEVICE);
-    }
-#else
-    i2cInit(I2C_DEVICE);
-#endif
 #endif
 
 #ifdef USE_ADC
@@ -381,11 +359,10 @@ void init(void)
     adcConfig()->vbat.enabled = feature(FEATURE_VBAT);
     adcConfig()->currentMeter.enabled = feature(FEATURE_CURRENT_METER);
     adcConfig()->rssi.enabled = feature(FEATURE_RSSI_ADC);
-    adcInit(&masterConfig.adcConfig);
+    adcInit(adcConfig());
 #endif
 
-
-    initBoardAlignment(&masterConfig.boardAlignment);
+    initBoardAlignment(boardAlignment());
 
 #ifdef CMS
     cmsInit();
@@ -393,7 +370,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(&masterConfig.rxConfig);
+        dashboardInit(rxConfig());
     }
 #endif
 
@@ -410,7 +387,7 @@ void init(void)
     if (feature(FEATURE_OSD)) {
 #ifdef USE_MAX7456
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(&masterConfig.vcdProfile);
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
 #else
         displayPort_t *osdDisplayPort = displayPortMspInit();
 #endif
@@ -419,7 +396,7 @@ void init(void)
 #endif
 
 #ifdef SONAR
-    const sonarConfig_t *sonarConfig = &masterConfig.sonarConfig;
+    const sonarConfig_t *sonarConfig = sonarConfig();
 #else
     const void *sonarConfig = NULL;
 #endif
@@ -450,7 +427,7 @@ void init(void)
     LED1_OFF;
 
     // gyro.targetLooptime set in sensorsAutodetect(), so we are ready to call pidSetTargetLooptime()
-    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * masterConfig.pid_process_denom); // Initialize pid looptime
+    pidSetTargetLooptime((gyro.targetLooptime + LOOPTIME_SUSPEND_TIME) * pidConfig()->pid_process_denom); // Initialize pid looptime
     pidInitFilters(&currentProfile->pidProfile);
     pidInitConfig(&currentProfile->pidProfile);
 
@@ -464,28 +441,28 @@ void init(void)
 #endif
 
 #ifdef USE_CLI
-    cliInit(&masterConfig.serialConfig);
+    cliInit(serialConfig());
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
 
-    rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
+    rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
         gpsInit(
-            &masterConfig.serialConfig,
-            &masterConfig.gpsConfig
+            serialConfig(),
+            gpsConfig()
         );
         navigationInit(
-            &masterConfig.gpsProfile,
+            gpsProfile(),
             &currentProfile->pidProfile
         );
     }
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(&masterConfig.ledStripConfig);
+    ledStripInit(ledStripConfig());
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
@@ -498,9 +475,9 @@ void init(void)
     }
 #endif
 
-#ifdef USE_ESC_TELEMETRY
-    if (feature(FEATURE_ESC_TELEMETRY)) {
-        escTelemetryInit();
+#ifdef USE_ESC_SENSOR
+    if (feature(FEATURE_ESC_SENSOR)) {
+        escSensorInit();
     }
 #endif
 
@@ -518,12 +495,8 @@ void init(void)
 #endif
 
 #ifdef USE_FLASHFS
-#ifdef NAZE
-    if (hardwareRevision == NAZE32_REV5) {
-        m25p16_init(IO_TAG_NONE);
-    }
-#elif defined(USE_FLASH_M25P16)
-    m25p16_init(IO_TAG_NONE);
+#if defined(USE_FLASH_M25P16)
+    m25p16_init(flashConfig());
 #endif
 
     flashfsInit();
@@ -568,7 +541,7 @@ void init(void)
     // Now that everything has powered up the voltage and cell count be determined.
 
     if (feature(FEATURE_VBAT | FEATURE_CURRENT_METER))
-        batteryInit(&masterConfig.batteryConfig);
+        batteryInit(batteryConfig());
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {

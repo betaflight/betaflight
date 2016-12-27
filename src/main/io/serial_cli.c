@@ -234,7 +234,7 @@ static const char * const featureNames[] = {
     "SONAR", "TELEMETRY", "CURRENT_METER", "3D", "RX_PARALLEL_PWM",
     "RX_MSP", "RSSI_ADC", "LED_STRIP", "DISPLAY", "OSD",
     "BLACKBOX", "CHANNEL_FORWARDING", "TRANSPONDER", "AIRMODE",
-    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_TELEMETRY", NULL
+    "SDCARD", "VTX", "RX_SPI", "SOFTSPI", "ESC_SENSOR", NULL
 };
 
 // sync this with rxFailsafeChannelMode_e
@@ -415,7 +415,11 @@ static const char * const lookupTableGPSSBASMode[] = {
 #endif
 
 static const char * const lookupTableCurrentSensor[] = {
-    "NONE", "ADC", "VIRTUAL"
+    "NONE", "ADC", "VIRTUAL", "ESC"
+};
+
+static const char * const lookupTableBatterySensor[] = {
+    "ADC", "ESC"
 };
 
 #ifdef USE_SERVOS
@@ -519,8 +523,9 @@ static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "VELOCITY",
     "DFILTER",
     "ANGLERATE",
-    "ESC_TELEMETRY",
+    "ESC_SENSOR",
     "SCHEDULER",
+    "STACK"
 };
 
 #ifdef OSD
@@ -571,6 +576,7 @@ typedef enum {
     TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_CURRENT_SENSOR,
+    TABLE_BATTERY_SENSOR,
 #ifdef USE_SERVOS
     TABLE_GIMBAL_MODE,
 #endif
@@ -611,6 +617,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
 #endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
+    { lookupTableBatterySensor, sizeof(lookupTableBatterySensor) / sizeof(char *) },
 #ifdef USE_SERVOS
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
 #endif
@@ -695,7 +702,9 @@ const clivalue_t valueTable[] = {
     { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
     { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rcInterpolationInterval, .config.minmax = { 1,  50 } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
-    { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
+#if defined(USE_PWM)
+    { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
+#endif
     { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE,  &rxConfig()->fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
     { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &rxConfig()->max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
@@ -779,6 +788,7 @@ const clivalue_t valueTable[] = {
 #ifdef TELEMETRY
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_switch, .config.lookup = { TABLE_OFF_ON } },
     { "telemetry_inversion",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_inversion, .config.lookup = { TABLE_OFF_ON } },
+    { "sport_halfduplex",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->sportHalfDuplex, .config.lookup = { TABLE_OFF_ON } },
     { "frsky_default_lattitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLatitude, .config.minmax = { -90.0,  90.0 } },
     { "frsky_default_longitude",    VAR_FLOAT  | MASTER_VALUE,  &telemetryConfig()->gpsNoFixLongitude, .config.minmax = { -180.0,  180.0 } },
     { "frsky_coordinates_format",   VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->frsky_coordinate_format, .config.minmax = { 0,  FRSKY_FORMAT_NMEA } },
@@ -799,6 +809,7 @@ const clivalue_t valueTable[] = {
     { "current_meter_offset",       VAR_INT16 | MASTER_VALUE,  &batteryConfig()->currentMeterOffset, .config.minmax = { -16000, 16000 } },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR } },
+    { "battery_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->batteryMeterType, .config.lookup = { TABLE_BATTERY_SENSOR } },
     { "battery_notpresent_level",   VAR_UINT8  | MASTER_VALUE, &batteryConfig()->batterynotpresentlevel, .config.minmax = { 0, 200 } },
     { "use_vbat_alerts",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &batteryConfig()->useVBatAlerts, .config.lookup = { TABLE_OFF_ON } },
     { "use_consumption_alerts",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &batteryConfig()->useConsumptionAlerts, .config.lookup = { TABLE_OFF_ON } },
@@ -811,7 +822,6 @@ const clivalue_t valueTable[] = {
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &boardAlignment()->pitchDegrees, .config.minmax = { -180,  360 } },
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment()->yawDegrees, .config.minmax = { -180,  360 } },
 
-    { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
     { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_soft_lpf_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
@@ -837,6 +847,7 @@ const clivalue_t valueTable[] = {
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &mixerConfig()->yaw_motor_direction, .config.minmax = { -1,  1 } },
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN, YAW_P_LIMIT_MAX } },
     { "pidsum_limit",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.pidSumLimit, .config.minmax = { 0.1, 1.0 } },
+    { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &pidConfig()->max_angle_inclination, .config.minmax = { 100,  900 } },
 #ifdef USE_SERVOS
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
@@ -874,8 +885,8 @@ const clivalue_t valueTable[] = {
     { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.xy, .config.minmax = { 0,  100 } },
     { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.z, .config.minmax = { 0,  100 } },
     { "acc_unarmedcal",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &imuConfig()->acc_unarmedcal, .config.lookup = { TABLE_OFF_ON } },
-    { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
-    { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &masterConfig.accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
+    { "acc_trim_pitch",             VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accelerometerTrims.values.pitch, .config.minmax = { -300,  300 } },
+    { "acc_trim_roll",              VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accelerometerTrims.values.roll, .config.minmax = { -300,  300 } },
 
 #ifdef BARO
     { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, &barometerConfig()->baro_sample_count, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX } },
@@ -904,7 +915,7 @@ const clivalue_t valueTable[] = {
     { "accum_threshold",            VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_accum_threshold",        VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yawItermIgnoreRate, .config.minmax = {15, 1000 } },
     { "yaw_lowpass",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 500 } },
-    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &masterConfig.pid_process_denom, .config.minmax = { 1,  8 } },
+    { "pid_process_denom",          VAR_UINT8  | MASTER_VALUE,  &pidConfig()->pid_process_denom, .config.minmax = { 1,  8 } },
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 } },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 } },
@@ -1209,8 +1220,8 @@ static void printAux(uint8_t dumpMask, master_t *defaultConfig)
     modeActivationCondition_t *macDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-        mac = &masterConfig.modeActivationConditions[i];
-        macDefault = &defaultConfig->modeActivationConditions[i];
+        mac = &modeActivationProfile()->modeActivationConditions[i];
+        macDefault = &defaultConfig->modeActivationProfile.modeActivationConditions[i];
         equalsDefault = mac->modeId == macDefault->modeId
             && mac->auxChannelIndex == macDefault->auxChannelIndex
             && mac->range.startStep == macDefault->range.startStep
@@ -1244,7 +1255,7 @@ static void cliAux(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1478,8 +1489,8 @@ static void printAdjustmentRange(uint8_t dumpMask, master_t *defaultConfig)
     adjustmentRange_t *arDefault;
     bool equalsDefault;
     for (uint32_t i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-        ar = &masterConfig.adjustmentRanges[i];
-        arDefault = &defaultConfig->adjustmentRanges[i];
+        ar = &adjustmentProfile()->adjustmentRanges[i];
+        arDefault = &defaultConfig->adjustmentProfile.adjustmentRanges[i];
         equalsDefault = ar->auxChannelIndex == arDefault->auxChannelIndex
             && ar->range.startStep == arDefault->range.startStep
             && ar->range.endStep == arDefault->range.endStep
@@ -1519,7 +1530,7 @@ static void cliAdjustmentRange(char *cmdline)
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *ar = &adjustmentProfile()->adjustmentRanges[i];
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
@@ -2255,18 +2266,35 @@ static void cliFlashInfo(char *cmdline)
             layout->sectors, layout->sectorSize, layout->pagesPerSector, layout->pageSize, layout->totalSize, flashfsGetOffset());
 }
 
+
 static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("Erasing...\r\n");
+#ifndef CLI_MINIMAL_VERBOSITY
+    uint32_t i;
+    cliPrintf("Erasing, please wait ... \r\n");
+#else
+    cliPrintf("Erasing,\r\n");
+#endif
+
+    bufWriterFlush(cliWriter);
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
+#ifndef CLI_MINIMAL_VERBOSITY
+        cliPrintf(".");
+        if (i++ > 120) {
+	    i=0;
+	    cliPrintf("\r\n");
+	}
+
+	bufWriterFlush(cliWriter);
+#endif
         delay(100);
     }
 
-    cliPrintf("Done.\r\n");
+    cliPrintf("\r\nDone.\r\n");
 }
 
 #ifdef USE_FLASH_TOOLS
@@ -3637,8 +3665,8 @@ static void cliTasks(char *cmdline)
             int subTaskFrequency;
             if (taskId == TASK_GYROPID) {
                 subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
-                taskFrequency = subTaskFrequency / masterConfig.pid_process_denom;
-                if (masterConfig.pid_process_denom > 1) {
+                taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
+                if (pidConfig()->pid_process_denom > 1) {
                     cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
                 } else {
                     taskFrequency = subTaskFrequency;
@@ -3657,7 +3685,7 @@ static void cliTasks(char *cmdline)
             cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
                     taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
                     maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
-            if (taskId == TASK_GYROPID && masterConfig.pid_process_denom > 1) {
+            if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }

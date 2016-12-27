@@ -18,11 +18,11 @@
 #pragma once
 
 #include <stdint.h>
-#include "io_types.h"
+#include "flash.h"
 
 #define M25P16_PAGESIZE 256
 
-bool m25p16_init(ioTag_t csTag);
+bool m25p16_init(flashConfig_t *flashConfig);
 
 void m25p16_eraseSector(uint32_t address);
 void m25p16_eraseCompletely();

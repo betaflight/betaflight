@@ -104,8 +104,8 @@ float rcInput[3];
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    masterConfig.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    masterConfig.accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -148,7 +148,6 @@ bool isCalibrating()
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
-#define RC_EXPO_POWER 3
 
 void calculateSetpointRate(int axis, int16_t rc) {
     float angleRate, rcRate, rcSuperfactor, rcCommandf;
@@ -168,7 +167,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * powerf(rcInput[axis], RC_EXPO_POWER) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcInput[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -213,16 +212,16 @@ void processRcCommand(void)
         if (isRXDataNew) {
             // Set RC refresh rate for sampling and channels to filter
             switch (rxConfig()->rcInterpolation) {
-                case(RC_SMOOTHING_AUTO):
-                    rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
-                    break;
-                case(RC_SMOOTHING_MANUAL):
-                    rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
-                    break;
-                case(RC_SMOOTHING_OFF):
-                case(RC_SMOOTHING_DEFAULT):
-                default:
-                    rxRefreshRate = rxGetRefreshRate();
+            case(RC_SMOOTHING_AUTO):
+                rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
+                break;
+            case(RC_SMOOTHING_MANUAL):
+                rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
+                break;
+            case(RC_SMOOTHING_OFF):
+            case(RC_SMOOTHING_DEFAULT):
+            default:
+                rxRefreshRate = rxGetRefreshRate();
             }
 
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
@@ -291,7 +290,7 @@ void updateRcCommands(void)
                 tmp = 0;
             }
             rcCommand[axis] = tmp;
-        } else if (axis == YAW) {
+        } else {
             if (tmp > rcControlsConfig()->yaw_deadband) {
                 tmp -= rcControlsConfig()->yaw_deadband;
             } else {
@@ -578,11 +577,11 @@ void processRx(timeUs_t currentTimeUs)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(masterConfig.modeActivationConditions);
+    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
 
     if (!cliMode) {
-        updateAdjustmentStates(masterConfig.adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
+        updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
+        processRcAdjustments(currentControlRateProfile, rxConfig());
     }
 
     bool canUseHorizonMode = true;
@@ -680,8 +679,8 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
-        masterConfig.max_angle_inclination,
-        &masterConfig.accelerometerTrims,
+        pidConfig()->max_angle_inclination,
+        &accelerometerConfig()->accelerometerTrims,
         rxConfig()->midrc
     );
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
@@ -694,74 +693,74 @@ void subTaskMainSubprocesses(void)
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
     if (gyro.dev.temperature) {
-        gyro.dev.temperature(&telemTemperature1);
+        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
     }
 
-    #ifdef MAG
-            if (sensors(SENSOR_MAG)) {
-                updateMagHold();
-            }
-    #endif
-
-    #ifdef GTUNE
-            updateGtuneState();
-    #endif
-
-    #if defined(BARO) || defined(SONAR)
-            // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-            updateRcCommands();
-            if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-                if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                    applyAltHold(&masterConfig.airplaneConfig);
-                }
-            }
-    #endif
-
-        // If we're armed, at minimum throttle, and we do arming via the
-        // sticks, do not process yaw input from the rx.  We do this so the
-        // motors do not spin up while we are trying to arm or disarm.
-        // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-        if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
-    #ifndef USE_QUAD_MIXER_ONLY
-    #ifdef USE_SERVOS
-                    && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
-    #endif
-                    && mixerConfig()->mixerMode != MIXER_AIRPLANE
-                    && mixerConfig()->mixerMode != MIXER_FLYING_WING
-    #endif
-        ) {
-            rcCommand[YAW] = 0;
-            setpointRate[YAW] = 0;
+#ifdef MAG
+        if (sensors(SENSOR_MAG)) {
+            updateMagHold();
         }
+#endif
 
-        if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
-        }
+#ifdef GTUNE
+        updateGtuneState();
+#endif
 
-        processRcCommand();
-
-    #ifdef GPS
-        if (sensors(SENSOR_GPS)) {
-            if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
-                updateGpsStateForHomeAndHoldMode();
+#if defined(BARO) || defined(SONAR)
+        // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+        updateRcCommands();
+        if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
+            if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
+                applyAltHold(&masterConfig.airplaneConfig);
             }
         }
-    #endif
+#endif
 
-    #ifdef USE_SDCARD
-        afatfs_poll();
-    #endif
+    // If we're armed, at minimum throttle, and we do arming via the
+    // sticks, do not process yaw input from the rx.  We do this so the
+    // motors do not spin up while we are trying to arm or disarm.
+    // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
+    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
+#ifndef USE_QUAD_MIXER_ONLY
+#ifdef USE_SERVOS
+                && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
+#endif
+                && mixerConfig()->mixerMode != MIXER_AIRPLANE
+                && mixerConfig()->mixerMode != MIXER_FLYING_WING
+#endif
+    ) {
+        rcCommand[YAW] = 0;
+        setpointRate[YAW] = 0;
+    }
 
-    #ifdef BLACKBOX
-        if (!cliMode && feature(FEATURE_BLACKBOX)) {
-            handleBlackbox(startTime);
+    if (throttleCorrectionConfig()->throttle_correction_value && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+        rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
+    }
+
+    processRcCommand();
+
+#ifdef GPS
+    if (sensors(SENSOR_GPS)) {
+        if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
+            updateGpsStateForHomeAndHoldMode();
         }
-    #endif
+    }
+#endif
 
-    #ifdef TRANSPONDER
-        transponderUpdate(startTime);
-    #endif
-        DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+
+#ifdef BLACKBOX
+    if (!cliMode && feature(FEATURE_BLACKBOX)) {
+        handleBlackbox(startTime);
+    }
+#endif
+
+#ifdef TRANSPONDER
+    transponderUpdate(startTime);
+#endif
+    DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
 void subTaskMotorUpdate(void)
@@ -779,9 +778,11 @@ void subTaskMotorUpdate(void)
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
-    servoTable();
-    filterServos();
-    writeServos();
+    if (isMixerUsingServos()) {
+        servoTable();
+        filterServos();
+        writeServos();
+    }
 #endif
 
     if (motorControlEnable) {
@@ -793,7 +794,7 @@ void subTaskMotorUpdate(void)
 uint8_t setPidUpdateCountDown(void)
 {
     if (gyroConfig()->gyro_soft_lpf_hz) {
-        return masterConfig.pid_process_denom - 1;
+        return pidConfig()->pid_process_denom - 1;
     } else {
         return 1;
     }

@@ -32,6 +32,7 @@
 #include "io.h"
 #include "nvic.h"
 #include "inverter.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -179,8 +180,11 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr callback,
 {
     uartPort_t *s = NULL;
 
-    if (USARTx == USART1) {
+    if (false) {
+#ifdef USE_UART1
+    } else if (USARTx == USART1) {
         s = serialUART1(baudRate, mode, options);
+#endif
 #ifdef USE_UART2
     } else if (USARTx == USART2) {
         s = serialUART2(baudRate, mode, options);
@@ -262,6 +266,7 @@ void uartStartTxDMA(uartPort_t *s)
         s->port.txBufferTail = 0;
     }
     s->txDMAEmpty = false;
+    HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
     HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
 }
 

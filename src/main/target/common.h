@@ -25,6 +25,8 @@
 
 #ifdef STM32F7
 #define STM_FAST_TARGET
+#define I2C3_OVERCLOCK true
+#define I2C4_OVERCLOCK true
 #endif
 
 /****************************
@@ -45,6 +47,8 @@
 // Using RX DMA disables the use of receive callbacks
 #define USE_UART1_RX_DMA
 #define USE_UART1_TX_DMA
+
+#define CLI_MINIMAL_VERBOSITY
 #endif
 
 #define SERIAL_RX
@@ -85,6 +89,7 @@
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define TELEMETRY_CRSF
+#define TELEMETRY_SRXL
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define USE_RX_MSP

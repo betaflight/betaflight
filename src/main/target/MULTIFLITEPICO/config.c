@@ -57,14 +57,14 @@ void targetConfiguration(master_t *config)
     config->rcControlsConfig.yaw_deadband = 2;
     config->rcControlsConfig.deadband = 2;
 
-    config->modeActivationConditions[0].modeId          = BOXANGLE;
-    config->modeActivationConditions[0].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
-    config->modeActivationConditions[0].range.startStep = CHANNEL_VALUE_TO_STEP(900);
-    config->modeActivationConditions[0].range.endStep   = CHANNEL_VALUE_TO_STEP(1400);
-    config->modeActivationConditions[1].modeId          = BOXHORIZON;
-    config->modeActivationConditions[1].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
-    config->modeActivationConditions[1].range.startStep = CHANNEL_VALUE_TO_STEP(1425);
-    config->modeActivationConditions[1].range.endStep   = CHANNEL_VALUE_TO_STEP(1575);
+    config->modeActivationProfile.modeActivationConditions[0].modeId          = BOXANGLE;
+    config->modeActivationProfile.modeActivationConditions[0].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    config->modeActivationProfile.modeActivationConditions[0].range.startStep = CHANNEL_VALUE_TO_STEP(900);
+    config->modeActivationProfile.modeActivationConditions[0].range.endStep   = CHANNEL_VALUE_TO_STEP(1400);
+    config->modeActivationProfile.modeActivationConditions[1].modeId          = BOXHORIZON;
+    config->modeActivationProfile.modeActivationConditions[1].auxChannelIndex = AUX1 - NON_AUX_CHANNEL_COUNT;
+    config->modeActivationProfile.modeActivationConditions[1].range.startStep = CHANNEL_VALUE_TO_STEP(1425);
+    config->modeActivationProfile.modeActivationConditions[1].range.endStep   = CHANNEL_VALUE_TO_STEP(1575);
 
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
@@ -72,7 +72,7 @@ void targetConfiguration(master_t *config)
     config->motorConfig.motorPwmRate = 17000;
 
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 1;
+    config->pidConfig.pid_process_denom = 1;
 
     config->profile[0].pidProfile.P8[ROLL] = 70;
     config->profile[0].pidProfile.I8[ROLL] = 62;

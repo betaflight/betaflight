@@ -103,14 +103,12 @@ typedef struct ppmDevice_s {
 
 ppmDevice_t ppmDev;
 
-
 #define PPM_IN_MIN_SYNC_PULSE_US    2700    // microseconds
 #define PPM_IN_MIN_CHANNEL_PULSE_US 750     // microseconds
 #define PPM_IN_MAX_CHANNEL_PULSE_US 2250    // microseconds
 #define PPM_STABLE_FRAMES_REQUIRED_COUNT    25
 #define PPM_IN_MIN_NUM_CHANNELS     4
 #define PPM_IN_MAX_NUM_CHANNELS     PWM_PORTS_OR_PPM_CAPTURE_COUNT
-
 
 bool isPPMDataBeingReceived(void)
 {
@@ -123,11 +121,6 @@ void resetPPMDataReceivedState(void)
 }
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
-
-void pwmRxSetInputFilteringMode(inputFilteringMode_e initialInputFilteringMode)
-{
-    inputFilteringMode = initialInputFilteringMode;
-}
 
 #ifdef DEBUG_PPM_ISR
 typedef enum {
@@ -364,17 +357,17 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
     TIM_ICInit(tim, &TIM_ICInitStructure);
 }
-
 #endif
-
 
 void pwmRxInit(const pwmConfig_t *pwmConfig)
 {
+    inputFilteringMode = pwmConfig->inputFilteringMode;
+
     for (int channel = 0; channel < PWM_INPUT_PORT_COUNT; channel++) {
 
         pwmInputPort_t *port = &pwmInputPorts[channel];
 
-        const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel], TIM_USE_PWM);
+        const timerHardware_t *timer = timerGetByTag(pwmConfig->ioTags[channel], TIM_USE_ANY);
 
         if (!timer) {
             /* TODO: maybe fail here if not enough channels? */
@@ -444,7 +437,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol)
 
     pwmInputPort_t *port = &pwmInputPorts[FIRST_PWM_PORT];
 
-    const timerHardware_t *timer = timerGetByTag(ppmConfig->ioTag, TIM_USE_PPM);
+    const timerHardware_t *timer = timerGetByTag(ppmConfig->ioTag, TIM_USE_ANY);
     if (!timer) {
         /* TODO: fail here? */
         return;

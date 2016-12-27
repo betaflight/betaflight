@@ -24,9 +24,20 @@
 #include "common/maths.h"
 
 #include "drivers/barometer.h"
+#include "drivers/barometer_bmp085.h"
+#include "drivers/barometer_bmp280.h"
+#include "drivers/barometer_fake.h"
+#include "drivers/barometer_ms5611.h"
 #include "drivers/system.h"
 
+#include "fc/runtime_config.h"
+
 #include "sensors/barometer.h"
+#include "sensors/sensors.h"
+
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
 
 baro_t baro;                        // barometer access functions
 
@@ -40,9 +51,75 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 static uint32_t baroPressureSum = 0;
 
-static barometerConfig_t *barometerConfig;
+static const barometerConfig_t *barometerConfig;
 
-void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
+bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
+{
+    // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
+
+    baroSensor_e baroHardware = baroHardwareToUse;
+
+#ifdef USE_BARO_BMP085
+    const bmp085Config_t *bmp085Config = NULL;
+
+#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+    static const bmp085Config_t defaultBMP085Config = {
+        .xclrIO = IO_TAG(BARO_XCLR_PIN),
+        .eocIO = IO_TAG(BARO_EOC_PIN),
+    };
+    bmp085Config = &defaultBMP085Config;
+#endif
+
+#ifdef NAZE
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
+#endif
+
+#endif
+
+    switch (baroHardware) {
+    case BARO_DEFAULT:
+        ; // fallthough
+    case BARO_BMP085:
+#ifdef USE_BARO_BMP085
+        if (bmp085Detect(bmp085Config, dev)) {
+            baroHardware = BARO_BMP085;
+            break;
+        }
+#endif
+        ; // fallthough
+    case BARO_MS5611:
+#ifdef USE_BARO_MS5611
+        if (ms5611Detect(dev)) {
+            baroHardware = BARO_MS5611;
+            break;
+        }
+#endif
+        ; // fallthough
+    case BARO_BMP280:
+#if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
+        if (bmp280Detect(dev)) {
+            baroHardware = BARO_BMP280;
+            break;
+        }
+#endif
+        ; // fallthough
+    case BARO_NONE:
+        baroHardware = BARO_NONE;
+        break;
+    }
+
+    if (baroHardware == BARO_NONE) {
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_BARO] = baroHardware;
+    sensorsSet(SENSOR_BARO);
+    return true;
+}
+
+void useBarometerConfig(const barometerConfig_t *barometerConfigToUse)
 {
     barometerConfig = barometerConfigToUse;
 }

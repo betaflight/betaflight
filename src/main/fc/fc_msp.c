@@ -46,6 +46,7 @@
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "drivers/pwm_output.h"
+#include "drivers/serial_escserial.h"
 
 #include "fc/config.h"
 #include "fc/mw.h"
@@ -182,14 +183,61 @@ typedef enum {
 #define RATEPROFILE_MASK (1 << 7)
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-static void msp4WayIfFn(serialPort_t *serialPort)
+#define ESC_4WAY 0xff
+
+uint8_t escMode;
+uint8_t escPortIndex = 0;
+
+#ifdef USE_ESCSERIAL
+static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
-    // rem: App: Wait at least appx. 500 ms for BLHeli to jump into
-    // bootloader mode before try to connect any ESC
-    // Start to activate here
-    esc4wayProcess(serialPort);
-    // former used MSP uart is still active
-    // proceed as usual with MSP commands
+    escEnablePassthrough(serialPort, escPortIndex, escMode);
+}
+#endif
+
+static void mspFc4waySerialCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessFnPtr *mspPostProcessFn)
+{
+    const unsigned int dataSize = sbufBytesRemaining(src);
+    if (dataSize == 0) {
+        // Legacy format
+
+        escMode = ESC_4WAY;
+    } else {
+        escMode = sbufReadU8(src);
+        escPortIndex = sbufReadU8(src);
+    }
+
+    switch(escMode) {
+    case ESC_4WAY:
+        // get channel number
+        // switch all motor lines HI
+        // reply with the count of ESC found
+        sbufWriteU8(dst, esc4wayInit());
+
+        if (mspPostProcessFn) {
+            *mspPostProcessFn = esc4wayProcess;
+        }
+
+        break;
+#ifdef USE_ESCSERIAL
+    case PROTOCOL_SIMONK:
+    case PROTOCOL_BLHELI:
+    case PROTOCOL_KISS:
+    case PROTOCOL_KISSALL:
+    case PROTOCOL_CASTLE:
+        if (escPortIndex < USABLE_TIMER_CHANNEL_COUNT || (escMode == PROTOCOL_KISS && escPortIndex == 255)) {
+            sbufWriteU8(dst, 1);
+
+            if (mspPostProcessFn) {
+                *mspPostProcessFn = mspEscPassthroughFn;
+            }
+
+            break;
+        }
+#endif
+    default:
+        sbufWriteU8(dst, 0);
+    }
 }
 #endif
 
@@ -214,10 +262,8 @@ static void serializeNames(sbuf_t *dst, const char *s)
 
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
-    uint8_t boxIndex;
-    const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->boxId == activeBoxId) {
             return candidate;
         }
@@ -227,10 +273,8 @@ static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 
 static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
-    uint8_t boxIndex;
-    const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->permanentId == permenantId) {
             return candidate;
         }
@@ -349,9 +393,7 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
     }
 
-    if (feature(FEATURE_OSD)) {
-        activeBoxIds[activeBoxIdCount++] = BOXOSD;
-    }
+    activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
@@ -431,21 +473,24 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
         state = MSP_SDCARD_STATE_FATAL;
     } else {
         switch (afatfs_getFilesystemState()) {
-            case AFATFS_FILESYSTEM_STATE_READY:
-                state = MSP_SDCARD_STATE_READY;
-                break;
-            case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
-                if (sdcard_isInitialized()) {
-                    state = MSP_SDCARD_STATE_FS_INIT;
-                } else {
-                    state = MSP_SDCARD_STATE_CARD_INIT;
-                }
-                break;
-            case AFATFS_FILESYSTEM_STATE_FATAL:
-            case AFATFS_FILESYSTEM_STATE_UNKNOWN:
-            default:
-                state = MSP_SDCARD_STATE_FATAL;
-                break;
+        case AFATFS_FILESYSTEM_STATE_READY:
+            state = MSP_SDCARD_STATE_READY;
+
+            break;
+        case AFATFS_FILESYSTEM_STATE_INITIALIZATION:
+            if (sdcard_isInitialized()) {
+                state = MSP_SDCARD_STATE_FS_INIT;
+            } else {
+                state = MSP_SDCARD_STATE_CARD_INIT;
+            }
+
+            break;
+        case AFATFS_FILESYSTEM_STATE_FATAL:
+        case AFATFS_FILESYSTEM_STATE_UNKNOWN:
+        default:
+            state = MSP_SDCARD_STATE_FATAL;
+
+            break;
         }
     }
 
@@ -606,6 +651,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, sensors(SENSOR_ACC) | sensors(SENSOR_BARO) << 1 | sensors(SENSOR_MAG) << 2 | sensors(SENSOR_GPS) << 3 | sensors(SENSOR_SONAR) << 4);
         sbufWriteU32(dst, packFlightModeFlags());
         sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU16(dst, constrain(averageSystemLoadPercent, 0, 100));
+        sbufWriteU16(dst, 0); // gyro cycle time
         break;
 
     case MSP_RAW_IMU:
@@ -744,7 +791,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
@@ -755,7 +802,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
@@ -855,8 +902,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.pitch);
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.roll);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -880,6 +927,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, batteryConfig()->vbatmincellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatmaxcellvoltage);
         sbufWriteU8(dst, batteryConfig()->vbatwarningcellvoltage);
+        sbufWriteU8(dst, batteryConfig()->batteryMeterType);
         break;
 
     case MSP_CURRENT_METER_CONFIG:
@@ -1090,7 +1138,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, 1);
         } else {
             sbufWriteU8(dst, gyroConfig()->gyro_sync_denom);
-            sbufWriteU8(dst, masterConfig.pid_process_denom);
+            sbufWriteU8(dst, pidConfig()->pid_process_denom);
         }
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
@@ -1135,18 +1183,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             *mspPostProcessFn = mspRebootFn;
         }
         break;
-
-#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
-    case MSP_SET_4WAY_IF:
-        // get channel number
-        // switch all motor lines HI
-        // reply with the count of ESC found
-        sbufWriteU8(dst, esc4wayInit());
-        if (mspPostProcessFn) {
-            *mspPostProcessFn = msp4WayIfFn;
-        }
-        break;
-#endif
 
     default:
         return false;
@@ -1247,8 +1283,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        masterConfig.accelerometerTrims.values.pitch = sbufReadU16(src);
-        masterConfig.accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig()->auto_disarm_delay = sbufReadU8(src);
@@ -1274,7 +1310,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MODE_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             i = sbufReadU8(src);
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1283,7 +1319,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1295,7 +1331,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             i = sbufReadU8(src);
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1378,7 +1414,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_SERVOS
         if (dataSize != 1 + sizeof(servoParam_t)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         i = sbufReadU8(src);
         if (i >= MAX_SUPPORTED_SERVOS) {
@@ -1439,7 +1474,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_ADVANCED_CONFIG:
         gyroConfig()->gyro_sync_denom = sbufReadU8(src);
-        masterConfig.pid_process_denom = sbufReadU8(src);
+        pidConfig()->pid_process_denom = sbufReadU8(src);
         motorConfig()->useUnsyncedPwm = sbufReadU8(src);
 #ifdef USE_DSHOT
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_MAX - 1);
@@ -1465,7 +1500,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         // reinitialize the gyro filters with the new values
         validateAndFixGyroConfig();
-        gyroInit(&masterConfig.gyroConfig);
+        gyroInitFilters();
         // reinitialize the PID filters with the new values
         pidInitFilters(&currentProfile->pidProfile);
         break;
@@ -1532,7 +1567,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_TRANSPONDER_CONFIG:
         if (dataSize != sizeof(masterConfig.transponderData)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             masterConfig.transponderData[i] = sbufReadU8(src);
@@ -1660,6 +1694,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
+        if (dataSize > 4) {
+            batteryConfig()->batteryMeterType = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_CURRENT_METER_CONFIG:
@@ -1836,6 +1873,11 @@ mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostPro
 
     if (mspFcProcessOutCommand(cmdMSP, dst, mspPostProcessFn)) {
         ret = MSP_RESULT_ACK;
+#ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
+    } else if (cmdMSP == MSP_SET_4WAY_IF) {
+        mspFc4waySerialCommand(dst, src, mspPostProcessFn);
+        ret = MSP_RESULT_ACK;
+#endif
 #ifdef GPS
     } else if (cmdMSP == MSP_WP) {
         mspFcWpCommand(dst, src);

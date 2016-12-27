@@ -27,5 +27,5 @@
 void targetConfiguration(master_t *config)
 {
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 1;
+    config->pidConfig.pid_process_denom = 1;
 }

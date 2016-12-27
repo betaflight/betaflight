@@ -55,7 +55,7 @@
 #define EXTERNAL_CONVERSION_MIN_VALUE 1000
 #define EXTERNAL_CONVERSION_MAX_VALUE 2000
 
-uint8_t motorCount;
+static uint8_t motorCount;
 
 int16_t motor[MAX_SUPPORTED_MOTORS];
 int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
@@ -239,7 +239,8 @@ static motorMixer_t *customMixers;
 static uint16_t disarmMotorOutput, motorOutputHigh, motorOutputLow, deadbandMotor3dHigh, deadbandMotor3dLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
-uint8_t getMotorCount() {
+uint8_t getMotorCount()
+{
     return motorCount;
 }
 
@@ -306,13 +307,11 @@ void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
 
 void mixerConfigureOutput(void)
 {
-    int i;
-
     motorCount = 0;
 
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
-        for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+        for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
             if (customMixers[i].throttle == 0.0f)
                 break;
@@ -321,9 +320,12 @@ void mixerConfigureOutput(void)
         }
     } else {
         motorCount = mixers[currentMixerMode].motorCount;
+        if (motorCount > MAX_SUPPORTED_MOTORS) {
+            motorCount = MAX_SUPPORTED_MOTORS;
+        }
         // copy motor-based mixers
         if (mixers[currentMixerMode].motor) {
-            for (i = 0; i < motorCount; i++)
+            for (int i = 0; i < motorCount; i++)
                 currentMixer[i] = mixers[currentMixerMode].motor[i];
         }
     }
@@ -331,7 +333,7 @@ void mixerConfigureOutput(void)
     // in 3D mode, mixer gain has to be halved
     if (feature(FEATURE_3D)) {
         if (motorCount > 1) {
-            for (i = 0; i < motorCount; i++) {
+            for (int i = 0; i < motorCount; i++) {
                 currentMixer[i].pitch *= 0.5f;
                 currentMixer[i].roll *= 0.5f;
                 currentMixer[i].yaw *= 0.5f;
@@ -344,18 +346,18 @@ void mixerConfigureOutput(void)
 
 void mixerLoadMix(int index, motorMixer_t *customMixers)
 {
-    int i;
-
     // we're 1-based
     index++;
     // clear existing
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         customMixers[i].throttle = 0.0f;
+    }
 
     // do we have anything here to begin with?
     if (mixers[index].motor != NULL) {
-        for (i = 0; i < mixers[index].motorCount; i++)
+        for (int i = 0; i < mixers[index].motorCount; i++) {
             customMixers[i] = mixers[index].motor[i];
+        }
     }
 }
 #else
@@ -363,7 +365,7 @@ void mixerConfigureOutput(void)
 {
     motorCount = QUAD_MOTOR_COUNT;
 
-    for (uint8_t i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         currentMixer[i] = mixerQuadX[i];
     }
 
@@ -373,16 +375,18 @@ void mixerConfigureOutput(void)
 
 void mixerResetDisarmedMotors(void)
 {
-    int i;
     // set disarmed motor values
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
         motor_disarmed[i] = disarmMotorOutput;
+    }
 }
 
 void writeMotors(void)
 {
-    for (uint8_t i = 0; i < motorCount; i++) {
-        pwmWriteMotor(i, motor[i]);
+    if (pwmAreMotorsEnabled()) {
+        for (int i = 0; i < motorCount; i++) {
+            pwmWriteMotor(i, motor[i]);
+        }
     }
 
     pwmCompleteMotorUpdate(motorCount);
@@ -391,7 +395,7 @@ void writeMotors(void)
 static void writeAllMotors(int16_t mc)
 {
     // Sends commands to all motors
-    for (uint8_t i = 0; i < motorCount; i++) {
+    for (int i = 0; i < motorCount; i++) {
         motor[i] = mc;
     }
 
@@ -413,13 +417,9 @@ void stopPwmAllMotors(void)
 
 void mixTable(pidProfile_t *pidProfile)
 {
-    uint32_t i = 0;
-    float vbatCompensationFactor = 1;
-
     // Scale roll/pitch/yaw uniformly to fit within throttle range
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
-    float motorMix[MAX_SUPPORTED_MOTORS];
-    float motorOutputRange = 0, throttle = 0, currentThrottleInputRange = 0, motorMixRange = 0, motorMixMax = 0, motorMixMin = 0;
+    float throttle = 0, currentThrottleInputRange = 0;
     uint16_t motorOutputMin, motorOutputMax;
     static uint16_t throttlePrevious = 0;   // Store the last throttle direction for deadband transitions
     bool mixerInversion = false;
@@ -461,33 +461,41 @@ void mixTable(pidProfile_t *pidProfile)
     }
 
     throttle = constrainf(throttle / currentThrottleInputRange, 0.0f, 1.0f);
-    motorOutputRange = motorOutputMax - motorOutputMin;
+    const float motorOutputRange = motorOutputMax - motorOutputMin;
 
     float scaledAxisPIDf[3];
     // Limit the PIDsum
-    for (int axis = 0; axis < 3; axis++)
+    for (int axis = 0; axis < 3; axis++) {
         scaledAxisPIDf[axis] = constrainf(axisPIDf[axis] / PID_MIXER_SCALING, -pidProfile->pidSumLimit, pidProfile->pidSumLimit);
-
-    // Calculate voltage compensation
-    if (batteryConfig && pidProfile->vbatPidCompensation) vbatCompensationFactor = calculateVbatPidCompensation();
-
-    // Find roll/pitch/yaw desired output
-    for (i = 0; i < motorCount; i++) {
-        motorMix[i] =
-            scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
-            scaledAxisPIDf[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_motor_direction * scaledAxisPIDf[YAW] * currentMixer[i].yaw;
-
-        if (vbatCompensationFactor > 1.0f) motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
-
-        if (motorMix[i] > motorMixMax) motorMixMax = motorMix[i];
-        if (motorMix[i] < motorMixMin) motorMixMin = motorMix[i];
     }
 
-    motorMixRange = motorMixMax - motorMixMin;
+    // Calculate voltage compensation
+    const float vbatCompensationFactor = (batteryConfig && pidProfile->vbatPidCompensation)  ? calculateVbatPidCompensation() : 1.0f;
+
+    // Find roll/pitch/yaw desired output
+    float motorMix[MAX_SUPPORTED_MOTORS];
+    float motorMixMax = 0, motorMixMin = 0;
+    for (int i = 0; i < motorCount; i++) {
+        motorMix[i] =
+            scaledAxisPIDf[PITCH] * currentMixer[i].pitch +
+            scaledAxisPIDf[ROLL]  * currentMixer[i].roll +
+            scaledAxisPIDf[YAW]   * currentMixer[i].yaw * (-mixerConfig->yaw_motor_direction);
+
+        if (vbatCompensationFactor > 1.0f) {
+            motorMix[i] *= vbatCompensationFactor;  // Add voltage compensation
+        }
+
+        if (motorMix[i] > motorMixMax) {
+            motorMixMax = motorMix[i];
+        } else if (motorMix[i] < motorMixMin) {
+            motorMixMin = motorMix[i];
+        }
+    }
+
+    const float motorMixRange = motorMixMax - motorMixMin;
 
     if (motorMixRange > 1.0f) {
-        for (i = 0; i < motorCount; i++) {
+        for (int i = 0; i < motorCount; i++) {
             motorMix[i] /= motorMixRange;
         }
         // Get the maximum correction by setting offset to center
@@ -499,6 +507,7 @@ void mixTable(pidProfile_t *pidProfile)
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
     // roll/pitch/yaw. This could move throttle down, but also up for those low throttle flips.
+    uint32_t i = 0;
     for (i = 0; i < motorCount; i++) {
         motor[i] = motorOutputMin + lrintf(motorOutputRange * (motorMix[i] + (throttle * currentMixer[i].throttle)));
 

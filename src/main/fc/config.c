@@ -41,6 +41,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/rx_spi.h"
 #include "drivers/serial.h"
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 #include "drivers/vcd.h"
 #include "drivers/max7456.h"
@@ -274,9 +275,19 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
     motorConfig->useUnsyncedPwm = true;
 #else
-    motorConfig->minthrottle = 1070;
-    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-    motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+#ifdef BRUSHED_ESC_AUTODETECT
+    if (hardwareMotorType == MOTOR_BRUSHED) {
+        motorConfig->minthrottle = 1000;
+        motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
+        motorConfig->useUnsyncedPwm = true;
+    } else
+#endif
+    {
+        motorConfig->minthrottle = 1070;
+        motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfig->motorPwmProtocol = PWM_TYPE_ONESHOT125;
+    }
 #endif
     motorConfig->maxthrottle = 2000;
     motorConfig->mincommand = 1000;
@@ -396,6 +407,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 1;
+    telemetryConfig->sportHalfDuplex = 1;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -490,6 +502,46 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
+{
+    for (int i = 0; i < LED_NUMBER; i++) {
+        statusLedConfig->ledTags[i] = IO_TAG_NONE;
+    }
+
+#ifdef LED0
+    statusLedConfig->ledTags[0] = IO_TAG(LED0);
+#endif
+#ifdef LED1
+    statusLedConfig->ledTags[1] = IO_TAG(LED1);
+#endif
+#ifdef LED2
+    statusLedConfig->ledTags[2] = IO_TAG(LED2);
+#endif
+
+    statusLedConfig->polarity = 0
+#ifdef LED0_INVERTED
+    | BIT(0)
+#endif
+#ifdef LED1_INVERTED
+    | BIT(1)
+#endif
+#ifdef LED2_INVERTED
+    | BIT(2)
+#endif
+    ;    
+}
+
+#ifdef USE_FLASHFS
+void resetFlashConfig(flashConfig_t *flashConfig)
+{
+#ifdef M25P16_CS_PIN
+    flashConfig->csTag = IO_TAG(M25P16_CS_PIN);
+#else
+    flashConfig->csTag = IO_TAG_NONE;
+#endif
+}
+#endif
+
 #ifdef USE_RSSI_SOFTPWM
 void resetRssiSoftPwmConfig(rssiSoftPwmConfig_t *rssiSoftPwmConfig)
 {
@@ -575,14 +627,15 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
     config->gyroConfig.gyro_sync_denom = 8;
-    config->pid_process_denom = 1;
+    config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
     config->gyroConfig.gyro_sync_denom = 1;
-    config->pid_process_denom = 4;
+    config->pidConfig.pid_process_denom = 4;
 #else
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pid_process_denom = 2;
+    config->pidConfig.pid_process_denom = 2;
 #endif
+    config->pidConfig.max_angle_inclination = 700;    // 70 degrees
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
     config->gyroConfig.gyro_soft_lpf_hz = 90;
     config->gyroConfig.gyro_soft_notch_hz_1 = 400;
@@ -602,7 +655,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
     config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
-    config->max_angle_inclination = 700;    // 70 degrees
     config->rcControlsConfig.yaw_control_direction = 1;
     config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
@@ -671,7 +723,9 @@ void createDefaultConfig(master_t *config)
 
     resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 
-    config->inputFilteringMode = INPUT_FILTERING_DISABLED;
+#ifdef USE_PWM
+    config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+#endif
 
     config->armingConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     config->armingConfig.disarm_kill_switch = 1;
@@ -705,7 +759,7 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerTrims);
+    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
 
     config->compassConfig.mag_declination = 0;
     config->accelerometerConfig.acc_lpf_hz = 10.0f;
@@ -801,6 +855,12 @@ void createDefaultConfig(master_t *config)
     }
 #endif
 
+#ifdef USE_FLASHFS
+    resetFlashConfig(&config->flashConfig);
+#endif
+
+    resetStatusLedConfig(&config->statusLedConfig);
+
 #ifdef USE_RSSI_SOFTPWM
     resetRssiSoftPwmConfig(&config->rssiSoftPwmConfig);
 #endif
@@ -838,7 +898,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        masterConfig.modeActivationConditions,
+        modeActivationProfile()->modeActivationConditions,
         &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
@@ -1010,7 +1070,7 @@ void validateAndFixGyroConfig(void)
     }
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        masterConfig.pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfig()->gyro_sync_denom = 1;
     }
 }

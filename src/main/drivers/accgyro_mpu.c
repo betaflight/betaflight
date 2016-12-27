@@ -75,7 +75,7 @@ static const extiConfig_t *mpuIntExtiConfig = NULL;
 
 #define MPU_INQUIRY_MASK   0x7E
 
-mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse)
+mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse)
 {
     memset(&mpuDetectionResult, 0, sizeof(mpuDetectionResult));
     memset(&mpuConfiguration, 0, sizeof(mpuConfiguration));
@@ -221,21 +221,13 @@ static void mpu6050FindRevision(void)
     }
 }
 
-typedef struct mpuIntRec_s {
-   extiCallbackRec_t exti;
-   gyroDev_t *gyro;
-} mpuIntRec_t;
-
-mpuIntRec_t mpuIntRec;
-
 /*
  * Gyro interrupt service routine
  */
 #if defined(MPU_INT_EXTI)
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
-    mpuIntRec_t *rec = container_of(cb, mpuIntRec_t, exti);
-    gyroDev_t *gyro = rec->gyro;
+    gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
@@ -250,7 +242,6 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 
 static void mpuIntExtiInit(gyroDev_t *gyro)
 {
-    mpuIntRec.gyro = gyro;
 #if defined(MPU_INT_EXTI)
     static bool mpuExtiInitDone = false;
 
@@ -269,19 +260,21 @@ static void mpuIntExtiInit(gyroDev_t *gyro)
 
 #if defined (STM32F7)
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
-    EXTIHandlerInit(&mpuIntRec.exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntRec.exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, IO_CONFIG(GPIO_MODE_INPUT,0,GPIO_NOPULL));   // TODO - maybe pullup / pulldown ?
 #else
 
     IOInit(mpuIntIO, OWNER_MPU_EXTI, 0);
     IOConfigGPIO(mpuIntIO, IOCFG_IN_FLOATING);   // TODO - maybe pullup / pulldown ?
 
-    EXTIHandlerInit(&mpuIntRec.exti, mpuIntExtiHandler);
-    EXTIConfig(mpuIntIO, &mpuIntRec.exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
+    EXTIHandlerInit(&gyro->exti, mpuIntExtiHandler);
+    EXTIConfig(mpuIntIO, &gyro->exti, NVIC_PRIO_MPU_INT_EXTI, EXTI_Trigger_Rising);
     EXTIEnable(mpuIntIO, true);
 #endif
 
     mpuExtiInitDone = true;
+#else
+    UNUSED(gyro);
 #endif
 }
 
@@ -297,7 +290,7 @@ static bool mpuWriteRegisterI2C(uint8_t reg, uint8_t data)
     return ack;
 }
 
-bool mpuAccRead(int16_t *accData)
+bool mpuAccRead(accDev_t *acc)
 {
     uint8_t data[6];
 
@@ -306,9 +299,9 @@ bool mpuAccRead(int16_t *accData)
         return false;
     }
 
-    accData[0] = (int16_t)((data[0] << 8) | data[1]);
-    accData[1] = (int16_t)((data[2] << 8) | data[3]);
-    accData[2] = (int16_t)((data[4] << 8) | data[5]);
+    acc->ADCRaw[X] = (int16_t)((data[0] << 8) | data[1]);
+    acc->ADCRaw[Y] = (int16_t)((data[2] << 8) | data[3]);
+    acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
 }
@@ -334,7 +327,7 @@ void mpuGyroInit(gyroDev_t *gyro)
     mpuIntExtiInit(gyro);
 }
 
-bool checkMPUDataReady(gyroDev_t* gyro)
+bool mpuCheckDataReady(gyroDev_t* gyro)
 {
     bool ret;
     if (gyro->dataReady) {

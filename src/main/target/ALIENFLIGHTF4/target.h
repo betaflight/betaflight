@@ -21,7 +21,7 @@
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PC13
-#define MOTOR_PIN               PB8
+#define BRUSHED_ESC_AUTODETECT
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -69,14 +69,14 @@
 
 //#define SDCARD_DETECT_INVERTED
 
-#define SDCARD_DETECT_PIN               PB10
+#define SDCARD_DETECT_PIN               PB11
 #define SDCARD_DETECT_EXTI_LINE         EXTI_Line10
 #define SDCARD_DETECT_EXTI_PIN_SOURCE   EXTI_PinSource10
 #define SDCARD_DETECT_EXTI_PORT_SOURCE  EXTI_PortSourceGPIOB
 #define SDCARD_DETECT_EXTI_IRQn         EXTI15_10_IRQn
 
 #define SDCARD_SPI_INSTANCE             SPI2
-#define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
+#define SDCARD_SPI_CS_PIN               PB10
 
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
@@ -151,7 +151,7 @@
 #define EXTERNAL1_ADC_GPIO_PIN  PC5
 
 // LED strip configuration using RC5 pin.
-//#define LED_STRIP
+#define LED_STRIP
 
 #define SPEKTRUM_BIND
 // USART2, PA3

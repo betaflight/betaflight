@@ -79,7 +79,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #define I2C3_SCL PA8
 #endif
 #ifndef I2C3_SDA
-#define I2C3_SDA PB4
+#define I2C3_SDA PC9
 #endif
 #endif
 

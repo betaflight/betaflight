@@ -20,6 +20,7 @@
 
 #include <platform.h>
 
+#include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
 
 #include "fc/rc_controls.h"
@@ -33,7 +34,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
-#include "hardware_revision.h"
+#define BRUSHED_MOTORS_PWM_RATE 32000           // 32kHz
 
 // alternative defaults settings for AlienFlight targets
 void targetConfiguration(master_t *config)
@@ -42,10 +43,7 @@ void targetConfiguration(master_t *config)
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
-        config->motorConfig.minthrottle = 1000;
-        config->motorConfig.motorPwmRate = 32000;
-        config->motorConfig.motorPwmProtocol = PWM_TYPE_BRUSHED;
-        config->motorConfig.useUnsyncedPwm = true;
+        config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
     }
 
     config->profile[0].pidProfile.P8[ROLL] = 90;

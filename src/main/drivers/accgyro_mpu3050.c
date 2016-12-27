@@ -21,6 +21,7 @@
 #include "platform.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "system.h"
 #include "exti.h"
@@ -46,25 +47,6 @@
 #define MPU3050_USER_RESET      0x01
 #define MPU3050_CLK_SEL_PLL_GX  0x01
 
-static void mpu3050Init(gyroDev_t *gyro);
-static bool mpu3050ReadTemp(int16_t *tempData);
-
-bool mpu3050Detect(gyroDev_t *gyro)
-{
-    if (mpuDetectionResult.sensor != MPU_3050) {
-        return false;
-    }
-    gyro->init = mpu3050Init;
-    gyro->read = mpuGyroRead;
-    gyro->temperature = mpu3050ReadTemp;
-    gyro->intStatus = checkMPUDataReady;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
 static void mpu3050Init(gyroDev_t *gyro)
 {
     bool ack;
@@ -81,14 +63,31 @@ static void mpu3050Init(gyroDev_t *gyro)
     mpuConfiguration.write(MPU3050_PWR_MGM, MPU3050_CLK_SEL_PLL_GX);
 }
 
-static bool mpu3050ReadTemp(int16_t *tempData)
+static bool mpu3050ReadTemperature(gyroDev_t *gyro, int16_t *tempData)
 {
+    UNUSED(gyro);
     uint8_t buf[2];
     if (!mpuConfiguration.read(MPU3050_TEMP_OUT, 2, buf)) {
         return false;
     }
 
     *tempData = 35 + ((int32_t)(buf[0] << 8 | buf[1]) + 13200) / 280;
+
+    return true;
+}
+
+bool mpu3050Detect(gyroDev_t *gyro)
+{
+    if (mpuDetectionResult.sensor != MPU_3050) {
+        return false;
+    }
+    gyro->init = mpu3050Init;
+    gyro->read = mpuGyroRead;
+    gyro->temperature = mpu3050ReadTemperature;
+    gyro->intStatus = mpuCheckDataReady;
+
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = 1.0f / 16.4f;
 
     return true;
 }
