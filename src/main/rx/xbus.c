@@ -227,14 +227,14 @@ static void xBusDataReceive(uint16_t c)
     }
 
     // Check if we shall start a frame?
- if (xBusFramePosition == 0)	{
-   	if (c == XBUS_START_OF_FRAME_BYTE_A1) {
-   		xBusDataIncoming = true;
-   		xBusFrameLength = XBUS_FRAME_SIZE_A1;	//decrease framesize (when receiver change, otherwise board must reboot)
-   	}   	else if (c == XBUS_START_OF_FRAME_BYTE_A2) {//16channel packet
+    if (xBusFramePosition == 0)	{
+   	    if (c == XBUS_START_OF_FRAME_BYTE_A1) {
+   		    xBusDataIncoming = true;
+   		    xBusFrameLength = XBUS_FRAME_SIZE_A1;	//decrease framesize (when receiver change, otherwise board must reboot)
+   	    } else if (c == XBUS_START_OF_FRAME_BYTE_A2) {//16channel packet
     		xBusDataIncoming = true;
     		xBusFrameLength = XBUS_FRAME_SIZE_A2;	//increase framesize
-   	}
+   	    }
     }
 
     // Only do this if we are receiving to a frame
