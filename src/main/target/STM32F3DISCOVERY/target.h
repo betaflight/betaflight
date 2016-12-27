@@ -176,6 +176,28 @@
 
 #define USE_ESC_SENSOR
 
+#define LED_STRIP
+
+#define USE_RX_SPI
+#define RX_SPI_INSTANCE         SPI1
+#define USE_RX_CC2500
+#define USE_RX_FRSKY
+
+#define RX_NSS_PIN              PB9
+#define RX_SW_CRX_PIN           PB10
+#define RX_SW_CTX_PIN           PB11
+#define RX_ANT_SW_CTX_PIN       PB12
+#define RX_ANT_SW_CRX_PIN       PB13
+#define RX_CC2500_GDO2_PIN      PB14
+
+#define RX_SW_CRX_GPIO_CLK_PERIPHERAL       RCC_APB2Periph_GPIOB
+#define RX_SW_CTX_GPIO_CLK_PERIPHERAL       RCC_APB2Periph_GPIOB
+#define RX_ANT_SW_CRX_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOB
+#define RX_ANT_SW_CTX_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOB
+#define RX_CC2500_GDO2_GPIO_CLK_PERIPHERAL  RCC_APB2Periph_GPIOB
+
+#define SPEKTRUM_BIND_PIN       PA3 // USART2, PA3
+
 #define SONAR
 #define SONAR_TRIGGER_PIN       PB0
 #define SONAR_ECHO_PIN          PB1
