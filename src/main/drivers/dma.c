@@ -114,8 +114,17 @@ void dmaSetHandler(dmaChannel_t* channel, dmaCallbackHandler_t* handler, uint8_t
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
         NVIC_Init(&NVIC_InitStructure);
     } else {
-        handler->next = channel->handler;
-        channel->handler = handler;
+        bool alreadyAdded = false;
+        dmaCallbackHandler_t* candidate = channel->handler;
+        while (candidate && !alreadyAdded) {
+            alreadyAdded = (candidate == handler);
+            candidate = handler->next;
+        }
+
+        if (!alreadyAdded) {
+            handler->next = channel->handler;
+            channel->handler = handler;
+        }
     }
 }
 
