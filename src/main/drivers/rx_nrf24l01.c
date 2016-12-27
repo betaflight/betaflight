@@ -98,7 +98,7 @@ uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length)
 /*
  * Empty the transmit FIFO buffer.
  */
-void NRF24L01_FlushTx()
+void NRF24L01_FlushTx(void)
 {
     rxSpiWriteByte(FLUSH_TX);
 }
@@ -106,7 +106,7 @@ void NRF24L01_FlushTx()
 /*
  * Empty the receive FIFO buffer.
  */
-void NRF24L01_FlushRx()
+void NRF24L01_FlushRx(void)
 {
     rxSpiWriteByte(FLUSH_RX);
 }
