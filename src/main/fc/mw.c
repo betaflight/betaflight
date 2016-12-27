@@ -198,7 +198,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 

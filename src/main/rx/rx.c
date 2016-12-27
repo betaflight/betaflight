@@ -461,11 +461,6 @@ static uint16_t getRxfailValue(uint8_t channel)
     const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
     uint8_t mode = channelFailsafeConfiguration->mode;
 
-    // force auto mode to prevent fly away when failsafe stage 2 is disabled
-    if ( channel < NON_AUX_CHANNEL_COUNT && (!feature(FEATURE_FAILSAFE)) ) {
-        mode = RX_FAILSAFE_MODE_AUTO;
-    }
-
     switch(mode) {
         case RX_FAILSAFE_MODE_AUTO:
             switch (channel) {
