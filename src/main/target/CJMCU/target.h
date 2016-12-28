@@ -60,9 +60,6 @@
 #define RX_SPI_INSTANCE         SPI1
 
 // Nordic Semiconductor uses 'CSN', STM uses 'NSS'
-#define RX_CE_GPIO_CLK_PERIPHERAL    RCC_APB2Periph_GPIOA
-#define RX_NSS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
-#define RX_IRQ_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOA
 #define RX_CE_PIN               PA4
 #define RX_NSS_PIN              PA11
 #define RX_SCK_PIN              PA5
