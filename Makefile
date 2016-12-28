@@ -77,6 +77,9 @@ LINKER_DIR      = $(ROOT)/src/main/target/link
 # import macros common to all supported build systems
 include $(ROOT)/make/system-id.mk
 
+# developer preferences, edit these at will, they'll be gitignored
+include $(ROOT)/make/local.mk
+ 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT)/tools
 BUILD_DIR := $(ROOT)/build
