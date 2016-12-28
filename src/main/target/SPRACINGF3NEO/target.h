@@ -104,8 +104,11 @@
 #define VTX
 #define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
-
 #define RTC6705_POWER_PIN       PC3
+
+#define USE_RTC6705_CLK_HACK
+#define RTC6705_CLK_GPIO        GPIOB
+#define RTC6705_CLK_PIN         GPIO_Pin_3
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
