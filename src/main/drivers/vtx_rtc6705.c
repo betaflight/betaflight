@@ -27,7 +27,7 @@
 
 #include "platform.h"
 
-#ifdef VTX
+#if defined(VTX_RTC6705) && !defined(VTX_RTC6705SOFTSPI)
 
 #include "common/maths.h"
 
@@ -84,15 +84,19 @@
 #define RTC6705_SET_WRITE 0x11 //10001b to write to register
 #define RTC6705_SET_DIVMULT 1000000 //Division value (to fit into a uint32_t) (Hz to MHz)
 
+#ifdef RTC6705_POWER_PIN
 static IO_t vtxPowerPin     = IO_NONE;
+#endif
 static IO_t vtxCSPin        = IO_NONE;
 
-#define DISABLE_RTC6705 IOHi(vtxCSPin)
+#define DISABLE_RTC6705()   IOHi(vtxCSPin)
+
 #ifdef USE_RTC6705_CLK_HACK
+static IO_t vtxCLKPin       = IO_NONE;
 // HACK for missing pull up on CLK line - drive the CLK high *before* enabling the CS pin.
-#define ENABLE_RTC6705  {GPIO_SetBits(RTC6705_CLK_GPIO, RTC6705_CLK_PIN); delayMicroseconds(5); IOLo(vtxCSPin); }
+#define ENABLE_RTC6705()    {IOHi(vtxCLKPin); delayMicroseconds(5); IOLo(vtxCSPin); }
 #else
-#define ENABLE_RTC6705  IOLo(vtxCSPin)
+#define ENABLE_RTC6705()    IOLo(vtxCSPin)
 #endif
 
 #define DP_5G_MASK          0x7000 // b111000000000000
@@ -104,8 +108,11 @@ static IO_t vtxCSPin        = IO_NONE;
 
 #define PA_CONTROL_DEFAULT  0x4FBD
 
-#define ENABLE_VTX_POWER       IOLo(vtxPowerPin)
-#define DISABLE_VTX_POWER      IOHi(vtxPowerPin)
+#define RTC6705_RW_CONTROL_BIT      (1 << 4)
+#define RTC6705_ADDRESS             (0x07)
+
+#define ENABLE_VTX_POWER()          IOLo(vtxPowerPin)
+#define DISABLE_VTX_POWER()         IOHi(vtxPowerPin)
 
 
 // Define variables
@@ -138,25 +145,29 @@ static uint32_t reverse32(uint32_t in)
  * Start chip if available
  */
 
-void rtc6705Init(void)
+void rtc6705IOInit(void)
 {
 #ifdef RTC6705_POWER_PIN
+
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
-    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
 
-    ENABLE_VTX_POWER;
+    DISABLE_VTX_POWER();
+    IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
+#endif
+
+#ifdef USE_RTC6705_CLK_HACK
+    vtxCLKPin = IOGetByTag(IO_TAG(RTC6705_CLK_PIN));
+    // we assume the CLK pin will have been initialised by the SPI code.
 #endif
 
     vtxCSPin = IOGetByTag(IO_TAG(RTC6705_CS_PIN));
     IOInit(vtxCSPin, OWNER_VTX, 0);
 
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
     // GPIO bit is enabled so here so the output is not pulled low when the GPIO is set in output mode.
     // Note: It's critical to ensure that incorrect signals are not sent to the VTX.
     IOConfigGPIO(vtxCSPin, IOCFG_OUT_PP);
-
-    delay(RTC6705_BOOT_DELAY);
 }
 
 /**
@@ -168,7 +179,7 @@ static void rtc6705Transfer(uint32_t command)
 {
     command = reverse32(command);
 
-    ENABLE_RTC6705;
+    ENABLE_RTC6705();
 
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 24) & 0xFF);
     spiTransferByte(RTC6705_SPI_INSTANCE, (command >> 16) & 0xFF);
@@ -177,7 +188,7 @@ static void rtc6705Transfer(uint32_t command)
 
     delayMicroseconds(2);
 
-    DISABLE_RTC6705;
+    DISABLE_RTC6705();
 
     delayMicroseconds(2);
 }
@@ -185,7 +196,7 @@ static void rtc6705Transfer(uint32_t command)
 /**
  * Set a band and channel
  */
-void rtc6705SetChannel(uint8_t band, uint8_t channel)
+void rtc6705SetBandAndChannel(uint8_t band, uint8_t channel)
 {
     band = constrain(band, 0, RTC6705_BAND_COUNT - 1);
     channel = constrain(channel, 0, RTC6705_CHANNEL_COUNT - 1);
@@ -200,14 +211,14 @@ void rtc6705SetChannel(uint8_t band, uint8_t channel)
  * Set a freq in mhz
  * Formula derived from datasheet
  */
-void rtc6705SetFreq(uint16_t freq)
+void rtc6705SetFreq(uint16_t frequency)
 {
-    freq = constrain(freq, RTC6705_FREQ_MIN, RTC6705_FREQ_MAX);
+    frequency = constrain(frequency, RTC6705_FREQ_MIN, RTC6705_FREQ_MAX);
 
     uint32_t val_hex = 0;
 
-    uint32_t val_a = ((((uint64_t)freq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
-    uint32_t val_n = (((uint64_t)freq*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
+    uint32_t val_a = ((((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) % RTC6705_SET_FDIV) / RTC6705_SET_NDIV; //Casts required to make sure correct math (large numbers)
+    uint32_t val_n = (((uint64_t)frequency*(uint64_t)RTC6705_SET_DIVMULT*(uint64_t)RTC6705_SET_R)/(uint64_t)RTC6705_SET_DIVMULT) / RTC6705_SET_FDIV; //Casts required to make sure correct math (large numbers)
 
     val_hex |= RTC6705_SET_WRITE;
     val_hex |= (val_a << 5);
@@ -222,10 +233,12 @@ void rtc6705SetFreq(uint16_t freq)
 
 void rtc6705SetRFPower(uint8_t rf_power)
 {
+    rf_power = constrain(rf_power, 0, RTC6705_RF_POWER_COUNT - 1);
+
     spiSetDivisor(RTC6705_SPI_INSTANCE, SPI_CLOCK_SLOW);
 
-    uint32_t val_hex = 0x10; // write
-    val_hex |= 7; // address
+    uint32_t val_hex = RTC6705_RW_CONTROL_BIT; // write
+    val_hex |= RTC6705_ADDRESS; // address
     uint32_t data = rf_power == 0 ? (PA_CONTROL_DEFAULT | PD_Q5G_MASK) & (~(PA5G_PW_MASK | PA5G_BS_MASK)) : PA_CONTROL_DEFAULT;
     val_hex |= data << 5; // 4 address bits and 1 rw bit.
 
@@ -235,14 +248,14 @@ void rtc6705SetRFPower(uint8_t rf_power)
 void rtc6705Disable(void)
 {
 #ifdef RTC6705_POWER_PIN
-    DISABLE_VTX_POWER;
+    DISABLE_VTX_POWER();
 #endif
 }
 
 void rtc6705Enable(void)
 {
 #ifdef RTC6705_POWER_PIN
-    ENABLE_VTX_POWER;
+    ENABLE_VTX_POWER();
 #endif
 }
 

@@ -116,7 +116,8 @@
 #define SDCARD_DMA_CHANNEL                  DMA_Channel_0
 
 // *************** RTC6705 *************************
-#define USE_RTC6705
+#define VTX_RTC6705
+#define VTX_RTC6705SOFTSPI
 #define RTC6705_SPILE_PIN       PB3
 #define RTC6705_SPICLK_PIN      PB4
 #define RTC6705_SPIDATA_PIN     PB5
@@ -127,7 +128,7 @@
 #define RSSI_ADC_PIN            PC1
 
 // *************** FEATURES ************************
-#define DEFAULT_FEATURES        (FEATURE_OSD | FEATURE_VTX)
+#define DEFAULT_FEATURES        (FEATURE_OSD)
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART3

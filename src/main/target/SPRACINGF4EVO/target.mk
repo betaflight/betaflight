@@ -9,10 +9,6 @@ TARGET_SRC = \
             drivers/compass/compass_ak8975.c \
             drivers/compass/compass_hmc5883l.c \
             drivers/max7456.c \
-            drivers/transponder_ir.c \
-            drivers/vtx_rtc6705.c \
-            io/osd.c \
-            io/transponder_ir.c \
-            io/vtx.c
+            drivers/vtx_rtc6705.c
 
 

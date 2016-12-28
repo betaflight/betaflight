@@ -45,7 +45,7 @@
 #include "io/gps.h"
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "io/vtx.h"
+#include "io/vtx_control.h"
 #include "io/dashboard.h"
 
 #include "sensors/barometer.h"
@@ -59,7 +59,6 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/failsafe.h"
-
 
 static pidProfile_t *pidProfile;
 
@@ -294,7 +293,7 @@ void processRcStickPositions(throttleStatus_e throttleStatus)
     }
 #endif
 
-#ifdef VTX
+#ifdef VTX_CONTROL
     if (rcSticks ==  THR_HI + YAW_LO + PIT_CE + ROL_HI) {
         vtxIncrementBand();
     }

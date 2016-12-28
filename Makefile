@@ -672,6 +672,7 @@ COMMON_SRC = \
             drivers/bus_i2c_soft.c \
             drivers/bus_spi.c \
             drivers/bus_spi_soft.c \
+            drivers/buttons.c \
             drivers/display.c \
             drivers/exti.c \
             drivers/io.c \
@@ -763,7 +764,6 @@ FC_SRC = \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c \
             common/colorconversion.c \
             common/gps_conversion.c \
             drivers/display_ug2864hsweg01.c \
@@ -794,9 +794,10 @@ FC_SRC = \
             telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx_string.c \
+            io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c \
-            io/vtx.c
+            io/vtx_control.c
             
 COMMON_DEVICE_SRC = \
             $(CMSIS_SRC) \
@@ -896,7 +897,7 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c \
+            io/vtx_rtc6705.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
 endif #F3
