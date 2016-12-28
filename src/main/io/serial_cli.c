@@ -2374,26 +2374,26 @@ static void cliFlashRead(char *cmdline)
 static void printVtx(uint8_t dumpMask, const master_t *defaultConfig)
 {
     // print out vtx channel settings
-    vtxChannelActivationCondition_t *cac;
-    vtxChannelActivationCondition_t *cacDefault;
-    bool equalsDefault;
+    const char *format = "vtx %u %u %u %u %u %u\r\n";
+    bool equalsDefault = true;
     for (uint32_t i = 0; i < MAX_CHANNEL_ACTIVATION_CONDITION_COUNT; i++) {
-        cac = &masterConfig.vtxChannelActivationConditions[i];
-        cacDefault = &defaultConfig->vtxChannelActivationConditions[i];
-        equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
-            && cac->band == cacDefault->band
-            && cac->channel == cacDefault->channel
-            && cac->range.startStep == cacDefault->range.startStep
-            && cac->range.endStep == cacDefault->range.endStep;
-        const char *format = "vtx %u %u %u %u %u %u\r\n";
-        cliDefaultPrintf(dumpMask, equalsDefault, format,
-            i,
-            cacDefault->auxChannelIndex,
-            cacDefault->band,
-            cacDefault->channel,
-            MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.startStep),
-            MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.endStep)
-        );
+        const vtxChannelActivationCondition_t *cac = &masterConfig.vtxChannelActivationConditions[i];
+        if (defaultConfig) {
+            const vtxChannelActivationCondition_t *cacDefault = &defaultConfig->vtxChannelActivationConditions[i];
+            equalsDefault = cac->auxChannelIndex == cacDefault->auxChannelIndex
+                && cac->band == cacDefault->band
+                && cac->channel == cacDefault->channel
+                && cac->range.startStep == cacDefault->range.startStep
+                && cac->range.endStep == cacDefault->range.endStep;
+            cliDefaultPrintf(dumpMask, equalsDefault, format,
+                i,
+                cacDefault->auxChannelIndex,
+                cacDefault->band,
+                cacDefault->channel,
+                MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.startStep),
+                MODE_STEP_TO_CHANNEL_VALUE(cacDefault->range.endStep)
+            );
+        }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
             cac->auxChannelIndex,
