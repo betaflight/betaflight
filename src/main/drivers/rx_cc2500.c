@@ -36,45 +36,34 @@
 #include "system.h"
 #include "bus_spi.h"
 #include "io.h"
+#include "io_impl.h"
 #include "rx_spi.h"
 #include "rx_cc2500.h"
 
 static uint8_t cc25xx_current_antenna;
 
-#define CC25XX_RX_HI()       {IOHi(IOGetByTag(IO_TAG(RX_SW_CRX_PIN)));}
-#define CC25XX_RX_LO()       {IOLo(IOGetByTag(IO_TAG(RX_SW_CRX_PIN)));}
-#define CC25XX_TX_HI()       {IOHi(IOGetByTag(IO_TAG(RX_SW_CTX_PIN)));}
-#define CC25XX_TX_LO()       {IOLo(IOGetByTag(IO_TAG(RX_SW_CTX_PIN)));}
+#define CC25XX_RX_HI()       {IOHi(DEFIO_IO(RX_SW_CRX_PIN));}
+#define CC25XX_RX_LO()       {IOLo(DEFIO_IO(RX_SW_CRX_PIN));}
+#define CC25XX_TX_HI()       {IOHi(DEFIO_IO(RX_SW_CTX_PIN));}
+#define CC25XX_TX_LO()       {IOLo(DEFIO_IO(RX_SW_CTX_PIN));}
 
 static void cc25xx_init_gpio(void)
 {
-#if defined(STM32F10X)
-    RCC_AHBPeriphClockCmd(RX_SW_CRX_GPIO_CLK_PERIPHERAL, ENABLE);
-    RCC_AHBPeriphClockCmd(RX_SW_CTX_GPIO_CLK_PERIPHERAL, ENABLE);
-    RCC_AHBPeriphClockCmd(RX_ANT_SW_CRX_GPIO_CLK_PERIPHERAL, ENABLE);
-    RCC_AHBPeriphClockCmd(RX_ANT_SW_CRX_GPIO_CLK_PERIPHERAL, ENABLE);
-    RCC_AHBPeriphClockCmd(RX_CC2500_GDO2_GPIO_CLK_PERIPHERAL, ENABLE);
-#endif
-
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    IOInit(IOGetByTag(IO_TAG(RX_SW_CRX_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
-    IOInit(IOGetByTag(IO_TAG(RX_SW_CTX_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
-    IOInit(IOGetByTag(IO_TAG(RX_ANT_SW_CTX_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
-    IOInit(IOGetByTag(IO_TAG(RX_ANT_SW_CRX_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOInit(DEFIO_IO(RX_SW_CRX_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOInit(DEFIO_IO(RX_SW_CTX_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOInit(DEFIO_IO(RX_CC2500_GDO2_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
     // All pins SPI_IO_CS_CFG except GDO2 which is input, same as SPI_IO_AF_MISO_CFG
-    IOInit(IOGetByTag(IO_TAG(RX_CC2500_GDO2_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
-#if defined(STM32F10X)
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_SW_CRX_PIN)), SPI_IO_CS_CFG);
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_SW_CTX_PIN)), SPI_IO_CS_CFG);
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_ANT_SW_CTX_PIN)), SPI_IO_CS_CFG);
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_ANT_SW_CRX_PIN)), SPI_IO_CS_CFG);
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_CC2500_GDO2_PIN)), SPI_IO_AF_MISO_CFG);
-#else
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_SW_CRX_PIN)), SPI_IO_CS_CFG, 0);
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_SW_CTX_PIN)), SPI_IO_CS_CFG, 0);
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_ANT_SW_CTX_PIN)), SPI_IO_CS_CFG, 0);
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_ANT_SW_CRX_PIN)), SPI_IO_CS_CFG, 0);
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_CC2500_GDO2_PIN)), SPI_IO_AF_MISO_CFG, 0);
+    IOConfigGPIO(DEFIO_IO(RX_SW_CRX_PIN), SPI_IO_CS_CFG);
+    IOConfigGPIO(DEFIO_IO(RX_SW_CTX_PIN), SPI_IO_CS_CFG);
+    IOConfigGPIO(DEFIO_IO(RX_CC2500_GDO2_PIN), SPI_IO_AF_MISO_CFG);
+#ifdef RX_ANT_SW_CTX_PIN
+    IOInit(DEFIO_IO(RX_ANT_SW_CTX_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOConfigGPIO(DEFIO_IO(RX_ANT_SW_CTX_PIN), SPI_IO_CS_CFG);
+#endif
+#ifdef RX_ANT_SW_CRX_PIN
+    IOInit(DEFIO_IO(RX_ANT_SW_CRX_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOConfigGPIO(DEFIO_IO(RX_ANT_SW_CRX_PIN), SPI_IO_CS_CFG);
 #endif
 }
 
@@ -157,7 +146,7 @@ void cc25xx_enable_receive(void)
 
 uint8_t cc25xx_get_gdo_status(void)
 {
-    return IORead(IOGetByTag(IO_TAG(RX_CC2500_GDO2_PIN)));
+    return IORead(DEFIO_IO(RX_CC2500_GDO2_PIN));
 }
 
 void cc25xx_register_read_multi(uint8_t address, uint8_t *data, uint8_t length)
@@ -202,10 +191,10 @@ void cc25xx_process_packet(volatile uint8_t *packet_received, volatile uint8_t *
             len = len1;
 
             //packet received, grab data
-            uint8_t tmp_buffer[len];
+            uint8_t tmp_buffer[128]; // fifo < 128 bytes
             cc25xx_read_fifo(tmp_buffer, len);
 
-            //only accept valid packet lenbghts:
+            //only accept valid packet lengths:
             if (len == maxlen){
                 uint8_t i;
                 for(i=0; i<maxlen; i++){

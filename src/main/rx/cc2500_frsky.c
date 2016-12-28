@@ -150,9 +150,9 @@ static bool frskyCheckBindPacket(const uint8_t *payload)
 #define BIND_PAYLOAD0       0x11
 #define BIND_PAYLOAD2       0x01
     bool bindPacket = false;
-    //!!TODO check CRC
-    if (payload[0] == BIND_PAYLOAD0&& payload[2] == BIND_PAYLOAD2) {
+    if (FRSKY_VALID_PACKET_BIND(payload)) {
         bindPacket = true;
+        //!!TODO process bind packet to set txid and hopping channels
     }
     return bindPacket;
 }
@@ -323,7 +323,7 @@ void timeout_set(uint32_t ms)
 
 bool timeout_timed_out(void)
 {
-    return millis() > timeoutMs ? true : false;
+    return cmp32(millis(), timeoutMs) > 0 ? true : false;
 }
 
 

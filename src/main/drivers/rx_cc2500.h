@@ -73,20 +73,20 @@
 #define RFST_SNOP     0x3D
 
 // Status registers
-#define PARTNUM        0x30|BURST_FLAG
-#define VERSION        0x31|BURST_FLAG
-#define FREQEST        0x32|BURST_FLAG
-#define LQI            0x33|BURST_FLAG
-#define RSSI           0x34|BURST_FLAG
-#define MARCSTATE      0x35|BURST_FLAG
-#define WORTIME1       0x36|BURST_FLAG
-#define WORTIME0       0x37|BURST_FLAG
-#define PKTSTATUS      0x38|BURST_FLAG
-#define VCO_VC_DAC     0x39|BURST_FLAG
-#define TXBYTES        0x3A|BURST_FLAG
-#define RXBYTES        0x3B|BURST_FLAG
-#define RCCTRL1_STATUS 0x3C|BURST_FLAG
-#define RCCTRL0_STATUS 0x3D|BURST_FLAG
+#define PARTNUM        (0x30|BURST_FLAG)
+#define VERSION        (0x31|BURST_FLAG)
+#define FREQEST        (0x32|BURST_FLAG)
+#define LQI            (0x33|BURST_FLAG)
+#define RSSI           (0x34|BURST_FLAG)
+#define MARCSTATE      (0x35|BURST_FLAG)
+#define WORTIME1       (0x36|BURST_FLAG)
+#define WORTIME0       (0x37|BURST_FLAG)
+#define PKTSTATUS      (0x38|BURST_FLAG)
+#define VCO_VC_DAC     (0x39|BURST_FLAG)
+#define TXBYTES        (0x3A|BURST_FLAG)
+#define RXBYTES        (0x3B|BURST_FLAG)
+#define RCCTRL1_STATUS (0x3C|BURST_FLAG)
+#define RCCTRL0_STATUS (0x3D|BURST_FLAG)
 
 // Status byte states
 #define STB_IDLE         0x00
