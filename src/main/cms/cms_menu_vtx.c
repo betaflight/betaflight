@@ -27,6 +27,8 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_vtx.h"
 
+#include "common/utils.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
