@@ -20,6 +20,10 @@
 
 #include <platform.h>
 
+#include "common/utils.h"
+
+#include "drivers/io.h"
+
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"

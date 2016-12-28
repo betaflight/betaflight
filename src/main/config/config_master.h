@@ -26,7 +26,7 @@
 #include "cms/cms.h"
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"

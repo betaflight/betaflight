@@ -54,7 +54,7 @@ uint8_t cliMode = 0;
 #include "drivers/io_impl.h"
 #include "drivers/dma.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
