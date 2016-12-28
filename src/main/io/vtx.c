@@ -61,7 +61,7 @@ void vtxInit(void)
     }
 }
 
-static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_t min, int32_t max)
+static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_t max)
 {
     if (ARMING_FLAG(ARMED)) {
         locked = 1;
@@ -69,7 +69,7 @@ static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_
 
     if (vtxConfig()->vtx_mode == 0 && !locked) {
         uint8_t temp = (*bandOrChannel) + step;
-        temp = constrain(temp, min, max);
+        temp = constrain(temp, 0, max);
         *bandOrChannel = temp;
 
         rtc6705SetChannel(vtxConfig()->vtx_band, vtxConfig()->vtx_channel);
@@ -81,22 +81,22 @@ static void setChannelSaveAndNotify(uint8_t *bandOrChannel, uint8_t step, int32_
 
 void vtxIncrementBand(void)
 {
-    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), 1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), 1, RTC6705_BAND_COUNT - 1);
 }
 
 void vtxDecrementBand(void)
 {
-    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), -1, RTC6705_BAND_MIN, RTC6705_BAND_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_band), -1, RTC6705_BAND_COUNT - 1);
 }
 
 void vtxIncrementChannel(void)
 {
-    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), 1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), 1, RTC6705_CHANNEL_COUNT - 1);
 }
 
 void vtxDecrementChannel(void)
 {
-    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), -1, RTC6705_CHANNEL_MIN, RTC6705_CHANNEL_MAX);
+    setChannelSaveAndNotify(&(vtxConfigMutable()->vtx_channel), -1, RTC6705_CHANNEL_COUNT - 1);
 }
 
 void vtxUpdateActivatedChannel(void)

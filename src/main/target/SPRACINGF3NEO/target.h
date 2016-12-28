@@ -102,8 +102,7 @@
 #define SPI3_MOSI_PIN           PB5
 
 #define VTX
-#define RTC6705_CS_GPIO         GPIOF
-#define RTC6705_CS_PIN          GPIO_Pin_4
+#define RTC6705_CS_PIN          PF4
 #define RTC6705_SPI_INSTANCE    SPI3
 
 #define RTC6705_POWER_PIN       PC3
