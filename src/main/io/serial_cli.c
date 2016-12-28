@@ -1096,9 +1096,13 @@ static void printRxFail(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxCo
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
         const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
-        const bool equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-            && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
+        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
+        bool equalsDefault = true;
+        if (defaultRxConfig) {
+            channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
+            equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
+                    && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
+        }
         const bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
