@@ -30,6 +30,7 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
 
@@ -60,6 +61,10 @@
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
+
+#ifdef USE_ESC_SENSOR
+#include "sensors/esc_sensor.h"
+#endif
 
 static serialPort_t *frskyPort = NULL;
 static serialPortConfig_t *portConfig;
@@ -195,23 +200,33 @@ static void sendGpsAltitude(void)
 
 static void sendThrottleOrBatterySizeAsRpm(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
     sendDataHead(ID_RPM);
+#ifdef USE_ESC_SENSOR
+    UNUSED(rxConfig);
+    UNUSED(deadband3d_throttle);
+
+    escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData.stale ? 0 : escData.rpm);
+#else
     if (ARMING_FLAG(ARMED)) {
         throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+        uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
     } else {
         serialize16((batteryConfig->batteryCapacity / BLADE_NUMBER_DIVIDER));
     }
-
+#endif
 }
 
 static void sendTemperature1(void)
 {
     sendDataHead(ID_TEMPRATURE1);
-#ifdef BARO
+#if defined(USE_ESC_SENSOR)
+    escSensorData_t escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData.stale ? 0 : escData.temperature);
+#elif defined(BARO)
     serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
     serialize16(telemTemperature1 / 10);
