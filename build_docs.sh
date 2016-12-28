@@ -38,7 +38,6 @@ doc_files=(
     'Board - AlienFlight.md'
     'Board - CC3D.md'
     'Board - CJMCU.md'
-    'Board - Olimexino.md'
     'Board - ChebuzzF3.md'
     'Cli.md'
 )
