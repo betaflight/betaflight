@@ -16,6 +16,11 @@
  */
 #pragma once
 
+#define i2i8(i) ((int8_t)((i) % 0xff))
+#define i2i16(i) ((int16_t)((i) % 0xffff))
+#define i2u8(i) ((uint8_t)((i) & 0xff))
+#define i2u16(i) ((uint16_t)((i) & 0xffff))
+
 void uli2a(unsigned long int num, unsigned int base, int uc, char *bf);
 void li2a(long num, char *bf);
 void ui2a(unsigned int num, unsigned int base, int uc, char *bf);

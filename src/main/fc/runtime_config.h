@@ -25,7 +25,7 @@ typedef enum {
     WAS_EVER_ARMED  = (1 << 3)
 } armingFlag_e;
 
-extern uint8_t armingFlags;
+extern armingFlag_e armingFlags;
 
 #define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
 #define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
@@ -46,28 +46,28 @@ typedef enum {
     GTUNE_MODE      = (1 << 11)
 } flightModeFlags_e;
 
-extern uint16_t flightModeFlags;
+extern flightModeFlags_e flightModeFlags;
 
-#define DISABLE_FLIGHT_MODE(mask) disableFlightMode(mask)
-#define ENABLE_FLIGHT_MODE(mask) enableFlightMode(mask)
-#define FLIGHT_MODE(mask) (flightModeFlags & (mask))
+#define DISABLE_FLIGHT_MODE(mask) disableFlightMode((flightModeFlags_e)mask)
+#define ENABLE_FLIGHT_MODE(mask) enableFlightMode((flightModeFlags_e)mask)
+#define FLIGHT_MODE(mask) (flightModeFlags & ((flightModeFlags_e)mask))
 
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),
     GPS_FIX        = (1 << 1),
     CALIBRATE_MAG  = (1 << 2),
     SMALL_ANGLE    = (1 << 3),
-    FIXED_WING     = (1 << 4)                    // set when in flying_wing or airplane mode. currently used by althold selection code
-} stateFlags_t;
+    FIXED_WING     = (1 << 4) // set when in flying_wing or airplane mode. currently used by althold selection code
+} stateFlags_e;
 
 #define DISABLE_STATE(mask) (stateFlags &= ~(mask))
 #define ENABLE_STATE(mask) (stateFlags |= (mask))
 #define STATE(mask) (stateFlags & (mask))
 
-extern uint8_t stateFlags;
+extern stateFlags_e stateFlags;
 
-uint16_t enableFlightMode(flightModeFlags_e mask);
-uint16_t disableFlightMode(flightModeFlags_e mask);
+flightModeFlags_e enableFlightMode(flightModeFlags_e mask);
+flightModeFlags_e disableFlightMode(flightModeFlags_e mask);
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);
