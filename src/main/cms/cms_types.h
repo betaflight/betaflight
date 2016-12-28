@@ -69,7 +69,7 @@ typedef struct
 
 #define IS_PRINTVALUE(p) ((p)->flags & PRINT_VALUE)
 #define SET_PRINTVALUE(p) { (p)->flags |= PRINT_VALUE; }
-#define CLR_PRINTVALUE(p) { (p)->flags &= ~PRINT_VALUE; }
+#define CLR_PRINTVALUE(p) { (p)->flags &= (uint8_t)~PRINT_VALUE; }
 
 #define IS_PRINTLABEL(p) ((p)->flags & PRINT_LABEL)
 #define SET_PRINTLABEL(p) { (p)->flags |= PRINT_LABEL; }

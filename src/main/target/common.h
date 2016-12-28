@@ -17,6 +17,10 @@
 
 #pragma once
 
+// type conversion warnings. -Wconversion can be turned on to enable the process of eliminating these warnings
+//#pragma GCC diagnostic error "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 //#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
 #define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
 
