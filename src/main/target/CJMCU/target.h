@@ -40,6 +40,8 @@
 #define GYRO
 #define USE_GYRO_MPU6050
 
+#define DEFAULT_GYRO_SYNC 0
+
 #define MAG
 #define USE_MAG_HMC5883
 
