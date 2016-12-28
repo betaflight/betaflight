@@ -25,11 +25,11 @@ typedef enum {
     WAS_EVER_ARMED  = (1 << 3)
 } armingFlag_e;
 
-extern armingFlag_e armingFlags;
+extern uint8_t armingFlags;
 
-#define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
-#define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
-#define ARMING_FLAG(mask) (armingFlags & (mask))
+#define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~((uint8_t)mask))
+#define ENABLE_ARMING_FLAG(mask) (armingFlags |= ((uint8_t)mask))
+#define ARMING_FLAG(mask) (armingFlags & ((uint8_t)mask))
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),
@@ -46,28 +46,28 @@ typedef enum {
     GTUNE_MODE      = (1 << 11)
 } flightModeFlags_e;
 
-extern flightModeFlags_e flightModeFlags;
+extern uint16_t flightModeFlags;
 
-#define DISABLE_FLIGHT_MODE(mask) disableFlightMode((flightModeFlags_e)mask)
-#define ENABLE_FLIGHT_MODE(mask) enableFlightMode((flightModeFlags_e)mask)
-#define FLIGHT_MODE(mask) (flightModeFlags & ((flightModeFlags_e)mask))
+#define DISABLE_FLIGHT_MODE(mask) disableFlightMode((uint16_t)mask)
+#define ENABLE_FLIGHT_MODE(mask) enableFlightMode((uint16_t)mask)
+#define FLIGHT_MODE(mask) (flightModeFlags & ((uint16_t)mask))
 
 typedef enum {
     GPS_FIX_HOME   = (1 << 0),
     GPS_FIX        = (1 << 1),
     CALIBRATE_MAG  = (1 << 2),
     SMALL_ANGLE    = (1 << 3),
-    FIXED_WING     = (1 << 4) // set when in flying_wing or airplane mode. currently used by althold selection code
-} stateFlags_e;
+    FIXED_WING     = (1 << 4)                    // set when in flying_wing or airplane mode. currently used by althold selection code
+} stateFlags_t;
 
-#define DISABLE_STATE(mask) (stateFlags &= ~(mask))
-#define ENABLE_STATE(mask) (stateFlags |= (mask))
-#define STATE(mask) (stateFlags & (mask))
+#define DISABLE_STATE(mask) (stateFlags &= ~((uint8_t)mask))
+#define ENABLE_STATE(mask) (stateFlags |= ((uint8_t)mask))
+#define STATE(mask) (stateFlags & ((uint8_t)mask))
 
-extern stateFlags_e stateFlags;
+extern uint8_t stateFlags;
 
-flightModeFlags_e enableFlightMode(flightModeFlags_e mask);
-flightModeFlags_e disableFlightMode(flightModeFlags_e mask);
+uint16_t enableFlightMode(uint16_t mask);
+uint16_t disableFlightMode(uint16_t mask);
 
 bool sensors(uint32_t mask);
 void sensorsSet(uint32_t mask);
