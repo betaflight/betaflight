@@ -71,9 +71,6 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
     IOInit(DEFIO_IO(RX_NSS_PIN), OWNER_SPI_CS, rxSPIDevice + 1);
 #endif // USE_RX_SOFTSPI
 
-#if defined(STM32F10X)
-    RCC_AHBPeriphClockCmd(RX_NSS_GPIO_CLK_PERIPHERAL, ENABLE);
-#endif
     DISABLE_RX();
 
 #ifdef RX_SPI_INSTANCE

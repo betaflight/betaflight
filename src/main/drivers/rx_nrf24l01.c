@@ -56,9 +56,6 @@
 
 static void NRF24L01_InitGpio(void)
 {
-#if defined(STM32F10X)
-    RCC_AHBPeriphClockCmd(RX_CE_GPIO_CLK_PERIPHERAL, ENABLE);
-#endif
     // CE as OUTPUT
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
     IOInit(DEFIO_IO(RX_CE_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
