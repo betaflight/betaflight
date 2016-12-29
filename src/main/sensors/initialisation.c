@@ -84,7 +84,7 @@ bool sensorsAutodetect(
         sonarInit(sonarConfig);
     }
 #else
-    UNUSED(sonarConfig);
+     UNUSED(sonarConfig);
 #endif
 
     if (compassConfig->mag_align != ALIGN_DEFAULT) {
