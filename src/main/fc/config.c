@@ -549,7 +549,7 @@ uint8_t getCurrentProfile(void)
     return masterConfig.current_profile_index;
 }
 
-void setProfile(uint8_t profileIndex)
+static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
     currentControlRateProfileIndex = currentProfile->activeRateProfile;
@@ -1070,10 +1070,14 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-    pgActivateProfile(getCurrentProfile());
-
+//    pgActivateProfile(getCurrentProfile());
 //    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
-    setControlRateProfile(0);
+
+    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        masterConfig.current_profile_index = 0;
+    }
+
+    setProfile(masterConfig.current_profile_index);
 
     validateAndFixConfig();
     activateConfig();
