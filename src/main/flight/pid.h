@@ -84,7 +84,7 @@ typedef struct pidProfile_s {
 } pidProfile_t;
 
 typedef struct pidConfig_s {
-    uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
+     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
 } pidConfig_t;
 
 union rollAndPitchTrims_u;
