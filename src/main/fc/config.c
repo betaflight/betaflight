@@ -112,13 +112,6 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
-{
-    accelerometerTrims->values.pitch = 0;
-    accelerometerTrims->values.roll = 0;
-    accelerometerTrims->values.yaw = 0;
-}
-
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
     controlRateConfig->rcRate8 = 100;
@@ -611,15 +604,11 @@ void createDefaultConfig(master_t *config)
 
      config->debug_mode = DEBUG_MODE;
 
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
-
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
@@ -723,10 +712,9 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
+    accResetRollAndPitchTrims();
 
     config->compassConfig.mag_declination = 0;
-    config->accelerometerConfig.acc_lpf_hz = 10.0f;
 
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;
@@ -875,8 +863,8 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&accelerometerConfig()->accZero);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accResetFlightDynamicsTrims();
+    accSetFilter();
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,

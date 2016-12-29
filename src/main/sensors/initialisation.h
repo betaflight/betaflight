@@ -18,7 +18,6 @@
 #pragma once
 
 bool sensorsAutodetect(
-        const accelerometerConfig_t *accConfig,
         const compassConfig_t *compassConfig,
         const barometerConfig_t *baroConfig,
         const sonarConfig_t *sonarConfig);
