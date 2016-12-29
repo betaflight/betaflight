@@ -49,7 +49,7 @@ bool sensorsAutodetect(void)
 #endif
 
 #ifdef SONAR
-     sonarInit();
+    sonarInit();
 #endif
 
     return true;
