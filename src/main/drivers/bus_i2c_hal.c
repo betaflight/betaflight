@@ -231,7 +231,14 @@ void i2cInit(I2CDevice device)
 
     i2cHandle[device].Handle.Instance             = i2cHardwareMap[device].dev;
     /// TODO: HAL check if I2C timing is correct
-    i2cHandle[device].Handle.Init.Timing          = 0x00B01B59;
+
+    if (i2c->overClock) {
+        // 800khz Maximum speed tested on various boards without issues
+        i2cHandle[device].Handle.Init.Timing          = 0x00500D1D;
+    } else {
+        //i2cHandle[device].Handle.Init.Timing          = 0x00500B6A;
+        i2cHandle[device].Handle.Init.Timing          = 0x00500C6F;
+    }
     //i2cHandle[device].Handle.Init.Timing          = 0x00D00E28; /* (Rise time = 120ns, Fall time = 25ns) */
     i2cHandle[device].Handle.Init.OwnAddress1     = 0x0;
     i2cHandle[device].Handle.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;

@@ -32,6 +32,7 @@
 #include "io.h"
 #include "nvic.h"
 #include "inverter.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -265,6 +266,7 @@ void uartStartTxDMA(uartPort_t *s)
         s->port.txBufferTail = 0;
     }
     s->txDMAEmpty = false;
+    HAL_CLEANCACHE((uint8_t *)&s->port.txBuffer[fromwhere],size);
     HAL_UART_Transmit_DMA(&s->Handle, (uint8_t *)&s->port.txBuffer[fromwhere], size);
 }
 

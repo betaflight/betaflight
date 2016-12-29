@@ -17,32 +17,8 @@
 
 #pragma once
 
-#include "drivers/io.h"
+#include "common/time.h"
 
-typedef enum {
-    INPUT_FILTERING_DISABLED = 0,
-    INPUT_FILTERING_ENABLED
-} inputFilteringMode_e;
-
-#define PPM_RCVR_TIMEOUT            0
-#define PWM_INPUT_PORT_COUNT        8
-
-typedef struct ppmConfig_s {
-    ioTag_t ioTag;
-} ppmConfig_t;
-
-typedef struct pwmConfig_s {
-    ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
-    inputFilteringMode_e inputFilteringMode;
-} pwmConfig_t;
-
-void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
-void pwmRxInit(const pwmConfig_t *pwmConfig);
-
-uint16_t pwmRead(uint8_t channel);
-uint16_t ppmRead(uint8_t channel);
-
-bool isPPMDataBeingReceived(void);
-void resetPPMDataReceivedState(void);
-
-bool isPWMDataBeingReceived(void);
+void initSrxlTelemetry(void);
+bool checkSrxlTelemetryState(void);
+void handleSrxlTelemetry(timeUs_t currentTimeUs);

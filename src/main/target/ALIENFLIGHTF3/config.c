@@ -22,10 +22,11 @@
 
 #include "common/axis.h"
 
-#include "drivers/sensor.h"
 #include "drivers/compass.h"
+#include "drivers/io.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
+#include "drivers/sensor.h"
 
 #include "fc/rc_controls.h"
 

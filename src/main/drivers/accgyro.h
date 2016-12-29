@@ -20,6 +20,7 @@
 #include "common/axis.h"
 #include "drivers/exti.h"
 #include "drivers/sensor.h"
+#include "drivers/accgyro_mpu.h"
 
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
@@ -37,7 +38,7 @@
 typedef struct gyroDev_s {
     sensorGyroInitFuncPtr init;                             // initialize function
     sensorGyroReadFuncPtr read;                             // read 3 axis data function
-    sensorGyroReadDataFuncPtr temperature;                          // read temperature if available
+    sensorGyroReadDataFuncPtr temperature;                  // read temperature if available
     sensorGyroInterruptStatusFuncPtr intStatus;
     extiCallbackRec_t exti;
     float scale;                                            // scalefactor
@@ -45,6 +46,9 @@ typedef struct gyroDev_s {
     uint16_t lpf;
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     sensor_align_e gyroAlign;
+    const extiConfig_t *mpuIntExtiConfig;
+    mpuDetectionResult_t mpuDetectionResult;
+    mpuConfiguration_t mpuConfiguration;
 } gyroDev_t;
 
 typedef struct accDev_s {
@@ -54,4 +58,6 @@ typedef struct accDev_s {
     int16_t ADCRaw[XYZ_AXIS_COUNT];
     char revisionCode;                                      // a revision code for the sensor, if known
     sensor_align_e accAlign;
+    mpuDetectionResult_t mpuDetectionResult;
+    mpuConfiguration_t mpuConfiguration;
 } accDev_t;

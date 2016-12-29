@@ -38,7 +38,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "common/printf.h"
 #include "common/axis.h"
@@ -568,13 +568,11 @@ static void applyLedBatteryLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
-    int state;
     int timerDelayUs = HZ_TO_US(1);
 
     if (updateNow) {
-       state = getBatteryState();
 
-        switch (state) {
+        switch (getBatteryState()) {
             case BATTERY_OK:
                 flash = true;
                 timerDelayUs = HZ_TO_US(1);
@@ -605,40 +603,40 @@ static void applyLedRssiLayer(bool updateNow, timeUs_t *timer)
 {
     static bool flash = false;
 
-    int state;
     int timerDelay = HZ_TO_US(1);
 
     if (updateNow) {
-       state = (rssi * 100) / 1023;
+        int state = (rssi * 100) / 1023;
 
-       if (state > 50) {
-           flash = true;
-           timerDelay = HZ_TO_US(1);
-       } else if (state > 20) {
-           flash = !flash;
-           timerDelay = HZ_TO_US(2);
-       } else {
-           flash = !flash;
-           timerDelay = HZ_TO_US(8);
-       }
+        if (state > 50) {
+            flash = true;
+            timerDelay = HZ_TO_US(1);
+        } else if (state > 20) {
+            flash = !flash;
+            timerDelay = HZ_TO_US(2);
+        } else {
+            flash = !flash;
+            timerDelay = HZ_TO_US(8);
+        }
     }
 
     *timer += timerDelay;
 
     if (!flash) {
-       hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
-       applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
+        hsvColor_t *bgc = getSC(LED_SCOLOR_BACKGROUND);
+        applyLedHsv(LED_MOV_FUNCTION(LED_FUNCTION_RSSI), bgc);
     }
 }
 
 #ifdef GPS
 static void applyLedGpsLayer(bool updateNow, timeUs_t *timer)
 {
-    static uint8_t gpsFlashCounter = 0;
+
     static uint8_t gpsPauseCounter = 0;
     const uint8_t blinkPauseLength = 4;
 
     if (updateNow) {
+        static uint8_t gpsFlashCounter = 0;
         if (gpsPauseCounter > 0) {
             gpsPauseCounter--;
         } else if (gpsFlashCounter >= GPS_numSat) {

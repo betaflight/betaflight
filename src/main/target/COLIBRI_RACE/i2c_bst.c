@@ -26,7 +26,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
 #include "fc/mw.h"
@@ -627,25 +627,25 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_SERVO_CONFIGURATIONS:
             for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-                bstWrite16(masterConfig.servoConf[i].min);
-                bstWrite16(masterConfig.servoConf[i].max);
-                bstWrite16(masterConfig.servoConf[i].middle);
-                bstWrite8(masterConfig.servoConf[i].rate);
-                bstWrite8(masterConfig.servoConf[i].angleAtMin);
-                bstWrite8(masterConfig.servoConf[i].angleAtMax);
-                bstWrite8(masterConfig.servoConf[i].forwardFromChannel);
-                bstWrite32(masterConfig.servoConf[i].reversedSources);
+                bstWrite16(servoProfile()->servoConf[i].min);
+                bstWrite16(servoProfile()->servoConf[i].max);
+                bstWrite16(servoProfile()->servoConf[i].middle);
+                bstWrite8(servoProfile()->servoConf[i].rate);
+                bstWrite8(servoProfile()->servoConf[i].angleAtMin);
+                bstWrite8(servoProfile()->servoConf[i].angleAtMax);
+                bstWrite8(servoProfile()->servoConf[i].forwardFromChannel);
+                bstWrite32(servoProfile()->servoConf[i].reversedSources);
             }
             break;
         case BST_SERVO_MIX_RULES:
             for (i = 0; i < MAX_SERVO_RULES; i++) {
-                bstWrite8(masterConfig.customServoMixer[i].targetChannel);
-                bstWrite8(masterConfig.customServoMixer[i].inputSource);
-                bstWrite8(masterConfig.customServoMixer[i].rate);
-                bstWrite8(masterConfig.customServoMixer[i].speed);
-                bstWrite8(masterConfig.customServoMixer[i].min);
-                bstWrite8(masterConfig.customServoMixer[i].max);
-                bstWrite8(masterConfig.customServoMixer[i].box);
+                bstWrite8(customServoMixer(i)->targetChannel);
+                bstWrite8(customServoMixer(i)->inputSource);
+                bstWrite8(customServoMixer(i)->rate);
+                bstWrite8(customServoMixer(i)->speed);
+                bstWrite8(customServoMixer(i)->min);
+                bstWrite8(customServoMixer(i)->max);
+                bstWrite8(customServoMixer(i)->box);
             }
             break;
 #endif
@@ -720,7 +720,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_MODE_RANGES:
             for (i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-                modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+                modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
                 const box_t *box = &boxes[mac->modeId];
                 bstWrite8(box->permanentId);
                 bstWrite8(mac->auxChannelIndex);
@@ -730,7 +730,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_ADJUSTMENT_RANGES:
             for (i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
                 bstWrite8(adjRange->adjustmentIndex);
                 bstWrite8(adjRange->auxChannelIndex);
                 bstWrite8(adjRange->range.startStep);
@@ -837,8 +837,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         // Additional commands that are not compatible with MultiWii
         case BST_ACC_TRIM:
-            bstWrite16(masterConfig.accelerometerTrims.values.pitch);
-            bstWrite16(masterConfig.accelerometerTrims.values.roll);
+            bstWrite16(accelerometerConfig()->accelerometerTrims.values.pitch);
+            bstWrite16(accelerometerConfig()->accelerometerTrims.values.roll);
             break;
 
         case BST_UID:
@@ -1033,8 +1033,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 }
             }
         case BST_SET_ACC_TRIM:
-            masterConfig.accelerometerTrims.values.pitch = bstRead16();
-            masterConfig.accelerometerTrims.values.roll  = bstRead16();
+            accelerometerConfig()->accelerometerTrims.values.pitch = bstRead16();
+            accelerometerConfig()->accelerometerTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
             armingConfig()->auto_disarm_delay = bstRead8();
@@ -1056,7 +1056,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_MODE_RANGE:
             i = bstRead8();
             if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-                modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+                modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
                 i = bstRead8();
                 const box_t *box = findBoxByPermenantId(i);
                 if (box) {
@@ -1065,7 +1065,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                     mac->range.startStep = bstRead8();
                     mac->range.endStep = bstRead8();
 
-                    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                    useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
                 } else {
                     ret = BST_FAILED;
                 }
@@ -1076,7 +1076,7 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_ADJUSTMENT_RANGE:
             i = bstRead8();
             if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-                adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+                adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
                 i = bstRead8();
                 if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                     adjRange->adjustmentIndex = i;
@@ -1157,14 +1157,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SUPPORTED_SERVOS) {
                ret = BST_FAILED;
            } else {
-               masterConfig.servoConf[i].min = bstRead16();
-               masterConfig.servoConf[i].max = bstRead16();
-               masterConfig.servoConf[i].middle = bstRead16();
-               masterConfig.servoConf[i].rate = bstRead8();
-               masterConfig.servoConf[i].angleAtMin = bstRead8();
-               masterConfig.servoConf[i].angleAtMax = bstRead8();
-               masterConfig.servoConf[i].forwardFromChannel = bstRead8();
-               masterConfig.servoConf[i].reversedSources = bstRead32();
+               servoProfile()->servoConf[i].min = bstRead16();
+               servoProfile()->servoConf[i].max = bstRead16();
+               servoProfile()->servoConf[i].middle = bstRead16();
+               servoProfile()->servoConf[i].rate = bstRead8();
+               servoProfile()->servoConf[i].angleAtMin = bstRead8();
+               servoProfile()->servoConf[i].angleAtMax = bstRead8();
+               servoProfile()->servoConf[i].forwardFromChannel = bstRead8();
+               servoProfile()->servoConf[i].reversedSources = bstRead32();
            }
 #endif
            break;
@@ -1174,13 +1174,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SERVO_RULES) {
                ret = BST_FAILED;
            } else {
-               masterConfig.customServoMixer[i].targetChannel = bstRead8();
-               masterConfig.customServoMixer[i].inputSource = bstRead8();
-               masterConfig.customServoMixer[i].rate = bstRead8();
-               masterConfig.customServoMixer[i].speed = bstRead8();
-               masterConfig.customServoMixer[i].min = bstRead8();
-               masterConfig.customServoMixer[i].max = bstRead8();
-               masterConfig.customServoMixer[i].box = bstRead8();
+               customServoMixer(i)->targetChannel = bstRead8();
+               customServoMixer(i)->inputSource = bstRead8();
+               customServoMixer(i)->rate = bstRead8();
+               customServoMixer(i)->speed = bstRead8();
+               customServoMixer(i)->min = bstRead8();
+               customServoMixer(i)->max = bstRead8();
+               customServoMixer(i)->box = bstRead8();
                loadCustomServoMixer();
            }
 #endif

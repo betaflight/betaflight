@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef uint16_t pgn_t;
 
 // parameter group registry flags
@@ -225,5 +228,6 @@ void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int siz
 int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex);
 void pgResetAll(int profileCount);
 void pgResetCurrent(const pgRegistry_t *reg);
+bool pgResetCopy(void *copy, pgn_t pgn);
 void pgReset(const pgRegistry_t* reg, int profileIndex);
 void pgActivateProfile(int profileIndex);

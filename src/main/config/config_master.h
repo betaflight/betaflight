@@ -26,7 +26,7 @@
 #include "cms/cms.h"
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
@@ -99,6 +99,11 @@
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define flashConfig(x) (&masterConfig.flashConfig)
 #define pidConfig(x) (&masterConfig.pidConfig)
+#define adjustmentProfile(x) (&masterConfig.adjustmentProfile)
+#define modeActivationProfile(x) (&masterConfig.modeActivationProfile)
+#define servoProfile(x) (&masterConfig.servoProfile)
+#define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
+#define customServoMixer(i) (&masterConfig.customServoMixer[i])
 
 
 // System-wide
@@ -119,7 +124,7 @@ typedef struct master_s {
     servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
-    servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
+    servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
 #endif
@@ -127,8 +132,6 @@ typedef struct master_s {
     boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;
-
-    rollAndPitchTrims_t accelerometerTrims; // accelerometer trim
 
     pidConfig_t pidConfig;
 
@@ -215,9 +218,8 @@ typedef struct master_s {
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
 
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-
+    modeActivationProfile_t modeActivationProfile;
+    adjustmentProfile_t adjustmentProfile;
 #ifdef VTX
     uint8_t vtx_band; //1=A, 2=B, 3=E, 4=F(Airwaves/Fatshark), 5=Raceband
     uint8_t vtx_channel; //1-8

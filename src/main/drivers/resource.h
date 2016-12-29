@@ -59,6 +59,7 @@ typedef enum {
     OWNER_INVERTER,
     OWNER_LED_STRIP,
     OWNER_TRANSPONDER,
+    OWNER_VTX,
     OWNER_TOTAL_COUNT
 } resourceOwner_e;
 
