@@ -601,29 +601,18 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;    // default profile
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
-    config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
-    config->gyroConfig.gyro_sync_denom = 8;
     config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-    config->gyroConfig.gyro_sync_denom = 1;
     config->pidConfig.pid_process_denom = 4;
 #else
-    config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
-    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
-    config->gyroConfig.gyro_soft_lpf_hz = 90;
-    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
-    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
-    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
-    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
-    config->debug_mode = DEBUG_MODE;
+     config->debug_mode = DEBUG_MODE;
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
     config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     config->compassConfig.mag_align = ALIGN_DEFAULT;
 
@@ -632,7 +621,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.yawDegrees = 0;
     config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
@@ -850,6 +838,8 @@ void createDefaultConfig(master_t *config)
 static void resetConf(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
     setProfile(0);
 

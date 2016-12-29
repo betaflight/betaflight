@@ -38,6 +38,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -76,7 +77,7 @@ void targetConfiguration(master_t *config)
         config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
-        config->gyroConfig.gyro_sync_denom = 2;
+        gyroConfig()->gyro_sync_denom = 2;
         config->pidConfig.pid_process_denom = 2;
     }
 
