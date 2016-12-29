@@ -605,7 +605,6 @@ void createDefaultConfig(master_t *config)
 
      config->debug_mode = DEBUG_MODE;
 
-
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
