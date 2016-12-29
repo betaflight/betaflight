@@ -79,15 +79,8 @@ bool sensorsAutodetect(
         sonarInit(sonarConfig);
     }
 #else
-     UNUSED(sonarConfig);
+    UNUSED(sonarConfig);
 #endif
 
-<<<<<<< HEAD
-=======
-    if (compassConfig->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig->mag_align;
-    }
-
->>>>>>> Added accelerometerConfig parameter group
     return true;
 }
