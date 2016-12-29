@@ -71,14 +71,15 @@
 #define debug_putc(x) {}
 #define debug_put_newline() {}
 
-void frsky_do_bind(void);
-void frsky_configure_address(void);
-void frsky_autotune(void);
-void frsky_fetch_txid_and_hoptable(void);
-void frsky_tune_channel(uint8_t ch);
-void frsky_show_partinfo(void);
-void frsky_enter_rxmode(uint8_t channel);
-void frsky_handle_overflows(void);
+static void frsky_do_bind(void);
+static void frsky_configure_address(void);
+static void frsky_autotune(void);
+static void frsky_fetch_txid_and_hoptable(void);
+static void frsky_tune_channel(uint8_t ch);
+static void frsky_show_partinfo(void);
+static void frsky_enter_rxmode(uint8_t channel);
+static void frsky_handle_overflows(void);
+static void frsky_increment_channel(int8_t cnt);
 
 
 typedef enum {
@@ -172,6 +173,7 @@ void frskySetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 
 static void frskyHopToNextChannel(void)
 {
+    frsky_increment_channel(1);
 }
 
 static void frskySetHoppingChannels(void)
@@ -233,7 +235,7 @@ rx_spi_received_e frskyDataReceived(uint8_t *payload)
     return ret;
 }
 
-void frsky_show_partinfo(void)
+static void frsky_show_partinfo(void)
 {
     uint8_t partnum, version;
     //start idle
@@ -316,18 +318,18 @@ void wdt_reset(void)
 }
 
 static uint32_t timeoutMs;
-void timeout_set(uint32_t ms)
+static void timeout_set(uint32_t ms)
 {
     timeoutMs = millis() + ms;
 }
 
-bool timeout_timed_out(void)
+static bool timeout_timed_out(void)
 {
     return cmp32(millis(), timeoutMs) > 0 ? true : false;
 }
 
 
-uint8_t frsky_bind_jumper_set(void)
+static uint8_t frsky_bind_jumper_set(void)
 {
 #if 0
     debug("frsky: BIND jumper set = "); debug_flush();
@@ -342,15 +344,12 @@ uint8_t frsky_bind_jumper_set(void)
     return 0;
 }
 
-void led_red_off(void) {}
-void led_red_on(void) {}
-void led_green_off(void) {}
-void led_green_on(void) {}
+static void led_red_off(void) {}
+static void led_red_on(void) {}
+static void led_green_on(void) {}
 
-void frsky_do_bind(void)
+static void frskyBind(void)
 {
-    debug("frsky: do bind\n"); debug_flush();
-
     //set txid to bind channel
     storage.frsky_txid[0] = 0x03;
 
@@ -360,15 +359,22 @@ void frsky_do_bind(void)
     //init txid matching
     frsky_configure_address();
 
-    //set up leds:frsky_txid
-    led_red_off();
-    led_green_on();
-
     //start autotune:
     frsky_autotune();
 
     //now run the actual binding:
     frsky_fetch_txid_and_hoptable();
+}
+
+static void frsky_do_bind(void)
+{
+    debug("frsky: do bind\n"); debug_flush();
+
+    //set up leds:frsky_txid
+    led_red_off();
+    led_green_on();
+
+    frskyBind();
 
     //important: stop RF interrupts:
     cc25xx_disable_rf_interrupt();
@@ -378,7 +384,7 @@ void frsky_do_bind(void)
 
     //done, end up in fancy blink code
     debug("frsky: finished binding. please reset\n");
-    //led_green_on();
+    led_green_on();
 
     while(1){
         led_red_on();
@@ -392,7 +398,8 @@ void frsky_do_bind(void)
 }
 
 
-void frsky_autotune(void){
+static void frsky_autotune(void)
+{
     uint8_t done = 0;
     uint8_t received_packet = 0;
     uint8_t state = 0;
@@ -552,7 +559,7 @@ void frsky_autotune(void){
     debug_flush();
 }
 
-void frsky_enter_rxmode(uint8_t channel)
+static void frsky_enter_rxmode(uint8_t channel)
 {
     cc25xx_strobe(RFST_SIDLE);
 
@@ -567,7 +574,7 @@ void frsky_enter_rxmode(uint8_t channel)
     cc25xx_strobe(RFST_SRX);
 }
 
-void frsky_configure_address(void)
+static void frsky_configure_address(void)
 {
     // start idle
     cc25xx_strobe(RFST_SIDLE);
@@ -586,7 +593,7 @@ void frsky_configure_address(void)
     cc25xx_set_register(PKTCTRL1, CC2500_PKTCTRL1_APPEND_STATUS | CC2500_PKTCTRL1_CRC_AUTOFLUSH | CC2500_PKTCTRL1_FLAG_ADR_CHECK_01);
 }
 
-void frsky_tune_channel(uint8_t ch)
+static void frsky_tune_channel(uint8_t ch)
 {
     //start idle
     cc25xx_strobe(RFST_SIDLE);
@@ -604,7 +611,7 @@ void frsky_tune_channel(uint8_t ch)
     //now FSCAL3..1 shold be set up correctly! yay!
 }
 
-void frsky_handle_overflows(void)
+static void frsky_handle_overflows(void)
 {
     uint8_t marc_state;
 
@@ -623,8 +630,8 @@ void frsky_handle_overflows(void)
     }
 }
 
-
-void frsky_fetch_txid_and_hoptable(void){
+static void frsky_fetch_txid_and_hoptable(void)
+{
     uint16_t hopdata_received = 0;
     uint8_t index;
     uint8_t i;
@@ -754,7 +761,8 @@ void frsky_fetch_txid_and_hoptable(void){
     //idle
     cc25xx_strobe(RFST_SIDLE);
 }
-void frsky_calib_pll(void)
+
+static void frsky_calib_pll(void)
 {
     uint8_t i;
     uint8_t ch;
@@ -811,9 +819,9 @@ void frsky_calib_pll(void)
     debug("frsky: calib pll done\n");
 }
 
-
-void frsky_set_channel(uint8_t hop_index){
-    uint8_t ch = storage.frsky_hop_table[hop_index];
+static void frsky_set_channel(uint8_t hop_index)
+{
+    const uint8_t ch = storage.frsky_hop_table[hop_index];
     //debug_putc('S'); debug_put_hex8(ch);
 
     //go to idle
@@ -828,9 +836,7 @@ void frsky_set_channel(uint8_t hop_index){
     cc25xx_set_register(CHANNR, ch);
 }
 
-
-
-void frsky_increment_channel(int8_t cnt)
+static void frsky_increment_channel(int8_t cnt)
 {
     int8_t next = frsky_current_ch_idx;
     //add increment
@@ -847,8 +853,8 @@ void frsky_increment_channel(int8_t cnt)
     frsky_set_channel(frsky_current_ch_idx);
 }
 
-
-uint8_t frsky_extract_rssi(uint8_t rssi_raw)
+#if 0
+static uint8_t frsky_extract_rssi(uint8_t rssi_raw)
 {
 #define FRSKY_RSSI_OFFSET 70
     if (rssi_raw >= 128){
@@ -859,6 +865,7 @@ uint8_t frsky_extract_rssi(uint8_t rssi_raw)
         return ((((uint16_t)rssi_raw) * 18)>>5) + 65;
     }
 }
+#endif
 
 void frsky_init(void)
 {
@@ -901,17 +908,28 @@ void frsky_init(void)
     debug("frsky: init done\n");debug_flush();
 }
 
-static void frskySetup(void)
+static void frskySetup(const uint32_t *rxSpiId)
 {
     storageInit();
     frsky_init();
+    rxSpiId = NULL; // !!TODO remove this once  configurator supports setting rx_id
+    if (rxSpiId == NULL || *rxSpiId == 0) {
+        //rxSpiIdPtr = NULL;
+        protocolState = STATE_BIND;
+        frskyBind();
+        //!!TODO - change back into data mode and continue
+    } else {
+        //rxSpiIdPtr = (uint32_t*)rxSpiId;
+        // use the rxTxAddr provided and go straight into DATA_STATE
+        //!!TODO set storage data, ie frsky_txid[2], frsky_hop_table[FRSKY_HOPTABLE_SIZE], frsky_freq_offset;
+    }
 }
 
 void frskyInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     UNUSED(rxConfig);
     rxRuntimeConfig->channelCount = FRSKY_CHANNEL_COUNT;
-    frskySetup();
+    frskySetup(&rxConfig->rx_spi_id);
 }
 #endif
 
