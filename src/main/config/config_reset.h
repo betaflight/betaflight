@@ -32,7 +32,7 @@
     memcpy((_name), &__UNIQL(_reset_template_), sizeof(*(_name)));      \
     /**/
 
-// overwrite _name with data passed as arguments. GCC is alloved to set structure field-by-field
+// overwrite _name with data passed as arguments. GCC is allowed to set structure field-by-field
 #define RESET_CONFIG_2(_type, _name, ...)                 \
     *(_name) = (_type) {                                  \
         __VA_ARGS__                                       \
