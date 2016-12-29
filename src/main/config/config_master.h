@@ -198,7 +198,7 @@ typedef struct master_s {
     uint8_t transponderData[6];
 #endif
 
-#if defined(USE_RTC6705) || defined(VTX_SMARTAUDIO)
+#if defined(USE_RTC6705)
     uint8_t vtx_channel;
     uint8_t vtx_power;
 #endif
