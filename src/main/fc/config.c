@@ -610,7 +610,7 @@ void createDefaultConfig(master_t *config)
     config->pidConfig.pid_process_denom = 2;
 #endif
 
-    config->debug_mode = DEBUG_MODE;
+     config->debug_mode = DEBUG_MODE;
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
