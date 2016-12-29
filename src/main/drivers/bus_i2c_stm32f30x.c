@@ -46,8 +46,11 @@
     { .dev = (busid), .scl = IO_TAG(sclpin), .sda = IO_TAG(sdapin), .rcc = rccdef, .overClock = busid##_OVERCLOCK }
 
 i2cDevice_t i2cPinMap[] = {
+    I2C_DEF(I2C1, PA15, PA14, RCC_APB1(I2C1)),
     I2C_DEF(I2C1, PB6,  PB7,  RCC_APB1(I2C1)),
-    I2C_DEF(I2C2, PA9,  PA10, RCC_APB1(I2C1)),
+    I2C_DEF(I2C1, PB8,  PB9,  RCC_APB1(I2C1)),
+    I2C_DEF(I2C2, PA9,  PA10, RCC_APB1(I2C2)),
+    I2C_DEF(I2C2, PF1,  PF0,  RCC_APB1(I2C2)), // What's PF6???
 };
 
 unsigned int i2cPinMapSize(void)

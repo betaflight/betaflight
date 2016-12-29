@@ -45,9 +45,12 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 
 i2cDevice_t i2cPinMap[] = {
     I2C_DEF(I2C1, PB6,  PB7,  RCC_APB1(I2C1)),
+    I2C_DEF(I2C1, PB8,  PB9,  RCC_APB1(I2C1)),
     I2C_DEF(I2C2, PB10, PB11, RCC_APB1(I2C2)),
-    I2C_DEF(I2C3, PA8,  PB4,  RCC_APB1(I2C3)),
+    I2C_DEF(I2C2, PF0,  PF1,  RCC_APB1(I2C2)),
+    I2C_DEF(I2C3, PA8,  PC9,  RCC_APB1(I2C3)),
     I2C_DEF(I2C4, PD12, PD13, RCC_APB1(I2C4)),
+    I2C_DEF(I2C4, PF14, PF15, RCC_APB1(I2C4)),
 };
 
 size_t i2cPinMapSize(void)
