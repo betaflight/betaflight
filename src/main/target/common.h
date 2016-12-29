@@ -101,6 +101,7 @@
 #define TELEMETRY_MAVLINK
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
+#define VTX_SMARTAUDIO
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif
