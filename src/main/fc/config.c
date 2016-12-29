@@ -605,15 +605,11 @@ void createDefaultConfig(master_t *config)
 
      config->debug_mode = DEBUG_MODE;
 
-    config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
     config->rcControlsConfig.yaw_control_direction = 1;
-
-    // xxx_hardware: 0:default/autodetect, 1: disable
-    config->compassConfig.mag_hardware = 1;
 
     config->barometerConfig.baro_hardware = 1;
 
@@ -714,8 +710,6 @@ void createDefaultConfig(master_t *config)
     resetProfile(&config->profile[0]);
 
     accResetRollAndPitchTrims();
-
-    config->compassConfig.mag_declination = 0;
 
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;

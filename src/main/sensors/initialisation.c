@@ -53,7 +53,6 @@ static bool sonarDetect(void)
 #endif
 
 bool sensorsAutodetect(
-        const compassConfig_t *compassConfig,
         const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
@@ -66,11 +65,7 @@ bool sensorsAutodetect(
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig->mag_hardware)) {
-        compassInit(compassConfig);
-    }
-#else
-    UNUSED(compassConfig);
+    compassInit();
 #endif
 
 #ifdef BARO
@@ -86,10 +81,6 @@ bool sensorsAutodetect(
 #else
      UNUSED(sonarConfig);
 #endif
-
-    if (compassConfig->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig->mag_align;
-    }
 
     return true;
 }
