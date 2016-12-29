@@ -52,14 +52,14 @@ static bool sonarDetect(void)
 }
 #endif
 
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
+bool sensorsAutodetect(
         const accelerometerConfig_t *accelerometerConfig,
         const compassConfig_t *compassConfig,
         const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
     // gyro must be initialised before accelerometer
-    if (!gyroInit(gyroConfig)) {
+    if (!gyroInit()) {
         return false;
     }
 
@@ -85,12 +85,9 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
         sonarInit(sonarConfig);
     }
 #else
-    UNUSED(sonarConfig);
+     UNUSED(sonarConfig);
 #endif
 
-    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig->gyro_align;
-    }
     if (accelerometerConfig->acc_align != ALIGN_DEFAULT) {
         acc.dev.accAlign = accelerometerConfig->acc_align;
     }
