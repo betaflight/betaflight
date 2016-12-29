@@ -399,7 +399,7 @@ void init(void)
 #else
     const void *sonarConfig = NULL;
 #endif
-    if (!sensorsAutodetect(compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect(barometerConfig(), sonarConfig)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }

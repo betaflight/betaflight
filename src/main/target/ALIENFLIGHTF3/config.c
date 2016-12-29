@@ -83,7 +83,7 @@ void targetConfiguration(master_t *config)
 
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    compassConfig()->mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;

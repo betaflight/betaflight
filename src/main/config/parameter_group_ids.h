@@ -55,6 +55,7 @@
 #define PG_BAROMETER_CONFIG 38 // structs OK
 #define PG_THROTTLE_CORRECTION_CONFIG 39
 #define PG_COMPASS_CONFIGURATION 40 // structs OK
+#define PG_COMPASS_CONFIG 40 // structs OK
 #define PG_MODE_ACTIVATION_PROFILE 41 // array needs to be made into struct
 #define PG_SERVO_PROFILE 42
 #define PG_FAILSAFE_CHANNEL_CONFIG 43 // structs OK

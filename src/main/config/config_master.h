@@ -70,7 +70,6 @@
 #define gimbalConfig(x) (&masterConfig.gimbalConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
-#define compassConfig(x) (&masterConfig.compassConfig)
 #define barometerConfig(x) (&masterConfig.barometerConfig)
 #define throttleCorrectionConfig(x) (&masterConfig.throttleCorrectionConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
@@ -134,8 +133,6 @@ typedef struct master_s {
     pidConfig_t pidConfig;
 
     uint8_t debug_mode;                     // Processing denominator for PID controller vs gyro sampling rate
-
-    compassConfig_t compassConfig;
 
     barometerConfig_t barometerConfig;
 
