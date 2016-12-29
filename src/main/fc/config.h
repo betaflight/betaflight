@@ -82,7 +82,6 @@ void activateConfig(void);
 
 uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
-void setProfile(uint8_t profileIndex);
 struct profile_s;
 void resetProfile(struct profile_s *profile);
 
@@ -91,7 +90,7 @@ void changeControlRateProfile(uint8_t profileIndex);
 bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
-struct master_s;
 
+struct master_s;
 void targetConfiguration(struct master_s *config);
 void targetValidateConfiguration(struct master_s *config);
