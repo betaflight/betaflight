@@ -104,7 +104,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
         __asm__ volatile ("\t# barier(" #data ")  end\n" : : "m" (**__d));                          \
     }                                                                   \
     typeof(data)  __attribute__((__cleanup__(__UNIQL(__barrierEnd)))) *__UNIQL(__barrier) = &data; \
-    __asm__ volatile ("\t# barier (" #data ") start\n" : "=m" (*__UNIQL(__barrier)))
+    __asm__ volatile ("\t# barier (" #data ") start\n" : "+m" (*__UNIQL(__barrier)))
 
 #endif //__arm__
 
