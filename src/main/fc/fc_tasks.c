@@ -87,13 +87,6 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define IBATINTERVAL (6 * 3500)
 
 
-static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-    accUpdate(&accelerometerConfig()->accelerometerTrims);
-}
-
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -301,7 +294,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
-        .taskFunc = taskUpdateAccelerometer,
+        .taskFunc = accUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
