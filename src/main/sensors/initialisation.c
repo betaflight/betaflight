@@ -76,7 +76,7 @@ bool sensorsAutodetect(
         sonarInit(sonarConfig);
     }
 #else
-    UNUSED(sonarConfig);
+     UNUSED(sonarConfig);
 #endif
 
     return true;
