@@ -72,23 +72,23 @@ typedef struct pidProfile_s {
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
+    float max_angle_inclination;
 
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before errorGyroReset in ms
     uint8_t setpointRelaxRatio;             // Setpoint weight relaxation effect
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
-    uint16_t yawRateAccelLimit;             // yaw accel limiter for deg/sec/ms
-    uint16_t rateAccelLimit;                // accel limiter roll/pitch deg/sec/ms
+    float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
+    float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
     float levelSensitivity;
 } pidProfile_t;
 
 typedef struct pidConfig_s {
     uint8_t pid_process_denom;              // Processing denominator for PID controller vs gyro sampling rate
-    uint16_t max_angle_inclination;
 } pidConfig_t;
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, uint16_t max_angle_inclination, const union rollAndPitchTrims_u *angleTrim, uint16_t midrc);
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
 
 extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];

@@ -176,12 +176,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
+    pidProfile->max_angle_inclination = 70.0f;    // 70 degrees
 
     // Betaflight PID controller parameters
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
-    pidProfile->yawRateAccelLimit = 220;
-    pidProfile->rateAccelLimit = 0;
+    pidProfile->yawRateAccelLimit = 20.0f;
+    pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
     pidProfile->levelSensitivity = 2.0f;
 }
@@ -612,7 +613,6 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
-    config->pidConfig.max_angle_inclination = 700;    // 70 degrees
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
     config->gyroConfig.gyro_soft_lpf_hz = 90;
     config->gyroConfig.gyro_soft_notch_hz_1 = 400;

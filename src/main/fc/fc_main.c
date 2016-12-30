@@ -92,13 +92,25 @@ uint8_t motorControlEnable = false;
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-extern uint8_t PIDweight[3];
+static float throttlePIDAttenuation;
 
 uint16_t filteredCycleTime;
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float setpointRate[3];
-float rcInput[3];
+static float setpointRate[3];
+static float rcDeflection[3];
+
+float getThrottlePIDAttenuation(void) {
+    return throttlePIDAttenuation;
+}
+
+float getSetpointRate(int axis) {
+    return setpointRate[axis];
+}
+
+float getRcDeflection(int axis) {
+    return rcDeflection[axis];
+}
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -137,11 +149,11 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
     rcCommandf = rc / 500.0f;
-    rcInput[axis] = ABS(rcCommandf);
+    rcDeflection[axis] = ABS(rcCommandf);
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcInput[axis]) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcDeflection[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -270,17 +282,18 @@ void updateRcCommands(void)
     int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop = 100;
+        throttlePIDAttenuation = 1.0f;
     } else {
         if (rcData[THROTTLE] < 2000) {
             prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
             prop = 100 - currentControlRateProfile->dynThrPID;
         }
+        throttlePIDAttenuation = prop / 100.0f;
     }
 
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
-        PIDweight[axis] = prop;
 
         int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
         if (axis == ROLL || axis == PITCH) {
@@ -679,9 +692,7 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
-        pidConfig()->max_angle_inclination,
-        &accelerometerConfig()->accelerometerTrims,
-        rxConfig()->midrc
+        &accelerometerConfig()->accelerometerTrims
     );
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
 }

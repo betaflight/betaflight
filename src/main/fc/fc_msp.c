@@ -1164,8 +1164,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
-        sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit);
-        sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit);
+        sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit * 10);
+        sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1512,8 +1512,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src);
-        currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src);
+        currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src) / 10.0f;
+        currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src) / 10.0f;
         pidInitConfig(&currentProfile->pidProfile);
         break;
 

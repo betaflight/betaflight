@@ -1261,8 +1261,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("itermThrottleThreshold:%d",           currentProfile->pidProfile.itermThrottleThreshold);
         BLACKBOX_PRINT_HEADER_LINE("setpointRelaxRatio:%d",               currentProfile->pidProfile.setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              currentProfile->pidProfile.dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                currentProfile->pidProfile.yawRateAccelLimit);
-        BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   currentProfile->pidProfile.rateAccelLimit);
+        BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                castFloatBytesToInt(currentProfile->pidProfile.yawRateAccelLimit));
+        BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   castFloatBytesToInt(currentProfile->pidProfile.rateAccelLimit));
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                         rcControlsConfig()->deadband);
