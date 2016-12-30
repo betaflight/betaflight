@@ -275,17 +275,6 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     }
 }
 
-#ifdef SONAR
-void resetSonarConfig(sonarConfig_t *sonarConfig)
-{
-#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
-    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
-#else
-#error Sonar not defined for target
-#endif
-}
-#endif
 
 #ifdef USE_SDCARD
 void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
@@ -617,10 +606,6 @@ void createDefaultConfig(master_t *config)
 
 #ifdef BEEPER
     resetBeeperConfig(&config->beeperConfig);
-#endif
-
-#ifdef SONAR
-    resetSonarConfig(&config->sonarConfig);
 #endif
 
 #ifdef USE_SDCARD

@@ -86,7 +86,6 @@
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)
 #define beeperConfig(x) (&masterConfig.beeperConfig)
-#define sonarConfig(x) (&masterConfig.sonarConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define statusLedConfig(x) (&masterConfig.statusLedConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -173,10 +172,6 @@ typedef struct master_s {
 
 #ifdef BEEPER
     beeperConfig_t beeperConfig;
-#endif
-
-#ifdef SONAR
-    sonarConfig_t sonarConfig;
 #endif
 
 #ifdef LED_STRIP

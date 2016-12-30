@@ -67,6 +67,9 @@
 #define PG_VOLTAGE_METER_CONFIG 49 // Cleanflight has voltageMeterConfig_t, betaflight has batteryConfig_t
 #define PG_AMPERAGE_METER_CONFIG 50 // Cleanflight has amperageMeterConfig_t, betaflight has batteryConfig_t
 
+// Betaflight specific PGs start at 500
+#define PG_SONAR_CONFIG 500
+
 // Driver configuration
 #define PG_DRIVER_PWM_RX_CONFIG 100 // does not exist in betaflight
 #define PG_DRIVER_FLASHCHIP_CONFIG 101 // does not exist in betaflight

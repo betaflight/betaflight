@@ -62,6 +62,7 @@ uint8_t cliMode = 0;
 #include "drivers/sdcard.h"
 #include "drivers/buf_writer.h"
 #include "drivers/serial_escserial.h"
+#include "drivers/sonar_hcsr04.h"
 #include "drivers/stack_check.h"
 #include "drivers/vcd.h"
 
@@ -730,7 +731,7 @@ static const clivalue_t valueTable[] = {
 #ifdef BARO
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
     { "baro_tab_size",              VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  BARO_SAMPLE_COUNT_MAX }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_sample_count) },
-    { "baro_noise_lpf",             VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, , PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_noise_lpf) },
+    { "baro_noise_lpf",             VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_noise_lpf) },
     { "baro_cf_vel",                VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_vel) },
     { "baro_cf_alt",                VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_alt) },
 #endif
@@ -3848,10 +3849,11 @@ const cliResourceValue_t resourceTable[] = {
     { OWNER_PPMINPUT,      &ppmConfig()->ioTag, 0 },
     { OWNER_PWMINPUT,      &pwmConfig()->ioTags[0], PWM_INPUT_PORT_COUNT },
 #endif
-#ifdef SONAR
+//!!TODO - fix this for parameter groups
+/*#ifdef SONAR
     { OWNER_SONAR_TRIGGER, &sonarConfig()->triggerTag, 0 },
     { OWNER_SONAR_ECHO,    &sonarConfig()->echoTag,    0 },
-#endif
+#endif*/
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
 #endif
