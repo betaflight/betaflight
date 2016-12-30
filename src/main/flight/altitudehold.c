@@ -50,20 +50,17 @@ int32_t AltHold;
 int32_t vario = 0;                      // variometer in cm/s
 
 
-static barometerConfig_t *barometerConfig;
 static pidProfile_t *pidProfile;
 static rcControlsConfig_t *rcControlsConfig;
 static motorConfig_t *motorConfig;
 
 void configureAltitudeHold(
         pidProfile_t *initialPidProfile,
-        barometerConfig_t *intialBarometerConfig,
         rcControlsConfig_t *initialRcControlsConfig,
         motorConfig_t *initialMotorConfig
 )
 {
     pidProfile = initialPidProfile;
-    barometerConfig = intialBarometerConfig;
     rcControlsConfig = initialRcControlsConfig;
     motorConfig = initialMotorConfig;
 }
@@ -231,8 +228,8 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     previousTimeUs = currentTimeUs;
 
 #ifdef BARO
-    if (!isBaroCalibrationComplete()) {
-        performBaroCalibrationCycle();
+    if (!baroIsCalibrationComplete()) {
+        baroPerformCalibrationCycle();
         vel = 0;
         accAlt = 0;
     }
@@ -272,7 +269,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     // Integrator - Altitude in cm
     accAlt += (vel_acc * 0.5f) * dt + vel * dt;                                                                 // integrate velocity to get distance (x= a/2 * t^2)
-    accAlt = accAlt * barometerConfig->baro_cf_alt + (float)baro.BaroAlt * (1.0f - barometerConfig->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
+    accAlt = accAlt * barometerConfig()->baro_cf_alt + (float)baro.BaroAlt * (1.0f - barometerConfig()->baro_cf_alt);    // complementary filter for altitude estimation (baro & acc)
     vel += vel_acc;
 
 #ifdef DEBUG_ALT_HOLD
@@ -284,7 +281,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
     imuResetAccelerationSum();
 
 #ifdef BARO
-    if (!isBaroCalibrationComplete()) {
+    if (!baroIsCalibrationComplete()) {
         return;
     }
 #endif
@@ -308,7 +305,7 @@ void calculateEstimatedAltitude(timeUs_t currentTimeUs)
 
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity).
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
-    vel = vel * barometerConfig->baro_cf_vel + baroVel * (1.0f - barometerConfig->baro_cf_vel);
+    vel = vel * barometerConfig()->baro_cf_vel + baroVel * (1.0f - barometerConfig()->baro_cf_vel);
     vel_tmp = lrintf(vel);
 
     // set vario

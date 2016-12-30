@@ -165,7 +165,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
 #if defined(BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
+        || (sensors(SENSOR_BARO) && baroIsReady())
 #endif
 #if defined(SONAR)
         || sensors(SENSOR_SONAR)
