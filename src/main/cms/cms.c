@@ -130,14 +130,14 @@ STATIC_UNIT_TESTED const CMS_Menu *currentMenu;    // Points to top entry of the
 // XXX Does menu backing support backing into second page???
 
 static const CMS_Menu *menuStack[10];  // Stack to save menu transition
-static uint8_t menuStackHistory[10];// cursorRow in a stacked menu
+static int menuStackHistory[10];// cursorRow in a stacked menu
 static uint8_t menuStackIdx = 0;
 
 static OSD_Entry *pageTop;       // Points to top entry of the current page
 static OSD_Entry *pageTopAlt;    // Only 2 pages are allowed (for now)
-static uint8_t maxRow;           // Max row in the current page
+static int maxRow;               // Max row in the current page
 
-static int8_t cursorRow;
+static int cursorRow;
 
 #ifdef CMS_MENU_DEBUG // For external menu content creators
 
@@ -169,7 +169,7 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
     }
 
     if (maxRow >  MAX_MENU_ITEMS(instance)) {
-        maxRow = (uint8_t)MAX_MENU_ITEMS(instance);
+        maxRow = MAX_MENU_ITEMS(instance);
     }
 
     maxRow--;
@@ -218,7 +218,7 @@ static void cmsPadToSize(char *buf, int size)
     buf[size] = 0;
 }
 
-static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
+static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, diplayPos_t row)
 {
     char buff[10];
     int cnt = 0;
@@ -335,7 +335,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             OSD_FLOAT_t *ptr = p->data;
             cmsFormatFloat(*ptr->val * ptr->multipler, buff);
             cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, (uint8_t)(RIGHT_MENU_COLUMN(pDisplay) - 1), row, buff); // XXX One char left ???
+            cnt = displayWrite(pDisplay, (diplayPos_t)(RIGHT_MENU_COLUMN(pDisplay) - 1), row, buff); // XXX One char left ???
             CLR_PRINTVALUE(p);
         }
         break;
@@ -343,7 +343,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Label:
         if (IS_PRINTVALUE(p) && p->data) {
             // A label with optional string, immediately following text
-            cnt = displayWrite(pDisplay, (uint8_t)(LEFT_MENU_COLUMN + 2 + strlen(p->text)), row, p->data);
+            cnt = displayWrite(pDisplay, (diplayPos_t)(LEFT_MENU_COLUMN + 2 + strlen(p->text)), row, p->data);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -373,7 +373,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (uint8_t)((pDisplay->rows - maxRow) / 2 - 1);
+    int top = (pDisplay->rows - maxRow) / 2 - 1;
 
     // Polled (dynamic) value display denominator.
 
@@ -414,14 +414,14 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         cursorRow++;
 
     if (pDisplay->cursorRow >= 0 && cursorRow != pDisplay->cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (uint8_t)(pDisplay->cursorRow + top), "  ");
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (diplayPos_t)(pDisplay->cursorRow + top), "  ");
     }
 
     if (room < 30)
         return;
 
     if (pDisplay->cursorRow != cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (uint8_t)(cursorRow + top), " >");
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (diplayPos_t)(cursorRow + top), " >");
         pDisplay->cursorRow = cursorRow;
     }
 
@@ -431,9 +431,9 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     // Print text labels
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
-            uint8_t coloff = LEFT_MENU_COLUMN;
-            coloff = (uint8_t)(coloff + ((p->type == OME_Label) ? 1 : 2));
-            room -= displayWrite(pDisplay, coloff, (uint8_t)(i + top), p->text);
+            int coloff = LEFT_MENU_COLUMN;
+            coloff += (p->type == OME_Label) ? 1 : 2;
+        room -= displayWrite(pDisplay, (diplayPos_t)coloff, (diplayPos_t)(i + top), p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;
@@ -447,7 +447,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, (uint8_t)(top + i));
+            room -= cmsDrawMenuEntry(pDisplay, p, (diplayPos_t)(top + i));
             if (room < 30)
                 return;
         }
@@ -477,7 +477,7 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
         if (pMenu != currentMenu) {
             menuStack[menuStackIdx] = currentMenu;
-            cursorRow = (int8_t)(cursorRow + pageTop - currentMenu->entries); // Convert cursorRow to absolute value
+            cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
             menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
 
@@ -521,7 +521,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
             // Cursor was in the second page.
             pageTopAlt = currentMenu->entries;
             pageTop = pageTopAlt + maxRow + 1;
-            cursorRow = (int8_t)(cursorRow - (maxRow + 1));
+            cursorRow -= (maxRow + 1);
             cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
         }
     }
@@ -620,9 +620,6 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
-
-//#pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wconversion"
 
 STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
@@ -775,11 +772,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_INT8_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
+                        *ptr->val = (int8_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
+                        *ptr->val = (int8_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -793,11 +790,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_UINT16_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
+                        *ptr->val = (uint16_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
+                        *ptr->val = (uint16_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -811,11 +808,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_INT16_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
+                        *ptr->val = (int16_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
+                        *ptr->val = (int16_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
