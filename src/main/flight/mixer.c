@@ -236,7 +236,8 @@ const mixer_t mixers[] = {
 
 static motorMixer_t *customMixers;
 
-static uint16_t disarmMotorOutput, motorOutputHigh, motorOutputLow, deadbandMotor3dHigh, deadbandMotor3dLow;
+static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+uint16_t motorOutputHigh, motorOutputLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount()
@@ -530,19 +531,6 @@ void mixTable(pidProfile_t *pidProfile)
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                 motor[i] = disarmMotorOutput;
             }
-        }
-    }
-
-    // Anti Desync feature for ESC's. Limit rapid throttle changes
-    if (motorConfig->maxEscThrottleJumpMs) {
-        const int16_t maxThrottleStep = constrain(motorConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
-
-        // Only makes sense when it's within the range
-        if (maxThrottleStep < motorOutputRange) {
-            static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
-
-            motor[i] = constrain(motor[i], motorOutputMin, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
-            motorPrevious[i] = motor[i];
         }
     }
 

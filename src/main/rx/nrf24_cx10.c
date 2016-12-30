@@ -129,7 +129,7 @@ STATIC_UNIT_TESTED uint16_t cx10ConvertToPwmUnsigned(const uint8_t *pVal)
 
 void cx10Nrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *payload)
 {
-    const uint8_t offset = (cx10Protocol == NRF24RX_CX10) ? 0 : 4;
+    const uint8_t offset = (cx10Protocol == RX_SPI_NRF24_CX10) ? 0 : 4;
     rcData[RC_SPI_ROLL] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[5 + offset]);  // aileron
     rcData[RC_SPI_PITCH] = (PWM_RANGE_MAX + PWM_RANGE_MIN) - cx10ConvertToPwmUnsigned(&payload[7 + offset]); // elevator
     rcData[RC_SPI_THROTTLE] = cx10ConvertToPwmUnsigned(&payload[9 + offset]); // throttle
@@ -274,8 +274,8 @@ static void cx10Nrf24Setup(rx_spi_protocol_e protocol)
 {
     cx10Protocol = protocol;
     protocolState = STATE_BIND;
-    payloadSize = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_PAYLOAD_SIZE : CX10A_PROTOCOL_PAYLOAD_SIZE;
-    hopTimeout = (protocol == NRF24RX_CX10) ? CX10_PROTOCOL_HOP_TIMEOUT : CX10A_PROTOCOL_HOP_TIMEOUT;
+    payloadSize = (protocol == RX_SPI_NRF24_CX10) ? CX10_PROTOCOL_PAYLOAD_SIZE : CX10A_PROTOCOL_PAYLOAD_SIZE;
+    hopTimeout = (protocol == RX_SPI_NRF24_CX10) ? CX10_PROTOCOL_HOP_TIMEOUT : CX10A_PROTOCOL_HOP_TIMEOUT;
 
     NRF24L01_Initialize(0); // sets PWR_UP, no CRC
     NRF24L01_SetupBasic();

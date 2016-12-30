@@ -80,6 +80,7 @@ OSD_Entry menuOsdActiveElemsEntries[] =
     {"GPS SATS.", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_GPS_SATS], 0},
 #endif // GPS
     {"ALTITUDE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ALTITUDE], 0},
+    {"POWER", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_POWER], 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };

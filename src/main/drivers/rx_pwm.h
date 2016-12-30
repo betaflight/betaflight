@@ -17,20 +17,32 @@
 
 #pragma once
 
-#include "common/time.h"
+#include "drivers/io_types.h"
 
-extern int16_t magHold;
-extern bool isRXDataNew;
+typedef enum {
+    INPUT_FILTERING_DISABLED = 0,
+    INPUT_FILTERING_ENABLED
+} inputFilteringMode_e;
 
-union rollAndPitchTrims_u;
-void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
-void handleInflightCalibrationStickPosition();
+#define PPM_RCVR_TIMEOUT            0
+#define PWM_INPUT_PORT_COUNT        8
 
-void mwDisarm(void);
-void mwArm(void);
+typedef struct ppmConfig_s {
+    ioTag_t ioTag;
+} ppmConfig_t;
 
-void processRx(timeUs_t currentTimeUs);
-void updateLEDs(void);
-void updateRcCommands(void);
+typedef struct pwmConfig_s {
+    ioTag_t ioTags[PWM_INPUT_PORT_COUNT];
+    inputFilteringMode_e inputFilteringMode;
+} pwmConfig_t;
 
-void taskMainPidLoop(timeUs_t currentTimeUs);
+void ppmRxInit(const ppmConfig_t *ppmConfig, uint8_t pwmProtocol);
+void pwmRxInit(const pwmConfig_t *pwmConfig);
+
+uint16_t pwmRead(uint8_t channel);
+uint16_t ppmRead(uint8_t channel);
+
+bool isPPMDataBeingReceived(void);
+void resetPPMDataReceivedState(void);
+
+bool isPWMDataBeingReceived(void);

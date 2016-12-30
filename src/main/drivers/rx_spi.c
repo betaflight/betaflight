@@ -28,22 +28,17 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
+#include "bus_spi.h"
+#include "bus_spi_soft.h"
 #include "gpio.h"
 #include "io.h"
 #include "io_impl.h"
 #include "rcc.h"
 #include "rx_spi.h"
+#include "system.h"
 
-#include "bus_spi.h"
-#include "bus_spi_soft.h"
-
-#define DISABLE_RX()    {IOHi(IOGetByTag(IO_TAG(RX_NSS_PIN)));}
-#define ENABLE_RX()     {IOLo(IOGetByTag(IO_TAG(RX_NSS_PIN)));}
-#ifdef RX_CE_PIN
-#define RX_CE_HI()       {IOHi(IOGetByTag(IO_TAG(RX_CE_PIN)));}
-#define RX_CE_LO()       {IOLo(IOGetByTag(IO_TAG(RX_CE_PIN)));}
-#endif
+#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
+#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
 
 #ifdef USE_RX_SOFTSPI
 static const softSPIDevice_t softSPIDevice = {
@@ -73,24 +68,9 @@ void rxSpiDeviceInit(rx_spi_type_e spiType)
 #else
     UNUSED(spiType);
     const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
-    IOInit(IOGetByTag(IO_TAG(RX_NSS_PIN)), OWNER_SPI_CS, rxSPIDevice + 1);
+    IOInit(DEFIO_IO(RX_NSS_PIN), OWNER_SPI_CS, rxSPIDevice + 1);
 #endif // USE_RX_SOFTSPI
 
-#if defined(STM32F10X)
-    RCC_AHBPeriphClockCmd(RX_NSS_GPIO_CLK_PERIPHERAL, ENABLE);
-    RCC_AHBPeriphClockCmd(RX_CE_GPIO_CLK_PERIPHERAL, ENABLE);
-#endif
-
-#ifdef RX_CE_PIN
-    // CE as OUTPUT
-    IOInit(IOGetByTag(IO_TAG(RX_CE_PIN)), OWNER_RX_SPI_CS, rxSPIDevice + 1);
-#if defined(STM32F10X)
-    IOConfigGPIO(IOGetByTag(IO_TAG(RX_CE_PIN)), SPI_IO_CS_CFG);
-#elif defined(STM32F3) || defined(STM32F4)
-    IOConfigGPIOAF(IOGetByTag(IO_TAG(RX_CE_PIN)), SPI_IO_CS_CFG, 0);
-#endif
-    RX_CE_LO();
-#endif // RX_CE_PIN
     DISABLE_RX();
 
 #ifdef RX_SPI_INSTANCE

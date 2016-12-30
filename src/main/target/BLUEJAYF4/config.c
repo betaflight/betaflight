@@ -20,10 +20,12 @@
 
 #include <platform.h>
 
+#include "blackbox/blackbox_io.h"
+
 #include "config/config_master.h"
 #include "config/feature.h"
 
-#include "blackbox/blackbox_io.h"
+#include "drivers/io.h"
 
 #include "hardware_revision.h"
 

@@ -116,7 +116,7 @@ void mpu6500SpiGyroInit(gyroDev_t *gyro)
 
 bool mpu6500SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_65xx_SPI) {
         return false;
     }
 
@@ -128,7 +128,7 @@ bool mpu6500SpiAccDetect(accDev_t *acc)
 
 bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_65xx_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_65xx_SPI) {
         return false;
     }
 

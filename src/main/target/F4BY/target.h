@@ -103,6 +103,9 @@
 
 #define SERIAL_PORT_COUNT       6 //VCP, UART1, UART2, UART3, UART4, UART5, UART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 8 // PWM 9
+
 #define USE_SPI
 #define USE_SPI_DEVICE_1
 #define SPI1_SCK_PIN            PA5
