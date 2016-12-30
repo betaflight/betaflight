@@ -84,10 +84,6 @@ PG_REGISTER_ARR_WITH_RESET_FN(modeColorIndexes_t, LED_MODE_COUNT, modeColors, PG
 PG_REGISTER_WITH_RESET_FN(specialColorIndexes_t, specialColors, PG_SPECIAL_COLOR_CONFIG, 0);
 */
 
-#if defined(TARGET_CONFIG_DEFAULT_LEDSTRIP)
-void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs);   
-#endif
-
 static bool ledStripInitialised = false;
 static bool ledStripEnabled = true;
 static ledStripConfig_t * currentLedStripConfig;
@@ -1082,10 +1078,6 @@ void pgResetFn_specialColors(specialColorIndexes_t *instance)
 void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     memset(ledConfigs, 0, LED_MAX_STRIP_LENGTH * sizeof(ledConfig_t));
-
-#if defined(TARGET_CONFIG_DEFAULT_LEDSTRIP)
-    targetApplyDefaultLedStripConfig(ledConfigs);
-#endif
 }
 
 void applyDefaultColors(hsvColor_t *colors)

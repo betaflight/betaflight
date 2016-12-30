@@ -29,6 +29,23 @@
 #include "config/feature.h"
 #include "io/ledstrip.h"
 
+void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)   
+{
+    const ledConfig_t defaultLedStripConfig[] = {
+        DEFINE_LED( 0,   0,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 0,   1,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 0,   8,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 7,  15,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 8,  15,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 7,  14,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 8,  14,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 15,  8,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 15,  1,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 15,  0,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+    };
+    memcpy(ledConfigs, &defaultLedStripConfig, MIN(LED_MAX_STRIP_LENGTH, sizeof(defaultLedStripConfig)));
+}
+
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config)
 {
@@ -77,30 +94,11 @@ void targetConfiguration(master_t *config)
     config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
 
+    targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 
     featureSet(FEATURE_VBAT);
     featureSet(FEATURE_RX_PPM);
-    //featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_FAILSAFE);
     featureSet(FEATURE_AIRMODE);
     featureSet(FEATURE_LED_STRIP);
 }
-
-#if defined(TARGET_CONFIG_DEFAULT_LEDSTRIP)
-void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)   
-{
-    const ledConfig_t defaultLedStripConfig[] = {
-        DEFINE_LED( 0,   0,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 0,   1,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 0,   8,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 7,  15,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 8,  15,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 7,  14,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 8,  14,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 15,  8,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 15,  1,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 15,  0,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
-    };
-    memcpy(ledConfigs, &defaultLedStripConfig, sizeof(defaultLedStripConfig));
-}
-#endif
