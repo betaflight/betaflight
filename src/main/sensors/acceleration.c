@@ -26,6 +26,11 @@
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "common/utils.h"
+
+#include "config/config_reset.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
@@ -72,10 +77,45 @@ extern bool AccInflightCalibrationMeasurementDone;
 extern bool AccInflightCalibrationSavetoEEProm;
 extern bool AccInflightCalibrationActive;
 
-static flightDynamicsTrims_t *accelerationTrims;
-
-static uint16_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
+
+PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+static void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
+{
+    RESET_CONFIG_2(rollAndPitchTrims_t, rollAndPitchTrims,
+        .values.roll = 0,
+        .values.pitch = 0,
+    );
+}
+
+void accResetRollAndPitchTrims(void)
+{
+    resetRollAndPitchTrims(&accelerometerConfig()->rollAndPitchTrims);
+}
+
+static void resetFlightDynamicsTrims(flightDynamicsTrims_t *accZero)
+{
+    accZero->values.roll = 0;
+    accZero->values.pitch = 0;
+    accZero->values.yaw = 0;
+}
+
+void accResetFlightDynamicsTrims(void)
+{
+    resetFlightDynamicsTrims(&accelerometerConfig()->accZero);
+}
+
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+{
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_lpf_hz = 15,
+        .acc_align = ALIGN_DEFAULT,
+        .acc_hardware = ACC_DEFAULT
+    );
+    resetRollAndPitchTrims(&instance->rollAndPitchTrims);
+    resetFlightDynamicsTrims(&instance->accZero);
+}
 
 bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
@@ -228,19 +268,19 @@ retry:
     return true;
 }
 
-bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamplingInverval)
+bool accInit(void)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
     acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
     acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
-    if (!accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
+    if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+    switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
@@ -255,10 +295,13 @@ bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamp
         acc.accSamplingInterval = 1000;
 #endif
     }
-    if (accLpfCutHz) {
+    if (accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accelerometerConfig()->acc_lpf_hz, acc.accSamplingInterval);
         }
+    }
+    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
+        acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
     return true;
 }
@@ -268,7 +311,7 @@ void accSetCalibrationCycles(uint16_t calibrationCyclesRequired)
     calibratingA = calibrationCyclesRequired;
 }
 
-bool isAccelerationCalibrationComplete(void)
+bool accIsCalibrationComplete(void)
 {
     return calibratingA == 0;
 }
@@ -283,13 +326,7 @@ static bool isOnFirstAccelerationCalibrationCycle(void)
     return calibratingA == CALIBRATING_ACC_CYCLES;
 }
 
-void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims)
-{
-    rollAndPitchTrims->values.roll = 0;
-    rollAndPitchTrims->values.pitch = 0;
-}
-
-static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performAcclerationCalibration(void)
 {
     static int32_t a[3];
 
@@ -304,16 +341,16 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
 
         // Reset global variables to prevent other code from using un-calibrated data
         acc.accSmooth[axis] = 0;
-        accelerationTrims->raw[axis] = 0;
+        accelerometerConfig()->accZero.raw[axis] = 0;
     }
 
     if (isOnFinalAccelerationCalibrationCycle()) {
         // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
-        accelerationTrims->raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
-        accelerationTrims->raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
+        accelerometerConfig()->accZero.raw[X] = (a[X] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerometerConfig()->accZero.raw[Y] = (a[Y] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES;
+        accelerometerConfig()->accZero.raw[Z] = (a[Z] + (CALIBRATING_ACC_CYCLES / 2)) / CALIBRATING_ACC_CYCLES - acc.dev.acc_1G;
 
-        resetRollAndPitchTrims(rollAndPitchTrims);
+        resetRollAndPitchTrims(&accelerometerConfig()->rollAndPitchTrims);
 
         saveConfigAndNotify();
     }
@@ -321,7 +358,7 @@ static void performAcclerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims
     calibratingA--;
 }
 
-static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndPitchTrims)
+static void performInflightAccelerationCalibration(void)
 {
     uint8_t axis;
     static int32_t b[3];
@@ -330,11 +367,11 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
 
     // Saving old zeropoints before measurement
     if (InflightcalibratingA == 50) {
-        accZero_saved[X] = accelerationTrims->raw[X];
-        accZero_saved[Y] = accelerationTrims->raw[Y];
-        accZero_saved[Z] = accelerationTrims->raw[Z];
-        angleTrim_saved.values.roll = rollAndPitchTrims->values.roll;
-        angleTrim_saved.values.pitch = rollAndPitchTrims->values.pitch;
+        accZero_saved[X] = accelerometerConfig()->accZero.raw[X];
+        accZero_saved[Y] = accelerometerConfig()->accZero.raw[Y];
+        accZero_saved[Z] = accelerometerConfig()->accZero.raw[Z];
+        angleTrim_saved.values.roll = accelerometerConfig()->rollAndPitchTrims.values.roll;
+        angleTrim_saved.values.pitch = accelerometerConfig()->rollAndPitchTrims.values.pitch;
     }
     if (InflightcalibratingA > 0) {
         for (axis = 0; axis < 3; axis++) {
@@ -345,7 +382,7 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
             b[axis] += acc.accSmooth[axis];
             // Clear global variables for next reading
             acc.accSmooth[axis] = 0;
-            accelerationTrims->raw[axis] = 0;
+            accelerometerConfig()->accZero.raw[axis] = 0;
         }
         // all values are measured
         if (InflightcalibratingA == 1) {
@@ -353,36 +390,38 @@ static void performInflightAccelerationCalibration(rollAndPitchTrims_t *rollAndP
             AccInflightCalibrationMeasurementDone = true;
             beeper(BEEPER_ACC_CALIBRATION); // indicate end of calibration
             // recover saved values to maintain current flight behaviour until new values are transferred
-            accelerationTrims->raw[X] = accZero_saved[X];
-            accelerationTrims->raw[Y] = accZero_saved[Y];
-            accelerationTrims->raw[Z] = accZero_saved[Z];
-            rollAndPitchTrims->values.roll = angleTrim_saved.values.roll;
-            rollAndPitchTrims->values.pitch = angleTrim_saved.values.pitch;
+            accelerometerConfig()->accZero.raw[X] = accZero_saved[X];
+            accelerometerConfig()->accZero.raw[Y] = accZero_saved[Y];
+            accelerometerConfig()->accZero.raw[Z] = accZero_saved[Z];
+            accelerometerConfig()->rollAndPitchTrims.values.roll = angleTrim_saved.values.roll;
+            accelerometerConfig()->rollAndPitchTrims.values.pitch = angleTrim_saved.values.pitch;
         }
         InflightcalibratingA--;
     }
     // Calculate average, shift Z down by acc_1G and store values in EEPROM at end of calibration
     if (AccInflightCalibrationSavetoEEProm) {      // the aircraft is landed, disarmed and the combo has been done again
         AccInflightCalibrationSavetoEEProm = false;
-        accelerationTrims->raw[X] = b[X] / 50;
-        accelerationTrims->raw[Y] = b[Y] / 50;
-        accelerationTrims->raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
+        accelerometerConfig()->accZero.raw[X] = b[X] / 50;
+        accelerometerConfig()->accZero.raw[Y] = b[Y] / 50;
+        accelerometerConfig()->accZero.raw[Z] = b[Z] / 50 - acc.dev.acc_1G;    // for nunchuck 200=1G
 
-        resetRollAndPitchTrims(rollAndPitchTrims);
+        resetRollAndPitchTrims(&accelerometerConfig()->rollAndPitchTrims);
 
         saveConfigAndNotify();
     }
 }
 
-static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrims)
+static void applyAccelerationTrims(void)
 {
-    acc.accSmooth[X] -= accelerationTrims->raw[X];
-    acc.accSmooth[Y] -= accelerationTrims->raw[Y];
-    acc.accSmooth[Z] -= accelerationTrims->raw[Z];
+    acc.accSmooth[X] -= accelerometerConfig()->accZero.raw[X];
+    acc.accSmooth[Y] -= accelerometerConfig()->accZero.raw[Y];
+    acc.accSmooth[Z] -= accelerometerConfig()->accZero.raw[Z];
 }
 
-void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     if (!acc.dev.read(&acc.dev)) {
         return;
     }
@@ -393,7 +432,7 @@ void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
         acc.accSmooth[axis] = acc.dev.ADCRaw[axis];
     }
 
-    if (accLpfCutHz) {
+    if (accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             acc.accSmooth[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accSmooth[axis]));
         }
@@ -401,28 +440,22 @@ void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
 
     alignSensors(acc.accSmooth, acc.dev.accAlign);
 
-    if (!isAccelerationCalibrationComplete()) {
-        performAcclerationCalibration(rollAndPitchTrims);
+    if (!accIsCalibrationComplete()) {
+        performAcclerationCalibration();
     }
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
-        performInflightAccelerationCalibration(rollAndPitchTrims);
+        performInflightAccelerationCalibration();
     }
 
-    applyAccelerationTrims(accelerationTrims);
+    applyAccelerationTrims();
 }
 
-void setAccelerationTrims(flightDynamicsTrims_t *accelerationTrimsToUse)
+void accSetFilter(void)
 {
-    accelerationTrims = accelerationTrimsToUse;
-}
-
-void setAccelerationFilter(uint16_t initialAccLpfCutHz)
-{
-    accLpfCutHz = initialAccLpfCutHz;
     if (acc.accSamplingInterval) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accSamplingInterval);
+            biquadFilterInitLPF(&accFilter[axis], accelerometerConfig()->acc_lpf_hz, acc.accSamplingInterval);
         }
     }
 }

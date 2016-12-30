@@ -29,7 +29,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 
@@ -87,13 +86,6 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 #define IBATINTERVAL (6 * 3500)
 
 
-static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-    accUpdate(&accelerometerConfig()->accelerometerTrims);
-}
-
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
@@ -125,7 +117,7 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
             ibatLastServiced = currentTimeUs;
-            updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+            updateCurrentMeter(ibatTimeSinceLastServiced, flight3DConfig()->deadband3d_throttle);
         }
     }
 }
@@ -154,15 +146,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
 #endif
 }
 
-#ifdef MAG
-static void taskUpdateCompass(timeUs_t currentTimeUs)
-{
-    if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
-    }
-}
-#endif
-
 #ifdef BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
 {
@@ -182,7 +165,7 @@ static void taskCalculateAltitude(timeUs_t currentTimeUs)
 {
     if (false
 #if defined(BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
+        || (sensors(SENSOR_BARO) && baroIsReady())
 #endif
 #if defined(SONAR)
         || sensors(SENSOR_SONAR)
@@ -198,7 +181,7 @@ static void taskTelemetry(timeUs_t currentTimeUs)
     telemetryCheckState();
 
     if (!cliMode && feature(FEATURE_TELEMETRY)) {
-        telemetryProcess(currentTimeUs, &masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+        telemetryProcess(currentTimeUs, flight3DConfig()->deadband3d_throttle);
     }
 }
 #endif
@@ -301,7 +284,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
-        .taskFunc = taskUpdateAccelerometer,
+        .taskFunc = accUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
@@ -356,7 +339,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef MAG
     [TASK_COMPASS] = {
         .taskName = "COMPASS",
-        .taskFunc = taskUpdateCompass,
+        .taskFunc = compassUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // Compass is updated at 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },

@@ -33,6 +33,8 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
+#include "sensors/acceleration.h"
+
 #ifdef CMS
 
 #if defined(VTX) || defined(USE_RTC6705)

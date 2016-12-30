@@ -17,86 +17,40 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
-#include "common/utils.h"
-
-#include "config/feature.h"
-
-#include "fc/config.h"
-#include "fc/runtime_config.h"
-
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/sonar.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/sonar.h"
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
-#ifdef SONAR
-static bool sonarDetect(void)
-{
-    if (feature(FEATURE_SONAR)) {
-        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
-        // since there is no way to detect it
-        sensorsSet(SENSOR_SONAR);
-        return true;
-    }
-    return false;
-}
-#endif
-
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
-        const accelerometerConfig_t *accelerometerConfig,
-        const compassConfig_t *compassConfig,
-        const barometerConfig_t *barometerConfig,
-        const sonarConfig_t *sonarConfig)
+bool sensorsAutodetect(void)
 {
     // gyro must be initialised before accelerometer
-    if (!gyroInit(gyroConfig)) {
+    if (!gyroInit()) {
         return false;
     }
 
-    accInit(accelerometerConfig, gyro.targetLooptime);
+    accInit();
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig->mag_hardware)) {
-        compassInit(compassConfig);
-    }
-#else
-    UNUSED(compassConfig);
+    compassInit();
 #endif
 
 #ifdef BARO
-    baroDetect(&baro.dev, barometerConfig->baro_hardware);
-#else
-    UNUSED(barometerConfig);
+    baroInit();
 #endif
 
 #ifdef SONAR
-    if (sonarDetect()) {
-        sonarInit(sonarConfig);
-    }
-#else
-    UNUSED(sonarConfig);
+    sonarInit();
 #endif
-
-    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig->gyro_align;
-    }
-    if (accelerometerConfig->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accelerometerConfig->acc_align;
-    }
-    if (compassConfig->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig->mag_align;
-    }
 
     return true;
 }

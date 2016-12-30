@@ -90,12 +90,10 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
-#endif
-#ifndef RX_SPI_DEFAULT_PROTOCOL
-#define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
@@ -110,13 +108,6 @@ profile_t *currentProfile;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
-
-static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
-{
-    accelerometerTrims->values.pitch = 0;
-    accelerometerTrims->values.roll = 0;
-    accelerometerTrims->values.yaw = 0;
-}
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
@@ -176,7 +167,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->max_angle_inclination = 70.0f;    // 70 degrees
 
     // Betaflight PID controller parameters
     pidProfile->setpointRelaxRatio = 30;
@@ -211,15 +201,6 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
-#ifdef BARO
-void resetBarometerConfig(barometerConfig_t *barometerConfig)
-{
-    barometerConfig->baro_sample_count = 21;
-    barometerConfig->baro_noise_lpf = 0.6f;
-    barometerConfig->baro_cf_vel = 0.985f;
-    barometerConfig->baro_cf_alt = 0.965f;
-}
-#endif
 
 #ifdef LED_STRIP
 void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
@@ -292,17 +273,6 @@ void resetMotorConfig(motorConfig_t *motorConfig)
     }
 }
 
-#ifdef SONAR
-void resetSonarConfig(sonarConfig_t *sonarConfig)
-{
-#if defined(SONAR_TRIGGER_PIN) && defined(SONAR_ECHO_PIN)
-    sonarConfig->triggerTag = IO_TAG(SONAR_TRIGGER_PIN);
-    sonarConfig->echoTag = IO_TAG(SONAR_ECHO_PIN);
-#else
-#error Sonar not defined for target
-#endif
-}
-#endif
 
 #ifdef USE_SDCARD
 void resetsdcardConfig(sdcardConfig_t *sdcardConfig)
@@ -537,7 +507,7 @@ uint8_t getCurrentProfile(void)
     return masterConfig.current_profile_index;
 }
 
-void setProfile(uint8_t profileIndex)
+static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
     currentControlRateProfileIndex = currentProfile->activeRateProfile;
@@ -602,43 +572,20 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;    // default profile
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
-    config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
-    config->gyroConfig.gyro_sync_denom = 8;
     config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-    config->gyroConfig.gyro_sync_denom = 1;
     config->pidConfig.pid_process_denom = 4;
 #else
-    config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
-    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
-    config->gyroConfig.gyro_soft_lpf_hz = 90;
-    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
-    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
-    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
-    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_MODE;
-
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
-
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
-    config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
-
-    // xxx_hardware: 0:default/autodetect, 1: disable
-    config->compassConfig.mag_hardware = 1;
-
-    config->barometerConfig.baro_hardware = 1;
 
     resetBatteryConfig(&config->batteryConfig);
 
@@ -659,46 +606,11 @@ void createDefaultConfig(master_t *config)
     resetBeeperConfig(&config->beeperConfig);
 #endif
 
-#ifdef SONAR
-    resetSonarConfig(&config->sonarConfig);
-#endif
-
 #ifdef USE_SDCARD
     intFeatureSet(FEATURE_SDCARD, featuresPtr);
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
-#ifdef SERIALRX_PROVIDER
-    config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
-#else
-    config->rxConfig.serialrx_provider = 0;
-#endif
-    config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
-    config->rxConfig.sbus_inversion = 1;
-    config->rxConfig.spektrum_sat_bind = 0;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->rxConfig.midrc = 1500;
-    config->rxConfig.mincheck = 1100;
-    config->rxConfig.maxcheck = 1900;
-    config->rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
-    config->rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
-
-    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &config->rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
-    }
-
-    config->rxConfig.rssi_channel = 0;
-    config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_ppm_invert = 0;
-    config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
-    config->rxConfig.rcInterpolationInterval = 19;
-    config->rxConfig.fpvCamAngleDegrees = 0;
-    config->rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
-    config->rxConfig.airModeActivateThreshold = 1350;
-
-    resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 
 #ifdef USE_PWM
     config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
@@ -736,24 +648,17 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
-
-    config->compassConfig.mag_declination = 0;
-    config->accelerometerConfig.acc_lpf_hz = 10.0f;
+    accResetRollAndPitchTrims();
 
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;
     config->imuConfig.acc_unarmedcal = 1;
 
-#ifdef BARO
-    resetBarometerConfig(&config->barometerConfig);
-#endif
-
     // Radio
 #ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", &config->rxConfig);
+    parseRcChannels("TAER1234");
 #else
-    parseRcChannels("AETR1234", &config->rxConfig);
+    parseRcChannels("AETR1234");
 #endif
 
     resetRcControlsConfig(&config->rcControlsConfig);
@@ -848,9 +753,11 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConfigs(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
     setProfile(0);
 
@@ -886,15 +793,14 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&accelerometerConfig()->accZero);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accResetFlightDynamicsTrims();
+    accSetFilter();
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
         &masterConfig.motorConfig,
         &masterConfig.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig
+        &masterConfig.airplaneConfig
     );
 
 #ifdef USE_SERVOS
@@ -910,14 +816,9 @@ void activateConfig(void)
 
     configureAltitudeHold(
         &currentProfile->pidProfile,
-        &masterConfig.barometerConfig,
         &masterConfig.rcControlsConfig,
         &masterConfig.motorConfig
     );
-
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
 }
 
 void validateAndFixConfig(void)
@@ -1017,8 +918,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-    useRxConfig(&masterConfig.rxConfig);
-
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
 
     if (!isSerialConfigValid(serialConfig)) {
@@ -1048,18 +947,50 @@ void validateAndFixGyroConfig(void)
     }
 }
 
+void readEEPROM(void)
+{
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//    pgActivateProfile(getCurrentProfile());
+//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        masterConfig.current_profile_index = 0;
+    }
+
+    setProfile(masterConfig.current_profile_index);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
 void resetEEPROM(void)
 {
-    resetConf();
+    resetConfigs();
     writeEEPROM();
 }
 

@@ -47,7 +47,6 @@
 #include "config/feature.h"
 
 extern mixerMode_e currentMixerMode;
-extern rxConfig_t *rxConfig;
 
 static servoMixerConfig_t *servoMixerConfig;
 
@@ -346,7 +345,7 @@ STATIC_UNIT_TESTED void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = axisPIDf[YAW];
 
         // Reverse yaw servo when inverted in 3D mode
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
             input[INPUT_STABILIZED_YAW] *= -1;
         }
     }
@@ -362,14 +361,14 @@ STATIC_UNIT_TESTED void servoMixer(void)
     // 2000 - 1500 = +500
     // 1500 - 1500 = 0
     // 1000 - 1500 = -500
-    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig->midrc;
-    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig->midrc;
-    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig->midrc;
-    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig->midrc;
-    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig->midrc;
-    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig->midrc;
-    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig->midrc;
-    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig->midrc;
+    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
+    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
+    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
+    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
+    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
 
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
         servo[i] = 0;

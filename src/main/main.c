@@ -369,7 +369,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(rxConfig());
+        dashboardInit();
     }
 #endif
 
@@ -394,12 +394,7 @@ void init(void)
     }
 #endif
 
-#ifdef SONAR
-    const sonarConfig_t *sonarConfig = sonarConfig();
-#else
-    const void *sonarConfig = NULL;
-#endif
-    if (!sensorsAutodetect(gyroConfig(), accelerometerConfig(), compassConfig(), barometerConfig(), sonarConfig)) {
+    if (!sensorsAutodetect()) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -439,9 +434,9 @@ void init(void)
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
+    failsafeInit(flight3DConfig()->deadband3d_throttle);
 
-    rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
+    rxInit(modeActivationProfile()->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {

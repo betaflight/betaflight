@@ -35,6 +35,8 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "sensors/gyro.h"
+
 #include "hardware_revision.h"
 
 void targetConfiguration(master_t *config)
@@ -49,14 +51,14 @@ void targetConfiguration(master_t *config)
 
     config->motorConfig.minthrottle = 1049;
 
-    config->gyroConfig.gyro_lpf = GYRO_LPF_188HZ;
-    config->gyroConfig.gyro_soft_lpf_hz = 100;
-    config->gyroConfig.gyro_soft_notch_hz_1 = 0;
-    config->gyroConfig.gyro_soft_notch_hz_2 = 0;
+    gyroConfig()->gyro_lpf = GYRO_LPF_188HZ;
+    gyroConfig()->gyro_soft_lpf_hz = 100;
+    gyroConfig()->gyro_soft_notch_hz_1 = 0;
+    gyroConfig()->gyro_soft_notch_hz_2 = 0;
 
     /*for (int channel = 0; channel < NON_AUX_CHANNEL_COUNT; channel++) {
-        config->rxConfig.channelRanges[channel].min = 1180;
-        config->rxConfig.channelRanges[channel].max = 1860;
+        rxConfig()->channelRanges[channel].min = 1180;
+        rxConfig()->channelRanges[channel].max = 1860;
     }*/
 
     for (int profileId = 0; profileId < 2; profileId++) {

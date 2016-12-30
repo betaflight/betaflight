@@ -64,7 +64,6 @@ static mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
 static airplaneConfig_t *airplaneConfig;
-rxConfig_t *rxConfig;
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -276,23 +275,21 @@ void initEscEndpoints(void) {
         deadbandMotor3dLow = flight3DConfig->deadband3d_low;
     }
 
-    rcCommandThrottleRange = (PWM_RANGE_MAX - rxConfig->mincheck);
-    rcCommandThrottleRange3dLow = rxConfig->midrc - rxConfig->mincheck - flight3DConfig->deadband3d_throttle;
-    rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+    rcCommandThrottleRange = (PWM_RANGE_MAX - rxConfig()->mincheck);
+    rcCommandThrottleRange3dLow = rxConfig()->midrc - rxConfig()->mincheck - flight3DConfig->deadband3d_throttle;
+    rcCommandThrottleRange3dHigh = PWM_RANGE_MAX - rxConfig()->midrc - flight3DConfig->deadband3d_throttle;
 }
 
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         motorConfig_t *motorConfigToUse,
         mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        rxConfig_t *rxConfigToUse)
+        airplaneConfig_t *airplaneConfigToUse)
 {
     flight3DConfig = flight3DConfigToUse;
     motorConfig = motorConfigToUse;
     mixerConfig = mixerConfigToUse;
     airplaneConfig = airplaneConfigToUse;
-    rxConfig = rxConfigToUse;
 }
 
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
@@ -427,25 +424,25 @@ void mixTable(pidProfile_t *pidProfile)
 
     // Find min and max throttle based on condition.
     if (feature(FEATURE_3D)) {
-        if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
+        if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
 
-        if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
+        if ((rcCommand[THROTTLE] <= (rxConfig()->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             motorOutputMax = deadbandMotor3dLow;
             motorOutputMin = motorOutputLow;
             throttlePrevious = rcCommand[THROTTLE];
-            throttle = rcCommand[THROTTLE] - rxConfig->mincheck;
+            throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
             if(isMotorProtocolDshot()) mixerInversion = true;
-        } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
+        } else if (rcCommand[THROTTLE] >= (rxConfig()->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
             motorOutputMax = motorOutputHigh;
             motorOutputMin = deadbandMotor3dHigh;
             throttlePrevious = rcCommand[THROTTLE];
-            throttle = rcCommand[THROTTLE] - rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+            throttle = rcCommand[THROTTLE] - rxConfig()->midrc - flight3DConfig->deadband3d_throttle;
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
-        } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
+        } else if ((throttlePrevious <= (rxConfig()->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
             motorOutputMax = deadbandMotor3dLow;
             motorOutputMin = motorOutputLow;
-            throttle = rxConfig->midrc - flight3DConfig->deadband3d_throttle;
+            throttle = rxConfig()->midrc - flight3DConfig->deadband3d_throttle;
             currentThrottleInputRange = rcCommandThrottleRange3dLow;
             if(isMotorProtocolDshot()) mixerInversion = true;
         } else {  // Deadband handling from positive to negative
@@ -455,7 +452,7 @@ void mixTable(pidProfile_t *pidProfile)
             currentThrottleInputRange = rcCommandThrottleRange3dHigh;
         }
     } else {
-        throttle = rcCommand[THROTTLE] - rxConfig->mincheck;
+        throttle = rcCommand[THROTTLE] - rxConfig()->mincheck;
         currentThrottleInputRange = rcCommandThrottleRange;
         motorOutputMin = motorOutputLow;
         motorOutputMax = motorOutputHigh;
@@ -528,7 +525,7 @@ void mixTable(pidProfile_t *pidProfile)
 
         // Motor stop handling
         if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isAirmodeActive()) {
-            if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
+            if (((rcData[THROTTLE]) < rxConfig()->mincheck)) {
                 motor[i] = disarmMotorOutput;
             }
         }
