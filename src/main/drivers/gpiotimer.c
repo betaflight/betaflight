@@ -44,10 +44,10 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 
     uint32_t newPulseMs = millis();
 
-    gpioTimerValue = newPulseMs - lastPulseMs;
+    gpioTimerValueMs = newPulseMs - lastPulseMs;
     lastPulseMs = newPulseMs;
 
-    debug[0] = gpioTimerValue;
+    debug[0] = gpioTimerValueMs;
 }
 
 void gpioTimerReset(void)
