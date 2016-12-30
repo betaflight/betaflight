@@ -204,15 +204,6 @@ void resetGpsProfile(gpsProfile_t *gpsProfile)
 }
 #endif
 
-#ifdef BARO
-void resetBarometerConfig(barometerConfig_t *barometerConfig)
-{
-    barometerConfig->baro_sample_count = 21;
-    barometerConfig->baro_noise_lpf = 0.6f;
-    barometerConfig->baro_cf_vel = 0.985f;
-    barometerConfig->baro_cf_alt = 0.965f;
-}
-#endif
 
 #ifdef LED_STRIP
 void resetLedStripConfig(ledStripConfig_t *ledStripConfig)
@@ -610,8 +601,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.yawDegrees = 0;
     config->rcControlsConfig.yaw_control_direction = 1;
 
-    config->barometerConfig.baro_hardware = 1;
-
     resetBatteryConfig(&config->batteryConfig);
 
 #if defined(USE_PWM) || defined(USE_PPM)
@@ -713,10 +702,6 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;
     config->imuConfig.acc_unarmedcal = 1;
-
-#ifdef BARO
-    resetBarometerConfig(&config->barometerConfig);
-#endif
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -881,14 +866,9 @@ void activateConfig(void)
 
     configureAltitudeHold(
         &currentProfile->pidProfile,
-        &masterConfig.barometerConfig,
         &masterConfig.rcControlsConfig,
         &masterConfig.motorConfig
     );
-
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
 }
 
 void validateAndFixConfig(void)

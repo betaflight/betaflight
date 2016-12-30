@@ -53,7 +53,6 @@ static bool sonarDetect(void)
 #endif
 
 bool sensorsAutodetect(
-        const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
     // gyro must be initialised before accelerometer
@@ -69,9 +68,7 @@ bool sensorsAutodetect(
 #endif
 
 #ifdef BARO
-    baroDetect(&baro.dev, barometerConfig->baro_hardware);
-#else
-    UNUSED(barometerConfig);
+    baroInit();
 #endif
 
 #ifdef SONAR
