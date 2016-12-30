@@ -43,13 +43,13 @@ uint16_t rxSpiRcData[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 STATIC_UNIT_TESTED uint8_t rxSpiPayload[RX_SPI_MAX_PAYLOAD_SIZE];
 STATIC_UNIT_TESTED uint8_t rxSpiNewPacketAvailable; // set true when a new packet is received
 
-typedef void (*protocolInitPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
-typedef rx_spi_received_e (*protocolDataReceivedPtr)(uint8_t *payload);
-typedef void (*protocolSetRcDataFromPayloadPtr)(uint16_t *rcData, const uint8_t *payload);
+typedef void (*protocolInitFnPtr)(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig);
+typedef rx_spi_received_e (*protocolDataReceivedFnPtr)(uint8_t *payload);
+typedef void (*protocolSetRcDataFromPayloadFnPtr)(uint16_t *rcData, const uint8_t *payload);
 
-static protocolInitPtr protocolInit;
-static protocolDataReceivedPtr protocolDataReceived;
-static protocolSetRcDataFromPayloadPtr protocolSetRcDataFromPayload;
+static protocolInitFnPtr protocolInit;
+static protocolDataReceivedFnPtr protocolDataReceived;
+static protocolSetRcDataFromPayloadFnPtr protocolSetRcDataFromPayload;
 
 STATIC_UNIT_TESTED uint16_t rxSpiReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t channel)
 {
@@ -69,38 +69,38 @@ STATIC_UNIT_TESTED bool rxSpiSetProtocol(rx_spi_protocol_e protocol)
     switch (protocol) {
     default:
 #ifdef USE_RX_V202
-    case NRF24RX_V202_250K:
-    case NRF24RX_V202_1M:
+    case RX_SPI_NRF24_V202_250K:
+    case RX_SPI_NRF24_V202_1M:
         protocolInit = v202Nrf24Init;
         protocolDataReceived = v202Nrf24DataReceived;
         protocolSetRcDataFromPayload = v202Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_SYMA
-    case NRF24RX_SYMA_X:
-    case NRF24RX_SYMA_X5C:
+    case RX_SPI_NRF24_SYMA_X:
+    case RX_SPI_NRF24_SYMA_X5C:
         protocolInit = symaNrf24Init;
         protocolDataReceived = symaNrf24DataReceived;
         protocolSetRcDataFromPayload = symaNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_CX10
-    case NRF24RX_CX10:
-    case NRF24RX_CX10A:
+    case RX_SPI_NRF24_CX10:
+    case RX_SPI_NRF24_CX10A:
         protocolInit = cx10Nrf24Init;
         protocolDataReceived = cx10Nrf24DataReceived;
         protocolSetRcDataFromPayload = cx10Nrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_H8_3D
-    case NRF24RX_H8_3D:
+    case RX_SPI_NRF24_H8_3D:
         protocolInit = h8_3dNrf24Init;
         protocolDataReceived = h8_3dNrf24DataReceived;
         protocolSetRcDataFromPayload = h8_3dNrf24SetRcDataFromPayload;
         break;
 #endif
 #ifdef USE_RX_INAV
-    case NRF24RX_INAV:
+    case RX_SPI_NRF24_INAV:
         protocolInit = inavNrf24Init;
         protocolDataReceived = inavNrf24DataReceived;
         protocolSetRcDataFromPayload = inavNrf24SetRcDataFromPayload;

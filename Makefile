@@ -76,8 +76,9 @@ LINKER_DIR      = $(ROOT)/src/main/target/link
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
 include $(ROOT)/make/system-id.mk
+
 # developer preferences, edit these at will, they'll be gitignored
-include $(ROOT)/make/local.mk
+-include $(ROOT)/make/local.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT)/tools
@@ -505,8 +506,8 @@ COMMON_SRC = \
             drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -592,6 +593,7 @@ HIGHEND_SRC = \
             sensors/barometer.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
+            telemetry/srxl.c \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
@@ -622,8 +624,8 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -717,7 +719,7 @@ VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp_hal.c
+            drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
@@ -784,7 +786,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
-            drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
@@ -792,7 +793,6 @@ STM32F7xx_COMMON_SRC = \
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
-            drivers/pwm_output.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied

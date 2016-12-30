@@ -27,11 +27,12 @@
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/rx_spi.h"
 #include "drivers/system.h"
 

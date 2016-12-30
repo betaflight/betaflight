@@ -39,6 +39,7 @@ typedef struct acc_s {
     accDev_t dev;
     uint32_t accSamplingInterval;
     int32_t accSmooth[XYZ_AXIS_COUNT];
+    bool isAccelUpdatedAtLeastOnce;
 } acc_t;
 
 extern acc_t acc;
@@ -59,13 +60,14 @@ typedef struct accelerometerConfig_s {
     sensor_align_e acc_align;               // acc alignment
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     flightDynamicsTrims_t accZero;
+    rollAndPitchTrims_t accelerometerTrims;
 } accelerometerConfig_t;
 
 bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroTargetLooptime);
 bool isAccelerationCalibrationComplete(void);
 void accSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void resetRollAndPitchTrims(rollAndPitchTrims_t *rollAndPitchTrims);
-void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims);
+void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims);
 union flightDynamicsTrims_u;
 void setAccelerationTrims(union flightDynamicsTrims_u *accelerationTrimsToUse);
 void setAccelerationFilter(uint16_t initialAccLpfCutHz);

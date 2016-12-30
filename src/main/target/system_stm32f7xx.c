@@ -197,6 +197,7 @@
                                   |RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART6
                                   |RCC_PERIPHCLK_UART4|RCC_PERIPHCLK_UART5
                                   |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART8
+                                  |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C3
                                   |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_I2C4;
       PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
       PeriphClkInitStruct.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
@@ -206,7 +207,9 @@
       PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
       PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
       PeriphClkInitStruct.Uart8ClockSelection = RCC_UART8CLKSOURCE_PCLK1;
+      PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
       PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
+      PeriphClkInitStruct.I2c3ClockSelection = RCC_I2C3CLKSOURCE_PCLK1;
       PeriphClkInitStruct.I2c4ClockSelection = RCC_I2C4CLKSOURCE_PCLK1;
       ret = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
       if (ret != HAL_OK)
@@ -268,10 +271,10 @@ void SystemInit(void)
 #endif
 
   /* Enable I-Cache */
-  //SCB_EnableICache();
+  SCB_EnableICache();
 
   /* Enable D-Cache */
-  //SCB_EnableDCache();
+  SCB_EnableDCache();
 
   /* Configure the system clock to 216 MHz */
   SystemClock_Config();

@@ -33,8 +33,9 @@ void SystemClock_Config(void);
 
 void systemReset(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
+    if (mpuReset) {
+        mpuReset();
+    }
 
     __disable_irq();
     NVIC_SystemReset();
@@ -42,9 +43,9 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
-
+    if (mpuReset) {
+        mpuReset();
+    }
 
     (*(__IO uint32_t *) (BKPSRAM_BASE + 4)) = 0xDEADBEEF;   // flag that will be readable after reboot
 

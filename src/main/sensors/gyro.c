@@ -231,8 +231,9 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     gyroConfig = gyroConfigToUse;
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050) || defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-    const extiConfig_t *extiConfig = selectMPUIntExtiConfig();
-    mpuDetect(extiConfig);
+    gyro.dev.mpuIntExtiConfig = selectMPUIntExtiConfig();
+    mpuDetect(&gyro.dev);
+    mpuReset = gyro.dev.mpuConfiguration.reset;
 #endif
 
     if (!gyroDetect(&gyro.dev)) {

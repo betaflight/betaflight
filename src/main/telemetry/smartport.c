@@ -328,12 +328,14 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    portOptions = SERIAL_BIDIR;
-
+    if (telemetryConfig->sportHalfDuplex) {
+        portOptions = SERIAL_BIDIR;
+    }
+    
     if (telemetryConfig->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
     }
-
+    
     smartPortSerialPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_SMARTPORT, NULL, SMARTPORT_BAUD, SMARTPORT_UART_MODE, portOptions);
 
     if (!smartPortSerialPort) {

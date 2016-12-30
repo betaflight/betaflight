@@ -103,8 +103,8 @@ float rcInput[3];
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    masterConfig.accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    masterConfig.accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -576,11 +576,11 @@ void processRx(timeUs_t currentTimeUs)
         updateInflightCalibrationState();
     }
 
-    updateActivatedModes(masterConfig.modeActivationConditions);
+    updateActivatedModes(modeActivationProfile()->modeActivationConditions);
 
     if (!cliMode) {
-        updateAdjustmentStates(masterConfig.adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
+        updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
+        processRcAdjustments(currentControlRateProfile, rxConfig());
     }
 
     bool canUseHorizonMode = true;
@@ -679,7 +679,7 @@ void subTaskPidController(void)
     pidController(
         &currentProfile->pidProfile,
         pidConfig()->max_angle_inclination,
-        &masterConfig.accelerometerTrims,
+        &accelerometerConfig()->accelerometerTrims,
         rxConfig()->midrc
     );
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}

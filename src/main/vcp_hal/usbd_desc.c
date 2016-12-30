@@ -49,13 +49,15 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_conf.h"
+#include "platform.h"
+#include "build/version.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define USBD_VID                      0x0483
 #define USBD_PID                      0x5740
 #define USBD_LANGID_STRING            0x409
-#define USBD_MANUFACTURER_STRING      "STMicroelectronics"
+#define USBD_MANUFACTURER_STRING      FC_FIRMWARE_NAME
 #define USBD_PRODUCT_HS_STRING        "STM32 Virtual ComPort in HS Mode"
 #define USBD_PRODUCT_FS_STRING        "STM32 Virtual ComPort in FS Mode"
 #define USBD_CONFIGURATION_HS_STRING  "VCP Config"
@@ -260,9 +262,9 @@ static void Get_SerialNum(void)
 {
   uint32_t deviceserial0, deviceserial1, deviceserial2;
 
-  deviceserial0 = *(uint32_t*)DEVICE_ID1;
-  deviceserial1 = *(uint32_t*)DEVICE_ID2;
-  deviceserial2 = *(uint32_t*)DEVICE_ID3;
+  deviceserial0 = U_ID_0;
+  deviceserial1 = U_ID_1;
+  deviceserial2 = U_ID_2;
 
   deviceserial0 += deviceserial2;
 

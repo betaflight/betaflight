@@ -42,7 +42,9 @@
 #define XBUS_RJ01_CHANNEL_COUNT 12
 
 // Frame is: ID(1 byte) + 12*channel(2 bytes) + CRC(2 bytes) = 27
-#define XBUS_FRAME_SIZE 27
+#define XBUS_FRAME_SIZE_A1 27
+#define XBUS_FRAME_SIZE_A2 35
+
 
 #define XBUS_RJ01_FRAME_SIZE 33
 #define XBUS_RJ01_MESSAGE_LENGTH 30
@@ -63,7 +65,8 @@
 // However, the JR XG14 that is used for test at the moment
 // does only use 0xA1 as its output. This is why the implementation
 // is based on these numbers only. Maybe update this in the future?
-#define XBUS_START_OF_FRAME_BYTE (0xA1)
+#define XBUS_START_OF_FRAME_BYTE_A1 (0xA1)      //12 channels
+#define XBUS_START_OF_FRAME_BYTE_A2 (0xA2)      //16 channels transfare, but only 12 channels use for
 
 // Pulse length convertion from [0...4095] to µs:
 //      800µs  -> 0x000
@@ -82,7 +85,7 @@ static uint8_t xBusProvider;
 
 
 // Use max values for ram areas
-static volatile uint8_t xBusFrame[XBUS_RJ01_FRAME_SIZE];
+static volatile uint8_t xBusFrame[XBUS_FRAME_SIZE_A2];  //siz 35 for 16 channels in xbus_Mode_B
 static uint16_t xBusChannelData[XBUS_RJ01_CHANNEL_COUNT];
 
 // The xbus mode B CRC calculations
@@ -136,16 +139,16 @@ static void xBusUnpackModeBFrame(uint8_t offsetBytes)
     uint8_t frameAddr;
 
     // Calculate on all bytes except the final two CRC bytes
-    for (i = 0; i < XBUS_FRAME_SIZE - 2; i++) {
+    for (i = 0; i < xBusFrameLength - 2; i++) {
         inCrc = xBusCRC16(inCrc, xBusFrame[i+offsetBytes]);
     }
 
     // Get the received CRC
-    crc = ((uint16_t)xBusFrame[offsetBytes + XBUS_FRAME_SIZE - 2]) << 8;
-    crc = crc + ((uint16_t)xBusFrame[offsetBytes + XBUS_FRAME_SIZE - 1]);
+    crc = ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 2]) << 8;
+    crc = crc + ((uint16_t)xBusFrame[offsetBytes + xBusFrameLength - 1]);
 
     if (crc == inCrc) {
-        // Unpack the data, we have a valid frame
+        // Unpack the data, we have a valid frame, only 12 channel unpack also when receive 16 channel
         for (i = 0; i < xBusChannelCount; i++) {
 
             frameAddr = offsetBytes + 1 + i * 2;
@@ -224,8 +227,14 @@ static void xBusDataReceive(uint16_t c)
     }
 
     // Check if we shall start a frame?
-    if ((xBusFramePosition == 0) && (c == XBUS_START_OF_FRAME_BYTE)) {
-        xBusDataIncoming = true;
+    if (xBusFramePosition == 0) {
+        if (c == XBUS_START_OF_FRAME_BYTE_A1) {
+            xBusDataIncoming = true;
+            xBusFrameLength = XBUS_FRAME_SIZE_A1;   //decrease framesize (when receiver change, otherwise board must reboot)
+        } else if (c == XBUS_START_OF_FRAME_BYTE_A2) {//16channel packet
+            xBusDataIncoming = true;
+            xBusFrameLength = XBUS_FRAME_SIZE_A2;   //increase framesize
+        }
     }
 
     // Only do this if we are receiving to a frame
@@ -285,7 +294,7 @@ bool xBusInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
         xBusDataIncoming = false;
         xBusFramePosition = 0;
         baudRate = XBUS_BAUDRATE;
-        xBusFrameLength = XBUS_FRAME_SIZE;
+        xBusFrameLength = XBUS_FRAME_SIZE_A1;
         xBusChannelCount = XBUS_CHANNEL_COUNT;
         xBusProvider = SERIALRX_XBUS_MODE_B;
         break;
