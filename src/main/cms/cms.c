@@ -120,8 +120,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((uint8_t)((p)->cols - 8))
-#define MAX_MENU_ITEMS(p)    ((uint8_t)((p)->rows - 2))
+static inline uint8_t RIGHT_MENU_COLUMN(displayPort_t *p) { return (uint8_t)((p)->cols - 8); }
+static inline uint8_t MAX_MENU_ITEMS(displayPort_t *p) { return (uint8_t)((p)->rows - 2); }
 
 static bool cmsInMenu = false;
 
@@ -432,10 +432,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
             uint8_t coloff = LEFT_MENU_COLUMN;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-            coloff += (p->type == OME_Label) ? 1 : 2;
-#pragma GCC diagnostic pop
+            coloff = (uint8_t)(coloff + ((p->type == OME_Label) ? 1 : 2));
             room -= displayWrite(pDisplay, coloff, (uint8_t)(i + top), p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
@@ -480,10 +477,7 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
         if (pMenu != currentMenu) {
             menuStack[menuStackIdx] = currentMenu;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-            cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
-#pragma GCC diagnostic pop
+            cursorRow = (int8_t)(cursorRow + pageTop - currentMenu->entries); // Convert cursorRow to absolute value
             menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
 
@@ -527,10 +521,7 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
             // Cursor was in the second page.
             pageTopAlt = currentMenu->entries;
             pageTop = pageTopAlt + maxRow + 1;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-            cursorRow -= (maxRow + 1);
-#pragma GCC diagnostic pop
+            cursorRow = (int8_t)(cursorRow - (maxRow + 1));
             cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
         }
     }
@@ -630,8 +621,8 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wconversion"
 
 STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
@@ -748,11 +739,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_UINT8_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -767,11 +758,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val += 1;
+                        *ptr->val = (uint8_t)(*ptr->val + 1);
                 }
                 else {
                     if (*ptr->val > 0)
-                        *ptr->val -= 1;
+                        *ptr->val = (uint8_t)(*ptr->val - 1);
                 }
                 if (p->func)
                     p->func(pDisplay, p->data);
@@ -784,11 +775,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_INT8_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -802,11 +793,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_UINT16_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -820,11 +811,11 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
                 OSD_INT16_t *ptr = p->data;
                 if (key == KEY_RIGHT) {
                     if (*ptr->val < ptr->max)
-                        *ptr->val += ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val + ptr->step);
                 }
                 else {
                     if (*ptr->val > ptr->min)
-                        *ptr->val -= ptr->step;
+                        *ptr->val = (uint8_t)(*ptr->val - ptr->step);
                 }
                 SET_PRINTVALUE(p);
                 if (p->func) {
@@ -847,7 +838,6 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
-#pragma GCC diagnostic pop
 
 uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
 {
@@ -862,7 +852,7 @@ uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeat
 
 static void cmsUpdate(uint32_t currentTimeUs)
 {
-    static int16_t rcDelayMs = BUTTON_TIME;
+    static timeDelta_t rcDelayMs = BUTTON_TIME;
     static int holdCount = 1;
     static int repeatCount = 1;
     static int repeatBase = 0;
@@ -916,10 +906,7 @@ static void cmsUpdate(uint32_t currentTimeUs)
         }
 
         if (rcDelayMs > 0) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
             rcDelayMs -= (currentTimeMs - lastCalledMs);
-#pragma GCC diagnostic pop
         } else if (key) {
             rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
 
@@ -937,10 +924,7 @@ static void cmsUpdate(uint32_t currentTimeUs)
 
                 // Decrease rcDelayMs reciprocally
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
                 rcDelayMs /= (holdCount - 20);
-#pragma GCC diagnostic pop
 
                 // When we reach the scheduling limit,
 
