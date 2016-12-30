@@ -1260,6 +1260,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_FEATURE:
             featureClearAll();
             featureSet(bstRead32()); // features bitmap
+#ifdef SERIALRX_UART
+            if (featureConfigured(FEATURE_RX_SERIAL)) {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+            } else {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
+            }
+#endif            
             break;
         case BST_SET_BOARD_ALIGNMENT:
             boardAlignment()->rollDegrees = bstRead16();
