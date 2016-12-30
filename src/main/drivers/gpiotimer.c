@@ -36,7 +36,7 @@ static IO_t gtimIO;
 static extiCallbackRec_t gtim_extiCallbackRec;
 
 static uint32_t lastPulseMs = 0;
-uint32_t gpioTimerValue = 0;
+uint32_t gpioTimerValueMs = 0;
 
 static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 {
@@ -48,6 +48,11 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
     lastPulseMs = newPulseMs;
 
     debug[0] = gpioTimerValue;
+}
+
+void gpioTimerReset(void)
+{
+    lastPulseMs = 0;
 }
 
 bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig)
