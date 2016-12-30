@@ -17,50 +17,27 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
-#include "common/utils.h"
-
-#include "config/feature.h"
-
-#include "fc/config.h"
-#include "fc/runtime_config.h"
-
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
-#include "sensors/gyro.h"
 #include "sensors/compass.h"
-#include "sensors/sonar.h"
+#include "sensors/gyro.h"
 #include "sensors/initialisation.h"
+#include "sensors/sonar.h"
 
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE };
 
 
-#ifdef SONAR
-static bool sonarDetect(void)
-{
-    if (feature(FEATURE_SONAR)) {
-        // the user has set the sonar feature, so assume they have an HC-SR04 plugged in,
-        // since there is no way to detect it
-        sensorsSet(SENSOR_SONAR);
-        return true;
-    }
-    return false;
-}
-#endif
-
-bool sensorsAutodetect(
-        const sonarConfig_t *sonarConfig)
+bool sensorsAutodetect(void)
 {
     // gyro must be initialised before accelerometer
     if (!gyroInit()) {
         return false;
     }
 
-    accInit(gyro.targetLooptime);
+    accInit();
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
@@ -72,11 +49,7 @@ bool sensorsAutodetect(
 #endif
 
 #ifdef SONAR
-    if (sonarDetect()) {
-        sonarInit(sonarConfig);
-    }
-#else
-     UNUSED(sonarConfig);
+    sonarInit();
 #endif
 
     return true;

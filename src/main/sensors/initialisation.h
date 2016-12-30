@@ -17,5 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(
-        const sonarConfig_t *sonarConfig);
+bool sensorsAutodetect(void);

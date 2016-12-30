@@ -268,7 +268,7 @@ retry:
     return true;
 }
 
-bool accInit(uint32_t gyroSamplingInverval)
+bool accInit(void)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
@@ -280,7 +280,7 @@ bool accInit(uint32_t gyroSamplingInverval)
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev); // driver initialisation
     // set the acc sampling interval according to the gyro sampling interval
-    switch (gyroSamplingInverval) {  // Switch statement kept in place to change acc sampling interval in the future
+    switch (gyro.targetLooptime) {  // Switch statement kept in place to change acc sampling interval in the future
     case 500:
     case 375:
     case 250:
