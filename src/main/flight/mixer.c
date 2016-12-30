@@ -534,19 +534,6 @@ void mixTable(pidProfile_t *pidProfile)
         }
     }
 
-    // Anti Desync feature for ESC's. Limit rapid throttle changes
-    if (motorConfig->maxEscThrottleJumpMs) {
-        const int16_t maxThrottleStep = constrain(motorConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
-
-        // Only makes sense when it's within the range
-        if (maxThrottleStep < motorOutputRange) {
-            static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
-
-            motor[i] = constrain(motor[i], motorOutputMin, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
-            motorPrevious[i] = motor[i];
-        }
-    }
-
     // Disarmed mode
     if (!ARMING_FLAG(ARMED)) {
         for (i = 0; i < motorCount; i++) {
