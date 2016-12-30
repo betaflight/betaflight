@@ -120,8 +120,8 @@ static displayPort_t *cmsDisplayPortSelectNext(void)
 //
 
 #define LEFT_MENU_COLUMN  1
-#define RIGHT_MENU_COLUMN(p) ((p)->cols - 8)
-#define MAX_MENU_ITEMS(p)    ((p)->rows - 2)
+#define RIGHT_MENU_COLUMN(p) ((uint8_t)((p)->cols - 8))
+#define MAX_MENU_ITEMS(p)    ((uint8_t)((p)->rows - 2))
 
 static bool cmsInMenu = false;
 
@@ -169,7 +169,7 @@ static void cmsUpdateMaxRow(displayPort_t *instance)
     }
 
     if (maxRow >  MAX_MENU_ITEMS(instance)) {
-        maxRow = MAX_MENU_ITEMS(instance);
+        maxRow = (uint8_t)MAX_MENU_ITEMS(instance);
     }
 
     maxRow--;
@@ -335,7 +335,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
             OSD_FLOAT_t *ptr = p->data;
             cmsFormatFloat(*ptr->val * ptr->multipler, buff);
             cmsPadToSize(buff, 5);
-            cnt = displayWrite(pDisplay, RIGHT_MENU_COLUMN(pDisplay) - 1, row, buff); // XXX One char left ???
+            cnt = displayWrite(pDisplay, (uint8_t)(RIGHT_MENU_COLUMN(pDisplay) - 1), row, buff); // XXX One char left ???
             CLR_PRINTVALUE(p);
         }
         break;
@@ -343,7 +343,7 @@ static int cmsDrawMenuEntry(displayPort_t *pDisplay, OSD_Entry *p, uint8_t row)
     case OME_Label:
         if (IS_PRINTVALUE(p) && p->data) {
             // A label with optional string, immediately following text
-            cnt = displayWrite(pDisplay, LEFT_MENU_COLUMN + 2 + strlen(p->text), row, p->data);
+            cnt = displayWrite(pDisplay, (uint8_t)(LEFT_MENU_COLUMN + 2 + strlen(p->text)), row, p->data);
             CLR_PRINTVALUE(p);
         }
         break;
@@ -373,7 +373,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     uint8_t i;
     OSD_Entry *p;
-    uint8_t top = (pDisplay->rows - maxRow) / 2 - 1;
+    uint8_t top = (uint8_t)((pDisplay->rows - maxRow) / 2 - 1);
 
     // Polled (dynamic) value display denominator.
 
@@ -414,14 +414,14 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         cursorRow++;
 
     if (pDisplay->cursorRow >= 0 && cursorRow != pDisplay->cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, pDisplay->cursorRow + top, "  ");
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (uint8_t)(pDisplay->cursorRow + top), "  ");
     }
 
     if (room < 30)
         return;
 
     if (pDisplay->cursorRow != cursorRow) {
-        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, cursorRow + top, " >");
+        room -= displayWrite(pDisplay, LEFT_MENU_COLUMN, (uint8_t)(cursorRow + top), " >");
         pDisplay->cursorRow = cursorRow;
     }
 
@@ -432,8 +432,11 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTLABEL(p)) {
             uint8_t coloff = LEFT_MENU_COLUMN;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
             coloff += (p->type == OME_Label) ? 1 : 2;
-            room -= displayWrite(pDisplay, coloff, i + top, p->text);
+#pragma GCC diagnostic pop
+            room -= displayWrite(pDisplay, coloff, (uint8_t)(i + top), p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;
@@ -447,12 +450,13 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
 
     for (i = 0, p = pageTop; i < MAX_MENU_ITEMS(pDisplay) && p->type != OME_END; i++, p++) {
         if (IS_PRINTVALUE(p)) {
-            room -= cmsDrawMenuEntry(pDisplay, p, top + i);
+            room -= cmsDrawMenuEntry(pDisplay, p, (uint8_t)(top + i));
             if (room < 30)
                 return;
         }
     }
 }
+
 
 long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 {
@@ -476,7 +480,10 @@ long cmsMenuChange(displayPort_t *pDisplay, const void *ptr)
 
         if (pMenu != currentMenu) {
             menuStack[menuStackIdx] = currentMenu;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
             cursorRow += pageTop - currentMenu->entries; // Convert cursorRow to absolute value
+#pragma GCC diagnostic pop
             menuStackHistory[menuStackIdx] = cursorRow;
             menuStackIdx++;
 
@@ -520,13 +527,17 @@ STATIC_UNIT_TESTED long cmsMenuBack(displayPort_t *pDisplay)
             // Cursor was in the second page.
             pageTopAlt = currentMenu->entries;
             pageTop = pageTopAlt + maxRow + 1;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
             cursorRow -= (maxRow + 1);
+#pragma GCC diagnostic pop
             cmsUpdateMaxRow(pDisplay); // Update maxRow for the second page
         }
     }
 
     return 0;
 }
+
 
 STATIC_UNIT_TESTED void cmsMenuOpen(void)
 {
@@ -537,7 +548,10 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentMenu = &menuMain;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
         DISABLE_ARMING_FLAG(OK_TO_ARM);
+#pragma GCC diagnostic pop
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
@@ -615,6 +629,9 @@ long cmsMenuExit(displayPort_t *pDisplay, const void *ptr)
 
 #define BUTTON_TIME   250 // msec
 #define BUTTON_PAUSE  500 // msec
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 
 STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
 {
@@ -830,6 +847,8 @@ STATIC_UNIT_TESTED uint16_t cmsHandleKey(displayPort_t *pDisplay, uint8_t key)
     return res;
 }
 
+#pragma GCC diagnostic pop
+
 uint16_t cmsHandleKeyWithRepeat(displayPort_t *pDisplay, uint8_t key, int repeatCount)
 {
     uint16_t ret;
@@ -897,7 +916,10 @@ static void cmsUpdate(uint32_t currentTimeUs)
         }
 
         if (rcDelayMs > 0) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
             rcDelayMs -= (currentTimeMs - lastCalledMs);
+#pragma GCC diagnostic pop
         } else if (key) {
             rcDelayMs = cmsHandleKeyWithRepeat(pCurrentDisplay, key, repeatCount);
 
@@ -915,7 +937,10 @@ static void cmsUpdate(uint32_t currentTimeUs)
 
                 // Decrease rcDelayMs reciprocally
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
                 rcDelayMs /= (holdCount - 20);
+#pragma GCC diagnostic pop
 
                 // When we reach the scheduling limit,
 

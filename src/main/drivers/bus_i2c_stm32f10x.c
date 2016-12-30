@@ -147,7 +147,7 @@ bool i2cWriteBuffer(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len_,
     i2cState_t *state;
     state = &(i2cState[device]);
 
-    state->addr = addr_ << 1;
+    state->addr = (uint8_t)(addr_ << 1);
     state->reg = reg_;
     state->writing = 1;
     state->reading = 0;
@@ -193,7 +193,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     i2cState_t *state;
     state = &(i2cState[device]);
 
-    state->addr = addr_ << 1;
+    state->addr = (uint8_t)(addr_ << 1);
     state->reg = reg_;
     state->writing = 0;
     state->reading = 1;
@@ -252,7 +252,7 @@ static void i2c_er_handler(I2CDevice device) {
             }
         }
     }
-    I2Cx->SR1 &= ~0x0F00;                                                       // reset all the error bits to clear the interrupt
+    I2Cx->SR1 &= (uint16_t)~0x0F00;                                                       // reset all the error bits to clear the interrupt
     state->busy = 0;
 }
 
@@ -266,10 +266,10 @@ void i2c_ev_handler(I2CDevice device) {
 
     static uint8_t subaddress_sent, final_stop;                                 // flag to indicate if subaddess sent, flag to indicate final bus condition
     static int8_t index;                                                        // index is signed -1 == send the subaddress
-    uint8_t SReg_1 = I2Cx->SR1;                                                 // read the status register here
+    uint16_t SReg_1 = I2Cx->SR1;                                                // read the status register here
 
     if (SReg_1 & I2C_SR1_SB) {                                                  // we just sent a start - EV5 in ref manual
-        I2Cx->CR1 &= ~I2C_CR1_POS;                                              // reset the POS bit so ACK/NACK applied to the current byte
+        I2Cx->CR1 &= (uint16_t)~I2C_CR1_POS;                                    // reset the POS bit so ACK/NACK applied to the current byte
         I2C_AcknowledgeConfig(I2Cx, ENABLE);                                    // make sure ACK is on
         index = 0;                                                              // reset the index
         if (state->reading && (subaddress_sent || 0xFF == state->reg)) {          // we have sent the subaddr
@@ -387,8 +387,8 @@ void i2cInit(I2CDevice device)
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
-    IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
-    IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
+    IOInit(scl, OWNER_I2C_SCL, (uint8_t)RESOURCE_INDEX(device));
+    IOInit(sda, OWNER_I2C_SDA, (uint8_t)RESOURCE_INDEX(device));
 
     // Enable RCC
     RCC_ClockCmd(i2c->rcc, ENABLE);
