@@ -42,8 +42,7 @@ typedef enum {
     UNUSED_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
     SONAR_MODE      = (1 << 9),
-    FAILSAFE_MODE   = (1 << 10),
-    GTUNE_MODE      = (1 << 11)
+    FAILSAFE_MODE   = (1 << 10)
 } flightModeFlags_e;
 
 extern uint16_t flightModeFlags;

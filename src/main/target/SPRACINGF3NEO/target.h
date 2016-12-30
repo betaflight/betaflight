@@ -72,6 +72,9 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
 
@@ -178,7 +181,6 @@
 
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
-
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
