@@ -69,25 +69,25 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 #define ATOMIC_BLOCK(prio) for ( uint8_t __basepri_save __attribute__((__cleanup__(__basepriRestoreMem))) = __get_BASEPRI(), \
                                      __ToDo = __basepriSetMemRetVal(prio); __ToDo ; __ToDo = 0 )
 
-// Run block with elevated BASEPRI (using BASEPRI_MAX), but do not create any (explicit) memory barrier.
+// Run block with elevated BASEPRI (using BASEPRI_MAX), but do not create memory barrier.
 // Be careful when using this, you must use some method to prevent optimizer form breaking things
 // - lto is used for Cleanflight compilation, so function call is not memory barrier
-// - use ATOMIC_BARRIER or proper volatile to protect used variables
+// - use ATOMIC_BARRIER or volatile to protect used variables
 // - gcc 4.8.4 does write all values in registers to memory before 'asm volatile', so this optimization does not help much
-//    but that can change in future versions
+// - gcc 5 and later works as intended, generating quite optimal code
 #define ATOMIC_BLOCK_NB(prio) for ( uint8_t __basepri_save __attribute__((__cleanup__(__basepriRestore))) = __get_BASEPRI(), \
                                     __ToDo = __basepriSetRetVal(prio); __ToDo ; __ToDo = 0 ) \
 
 // ATOMIC_BARRIER
 // Create memory barrier
-// - at the beginning (all data must be reread from memory)
-// - at exit of block (all exit paths) (all data must be written, but may be cached in register for subsequent use)
-// ideally this would only protect memory passed as parameter (any type should work), but gcc is currently creating almost full barrier
+// - at the beginning of containing block (value of parameter must be reread from memory)
+// - at exit of block (all exit paths) (parameter value if written into memory, but may be cached in register for subsequent use)
+// On gcc 5 and higher, this protects only memory passed as parameter (any type should work)
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
 #if (__GNUC__ > 5)
 #warning "Please verify that ATOMIC_BARRIER works as intended"
-// increment version number is BARRIER works
+// increment version number if BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead
 // you should check that local variable scope with cleanup spans entire block
 #endif
