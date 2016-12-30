@@ -369,7 +369,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(rxConfig());
+        dashboardInit();
     }
 #endif
 
@@ -434,9 +434,9 @@ void init(void)
     cliInit(serialConfig());
 #endif
 
-    failsafeInit(rxConfig(), flight3DConfig()->deadband3d_throttle);
+    failsafeInit(flight3DConfig()->deadband3d_throttle);
 
-    rxInit(rxConfig(), modeActivationProfile()->modeActivationConditions);
+    rxInit(modeActivationProfile()->modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {

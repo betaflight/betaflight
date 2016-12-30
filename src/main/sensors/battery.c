@@ -262,7 +262,7 @@ void updateConsumptionWarning(void)
     }
 }
 
-void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void updateCurrentMeter(int32_t lastUpdateAt, uint16_t deadband3d_throttle)
 {
     switch(batteryConfig->currentMeterType) {
         case CURRENT_SENSOR_ADC:
@@ -276,7 +276,7 @@ void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t dea
         case CURRENT_SENSOR_VIRTUAL:
             amperageLatest = (int32_t)batteryConfig->currentMeterOffset;
             if (ARMING_FLAG(ARMED)) {
-                throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+                throttleStatus_e throttleStatus = calculateThrottleStatus(deadband3d_throttle);
                 int throttleOffset = (int32_t)rcCommand[THROTTLE] - 1000;
                 if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP)) {
                     throttleOffset = 0;

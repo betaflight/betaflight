@@ -47,9 +47,9 @@ void targetConfiguration(master_t *config)
     int index = findSerialPortIndexByIdentifier(SBUS_TELEMETRY_UART);
     config->serialConfig.portConfigs[index].functionMask = FUNCTION_TELEMETRY_FRSKY | FUNCTION_RX_SERIAL;
     
-    config->rxConfig.serialrx_provider = SERIALRX_SBUS;
+    rxConfig()->serialrx_provider = SERIALRX_SBUS;
+    rxConfig()->sbus_inversion = 0;
     config->telemetryConfig.telemetry_inversion = 0;
-    config->rxConfig.sbus_inversion = 0;
 
     intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT, &config->enabledFeatures);
 }

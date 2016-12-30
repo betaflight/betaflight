@@ -735,6 +735,28 @@ static const clivalue_t valueTable[] = {
     { "baro_cf_vel",                VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_vel) },
     { "baro_cf_alt",                VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0 , 1 }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_cf_alt) },
 #endif
+
+    { "mid_rc",                     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1200,  1700 }, PG_RX_CONFIG, offsetof(rxConfig_t, midrc) },
+    { "min_check",                  VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, mincheck) },
+    { "max_check",                  VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, maxcheck) },
+    { "rssi_channel",               VAR_INT8   | MASTER_VALUE, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_channel) },
+    { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_scale) },
+    { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_RC_INTERPOLATION }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolation) },
+    { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  50 }, PG_RX_CONFIG, offsetof(rxConfig_t, rcInterpolationInterval) },
+    { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_ppm_invert) },
+    { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  50 }, PG_RX_CONFIG, offsetof(rxConfig_t, fpvCamAngleDegrees) },
+    { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  13 }, PG_RX_CONFIG, offsetof(rxConfig_t, max_aux_channel) },
+#ifdef SERIAL_RX
+    { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_SERIAL_RX }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_provider) },
+#endif
+    { "sbus_inversion",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, sbus_inversion) },
+#ifdef SPEKTRUM_BIND
+    { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX}, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind) },
+    { "spektrum_sat_bind_autoreset",VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  1}, PG_RX_CONFIG, offsetof(rxConfig_t, spektrum_sat_bind_autoreset) },
+#endif
+    { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, .config.minmax = {1000, 2000 }, PG_RX_CONFIG, offsetof(rxConfig_t, airModeActivateThreshold) },
+    { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
+    { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
 };
 
 #else
@@ -746,19 +768,9 @@ typedef struct {
 } clivalue_t;
 
 static const clivalue_t valueTable[] = {
-    { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &rxConfig()->midrc, .config.minmax = { 1200,  1700 } },
-    { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &rxConfig()->rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT } },
-    { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
-    { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
-    { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rcInterpolationInterval, .config.minmax = { 1,  50 } },
-    { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
 #if defined(USE_PWM)
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
 #endif
-    { "roll_yaw_cam_mix_degrees",   VAR_UINT8  | MASTER_VALUE,  &rxConfig()->fpvCamAngleDegrees, .config.minmax = { 0,  50 } },
-    { "max_aux_channels",           VAR_UINT8  | MASTER_VALUE,  &rxConfig()->max_aux_channel, .config.minmax = { 0,  13 } },
     { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE,  &motorConfig()->minthrottle, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
@@ -812,16 +824,6 @@ static const clivalue_t valueTable[] = {
     { "beeper_od",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &beeperConfig()->isOpenDrain, .config.lookup = { TABLE_OFF_ON } },
 #endif
 
-#ifdef SERIAL_RX
-    { "serialrx_provider",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->serialrx_provider, .config.lookup = { TABLE_SERIAL_RX } },
-#endif
-
-    { "sbus_inversion",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->sbus_inversion, .config.lookup = { TABLE_OFF_ON } },
-
-#ifdef SPEKTRUM_BIND
-    { "spektrum_sat_bind",          VAR_UINT8  | MASTER_VALUE,  &rxConfig()->spektrum_sat_bind, .config.minmax = { SPEKTRUM_SAT_BIND_DISABLED,  SPEKTRUM_SAT_BIND_MAX} },
-    { "spektrum_sat_bind_autoreset",VAR_UINT8  | MASTER_VALUE,  &rxConfig()->spektrum_sat_bind_autoreset, .config.minmax = { 0,  1} },
-#endif
 
 #ifdef TELEMETRY
     { "telemetry_switch",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->telemetry_switch, .config.lookup = { TABLE_OFF_ON } },
@@ -894,7 +896,6 @@ static const clivalue_t valueTable[] = {
     { "yaw_srate",                  VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].rates[FD_YAW], .config.minmax = { 0,  CONTROL_RATE_CONFIG_YAW_RATE_MAX } },
     { "tpa_rate",                   VAR_UINT8  | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].dynThrPID, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX} },
     { "tpa_breakpoint",             VAR_UINT16 | PROFILE_RATE_VALUE, &masterConfig.profile[0].controlRateProfile[0].tpa_breakpoint, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX} },
-    { "airmode_activate_throttle",  VAR_UINT16 | MASTER_VALUE, &rxConfig()->airModeActivateThreshold, .config.minmax = {1000, 2000 } },
 
     { "failsafe_delay",             VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_delay, .config.minmax = { 0,  200 } },
     { "failsafe_off_delay",         VAR_UINT8  | MASTER_VALUE,  &failsafeConfig()->failsafe_off_delay, .config.minmax = { 0,  200 } },
@@ -902,9 +903,6 @@ static const clivalue_t valueTable[] = {
     { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &failsafeConfig()->failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &failsafeConfig()->failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
     { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &failsafeConfig()->failsafe_procedure, .config.lookup = { TABLE_FAILSAFE } },
-
-    { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
-    { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
     { "accxy_deadband",             VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.xy, .config.minmax = { 0,  100 } },
     { "accz_deadband",              VAR_UINT8  | MASTER_VALUE, &imuConfig()->accDeadband.z, .config.minmax = { 0,  100 } },
@@ -1098,40 +1096,40 @@ static bool isEmpty(const char *string)
     return *string == '\0';
 }
 
-static void printRxFail(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
+static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultFxFailsafeChannelConfigs)
 {
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
-        const rxFailsafeChannelConfiguration_t *channelFailsafeConfigurationDefault;
+        const rxFailsafeChannelConfig_t *channelFailsafeConfig = &rxFailsafeChannelConfigs[channel];
+        const rxFailsafeChannelConfig_t *channelFailsafeConfigDefault;
         bool equalsDefault = true;
-        if (defaultRxConfig) {
-            channelFailsafeConfigurationDefault = &defaultRxConfig->failsafe_channel_configurations[channel];
-            equalsDefault = channelFailsafeConfiguration->mode == channelFailsafeConfigurationDefault->mode
-                    && channelFailsafeConfiguration->step == channelFailsafeConfigurationDefault->step;
+        if (defaultFxFailsafeChannelConfigs) {
+            channelFailsafeConfigDefault = &defaultFxFailsafeChannelConfigs[channel];
+            equalsDefault = channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode
+                    && channelFailsafeConfig->step == channelFailsafeConfigDefault->step;
         }
-        const bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+        const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigurationDefault->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigurationDefault->step)
+                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
+                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfiguration->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                rxFailsafeModeCharacters[channelFailsafeConfig->mode],
+                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
             );
         } else {
             const char *format = "rxfail %u %c\r\n";
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigurationDefault->mode]
+                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
             );
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
-                rxFailsafeModeCharacters[channelFailsafeConfiguration->mode]
+                rxFailsafeModeCharacters[channelFailsafeConfig->mode]
             );
         }
     }
@@ -1152,12 +1150,12 @@ static void cliRxFail(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig()->failsafe_channel_configurations[channel];
+            rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigs(channel);
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
-            rxFailsafeChannelMode_e mode = channelFailsafeConfiguration->mode;
-            bool requireValue = channelFailsafeConfiguration->mode == RX_FAILSAFE_MODE_SET;
+            rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
+            bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
 
             ptr = nextArg(ptr);
             if (ptr) {
@@ -1188,16 +1186,16 @@ static void cliRxFail(char *cmdline)
                         return;
                     }
 
-                    channelFailsafeConfiguration->step = value;
+                    channelFailsafeConfig->step = value;
                 } else if (requireValue) {
                     cliShowParseError();
                     return;
                 }
-                channelFailsafeConfiguration->mode = mode;
+                channelFailsafeConfig->mode = mode;
 
             }
 
-            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfiguration->mode];
+            char modeCharacter = rxFailsafeModeCharacters[channelFailsafeConfig->mode];
 
             // double use of cliPrintf below
             // 1. acknowledge interpretation on command,
@@ -1207,7 +1205,7 @@ static void cliRxFail(char *cmdline)
                 cliPrintf("rxfail %u %c %d\r\n",
                     channel,
                     modeCharacter,
-                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfiguration->step)
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfig->step)
                 );
             } else {
                 cliPrintf("rxfail %u %c\r\n",
@@ -1693,26 +1691,24 @@ static void cliMotorMix(char *cmdline)
 #endif
 }
 
-static void printRxRange(uint8_t dumpMask, const rxConfig_t *rxConfig, const rxConfig_t *defaultRxConfig)
+static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channelRangeConfigs, const rxChannelRangeConfig_t *defaultChannelRangeConfigs)
 {
     const char *format = "rxrange %u %u %u\r\n";
     for (uint32_t i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        const rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig->channelRanges[i];
         bool equalsDefault = true;
-        if (defaultRxConfig) {
-            const rxChannelRangeConfiguration_t *channelRangeConfigurationDefault = &defaultRxConfig->channelRanges[i];
-            equalsDefault = channelRangeConfiguration->min == channelRangeConfigurationDefault->min
-                && channelRangeConfiguration->max == channelRangeConfigurationDefault->max;
+        if (defaultChannelRangeConfigs) {
+            equalsDefault = channelRangeConfigs[i].min == defaultChannelRangeConfigs[i].min
+                && channelRangeConfigs[i].max == defaultChannelRangeConfigs[i].max;
             cliDefaultPrintf(dumpMask, equalsDefault, format,
                 i,
-                channelRangeConfigurationDefault->min,
-                channelRangeConfigurationDefault->max
+                defaultChannelRangeConfigs[i].min,
+                defaultChannelRangeConfigs[i].max
             );
         }
         cliDumpPrintf(dumpMask, equalsDefault, format,
             i,
-            channelRangeConfiguration->min,
-            channelRangeConfiguration->max
+            channelRangeConfigs[i].min,
+            channelRangeConfigs[i].max
         );
     }
 }
@@ -1723,9 +1719,9 @@ static void cliRxRange(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printRxRange(DUMP_MASTER, rxConfig(), NULL);
+        printRxRange(DUMP_MASTER, rxChannelRangeConfigs(0), NULL);
     } else if (strcasecmp(cmdline, "reset") == 0) {
-        resetAllRxChannelRangeConfigurations(rxConfig()->channelRanges);
+        resetAllRxChannelRangeConfigurations();
     } else {
         ptr = cmdline;
         i = atoi(ptr);
@@ -1749,9 +1745,9 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfiguration_t *channelRangeConfiguration = &rxConfig()->channelRanges[i];
-                channelRangeConfiguration->min = rangeMin;
-                channelRangeConfiguration->max = rangeMax;
+                rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigs(i);
+                channelRangeConfig->min = rangeMin;
+                channelRangeConfig->max = rangeMax;
             }
         } else {
             cliShowArgumentRangeError("channel", 0, NON_AUX_CHANNEL_COUNT - 1);
@@ -2691,7 +2687,7 @@ static void cliMap(char *cmdline)
             cliShowParseError();
             return;
         }
-        parseRcChannels(cmdline, &masterConfig.rxConfig);
+        parseRcChannels(cmdline);
     }
     cliPrint("Map: ");
     uint32_t i;
@@ -2837,6 +2833,34 @@ static void printConfig(char *cmdline, bool doDiff)
     }
 
     createDefaultConfig(&defaultConfig);
+    // make copies of configs to do differencing
+    static gyroConfig_t gyroConfigCopy;
+    gyroConfigCopy = *gyroConfig();
+    static accelerometerConfig_t accelerometerConfigCopy;
+    accelerometerConfigCopy = *accelerometerConfig();
+    static compassConfig_t compassConfigCopy;
+    compassConfigCopy = *compassConfig();
+    static barometerConfig_t barometerConfigCopy;
+    barometerConfigCopy = *barometerConfig();
+#ifdef SONAR
+    static sonarConfig_t sonarConfigCopy;
+    sonarConfigCopy = *sonarConfig();
+#endif
+    static rxConfig_t rxConfigCopy;
+    rxConfigCopy = *rxConfig();
+    static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
+        rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
+    }
+    static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
+    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
+        rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
+    }
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+#if defined(TARGET_CONFIG)
+    targetConfiguration(&defaultConfig);
+#endif
 
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -2889,7 +2913,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("map");
-        printMap(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printMap(dumpMask, &rxConfigCopy, rxConfig());
 
         cliPrintHashLine("serial");
         printSerial(dumpMask, serialConfig(), &defaultConfig.serialConfig);
@@ -2912,7 +2936,7 @@ static void printConfig(char *cmdline, bool doDiff)
         printAdjustmentRange(dumpMask, adjustmentProfile(), &defaultConfig.adjustmentProfile);
 
         cliPrintHashLine("rxrange");
-        printRxRange(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
 #ifdef VTX
         cliPrintHashLine("vtx");
@@ -2920,7 +2944,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("rxfail");
-        printRxFail(dumpMask, rxConfig(), &defaultConfig.rxConfig);
+        printRxFail(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
@@ -2961,6 +2985,22 @@ static void printConfig(char *cmdline, bool doDiff)
 
     if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
+    }
+
+    // restore configs from copies
+    *gyroConfig() = gyroConfigCopy;
+    *accelerometerConfig() = accelerometerConfigCopy;
+    *compassConfig() = compassConfigCopy;
+    *barometerConfig( ) = barometerConfigCopy;
+#ifdef SONAR
+    *sonarConfig() = sonarConfigCopy;
+#endif
+    *rxConfig() = rxConfigCopy;
+    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
+        *rxFailsafeChannelConfigs(ii) = rxFailsafeChannelConfigsCopy[ii];
+    }
+    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
+        *rxChannelRangeConfigs(ii) = rxChannelRangeConfigsCopy[ii];
     }
 }
 

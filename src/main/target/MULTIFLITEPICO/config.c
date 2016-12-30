@@ -44,7 +44,7 @@
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config)
 {
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    compassConfig()->mag_hardware = MAG_NONE;            // disabled by default
 
     config->batteryConfig.vbatscale = 100;
     config->batteryConfig.vbatresdivval = 15;
