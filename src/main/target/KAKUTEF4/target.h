@@ -93,6 +93,9 @@
 
 #define SERIAL_PORT_COUNT 4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1 //ICM20689
