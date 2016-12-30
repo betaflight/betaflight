@@ -7,3 +7,5 @@ typedef struct gpioTimerConfig_s {
 } gpioTimerConfig_t;
 
 bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig);
+
+uint32_t gpioTimerValueMs;

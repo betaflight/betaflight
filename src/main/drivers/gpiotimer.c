@@ -12,11 +12,7 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
-#include "build/atomic.h"
 #include "build/debug.h"
-
-#include "common/maths.h"
 
 #ifdef USE_GPIOTIMER
 
