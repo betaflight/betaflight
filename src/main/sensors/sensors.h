@@ -55,20 +55,5 @@ typedef enum {
     SENSOR_GPSMAG = 1 << 7,
 } sensors_e;
 
-typedef enum {
-    ALIGN_DEFAULT = 0,                                      // driver-provided alignment
-    CW0_DEG = 1,
-    CW90_DEG = 2,
-    CW180_DEG = 3,
-    CW270_DEG = 4,
-    CW0_DEG_FLIP = 5,
-    CW90_DEG_FLIP = 6,
-    CW180_DEG_FLIP = 7,
-    CW270_DEG_FLIP = 8
-} sensor_align_e;
-
-typedef struct sensorAlignmentConfig_s {
-    sensor_align_e gyro_align;              // gyro alignment
-    sensor_align_e acc_align;               // acc alignment
-    sensor_align_e mag_align;               // mag alignment
-} sensorAlignmentConfig_t;
+extern uint8_t requestedSensors[SENSOR_INDEX_COUNT];
+extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];

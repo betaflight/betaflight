@@ -9,7 +9,7 @@
 * STM32F405 CPU
 * Integrated Accelerometer/Gyro MPU6000 or MPU6500 via SPI bus
 * 6 motor outputs
-* 3 UART ports (UART1, UART3, UART6)
+* 4 UART ports (UART1, UART3, UART6, Softserial1)
 * External I2C bus, pins shared with UART3, can not be used simultaneously
 * Only UART1 is equipped with inverter
 * Onboard 128Mbit (16MB) flash
@@ -20,7 +20,6 @@
 ## **NOT** supported
 
 * Sonar
-* SoftwareSerial
 * ServoTilt
 * Channel Forwarding
 
@@ -66,13 +65,35 @@ Flashing requires DFU mode and STM32 DFU drivers. Use [Zadig](http://zadig.akeo.
 * Connected to pin PC2
 * Connected to VBAT pins (both are the same) and integrated Voltage Stabilizer (LM7805M)
 
-### Integrated voltage stabilizer
+## Integrated voltage stabilizer
 
 It is integrated with voltage monitoring and always powered when VBAT is connected to battery.
 Because this is **Linear Stabilizer**, it has a tendency to overheat, especially on 4S. Because of that,
 avoid powering too many devices directly to 5V pins on the board. RX receiver is (and board itself) is rather all
 it can do without overeating (150mA on 4S gives 1.5W of waste heat!). OSD, LED Strip and other devices should powered from separate BEC if voltage monitoring is to be enabled.
 
-### LED Strip
+## LED Strip
 
 Right now, LED strip is not functioning correctly on this target. It is a known bug. When bug will be fixed, LED Strip should be connected to **MOTOR 5** output, not dedicated "LED" connector.
+
+## SoftwareSerial
+
+This board allows for single **SoftwareSerial** port on small soldering pads located next to UART3 pins. 
+
+| Pad   | SoftwareSerial Role   |
+| ----  | ----                  |
+| CH5   | RX                    |
+| CH6   | TX                    |
+
+## FrSky SmartPort using SoftwareSerial
+
+SmartPort telemetry is possible using SoftwareSerial. RX and TX lines have to be bridged using
+1kOhm resistor (confirmed working with 100Ohm, 1kOhm and 10kOhm)
+
+```
+SmartPort ---> RX (CH5 pad) ---> 1kOhm resistor ---> TX (CH6 pad)
+```
+
+* Telemetry has to be inverted with `set telemetry_inversion = ON`
+* Port should be configured for _57600bps_
+* Tested with FrSky X4R

@@ -31,13 +31,6 @@ __attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX_nb(uint3
    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) );
 }
 
-#ifndef STM32F4 /* already defined in /lib/main/CMSIS/CM4/CoreSupport/core_cmFunc.h for F4 targets */
-__attribute__( ( always_inline ) ) static inline void __set_BASEPRI_MAX(uint32_t basePri)
-{
-    __ASM volatile ("\tMSR basepri_max, %0\n" : : "r" (basePri) : "memory" );
-}
-#endif
-
 // cleanup BASEPRI restore function, with global memory barrier
 static inline void __basepriRestoreMem(uint8_t *val)
 {
@@ -104,7 +97,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
         __asm__ volatile ("\t# barier(" #data ")  end\n" : : "m" (**__d));                          \
     }                                                                   \
     typeof(data)  __attribute__((__cleanup__(__UNIQL(__barrierEnd)))) *__UNIQL(__barrier) = &data; \
-    __asm__ volatile ("\t# barier (" #data ") start\n" : "=m" (*__UNIQL(__barrier)))
+    __asm__ volatile ("\t# barier (" #data ") start\n" : "+m" (*__UNIQL(__barrier)))
 
 
 // define these wrappers for atomic operations, use gcc buildins

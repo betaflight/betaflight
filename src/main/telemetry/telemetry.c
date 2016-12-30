@@ -138,7 +138,7 @@ void telemetryCheckState(void)
 
 }
 
-void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(timeUs_t currentTimeUs, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
 #if defined(TELEMETRY_FRSKY)
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
@@ -148,9 +148,9 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #endif
 
 #if defined(TELEMETRY_HOTT)
-    handleHoTTTelemetry(currentTime);
+    handleHoTTTelemetry(currentTimeUs);
 #else
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 #endif
 
 #if defined(TELEMETRY_SMARTPORT)
@@ -162,9 +162,9 @@ void telemetryProcess(uint32_t currentTime, rxConfig_t *rxConfig, uint16_t deadb
 #endif
 
 #if defined(TELEMETRY_MAVLINK)
-    handleMAVLinkTelemetry(currentTime);
+    handleMAVLinkTelemetry(currentTimeUs);
 #else
-    UNUSED(currentTime);
+    UNUSED(currentTimeUs);
 #endif
 
 #if defined(TELEMETRY_JETIEXBUS)

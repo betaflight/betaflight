@@ -24,7 +24,6 @@ CURL_PUB_BASEOPTS=(
 # A hacky way of running the unit tests at the same time as the normal builds.
 if [ $RUNTESTS ] ; then
 	cd ./src/test && make test
-
 # A hacky way of building the docs at the same time as the normal builds.
 elif [ $PUBLISHDOCS ] ; then
 	if [ $PUBLISH_URL ] ; then
@@ -42,14 +41,12 @@ elif [ $PUBLISHDOCS ] ; then
 
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "manual=@docs/Manual.pdf" ${PUBLISH_URL} || true
 	fi
-
 elif [ $PUBLISHMETA ] ; then
 	if [ $PUBLISH_URL ] ; then
 		RECENT_COMMITS=$(git shortlog -n25)
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "recent_commits=${RECENT_COMMITS}" ${PUBLISH_URL} || true
 	fi
-
-else
+elif [ $TARGET ] ; then
 	if [ $PUBLISH_URL ] ; then
 		make -j2
 		if   [ -f ${TARGET_FILE}.bin ] ; then
@@ -64,6 +61,9 @@ else
 		curl -k "${CURL_BASEOPTS[@]}" "${CURL_PUB_BASEOPTS[@]}" --form "file=@${TARGET_FILE}" ${PUBLISH_URL} || true
 		exit 0;
 	else
-		make -j2
+		make -j2 $MAKEFILE
 	fi
+else
+    # No target specified, build all with very low verbosity.
+    make V=0 all
 fi

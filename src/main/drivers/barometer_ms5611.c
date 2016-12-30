@@ -59,7 +59,7 @@ STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool ms5611Detect(baro_t *baro)
+bool ms5611Detect(baroDev_t *baro)
 {
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
     for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {

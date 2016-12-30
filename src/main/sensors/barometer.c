@@ -24,14 +24,24 @@
 #include "common/maths.h"
 
 #include "drivers/barometer.h"
+#include "drivers/barometer_bmp085.h"
+#include "drivers/barometer_bmp280.h"
+#include "drivers/barometer_fake.h"
+#include "drivers/barometer_ms5611.h"
+#include "drivers/logging.h"
+
+#include "fc/runtime_config.h"
 
 #include "sensors/barometer.h"
+#include "sensors/sensors.h"
 
 #include "flight/hil.h"
 
+#ifdef USE_HARDWARE_REVISION_DETECTION
+#include "hardware_revision.h"
+#endif
+
 baro_t baro;                        // barometer access functions
-int32_t baroTemperature = 0;
-int32_t BaroAlt = 0;
 
 #ifdef BARO
 
@@ -41,6 +51,99 @@ static int32_t baroGroundAltitude = 0;
 static int32_t baroGroundPressure = 0;
 
 static barometerConfig_t *barometerConfig;
+
+bool baroDetect(baroDev_t *dev, baroSensor_e baroHardwareToUse)
+{
+    // Detect what pressure sensors are available. baro->update() is set to sensor-specific update function
+
+    baroSensor_e baroHardware = BARO_NONE;
+    requestedSensors[SENSOR_INDEX_BARO] = baroHardwareToUse;
+
+#ifdef USE_BARO_BMP085
+    const bmp085Config_t *bmp085Config = NULL;
+
+#if defined(BARO_XCLR_GPIO) && defined(BARO_EOC_GPIO)
+    static const bmp085Config_t defaultBMP085Config = {
+        .xclrIO = IO_TAG(BARO_XCLR_PIN),
+        .eocIO = IO_TAG(BARO_EOC_PIN),
+    };
+    bmp085Config = &defaultBMP085Config;
+#endif
+
+#ifdef NAZE
+    if (hardwareRevision == NAZE32) {
+        bmp085Disable(bmp085Config);
+    }
+#endif
+
+#endif
+
+    switch (baroHardwareToUse) {
+    case BARO_AUTODETECT:
+    case BARO_BMP085:
+#ifdef USE_BARO_BMP085
+        if (bmp085Detect(bmp085Config, dev)) {
+            baroHardware = BARO_BMP085;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
+
+    case BARO_MS5611:
+#ifdef USE_BARO_MS5611
+        if (ms5611Detect(dev)) {
+            baroHardware = BARO_MS5611;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
+
+    case BARO_BMP280:
+#if defined(USE_BARO_BMP280) || defined(USE_BARO_SPI_BMP280)
+        if (bmp280Detect(dev)) {
+            baroHardware = BARO_BMP280;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
+
+    case BARO_FAKE:
+#ifdef USE_FAKE_BARO
+        if (fakeBaroDetect(dev)) {
+            baroHardware = BARO_FAKE;
+            break;
+        }
+#endif
+        /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+        if (baroHardwareToUse != BARO_AUTODETECT) {
+            break;
+        }
+
+    case BARO_NONE:
+        baroHardware = BARO_NONE;
+        break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_BARO_DETECTION, BOOT_EVENT_FLAGS_NONE, baroHardware, 0, 0, 0);
+
+    if (baroHardware == BARO_NONE) {
+        sensorsClear(SENSOR_BARO);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_BARO] = baroHardware;
+    sensorsSet(SENSOR_BARO);
+    return true;
+}
 
 void useBarometerConfig(barometerConfig_t *barometerConfigToUse)
 {
@@ -88,7 +191,8 @@ typedef enum {
     BAROMETER_NEEDS_CALCULATION
 } barometerState_e;
 
-bool isBaroReady(void) {
+bool isBaroReady(void)
+{
     return baroReady;
 }
 
@@ -99,21 +203,21 @@ uint32_t baroUpdate(void)
     switch (state) {
         default:
         case BAROMETER_NEEDS_SAMPLES:
-            baro.get_ut();
-            baro.start_up();
+            baro.dev.get_ut();
+            baro.dev.start_up();
             state = BAROMETER_NEEDS_CALCULATION;
-            return baro.up_delay;
+            return baro.dev.up_delay;
         break;
 
         case BAROMETER_NEEDS_CALCULATION:
-            baro.get_up();
-            baro.start_ut();
-            baro.calculate(&baroPressure, &baroTemperature);
+            baro.dev.get_up();
+            baro.dev.start_ut();
+            baro.dev.calculate(&baroPressure, &baro.baroTemperature);
             if (barometerConfig->use_median_filtering) {
                 baroPressure = applyBarometerMedianFilter(baroPressure);
             }
             state = BAROMETER_NEEDS_SAMPLES;
-            return baro.ut_delay;
+            return baro.dev.ut_delay;
         break;
     }
 }
@@ -131,22 +235,27 @@ int32_t baroCalculateAltitude(void)
 {
     if (!isBaroCalibrationComplete()) {
         performBaroCalibrationCycle();
-        BaroAlt = 0;
+        baro.BaroAlt = 0;
     }
     else {
 #ifdef HIL
         if (hilActive) {
-            BaroAlt = hilToFC.baroAlt;
-            return BaroAlt;
+            baro.BaroAlt = hilToFC.baroAlt;
+            return baro.BaroAlt;
         }
 #endif
         // calculates height from ground via baro readings
         // see: https://github.com/diydrones/ardupilot/blob/master/libraries/AP_Baro/AP_Baro.cpp#L140
-        BaroAlt = lrintf((1.0f - powf((float)(baroPressure) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
-        BaroAlt -= baroGroundAltitude;
+        baro.BaroAlt = lrintf((1.0f - powf((float)(baroPressure) / 101325.0f, 0.190295f)) * 4433000.0f); // in cm
+        baro.BaroAlt -= baroGroundAltitude;
     }
 
-    return BaroAlt;
+    return baro.BaroAlt;
+}
+
+bool isBarometerHealthy(void)
+{
+    return true;
 }
 
 #endif /* BARO */

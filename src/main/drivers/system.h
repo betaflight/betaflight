@@ -17,13 +17,18 @@
 
 #pragma once
 
-void systemInit(void);
-void delayMicroseconds(uint32_t us);
-void delay(uint32_t ms);
+#include "common/time.h"
 
-uint32_t micros(void);
-uint32_t microsISR(void);
-uint32_t millis(void);
+void systemInit(void);
+void delayMicroseconds(timeUs_t us);
+void delay(timeMs_t ms);
+
+timeUs_t micros(void);
+timeUs_t microsISR(void);
+timeMs_t millis(void);
+
+uint32_t ticks(void);
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end);
 
 typedef enum {
     FAILURE_DEVELOPER = 0,

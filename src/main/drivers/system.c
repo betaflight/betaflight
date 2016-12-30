@@ -48,9 +48,9 @@ void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
 }
 
 // cycles per microsecond
-static uint32_t usTicks = 0;
+static timeUs_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
-static volatile uint32_t sysTickUptime = 0;
+static volatile timeMs_t sysTickUptime = 0;
 // cached value of RCC->CSR
 uint32_t cachedRccCsrValue;
 
@@ -59,6 +59,10 @@ void cycleCounterInit(void)
     RCC_ClocksTypeDef clocks;
     RCC_GetClocksFreq(&clocks);
     usTicks = clocks.SYSCLK_Frequency / 1000000;
+
+    // Enable DWT for precision time measurement
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
 // SysTick
@@ -74,9 +78,19 @@ void SysTick_Handler(void)
     }
 }
 
-// Return system uptime in microseconds (rollover in 70minutes)
+uint32_t ticks(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    return DWT->CYCCNT;
+}
 
-uint32_t microsISR(void)
+timeDelta_t ticks_diff_us(uint32_t begin, uint32_t end)
+{
+    return (end - begin) / usTicks;
+}
+
+// Return system uptime in microseconds (rollover in 70minutes)
+timeUs_t microsISR(void)
 {
     register uint32_t ms, pending, cycle_cnt;
 
@@ -103,7 +117,7 @@ uint32_t microsISR(void)
     return ((ms + pending) * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
 
-uint32_t micros(void)
+timeUs_t micros(void)
 {
     register uint32_t ms, cycle_cnt;
 
@@ -126,26 +140,26 @@ uint32_t micros(void)
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
-uint32_t millis(void)
+timeMs_t millis(void)
 {
     return sysTickUptime;
 }
 
 #if 1
-void delayMicroseconds(uint32_t us)
+void delayMicroseconds(timeUs_t us)
 {
-    uint32_t now = micros();
+    timeUs_t now = micros();
     while (micros() - now < us);
 }
 #else
-void delayMicroseconds(uint32_t us)
+void delayMicroseconds(timeUs_t us)
 {
     uint32_t elapsed = 0;
     uint32_t lastCount = SysTick->VAL;
 
     for (;;) {
         register uint32_t current_count = SysTick->VAL;
-        uint32_t elapsed_us;
+        timeUs_t elapsed_us;
 
         // measure the time elapsed since the last time we checked
         elapsed += current_count - lastCount;
@@ -165,7 +179,7 @@ void delayMicroseconds(uint32_t us)
 }
 #endif
 
-void delay(uint32_t ms)
+void delay(timeMs_t ms)
 {
     while (ms--)
         delayMicroseconds(1000);

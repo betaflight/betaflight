@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "blackbox/blackbox.h"
+
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -32,8 +34,16 @@
 
 #include "fc/rc_controls.h"
 
+#include "flight/failsafe.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "flight/imu.h"
+#include "flight/navigation_rewrite.h"
+#include "flight/pid.h"
+
 #include "io/gimbal.h"
 #include "io/gps.h"
+#include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/motors.h"
 #include "io/serial.h"
@@ -46,21 +56,40 @@
 #include "sensors/boardalignment.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
+#include "sensors/compass.h"
 #include "sensors/gyro.h"
 #include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
 
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/navigation_rewrite.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-
 #include "config/config.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
+
+#define motorConfig(x) (&masterConfig.motorConfig)
+#define flight3DConfig(x) (&masterConfig.flight3DConfig)
+#define servoConfig(x) (&masterConfig.servoConfig)
+#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
+#define boardAlignment(x) (&masterConfig.boardAlignment)
+#define imuConfig(x) (&masterConfig.imuConfig)
+#define gyroConfig(x) (&masterConfig.gyroConfig)
+#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
+#define barometerConfig(x) (&masterConfig.barometerConfig)
+#define compassConfig(x) (&masterConfig.compassConfig)
+#define pitotmeterConfig(x) (&masterConfig.pitotmeterConfig)
+#define batteryConfig(x) (&masterConfig.batteryConfig)
+#define gpsConfig(x) (&masterConfig.gpsConfig)
+#define navConfig(x) (&masterConfig.navConfig)
+#define rxConfig(x) (&masterConfig.rxConfig)
+#define armingConfig(x) (&masterConfig.armingConfig)
+#define mixerConfig(x) (&masterConfig.mixerConfig)
+#define failsafeConfig(x) (&masterConfig.failsafeConfig)
+#define serialConfig(x) (&masterConfig.serialConfig)
+#define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define osdProfile(x) (&masterConfig.osdProfile)
+#define blackboxConfig(x) (&masterConfig.blackboxConfig)
+#define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
+
 
 // System-wide
 typedef struct master_s {
@@ -68,13 +97,9 @@ typedef struct master_s {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint8_t mixerMode;
     uint32_t enabledFeatures;
     uint8_t persistentFlags;
-    uint16_t looptime;                      // imu loop time in us
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
-    uint8_t gyroSync;                       // Enable interrupt based loop
-    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
 
 #ifdef ASYNC_GYRO_PROCESSING
     uint16_t accTaskFrequency;
@@ -82,58 +107,32 @@ typedef struct master_s {
     uint8_t asyncMode;
 #endif
 
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-#ifdef USE_SERVOS
-    servoMixer_t customServoMixer[MAX_SERVO_RULES];
-#endif
     // motor/esc/servo related stuff
+    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     motorConfig_t motorConfig;
-    servoConfig_t servoConfig;
     flight3DConfig_t flight3DConfig;
 
-    // global sensor-related stuff
+#ifdef USE_SERVOS
+    servoConfig_t servoConfig;
+    servoMixerConfig_t servoMixerConfig;
+    servoMixer_t customServoMixer[MAX_SERVO_RULES];
+#endif
 
-    sensorAlignmentConfig_t sensorAlignmentConfig;
     boardAlignment_t boardAlignment;
 
-    uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-
-    uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer
-    uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
-    uint16_t dcm_kp_mag;                    // DCM filter proportional gain ( x 10000) for magnetometer and GPS heading
-    uint16_t dcm_ki_mag;                    // DCM filter integral gain ( x 10000) for magnetometer and GPS heading
-
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    imuConfig_t imuConfig;
 
     gyroConfig_t gyroConfig;
 
+    accelerometerConfig_t accelerometerConfig;
+
     barometerConfig_t barometerConfig;
+
+    compassConfig_t compassConfig;
 
     pitotmeterConfig_t pitotmeterConfig;
 
-    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
-    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
-
-    flightDynamicsTrims_t accZero;          // Accelerometer offset
-    flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
-    flightDynamicsTrims_t magZero;          // Compass offset
-
     batteryConfig_t batteryConfig;
-
-    rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
-
-    failsafeConfig_t failsafeConfig;
-
-    uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
-    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
-    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
-    uint8_t small_angle;
-
-    // mixer-related configuration
-    mixerConfig_t mixerConfig;
-    servoMixerConfig_t servoMixerConfig;
 
 #ifdef GPS
     gpsConfig_t gpsConfig;
@@ -143,19 +142,27 @@ typedef struct master_s {
     navConfig_t navConfig;
 #endif
 
-    serialConfig_t serialConfig;
+    rxConfig_t rxConfig;
+    pwmRxConfig_t pwmRxConfig;
 
+    armingConfig_t armingConfig;
+
+    // mixer-related configuration
+    mixerConfig_t mixerConfig;
+
+    failsafeConfig_t failsafeConfig;
+    serialConfig_t serialConfig;
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
 #endif
 
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
-    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
-    specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    ledStripConfig_t ledStripConfig;
+#endif
+
+#ifdef OSD
+    osd_profile_t osdProfile;
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
@@ -163,16 +170,20 @@ typedef struct master_s {
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
 #ifdef BLACKBOX
-    uint8_t blackbox_rate_num;
-    uint8_t blackbox_rate_denom;
-    uint8_t blackbox_device;
+    blackboxConfig_t blackboxConfig;
 #endif
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
+    char name[MAX_NAME_LENGTH + 1];
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
+    /*
+        do not add properties after the MAGIC_EF and CHK
+        as it is assumed to exist at length-2 and length-1
+    */
 } master_t;
 
 extern master_t masterConfig;

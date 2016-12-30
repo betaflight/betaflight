@@ -17,7 +17,7 @@
 
 #pragma once
 
-#ifdef STACK_CHECK
-uint32_t getTotalStackSize(void);
-uint32_t getUsedStackSize(void);
-#endif
+void taskStackCheck(timeUs_t currentTimeUs);
+uint32_t stackUsedSize(void);
+uint32_t stackTotalSize(void);
+uint32_t stackHighMem(void);

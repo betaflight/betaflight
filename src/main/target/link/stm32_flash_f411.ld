@@ -1,50 +1,34 @@
 /*
 *****************************************************************************
 **
-**  File        : stm32_flash.ld
+**  File        : stm32_flash_f411.ld
 **
 **  Abstract    : Linker script for STM32F11 Device with
 **                512KByte FLASH, 128KByte RAM
 **
-**                Set heap size, stack size and stack location according
-**                to application requirements.
-**
-**                Set memory bank area and size if external memory is used.
-**
-**  Target      : STMicroelectronics STM32
-**
-**  Environment : Atollic TrueSTUDIO(R)
-**
-**  Distribution: The file is distributed “as is,” without any warranty
-**                of any kind.
-**
-**  (c)Copyright Atollic AB.
-**  You may use this file as-is or modify it according to the needs of your
-**  project. Distribution of this file (unmodified or modified) is not
-**  permitted. Atollic AB permit registered Atollic TrueSTUDIO(R) users the
-**  rights to distribute the assembled, compiled & linked contents of this
-**  file as part of an application binary file, provided that it is built
-**  using the Atollic TrueSTUDIO(R) toolchain.
-**
 *****************************************************************************
 */
 
-/* Specify the memory areas */
+/* Entry Point */
+ENTRY(Reset_Handler)
 
 /*
-0x08000000 to 0x08080000 512kb full flash,
-0x08000000 to 0x08060000 384kb firmware,
-0x08060000 to 0x08080000 128kb config,
+0x08000000 to 0x08080000 512K full flash,
+0x08000000 to 0x0805FFFF 384K firmware,
+0x08060000 to 0x08080000 128K config,
 */
 
+/* Specify the memory areas */
 MEMORY
 {
-	FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 0x00080000 
-	RAM (rwx)       : ORIGIN = 0x20000000, LENGTH = 0x00020000
-	MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
+    FLASH (rx)        : ORIGIN = 0x08000000, LENGTH = 384K
+    FLASH_CONFIG (r)  : ORIGIN = 0x08060000, LENGTH = 128K
+
+    RAM (rwx)         : ORIGIN = 0x20000000, LENGTH = 128K
+    CCM (xrw)         : ORIGIN = 0x10000000, LENGTH = 64K
+    MEMORY_B1 (rx)    : ORIGIN = 0x60000000, LENGTH = 0K
 }
 
-REGION_ALIAS("CCSRAM", RAM);
-REGION_ALIAS("SRAM", RAM);
+REGION_ALIAS("STACKRAM", CCM)
 
 INCLUDE "stm32_flash.ld"

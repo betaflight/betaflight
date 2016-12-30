@@ -82,6 +82,10 @@ Failsafe delays are configured in 0.1 second steps.
 
 Guard time for failsafe activation after signal lost.  This is the amount of time the flight controller waits to see if it begins receiving a valid signal again before activating failsafe.
 
+### `failsafe_recovery_delay`
+
+Guard time for failsafe de-activation after signal is recovered.  This is the amount of time the flight controller waits to see if the signal is consistent before turning off failsafe procedure. Usefull to avoid swithing in and out of failsafe RTH.
+
 ### `failsafe_off_delay`
 
 Delay after failsafe activates before motors finally turn off.  This is the amount of time 'failsafe_throttle' is active.  If you fly at higher altitudes you may need more time to descend safely.
@@ -104,6 +108,7 @@ Use standard RX usec values.  See Rx documentation.
 
 * __Drop:__ Just kill the motors and disarm (crash the craft).
 * __Land:__ Enable an auto-level mode, center the flight sticks and set the throttle to a predefined value (`failsafe_throttle`) for a predefined time (`failsafe_off_delay`). This should allow the craft to come to a safer landing.
+* __RTH:__ Attempt to return and land the drone at the point of launch. GPS and Barometer required for proper operation. If this more is selected and GPS is not available - the drone will be landed immediately.
 
 ### `rx_min_usec`
 

@@ -26,4 +26,4 @@
 #define MPU3050_USER_CTRL       0x3D
 #define MPU3050_PWR_MGM         0x3E
 
-bool mpu3050Detect(gyro_t *gyro);
+bool mpu3050Detect(gyroDev_t *gyro);

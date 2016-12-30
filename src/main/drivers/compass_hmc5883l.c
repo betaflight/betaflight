@@ -128,7 +128,7 @@ static const hmc5883Config_t *hmc5883Config = NULL;
 static IO_t intIO;
 static extiCallbackRec_t hmc5883_extiCallbackRec;
 
-void hmc5883_extiHandler(extiCallbackRec_t* cb)
+static void hmc5883_extiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
 #ifdef DEBUG_MAG_DATA_READY_INTERRUPT
@@ -169,27 +169,28 @@ static void hmc5883lConfigureDataReadyInterruptHandling(void)
 #endif
 }
 
-#define DETECTION_MAX_RETRY_COUNT   5
-bool hmc5883lDetect(mag_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
+static bool hmc5883lRead(int16_t *magData)
 {
-    hmc5883Config = hmc5883ConfigToUse;
+    uint8_t buf[6];
 
-    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
-        uint8_t sig = 0;
-        bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
-        if (ack && sig == 'H') {
-            mag->init = hmc5883lInit;
-            mag->read = hmc5883lRead;
-
-            return true;
-        }
+    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
+    if (!ack) {
+        magData[X] = 0;
+        magData[Y] = 0;
+        magData[Z] = 0;
+        return false;
     }
+    // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
+    // After calibration is done, magGain is set to calculated gain values.
+    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
+    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
+    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 
-    return false;
+    return true;
 }
 
 #define INITIALISATION_MAX_READ_FAILURES 5
-bool hmc5883lInit(void)
+static bool hmc5883lInit(void)
 {
     int16_t magADC[3];
     int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
@@ -285,23 +286,22 @@ bool hmc5883lInit(void)
     return bret;
 }
 
-bool hmc5883lRead(int16_t *magData)
+#define DETECTION_MAX_RETRY_COUNT   5
+bool hmc5883lDetect(magDev_t* mag, const hmc5883Config_t *hmc5883ConfigToUse)
 {
-    uint8_t buf[6];
+    hmc5883Config = hmc5883ConfigToUse;
 
-    bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-    if (!ack) {
-        magData[X] = 0;
-        magData[Y] = 0;
-        magData[Z] = 0;
-        return false;
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        uint8_t sig = 0;
+        bool ack = i2cRead(MAG_I2C_INSTANCE, MAG_ADDRESS, 0x0A, 1, &sig);
+        if (ack && sig == 'H') {
+            mag->init = hmc5883lInit;
+            mag->read = hmc5883lRead;
+
+            return true;
+        }
     }
-    // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
-    // After calibration is done, magGain is set to calculated gain values.
-    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 
-    return true;
+    return false;
 }
 #endif

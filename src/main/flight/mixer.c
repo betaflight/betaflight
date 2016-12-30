@@ -23,13 +23,10 @@
 #include "platform.h"
 #include "build/debug.h"
 
-
-#include "build/build_config.h"
-
-
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"

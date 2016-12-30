@@ -21,10 +21,10 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/maths.h"
+#include "common/utils.h"
 
 #include "nvic.h"
 
@@ -50,42 +50,9 @@
 
 #define MPU6050_SMPLRT_DIV      0       // 8000Hz
 
-static void mpu6050AccInit(acc_t *acc);
-static void mpu6050GyroInit(uint8_t lpf);
-
-bool mpu6050AccDetect(acc_t *acc)
+static void mpu6050AccInit(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_60x0) {
-        return false;
-    }
-
-    acc->init = mpu6050AccInit;
-    acc->read = mpuAccRead;
-    acc->revisionCode = (mpuDetectionResult.resolution == MPU_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
-
-    return true;
-}
-
-bool mpu6050GyroDetect(gyro_t *gyro)
-{
-    if (mpuDetectionResult.sensor != MPU_60x0) {
-        return false;
-    }
-    gyro->init = mpu6050GyroInit;
-    gyro->read = mpuGyroRead;
-    gyro->intStatus = checkMPUDataReady;
-
-    // 16.4 dps/lsb scalefactor
-    gyro->scale = 1.0f / 16.4f;
-
-    return true;
-}
-
-static void mpu6050AccInit(acc_t *acc)
-{
-    mpuIntExtiInit();
-
-    switch (mpuDetectionResult.resolution) {
+    switch (acc->mpuDetectionResult.resolution) {
         case MPU_HALF_RESOLUTION:
             acc->acc_1G = 256 * 8;
             break;
@@ -95,29 +62,55 @@ static void mpu6050AccInit(acc_t *acc)
     }
 }
 
-static void mpu6050GyroInit(uint8_t lpf)
+bool mpu6050AccDetect(accDev_t *acc)
 {
-    bool ack;
+    if (acc->mpuDetectionResult.sensor != MPU_60x0) {
+        return false;
+    }
 
-    mpuIntExtiInit();
+    acc->init = mpu6050AccInit;
+    acc->read = mpuAccRead;
+    acc->revisionCode = (acc->mpuDetectionResult.resolution == MPU_HALF_RESOLUTION ? 'o' : 'n'); // es/non-es variance between MPU6050 sensors, half of the naze boards are mpu6000ES.
 
-    ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
+    return true;
+}
+
+static void mpu6050GyroInit(gyroDev_t *gyro)
+{
+    mpuGyroInit(gyro);
+
+    bool ack = gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x80);      //PWR_MGMT_1    -- DEVICE_RESET 1
     delay(100);
-    ack = mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x03); //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
-    ack = mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
-    delay(15); //PLL Settling time when changing CLKSEL is max 10ms.  Use 15ms to be sure 
-    ack = mpuConfiguration.write(MPU_RA_CONFIG, lpf); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
-    ack = mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
+    ack = gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0x03); //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
+    ack = gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); //SMPLRT_DIV    -- SMPLRT_DIV = 0  Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
+    delay(15); //PLL Settling time when changing CLKSEL is max 10ms.  Use 15ms to be sure
+    ack = gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
+    ack = gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);   //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
 
     // ACC Init stuff.
     // Accel scale 8g (4096 LSB/g)
-    ack = mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
+    ack = gyro->mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_8G << 3);
 
-    ack = mpuConfiguration.write(MPU_RA_INT_PIN_CFG,
+    ack = gyro->mpuConfiguration.write(MPU_RA_INT_PIN_CFG,
             0 << 7 | 0 << 6 | 0 << 5 | 0 << 4 | 0 << 3 | 0 << 2 | 1 << 1 | 0 << 0); // INT_PIN_CFG   -- INT_LEVEL_HIGH, INT_OPEN_DIS, LATCH_INT_DIS, INT_RD_CLEAR_DIS, FSYNC_INT_LEVEL_HIGH, FSYNC_INT_DIS, I2C_BYPASS_EN, CLOCK_DIS
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    ack = mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
+    ack = gyro->mpuConfiguration.write(MPU_RA_INT_ENABLE, MPU_RF_DATA_RDY_EN);
 #endif
     UNUSED(ack);
+}
+
+bool mpu6050GyroDetect(gyroDev_t *gyro)
+{
+    if (gyro->mpuDetectionResult.sensor != MPU_60x0) {
+        return false;
+    }
+    gyro->init = mpu6050GyroInit;
+    gyro->read = mpuGyroRead;
+    gyro->intStatus = mpuCheckDataReady;
+
+    // 16.4 dps/lsb scalefactor
+    gyro->scale = 1.0f / 16.4f;
+
+    return true;
 }

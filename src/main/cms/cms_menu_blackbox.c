@@ -1,0 +1,122 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+//
+// CMS things for blackbox and flashfs.
+//
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "platform.h"
+
+#ifdef CMS
+
+#include "build/version.h"
+
+#include "common/utils.h"
+
+#include "drivers/system.h"
+
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_blackbox.h"
+
+#include "common/axis.h"
+#include "io/gimbal.h"
+#include "flight/pid.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "config/config.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
+#include "config/feature.h"
+
+#include "io/flashfs.h"
+
+#ifdef USE_FLASHFS
+static long cmsx_EraseFlash(displayPort_t *pDisplay, const void *ptr)
+{
+    UNUSED(ptr);
+
+    displayClear(pDisplay);
+    displayWrite(pDisplay, 5, 3, "ERASING FLASH...");
+    displayResync(pDisplay); // Was max7456RefreshAll(); Why at this timing?
+
+    flashfsEraseCompletely();
+    while (!flashfsIsReady()) {
+        delay(100);
+    }
+
+    displayClear(pDisplay);
+    displayResync(pDisplay); // Was max7456RefreshAll(); wedges during heavy SPI?
+
+    return 0;
+}
+#endif // USE_FLASHFS
+
+static bool featureRead = false;
+static uint8_t cmsx_FeatureBlackbox;
+
+static long cmsx_Blackbox_FeatureRead(void)
+{
+    if (!featureRead) {
+        cmsx_FeatureBlackbox = feature(FEATURE_BLACKBOX) ? 1 : 0;
+        featureRead = true;
+    }
+
+    return 0;
+}
+
+static long cmsx_Blackbox_FeatureWriteback(void)
+{
+    if (cmsx_FeatureBlackbox)
+        featureSet(FEATURE_BLACKBOX);
+    else
+        featureClear(FEATURE_BLACKBOX);
+
+    return 0;
+}
+
+static OSD_Entry cmsx_menuBlackboxEntries[] =
+{
+    { "-- BLACKBOX --", OME_Label, NULL, NULL, 0},
+    { "ENABLED",     OME_Bool,    NULL,            &cmsx_FeatureBlackbox,                                      0 },
+    { "RATE DENOM",  OME_UINT8,   NULL,            &(OSD_UINT8_t){ &blackboxConfig()->rate_denom,1,32,1 }, 0 },
+
+#ifdef USE_FLASHFS
+    { "ERASE FLASH", OME_Funcall, cmsx_EraseFlash, NULL,                                                       0 },
+#endif // USE_FLASHFS
+
+    { "BACK", OME_Back, NULL, NULL, 0 },
+    { NULL, OME_END, NULL, NULL, 0 }
+};
+
+CMS_Menu cmsx_menuBlackbox = {
+    .GUARD_text = "MENUBB",
+    .GUARD_type = OME_MENU,
+    .onEnter = cmsx_Blackbox_FeatureRead,
+    .onExit = NULL,
+    .onGlobalExit = cmsx_Blackbox_FeatureWriteback,
+    .entries = cmsx_menuBlackboxEntries
+};
+#endif

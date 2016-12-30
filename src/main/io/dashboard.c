@@ -30,7 +30,7 @@
 #include "drivers/system.h"
 #include "drivers/display_ug2864hsweg01.h"
 
-//#include "cms/cms.h"
+#include "cms/cms.h"
 
 #include "common/printf.h"
 #include "common/maths.h"
@@ -46,8 +46,11 @@
 #include "flight/navigation_rewrite.h"
 
 #include "io/dashboard.h"
-//#include "io/displayport_oled.h"
+#include "io/displayport_oled.h"
+
+#ifdef GPS
 #include "io/gps.h"
+#endif
 
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
@@ -69,11 +72,11 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 #define DASHBOARD_UPDATE_FREQUENCY (MICROSECONDS_IN_A_SECOND / 5)
 #define PAGE_CYCLE_FREQUENCY (MICROSECONDS_IN_A_SECOND * 5)
 
-static uint32_t nextDisplayUpdateAt = 0;
+static timeUs_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
 static const rxConfig_t *rxConfig;
-//static displayPort_t *displayPort;
+static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
 
@@ -151,6 +154,7 @@ static void padLineBufferToChar(uint8_t toChar)
     lineBuffer[length] = 0;
 }
 
+#ifdef GPS
 static void padLineBuffer(void)
 {
     padLineBufferToChar(sizeof(lineBuffer));
@@ -161,6 +165,7 @@ static void padHalfLineBuffer(void)
     uint8_t halfLineIndex = sizeof(lineBuffer) / 2;
     padLineBufferToChar(halfLineIndex);
 }
+#endif
 
 // LCDbar(n,v) : draw a bar graph - n number of chars for width, v value in % to display
 static void drawHorizonalPercentageBar(uint8_t width,uint8_t percent) {
@@ -241,7 +246,7 @@ static void showTitle(void)
         i2c_OLED_set_line(0);
         i2c_OLED_send_string(pageTitles[currentPageId]);
     }
-#else 
+#else
     i2c_OLED_set_line(0);
     i2c_OLED_send_string(pageTitles[currentPageId]);
 #endif
@@ -351,7 +356,7 @@ static void showStatusPage(void)
 #endif
 
 #ifdef MAG
-    if (sensors(SENSOR_MAG)) {  
+    if (sensors(SENSOR_MAG)) {
         tfp_sprintf(lineBuffer, "HDG: %d", DECIDEGREES_TO_DEGREES(attitude.values.yaw));
         padHalfLineBuffer();
         i2c_OLED_set_line(rowIndex);
@@ -360,7 +365,7 @@ static void showStatusPage(void)
 #endif
 
 #ifdef BARO
-    if (sensors(SENSOR_BARO)) {  
+    if (sensors(SENSOR_BARO)) {
         int32_t alt = baroCalculateAltitude();
         tfp_sprintf(lineBuffer, "Alt: %d", alt / 100);
         padHalfLineBuffer();
@@ -371,24 +376,33 @@ static void showStatusPage(void)
 
 }
 
-void dashboardUpdate(uint32_t currentTime)
+void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
+    static bool wasGrabbed = false;
+    bool pageChanging;
 
 #ifdef CMS
     if (displayIsGrabbed(displayPort)) {
+        wasGrabbed = true;
         return;
+    } else if (wasGrabbed) {
+        pageChanging = true;
+        wasGrabbed = false;
+    } else {
+        pageChanging = false;
     }
+#else
+    pageChanging = false;
 #endif
 
-    bool pageChanging = false;
-    bool updateNow = (int32_t)(currentTime - nextDisplayUpdateAt) >= 0L;
+    bool updateNow = (int32_t)(currentTimeUs - nextDisplayUpdateAt) >= 0L;
 
     if (!updateNow) {
         return;
     }
 
-    nextDisplayUpdateAt = currentTime + DASHBOARD_UPDATE_FREQUENCY;
+    nextDisplayUpdateAt = currentTimeUs + DASHBOARD_UPDATE_FREQUENCY;
 
     bool armedState = ARMING_FLAG(ARMED) ? true : false;
     bool armedStateChanged = armedState != previousArmedState;
@@ -406,7 +420,7 @@ void dashboardUpdate(uint32_t currentTime)
             pageChanging = true;
         }
 
-        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(currentTime - nextPageAt) >= 0L)) {
+        if ((currentPageId == PAGE_WELCOME) && ((int32_t)(currentTimeUs - nextPageAt) >= 0L)) {
             currentPageId = PAGE_STATUS;
             pageChanging = true;
         }
@@ -470,10 +484,12 @@ void dashboardInit(const rxConfig_t *rxConfigToUse)
     resetDisplay();
     delay(200);
 
-//    displayPort = displayPortOledInit();
+    displayPort = displayPortOledInit();
 #if defined(CMS)
     cmsDisplayPortRegister(displayPort);
 #endif
+
+    rxConfig = rxConfigToUse;
 
     dashboardSetPage(PAGE_WELCOME);
     const uint32_t now = micros();

@@ -59,23 +59,7 @@
 #define MAG3110_MAG_REG_CTRL_REG1    0x10
 #define MAG3110_MAG_REG_CTRL_REG2    0x11
 
-#define DETECTION_MAX_RETRY_COUNT   5
-bool mag3110detect(mag_t *mag)
-{
-    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
-        uint8_t sig = 0;
-        bool ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
-        if (ack && sig == 0xC4) {
-            mag->init = mag3110Init;
-            mag->read = mag3110Read;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool mag3110Init()
+static bool mag3110Init()
 {
     bool ack = i2cWrite(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_CTRL_REG1, 0x01); //  active mode 80 Hz ODR with OSR = 1
     delay(20);
@@ -94,7 +78,7 @@ bool mag3110Init()
 
 #define BIT_STATUS_REG_DATA_READY               (1 << 3)
 
-bool mag3110Read(int16_t *magData)
+static bool mag3110Read(int16_t *magData)
 {
     uint8_t status;
     uint8_t buf[6];
@@ -121,4 +105,19 @@ bool mag3110Read(int16_t *magData)
     return true;
 }
 
+#define DETECTION_MAX_RETRY_COUNT   5
+bool mag3110detect(magDev_t *mag)
+{
+    for (int retryCount = 0; retryCount < DETECTION_MAX_RETRY_COUNT; retryCount++) {
+        uint8_t sig = 0;
+        bool ack = i2cRead(MAG_I2C_INSTANCE, MAG3110_MAG_I2C_ADDRESS, MAG3110_MAG_REG_WHO_AM_I, 1, &sig);
+        if (ack && sig == 0xC4) {
+            mag->init = mag3110Init;
+            mag->read = mag3110Read;
+            return true;
+        }
+    }
+
+    return false;
+}
 #endif

@@ -117,6 +117,8 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
+#define TARGET_CONFIG
+
 // Number of available PWM outputs
 #define MAX_PWM_OUTPUT_PORTS    10
 

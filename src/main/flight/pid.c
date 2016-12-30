@@ -82,7 +82,7 @@ int16_t magHoldTargetHeading;
 static pt1Filter_t magHoldRateFilter;
 
 // Thrust PID Attenuation factor. 0.0f means fully attenuated, 1.0f no attenuation is applied
-static bool shouldUpdatePIDCoeffs = false;
+static bool pidGainsUpdateRequired = false;
 static float tpaFactor;
 int16_t axisPID[FLIGHT_DYNAMICS_INDEX_COUNT];
 
@@ -134,13 +134,14 @@ Rate 20 means 200dps at full stick deflection
 */
 float pidRateToRcCommand(float rateDPS, uint8_t rate)
 {
-    const float rateDPS_10 = constrainf(rateDPS / 10.0f, (float) -rate, (float) rate);
-    return scaleRangef(rateDPS_10, (float) -rate, (float) rate, -500.0f, 500.0f);
+    const float maxRateDPS = rate * 10.0f;
+    return scaleRangef(rateDPS, -maxRateDPS, maxRateDPS, -500.0f, 500.0f);
 }
 
 float pidRcCommandToRate(int16_t stick, uint8_t rate)
 {
-    return scaleRangef((float) stick, (float) -500, (float) 500, (float) -rate, (float) rate) * 10;
+    const float maxRateDPS = rate * 10.0f;
+    return scaleRangef((float) stick, -500.0f, 500.0f, -maxRateDPS, maxRateDPS);
 }
 
 /*
@@ -152,9 +153,9 @@ FP-PID has been rescaled to match LuxFloat (and MWRewrite) from Cleanflight 1.13
 #define FP_PID_LEVEL_P_MULTIPLIER   65.6f
 #define FP_PID_YAWHOLD_P_MULTIPLIER 80.0f
 
-void signalRequiredPIDCoefficientsUpdate(void)
+void schedulePidGainsUpdate(void)
 {
-    shouldUpdatePIDCoeffs = true;
+    pidGainsUpdateRequired = true;
 }
 
 void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const struct motorConfig_s *motorConfig)
@@ -164,11 +165,11 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
     // Check if throttle changed
     if (rcCommand[THROTTLE] != prevThrottle) {
         prevThrottle = rcCommand[THROTTLE];
-        signalRequiredPIDCoefficientsUpdate();
+        pidGainsUpdateRequired = true;
     }
 
     // If nothing changed - don't waste time recalculating coefficients
-    if (!shouldUpdatePIDCoeffs) {
+    if (!pidGainsUpdateRequired) {
         return;
     }
 
@@ -235,7 +236,7 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
         }
     }
 
-    shouldUpdatePIDCoeffs = false;
+    pidGainsUpdateRequired = false;
 }
 
 static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidState)
@@ -518,7 +519,7 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
 
     for (int axis = 0; axis < 3; axis++) {
         // Step 1: Calculate gyro rates
-        pidState[axis].gyroRate = gyroADC[axis] * gyro.scale;
+        pidState[axis].gyroRate = gyro.gyroADC[axis] * gyro.dev.scale;
 
         // Step 2: Read target
         float rateTarget;

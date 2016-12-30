@@ -37,6 +37,7 @@
 #include "drivers/system.h"
 
 #include "sensors/sensors.h"
+#include "sensors/diagnostics.h"
 #include "sensors/boardalignment.h"
 #include "sensors/acceleration.h"
 #include "sensors/barometer.h"
@@ -120,10 +121,54 @@ int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
 {
     int16_t stickDeflection;
 
-    stickDeflection = constrain(rawData - masterConfig.rxConfig.midrc, -500, 500);
+    stickDeflection = constrain(rawData - rxConfig()->midrc, -500, 500);
     stickDeflection = applyDeadband(stickDeflection, deadband);
 
     return rcLookup(stickDeflection, rate);
+}
+
+static void updatePreArmingChecks(void)
+{
+    DISABLE_ARMING_FLAG(BLOCKED_ALL_FLAGS);
+
+    if (!STATE(SMALL_ANGLE)) {
+        ENABLE_ARMING_FLAG(BLOCKED_UAV_NOT_LEVEL);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+    if (isCalibrating()) {
+        ENABLE_ARMING_FLAG(BLOCKED_SENSORS_CALIBRATING);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+    if (isSystemOverloaded()) {
+        ENABLE_ARMING_FLAG(BLOCKED_SYSTEM_OVERLOADED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+#if defined(NAV)
+    if (naivationBlockArming()) {
+        ENABLE_ARMING_FLAG(BLOCKED_NAVIGATION_SAFETY);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+#endif
+
+#if defined(MAG)
+    if (sensors(SENSOR_MAG) && !STATE(COMPASS_CALIBRATED)) {
+        ENABLE_ARMING_FLAG(BLOCKED_COMPASS_NOT_CALIBRATED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+#endif
+
+    if (sensors(SENSOR_ACC) && !STATE(ACCELEROMETER_CALIBRATED)) {
+        ENABLE_ARMING_FLAG(BLOCKED_ACCELEROMETER_NOT_CALIBRATED);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
+
+    if (!isHardwareHealthy()) {
+        ENABLE_ARMING_FLAG(BLOCKED_HARDWARE_FAILURE);
+        DISABLE_ARMING_FLAG(OK_TO_ARM);
+    }
 }
 
 void annexCode(void)
@@ -137,8 +182,8 @@ void annexCode(void)
     rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, currentProfile->rcControlsConfig.yaw_deadband);
 
     //Compute THROTTLE command
-    throttleValue = constrain(rcData[THROTTLE], masterConfig.rxConfig.mincheck, PWM_RANGE_MAX);
-    throttleValue = (uint32_t)(throttleValue - masterConfig.rxConfig.mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - masterConfig.rxConfig.mincheck);       // [MINCHECK;2000] -> [0;1000]
+    throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
+    throttleValue = (uint32_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);       // [MINCHECK;2000] -> [0;1000]
     rcCommand[THROTTLE] = rcLookupThrottle(throttleValue);
 
     if (FLIGHT_MODE(HEADFREE_MODE)) {
@@ -153,24 +198,11 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (IS_RC_MODE_ACTIVE(BOXARM) == 0) {
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
-        if (!STATE(SMALL_ANGLE)) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-        if (isCalibrating() || isSystemOverloaded()) {
-            warningLedFlash();
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-
-#if defined(NAV)
-        if (naivationBlockArming()) {
-            DISABLE_ARMING_FLAG(OK_TO_ARM);
-        }
-#endif
+        updatePreArmingChecks();
 
         if (ARMING_FLAG(OK_TO_ARM)) {
             warningLedDisable();
@@ -182,8 +214,9 @@ void annexCode(void)
     }
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.temperature)
-        gyro.temperature(&telemTemperature1);
+    if (gyro.dev.temperature) {
+        gyro.dev.temperature(&gyro.dev, &telemTemperature1);
+    }
 }
 
 void mwDisarm(void)
@@ -236,7 +269,7 @@ void mwArm(void)
                 startBlackbox();
             }
 #endif
-            disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
+            disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;   // start disarm timeout, will be extended when throttle is nonzero
 
             //beep to indicate arming
 #ifdef NAV
@@ -257,11 +290,11 @@ void mwArm(void)
     }
 }
 
-void processRx(uint32_t currentTime)
+void processRx(timeUs_t currentTimeUs)
 {
     static bool armedBeeperOn = false;
 
-    calculateRxChannelsAndUpdateFailsafe(currentTime);
+    calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (feature(FEATURE_3D)) {
@@ -269,18 +302,18 @@ void processRx(uint32_t currentTime)
             mwDisarm();
     }
 
-    updateRSSI(currentTime);
+    updateRSSI(currentTimeUs);
 
     if (feature(FEATURE_FAILSAFE)) {
 
-        if (currentTime > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
+        if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
             failsafeStartMonitoring();
         }
 
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     // When armed and motors aren't spinning, do beeps and then disarm
     // board after delay so users without buzzer won't lose fingers.
@@ -291,7 +324,7 @@ void processRx(uint32_t currentTime)
     ) {
         if (isUsingSticksForArming()) {
             if (throttleStatus == THROTTLE_LOW) {
-                if (masterConfig.auto_disarm_delay != 0
+                if (armingConfig()->auto_disarm_delay != 0
                     && (int32_t)(disarmAt - millis()) < 0
                 ) {
                     // auto-disarm configured and delay is over
@@ -304,9 +337,9 @@ void processRx(uint32_t currentTime)
                 }
             } else {
                 // throttle is not low
-                if (masterConfig.auto_disarm_delay != 0) {
+                if (armingConfig()->auto_disarm_delay != 0) {
                     // extend disarm time
-                    disarmAt = millis() + masterConfig.auto_disarm_delay * 1000;
+                    disarmAt = millis() + armingConfig()->auto_disarm_delay * 1000;
                 }
 
                 if (armedBeeperOn) {
@@ -326,7 +359,7 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, masterConfig.disarm_kill_switch, masterConfig.fixed_wing_auto_arm);
+    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch, armingConfig()->fixed_wing_auto_arm);
 
     updateActivatedModes(currentProfile->modeActivationConditions, currentProfile->modeActivationOperator);
 
@@ -452,14 +485,14 @@ void processRx(uint32_t currentTime)
         }
     }
 
-    if (masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE) {
+    if (mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE) {
         DISABLE_FLIGHT_MODE(HEADFREE_MODE);
     }
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY)) {
-        if ((!masterConfig.telemetryConfig.telemetry_switch && ARMING_FLAG(ARMED)) ||
-                (masterConfig.telemetryConfig.telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
+        if ((!telemetryConfig()->telemetry_switch && ARMING_FLAG(ARMED)) ||
+                (telemetryConfig()->telemetry_switch && IS_RC_MODE_ACTIVE(BOXTELEMETRY))) {
 
             releaseSharedTelemetryPorts();
         } else {
@@ -515,17 +548,17 @@ void filterRc(bool isRXDataNew)
 }
 
 // Function for loop trigger
-void taskGyro(uint32_t currentTime) {
+void taskGyro(timeUs_t currentTimeUs) {
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    const uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const timeUs_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
-    if (masterConfig.gyroSync) {
+    if (gyroConfig()->gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }
@@ -537,35 +570,35 @@ void taskGyro(uint32_t currentTime) {
 
 #ifdef ASYNC_GYRO_PROCESSING
     /* Update IMU for better accuracy */
-    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTime));
+    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTimeUs));
 #endif
 }
 
-void taskMainPidLoop(uint32_t currentTime)
+void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)cycleTime * 0.000001f;
 
 #ifdef ASYNC_GYRO_PROCESSING
     if (getAsyncMode() == ASYNC_MODE_NONE) {
-        taskGyro(currentTime);
+        taskGyro(currentTimeUs);
     }
 
     if (getAsyncMode() != ASYNC_MODE_ALL && sensors(SENSOR_ACC)) {
         imuUpdateAccelerometer();
-        imuUpdateAttitude(currentTime);
+        imuUpdateAttitude(currentTimeUs);
     }
 #else
     /* Update gyroscope */
-    taskGyro(currentTime);
+    taskGyro(currentTimeUs);
     imuUpdateAccelerometer();
-    imuUpdateAttitude(currentTime);
+    imuUpdateAttitude(currentTimeUs);
 #endif
 
 
     annexCode();
 
-    if (masterConfig.rxConfig.rcSmoothing) {
+    if (rxConfig()->rcSmoothing) {
         filterRc(isRXDataNew);
     }
 
@@ -586,14 +619,14 @@ void taskMainPidLoop(uint32_t currentTime)
     // sticks, do not process yaw input from the rx.  We do this so the
     // motors do not spin up while we are trying to arm or disarm.
     // Allow yaw control for tricopters if the user wants the servo to move even when unarmed.
-    if (isUsingSticksForArming() && rcData[THROTTLE] <= masterConfig.rxConfig.mincheck
+    if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-            && !((masterConfig.mixerMode == MIXER_TRI || masterConfig.mixerMode == MIXER_CUSTOM_TRI) && masterConfig.servoMixerConfig.tri_unarmed_servo)
+            && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
 #endif
-            && masterConfig.mixerMode != MIXER_AIRPLANE
-            && masterConfig.mixerMode != MIXER_FLYING_WING
-            && masterConfig.mixerMode != MIXER_CUSTOM_AIRPLANE
+            && mixerConfig()->mixerMode != MIXER_AIRPLANE
+            && mixerConfig()->mixerMode != MIXER_FLYING_WING
+            && mixerConfig()->mixerMode != MIXER_CUSTOM_AIRPLANE
 #endif
     ) {
         rcCommand[YAW] = 0;
@@ -611,10 +644,10 @@ void taskMainPidLoop(uint32_t currentTime)
         }
 
         if (thrTiltCompStrength) {
-            rcCommand[THROTTLE] = constrain(masterConfig.motorConfig.minthrottle
-                                            + (rcCommand[THROTTLE] - masterConfig.motorConfig.minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
-                                            masterConfig.motorConfig.minthrottle,
-                                            masterConfig.motorConfig.maxthrottle);
+            rcCommand[THROTTLE] = constrain(motorConfig()->minthrottle
+                                            + (rcCommand[THROTTLE] - motorConfig()->minthrottle) * calculateThrottleTiltCompensationFactor(thrTiltCompStrength),
+                                            motorConfig()->minthrottle,
+                                            motorConfig()->maxthrottle);
         }
     }
     else {
@@ -646,6 +679,8 @@ void taskMainPidLoop(uint32_t currentTime)
         processServoTilt();
     }
 
+    processServoAutotrim();
+
     //Servos should be filtered or written only when mixer is using servos or special feaures are enabled
     if (isServoOutputEnabled()) {
         filterServos();
@@ -669,15 +704,15 @@ void taskMainPidLoop(uint32_t currentTime)
 
 }
 
-bool taskUpdateRxCheck(uint32_t currentTime, uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 
-    return updateRx(currentTime);
+    return updateRx(currentTimeUs);
 }
 
-void taskUpdateRxMain(uint32_t currentTime)
+void taskUpdateRxMain(timeUs_t currentTimeUs)
 {
-    processRx(currentTime);
+    processRx(currentTimeUs);
     isRXDataNew = true;
 }

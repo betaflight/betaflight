@@ -48,7 +48,7 @@ void fakeBaroSet(int32_t pressure, int32_t temperature)
     fakeTemperature = temperature;
 }
 
-bool fakeBaroDetect(baro_t *baro)
+bool fakeBaroDetect(baroDev_t *baro)
 {
     fakePressure = 101325;    // pressure in Pa (0m MSL)
     fakeTemperature = 2500;   // temperature in 0.01 C = 25 deg

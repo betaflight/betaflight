@@ -334,7 +334,7 @@ void handleSmartPortTelemetry(void)
             //case FSSP_DATAID_RPM        :
             case FSSP_DATAID_ALTITUDE   :
                 if (sensors(SENSOR_BARO)) {
-                    smartPortSendPackage(id, BaroAlt); // unknown given unit, requested 100 = 1 meter
+                    smartPortSendPackage(id, baro.BaroAlt); // unknown given unit, requested 100 = 1 meter
                     smartPortHasRequest = 0;
                 }
                 break;
@@ -380,18 +380,15 @@ void handleSmartPortTelemetry(void)
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCX       :
-                smartPortSendPackage(id, accADC[X] / 44);
-                // unknown input and unknown output unit
-                // we can only show 00.00 format, another digit won't display right on Taranis
-                // dividing by roughly 44 will give acceleration in G units
+                smartPortSendPackage(id, 100 * acc.accADC[X] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCY       :
-                smartPortSendPackage(id, accADC[Y] / 44);
+                smartPortSendPackage(id, 100 * acc.accADC[Y] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_ACCZ       :
-                smartPortSendPackage(id, accADC[Z] / 44);
+                smartPortSendPackage(id, 100 * acc.accADC[Z] / acc.dev.acc_1G);
                 smartPortHasRequest = 0;
                 break;
             case FSSP_DATAID_T1         :
@@ -458,7 +455,7 @@ void handleSmartPortTelemetry(void)
 #ifdef PITOT
             case FSSP_DATAID_ASPD    :
                 if (sensors(SENSOR_PITOT)) {
-                    smartPortSendPackage(id, AirSpeed*0.194384449f); // cm/s to knots*10
+                    smartPortSendPackage(id, pitot.airSpeed*0.194384449f); // cm/s to knots*10
                     smartPortHasRequest = 0;
                 }
                 break;

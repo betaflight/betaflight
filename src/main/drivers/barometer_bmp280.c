@@ -66,7 +66,7 @@ static void bmp280_get_up(void);
 STATIC_UNIT_TESTED void bmp280_calculate(int32_t *pressure, int32_t *temperature);
 
 #define DETECTION_MAX_RETRY_COUNT   5
-bool bmp280Detect(baro_t *baro)
+bool bmp280Detect(baroDev_t *baro)
 {
     if (bmp280InitDone)
         return true;
@@ -115,7 +115,7 @@ bool bmp280Detect(baro_t *baro)
 
         return true;
     }
-    
+
     return false;
 }
 

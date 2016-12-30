@@ -33,6 +33,7 @@
 #include "common/maths.h"
 #include "common/axis.h"
 #include "common/color.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -108,7 +109,7 @@ static const uint8_t mavRates[] = {
 static uint8_t mavTicks[MAXSTREAMS];
 static mavlink_message_t mavMsg;
 static uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-static uint32_t lastMavlinkMessage = 0;
+static timeUs_t lastMavlinkMessage = 0;
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
@@ -208,10 +209,10 @@ void mavlinkSendSystemStatus(void)
     if (sensors(SENSOR_GPS))  onboardControlAndSensors |= 16416;
 
     mavlink_msg_sys_status_pack(0, 200, &mavMsg,
-        // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present. 
-        //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure, 
-        // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position, 
-        // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization, 
+        // onboard_control_sensors_present Bitmask showing which onboard controllers and sensors are present.
+        //Value of 0: not present. Value of 1: present. Indices: 0: 3D gyro, 1: 3D acc, 2: 3D mag, 3: absolute pressure,
+        // 4: differential pressure, 5: GPS, 6: optical flow, 7: computer vision position, 8: laser based position,
+        // 9: external ground-truth (Vicon or Leica). Controllers: 10: 3D angular rate control 11: attitude stabilization,
         // 12: yaw position, 13: z/altitude control, 14: x/y position control, 15: motor outputs / control
         onboardControlAndSensors,
         // onboard_control_sensors_enabled Bitmask showing which onboard controllers and sensors are enabled
@@ -273,7 +274,7 @@ void mavlinkSendRCChannelsAndRSSI(void)
 }
 
 #if defined(GPS)
-void mavlinkSendPosition(uint32_t currentTime)
+void mavlinkSendPosition(timeUs_t currentTimeUs)
 {
     uint16_t msgLength;
     uint8_t gpsFixType = 0;
@@ -290,7 +291,7 @@ void mavlinkSendPosition(uint32_t currentTime)
 
     mavlink_msg_gps_raw_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        currentTime,
+        currentTimeUs,
         // fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
         gpsFixType,
         // lat Latitude in 1E7 degrees
@@ -315,7 +316,7 @@ void mavlinkSendPosition(uint32_t currentTime)
     // Global position
     mavlink_msg_global_position_int_pack(0, 200, &mavMsg,
         // time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
-        currentTime,
+        currentTimeUs,
         // lat Latitude in 1E7 degrees
         gpsSol.llh.lat,
         // lon Longitude in 1E7 degrees
@@ -422,7 +423,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     uint8_t mavSystemType;
-    switch(masterConfig.mixerMode)
+    switch(mixerConfig()->mixerMode)
     {
         case MIXER_TRI:
             mavSystemType = MAV_TYPE_TRICOPTER;
@@ -502,8 +503,9 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSerialWrite(mavBuffer, msgLength);
 }
 
-void processMAVLinkTelemetry(uint32_t currentTime)
+void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
         mavlinkSendSystemStatus();
@@ -515,7 +517,7 @@ void processMAVLinkTelemetry(uint32_t currentTime)
 
 #ifdef GPS
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_POSITION)) {
-        mavlinkSendPosition(currentTime);
+        mavlinkSendPosition(currentTimeUs);
     }
 #endif
 
@@ -528,7 +530,7 @@ void processMAVLinkTelemetry(uint32_t currentTime)
     }
 }
 
-void handleMAVLinkTelemetry(uint32_t currentTime)
+void handleMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
     if (!mavlinkTelemetryEnabled) {
         return;
@@ -538,9 +540,9 @@ void handleMAVLinkTelemetry(uint32_t currentTime)
         return;
     }
 
-    if ((currentTime - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
-        processMAVLinkTelemetry(currentTime);
-        lastMavlinkMessage = currentTime;
+    if ((currentTimeUs - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) {
+        processMAVLinkTelemetry(currentTimeUs);
+        lastMavlinkMessage = currentTimeUs;
     }
 }
 

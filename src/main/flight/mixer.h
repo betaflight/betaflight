@@ -88,6 +88,7 @@ typedef struct mixer_s {
 } mixer_t;
 
 typedef struct mixerConfig_s {
+    uint8_t mixerMode;
     int8_t yaw_motor_direction;
     uint16_t yaw_jump_prevention_limit;      // make limit configurable (original fixed value was 100)
 } mixerConfig_t;
@@ -123,6 +124,7 @@ void mixTable(void);
 void writeMotors(void);
 void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted);
 void processServoTilt(void);
+void processServoAutotrim(void);
 void stopMotors(void);
 void stopPwmAllMotors(void);
 

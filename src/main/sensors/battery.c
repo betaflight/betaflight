@@ -90,7 +90,7 @@ void updateBattery(uint32_t vbatTimeDelta)
         /* Actual battery state is calculated below, this is really BATTERY_PRESENT */
         batteryState = BATTERY_OK;
         /* wait for VBatt to stabilise then we can calc number of cells
-        (using the filtered value takes a long time to ramp up) 
+        (using the filtered value takes a long time to ramp up)
         We only do this on the ground so don't care if we do block, not
         worse than original code anyway*/
         delay(VBATTERY_STABLE_DELAY);

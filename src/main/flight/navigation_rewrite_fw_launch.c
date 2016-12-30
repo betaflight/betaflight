@@ -56,40 +56,45 @@
 
 typedef struct FixedWingLaunchState_s {
     /* Launch detection */
-    uint32_t launchDetectorPreviosUpdate;
-    uint32_t launchDetectionTimeAccum;
+    timeUs_t launchDetectorPreviosUpdate;
+    timeUs_t launchDetectionTimeAccum;
     bool launchDetected;
 
     /* Launch progress */
-    uint32_t launchStartedTime;
+    timeUs_t launchStartedTime;
     bool launchFinished;
     bool motorControlAllowed;
 } FixedWingLaunchState_t;
 
 static FixedWingLaunchState_t   launchState;
 
-#define COS_MAX_LAUNCH_ANGLE    0.70710678f         // cos(45), just to be safe
-static void updateFixedWingLaunchDetector(const uint32_t currentTime)
+#define COS_MAX_LAUNCH_ANGLE                0.70710678f                 // cos(45), just to be safe
+#define SWING_LAUNCH_MIN_ROTATION_RATE      DEGREES_TO_RADIANS(100)     // expect minimum 100dps rotation rate
+static void updateFixedWingLaunchDetector(timeUs_t currentTimeUs)
 {
+    const float swingVelocity = (ABS(imuMeasuredRotationBF.A[Z]) > SWING_LAUNCH_MIN_ROTATION_RATE) ? (imuAccelInBodyFrame.A[Y] / imuMeasuredRotationBF.A[Z]) : 0;
     const bool isForwardAccelerationHigh = (imuAccelInBodyFrame.A[X] > posControl.navConfig->fw.launch_accel_thresh);
     const bool isAircraftAlmostLevel = (calculateCosTiltAngle() >= COS_MAX_LAUNCH_ANGLE);
 
-    if (isForwardAccelerationHigh && isAircraftAlmostLevel) {
-        launchState.launchDetectionTimeAccum += (currentTime - launchState.launchDetectorPreviosUpdate);
-        launchState.launchDetectorPreviosUpdate = currentTime;
+    const bool isBungeeLaunched = isForwardAccelerationHigh && isAircraftAlmostLevel;
+    const bool isSwingLaunched = (swingVelocity > posControl.navConfig->fw.launch_velocity_thresh) && (imuAccelInBodyFrame.A[X] > 0);
+
+    if (isBungeeLaunched || isSwingLaunched) {
+        launchState.launchDetectionTimeAccum += (currentTimeUs - launchState.launchDetectorPreviosUpdate);
+        launchState.launchDetectorPreviosUpdate = currentTimeUs;
         if (launchState.launchDetectionTimeAccum >= MS2US((uint32_t)posControl.navConfig->fw.launch_time_thresh)) {
             launchState.launchDetected = true;
         }
     }
     else {
-        launchState.launchDetectorPreviosUpdate = currentTime;
+        launchState.launchDetectorPreviosUpdate = currentTimeUs;
         launchState.launchDetectionTimeAccum = 0;
     }
 }
 
-void resetFixedWingLaunchController(const uint32_t currentTime)
+void resetFixedWingLaunchController(timeUs_t currentTimeUs)
 {
-    launchState.launchDetectorPreviosUpdate = currentTime;
+    launchState.launchDetectorPreviosUpdate = currentTimeUs;
     launchState.launchDetectionTimeAccum = 0;
     launchState.launchStartedTime = 0;
     launchState.launchDetected = false;
@@ -102,9 +107,9 @@ bool isFixedWingLaunchDetected(void)
     return launchState.launchDetected;
 }
 
-void enableFixedWingLaunchController(const uint32_t currentTime)
+void enableFixedWingLaunchController(timeUs_t currentTimeUs)
 {
-    launchState.launchStartedTime = currentTime;
+    launchState.launchStartedTime = currentTimeUs;
     launchState.motorControlAllowed = true;
 }
 
@@ -113,13 +118,13 @@ bool isFixedWingLaunchFinishedOrAborted(void)
     return launchState.launchFinished;
 }
 
-void applyFixedWingLaunchController(const uint32_t currentTime)
+void applyFixedWingLaunchController(timeUs_t currentTimeUs)
 {
     // Called at PID rate
 
     if (launchState.launchDetected) {
         // If launch detected we are in launch procedure - control airplane
-        const float timeElapsedSinceLaunchMs = US2MS(currentTime - launchState.launchStartedTime);
+        const float timeElapsedSinceLaunchMs = US2MS(currentTimeUs- launchState.launchStartedTime);
 
         // If user moves the stick - finish the launch
         if ((ABS(rcCommand[ROLL]) > posControl.rcControlsConfig->pos_hold_deadband) || (ABS(rcCommand[PITCH]) > posControl.rcControlsConfig->pos_hold_deadband)) {
@@ -149,7 +154,7 @@ void applyFixedWingLaunchController(const uint32_t currentTime)
     }
     else {
         // We are waiting for launch - update launch detector
-        updateFixedWingLaunchDetector(currentTime);
+        updateFixedWingLaunchDetector(currentTimeUs);
 
         // Until motors are started don't use PID I-term
         pidResetErrorAccumulators();

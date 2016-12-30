@@ -32,7 +32,9 @@
 #define EXPAND_I(x) x
 #define EXPAND(x) EXPAND_I(x)
 
+#if !defined(UNUSED)
 #define UNUSED(x) (void)(x)
+#endif
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 #define BIT(x) (1 << (x))
@@ -43,7 +45,6 @@ http://resnet.uoregon.edu/~gurney_j/jmpc/bitwise.html
 #define BITCOUNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
 #define BX_(x) ((x) - (((x)>>1)&0x77777777) - (((x)>>2)&0x33333333) - (((x)>>3)&0x11111111))
 
-#define UNUSED(x) (void)(x)
 
 /*
  * https://groups.google.com/forum/?hl=en#!msg/comp.lang.c/attFnqwhvGk/sGBKXvIkY3AJ

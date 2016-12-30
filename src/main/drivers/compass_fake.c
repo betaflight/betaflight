@@ -56,7 +56,7 @@ static bool fakeMagRead(int16_t *magData)
     return true;
 }
 
-bool fakeMagDetect(mag_t *mag)
+bool fakeMagDetect(magDev_t *mag)
 {
     mag->init = fakeMagInit;
     mag->read = fakeMagRead;

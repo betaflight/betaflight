@@ -11,15 +11,13 @@
 
 #include "platform.h"
 
-#ifdef STACK_CHECK
-
+#include "build/build_config.h"
 #include "build/debug.h"
 
 #define STACK_FILL_CHAR 0xa5
 
 extern char _estack; // end of stack, declared in .LD file
 extern char _Min_Stack_Size; // declared in .LD file
-static uint32_t _Used_Stack_Size;
 
 /*
  * The ARM processor uses a full descending stack. This means the stack pointer holds the address
@@ -42,8 +40,15 @@ static uint32_t _Used_Stack_Size;
  * 0x20000000 to 0x20020000
  *
  */
-void taskStackCheck(void)
+
+#ifdef STACK_CHECK
+
+static uint32_t usedStackSize;
+
+void taskStackCheck(timeUs_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     char * const stackHighMem = &_estack;
     const uint32_t stackSize = (uint32_t)&_Min_Stack_Size;
     char * const stackLowMem = stackHighMem - stackSize;
@@ -56,7 +61,7 @@ void taskStackCheck(void)
         }
     }
 
-    _Used_Stack_Size = (uint32_t)stackHighMem - (uint32_t)p;
+    usedStackSize = (uint32_t)stackHighMem - (uint32_t)p;
 
 #ifdef DEBUG_STACK
     debug[0] = (uint32_t)stackHighMem & 0xffff;
@@ -66,14 +71,18 @@ void taskStackCheck(void)
 #endif
 }
 
-uint32_t getTotalStackSize(void)
+uint32_t stackUsedSize(void)
+{
+    return usedStackSize;
+}
+#endif
+
+uint32_t stackTotalSize(void)
 {
     return (uint32_t)&_Min_Stack_Size;
 }
 
-uint32_t getUsedStackSize(void)
+uint32_t stackHighMem(void)
 {
-    return _Used_Stack_Size;
+    return (uint32_t)&_estack;
 }
-
-#endif

@@ -17,9 +17,11 @@
 
 #pragma once
 
+#include "drivers/pitotmeter.h"
+
 typedef enum {
-    PITOT_DEFAULT = 0,
-    PITOT_NONE = 1,
+    PITOT_NONE = 0,
+    PITOT_AUTODETECT = 1,
     PITOT_MS4525 = 2,
     PITOT_FAKE = 3,
 } pitotSensor_e;
@@ -28,18 +30,24 @@ typedef enum {
 #define PITOT_SAMPLE_COUNT_MAX   48
 
 typedef struct pitotmeterConfig_s {
-    uint8_t use_median_filtering;            // Use 3-point median filtering
-    float pitot_noise_lpf;                   // additional LPF to reduce pitot noise
-    float pitot_scale;                       // scale value
+    uint8_t use_median_filtering;           // Use 3-point median filtering
+    uint8_t pitot_hardware;                 // Pitotmeter hardware to use
+    float pitot_noise_lpf;                  // additional LPF to reduce pitot noise
+    float pitot_scale;                      // scale value
 } pitotmeterConfig_t;
 
-extern int32_t AirSpeed;
+typedef struct pito_s {
+    pitotDev_t dev;
+    int32_t airSpeed;
+} pitot_t;
 
-#ifdef PITOT
+extern pitot_t pitot;
+
+bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse);
 void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse);
 bool isPitotCalibrationComplete(void);
 void pitotSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 uint32_t pitotUpdate(void);
 bool isPitotReady(void);
 int32_t pitotCalculateAirSpeed(void);
-#endif
+bool isPitotmeterHealthy(void);

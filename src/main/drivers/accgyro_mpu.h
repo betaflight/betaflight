@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "io_types.h"
 #include "exti.h"
 
 // MPU6050
@@ -120,7 +119,9 @@
 
 typedef bool (*mpuReadRegisterFunc)(uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
-typedef void(*mpuResetFuncPtr)(void);  
+typedef void(*mpuResetFuncPtr)(void);
+
+mpuResetFuncPtr mpuReset;
 
 typedef struct mpuConfiguration_s {
     uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
@@ -130,8 +131,6 @@ typedef struct mpuConfiguration_s {
     mpuWriteRegisterFunc verifywrite;
     mpuResetFuncPtr reset;
 } mpuConfiguration_t;
-
-extern mpuConfiguration_t mpuConfiguration;
 
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
@@ -168,7 +167,8 @@ typedef enum {
     MPU_60x0_SPI,
     MPU_65xx_I2C,
     MPU_65xx_SPI,
-    MPU_9250_SPI
+    MPU_9250_SPI,
+    ICM_20689_SPI
 } detectedMPUSensor_e;
 
 typedef enum {
@@ -181,11 +181,10 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
-extern mpuDetectionResult_t mpuDetectionResult;
-
-void configureMPUDataReadyInterruptHandling(void);
-void mpuIntExtiInit(void);
-bool mpuAccRead(int16_t *accData);
-bool mpuGyroRead(int16_t *gyroADC);
-mpuDetectionResult_t *detectMpu(const extiConfig_t *configToUse);
-bool checkMPUDataReady(void);
+struct gyroDev_s;
+void mpuGyroInit(struct gyroDev_s *gyro);
+struct accDev_s;
+bool mpuAccRead(struct accDev_s *acc);
+bool mpuGyroRead(struct gyroDev_s *gyro);
+mpuDetectionResult_t *mpuDetect(struct gyroDev_s *gyro);
+bool mpuCheckDataReady(struct gyroDev_s *gyro);

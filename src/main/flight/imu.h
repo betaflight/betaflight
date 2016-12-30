@@ -17,14 +17,16 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define GRAVITY_CMSS    980.665f
 
 extern int16_t throttleAngleCorrection;
 extern int16_t smallAngle;
 
-extern t_fp_vector imuAccelInBodyFrame;
-extern t_fp_vector imuMeasuredGravityBF;
-extern t_fp_vector imuMeasuredRotationBF;
+extern t_fp_vector imuAccelInBodyFrame;         // cm/s/s
+extern t_fp_vector imuMeasuredGravityBF;        // cm/s/s
+extern t_fp_vector imuMeasuredRotationBF;       // rad/s
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -38,6 +40,14 @@ typedef union {
 
 extern attitudeEulerAngles_t attitude;
 
+typedef struct imuConfig_s {
+    uint16_t dcm_kp_acc;                    // DCM filter proportional gain ( x 10000) for accelerometer
+    uint16_t dcm_ki_acc;                    // DCM filter integral gain ( x 10000) for accelerometer
+    uint16_t dcm_kp_mag;                    // DCM filter proportional gain ( x 10000) for magnetometer and GPS heading
+    uint16_t dcm_ki_mag;                    // DCM filter integral gain ( x 10000) for magnetometer and GPS heading
+    uint8_t small_angle;
+} imuConfig_t;
+
 typedef struct imuRuntimeConfig_s {
     float dcm_kp_acc;
     float dcm_ki_acc;
@@ -47,9 +57,9 @@ typedef struct imuRuntimeConfig_s {
 } imuRuntimeConfig_t;
 
 struct pidProfile_s;
-void imuConfigure(imuRuntimeConfig_t *initialImuRuntimeConfig, struct pidProfile_s *initialPidProfile);
+void imuConfigure(imuConfig_t *imuConfig, struct pidProfile_s *initialPidProfile);
 
-void imuUpdateAttitude(uint32_t currentTime);
+void imuUpdateAttitude(timeUs_t currentTimeUs);
 void imuUpdateAccelerometer(void);
 void imuUpdateGyroscope(uint32_t gyroUpdateDeltaUs);
 float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength);

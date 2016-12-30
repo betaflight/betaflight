@@ -33,6 +33,8 @@
 #include "common/maths.h"
 #include "common/printf.h"
 
+#include "cms/cms.h"
+
 #include "drivers/logging.h"
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
@@ -82,6 +84,8 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial_cli.h"
+#include "io/osd.h"
+#include "io/displayport_msp.h"
 
 #include "msp/msp_serial.h"
 
@@ -95,6 +99,7 @@
 #include "sensors/gyro.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/pitotmeter.h"
 #include "sensors/initialisation.h"
 #include "sensors/sonar.h"
 
@@ -190,7 +195,7 @@ void init(void)
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
-        switch (masterConfig.rxConfig.serialrx_provider) {
+        switch (rxConfig()->serialrx_provider) {
             case SERIALRX_SPEKTRUM1024:
             case SERIALRX_SPEKTRUM2048:
                 // Spektrum satellite binding if enabled on startup.
@@ -218,7 +223,7 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(masterConfig.mixerMode, masterConfig.customMotorMixer);
+    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servosInit(masterConfig.customServoMixer);
 #endif
@@ -228,7 +233,7 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
-        const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(masterConfig.batteryConfig.currentMeterType);
+        const sonarHcsr04Hardware_t *sonarHardware = sonarGetHardwareConfiguration(batteryConfig()->currentMeterType);
         if (sonarHardware) {
             pwm_params.useSonar = true;
             pwm_params.sonarIOConfig.triggerTag = sonarHardware->triggerTag;
@@ -238,7 +243,7 @@ void init(void)
 #endif
 
     // when using airplane/wing mixer, servo/motor outputs are remapped
-    if (masterConfig.mixerMode == MIXER_AIRPLANE || masterConfig.mixerMode == MIXER_FLYING_WING || masterConfig.mixerMode == MIXER_CUSTOM_AIRPLANE)
+    if (mixerConfig()->mixerMode == MIXER_AIRPLANE || mixerConfig()->mixerMode == MIXER_FLYING_WING || mixerConfig()->mixerMode == MIXER_CUSTOM_AIRPLANE)
         pwm_params.airplane = true;
     else
         pwm_params.airplane = false;
@@ -259,7 +264,7 @@ void init(void)
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
     pwm_params.useRSSIADC = feature(FEATURE_RSSI_ADC);
     pwm_params.useCurrentMeterADC = feature(FEATURE_CURRENT_METER)
-        && masterConfig.batteryConfig.currentMeterType == CURRENT_SENSOR_ADC;
+        && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC;
     pwm_params.useLEDStrip = feature(FEATURE_LED_STRIP);
     pwm_params.usePPM = feature(FEATURE_RX_PPM);
     pwm_params.useSerialRx = feature(FEATURE_RX_SERIAL);
@@ -267,23 +272,23 @@ void init(void)
 #ifdef USE_SERVOS
     pwm_params.useServos = isMixerUsingServos();
     pwm_params.useChannelForwarding = feature(FEATURE_CHANNEL_FORWARDING);
-    pwm_params.servoCenterPulse = masterConfig.servoConfig.servoCenterPulse;
-    pwm_params.servoPwmRate = masterConfig.servoConfig.servoPwmRate;
+    pwm_params.servoCenterPulse = servoConfig()->servoCenterPulse;
+    pwm_params.servoPwmRate = servoConfig()->servoPwmRate;
 #endif
 
-    pwm_params.pwmProtocolType = masterConfig.motorConfig.motorPwmProtocol;
+    pwm_params.pwmProtocolType = motorConfig()->motorPwmProtocol;
 #ifndef BRUSHED_MOTORS
-    pwm_params.useFastPwm = (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT125) ||
-                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
-                            (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_MULTISHOT);
+    pwm_params.useFastPwm = (motorConfig()->motorPwmProtocol == PWM_TYPE_ONESHOT125) ||
+                            (motorConfig()->motorPwmProtocol == PWM_TYPE_ONESHOT42) ||
+                            (motorConfig()->motorPwmProtocol == PWM_TYPE_MULTISHOT);
 #endif
-    pwm_params.motorPwmRate = masterConfig.motorConfig.motorPwmRate;
-    pwm_params.idlePulse = masterConfig.motorConfig.mincommand;
+    pwm_params.motorPwmRate = motorConfig()->motorPwmRate;
+    pwm_params.idlePulse = motorConfig()->mincommand;
     if (feature(FEATURE_3D)) {
-        pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
+        pwm_params.idlePulse = flight3DConfig()->neutral3d;
     }
 
-    if (masterConfig.motorConfig.motorPwmProtocol == PWM_TYPE_BRUSHED) {
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_BRUSHED) {
         pwm_params.useFastPwm = false;
         featureClear(FEATURE_3D);
         pwm_params.idlePulse = 0; // brushed motors
@@ -292,7 +297,7 @@ void init(void)
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
 #ifndef SKIP_RX_PWM_PPM
-    pwmRxInit(masterConfig.inputFilteringMode);
+    pwmRxInit(pwmRxConfig());
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
@@ -403,7 +408,13 @@ void init(void)
 #else
     i2cInit(I2C_DEVICE);
 #if defined(I2C_DEVICE_EXT)
-    i2cInit(I2C_DEVICE_EXT);
+    #if defined(I2C_DEVICE_EXT_SHARES_UART3)
+        if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
+            i2cInit(I2C_DEVICE_EXT);
+        }
+    #else
+        i2cInit(I2C_DEVICE_EXT);
+    #endif
 #endif
 #endif
 #endif
@@ -447,9 +458,19 @@ void init(void)
 
     initBoardAlignment(&masterConfig.boardAlignment);
 
+#ifdef CMS
+    cmsInit();
+#endif
+
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
         dashboardInit(&masterConfig.rxConfig);
+    }
+#endif
+
+#ifdef OSD
+    if (feature(FEATURE_OSD)) {
+        osdInit();
     }
 #endif
 
@@ -459,16 +480,13 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-            masterConfig.acc_hardware,
-            masterConfig.mag_hardware,
-            masterConfig.baro_hardware,
-            masterConfig.pitot_hardware,
-            currentProfile->mag_declination,
-            masterConfig.looptime,
-            masterConfig.gyro_lpf,
-            masterConfig.gyroSync,
-            masterConfig.gyroSyncDenominator)) {
+    if (!sensorsAutodetect(
+            &masterConfig.gyroConfig,
+            &masterConfig.accelerometerConfig,
+            &masterConfig.compassConfig,
+            &masterConfig.barometerConfig,
+            &masterConfig.pitotmeterConfig
+            )) {
 
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -484,11 +502,15 @@ void init(void)
     mspFcInit();
     mspSerialInit();
 
+#if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
+    cmsDisplayPortRegister(displayPortMspInit());
+#endif
+
 #ifdef USE_CLI
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
+    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
 
     rxInit(&masterConfig.rxConfig, currentProfile->modeActivationConditions);
 
@@ -515,7 +537,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
+    ledStripInit(ledStripConfig()->ledConfigs, ledStripConfig()->colors, ledStripConfig()->modeColors, &ledStripConfig()->specialColors);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();

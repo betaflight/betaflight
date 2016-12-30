@@ -16,8 +16,8 @@
  *
  *        http://www.st.com/software_license_agreement_liberty_v2
  *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -27,6 +27,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <stdbool.h>
+
 #include "stm32_it.h"
 #include "platform.h"
 #include "usb_lib.h"
@@ -35,11 +37,10 @@
 #include "hw_config.h"
 #include "usb_pwr.h"
 
-#include <stdbool.h>
+#include "common/utils.h"
+
 #include "drivers/system.h"
 #include "drivers/nvic.h"
-
-#include "build/build_config.h"
 
 
 
@@ -69,13 +70,13 @@ void Set_System(void)
 {
 #if !defined(STM32L1XX_MD) && !defined(STM32L1XX_HD) && !defined(STM32L1XX_MD_PLUS)
     GPIO_InitTypeDef GPIO_InitStructure;
-#endif /* STM32L1XX_MD && STM32L1XX_XD */  
+#endif /* STM32L1XX_MD && STM32L1XX_XD */
 
 #if defined(USB_USE_EXTERNAL_PULLUP)
     GPIO_InitTypeDef GPIO_InitStructure;
-#endif /* USB_USE_EXTERNAL_PULLUP */ 
+#endif /* USB_USE_EXTERNAL_PULLUP */
 
-    /*!< At this stage the microcontroller clock setting is already configured, 
+    /*!< At this stage the microcontroller clock setting is already configured,
      this is done through SystemInit() function which is called from startup
      file (startup_stm32f10x_xx.s) before to branch to application main.
      To reconfigure the default setting of SystemInit() function, refer to
@@ -84,7 +85,7 @@ void Set_System(void)
 #if defined(STM32L1XX_MD) || defined(STM32L1XX_HD)|| defined(STM32L1XX_MD_PLUS) || defined(STM32F37X) || defined(STM32F303xC)
     /* Enable the SYSCFG module clock */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-#endif /* STM32L1XX_XD */ 
+#endif /* STM32L1XX_XD */
 
     /*Pull down PA12 to create USB Disconnect Pulse*/     // HJI
 #if defined(STM32F303xC)                                    // HJI
@@ -278,12 +279,12 @@ static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 
 /*******************************************************************************
  * Function Name  : Send DATA .
- * Description    : send the data received from the STM32 to the PC through USB  
+ * Description    : send the data received from the STM32 to the PC through USB
  * Input          : None.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint8_t sendLength)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
     /* Last transmission hasn't finished, abort */
     if (packetSent) {

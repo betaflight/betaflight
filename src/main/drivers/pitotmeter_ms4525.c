@@ -20,12 +20,11 @@
 
 #include <platform.h>
 
-#include "build/build_config.h"
-
-#include "pitotmeter.h"
-
-#include "system.h"
 #include "bus_i2c.h"
+#include "pitotmeter.h"
+#include "system.h"
+
+#include "common/utils.h"
 
 // MS4525, Standard address 0x28
 #define MS4525_ADDR                 0x28
@@ -40,7 +39,7 @@ static uint16_t ms4525_ut;  // static result of temperature measurement
 static uint16_t ms4525_up;  // static result of pressure measurement
 static uint8_t rxbuf[4];
 
-bool ms4525Detect(pitot_t *pitot)
+bool ms4525Detect(pitotDev_t *pitot)
 {
     bool ack = false;
 

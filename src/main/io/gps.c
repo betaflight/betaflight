@@ -423,11 +423,11 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
     }
 }
 
-void updateGpsIndicator(uint32_t currentTime)
+void updateGpsIndicator(timeUs_t currentTimeUs)
 {
-    static uint32_t GPSLEDTime;
-    if ((int32_t)(currentTime - GPSLEDTime) >= 0 && (gpsSol.numSat>= 5)) {
-        GPSLEDTime = currentTime + 150000;
+    static timeUs_t GPSLEDTime;
+    if ((int32_t)(currentTimeUs - GPSLEDTime) >= 0 && (gpsSol.numSat>= 5)) {
+        GPSLEDTime = currentTimeUs + 150000;
         LED1_TOGGLE;
     }
 }
@@ -446,7 +446,7 @@ bool gpsMagRead(int16_t *magData)
     return gpsSol.flags.validMag;
 }
 
-bool gpsMagDetect(mag_t *mag)
+bool gpsMagDetect(magDev_t *mag)
 {
     if (!(feature(FEATURE_GPS) && gpsProviders[gpsState.gpsConfig->provider].hasCompass))
         return false;
@@ -460,4 +460,8 @@ bool gpsMagDetect(mag_t *mag)
     return true;
 }
 
+bool isGPSHealthy(void)
+{
+    return true;
+}
 #endif

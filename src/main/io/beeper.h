@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 typedef enum {
     // IMPORTANT: these are in priority order, 0 = Highest
     BEEPER_SILENCE = 0,             // Silence, see beeperSilence()
@@ -40,6 +42,7 @@ typedef enum {
     BEEPER_SYSTEM_INIT,             // Initialisation beeps when board is powered on
     BEEPER_USB,                     // Some boards have beeper powered USB connected
     BEEPER_LAUNCH_MODE_ENABLED,     // Fixed-wing launch mode enabled
+    BEEPER_HARDWARE_FAILURE,        // HW failure
 
     BEEPER_ALL,                     // Turn ON or OFF all beeper conditions
     BEEPER_PREFERENCE,              // Save preferred beeper configuration
@@ -48,7 +51,7 @@ typedef enum {
 
 void beeper(beeperMode_e mode);
 void beeperSilence(void);
-void beeperUpdate(uint32_t currentTime);
+void beeperUpdate(timeUs_t currentTimeUs);
 void beeperConfirmationBeeps(uint8_t beepCount);
 uint32_t getArmingBeepTimeMicros(void);
 beeperMode_e beeperModeForTableIndex(int idx);

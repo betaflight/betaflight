@@ -47,6 +47,7 @@ typedef enum {
     BOXSURFACE,
     BOXFLAPERON,
     BOXTURNASSIST,
+    BOXAUTOTRIM,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -162,6 +163,12 @@ typedef struct rcControlsConfig_s {
     uint8_t pos_hold_deadband;             // Adds ability to adjust the Hold-position when moving the sticks (assisted mode)
     uint8_t alt_hold_deadband;             // Defines the neutral zone of throttle stick during altitude hold
 } rcControlsConfig_t;
+
+typedef struct armingConfig_s {
+    uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
+    uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
+    uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
+} armingConfig_t;
 
 bool areUsingSticksToArm(void);
 

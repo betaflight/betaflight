@@ -18,11 +18,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "fc/runtime_config.h"
 #include "io/beeper.h"
 
-uint8_t armingFlags = 0;
-uint8_t stateFlags = 0;
+uint16_t armingFlags = 0;
+uint32_t stateFlags = 0;
 uint32_t flightModeFlags = 0;
 
 static uint32_t enabledSensors = 0;

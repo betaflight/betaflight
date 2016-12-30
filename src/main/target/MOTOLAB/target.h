@@ -130,9 +130,9 @@
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
-#undef GPS
+//#undef GPS
 #undef GPS_PROTO_NMEA
-#undef GPS_PROTO_UBLOX
+//#undef GPS_PROTO_UBLOX
 #undef GPS_PROTO_I2C_NAV
 #undef GPS_PROTO_NAZA
 

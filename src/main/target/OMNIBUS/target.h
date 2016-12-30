@@ -139,6 +139,16 @@
 // Performance logging for SD card operations:
 // #define AFATFS_USE_INTROSPECTIVE_LOGGING
 
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI1
+#define MAX7456_SPI_CS_PIN      PB1
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
+//#define MAX7456_DMA_CHANNEL_TX            DMA1_Channel3
+//#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
+//#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
+
 #define USE_ADC
 //#define BOARD_HAS_VOLTAGE_DIVIDER
 #define VBAT_ADC_PIN                PA0
@@ -198,12 +208,13 @@
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // Number of available PWM outputs
-#define MAX_PWM_OUTPUT_PORTS    12
+#define MAX_PWM_OUTPUT_PORTS    6
 
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7 // 6 Outputs; PPM;
+#define USABLE_TIMER_CHANNEL_COUNT  7
+
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15))

@@ -12,7 +12,11 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
+_estack = ORIGIN(STACKRAM) + LENGTH(STACKRAM);    /* end of RAM */
+
+/* Base address where the config is stored. */
+__config_start = ORIGIN(FLASH_CONFIG);
+__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
@@ -110,7 +114,7 @@ SECTIONS
   } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
-  _heap_stack_end = ORIGIN(RAM)+LENGTH(RAM) - 8; /* 8 bytes to allow for alignment */
+  _heap_stack_end = ORIGIN(STACKRAM)+LENGTH(STACKRAM) - 8; /* 8 bytes to allow for alignment */
   _heap_stack_begin = _heap_stack_end - _Min_Stack_Size  - _Min_Heap_Size;
   . = _heap_stack_begin;
   ._user_heap_stack :
@@ -121,7 +125,7 @@ SECTIONS
     . = . + _Min_Heap_Size;
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
-  } >RAM = 0xa5
+  } >STACKRAM = 0xa5
 
   /* MEMORY_bank1 section, code must be located here explicitly            */
   /* Example: extern int foo(void) __attribute__ ((section (".mb1text"))); */

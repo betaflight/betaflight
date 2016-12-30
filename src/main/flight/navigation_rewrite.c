@@ -22,12 +22,12 @@
 
 #include "platform.h"
 
-#include "build/build_config.h"
 #include "build/debug.h"
 
 #include "common/axis.h"
-#include "common/maths.h"
 #include "common/filter.h"
+#include "common/maths.h"
+#include "common/utils.h"
 
 #include "drivers/system.h"
 
@@ -1001,7 +1001,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
 
-    if ((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) {
+    if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!posControl.navConfig->general.flags.rth_climb_first)) {
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
     }
     else {
@@ -1295,21 +1295,21 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_EMERGENCY_LANDING_FINIS
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_INITIALIZE(navigationFSMState_t previousState)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
     UNUSED(previousState);
 
-    resetFixedWingLaunchController(currentTime);
+    resetFixedWingLaunchController(currentTimeUs);
 
     return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_WAIT
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_LAUNCH_WAIT(navigationFSMState_t previousState)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
     UNUSED(previousState);
 
     if (isFixedWingLaunchDetected()) {
-        enableFixedWingLaunchController(currentTime);
+        enableFixedWingLaunchController(currentTimeUs);
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_LAUNCH_MOTOR_DELAY
     }
 
@@ -1677,11 +1677,11 @@ static void updateDesiredRTHAltitude(void)
 {
     if (ARMING_FLAG(ARMED)) {
         if (!(navGetStateFlags(posControl.navState) & NAV_AUTO_RTH)) {
-            switch (posControl.navConfig->general.flags.rth_alt_control_style) {
+            switch (posControl.navConfig->general.flags.rth_alt_control_mode) {
             case NAV_RTH_NO_ALT:
                 posControl.homeWaypointAbove.pos.V.Z = posControl.actualState.pos.V.Z;
                 break;
-            case NAX_RTH_EXTRA_ALT: // Maintain current altitude + predefined safety margin
+            case NAV_RTH_EXTRA_ALT: // Maintain current altitude + predefined safety margin
                 posControl.homeWaypointAbove.pos.V.Z = posControl.actualState.pos.V.Z + posControl.navConfig->general.rth_altitude;
                 break;
             case NAV_RTH_MAX_ALT:
@@ -2037,7 +2037,7 @@ void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData)
     wpLLH.alt = wpData->alt;
 
     // WP #0 - special waypoint - HOME
-    if ((wpNumber == 0) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid) {
+    if ((wpNumber == 0) && ARMING_FLAG(ARMED) && posControl.flags.hasValidPositionSensor && posControl.gpsOrigin.valid && posControl.flags.isGCSAssistedNavigationEnabled) {
         // Forcibly set home position. Note that this is only valid if already armed, otherwise home will be reset instantly
         geoConvertGeodeticToLocal(&posControl.gpsOrigin, &wpLLH, &wpPos.pos, GEO_ALT_RELATIVE);
         setHomePosition(&wpPos.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
@@ -2198,7 +2198,7 @@ static void processNavigationRCAdjustments(void)
  *-----------------------------------------------------------*/
 void applyWaypointNavigationAndAltitudeHold(void)
 {
-    const uint32_t currentTime = micros();
+    const timeUs_t currentTimeUs = micros();
 
 #if defined(NAV_BLACKBOX)
     navFlags = 0;
@@ -2229,10 +2229,10 @@ void applyWaypointNavigationAndAltitudeHold(void)
     /* Process controllers */
     navigationFSMStateFlags_t navStateFlags = navGetStateFlags(posControl.navState);
     if (STATE(FIXED_WING)) {
-        applyFixedWingNavigationController(navStateFlags, currentTime);
+        applyFixedWingNavigationController(navStateFlags, currentTimeUs);
     }
     else {
-        applyMulticopterNavigationController(navStateFlags, currentTime);
+        applyMulticopterNavigationController(navStateFlags, currentTimeUs);
     }
 
     /* Consume position data */

@@ -132,6 +132,13 @@ typedef struct ledCounts_s {
     uint8_t ringSeqLen;
 } ledCounts_t;
 
+typedef struct ledStripConfig_s {
+    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
+    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
+    modeColorIndexes_t modeColors[LED_MODE_COUNT];
+    specialColorIndexes_t specialColors;
+    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+} ledStripConfig_t;
 
 ledConfig_t *ledConfigs;
 struct hsvColor_s;
@@ -166,7 +173,7 @@ void reevaluateLedConfig(void);
 
 void ledStripInit(ledConfig_t *ledConfigsToUse, struct hsvColor_s *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
 void ledStripEnable(void);
-void updateLedStrip(uint32_t currentTime);
+void ledStripUpdate(timeUs_t currentTimeUs);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
 

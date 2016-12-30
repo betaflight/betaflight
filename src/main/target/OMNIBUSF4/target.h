@@ -18,7 +18,6 @@
 #pragma once
 
 #define TARGET_BOARD_IDENTIFIER "OBF4"
-#define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 #define USBD_PRODUCT_STRING     "Omnibus F4"
 
 #define LED0                    PB5
@@ -83,7 +82,11 @@
 #define UART6_RX_PIN            PC7
 #define UART6_TX_PIN            PC6
 
-#define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
+#define USE_SOFTSERIAL1
+#define SOFTSERIAL_1_TIMER_RX_HARDWARE 4 // CH5
+#define SOFTSERIAL_1_TIMER_TX_HARDWARE 5 // CH6
+
+#define SERIAL_PORT_COUNT       5 //VCP, USART1, USART3, USART6, SOFTSERIAL1
 
 #define USE_SPI
 
@@ -94,6 +97,13 @@
 #define SPI3_SCK_PIN            PC10
 #define SPI3_MISO_PIN           PC11
 #define SPI3_MOSI_PIN           PC12
+
+#define OSD
+#define USE_MAX7456
+#define MAX7456_SPI_INSTANCE    SPI3
+#define MAX7456_SPI_CS_PIN      PA15
+#define MAX7456_SPI_CLK         (SPI_CLOCK_STANDARD*2)
+#define MAX7456_RESTORE_CLK     (SPI_CLOCK_FAST)
 
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_2)

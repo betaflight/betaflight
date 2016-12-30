@@ -17,13 +17,19 @@
 
 #pragma once
 
+#include "flight/pid.h"
+#include "fc/rc_controls.h"
+
+#ifdef USE_SERVOS
+#include "flight/mixer.h"
+#include "flight/servos.h"
+#include "io/gimbal.h"
+#endif
+
 typedef struct profile_s {
     pidProfile_t pidProfile;
 
     uint8_t defaultRateProfileIndex;
-
-    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
-                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
 
     modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
     modeActivationOperator_e modeActivationOperator;

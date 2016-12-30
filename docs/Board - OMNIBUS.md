@@ -33,6 +33,8 @@ The OMNIBUS target in iNav has different configuration from the BetaFlight suppo
 Six PWM outputs (PWM1~PWM6) are supported, but PWM5 and PWM6 is not available when UART3 is in use.
 PWM7 and PWM8 are dedicated for I2C; in this document, they are used to indicate the pin location, not the function.
 
+If servos are used on a multirotor mixer (i.e. Tricopter) PWM1 is remapped to servo and motor 1 is moved to PWM2 etc.
+
 Note: Tested only for QUAD-X configuration.
 
 ### Hardware UART Ports

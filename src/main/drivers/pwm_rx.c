@@ -127,9 +127,9 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-void pwmRxInit(inputFilteringMode_e initialInputFilteringMode)
+void pwmRxInit(const pwmRxConfig_t *pwmRxConfig)
 {
-    inputFilteringMode = initialInputFilteringMode;
+    inputFilteringMode = pwmRxConfig->inputFilteringMode;
 }
 
 #ifdef DEBUG_PPM_ISR
@@ -327,8 +327,13 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
     } else {
         pwmInputPort->fall = capture;
 
-        // compute and store capture
-        pwmInputPort->capture = pwmInputPort->fall - pwmInputPort->rise;
+        // compute and store capture and handle overflow correctly - timer may be configured for PWM output in such case overflow value is not 0xFFFF
+        if (pwmInputPort->fall >= pwmInputPort->rise) {
+            pwmInputPort->capture = pwmInputPort->fall - pwmInputPort->rise;
+        }
+        else {
+            pwmInputPort->capture = (pwmInputPort->fall + timerGetPeriod(timerHardwarePtr)) - pwmInputPort->rise;
+        }
         captures[pwmInputPort->channel] = pwmInputPort->capture;
 
         // switch state

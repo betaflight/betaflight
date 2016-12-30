@@ -21,17 +21,22 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "common/maths.h"
 
-#include "drivers/pitotmeter.h"
 #include "config/config.h"
 
+#include "drivers/logging.h"
+#include "drivers/pitotmeter.h"
+#include "drivers/pitotmeter_ms4525.h"
+
+#include "fc/runtime_config.h"
+
 #include "sensors/pitotmeter.h"
+#include "sensors/sensors.h"
 
-extern int16_t debug[4];
-
-pitot_t pitot;                  // pitotmeter access functions
-int32_t AirSpeed = 0;
+pitot_t pitot;
 
 #ifdef PITOT
 
@@ -42,6 +47,54 @@ static float pitotTemperature = 0;
 static float CalibratedAirspeed = 0;
 
 pitotmeterConfig_t *pitotmeterConfig;
+
+bool pitotDetect(pitotDev_t *dev, uint8_t pitotHardwareToUse)
+{
+    pitotSensor_e pitotHardware = PITOT_NONE;
+    requestedSensors[SENSOR_INDEX_PITOT] = pitotHardwareToUse;
+
+    switch (pitotHardwareToUse) {
+        case PITOT_AUTODETECT:
+        case PITOT_MS4525:
+#ifdef USE_PITOT_MS4525
+            if (ms4525Detect(dev)) {
+                pitotHardware = PITOT_MS4525;
+                break;
+            }
+#endif
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
+
+        case PITOT_FAKE:
+#ifdef USE_PITOT_FAKE
+            if (fakePitotDetect(&pitot)) {
+                pitotHardware = PITOT_FAKE;
+                break;
+            }
+#endif
+            /* If we are asked for a specific sensor - break out, otherwise - fall through and continue */
+            if (pitotHardwareToUse != PITOT_AUTODETECT) {
+                break;
+            }
+
+        case PITOT_NONE:
+            pitotHardware = PITOT_NONE;
+            break;
+    }
+
+    addBootlogEvent6(BOOT_EVENT_PITOT_DETECTION, BOOT_EVENT_FLAGS_NONE, pitotHardware, 0, 0, 0);
+
+    if (pitotHardware == PITOT_NONE) {
+        sensorsClear(SENSOR_PITOT);
+        return false;
+    }
+
+    detectedSensors[SENSOR_INDEX_PITOT] = pitotHardware;
+    sensorsSet(SENSOR_PITOT);
+    return true;
+}
 
 void usePitotmeterConfig(pitotmeterConfig_t *pitotmeterConfigToUse)
 {
@@ -101,19 +154,19 @@ uint32_t pitotUpdate(void)
     switch (state) {
         default:
         case PITOTMETER_NEEDS_SAMPLES:
-            pitot.start();
+            pitot.dev.start();
             state = PITOTMETER_NEEDS_CALCULATION;
-            return pitot.delay;
+            return pitot.dev.delay;
         break;
 
         case PITOTMETER_NEEDS_CALCULATION:
-            pitot.get();
-            pitot.calculate(&pitotPressure, &pitotTemperature);
+            pitot.dev.get();
+            pitot.dev.calculate(&pitotPressure, &pitotTemperature);
             if (pitotmeterConfig->use_median_filtering) {
                 pitotPressure = applyPitotmeterMedianFilter(pitotPressure);
             }
             state = PITOTMETER_NEEDS_SAMPLES;
-           return pitot.delay;
+           return pitot.dev.delay;
         break;
     }
 }
@@ -134,7 +187,7 @@ int32_t pitotCalculateAirSpeed(void)
 {
     if (!isPitotCalibrationComplete()) {
         performPitotCalibrationCycle();
-        AirSpeed = 0;
+        pitot.airSpeed = 0;
     }
     else {
         float CalibratedAirspeed_tmp;
@@ -142,13 +195,18 @@ int32_t pitotCalculateAirSpeed(void)
         CalibratedAirspeed = CalibratedAirspeed * pitotmeterConfig->pitot_noise_lpf + CalibratedAirspeed_tmp * (1.0f - pitotmeterConfig->pitot_noise_lpf); // additional LPF to reduce baro noise
         float TrueAirspeed = CalibratedAirspeed * TASFACTOR * sqrtf(pitotTemperature);
 
-        AirSpeed = TrueAirspeed*100;
+        pitot.airSpeed = TrueAirspeed*100;
         //debug[0] = (int16_t)(CalibratedAirspeed*100);
         //debug[1] = (int16_t)(TrueAirspeed*100);
         //debug[2] = (int16_t)((pitotTemperature-273.15f)*100);
         //debug[3] = AirSpeed;
     }
-    return AirSpeed;
+    return pitot.airSpeed;
+}
+
+bool isPitotmeterHealthy(void)
+{
+    return true;
 }
 
 #endif /* PITOT */

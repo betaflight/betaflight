@@ -16,7 +16,7 @@
  */
 
 #define FC_VERSION_MAJOR            1  // increment when a major release is made (big new feature, etc)
-#define FC_VERSION_MINOR            4  // increment when a minor release is made (small new feature, change etc)
+#define FC_VERSION_MINOR            5  // increment when a minor release is made (small new feature, change etc)
 #define FC_VERSION_PATCH_LEVEL      0  // increment when a bug is fixed
 
 #define STR_HELPER(x) #x
@@ -28,7 +28,7 @@
 
 extern const char* const targetName;
 
-#define GIT_SHORT_REVISION_LENGTH   7 // lower case hexadecimal digits.
+#define GIT_SHORT_REVISION_LENGTH   8 // lower case hexadecimal digits.
 extern const char* const shortGitRevision;
 
 #define BUILD_DATE_LENGTH 11

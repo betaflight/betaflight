@@ -17,28 +17,45 @@
 
 #pragma once
 
+#include "common/time.h"
+
+#include "drivers/compass.h"
+
 #include "sensors/sensors.h"
 
 // Type of magnetometer used/detected
 typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
+    MAG_NONE = 0,
+    MAG_AUTODETECT = 1,
     MAG_HMC5883 = 2,
     MAG_AK8975 = 3,
     MAG_GPS = 4,
     MAG_MAG3110 = 5,
     MAG_AK8963 = 6,
-    MAG_FAKE = 7,
+    MAG_IST8310 = 7,
+    MAG_FAKE = 8,
+    MAG_MAX = MAG_FAKE
 } magSensor_e;
 
-#define MAG_MAX  MAG_FAKE
+typedef struct mag_s {
+    magDev_t dev;
+    float magneticDeclination;
+    int32_t magADC[XYZ_AXIS_COUNT];
+} mag_t;
 
-bool compassInit(int16_t magDeclinationFromConfig);
+extern mag_t mag;
+
+typedef struct compassConfig_s {
+    int16_t mag_declination;                // Get your magnetic decliniation from here : http://magnetic-declination.com/
+                                            // For example, -6deg 37min, = -637 Japan, format is [sign]dddmm (degreesminutes) default is zero.
+    sensor_align_e mag_align;               // mag alignment
+    uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
+    flightDynamicsTrims_t magZero;
+} compassConfig_t;
+
+bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
+bool compassInit(const compassConfig_t *compassConfig);
 union flightDynamicsTrims_u;
-void updateCompass(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
+void compassUpdate(timeUs_t currentTimeUs, union flightDynamicsTrims_u *magZero);
 bool isCompassReady(void);
-
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern float magneticDeclination;
+bool isCompassHealthy(void);
