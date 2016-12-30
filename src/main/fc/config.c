@@ -850,6 +850,11 @@ void createDefaultConfig(master_t *config)
 
     resetStatusLedConfig(&config->statusLedConfig);
 
+#ifdef USE_GPIOTIMER
+    config->gpioTimerConfig.ioTag = IO_TAG_NONE;
+    config->gpioTimerConfig.polarity = 0;
+#endif
+
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif

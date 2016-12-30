@@ -58,6 +58,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/gpiotimer.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -487,6 +488,10 @@ void init(void)
         transponderStartRepeating();
         systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
     }
+#endif
+
+#ifdef USE_GPIOTIMER
+    gpioTimerInit(gpioTimerConfig());
 #endif
 
 #ifdef USE_FLASHFS

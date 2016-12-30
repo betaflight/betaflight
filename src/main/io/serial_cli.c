@@ -1002,6 +1002,9 @@ const clivalue_t valueTable[] = {
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->h_offset, .config.minmax = { -32, 31 } },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->v_offset, .config.minmax = { -15, 16 } },
 #endif
+#ifdef USE_GPIOTIMER
+    { "gpiotimer_polarity",         VAR_UINT8   | MASTER_VALUE, &gpioTimerConfig()->polarity, .config.minmax = { 0, 1 } },
+#endif
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
@@ -3837,6 +3840,9 @@ const cliResourceValue_t resourceTable[] = {
 #endif
 #ifdef LED_STRIP
     { OWNER_LED_STRIP,     &ledStripConfig()->ioTag,   0 },
+#endif
+#ifdef USE_GPIOTIMER
+    { OWNER_GPIOTIMER,     &gpioTimerConfig()->ioTag,  0 },
 #endif
 };
 
