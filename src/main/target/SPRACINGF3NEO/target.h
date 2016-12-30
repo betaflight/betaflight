@@ -175,10 +175,6 @@
 #define BUTTONS
 #define BUTTON_A_PIN            PD2
 
-#define SPEKTRUM_BIND
-// USART3
-#define BIND_PIN                PA3
-
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 
@@ -193,4 +189,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 2xPPM, 6xPWM, UART3 RX/TX, LED Strip, IR.
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
-
