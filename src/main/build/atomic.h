@@ -85,7 +85,7 @@ static inline uint8_t __basepriSetRetVal(uint8_t prio)
 // On gcc 5 and higher, this protects only memory passed as parameter (any type should work)
 // this macro can be used only ONCE PER LINE, but multiple uses per block are fine
 
-#if (__GNUC__ > 5)
+#if (__GNUC__ > 6)
 #warning "Please verify that ATOMIC_BARRIER works as intended"
 // increment version number if BARRIER works
 // TODO - use flag to disable ATOMIC_BARRIER and use full barrier instead
