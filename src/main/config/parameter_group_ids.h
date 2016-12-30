@@ -59,7 +59,9 @@
 #define PG_MODE_ACTIVATION_PROFILE 41 // array needs to be made into struct
 #define PG_SERVO_PROFILE 42
 #define PG_FAILSAFE_CHANNEL_CONFIG 43 // structs OK
+#define PG_RX_FAILSAFE_CHANNEL_CONFIG 43
 #define PG_CHANNEL_RANGE_CONFIG 44 // structs OK
+#define PG_RX_CHANNEL_RANGE_CONFIG 44
 #define PG_MODE_COLOR_CONFIG 45  // part of led strip, structs OK
 #define PG_SPECIAL_COLOR_CONFIG 46  // part of led strip, structs OK
 #define PG_PILOT_CONFIG 47 // does not exist in betaflight

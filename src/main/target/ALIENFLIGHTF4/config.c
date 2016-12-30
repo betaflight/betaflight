@@ -67,12 +67,12 @@ void targetConfiguration(master_t *config)
     }
 
     if (hardwareRevision == AFF4_REV_1) {
-        config->rxConfig.serialrx_provider = SERIALRX_SPEKTRUM2048;
-        config->rxConfig.spektrum_sat_bind = 5;
-        config->rxConfig.spektrum_sat_bind_autoreset = 1;
+        rxConfig()->serialrx_provider = SERIALRX_SPEKTRUM2048;
+        rxConfig()->spektrum_sat_bind = 5;
+        rxConfig()->spektrum_sat_bind_autoreset = 1;
     } else {
-        config->rxConfig.serialrx_provider = SERIALRX_SBUS;
-        config->rxConfig.sbus_inversion = 0;
+        rxConfig()->serialrx_provider = SERIALRX_SBUS;
+        rxConfig()->sbus_inversion = 0;
         config->serialConfig.portConfigs[findSerialPortIndexByIdentifier(TELEMETRY_UART)].functionMask = FUNCTION_TELEMETRY_FRSKY;
         config->telemetryConfig.telemetry_inversion = 0;
         intFeatureSet(FEATURE_CURRENT_METER | FEATURE_VBAT | FEATURE_TELEMETRY, &config->enabledFeatures);

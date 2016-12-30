@@ -85,8 +85,7 @@ void updateBattery(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 batteryConfig_t *batteryConfig;
 
-struct rxConfig_s;
-void updateCurrentMeter(int32_t lastUpdateAt, struct rxConfig_s *rxConfig, uint16_t deadband3d_throttle);
+void updateCurrentMeter(int32_t lastUpdateAt, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 float calculateVbatPidCompensation(void);

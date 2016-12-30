@@ -95,9 +95,6 @@
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
-#ifndef RX_SPI_DEFAULT_PROTOCOL
-#define RX_SPI_DEFAULT_PROTOCOL 0
-#endif
 
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #ifdef STM32F4
@@ -613,37 +610,6 @@ void createDefaultConfig(master_t *config)
     resetsdcardConfig(&config->sdcardConfig);
 #endif
 
-#ifdef SERIALRX_PROVIDER
-    config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
-#else
-    config->rxConfig.serialrx_provider = 0;
-#endif
-    config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
-    config->rxConfig.sbus_inversion = 1;
-    config->rxConfig.spektrum_sat_bind = 0;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->rxConfig.midrc = 1500;
-    config->rxConfig.mincheck = 1100;
-    config->rxConfig.maxcheck = 1900;
-    config->rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
-    config->rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
-
-    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &config->rxConfig.failsafe_channel_configurations[i];
-        channelFailsafeConfiguration->mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
-    }
-
-    config->rxConfig.rssi_channel = 0;
-    config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_ppm_invert = 0;
-    config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
-    config->rxConfig.rcInterpolationInterval = 19;
-    config->rxConfig.fpvCamAngleDegrees = 0;
-    config->rxConfig.max_aux_channel = MAX_AUX_CHANNELS;
-    config->rxConfig.airModeActivateThreshold = 1350;
-
-    resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
 
 #ifdef USE_PWM
     config->pwmConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
@@ -689,9 +655,9 @@ void createDefaultConfig(master_t *config)
 
     // Radio
 #ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", &config->rxConfig);
+    parseRcChannels("TAER1234");
 #else
-    parseRcChannels("AETR1234", &config->rxConfig);
+    parseRcChannels("AETR1234");
 #endif
 
     resetRcControlsConfig(&config->rcControlsConfig);
@@ -786,7 +752,7 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConfigs(void)
 {
     createDefaultConfig(&masterConfig);
     pgResetAll(MAX_PROFILE_COUNT);
@@ -833,8 +799,7 @@ void activateConfig(void)
         &masterConfig.flight3DConfig,
         &masterConfig.motorConfig,
         &masterConfig.mixerConfig,
-        &masterConfig.airplaneConfig,
-        &masterConfig.rxConfig
+        &masterConfig.airplaneConfig
     );
 
 #ifdef USE_SERVOS
@@ -952,8 +917,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-    useRxConfig(&masterConfig.rxConfig);
-
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
 
     if (!isSerialConfigValid(serialConfig)) {
@@ -1026,7 +989,7 @@ void ensureEEPROMContainsValidData(void)
 
 void resetEEPROM(void)
 {
-    resetConf();
+    resetConfigs();
     writeEEPROM();
 }
 

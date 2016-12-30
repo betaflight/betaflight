@@ -75,7 +75,6 @@
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
 #define gpsProfile(x) (&masterConfig.gpsProfile)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
-#define rxConfig(x) (&masterConfig.rxConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define airplaneConfig(x) (&masterConfig.airplaneConfig)
@@ -143,8 +142,6 @@ typedef struct master_s {
     gpsProfile_t gpsProfile;
     gpsConfig_t gpsConfig;
 #endif
-
-    rxConfig_t rxConfig;
 
     armingConfig_t armingConfig;
 

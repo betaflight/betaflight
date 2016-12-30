@@ -44,7 +44,7 @@
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config)
 {
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    compassConfig()->mag_hardware = MAG_NONE;            // disabled by default
 
     config->batteryConfig.vbatscale = 100;
     config->batteryConfig.vbatresdivval = 15;
@@ -53,8 +53,8 @@ void targetConfiguration(master_t *config)
     config->batteryConfig.vbatmincellvoltage = 32;
     config->batteryConfig.vbatwarningcellvoltage = 33;
 
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
+    rxConfig()->spektrum_sat_bind = 5;
+    rxConfig()->spektrum_sat_bind_autoreset = 1;
 
     config->rcControlsConfig.yaw_deadband = 2;
     config->rcControlsConfig.deadband = 2;

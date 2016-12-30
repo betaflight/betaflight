@@ -84,7 +84,6 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 static uint32_t nextDisplayUpdateAt = 0;
 static bool dashboardPresent = false;
 
-static rxConfig_t *rxConfig;
 static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
@@ -701,7 +700,7 @@ void dashboardSetPage(pageId_e pageId)
     pageState.pageFlags |= PAGE_STATE_FLAG_FORCE_PAGE_CHANGE;
 }
 
-void dashboardInit(rxConfig_t *rxConfigToUse)
+void dashboardInit(void)
 {
     delay(200);
     resetDisplay();
@@ -713,8 +712,6 @@ void dashboardInit(rxConfig_t *rxConfigToUse)
         cmsDisplayPortRegister(displayPort);
     }
 #endif
-
-    rxConfig = rxConfigToUse;
 
     memset(&pageState, 0, sizeof(pageState));
     dashboardSetPage(PAGE_WELCOME);
