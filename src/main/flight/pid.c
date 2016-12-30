@@ -157,20 +157,20 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
 }
 
-float currentPidSetpoint = 0, horizonLevelStrength = 1.0f;
-
-void calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
-    const float mostDeflectedPos = MAX(getRcDeflection(FD_ROLL), getRcDeflection(FD_PITCH));
-    // Progressively turn off the horizon self level strength as the stick is banged over
-    horizonLevelStrength = (1.0f - mostDeflectedPos);  // 1 at centre stick, 0 = max stick deflection
+float calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
+    float horizonLevelStrength;
     if(pidProfile->D8[PIDLEVEL] == 0){
         horizonLevelStrength = 0;
     } else {
+        const float mostDeflectedPos = MAX(getRcDeflection(FD_ROLL), getRcDeflection(FD_PITCH));
+        // Progressively turn off the horizon self level strength as the stick is banged over
+        horizonLevelStrength = (1.0f - mostDeflectedPos);  // 1 at centre stick, 0 = max stick deflection
         horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * horizonTransition) + 1, 0, 1);
     }
+    return horizonLevelStrength;
 }
 
-void pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim) {
+float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim) {
     // calculate error angle and limit the angle to the max inclination
     float errorAngle = pidProfile->levelSensitivity * rcCommand[axis];
 #ifdef GPS
@@ -178,17 +178,20 @@ void pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_
 #endif
     errorAngle = constrainf(errorAngle, -pidProfile->max_angle_inclination, pidProfile->max_angle_inclination);
     errorAngle = (errorAngle - ((attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f));
+    float currentPidSetpoint;
     if(FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
     } else {
         // HORIZON mode - direct sticks control is applied to rate PID
         // mix up angle error to desired AngleRate to add a little auto-level feel
+        const float horizonLevelStrength = calcHorizonLevelStrength(pidProfile);
         currentPidSetpoint = currentPidSetpoint + (errorAngle * horizonGain * horizonLevelStrength);
     }
+    return currentPidSetpoint;
 }
 
-void accelerationLimit(int axis) {
+float accelerationLimit(int axis, float currentPidSetpoint) {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
@@ -196,6 +199,7 @@ void accelerationLimit(int axis) {
         currentPidSetpoint = (currentVelocity > 0) ? previousSetpoint[axis] + maxVelocity[axis] : previousSetpoint[axis] - maxVelocity[axis];
 
     previousSetpoint[axis] = currentPidSetpoint;
+    return currentPidSetpoint;
 }
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
@@ -205,21 +209,18 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
     static float previousRateError[2];
     static float previousSetpoint[3];
 
-    if(FLIGHT_MODE(HORIZON_MODE))
-        calcHorizonLevelStrength(pidProfile);
-
     // ----------PID controller----------
     const float tpaFactor = getThrottlePIDAttenuation();
 
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
-        currentPidSetpoint = getSetpointRate(axis);
+        float currentPidSetpoint = getSetpointRate(axis);
 
         if(maxVelocity[axis])
-            accelerationLimit(axis);
+            currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
-            pidLevel(axis, pidProfile, angleTrim);
+            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim);
         }
 
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
@@ -232,6 +233,9 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // -----calculate P component and add Dynamic Part based on stick input
         float PTerm = Kp[axis] * errorRate * tpaFactor;
+        if (axis == FD_YAW) {
+            PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
+        }
 
         // -----calculate I component
         // Reduce strong Iterm accumulation during higher stick inputs
@@ -271,8 +275,6 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
             DTerm = dtermNotchFilterApplyFn(dtermFilterNotch[axis], DTerm);
             DTerm = dtermLpfApplyFn(dtermFilterLpf[axis], DTerm);
 
-        } else {
-            PTerm = ptermYawFilterApplyFn(ptermYawFilter, PTerm);
         }
         previousSetpoint[axis] = currentPidSetpoint;
 
