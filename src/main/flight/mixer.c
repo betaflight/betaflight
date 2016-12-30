@@ -236,7 +236,8 @@ const mixer_t mixers[] = {
 
 static motorMixer_t *customMixers;
 
-static uint16_t disarmMotorOutput, motorOutputHigh, motorOutputLow, deadbandMotor3dHigh, deadbandMotor3dLow;
+static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+uint16_t motorOutputHigh, motorOutputLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount()
