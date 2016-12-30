@@ -170,7 +170,7 @@ float calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
     return horizonLevelStrength;
 }
 
-float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim) {
+float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     float errorAngle = pidProfile->levelSensitivity * rcCommand[axis];
 #ifdef GPS
@@ -178,7 +178,6 @@ float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims
 #endif
     errorAngle = constrainf(errorAngle, -pidProfile->max_angle_inclination, pidProfile->max_angle_inclination);
     errorAngle = (errorAngle - ((attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f));
-    float currentPidSetpoint;
     if(FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
         currentPidSetpoint = errorAngle * levelGain;
@@ -220,7 +219,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
 
         // Yaw control is GYRO based, direct sticks control is applied to rate PID
         if ((FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) && axis != YAW) {
-            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim);
+            currentPidSetpoint = pidLevel(axis, pidProfile, angleTrim, currentPidSetpoint);
         }
 
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
