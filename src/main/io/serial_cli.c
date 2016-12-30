@@ -996,6 +996,7 @@ const clivalue_t valueTable[] = {
     { "osd_pid_roll_pos",           VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_ROLL_PIDS], .config.minmax = { 0, UINT16_MAX } },
     { "osd_pid_pitch_pos",          VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_PITCH_PIDS], .config.minmax = { 0, UINT16_MAX } },
     { "osd_pid_yaw_pos",            VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_YAW_PIDS], .config.minmax = { 0, UINT16_MAX } },
+    { "osd_power_pos",              VAR_UINT16  | MASTER_VALUE, &osdProfile()->item_pos[OSD_POWER], .config.minmax = { 0, UINT16_MAX } },
 #endif
 #ifdef USE_MAX7456
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &vcdProfile()->video_system, .config.minmax = { 0, 2 } },
