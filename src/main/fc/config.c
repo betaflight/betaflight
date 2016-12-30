@@ -1095,7 +1095,7 @@ void changeProfile(uint8_t profileIndex)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (profileIndex > MAX_RATEPROFILES) {
+    if (profileIndex >= MAX_RATEPROFILES) {
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
