@@ -25,11 +25,16 @@ typedef enum {
     WAS_EVER_ARMED  = (1 << 3)
 } armingFlag_e;
 
+// This is really an armingFlag_e type. Args and return values in the inlined funcs too.
+// But clang++ in unittests does not like that in the compound assignments.
+// It would also be expanded to the native size of enum-types, 32-bit int typically.
+// Keep as is for now.
 extern uint8_t armingFlags;
 
-#define DISABLE_ARMING_FLAG(mask) (armingFlags &= ~(mask))
-#define ENABLE_ARMING_FLAG(mask) (armingFlags |= (mask))
-#define ARMING_FLAG(mask) (armingFlags & (mask))
+static inline void DISABLE_ARMING_FLAG(uint8_t mask) { (armingFlags &= (uint8_t)~(mask)); }
+static inline void ENABLE_ARMING_FLAG(uint8_t mask) { (armingFlags |= (uint8_t)(mask)); }
+static inline uint8_t ARMING_FLAG(uint8_t mask) { return (armingFlags & (mask)); }
+
 
 typedef enum {
     ANGLE_MODE      = (1 << 0),

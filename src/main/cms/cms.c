@@ -433,7 +433,7 @@ static void cmsDrawMenu(displayPort_t *pDisplay, uint32_t currentTimeUs)
         if (IS_PRINTLABEL(p)) {
             int coloff = LEFT_MENU_COLUMN;
             coloff += (p->type == OME_Label) ? 1 : 2;
-        room -= displayWrite(pDisplay, (diplayPos_t)coloff, (diplayPos_t)(i + top), p->text);
+            room -= displayWrite(pDisplay, (diplayPos_t)coloff, (diplayPos_t)(i + top), p->text);
             CLR_PRINTLABEL(p);
             if (room < 30)
                 return;
@@ -539,10 +539,7 @@ STATIC_UNIT_TESTED void cmsMenuOpen(void)
             return;
         cmsInMenu = true;
         currentMenu = &menuMain;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
         DISABLE_ARMING_FLAG(OK_TO_ARM);
-#pragma GCC diagnostic pop
     } else {
         // Switch display
         displayPort_t *pNextDisplay = cmsDisplayPortSelectNext();
