@@ -607,6 +607,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/ibus.c \
             sensors/esc_sensor.c \
             io/vtx_smartaudio.c
 

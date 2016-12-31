@@ -48,6 +48,7 @@
 #include "telemetry/mavlink.h"
 #include "telemetry/crsf.h"
 #include "telemetry/srxl.h"
+#include "telemetry/ibus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -81,6 +82,9 @@ void telemetryInit(void)
 #endif
 #ifdef TELEMETRY_SRXL
     initSrxlTelemetry();
+#endif
+#ifdef TELEMETRY_IBUS
+    initIbusTelemetry();
 #endif
 
     telemetryCheckState();
