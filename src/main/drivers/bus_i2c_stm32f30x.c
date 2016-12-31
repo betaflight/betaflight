@@ -50,7 +50,9 @@ i2cDevice_t i2cPinMap[] = {
     I2C_DEF(I2C1, PB6,  PB7,  RCC_APB1(I2C1)),
     I2C_DEF(I2C1, PB8,  PB9,  RCC_APB1(I2C1)),
     I2C_DEF(I2C2, PA9,  PA10, RCC_APB1(I2C2)),
+#ifdef STM32F3xx_WITH_PF0_PF1
     I2C_DEF(I2C2, PF1,  PF0,  RCC_APB1(I2C2)), // What's PF6???
+#endif
 };
 
 unsigned int i2cPinMapSize(void)
