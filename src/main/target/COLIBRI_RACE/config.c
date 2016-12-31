@@ -96,9 +96,4 @@ void targetConfiguration(master_t *config)
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 
-    featureSet(FEATURE_VBAT);
-    featureSet(FEATURE_RX_PPM);
-    featureSet(FEATURE_FAILSAFE);
-    featureSet(FEATURE_AIRMODE);
-    featureSet(FEATURE_LED_STRIP);
 }
