@@ -1088,12 +1088,37 @@ void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)
     saveConfigAndNotify();
 }
 
-
-void readEEPROMAndNotify(void)
+void readEEPROM(void)
 {
-    // re-read written data
-    readEEPROM();
-    beeperConfirmationBeeps(1);
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//    pgActivateProfile(getCurrentProfile());
+//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        masterConfig.current_profile_index = 0;
+    }
+
+    setProfile(masterConfig.current_profile_index);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
 }
 
 void ensureEEPROMContainsValidData(void)
@@ -1101,7 +1126,6 @@ void ensureEEPROMContainsValidData(void)
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 
@@ -1114,11 +1138,15 @@ void resetEEPROM(void)
 void saveConfigAndNotify(void)
 {
     writeEEPROM();
-    readEEPROMAndNotify();
+    readEEPROM();
+    beeperConfirmationBeeps(1);
 }
 
 void changeProfile(uint8_t profileIndex)
 {
+    if (profileIndex >= MAX_PROFILE_COUNT) {
+        profileIndex = MAX_PROFILE_COUNT - 1;
+    }
     masterConfig.current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
@@ -1127,7 +1155,7 @@ void changeProfile(uint8_t profileIndex)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (profileIndex > MAX_CONTROL_RATE_PROFILE_COUNT) {
+    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
         profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
     }
     setControlRateProfile(profileIndex);

@@ -18,348 +18,280 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "platform.h"
 
 #include "build/build_config.h"
 
-#include "common/color.h"
-#include "common/axis.h"
-
-#include "drivers/system.h"
-#include "drivers/serial.h"
-
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-#include "sensors/pitotmeter.h"
-
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/motors.h"
-#include "io/servos.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
-
-#include "io/ledstrip.h"
-#include "io/gps.h"
-
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/servos.h"
-#include "flight/pid.h"
-#include "flight/failsafe.h"
-#include "flight/navigation_rewrite.h"
+#include "common/maths.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
+#include "config/config_streamer.h"
 #include "config/config_master.h"
+#include "config/parameter_group.h"
 
-#ifndef FLASH_PAGE_SIZE
-    #if defined(STM32F303xC)
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #elif defined(STM32F10X_MD)
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x400)
-    #elif defined(STM32F10X_HD)
-        #define FLASH_PAGE_SIZE                 ((uint16_t)0x800)
-    #elif defined(STM32F40_41xxx)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
-    #elif defined(STM32F411xE)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
-    #elif defined(STM32F427_437xx)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
-    #elif defined(STM32F745xx)
-        #define FLASH_PAGE_SIZE                 ((uint32_t)0x40000) // 256K sectors
-    #else
-        #error "Flash page size not defined for target."
-    #endif
-#endif
+#include "drivers/system.h"
+
+#include "fc/config.h"
+
+// declare a dummy PG, since scanEEPROM assumes there is at least one PG
+// !!TODO remove once first PG has been created out of masterConfg
+typedef struct dummpConfig_s {
+    uint8_t dummy;
+} dummyConfig_t;
+PG_DECLARE(dummyConfig_t, dummyConfig);
+#define PG_DUMMY_CONFIG 1
+PG_REGISTER(dummyConfig_t, dummyConfig, PG_DUMMY_CONFIG, 0);
 
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 
+typedef enum {
+    CR_CLASSICATION_SYSTEM   = 0,
+    CR_CLASSICATION_PROFILE1 = 1,
+    CR_CLASSICATION_PROFILE2 = 2,
+    CR_CLASSICATION_PROFILE3 = 3,
+    CR_CLASSICATION_PROFILE_LAST = CR_CLASSICATION_PROFILE3,
+} configRecordFlags_e;
+
+#define CR_CLASSIFICATION_MASK (0x3)
+
+// Header for the saved copy.
+typedef struct {
+    uint8_t format;
+} PG_PACKED configHeader_t;
+
+// Header for each stored PG.
+typedef struct {
+    // split up.
+    uint16_t size;
+    pgn_t pgn;
+    uint8_t version;
+
+    // lower 2 bits used to indicate system or profile number, see CR_CLASSIFICATION_MASK
+    uint8_t flags;
+
+    uint8_t pg[];
+} PG_PACKED configRecord_t;
+
+// Footer for the saved copy.
+typedef struct {
+    uint16_t terminator;
+} PG_PACKED configFooter_t;
+// checksum is appended just after footer. It is not included in footer to make checksum calculation consistent
+
+// Used to check the compiler packing at build time.
+typedef struct {
+    uint8_t byte;
+    uint32_t word;
+} PG_PACKED packingTest_t;
+
 void initEEPROM(void)
 {
+    // Verify that this architecture packs as expected.
+    BUILD_BUG_ON(offsetof(packingTest_t, byte) != 0);
+    BUILD_BUG_ON(offsetof(packingTest_t, word) != 1);
+    BUILD_BUG_ON(sizeof(packingTest_t) != 5);
+
+    BUILD_BUG_ON(sizeof(configHeader_t) != 1);
+    BUILD_BUG_ON(sizeof(configFooter_t) != 2);
+    BUILD_BUG_ON(sizeof(configRecord_t) != 6);
 }
 
-static uint8_t calculateChecksum(const uint8_t *data, uint32_t length)
+static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
 {
-    uint8_t checksum = 0;
-    const uint8_t *byteOffset;
+    const uint8_t *p = (const uint8_t *)data;
+    const uint8_t *pend = p + length;
 
-    for (byteOffset = data; byteOffset < (data + length); byteOffset++)
-        checksum ^= *byteOffset;
-    return checksum;
+    for (; p != pend; p++) {
+        chk ^= *p;
+    }
+    return chk;
+}
+
+// Scan the EEPROM config. Returns true if the config is valid.
+static bool scanEEPROM(void)
+{
+    uint8_t chk = 0;
+    const uint8_t *p = &__config_start;
+    const configHeader_t *header = (const configHeader_t *)p;
+
+    if (header->format != EEPROM_CONF_VERSION) {
+        return false;
+    }
+    chk = updateChecksum(chk, header, sizeof(*header));
+    p += sizeof(*header);
+    // include the transitional masterConfig record
+    chk = updateChecksum(chk, p, sizeof(masterConfig));
+    p += sizeof(masterConfig);
+
+    for (;;) {
+        const configRecord_t *record = (const configRecord_t *)p;
+
+        if (record->size == 0) {
+            // Found the end.  Stop scanning.
+            break;
+        }
+        if (p + record->size >= &__config_end
+            || record->size < sizeof(*record)) {
+            // Too big or too small.
+            return false;
+        }
+
+        chk = updateChecksum(chk, p, record->size);
+
+        p += record->size;
+    }
+
+    const configFooter_t *footer = (const configFooter_t *)p;
+    chk = updateChecksum(chk, footer, sizeof(*footer));
+    p += sizeof(*footer);
+    chk = ~chk;
+    return chk == *p;
+}
+
+// find config record for reg + classification (profile info) in EEPROM
+// return NULL when record is not found
+// this function assumes that EEPROM content is valid
+static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFlags_e classification)
+{
+    const uint8_t *p = &__config_start;
+    p += sizeof(configHeader_t);             // skip header
+    p += sizeof(master_t); // skip the transitional master_t record
+    while (true) {
+        const configRecord_t *record = (const configRecord_t *)p;
+        if (record->size == 0
+            || p + record->size >= &__config_end
+            || record->size < sizeof(*record))
+            break;
+        if (pgN(reg) == record->pgn
+            && (record->flags & CR_CLASSIFICATION_MASK) == classification)
+            return record;
+        p += record->size;
+    }
+    // record not found
+    return NULL;
+}
+
+// Initialize all PG records from EEPROM.
+// This functions processes all PGs sequentially, scanning EEPROM for each one. This is suboptimal,
+//   but each PG is loaded/initialized exactly once and in defined order.
+bool loadEEPROM(void)
+{
+    // read in the transitional masterConfig record
+    const uint8_t *p = &__config_start;
+    p += sizeof(configHeader_t); // skip header
+    masterConfig = *(master_t*)p;
+
+    PG_FOREACH(reg) {
+        configRecordFlags_e cls_start, cls_end;
+        if (pgIsSystem(reg)) {
+            cls_start = CR_CLASSICATION_SYSTEM;
+            cls_end = CR_CLASSICATION_SYSTEM;
+        } else {
+            cls_start = CR_CLASSICATION_PROFILE1;
+            cls_end = CR_CLASSICATION_PROFILE_LAST;
+        }
+        for (configRecordFlags_e cls = cls_start; cls <= cls_end; cls++) {
+            int profileIndex = cls - cls_start;
+            const configRecord_t *rec = findEEPROM(reg, cls);
+            if (rec) {
+                // config from EEPROM is available, use it to initialize PG. pgLoad will handle version mismatch
+                pgLoad(reg, profileIndex, rec->pg, rec->size - offsetof(configRecord_t, pg), rec->version);
+            } else {
+                pgReset(reg, profileIndex);
+            }
+        }
+    }
+    return true;
 }
 
 bool isEEPROMContentValid(void)
 {
-    const master_t *temp = (const master_t *) &__config_start;
-    uint8_t checksum = 0;
-
-    // check version number
-    if (EEPROM_CONF_VERSION != temp->version)
-        return false;
-
-    // check size and magic numbers
-    if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
-        return false;
-
-    // verify integrity of temporary copy
-    checksum = calculateChecksum((const uint8_t *) temp, sizeof(master_t));
-    if (checksum != 0)
-        return false;
-
-    // looks good, let's roll!
-    return true;
+    return scanEEPROM();
 }
 
-#if defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F427_437xx)
-/*
-Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
-Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
-Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
-Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
-Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
-Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
-Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
-Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
-Sector 8    0x08080000 - 0x0809FFFF 128 Kbytes
-Sector 9    0x080A0000 - 0x080BFFFF 128 Kbytes
-Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
-Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
-*/
-
-static uint32_t getFLASHSectorForEEPROM(void)
+static bool writeSettingsToEEPROM(void)
 {
-    if ((uint32_t)&__config_start <= 0x08003FFF)
-        return FLASH_Sector_0;
-    if ((uint32_t)&__config_start <= 0x08007FFF)
-        return FLASH_Sector_1;
-    if ((uint32_t)&__config_start <= 0x0800BFFF)
-        return FLASH_Sector_2;
-    if ((uint32_t)&__config_start <= 0x0800FFFF)
-        return FLASH_Sector_3;
-    if ((uint32_t)&__config_start <= 0x0801FFFF)
-        return FLASH_Sector_4;
-    if ((uint32_t)&__config_start <= 0x0803FFFF)
-        return FLASH_Sector_5;
-    if ((uint32_t)&__config_start <= 0x0805FFFF)
-        return FLASH_Sector_6;
-    if ((uint32_t)&__config_start <= 0x0807FFFF)
-        return FLASH_Sector_7;
-    if ((uint32_t)&__config_start <= 0x0809FFFF)
-        return FLASH_Sector_8;
-    if ((uint32_t)&__config_start <= 0x080DFFFF)
-        return FLASH_Sector_9;
-    if ((uint32_t)&__config_start <= 0x080BFFFF)
-        return FLASH_Sector_10;
-    if ((uint32_t)&__config_start <= 0x080FFFFF)
-        return FLASH_Sector_11;
+    config_streamer_t streamer;
+    config_streamer_init(&streamer);
 
-    // Not good
-    while (1) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
-}
-#elif defined(STM32F7)
-/*
-Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
-Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
-Sector 2    0x08010000 - 0x08017FFF 32 Kbytes
-Sector 3    0x08018000 - 0x0801FFFF 32 Kbytes
-Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
-Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
-Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
-Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
-*/
+    config_streamer_start(&streamer, (uintptr_t)&__config_start, &__config_end - &__config_start);
+    uint8_t chk = 0;
 
-static uint32_t getFLASHSectorForEEPROM(void)
-{
-    if ((uint32_t)&__config_start <= 0x08007FFF)
-        return FLASH_SECTOR_0;
-    if ((uint32_t)&__config_start <= 0x0800FFFF)
-        return FLASH_SECTOR_1;
-    if ((uint32_t)&__config_start <= 0x08017FFF)
-        return FLASH_SECTOR_2;
-    if ((uint32_t)&__config_start <= 0x0801FFFF)
-        return FLASH_SECTOR_3;
-    if ((uint32_t)&__config_start <= 0x0803FFFF)
-        return FLASH_SECTOR_4;
-    if ((uint32_t)&__config_start <= 0x0807FFFF)
-        return FLASH_SECTOR_5;
-    if ((uint32_t)&__config_start <= 0x080BFFFF)
-        return FLASH_SECTOR_6;
-    if ((uint32_t)&__config_start <= 0x080FFFFF)
-        return FLASH_SECTOR_7;
+    configHeader_t header = {
+        .format = EEPROM_CONF_VERSION,
+    };
 
-    // Not good
-    while (1) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
-}
-#endif
+    config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
+    chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
+    // write the transitional masterConfig record
+    config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
+    chk = updateChecksum(chk, (uint8_t *)&masterConfig, sizeof(masterConfig));
+    PG_FOREACH(reg) {
+        const uint16_t regSize = pgSize(reg);
+        configRecord_t record = {
+            .size = sizeof(configRecord_t) + regSize,
+            .pgn = pgN(reg),
+            .version = pgVersion(reg),
+            .flags = 0
+        };
 
-#if defined(STM32F7)
+        if (pgIsSystem(reg)) {
+            // write the only instance
+            record.flags |= CR_CLASSICATION_SYSTEM;
+            config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
+            chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
+            config_streamer_write(&streamer, reg->address, regSize);
+            chk = updateChecksum(chk, reg->address, regSize);
+        } else {
+            // write one instance for each profile
+            for (uint8_t profileIndex = 0; profileIndex < MAX_PROFILE_COUNT; profileIndex++) {
+                record.flags = 0;
 
-// FIXME: HAL for now this will only work for F4/F7 as flash layout is different
-void writeEEPROM(void)
-{
-    // Generate compile time error if the config does not fit in the reserved area of flash.
-    BUILD_BUG_ON(sizeof(master_t) > ((uint32_t)&__config_end - (uint32_t)&__config_start));
-
-    HAL_StatusTypeDef status;
-    uint32_t wordOffset;
-    int8_t attemptsRemaining = 3;
-
-    suspendRxSignal();
-
-    // prepare checksum/version constants
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.size = sizeof(master_t);
-    masterConfig.magic_be = 0xBE;
-    masterConfig.magic_ef = 0xEF;
-    masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
-
-    // write it
-    /* Unlock the Flash to enable the flash control register access *************/
-    HAL_FLASH_Unlock();
-    while (attemptsRemaining--)
-    {
-        /* Fill EraseInit structure*/
-        FLASH_EraseInitTypeDef EraseInitStruct = {0};
-        EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
-        EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_3; // 2.7-3.6V
-        EraseInitStruct.Sector        = getFLASHSectorForEEPROM();
-        EraseInitStruct.NbSectors     = 1;
-        uint32_t SECTORError;
-        status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
-        if (status != HAL_OK)
-        {
-            continue;
-        }
-        else
-        {
-            for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4)
-            {
-                status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)&__config_start + wordOffset, *(uint32_t *) ((char *) &masterConfig + wordOffset));
-                if(status != HAL_OK)
-                {
-                    break;
-                }
+                record.flags |= ((profileIndex + 1) & CR_CLASSIFICATION_MASK);
+                config_streamer_write(&streamer, (uint8_t *)&record, sizeof(record));
+                chk = updateChecksum(chk, (uint8_t *)&record, sizeof(record));
+                const uint8_t *address = reg->address + (regSize * profileIndex);
+                config_streamer_write(&streamer, address, regSize);
+                chk = updateChecksum(chk, address, regSize);
             }
         }
-        if (status == HAL_OK) {
-            break;
+    }
+
+    configFooter_t footer = {
+        .terminator = 0,
+    };
+
+    config_streamer_write(&streamer, (uint8_t *)&footer, sizeof(footer));
+    chk = updateChecksum(chk, (uint8_t *)&footer, sizeof(footer));
+
+    // append checksum now
+    chk = ~chk;
+    config_streamer_write(&streamer, &chk, sizeof(chk));
+
+    config_streamer_flush(&streamer);
+
+    bool success = config_streamer_finish(&streamer) == 0;
+
+    return success;
+}
+
+void writeConfigToEEPROM(void)
+{
+    bool success = false;
+    // write it
+    for (int attempt = 0; attempt < 3 && !success; attempt++) {
+        if (writeSettingsToEEPROM()) {
+            success = true;
         }
     }
-    HAL_FLASH_Lock();
+
+    if (success && isEEPROMContentValid()) {
+        return;
+    }
 
     // Flash write failed - just die now
-    if (status != HAL_OK || !isEEPROMContentValid()) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
-
-    resumeRxSignal();
-}
-#else
-void writeEEPROM(void)
-{
-    // Generate compile time error if the config does not fit in the reserved area of flash.
-    BUILD_BUG_ON(sizeof(master_t) > ((uint32_t)&__config_end - (uint32_t)&__config_start));
-
-    FLASH_Status status = 0;
-    uint32_t wordOffset;
-    int8_t attemptsRemaining = 3;
-
-    suspendRxSignal();
-
-    // prepare checksum/version constants
-    masterConfig.version = EEPROM_CONF_VERSION;
-    masterConfig.size = sizeof(master_t);
-    masterConfig.magic_be = 0xBE;
-    masterConfig.magic_ef = 0xEF;
-    masterConfig.chk = 0; // erase checksum before recalculating
-    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
-
-    // write it
-    FLASH_Unlock();
-    while (attemptsRemaining--) {
-#ifdef STM32F4
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
-#endif
-#ifdef STM32F303
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPERR);
-#endif
-#ifdef STM32F10X
-        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_PGERR | FLASH_FLAG_WRPRTERR);
-#endif
-        for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4) {
-            if (wordOffset % FLASH_PAGE_SIZE == 0) {
-#if defined(STM32F40_41xxx) || defined(STM32F411xE) || defined(STM32F427_437xx)
-                status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
-#else
-                status = FLASH_ErasePage((uint32_t)&__config_start + wordOffset);
-#endif
-                if (status != FLASH_COMPLETE) {
-                    break;
-                }
-            }
-
-            status = FLASH_ProgramWord((uint32_t)&__config_start + wordOffset, *(uint32_t *) ((char *) &masterConfig + wordOffset));
-            if (status != FLASH_COMPLETE) {
-                break;
-            }
-        }
-        if (status == FLASH_COMPLETE) {
-            break;
-        }
-    }
-    FLASH_Lock();
-
-    // Flash write failed - just die now
-    if (status != FLASH_COMPLETE || !isEEPROMContentValid()) {
-        failureMode(FAILURE_FLASH_WRITE_FAILED);
-    }
-
-    resumeRxSignal();
-}
-#endif
-
-void readEEPROM(void)
-{
-    // Sanity check
-    if (!isEEPROMContentValid())
-        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
-
-    suspendRxSignal();
-
-    // Read flash
-    memcpy(&masterConfig, (char *)&__config_start, sizeof(master_t));
-
-    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) // sanity check
-        masterConfig.current_profile_index = 0;
-
-    setProfile(masterConfig.current_profile_index);
-
-    if (currentProfile->defaultRateProfileIndex > MAX_CONTROL_RATE_PROFILE_COUNT - 1) // sanity check
-        currentProfile->defaultRateProfileIndex = 0;
-
-    setControlRateProfile(currentProfile->defaultRateProfileIndex);
-
-    validateAndFixConfig();
-    activateConfig();
-
-    resumeRxSignal();
+    failureMode(FAILURE_FLASH_WRITE_FAILED);
 }

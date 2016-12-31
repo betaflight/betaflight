@@ -480,6 +480,7 @@ COMMON_SRC = \
             common/streambuf.c \
             config/feature.c \
             config/config_eeprom.c \
+            config/config_streamer.c \
             config/parameter_group.c \
             fc/config.c \
             fc/runtime_config.c \
