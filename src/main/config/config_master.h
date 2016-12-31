@@ -189,3 +189,5 @@ typedef struct master_s {
 extern master_t masterConfig;
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
+
+void createDefaultConfig(master_t *config);
