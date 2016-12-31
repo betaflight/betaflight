@@ -106,11 +106,6 @@
 //#define MAX7456_DMA_CHANNEL_RX            DMA1_Channel2
 //#define MAX7456_DMA_IRQ_HANDLER_ID        DMA1_CH3_HANDLER
 
-// VTX monitor task
-#define VTX_CONTROL
-// VTX device type
-#define VTX_SMARTAUDIO
-
 #define USE_SPI
 #define USE_SPI_DEVICE_2 // PB12,13,14,15 on AF5
 

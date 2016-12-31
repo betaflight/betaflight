@@ -131,11 +131,6 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
-// VTX monitor task
-#define VTX_CONTROL
-// VTX device type
-#define VTX_SMARTAUDIO
-
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
