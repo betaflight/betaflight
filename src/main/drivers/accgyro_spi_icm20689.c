@@ -114,7 +114,7 @@ void icm20689AccInit(accDev_t *acc)
 
 bool icm20689SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != ICM_20689_SPI) {
+    if (acc->mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
     }
 
@@ -130,31 +130,31 @@ void icm20689GyroInit(gyroDev_t *gyro)
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_INITIALIZATON);
 
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
+    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, ICM20689_BIT_RESET);
     delay(100);
-    mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x03);
+    gyro->mpuConfiguration.write(MPU_RA_SIGNAL_PATH_RESET, 0x03);
     delay(100);
-//    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
+//    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, 0);
 //    delay(100);
-    mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
+    gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
+    gyro->mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
-    mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
+    gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration
-//    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
-    mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0x10);  // INT_ANYRD_2CLEAR, BYPASS_EN
+//    gyro->mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0 << 7 | 0 << 6 | 0 << 5 | 1 << 4 | 0 << 3 | 0 << 2 | 0 << 1 | 0 << 0);  // INT_ANYRD_2CLEAR, BYPASS_EN
+    gyro->mpuConfiguration.write(MPU_RA_INT_PIN_CFG, 0x10);  // INT_ANYRD_2CLEAR, BYPASS_EN
 
     delay(15);
 
 #ifdef USE_MPU_DATA_READY_SIGNAL
-    mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
+    gyro->mpuConfiguration.write(MPU_RA_INT_ENABLE, 0x01); // RAW_RDY_EN interrupt enable
 #endif
 
     spiSetDivisor(ICM20689_SPI_INSTANCE, SPI_CLOCK_STANDARD);
@@ -162,7 +162,7 @@ void icm20689GyroInit(gyroDev_t *gyro)
 
 bool icm20689SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != ICM_20689_SPI) {
+    if (gyro->mpuDetectionResult.sensor != ICM_20689_SPI) {
         return false;
     }
 

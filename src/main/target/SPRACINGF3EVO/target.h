@@ -17,7 +17,11 @@
 
 #pragma once
 
+#ifdef AIORACERF3
+#define TARGET_BOARD_IDENTIFIER "ARF3"
+#else
 #define TARGET_BOARD_IDENTIFIER "SPEV"
+#endif
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 

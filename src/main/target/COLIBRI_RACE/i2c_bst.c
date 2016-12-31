@@ -26,10 +26,10 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "fc/config.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -627,25 +627,25 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             break;
         case BST_SERVO_CONFIGURATIONS:
             for (i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-                bstWrite16(masterConfig.servoConf[i].min);
-                bstWrite16(masterConfig.servoConf[i].max);
-                bstWrite16(masterConfig.servoConf[i].middle);
-                bstWrite8(masterConfig.servoConf[i].rate);
-                bstWrite8(masterConfig.servoConf[i].angleAtMin);
-                bstWrite8(masterConfig.servoConf[i].angleAtMax);
-                bstWrite8(masterConfig.servoConf[i].forwardFromChannel);
-                bstWrite32(masterConfig.servoConf[i].reversedSources);
+                bstWrite16(servoProfile()->servoConf[i].min);
+                bstWrite16(servoProfile()->servoConf[i].max);
+                bstWrite16(servoProfile()->servoConf[i].middle);
+                bstWrite8(servoProfile()->servoConf[i].rate);
+                bstWrite8(servoProfile()->servoConf[i].angleAtMin);
+                bstWrite8(servoProfile()->servoConf[i].angleAtMax);
+                bstWrite8(servoProfile()->servoConf[i].forwardFromChannel);
+                bstWrite32(servoProfile()->servoConf[i].reversedSources);
             }
             break;
         case BST_SERVO_MIX_RULES:
             for (i = 0; i < MAX_SERVO_RULES; i++) {
-                bstWrite8(masterConfig.customServoMixer[i].targetChannel);
-                bstWrite8(masterConfig.customServoMixer[i].inputSource);
-                bstWrite8(masterConfig.customServoMixer[i].rate);
-                bstWrite8(masterConfig.customServoMixer[i].speed);
-                bstWrite8(masterConfig.customServoMixer[i].min);
-                bstWrite8(masterConfig.customServoMixer[i].max);
-                bstWrite8(masterConfig.customServoMixer[i].box);
+                bstWrite8(customServoMixer(i)->targetChannel);
+                bstWrite8(customServoMixer(i)->inputSource);
+                bstWrite8(customServoMixer(i)->rate);
+                bstWrite8(customServoMixer(i)->speed);
+                bstWrite8(customServoMixer(i)->min);
+                bstWrite8(customServoMixer(i)->max);
+                bstWrite8(customServoMixer(i)->box);
             }
             break;
 #endif
@@ -704,6 +704,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
             bstWrite8(currentControlRateProfile->thrExpo8);
             bstWrite16(currentControlRateProfile->tpa_breakpoint);
             bstWrite8(currentControlRateProfile->rcYawExpo8);
+            bstWrite8(currentControlRateProfile->rcYawRate8);
             break;
         case BST_PID:
             for (i = 0; i < PID_ITEM_COUNT; i++) {
@@ -1108,6 +1109,9 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 if (bstReadDataSize() >= 11) {
                     currentControlRateProfile->rcYawExpo8 = bstRead8();
                 }
+                if (bstReadDataSize() >= 12) {
+                    currentControlRateProfile->rcYawRate8 = bstRead8();
+                }
             } else {
                 ret = BST_FAILED;
             }
@@ -1157,14 +1161,14 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SUPPORTED_SERVOS) {
                ret = BST_FAILED;
            } else {
-               masterConfig.servoConf[i].min = bstRead16();
-               masterConfig.servoConf[i].max = bstRead16();
-               masterConfig.servoConf[i].middle = bstRead16();
-               masterConfig.servoConf[i].rate = bstRead8();
-               masterConfig.servoConf[i].angleAtMin = bstRead8();
-               masterConfig.servoConf[i].angleAtMax = bstRead8();
-               masterConfig.servoConf[i].forwardFromChannel = bstRead8();
-               masterConfig.servoConf[i].reversedSources = bstRead32();
+               servoProfile()->servoConf[i].min = bstRead16();
+               servoProfile()->servoConf[i].max = bstRead16();
+               servoProfile()->servoConf[i].middle = bstRead16();
+               servoProfile()->servoConf[i].rate = bstRead8();
+               servoProfile()->servoConf[i].angleAtMin = bstRead8();
+               servoProfile()->servoConf[i].angleAtMax = bstRead8();
+               servoProfile()->servoConf[i].forwardFromChannel = bstRead8();
+               servoProfile()->servoConf[i].reversedSources = bstRead32();
            }
 #endif
            break;
@@ -1174,13 +1178,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
            if (i >= MAX_SERVO_RULES) {
                ret = BST_FAILED;
            } else {
-               masterConfig.customServoMixer[i].targetChannel = bstRead8();
-               masterConfig.customServoMixer[i].inputSource = bstRead8();
-               masterConfig.customServoMixer[i].rate = bstRead8();
-               masterConfig.customServoMixer[i].speed = bstRead8();
-               masterConfig.customServoMixer[i].min = bstRead8();
-               masterConfig.customServoMixer[i].max = bstRead8();
-               masterConfig.customServoMixer[i].box = bstRead8();
+               customServoMixer(i)->targetChannel = bstRead8();
+               customServoMixer(i)->inputSource = bstRead8();
+               customServoMixer(i)->rate = bstRead8();
+               customServoMixer(i)->speed = bstRead8();
+               customServoMixer(i)->min = bstRead8();
+               customServoMixer(i)->max = bstRead8();
+               customServoMixer(i)->box = bstRead8();
                loadCustomServoMixer();
            }
 #endif
@@ -1256,6 +1260,13 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
         case BST_SET_FEATURE:
             featureClearAll();
             featureSet(bstRead32()); // features bitmap
+#ifdef SERIALRX_UART
+            if (featureConfigured(FEATURE_RX_SERIAL)) {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_RX_SERIAL;
+            } else {
+                serialConfig()->portConfigs[SERIALRX_UART].functionMask = FUNCTION_NONE;
+            }
+#endif            
             break;
         case BST_SET_BOARD_ALIGNMENT:
             boardAlignment()->rollDegrees = bstRead16();

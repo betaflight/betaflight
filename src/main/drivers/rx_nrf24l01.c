@@ -28,13 +28,15 @@
 
 #include "build/build_config.h"
 
-#include "system.h"
+#include "bus_spi.h"
 #include "io.h"
+#include "io_impl.h"
 #include "rx_spi.h"
 #include "rx_nrf24l01.h"
+#include "system.h"
 
-#define NRF24_CE_HI()       {IOHi(IOGetByTag(IO_TAG(RX_CE_PIN)));}
-#define NRF24_CE_LO()       {IOLo(IOGetByTag(IO_TAG(RX_CE_PIN)));}
+#define NRF24_CE_HI()   {IOHi(DEFIO_IO(RX_CE_PIN));}
+#define NRF24_CE_LO()   {IOLo(DEFIO_IO(RX_CE_PIN));}
 
 // Instruction Mnemonics
 // nRF24L01:  Table 16. Command set for the nRF24L01 SPI. Product Specification, p46
@@ -51,6 +53,15 @@
 #define FLUSH_RX      0xE2
 #define REUSE_TX_PL   0xE3
 #define NOP           0xFF
+
+static void NRF24L01_InitGpio(void)
+{
+    // CE as OUTPUT
+    const SPIDevice rxSPIDevice = spiDeviceByInstance(RX_SPI_INSTANCE);
+    IOInit(DEFIO_IO(RX_CE_PIN), OWNER_RX_SPI_CS, rxSPIDevice + 1);
+    IOConfigGPIO(DEFIO_IO(RX_CE_PIN), SPI_IO_CS_CFG);
+    NRF24_CE_LO();
+}
 
 uint8_t NRF24L01_WriteReg(uint8_t reg, uint8_t data)
 {
@@ -98,7 +109,7 @@ uint8_t NRF24L01_ReadPayload(uint8_t *data, uint8_t length)
 /*
  * Empty the transmit FIFO buffer.
  */
-void NRF24L01_FlushTx()
+void NRF24L01_FlushTx(void)
 {
     rxSpiWriteByte(FLUSH_TX);
 }
@@ -106,7 +117,7 @@ void NRF24L01_FlushTx()
 /*
  * Empty the receive FIFO buffer.
  */
-void NRF24L01_FlushRx()
+void NRF24L01_FlushRx(void)
 {
     rxSpiWriteByte(FLUSH_RX);
 }
@@ -122,7 +133,7 @@ static uint8_t standbyConfig;
 void NRF24L01_Initialize(uint8_t baseConfig)
 {
     standbyConfig = BV(NRF24L01_00_CONFIG_PWR_UP) | baseConfig;
-    NRF24_CE_LO();
+    NRF24L01_InitGpio();
     // nRF24L01+ needs 100 milliseconds settling time from PowerOnReset to PowerDown mode
     static const uint32_t settlingTimeUs = 100000;
     const uint32_t currentTimeUs = micros();
@@ -208,8 +219,8 @@ bool NRF24L01_ReadPayloadIfAvailable(uint8_t *data, uint8_t length)
 }
 
 #ifndef UNIT_TEST
-#define DISABLE_RX()    {IOHi(IOGetByTag(IO_TAG(RX_NSS_PIN)));}
-#define ENABLE_RX()     {IOLo(IOGetByTag(IO_TAG(RX_NSS_PIN)));}
+#define DISABLE_RX()    {IOHi(DEFIO_IO(RX_NSS_PIN));}
+#define ENABLE_RX()     {IOLo(DEFIO_IO(RX_NSS_PIN));}
 /*
  * Fast read of payload, for use in interrupt service routine
  */

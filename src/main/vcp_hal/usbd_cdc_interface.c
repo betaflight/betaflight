@@ -354,24 +354,24 @@ uint32_t CDC_Send_FreeBytes(void)
  * @brief  CDC_Send_DATA
  *         CDC received data to be send over USB IN endpoint are managed in
  *         this function.
- * @param  Buf: Buffer of data to be sent
- * @param  Len: Number of data to be sent (in bytes)
+ * @param  ptrBuffer: Buffer of data to be sent
+ * @param  sendLength: Number of data to be sent (in bytes)
  * @retval Bytes sent
  */
-uint32_t CDC_Send_DATA(const uint8_t* Buf, uint32_t Len)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
     USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)USBD_Device.pClassData;
     while(hcdc->TxState != 0);
 
-    for (uint32_t i = 0; i < Len; i++)
+    for (uint32_t i = 0; i < sendLength; i++)
     {
-        UserTxBuffer[UserTxBufPtrIn] = Buf[i];
+        UserTxBuffer[UserTxBufPtrIn] = ptrBuffer[i];
         UserTxBufPtrIn = (UserTxBufPtrIn + 1) % APP_TX_DATA_SIZE;
         while (CDC_Send_FreeBytes() == 0) {
             delay(1);
         }
     }
-    return Len;
+    return sendLength;
 }
 
 

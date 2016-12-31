@@ -63,7 +63,6 @@
 #include "flight/servos.h"
 #include "flight/pid.h"
 #include "flight/failsafe.h"
-#include "flight/gtune.h"
 #include "flight/altitudehold.h"
 
 #include "config/config_profile.h"
@@ -93,13 +92,28 @@ uint8_t motorControlEnable = false;
 int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
-extern uint8_t PIDweight[3];
+static float throttlePIDAttenuation;
 
 uint16_t filteredCycleTime;
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-float setpointRate[3];
-float rcInput[3];
+static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
+
+float getThrottlePIDAttenuation(void) {
+    return throttlePIDAttenuation;
+}
+
+float getSetpointRate(int axis) {
+    return setpointRate[axis];
+}
+
+float getRcDeflection(int axis) {
+    return rcDeflection[axis];
+}
+
+float getRcDeflectionAbs(int axis) {
+    return rcDeflectionAbs[axis];
+}
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
@@ -108,30 +122,6 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 
     saveConfigAndNotify();
 }
-
-#ifdef GTUNE
-
-void updateGtuneState(void)
-{
-    static bool GTuneWasUsed = false;
-
-    if (IS_RC_MODE_ACTIVE(BOXGTUNE)) {
-        if (!FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            ENABLE_FLIGHT_MODE(GTUNE_MODE);
-            init_Gtune(&currentProfile->pidProfile);
-            GTuneWasUsed = true;
-        }
-        if (!FLIGHT_MODE(GTUNE_MODE) && !ARMING_FLAG(ARMED) && GTuneWasUsed) {
-            saveConfigAndNotify();
-            GTuneWasUsed = false;
-        }
-    } else {
-        if (FLIGHT_MODE(GTUNE_MODE) && ARMING_FLAG(ARMED)) {
-            DISABLE_FLIGHT_MODE(GTUNE_MODE);
-        }
-    }
-}
-#endif
 
 bool isCalibrating()
 {
@@ -162,11 +152,12 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
     rcCommandf = rc / 500.0f;
-    rcInput[axis] = ABS(rcCommandf);
+    rcDeflection[axis] = rcCommandf;
+    rcDeflectionAbs[axis] = ABS(rcCommandf);
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcInput[axis]) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcDeflection[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -199,20 +190,45 @@ void scaleRcCommandToFpvCamAngle(void) {
     rcCommand[YAW]  = constrain(yaw  * cosFactor + roll * sinFactor, -500, 500);
 }
 
+#define THROTTLE_BUFFER_MAX 20
+#define THROTTLE_DELTA_MS 100
+
+ void checkForThrottleErrorResetState(uint16_t rxRefreshRate) {
+    static int index;
+    static int16_t rcCommandThrottlePrevious[THROTTLE_BUFFER_MAX];
+    const int rxRefreshRateMs = rxRefreshRate / 1000;
+    const int indexMax = constrain(THROTTLE_DELTA_MS / rxRefreshRateMs, 1, THROTTLE_BUFFER_MAX);
+    const int16_t throttleVelocityThreshold = (feature(FEATURE_3D)) ? currentProfile->pidProfile.itermThrottleThreshold / 2 : currentProfile->pidProfile.itermThrottleThreshold;
+
+    rcCommandThrottlePrevious[index++] = rcCommand[THROTTLE];
+    if (index >= indexMax)
+        index = 0;
+
+    const int16_t rcCommandSpeed = rcCommand[THROTTLE] - rcCommandThrottlePrevious[index];
+
+    if(ABS(rcCommandSpeed) > throttleVelocityThreshold)
+        pidResetErrorGyroState();
+}
+
 void processRcCommand(void)
 {
     static int16_t lastCommand[4] = { 0, 0, 0, 0 };
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
+    static uint16_t currentRxRefreshRate;
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
 
+    if (isRXDataNew) {
+        currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
+        checkForThrottleErrorResetState(currentRxRefreshRate);
+    }
+
     if (rxConfig()->rcInterpolation || flightModeFlags) {
-        if (isRXDataNew) {
-            // Set RC refresh rate for sampling and channels to filter
-            switch (rxConfig()->rcInterpolation) {
+         // Set RC refresh rate for sampling and channels to filter
+        switch(rxConfig()->rcInterpolation) {
             case(RC_SMOOTHING_AUTO):
-                rxRefreshRate = constrain(getTaskDeltaTime(TASK_RX), 1000, 20000) + 1000; // Add slight overhead to prevent ramps
+                rxRefreshRate = currentRxRefreshRate + 1000; // Add slight overhead to prevent ramps
                 break;
             case(RC_SMOOTHING_MANUAL):
                 rxRefreshRate = 1000 * rxConfig()->rcInterpolationInterval;
@@ -221,8 +237,9 @@ void processRcCommand(void)
             case(RC_SMOOTHING_DEFAULT):
             default:
                 rxRefreshRate = rxGetRefreshRate();
-            }
+        }
 
+        if (isRXDataNew) {
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {
@@ -269,17 +286,18 @@ void updateRcCommands(void)
     int32_t prop;
     if (rcData[THROTTLE] < currentControlRateProfile->tpa_breakpoint) {
         prop = 100;
+        throttlePIDAttenuation = 1.0f;
     } else {
         if (rcData[THROTTLE] < 2000) {
             prop = 100 - (uint16_t)currentControlRateProfile->dynThrPID * (rcData[THROTTLE] - currentControlRateProfile->tpa_breakpoint) / (2000 - currentControlRateProfile->tpa_breakpoint);
         } else {
             prop = 100 - currentControlRateProfile->dynThrPID;
         }
+        throttlePIDAttenuation = prop / 100.0f;
     }
 
     for (int axis = 0; axis < 3; axis++) {
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2.
-        PIDweight[axis] = prop;
 
         int32_t tmp = MIN(ABS(rcData[axis] - rxConfig()->midrc), 500);
         if (axis == ROLL || axis == PITCH) {
@@ -678,9 +696,7 @@ void subTaskPidController(void)
     // PID - note this is function pointer set by setPIDController()
     pidController(
         &currentProfile->pidProfile,
-        pidConfig()->max_angle_inclination,
-        &accelerometerConfig()->accelerometerTrims,
-        rxConfig()->midrc
+        &accelerometerConfig()->accelerometerTrims
     );
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
 }

@@ -30,7 +30,6 @@
 #define PG_CONTROL_RATE_PROFILES 12 // struct OK, needs to be split out of rc_controls.h into rate_profile.h
 #define PG_SERIAL_CONFIG 13 // struct OK
 #define PG_PID_PROFILE 14 // struct OK, CF differences
-#define PG_GTUNE_CONFIG 15 // is GTUNE still being used?
 #define PG_ARMING_CONFIG 16 // structs OK, CF naming differences
 #define PG_TRANSPONDER_CONFIG 17 // struct OK
 #define PG_SYSTEM_CONFIG 18 // just has i2c_highspeed

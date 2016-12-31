@@ -211,7 +211,7 @@ bool mpu9250SpiDetect(void)
 
 bool mpu9250SpiAccDetect(accDev_t *acc)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (acc->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 
@@ -223,7 +223,7 @@ bool mpu9250SpiAccDetect(accDev_t *acc)
 
 bool mpu9250SpiGyroDetect(gyroDev_t *gyro)
 {
-    if (mpuDetectionResult.sensor != MPU_9250_SPI) {
+    if (gyro->mpuDetectionResult.sensor != MPU_9250_SPI) {
         return false;
     }
 

@@ -45,6 +45,7 @@ typedef enum {
     OSD_ROLL_PIDS,
     OSD_PITCH_PIDS,
     OSD_YAW_PIDS,
+    OSD_POWER,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

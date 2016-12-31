@@ -38,7 +38,7 @@
 #include "drivers/accgyro.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 
 #include "common/printf.h"
 #include "common/axis.h"

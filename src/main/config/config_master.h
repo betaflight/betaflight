@@ -26,7 +26,7 @@
 #include "cms/cms.h"
 
 #include "drivers/adc.h"
-#include "drivers/pwm_rx.h"
+#include "drivers/rx_pwm.h"
 #include "drivers/sound_beeper.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/sdcard.h"
@@ -102,6 +102,9 @@
 #define pidConfig(x) (&masterConfig.pidConfig)
 #define adjustmentProfile(x) (&masterConfig.adjustmentProfile)
 #define modeActivationProfile(x) (&masterConfig.modeActivationProfile)
+#define servoProfile(x) (&masterConfig.servoProfile)
+#define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
+#define customServoMixer(i) (&masterConfig.customServoMixer[i])
 #define i2cPinConfig(x) (&masterConfig.i2cPinConfig)
 
 
@@ -123,7 +126,7 @@ typedef struct master_s {
     servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
     // Servo-related stuff
-    servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
+    servoProfile_t servoProfile;
     // gimbal-related configuration
     gimbalConfig_t gimbalConfig;
 #endif

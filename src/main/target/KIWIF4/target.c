@@ -15,7 +15,19 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <stdint.h>
 
-void init_Gtune(pidProfile_t *pidProfileToTune);
-void calculate_Gtune(uint8_t axis);
+#include <platform.h>
+#include "drivers/io.h"
+
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
+
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    DEF_TIM(TIM2,  CH4, PA3,  TIM_USE_MOTOR, 1, 1),  
+    DEF_TIM(TIM3,  CH3, PB0,  TIM_USE_MOTOR, 1, 0),  
+    DEF_TIM(TIM3,  CH4, PB1,  TIM_USE_MOTOR, 1, 0),  
+    DEF_TIM(TIM2,  CH3, PA2,  TIM_USE_MOTOR, 1, 0),  
+    DEF_TIM(TIM4,  CH2, PB7,  TIM_USE_LED,   0, 0),  // LED 
+};

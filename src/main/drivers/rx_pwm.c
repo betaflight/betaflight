@@ -34,7 +34,7 @@
 #include "timer.h"
 
 #include "pwm_output.h"
-#include "pwm_rx.h"
+#include "rx_pwm.h"
 
 #define DEBUG_PPM_ISR
 

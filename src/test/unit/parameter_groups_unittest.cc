@@ -1,0 +1,92 @@
+/*
+ * This file is part of Cleanflight.
+ *
+ * Cleanflight is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Cleanflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <limits.h>
+
+extern "C" {
+    #include "build/debug.h"
+
+    #include <platform.h>
+
+    #include "config/parameter_group.h"
+    #include "config/parameter_group_ids.h"
+
+    #include "io/motors.h"
+
+PG_DECLARE(motorConfig_t, motorConfig);
+
+PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
+
+PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
+    .minthrottle = 1150,
+    .maxthrottle = 1850,
+    .mincommand = 1000,
+    .motorPwmRate = 400,
+);
+}
+
+
+#include "unittest_macros.h"
+#include "gtest/gtest.h"
+
+TEST(ParameterGroupsfTest, Test_pgResetAll)
+{
+    memset(motorConfig(), 0, sizeof(motorConfig_t));
+    pgResetAll(0);
+    EXPECT_EQ(1150, motorConfig()->minthrottle);
+    EXPECT_EQ(1850, motorConfig()->maxthrottle);
+    EXPECT_EQ(1000, motorConfig()->mincommand);
+    EXPECT_EQ(400, motorConfig()->motorPwmRate);
+}
+
+TEST(ParameterGroupsfTest, Test_pgFind)
+{
+    memset(motorConfig(), 0, sizeof(motorConfig_t));
+    const pgRegistry_t *pgRegistry = pgFind(PG_MOTOR_CONFIG);
+    pgResetCurrent(pgRegistry);
+    EXPECT_EQ(1150, motorConfig()->minthrottle);
+    EXPECT_EQ(1850, motorConfig()->maxthrottle);
+    EXPECT_EQ(1000, motorConfig()->mincommand);
+    EXPECT_EQ(400, motorConfig()->motorPwmRate);
+
+    motorConfig_t motorConfig2;
+    memset(&motorConfig2, 0, sizeof(motorConfig_t));
+    motorConfig()->motorPwmRate = 500;
+    pgStore(pgRegistry, &motorConfig2, sizeof(motorConfig_t), 0);
+    EXPECT_EQ(1150, motorConfig2.minthrottle);
+    EXPECT_EQ(1850, motorConfig2.maxthrottle);
+    EXPECT_EQ(1000, motorConfig2.mincommand);
+    EXPECT_EQ(500, motorConfig2.motorPwmRate);
+
+    motorConfig_t motorConfig3;
+    memset(&motorConfig3, 0, sizeof(motorConfig_t));
+    pgResetCopy(&motorConfig3, PG_MOTOR_CONFIG);
+    EXPECT_EQ(1150, motorConfig3.minthrottle);
+    EXPECT_EQ(1850, motorConfig3.maxthrottle);
+    EXPECT_EQ(1000, motorConfig3.mincommand);
+    EXPECT_EQ(400, motorConfig3.motorPwmRate);
+}
+
+// STUBS
+
+extern "C" {
+}
+
