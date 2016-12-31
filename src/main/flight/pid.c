@@ -157,15 +157,12 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
 }
 
-float calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
-    float horizonLevelStrength;
-    if(pidProfile->D8[PIDLEVEL] == 0){
-        horizonLevelStrength = 0;
-    } else {
+float calcHorizonLevelStrength(void) {
+    float horizonLevelStrength = 0.0f;
+    if (horizonTransition > 0.0f) {
         const float mostDeflectedPos = MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
         // Progressively turn off the horizon self level strength as the stick is banged over
-        horizonLevelStrength = (1.0f - mostDeflectedPos);  // 1 at centre stick, 0 = max stick deflection
-        horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * horizonTransition) + 1, 0, 1);
+        horizonLevelStrength = constrainf(1 - mostDeflectedPos * horizonTransition, 0, 1);
     }
     return horizonLevelStrength;
 }
@@ -184,7 +181,7 @@ float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims
     } else {
         // HORIZON mode - direct sticks control is applied to rate PID
         // mix up angle error to desired AngleRate to add a little auto-level feel
-        const float horizonLevelStrength = calcHorizonLevelStrength(pidProfile);
+        const float horizonLevelStrength = calcHorizonLevelStrength();
         currentPidSetpoint = currentPidSetpoint + (errorAngle * horizonGain * horizonLevelStrength);
     }
     return currentPidSetpoint;
