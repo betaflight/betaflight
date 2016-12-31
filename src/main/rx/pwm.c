@@ -27,10 +27,11 @@
 
 #include "common/utils.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/pwm_rx.h"
+
+#include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

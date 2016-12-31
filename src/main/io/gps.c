@@ -46,9 +46,9 @@
 
 #include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2000 ms)

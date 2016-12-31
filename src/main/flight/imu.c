@@ -35,6 +35,9 @@
 
 #include "drivers/system.h"
 
+#include "fc/config.h"
+#include "fc/runtime_config.h"
+
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
@@ -47,9 +50,6 @@
 #include "flight/hil.h"
 
 #include "io/gps.h"
-#include "fc/runtime_config.h"
-
-#include "config/config.h"
 
 /**
  * In Cleanflight accelerometer is aligned in the following way:

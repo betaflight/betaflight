@@ -26,19 +26,19 @@
 
 #include "common/axis.h"
 
-#include "rx/rx.h"
 #include "drivers/system.h"
+
 #include "io/beeper.h"
 #include "io/motors.h"
-#include "fc/rc_controls.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config.h"
-
 #include "flight/failsafe.h"
-
 #include "flight/navigation_rewrite.h"
+
+#include "rx/rx.h"
 
 /*
  * Usage:

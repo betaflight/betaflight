@@ -29,7 +29,6 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/adc.h"
@@ -38,6 +37,7 @@
 #include "drivers/serial.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"

@@ -25,12 +25,11 @@
 
 #include "common/maths.h"
 
-#include "config/config.h"
-
 #include "drivers/logging.h"
 #include "drivers/pitotmeter.h"
 #include "drivers/pitotmeter_ms4525.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "sensors/pitotmeter.h"

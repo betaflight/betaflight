@@ -17,12 +17,15 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef uint16_t pgn_t;
 
 // parameter group registry flags
 typedef enum {
     PGRF_NONE = 0,
-    PGRF_CLASSIFICATON_BIT = (1 << 0),
+    PGRF_CLASSIFICATON_BIT = (1 << 0)
 } pgRegistryFlags_e;
 
 typedef enum {
@@ -30,7 +33,7 @@ typedef enum {
     PGR_PGN_VERSION_MASK =  0xf000,
     PGR_SIZE_MASK =         0x0fff,
     PGR_SIZE_SYSTEM_FLAG =  0x0000, // documentary
-    PGR_SIZE_PROFILE_FLAG = 0x8000, // start using flags from the top bit down
+    PGR_SIZE_PROFILE_FLAG = 0x8000  // start using flags from the top bit down
 } pgRegistryInternal_e;
 
 // function that resets a single parameter group instance
@@ -167,7 +170,7 @@ extern const uint8_t __pg_resetdata_end[];
     /**/
 
 #if 0
-// ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it.
+// ARRAY reset mechanism is not implemented yet, only few places in code would benefit from it - See pgResetInstance
 #define PG_REGISTER_ARR_WITH_RESET_TEMPLATE(_type, _size, _name, _pgn, _version) \
     extern const _type pgResetTemplate_ ## _name;                       \
     PG_REGISTER_ARR_I(_type, _size, _name, _pgn, _version, .reset = {.ptr = (void*)&pgResetTemplate_ ## _name}) \
@@ -219,12 +222,12 @@ extern const uint8_t __pg_resetdata_end[];
     }                                                                   \
     /**/
 
-typedef uint8_t (*pgMatcherFuncPtr)(const pgRegistry_t *candidate, const void *criteria);
-
 const pgRegistry_t* pgFind(pgn_t pgn);
-const pgRegistry_t* pgMatcher(pgMatcherFuncPtr matcher, const void *criteria);
-void pgLoad(const pgRegistry_t* reg, const void *from, int size, uint8_t profileIndex);
+
+void pgLoad(const pgRegistry_t* reg, int profileIndex, const void *from, int size, int version);
 int pgStore(const pgRegistry_t* reg, void *to, int size, uint8_t profileIndex);
-void pgResetAll(uint8_t profileCount);
-void pgActivateProfile(uint8_t profileIndexToActivate);
+void pgResetAll(int profileCount);
 void pgResetCurrent(const pgRegistry_t *reg);
+bool pgResetCopy(void *copy, pgn_t pgn);
+void pgReset(const pgRegistry_t* reg, int profileIndex);
+void pgActivateProfile(int profileIndex);

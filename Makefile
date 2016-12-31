@@ -471,10 +471,10 @@ COMMON_SRC = \
             common/printf.c \
             common/typeconversion.c \
             common/streambuf.c \
-            config/config.c \
             config/feature.c \
             config/config_eeprom.c \
             config/parameter_group.c \
+            fc/config.c \
             fc/runtime_config.c \
             drivers/logging.c \
             drivers/adc.c \

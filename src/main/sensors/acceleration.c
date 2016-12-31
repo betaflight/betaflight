@@ -26,8 +26,6 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
-#include "config/config.h"
-
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
@@ -51,6 +49,7 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/beeper.h"

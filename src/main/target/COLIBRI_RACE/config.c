@@ -58,6 +58,7 @@
 
 #include "telemetry/telemetry.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
@@ -67,7 +68,6 @@
 #include "flight/imu.h"
 #include "flight/failsafe.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "config/config_master.h"

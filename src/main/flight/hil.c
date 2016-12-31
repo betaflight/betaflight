@@ -43,9 +43,8 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
-
-#include "config/config.h"
 
 #ifdef HIL
 

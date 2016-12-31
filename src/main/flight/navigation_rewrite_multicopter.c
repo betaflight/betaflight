@@ -38,6 +38,7 @@
 
 #include "io/motors.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
@@ -47,8 +48,6 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 #include "flight/failsafe.h"
-
-#include "config/config.h"
 
 /*-----------------------------------------------------------
  * Altitude controller for multicopter aircraft

@@ -65,7 +65,7 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 
-#include "rx/rx.h"
+#include "fc/config.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -73,10 +73,10 @@
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
+#include "rx/rx.h"
+
 #include "telemetry/telemetry.h"
 #include "telemetry/ltm.h"
-
-#include "config/config.h"
 
 #define TELEMETRY_LTM_INITIAL_PORT_MODE MODE_TX
 #define LTM_CYCLETIME   100

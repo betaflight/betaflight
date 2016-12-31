@@ -29,11 +29,11 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"

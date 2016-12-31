@@ -17,6 +17,9 @@
 
 #pragma once
 
+// !!Temporarily remove blackbox until ROM recovered for NAZE target
+#undef BLACKBOX
+
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 #define USE_HARDWARE_REVISION_DETECTION
 

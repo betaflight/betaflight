@@ -44,6 +44,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -54,7 +55,6 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 

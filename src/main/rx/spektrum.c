@@ -31,9 +31,9 @@
 #include "drivers/serial.h"
 #include "drivers/system.h"
 
-#include "io/serial.h"
+#include "fc/config.h"
 
-#include "config/config.h"
+#include "io/serial.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"

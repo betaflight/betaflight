@@ -8,9 +8,9 @@
 #include "common/maths.h"
 #include "common/time.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"
