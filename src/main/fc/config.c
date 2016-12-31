@@ -846,7 +846,7 @@ void createDefaultConfig(master_t *config)
 #endif
 
 #ifdef USE_OLEDI2C
-    oledi2cConfigInit(oledi2cConfig());
+    i2c_OLED_configInit(oledi2cConfig());
 #endif
 
     // copy first profile into remaining profile

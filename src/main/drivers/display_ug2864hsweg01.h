@@ -49,4 +49,3 @@ void i2c_OLED_send_char(unsigned char ascii);
 void i2c_OLED_send_string(const char *string);
 void i2c_OLED_clear_display(void);
 void i2c_OLED_clear_display_quick(void);
-
