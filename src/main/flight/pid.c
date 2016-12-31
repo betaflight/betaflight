@@ -162,7 +162,7 @@ float calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
     if(pidProfile->D8[PIDLEVEL] == 0){
         horizonLevelStrength = 0;
     } else {
-        const float mostDeflectedPos = MAX(getRcDeflection(FD_ROLL), getRcDeflection(FD_PITCH));
+        const float mostDeflectedPos = MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
         // Progressively turn off the horizon self level strength as the stick is banged over
         horizonLevelStrength = (1.0f - mostDeflectedPos);  // 1 at centre stick, 0 = max stick deflection
         horizonLevelStrength = constrainf(((horizonLevelStrength - 1) * horizonTransition) + 1, 0, 1);
@@ -172,11 +172,11 @@ float calcHorizonLevelStrength(const pidProfile_t *pidProfile) {
 
 float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
-    float errorAngle = pidProfile->levelSensitivity * rcCommand[axis];
+    float errorAngle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
     errorAngle += GPS_angle[axis];
 #endif
-    errorAngle = constrainf(errorAngle, -pidProfile->max_angle_inclination, pidProfile->max_angle_inclination);
+    errorAngle = constrainf(errorAngle, -pidProfile->levelAngleLimit, pidProfile->levelAngleLimit);
     errorAngle = (errorAngle - ((attitude.raw[axis] + angleTrim->raw[axis]) / 10.0f));
     if(FLIGHT_MODE(ANGLE_MODE)) {
         // ANGLE mode - control is angle based, so control loop is needed
@@ -252,7 +252,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         if (axis != FD_YAW) {
             float dynC = c[axis];
             if (pidProfile->setpointRelaxRatio < 100) {
-                const float rcDeflection = getRcDeflection(axis);
+                const float rcDeflection = getRcDeflectionAbs(axis);
                 dynC = c[axis];
                 if (currentPidSetpoint > 0) {
                     if ((currentPidSetpoint - previousSetpoint[axis]) < previousSetpoint[axis])
