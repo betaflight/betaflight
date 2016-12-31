@@ -34,6 +34,7 @@
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
 #include "drivers/bus_i2c.h"
+#include "drivers/display_ug2864hsweg01.h"
 
 #include "fc/rc_controls.h"
 
@@ -106,6 +107,7 @@
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
 #define i2cPinConfig(x) (&masterConfig.i2cPinConfig)
+#define oledi2cConfig(x) (&masterConfig.oledi2cConfig)
 
 
 // System-wide
@@ -244,6 +246,10 @@ typedef struct master_s {
 
 #ifdef USE_I2C
     i2cPinConfig_t i2cPinConfig;
+#endif
+
+#ifdef USE_OLEDI2C
+    oledi2cConfig_t oledi2cConfig;
 #endif
 
     char name[MAX_NAME_LENGTH + 1];

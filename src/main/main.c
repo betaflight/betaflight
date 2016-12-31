@@ -58,6 +58,7 @@
 #include "drivers/transponder_ir.h"
 #include "drivers/exti.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/display_ug2864hsweg01.h"
 
 #ifdef USE_BST
 #include "bus_bst.h"
@@ -335,6 +336,10 @@ void init(void)
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     updateHardwareRevision();
+#endif
+
+#ifdef USE_OLEDI2C
+    i2c_OLED_init(oledi2cConfig());
 #endif
 
 #ifdef VTX

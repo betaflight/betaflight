@@ -990,6 +990,9 @@ const clivalue_t valueTable[] = {
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->h_offset, .config.minmax = { -32, 31 } },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->v_offset, .config.minmax = { -15, 16 } },
 #endif
+#ifdef USE_OLEDI2C
+    { "oled_bus",                   VAR_INT8    | MASTER_VALUE, &oledi2cConfig()->bus, .config.minmax = { I2CINVALID, I2CDEV_COUNT - 1 } },
+#endif
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))

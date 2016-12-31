@@ -22,14 +22,16 @@
 
 #ifdef USE_OLEDI2C
 
-#include "bus_i2c.h"
 #include "system.h"
+#include "bus_i2c.h"
 
 #include "display_ug2864hsweg01.h"
 
 #ifndef OLED_I2C_INSTANCE
 #define OLED_I2C_INSTANCE I2C_DEVICE
 #endif
+
+I2CDevice i2cBus;
 
 #define INVERSE_CHAR_FORMAT 0x7f // 0b01111111
 #define NORMAL_CHAR_FORMAT  0x00 // 0b00000000
@@ -177,12 +179,12 @@ static const uint8_t multiWiiFont[][5] = { // Refer to "Times New Roman" Font Da
 
 static bool i2c_OLED_send_cmd(uint8_t command)
 {
-    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x80, command);
+    return i2cWrite(i2cBus, OLED_address, 0x80, command);
 }
 
 static bool i2c_OLED_send_byte(uint8_t val)
 {
-    return i2cWrite(OLED_I2C_INSTANCE, OLED_address, 0x40, val);
+    return i2cWrite(i2cBus, OLED_address, 0x40, val);
 }
 
 void i2c_OLED_clear_display(void)
@@ -253,8 +255,10 @@ void i2c_OLED_send_string(const char *string)
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15
 */
 #if 1
-bool ug2864hsweg01InitI2C(void)
+static bool ug2864hsweg01InitI2C(void)
 {
+    if (i2cBus == I2CINVALID)
+        return false;
 
     // Set display OFF
     if (!i2c_OLED_send_cmd(0xAE)) {
@@ -289,7 +293,7 @@ bool ug2864hsweg01InitI2C(void)
     return true;
 }
 #else
-void ug2864hsweg01InitI2C(void)
+static void ug2864hsweg01InitI2C(void)
 {
     i2c_OLED_send_cmd(0xae);    //display off
     i2c_OLED_send_cmd(0xa4);          //SET All pixels OFF
@@ -327,5 +331,20 @@ void ug2864hsweg01InitI2C(void)
 }
 
 #endif
+
+void i2c_OLED_configInit(oledi2cConfig_t *oledi2cConfig)
+{
+    oledi2cConfig->bus = OLED_I2C_INSTANCE;
+}
+
+void i2c_OLED_init(oledi2cConfig_t *oledi2cConfig)
+{
+    i2cBus = oledi2cConfig->bus;
+}
+
+bool i2c_OLED_present(void)
+{
+    return ug2864hsweg01InitI2C();
+}
 
 #endif // USE_OLEDI2C

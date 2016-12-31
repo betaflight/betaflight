@@ -845,6 +845,10 @@ void createDefaultConfig(master_t *config)
     i2cTargetConfigInit(i2cPinConfig());
 #endif
 
+#ifdef USE_OLEDI2C
+    oledi2cConfigInit(oledi2cConfig());
+#endif
+
     // copy first profile into remaining profile
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));

@@ -155,7 +155,7 @@ typedef struct pageState_s {
 static pageState_t pageState;
 
 void resetDisplay(void) {
-    dashboardPresent = ug2864hsweg01InitI2C();
+    dashboardPresent = i2c_OLED_present();
 }
 
 void LCDprint(uint8_t i) {
