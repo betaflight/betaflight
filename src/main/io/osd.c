@@ -360,6 +360,12 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+        case OSD_POWER:
+        {
+            sprintf(buff, "%dW", amperage * vbat / 1000);
+            break;
+        }
+
         default:
             return;
     }
@@ -402,6 +408,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ROLL_PIDS);
     osdDrawSingleElement(OSD_PITCH_PIDS);
     osdDrawSingleElement(OSD_YAW_PIDS);
+    osdDrawSingleElement(OSD_POWER);
 
 #ifdef GPS
 #ifdef CMS
@@ -436,6 +443,7 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;

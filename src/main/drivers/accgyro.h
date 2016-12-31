@@ -42,12 +42,12 @@ typedef struct gyroDev_s {
     sensorGyroInterruptStatusFuncPtr intStatus;
     extiCallbackRec_t exti;
     float scale;                                            // scalefactor
-    volatile bool dataReady;
-    uint16_t lpf;
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
+    uint16_t lpf;
+    volatile bool dataReady;
     sensor_align_e gyroAlign;
-    const extiConfig_t *mpuIntExtiConfig;
     mpuDetectionResult_t mpuDetectionResult;
+    const extiConfig_t *mpuIntExtiConfig;
     mpuConfiguration_t mpuConfiguration;
 } gyroDev_t;
 

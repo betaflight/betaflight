@@ -34,3 +34,7 @@ void updateLEDs(void);
 void updateRcCommands(void);
 
 void taskMainPidLoop(timeUs_t currentTimeUs);
+float getThrottlePIDAttenuation(void);
+float getSetpointRate(int axis);
+float getRcDeflection(int axis);
+float getRcDeflectionAbs(int axis);
