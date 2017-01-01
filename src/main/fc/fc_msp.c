@@ -608,14 +608,14 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
     case MSP_SERVO_CONFIGURATIONS:
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            sbufWriteU16(dst, currentProfile->servoConf[i].min);
-            sbufWriteU16(dst, currentProfile->servoConf[i].max);
-            sbufWriteU16(dst, currentProfile->servoConf[i].middle);
-            sbufWriteU8(dst, currentProfile->servoConf[i].rate);
-            sbufWriteU8(dst, currentProfile->servoConf[i].angleAtMin);
-            sbufWriteU8(dst, currentProfile->servoConf[i].angleAtMax);
-            sbufWriteU8(dst, currentProfile->servoConf[i].forwardFromChannel);
-            sbufWriteU32(dst, currentProfile->servoConf[i].reversedSources);
+            sbufWriteU16(dst, masterConfig.servoConf[i].min);
+            sbufWriteU16(dst, masterConfig.servoConf[i].max);
+            sbufWriteU16(dst, masterConfig.servoConf[i].middle);
+            sbufWriteU8(dst, masterConfig.servoConf[i].rate);
+            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMin);
+            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMax);
+            sbufWriteU8(dst, masterConfig.servoConf[i].forwardFromChannel);
+            sbufWriteU32(dst, masterConfig.servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -719,7 +719,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             const box_t *box = findBoxByActiveBoxId(mac->modeId);
             sbufWriteU8(dst, box ? box->permanentId : 0);
             sbufWriteU8(dst, mac->auxChannelIndex);
@@ -730,7 +730,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
@@ -1041,9 +1041,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_RC_DEADBAND:
-        sbufWriteU8(dst, currentProfile->rcControlsConfig.deadband);
-        sbufWriteU8(dst, currentProfile->rcControlsConfig.yaw_deadband);
-        sbufWriteU8(dst, currentProfile->rcControlsConfig.alt_hold_deadband);
+        sbufWriteU8(dst, masterConfig.rcControlsConfig.deadband);
+        sbufWriteU8(dst, masterConfig.rcControlsConfig.yaw_deadband);
+        sbufWriteU8(dst, masterConfig.rcControlsConfig.alt_hold_deadband);
         sbufWriteU16(dst, flight3DConfig()->deadband3d_throttle);
         break;
 
@@ -1277,7 +1277,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MODE_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &currentProfile->modeActivationConditions[i];
+            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
             i = sbufReadU8(src);
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1286,7 +1286,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(currentProfile->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1298,7 +1298,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &currentProfile->adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
             i = sbufReadU8(src);
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1394,14 +1394,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SUPPORTED_SERVOS) {
             return MSP_RESULT_ERROR;
         } else {
-            currentProfile->servoConf[i].min = sbufReadU16(src);
-            currentProfile->servoConf[i].max = sbufReadU16(src);
-            currentProfile->servoConf[i].middle = sbufReadU16(src);
-            currentProfile->servoConf[i].rate = sbufReadU8(src);
-            currentProfile->servoConf[i].angleAtMin = sbufReadU8(src);
-            currentProfile->servoConf[i].angleAtMax = sbufReadU8(src);
-            currentProfile->servoConf[i].forwardFromChannel = sbufReadU8(src);
-            currentProfile->servoConf[i].reversedSources = sbufReadU32(src);
+            masterConfig.servoConf[i].min = sbufReadU16(src);
+            masterConfig.servoConf[i].max = sbufReadU16(src);
+            masterConfig.servoConf[i].middle = sbufReadU16(src);
+            masterConfig.servoConf[i].rate = sbufReadU8(src);
+            masterConfig.servoConf[i].angleAtMin = sbufReadU8(src);
+            masterConfig.servoConf[i].angleAtMax = sbufReadU8(src);
+            masterConfig.servoConf[i].forwardFromChannel = sbufReadU8(src);
+            masterConfig.servoConf[i].reversedSources = sbufReadU32(src);
         }
 #endif
         break;
@@ -1432,9 +1432,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RC_DEADBAND:
-        currentProfile->rcControlsConfig.deadband = sbufReadU8(src);
-        currentProfile->rcControlsConfig.yaw_deadband = sbufReadU8(src);
-        currentProfile->rcControlsConfig.alt_hold_deadband = sbufReadU8(src);
+        masterConfig.rcControlsConfig.deadband = sbufReadU8(src);
+        masterConfig.rcControlsConfig.yaw_deadband = sbufReadU8(src);
+        masterConfig.rcControlsConfig.alt_hold_deadband = sbufReadU8(src);
         break;
 
     case MSP_SET_RESET_CURR_PID:

@@ -177,9 +177,9 @@ void annexCode(void)
     int32_t throttleValue;
 
     // Compute ROLL PITCH and YAW command
-    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, currentProfile->rcControlsConfig.deadband);
-    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, currentProfile->rcControlsConfig.deadband);
-    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, currentProfile->rcControlsConfig.yaw_deadband);
+    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, masterConfig.rcControlsConfig.deadband);
+    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, masterConfig.rcControlsConfig.deadband);
+    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, masterConfig.rcControlsConfig.yaw_deadband);
 
     //Compute THROTTLE command
     throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
@@ -361,10 +361,10 @@ void processRx(timeUs_t currentTimeUs)
 
     processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch, armingConfig()->fixed_wing_auto_arm);
 
-    updateActivatedModes(currentProfile->modeActivationConditions, currentProfile->modeActivationOperator);
+    updateActivatedModes(masterConfig.modeActivationConditions, masterConfig.modeActivationOperator);
 
     if (!cliMode) {
-        updateAdjustmentStates(currentProfile->adjustmentRanges);
+        updateAdjustmentStates(masterConfig.adjustmentRanges);
         processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
     }
 
@@ -645,8 +645,8 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         if (navigationRequiresThrottleTiltCompensation()) {
             thrTiltCompStrength = 100;
         }
-        else if (currentProfile->throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            thrTiltCompStrength = currentProfile->throttle_tilt_compensation_strength;
+        else if (masterConfig.throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+            thrTiltCompStrength = masterConfig.throttle_tilt_compensation_strength;
         }
 
         if (thrTiltCompStrength) {
@@ -678,7 +678,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 #ifdef USE_SERVOS
 
     if (isMixerUsingServos()) {
-        servoMixer(currentProfile->flaperon_throw_offset, currentProfile->flaperon_throw_inverted);
+        servoMixer(masterConfig.flaperon_throw_offset, masterConfig.flaperon_throw_inverted);
     }
 
     if (feature(FEATURE_SERVO_TILT)) {
