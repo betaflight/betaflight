@@ -33,6 +33,7 @@
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 
+#include "fc/config.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
 #include "fc/mw.h"
@@ -69,7 +70,6 @@
 
 #include "telemetry/telemetry.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

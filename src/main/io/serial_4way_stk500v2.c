@@ -24,13 +24,17 @@
 #include <stdlib.h>
 
 #include <platform.h>
+
 #include "common/utils.h"
+
 #include "drivers/gpio.h"
 #include "drivers/buf_writer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"
-#include "config/config.h"
+
+#include "fc/config.h"
+
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/serial_4way_impl.h"

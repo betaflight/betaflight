@@ -27,11 +27,14 @@
 #include "common/color.h"
 #include "common/maths.h"
 
+#include "config/config_profile.h"
+
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 
 #include "flight/failsafe.h"
@@ -61,9 +64,6 @@
 #include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
-
-#include "config/config.h"
-#include "config/config_profile.h"
 
 #define motorConfig(x) (&masterConfig.motorConfig)
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)

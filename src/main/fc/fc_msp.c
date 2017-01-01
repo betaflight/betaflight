@@ -78,6 +78,8 @@
 
 #include "telemetry/telemetry.h"
 
+#include "fc/config.h"
+
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/pid.h"
@@ -86,7 +88,6 @@
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"

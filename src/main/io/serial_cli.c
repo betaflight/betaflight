@@ -35,7 +35,6 @@
 #include "common/printf.h"
 #include "common/typeconversion.h"
 
-#include "config/config.h"
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -56,6 +55,7 @@
 #include "drivers/system.h"
 #include "drivers/timer.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 

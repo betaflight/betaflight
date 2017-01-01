@@ -48,12 +48,13 @@
 
 #include "rx/rx.h"
 
+#include "fc/config.h"
+
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 #include "telemetry/telemetry.h"

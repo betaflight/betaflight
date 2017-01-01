@@ -19,9 +19,10 @@
 
 #include <platform.h>
 
-#include "config/config.h"
 #include "config/config_master.h"
 #include "config/config_profile.h"
+
+#include "fc/config.h"
 
 #include "hardware_revision.h"
 

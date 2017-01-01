@@ -21,6 +21,7 @@
 #include "rx/rx.h"
 #include "rx/msp.h"
 
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -39,7 +40,6 @@
 #include "telemetry/telemetry.h"
 #include "telemetry/smartport.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 enum

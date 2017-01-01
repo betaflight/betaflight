@@ -37,6 +37,7 @@
 #include "common/axis.h"
 #include "common/typeconversion.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 #include "fc/rc_controls.h"
 
@@ -61,7 +62,6 @@
 
 #include "rx/rx.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
 

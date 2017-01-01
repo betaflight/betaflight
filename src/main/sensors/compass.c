@@ -25,8 +25,6 @@
 #include "common/axis.h"
 #include "common/maths.h"
 
-#include "config/config.h"
-
 #include "drivers/compass.h"
 #include "drivers/compass_ak8963.h"
 #include "drivers/compass_ak8975.h"
@@ -39,6 +37,7 @@
 #include "drivers/logging.h"
 #include "drivers/system.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #include "io/gps.h"

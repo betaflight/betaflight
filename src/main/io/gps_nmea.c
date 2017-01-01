@@ -41,7 +41,7 @@
 
 #include "flight/gps_conversion.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 /* This is a light implementation of a GPS frame decoding

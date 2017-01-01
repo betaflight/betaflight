@@ -1,9 +1,11 @@
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "drivers/io_pca9685.h"
 
-#include "config/config.h"
+#include "fc/config.h"
 #include "fc/runtime_config.h"
+
 #include "config/feature.h"
 
 #define PWM_DRIVER_IMPLEMENTATION_COUNT 1

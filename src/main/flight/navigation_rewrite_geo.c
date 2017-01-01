@@ -38,8 +38,8 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
-#include "config/config.h"
 
 #if defined(NAV_AUTO_MAG_DECLINATION)
 /* Declination calculation code from PX4 project */
