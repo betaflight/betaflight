@@ -379,10 +379,10 @@ static void showStatusPage(void)
 void dashboardUpdate(timeUs_t currentTimeUs)
 {
     static uint8_t previousArmedState = 0;
-    static bool wasGrabbed = false;
     bool pageChanging;
 
 #ifdef CMS
+    static bool wasGrabbed = false;
     if (displayIsGrabbed(displayPort)) {
         wasGrabbed = true;
         return;
