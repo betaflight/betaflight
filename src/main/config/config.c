@@ -611,7 +611,7 @@ void createDefaultConfig(master_t *config)
 
     config->compassConfig.mag_declination = 0;
 
-    config->profile[0].modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
+    config->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 
     resetBarometerConfig(&config->barometerConfig);
     resetPitotmeterConfig(&config->pitotmeterConfig);
@@ -623,9 +623,9 @@ void createDefaultConfig(master_t *config)
     parseRcChannels("AETR1234", &config->rxConfig);
 #endif
 
-    resetRcControlsConfig(&config->profile[0].rcControlsConfig);
+    resetRcControlsConfig(&config->rcControlsConfig);
 
-    config->profile[0].throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
+    config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
     // Failsafe Variables
     config->failsafeConfig.failsafe_delay = 5;               // 0.5 sec
@@ -639,20 +639,20 @@ void createDefaultConfig(master_t *config)
 #ifdef USE_SERVOS
     // servos
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        config->profile[0].servoConf[i].min = DEFAULT_SERVO_MIN;
-        config->profile[0].servoConf[i].max = DEFAULT_SERVO_MAX;
-        config->profile[0].servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        config->profile[0].servoConf[i].rate = 100;
-        config->profile[0].servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        config->profile[0].servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        config->profile[0].servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        config->servoConf[i].min = DEFAULT_SERVO_MIN;
+        config->servoConf[i].max = DEFAULT_SERVO_MAX;
+        config->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
+        config->servoConf[i].rate = 100;
+        config->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
+        config->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
+        config->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
     // gimbal
-    config->profile[0].gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+    config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
 
-    config->profile[0].flaperon_throw_offset = FLAPERON_THROW_DEFAULT;
-    config->profile[0].flaperon_throw_inverted = 0;
+    config->flaperon_throw_offset = FLAPERON_THROW_DEFAULT;
+    config->flaperon_throw_inverted = 0;
 
 #endif
 
@@ -794,7 +794,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        currentProfile->modeActivationConditions,
+        masterConfig.modeActivationConditions,
         &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
@@ -812,7 +812,7 @@ void activateConfig(void)
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoMixerConfig, currentProfile->servoConf, &currentProfile->gimbalConfig, &masterConfig.rxConfig);
+    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig, &masterConfig.rxConfig);
 #endif
 
     imuConfigure(&masterConfig.imuConfig, &currentProfile->pidProfile);
@@ -822,7 +822,7 @@ void activateConfig(void)
 #ifdef NAV
     navigationUseConfig(&masterConfig.navConfig);
     navigationUsePIDs(&currentProfile->pidProfile);
-    navigationUseRcControlsConfig(&currentProfile->rcControlsConfig);
+    navigationUseRcControlsConfig(&masterConfig.rcControlsConfig);
     navigationUseRxConfig(&masterConfig.rxConfig);
     navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
     navigationUsemotorConfig(&masterConfig.motorConfig);
