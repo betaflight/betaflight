@@ -111,6 +111,9 @@ static sdcard_t sdcard;
 
 #ifdef SDCARD_DMA_CHANNEL_TX
     static bool useDMAForTx;
+#if defined(USE_HAL_DRIVER)
+    DMA_HandleTypeDef *sdDMAHandle;
+#endif
 #else
     // DMA channel not available so we can hard-code this to allow the non-DMA paths to be stripped by optimization
     static const bool useDMAForTx = false;
@@ -416,6 +419,9 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
 
     if (useDMAForTx) {
 #ifdef SDCARD_DMA_CHANNEL_TX
+#if defined(USE_HAL_DRIVER)
+        sdDMAHandle = spiSetDMATransmit(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL, SDCARD_SPI_INSTANCE, buffer, SDCARD_BLOCK_SIZE);
+#else
         // Queue the transmission of the sector payload
         DMA_InitTypeDef DMA_InitStructure;
 
@@ -446,6 +452,7 @@ static void sdcard_sendDataBlockBegin(uint8_t *buffer, bool multiBlockWrite)
         DMA_Cmd(SDCARD_DMA_CHANNEL_TX, ENABLE);
 
         SPI_I2S_DMACmd(SDCARD_SPI_INSTANCE, SPI_I2S_DMAReq_Tx, ENABLE);
+#endif
 #endif
     }
     else {
@@ -544,8 +551,10 @@ void sdcard_init(bool useDMA)
 {
 #ifdef SDCARD_DMA_CHANNEL_TX
     useDMAForTx = useDMA;
+#if !defined(USE_HAL_DRIVER)
     dmaEnableClock(dmaFindHandlerIdentifier(SDCARD_DMA_CHANNEL_TX));
     DMA_Cmd(SDCARD_DMA_CHANNEL_TX, DISABLE);
+#endif
 #else
     // DMA is not available
     (void) useDMA;
@@ -731,6 +740,28 @@ bool sdcard_poll(void)
             sendComplete = false;
 
 #ifdef SDCARD_DMA_CHANNEL_TX
+#if defined(USE_HAL_DRIVER)
+            //if (useDMAForTx && __HAL_DMA_GET_FLAG(sdDMAHandle, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
+            //if (useDMAForTx && HAL_DMA_PollForTransfer(sdDMAHandle, HAL_DMA_FULL_TRANSFER, HAL_MAX_DELAY) == HAL_OK) {
+            if (useDMAForTx && (sdDMAHandle->State == HAL_DMA_STATE_READY)) {
+                //__HAL_DMA_CLEAR_FLAG(sdDMAHandle, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
+
+                //__HAL_DMA_DISABLE(sdDMAHandle);
+
+                // Drain anything left in the Rx FIFO (we didn't read it during the write)
+                while (__HAL_SPI_GET_FLAG(spiHandleByInstance(SDCARD_SPI_INSTANCE), SPI_FLAG_RXNE) == SET) {
+                    SDCARD_SPI_INSTANCE->DR;
+                }
+
+                // Wait for the final bit to be transmitted
+                while (spiIsBusBusy(SDCARD_SPI_INSTANCE)) {
+                }
+
+                HAL_SPI_DMAStop(spiHandleByInstance(SDCARD_SPI_INSTANCE));
+
+                sendComplete = true;
+            }
+#else
 #ifdef SDCARD_DMA_CHANNEL
             if (useDMAForTx && DMA_GetFlagStatus(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG) == SET) {
                 DMA_ClearFlag(SDCARD_DMA_CHANNEL_TX, SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG);
@@ -754,6 +785,7 @@ bool sdcard_poll(void)
 
                 sendComplete = true;
             }
+#endif
 #endif
             if (!useDMAForTx) {
                 // Send another chunk

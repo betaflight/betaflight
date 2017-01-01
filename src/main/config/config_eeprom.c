@@ -74,6 +74,8 @@
         #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
     #elif defined(STM32F411xE)
         #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000) // 128K sectors
+    #elif defined(STM32F745xx)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x40000) // 256K sectors
     #else
         #error "Flash page size not defined for target."
     #endif
@@ -166,8 +168,108 @@ static uint32_t getFLASHSectorForEEPROM(void)
         failureMode(FAILURE_FLASH_WRITE_FAILED);
     }
 }
+#elif defined(STM32F7)
+/*
+Sector 0    0x08000000 - 0x08007FFF 32 Kbytes
+Sector 1    0x08008000 - 0x0800FFFF 32 Kbytes
+Sector 2    0x08010000 - 0x08017FFF 32 Kbytes
+Sector 3    0x08018000 - 0x0801FFFF 32 Kbytes
+Sector 4    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 5    0x08040000 - 0x0807FFFF 256 Kbytes
+Sector 6    0x08080000 - 0x080BFFFF 256 Kbytes
+Sector 7    0x080C0000 - 0x080FFFFF 256 Kbytes
+*/
+
+static uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return FLASH_SECTOR_0;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return FLASH_SECTOR_1;
+    if ((uint32_t)&__config_start <= 0x08017FFF)
+        return FLASH_SECTOR_2;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return FLASH_SECTOR_3;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return FLASH_SECTOR_4;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return FLASH_SECTOR_5;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return FLASH_SECTOR_6;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return FLASH_SECTOR_7;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+}
 #endif
 
+#if defined(STM32F7)
+
+// FIXME: HAL for now this will only work for F4/F7 as flash layout is different
+void writeEEPROM(void)
+{
+    // Generate compile time error if the config does not fit in the reserved area of flash.
+    BUILD_BUG_ON(sizeof(master_t) > ((uint32_t)&__config_end - (uint32_t)&__config_start));
+
+    HAL_StatusTypeDef status;
+    uint32_t wordOffset;
+    int8_t attemptsRemaining = 3;
+
+    suspendRxSignal();
+
+    // prepare checksum/version constants
+    masterConfig.version = EEPROM_CONF_VERSION;
+    masterConfig.size = sizeof(master_t);
+    masterConfig.magic_be = 0xBE;
+    masterConfig.magic_ef = 0xEF;
+    masterConfig.chk = 0; // erase checksum before recalculating
+    masterConfig.chk = calculateChecksum((const uint8_t *) &masterConfig, sizeof(master_t));
+
+    // write it
+    /* Unlock the Flash to enable the flash control register access *************/
+    HAL_FLASH_Unlock();
+    while (attemptsRemaining--)
+    {
+        /* Fill EraseInit structure*/
+        FLASH_EraseInitTypeDef EraseInitStruct = {0};
+        EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
+        EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_3; // 2.7-3.6V
+        EraseInitStruct.Sector        = getFLASHSectorForEEPROM();
+        EraseInitStruct.NbSectors     = 1;
+        uint32_t SECTORError;
+        status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK)
+        {
+            continue;
+        }
+        else
+        {
+            for (wordOffset = 0; wordOffset < sizeof(master_t); wordOffset += 4)
+            {
+                status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (uint32_t)&__config_start + wordOffset, *(uint32_t *) ((char *) &masterConfig + wordOffset));
+                if(status != HAL_OK)
+                {
+                    break;
+                }
+            }
+        }
+        if (status == HAL_OK) {
+            break;
+        }
+    }
+    HAL_FLASH_Lock();
+
+    // Flash write failed - just die now
+    if (status != HAL_OK || !isEEPROMContentValid()) {
+        failureMode(FAILURE_FLASH_WRITE_FAILED);
+    }
+
+    resumeRxSignal();
+}
+#else
 void writeEEPROM(void)
 {
     // Generate compile time error if the config does not fit in the reserved area of flash.
@@ -229,6 +331,7 @@ void writeEEPROM(void)
 
     resumeRxSignal();
 }
+#endif
 
 void readEEPROM(void)
 {
