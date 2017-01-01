@@ -29,9 +29,9 @@
 
 #include "io/pwmdriver_i2c.h"
 
-#include "config/config.h"
 #include "config/feature.h"
 
+#include "fc/config.h"
 #include "fc/runtime_config.h"
 
 #if defined(STM32F7) // must be multiples of timer clock
