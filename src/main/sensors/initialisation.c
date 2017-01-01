@@ -43,7 +43,6 @@ uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, 
 
 
 bool sensorsAutodetect(
-                barometerConfig_t *baroConfig,
                 pitotmeterConfig_t *pitotConfig)
 {
     bool eepromUpdatePending = false;
@@ -61,9 +60,7 @@ bool sensorsAutodetect(
 #endif
 
 #ifdef BARO
-    baroDetect(&baro.dev, baroConfig->baro_hardware);
-#else
-    UNUSED(baroConfig);
+    baroInit();
 #endif
 
 #ifdef PITOT
@@ -88,10 +85,12 @@ bool sensorsAutodetect(
         eepromUpdatePending = true;
     }
 
-    if (baroConfig->baro_hardware == BARO_AUTODETECT) {
-        baroConfig->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
+#ifdef BARO
+    if (barometerConfig()->baro_hardware == BARO_AUTODETECT) {
+        barometerConfig()->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
         eepromUpdatePending = true;
     }
+#endif
 
     if (compassConfig()->mag_hardware == MAG_AUTODETECT) {
         compassConfig()->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];

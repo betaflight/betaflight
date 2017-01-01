@@ -18,5 +18,4 @@
 #pragma once
 
 bool sensorsAutodetect(
-                barometerConfig_t *baroConfig,
                 pitotmeterConfig_t *pitotConfig);
