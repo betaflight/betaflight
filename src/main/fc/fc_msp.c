@@ -75,6 +75,7 @@
 
 #include "scheduler/scheduler.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -104,7 +105,6 @@
 #endif
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern void resetProfile(profile_t *profile);
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -898,8 +898,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
-        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
-        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
+        sbufWriteU16(dst, accelerometerConfig()->rollAndPitchTrims.values.pitch);
+        sbufWriteU16(dst, accelerometerConfig()->rollAndPitchTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1279,8 +1279,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
-        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfig()->rollAndPitchTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfig()->rollAndPitchTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig()->auto_disarm_delay = sbufReadU8(src);

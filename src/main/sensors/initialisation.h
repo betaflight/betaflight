@@ -17,8 +17,7 @@
 
 #pragma once
 
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
-        const accelerometerConfig_t *accConfig,
+bool sensorsAutodetect(
         const compassConfig_t *compassConfig,
         const barometerConfig_t *baroConfig,
         const sonarConfig_t *sonarConfig);

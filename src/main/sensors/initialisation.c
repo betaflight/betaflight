@@ -52,18 +52,17 @@ static bool sonarDetect(void)
 }
 #endif
 
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
-        const accelerometerConfig_t *accelerometerConfig,
+bool sensorsAutodetect(
         const compassConfig_t *compassConfig,
         const barometerConfig_t *barometerConfig,
         const sonarConfig_t *sonarConfig)
 {
     // gyro must be initialised before accelerometer
-    if (!gyroInit(gyroConfig)) {
+    if (!gyroInit()) {
         return false;
     }
 
-    accInit(accelerometerConfig, gyro.targetLooptime);
+    accInit(gyro.targetLooptime);
 
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
@@ -88,12 +87,6 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
     UNUSED(sonarConfig);
 #endif
 
-    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig->gyro_align;
-    }
-    if (accelerometerConfig->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accelerometerConfig->acc_align;
-    }
     if (compassConfig->mag_align != ALIGN_DEFAULT) {
         mag.dev.magAlign = compassConfig->mag_align;
     }
