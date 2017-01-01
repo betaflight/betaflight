@@ -1000,6 +1000,11 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full);
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, master_t *defaultConfig);
 static void cliPrintVarRange(const clivalue_t *var);
 static void cliPrint(const char *str);
+#ifdef CLI_MINIMAL_VERBOSITY
+#define cliPrintHashLine(str)
+#else
+static void cliPrintHashLine(const char *str);
+#endif
 static void cliPrintf(const char *fmt, ...);
 static void cliWrite(uint8_t ch);
 
@@ -2628,31 +2633,23 @@ static void printConfig(char *cmdline, bool doDiff)
     }
 
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# version\r\n");
-#endif
+        cliPrintHashLine("version");
         cliVersion(NULL);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# pflags\r\n");
-#endif
+        cliPrintHashLine("pflags");
         cliPFlags("");
 
 #ifndef CLI_MINIMAL_VERBOSITY
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
-            cliPrint("\r\n# reset configuration to default settings\r\ndefaults\r\n");
+            cliPrintHashLine("reset configuration to default settings\r\ndefaults");
         }
 #endif
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# resources\r\n");
-#endif
+        cliPrintHashLine("resources");
         //printResource(dumpMask, &defaultConfig);
 
 #ifndef USE_QUAD_MIXER_ONLY
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# mixer\r\n");
-#endif
+        cliPrintHashLine("mixer");
         const bool equalsDefault = masterConfig.mixerConfig.mixerMode == defaultConfig.mixerConfig.mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerConfig.mixerMode - 1]);
@@ -2663,81 +2660,53 @@ static void printConfig(char *cmdline, bool doDiff)
         printMotorMix(dumpMask, &defaultConfig);
 
 #ifdef USE_SERVOS
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# servo\r\n");
-#endif
+        cliPrintHashLine("servo");
         printServo(dumpMask, &defaultConfig);
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# servo mix\r\n");
-#endif
+        cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
         cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
         printServoMix(dumpMask, &defaultConfig);
 #endif
 #endif
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# feature\r\n");
-#endif
+        cliPrintHashLine("feature");
         printFeature(dumpMask, &defaultConfig);
 
 #ifdef BEEPER
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# beeper\r\n");
-#endif
+        cliPrintHashLine("beeper");
         printBeeper(dumpMask, &defaultConfig);
 #endif
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# map\r\n");
-#endif
+        cliPrintHashLine("map");
         printMap(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# serial\r\n");
-#endif
+        cliPrintHashLine("serial");
         printSerial(dumpMask, &defaultConfig);
 
 #ifdef LED_STRIP
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# led\r\n");
-#endif
+        cliPrintHashLine("led");
         printLed(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# color\r\n");
-#endif
+        cliPrintHashLine("color");
         printColor(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# mode_color\r\n");
-#endif
+        cliPrintHashLine("mode_color");
         printModeColor(dumpMask, &defaultConfig);
 #endif
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# aux\r\n");
-#endif
+        cliPrintHashLine("aux");
         printAux(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# adjrange\r\n");
-#endif
+        cliPrintHashLine("adjrange");
         printAdjustmentRange(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# rxrange\r\n");
-#endif
+        cliPrintHashLine("rxrange");
         printRxRange(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# rxfail\r\n");
-#endif
+        cliPrintHashLine("rxfail");
         printRxFail(dumpMask, &defaultConfig);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-        cliPrint("\r\n# master\r\n");
-#endif
+        cliPrintHashLine("master");
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
 
         if (dumpMask & DUMP_ALL) {
@@ -2747,9 +2716,7 @@ static void printConfig(char *cmdline, bool doDiff)
             }
 
             changeProfile(activeProfile);
-#ifndef CLI_MINIMAL_VERBOSITY
-            cliPrint("\r\n# restore original profile selection\r\n");
-#endif
+            cliPrintHashLine("restore original profile selection");
             cliProfile("");
 
             uint8_t currentRateIndex = getCurrentControlRateProfile();
@@ -2757,13 +2724,9 @@ static void printConfig(char *cmdline, bool doDiff)
                 cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
             }
             changeControlRateProfile(currentRateIndex);
-#ifndef CLI_MINIMAL_VERBOSITY
-            cliPrint("\r\n# restore original rateprofile selection\r\n");
-#endif
+            cliPrintHashLine("restore original rateprofile selection");
             cliRateProfile("");
-#ifndef CLI_MINIMAL_VERBOSITY
-            cliPrint("\r\n# save configuration\r\nsave\r\n");
-#endif
+            cliPrintHashLine("save configuration\r\nsave");
         } else {
             cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
             cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
@@ -2786,9 +2749,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, master_t *def
         return;
     }
     changeProfile(profileIndex);
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\n# profile\r\n");
-#endif
+    cliPrintHashLine("profile");
     cliProfile("");
     cliPrint("\r\n");
     dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
@@ -2801,9 +2762,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, maste
         return;
     }
     changeControlRateProfile(rateProfileIndex);
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\n# rateprofile\r\n");
-#endif
+    cliPrintHashLine("rateprofile");
     cliRateProfile("");
     cliPrint("\r\n");
     dumpValues(CONTROL_RATE_VALUE, dumpMask, defaultConfig);
@@ -3068,6 +3027,15 @@ static void cliPrint(const char *str)
         bufWriterAppend(cliWriter, *str++);
     }
 }
+
+#ifndef CLI_MINIMAL_VERBOSITY
+static void cliPrintHashLine(const char *str)
+{
+    cliPrint("\r\n# ");
+    cliPrint(str);
+    cliPrint("\r\n");
+}
+#endif
 
 static void cliPutp(void *p, char ch)
 {
