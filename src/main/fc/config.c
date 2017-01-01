@@ -473,17 +473,13 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
 
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero, &config->accelerometerConfig.accGain);
+    resetAccelerometerTrims(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
 
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDeciDegrees = 0;
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
-
-
-    config->accelerometerConfig.acc_hardware = ACC_AUTODETECT;     // default/autodetect
 
 #ifdef MAG
     config->compassConfig.mag_hardware = MAG_AUTODETECT;
@@ -778,8 +774,8 @@ static void activateConfig(void)
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
 
-    setAccelerationCalibrationValues(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
-    setAccelerationFilter(currentProfile->pidProfile.acc_soft_lpf_hz);
+    setAccelerationCalibrationValues();
+    setAccelerationFilter();
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
 #ifdef USE_SERVOS

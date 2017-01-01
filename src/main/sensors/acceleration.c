@@ -26,6 +26,10 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
+
 #include "drivers/accgyro.h"
 #include "drivers/accgyro_adxl345.h"
 #include "drivers/accgyro_bma280.h"
@@ -62,12 +66,28 @@ acc_t acc;                       // acc access functions
 
 static uint16_t calibratingA = 0;      // the calibration is done is the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 
-static flightDynamicsTrims_t * accZero;
-static flightDynamicsTrims_t * accGain;
-
-static uint8_t accLpfCutHz = 0;
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
+PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+
+void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
+{
+    RESET_CONFIG_2(accelerometerConfig_t, instance,
+        .acc_align = ALIGN_DEFAULT,
+        .acc_hardware = ACC_AUTODETECT,
+        .acc_lpf_hz = 15
+    );
+    RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accZero,
+        .raw[X] = 0,
+        .raw[Y] = 0,
+        .raw[Z] = 0
+    );
+    RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accGain,
+         .raw[X] = 0,
+         .raw[Y] = 0,
+         .raw[Z] = 0
+    );
+}
 static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
@@ -231,22 +251,21 @@ static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
     return true;
 }
 
-bool accInit(const accelerometerConfig_t *accConfig, uint32_t targetLooptime)
+bool accInit(uint32_t targetLooptime)
 {
     memset(&acc, 0, sizeof(acc));
     // copy over the common gyro mpu settings
     acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
     acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
-    if (!accDetect(&acc.dev, accConfig->acc_hardware)) {
+    if (!accDetect(&acc.dev, accelerometerConfig()->acc_hardware)) {
         return false;
     }
     acc.dev.acc_1G = 256; // set default
     acc.dev.init(&acc.dev);
     acc.accTargetLooptime = targetLooptime;
-    if (accLpfCutHz) {
-        for (int axis = 0; axis < 3; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
-        }
+    setAccelerationFilter();
+    if (accelerometerConfig()->acc_align != ALIGN_DEFAULT) {
+        acc.dev.accAlign = accelerometerConfig()->acc_align;
     }
     return true;
 }
@@ -338,16 +357,16 @@ void performAcclerationCalibration(void)
         sensorCalibrationSolveForOffset(&calState, accTmp);
 
         for (int axis = 0; axis < 3; axis++) {
-            accZero->raw[axis] = lrintf(accTmp[axis]);
+            accelerometerConfig()->accZero.raw[axis] = lrintf(accTmp[axis]);
         }
 
         /* Not we can offset our accumulated averages samples and calculate scale factors and calculate gains */
         sensorCalibrationResetState(&calState);
 
         for (int axis = 0; axis < 6; axis++) {
-            accSample[X] = accSamples[axis][X] / CALIBRATING_ACC_CYCLES - accZero->raw[X];
-            accSample[Y] = accSamples[axis][Y] / CALIBRATING_ACC_CYCLES - accZero->raw[Y];
-            accSample[Z] = accSamples[axis][Z] / CALIBRATING_ACC_CYCLES - accZero->raw[Z];
+            accSample[X] = accSamples[axis][X] / CALIBRATING_ACC_CYCLES - accelerometerConfig()->accZero.raw[X];
+            accSample[Y] = accSamples[axis][Y] / CALIBRATING_ACC_CYCLES - accelerometerConfig()->accZero.raw[Y];
+            accSample[Z] = accSamples[axis][Z] / CALIBRATING_ACC_CYCLES - accelerometerConfig()->accZero.raw[Z];
 
             sensorCalibrationPushSampleForScaleCalculation(&calState, axis / 2, accSample, acc.dev.acc_1G);
         }
@@ -355,7 +374,7 @@ void performAcclerationCalibration(void)
         sensorCalibrationSolveForScale(&calState, accTmp);
 
         for (int axis = 0; axis < 3; axis++) {
-            accGain->raw[axis] = lrintf(accTmp[axis] * 4096);
+            accelerometerConfig()->accGain.raw[axis] = lrintf(accTmp[axis] * 4096);
         }
 
         saveConfigAndNotify();
@@ -381,7 +400,7 @@ void updateAccelerationReadings(void)
         acc.accADC[axis] = acc.dev.ADCRaw[axis];
     }
 
-    if (accLpfCutHz) {
+    if (accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
             acc.accADC[axis] = lrintf(biquadFilterApply(&accFilter[axis], (float)acc.accADC[axis]));
         }
@@ -391,18 +410,15 @@ void updateAccelerationReadings(void)
         performAcclerationCalibration();
     }
 
-    applyAccelerationZero(accZero, accGain);
+    applyAccelerationZero(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
 
     alignSensors(acc.accADC, acc.dev.accAlign);
 }
 
-void setAccelerationCalibrationValues(flightDynamicsTrims_t * accZeroToUse, flightDynamicsTrims_t * accGainToUse)
+void setAccelerationCalibrationValues(void)
 {
-    accZero = accZeroToUse;
-    accGain = accGainToUse;
-
-    if ((accZero->raw[X] == 0) && (accZero->raw[Y] == 0) && (accZero->raw[Z] == 0) &&
-        (accGain->raw[X] == 4096) && (accGain->raw[Y] == 4096) &&(accGain->raw[Z] == 4096)) {
+    if ((accelerometerConfig()->accZero.raw[X] == 0) && (accelerometerConfig()->accZero.raw[Y] == 0) && (accelerometerConfig()->accZero.raw[Z] == 0) &&
+        (accelerometerConfig()->accGain.raw[X] == 4096) && (accelerometerConfig()->accGain.raw[Y] == 4096) &&(accelerometerConfig()->accGain.raw[Z] == 4096)) {
         DISABLE_STATE(ACCELEROMETER_CALIBRATED);
     }
     else {
@@ -410,12 +426,11 @@ void setAccelerationCalibrationValues(flightDynamicsTrims_t * accZeroToUse, flig
     }
 }
 
-void setAccelerationFilter(uint8_t initialAccLpfCutHz)
+void setAccelerationFilter(void)
 {
-    accLpfCutHz = initialAccLpfCutHz;
-    if (acc.accTargetLooptime) {
+    if (acc.accTargetLooptime && accelerometerConfig()->acc_lpf_hz) {
         for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-            biquadFilterInitLPF(&accFilter[axis], accLpfCutHz, acc.accTargetLooptime);
+            biquadFilterInitLPF(&accFilter[axis], accelerometerConfig()->acc_lpf_hz, acc.accTargetLooptime);
         }
     }
 }

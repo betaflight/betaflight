@@ -55,7 +55,6 @@
 #include "rx/rx.h"
 
 #include "sensors/sensors.h"
-#include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 #include "sensors/barometer.h"
 #include "sensors/battery.h"
@@ -70,7 +69,6 @@
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
-#define accelerometerConfig(x) (&masterConfig.accelerometerConfig)
 #define barometerConfig(x) (&masterConfig.barometerConfig)
 #define compassConfig(x) (&masterConfig.compassConfig)
 #define pitotmeterConfig(x) (&masterConfig.pitotmeterConfig)
@@ -143,8 +141,6 @@ typedef struct master_s {
     boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;
-
-    accelerometerConfig_t accelerometerConfig;
 
     barometerConfig_t barometerConfig;
 
