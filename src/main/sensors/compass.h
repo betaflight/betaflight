@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #include "drivers/compass.h"
 
 #include "sensors/sensors.h"
@@ -47,8 +49,8 @@ typedef struct compassConfig_s {
     flightDynamicsTrims_t magZero;
 } compassConfig_t;
 
-bool compassDetect(magDev_t *dev, magSensor_e magHardwareToUse);
-void compassInit(const compassConfig_t *compassConfig);
-union flightDynamicsTrims_u;
-void compassUpdate(uint32_t currentTime, union flightDynamicsTrims_u *magZero);
+PG_DECLARE(compassConfig_t, compassConfig);
+
+bool compassInit(void);
+void compassUpdate(uint32_t currentTime);
 

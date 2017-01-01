@@ -88,7 +88,7 @@ typedef struct pidConfig_s {
 } pidConfig_t;
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *rollAndPitchTrims);
 
 extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
