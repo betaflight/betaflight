@@ -1337,51 +1337,51 @@ static bool blackboxWriteSysinfo()
             );
 
         BLACKBOX_PRINT_HEADER_LINE("looptime:%d",                           gyro.targetLooptime);
-        BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].rcYawExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrMid8);
-        BLACKBOX_PRINT_HEADER_LINE("thrExpo:%d",                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].thrExpo8);
-        BLACKBOX_PRINT_HEADER_LINE("dynThrPID:%d",                          masterConfig.controlRateProfiles[masterConfig.current_profile_index].dynThrPID);
-        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint:%d",                     masterConfig.controlRateProfiles[masterConfig.current_profile_index].tpa_breakpoint);
-        BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[ROLL],
-                                                                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[PITCH],
-                                                                            masterConfig.controlRateProfiles[masterConfig.current_profile_index].rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[ROLL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[ROLL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PITCH],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PITCH],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[YAW],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[YAW],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDALT],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDALT],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDALT]);
-        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOS],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOS],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOS]);
-        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDPOSR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDPOSR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDPOSR]);
-        BLACKBOX_PRINT_HEADER_LINE("navrPID:%d,%d,%d",                      masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDNAVR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDNAVR],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDNAVR]);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDLEVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDLEVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDLEVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDMAG]);
-        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       masterConfig.profile[masterConfig.current_profile_index].pidProfile.P8[PIDVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.I8[PIDVEL],
-                                                                            masterConfig.profile[masterConfig.current_profile_index].pidProfile.D8[PIDVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_p_limit);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.yaw_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.dterm_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("rcExpo:%d",                             currentControlRateProfile->rcExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("rcYawExpo:%d",                          currentControlRateProfile->rcYawExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("thrMid:%d",                             currentControlRateProfile->thrMid8);
+        BLACKBOX_PRINT_HEADER_LINE("thrExpo:%d",                            currentControlRateProfile->thrExpo8);
+        BLACKBOX_PRINT_HEADER_LINE("dynThrPID:%d",                          currentControlRateProfile->dynThrPID);
+        BLACKBOX_PRINT_HEADER_LINE("tpa_breakpoint:%d",                     currentControlRateProfile->tpa_breakpoint);
+        BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
+                                                                            currentControlRateProfile->rates[PITCH],
+                                                                            currentControlRateProfile->rates[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      currentProfile->pidProfile.P8[ROLL],
+                                                                            currentProfile->pidProfile.I8[ROLL],
+                                                                            currentProfile->pidProfile.D8[ROLL]);
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PITCH],
+                                                                            currentProfile->pidProfile.I8[PITCH],
+                                                                            currentProfile->pidProfile.D8[PITCH]);
+        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       currentProfile->pidProfile.P8[YAW],
+                                                                            currentProfile->pidProfile.I8[YAW],
+                                                                            currentProfile->pidProfile.D8[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDALT],
+                                                                            currentProfile->pidProfile.I8[PIDALT],
+                                                                            currentProfile->pidProfile.D8[PIDALT]);
+        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDPOS],
+                                                                            currentProfile->pidProfile.I8[PIDPOS],
+                                                                            currentProfile->pidProfile.D8[PIDPOS]);
+        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      currentProfile->pidProfile.P8[PIDPOSR],
+                                                                            currentProfile->pidProfile.I8[PIDPOSR],
+                                                                            currentProfile->pidProfile.D8[PIDPOSR]);
+        BLACKBOX_PRINT_HEADER_LINE("navrPID:%d,%d,%d",                      currentProfile->pidProfile.P8[PIDNAVR],
+                                                                            currentProfile->pidProfile.I8[PIDNAVR],
+                                                                            currentProfile->pidProfile.D8[PIDNAVR]);
+        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PIDLEVEL],
+                                                                            currentProfile->pidProfile.I8[PIDLEVEL],
+                                                                            currentProfile->pidProfile.D8[PIDLEVEL]);
+        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             currentProfile->pidProfile.P8[PIDMAG]);
+        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDVEL],
+                                                                            currentProfile->pidProfile.I8[PIDVEL],
+                                                                            currentProfile->pidProfile.D8[PIDVEL]);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        currentProfile->pidProfile.yaw_p_limit);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(currentProfile->pidProfile.yaw_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(currentProfile->pidProfile.dterm_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           masterConfig.rcControlsConfig.deadband);
         BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       masterConfig.rcControlsConfig.yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.gyro_soft_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(masterConfig.profile[masterConfig.current_profile_index].pidProfile.acc_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    (int)(currentProfile->pidProfile.gyro_soft_lpf_hz * 100.0f));
+        BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(currentProfile->pidProfile.acc_soft_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
