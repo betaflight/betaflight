@@ -81,12 +81,9 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-    DMA_Cmd(descriptor->channel, DISABLE);
+    DMA_Cmd(descriptor->channel, DISABLE); // XXX F1 needs this!!!
 
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 
 #ifdef USE_UART1
