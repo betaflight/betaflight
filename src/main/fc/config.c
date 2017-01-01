@@ -150,7 +150,6 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->axisAccelerationLimitRollPitch = 0;     // dps/s
 
     pidProfile->yaw_p_limit = YAW_P_LIMIT_DEFAULT;
-    pidProfile->mag_hold_rate_limit = MAG_HOLD_RATE_LIMIT_DEFAULT;
 
     pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
     pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
@@ -475,17 +474,9 @@ void createDefaultConfig(master_t *config)
 
     resetAccelerometerTrims(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
 
-    config->compassConfig.mag_align = ALIGN_DEFAULT;
-
     config->boardAlignment.rollDeciDegrees = 0;
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
-
-#ifdef MAG
-    config->compassConfig.mag_hardware = MAG_AUTODETECT;
-#else
-    config->compassConfig.mag_hardware = MAG_NONE;
-#endif
 
 #ifdef BARO
     config->barometerConfig.baro_hardware = BARO_AUTODETECT;
@@ -580,8 +571,6 @@ void createDefaultConfig(master_t *config)
 
     // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
-
-    config->compassConfig.mag_declination = 0;
 
     config->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 

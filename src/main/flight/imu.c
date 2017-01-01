@@ -426,7 +426,7 @@ static int imuCalculateAccelerometerConfidence(void)
 static void imuCalculateEstimatedAttitude(float dT)
 {
 #if defined(MAG)
-    const bool canUseMAG = sensors(SENSOR_MAG) && isCompassHealthy();
+    const bool canUseMAG = sensors(SENSOR_MAG) && compassIsHealthy();
 #else
     const bool canUseMAG = false;
 #endif
