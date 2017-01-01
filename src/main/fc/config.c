@@ -90,6 +90,7 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -110,13 +111,6 @@ profile_t *currentProfile;
 
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
-
-static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
-{
-    accelerometerTrims->values.pitch = 0;
-    accelerometerTrims->values.roll = 0;
-    accelerometerTrims->values.yaw = 0;
-}
 
 static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 {
@@ -535,7 +529,7 @@ uint8_t getCurrentProfile(void)
     return masterConfig.current_profile_index;
 }
 
-void setProfile(uint8_t profileIndex)
+static void setProfile(uint8_t profileIndex)
 {
     currentProfile = &masterConfig.profile[profileIndex];
     currentControlRateProfileIndex = currentProfile->activeRateProfile;
@@ -600,41 +594,21 @@ void createDefaultConfig(master_t *config)
     config->current_profile_index = 0;    // default profile
     config->imuConfig.dcm_kp = 2500;                // 1.0 * 10000
     config->imuConfig.dcm_ki = 0;                   // 0.003 * 10000
-    config->gyroConfig.gyro_lpf = GYRO_LPF_256HZ;    // 256HZ default
 #ifdef STM32F10X
-    config->gyroConfig.gyro_sync_denom = 8;
     config->pidConfig.pid_process_denom = 1;
 #elif defined(USE_GYRO_SPI_MPU6000) || defined(USE_GYRO_SPI_MPU6500)  || defined(USE_GYRO_SPI_ICM20689)
-    config->gyroConfig.gyro_sync_denom = 1;
     config->pidConfig.pid_process_denom = 4;
 #else
-    config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
-    config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
-    config->gyroConfig.gyro_soft_lpf_hz = 90;
-    config->gyroConfig.gyro_soft_notch_hz_1 = 400;
-    config->gyroConfig.gyro_soft_notch_cutoff_1 = 300;
-    config->gyroConfig.gyro_soft_notch_hz_2 = 200;
-    config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
-    config->debug_mode = DEBUG_MODE;
+     config->debug_mode = DEBUG_MODE;
 
-    resetAccelerometerTrims(&config->accelerometerConfig.accZero);
-
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
-    config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
-    config->compassConfig.mag_align = ALIGN_DEFAULT;
 
     config->boardAlignment.rollDegrees = 0;
     config->boardAlignment.pitchDegrees = 0;
     config->boardAlignment.yawDegrees = 0;
-    config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
-
-    // xxx_hardware: 0:default/autodetect, 1: disable
-    config->compassConfig.mag_hardware = 1;
 
     config->barometerConfig.baro_hardware = 1;
 
@@ -734,10 +708,7 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
-
-    config->compassConfig.mag_declination = 0;
-    config->accelerometerConfig.acc_lpf_hz = 10.0f;
+    accResetRollAndPitchTrims();
 
     config->imuConfig.accDeadband.xy = 40;
     config->imuConfig.accDeadband.z = 40;
@@ -849,6 +820,8 @@ void createDefaultConfig(master_t *config)
 static void resetConf(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
     setProfile(0);
 
@@ -884,8 +857,8 @@ void activateConfig(void)
 #endif
 
     useFailsafeConfig(&masterConfig.failsafeConfig);
-    setAccelerationTrims(&accelerometerConfig()->accZero);
-    setAccelerationFilter(accelerometerConfig()->acc_lpf_hz);
+    accResetFlightDynamicsTrims();
+    accSetFilter();
 
     mixerUseConfigs(
         &masterConfig.flight3DConfig,
@@ -1046,12 +1019,44 @@ void validateAndFixGyroConfig(void)
     }
 }
 
+void readEEPROM(void)
+{
+    suspendRxSignal();
+
+    // Sanity check, read flash
+    if (!loadEEPROM()) {
+        failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
+    }
+
+//    pgActivateProfile(getCurrentProfile());
+//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
+
+    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
+        masterConfig.current_profile_index = 0;
+    }
+
+    setProfile(masterConfig.current_profile_index);
+
+    validateAndFixConfig();
+    activateConfig();
+
+    resumeRxSignal();
+}
+
+void writeEEPROM(void)
+{
+    suspendRxSignal();
+
+    writeConfigToEEPROM();
+
+    resumeRxSignal();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
-
     resetEEPROM();
 }
 

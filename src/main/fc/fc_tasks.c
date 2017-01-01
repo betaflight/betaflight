@@ -29,7 +29,6 @@
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/compass.h"
 #include "drivers/serial.h"
 #include "drivers/stack_check.h"
 
@@ -86,13 +85,6 @@ void taskBstMasterProcess(timeUs_t currentTimeUs);
 /* IBat monitoring interval (in microseconds) - 6 default looptimes */
 #define IBATINTERVAL (6 * 3500)
 
-
-static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-    accUpdate(&accelerometerConfig()->accelerometerTrims);
-}
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
 {
@@ -153,15 +145,6 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
     }
 #endif
 }
-
-#ifdef MAG
-static void taskUpdateCompass(timeUs_t currentTimeUs)
-{
-    if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
-    }
-}
-#endif
 
 #ifdef BARO
 static void taskUpdateBaro(timeUs_t currentTimeUs)
@@ -301,7 +284,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_ACCEL] = {
         .taskName = "ACCEL",
-        .taskFunc = taskUpdateAccelerometer,
+        .taskFunc = accUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(1000),      // 1000Hz, every 1ms
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
@@ -356,7 +339,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
 #ifdef MAG
     [TASK_COMPASS] = {
         .taskName = "COMPASS",
-        .taskFunc = taskUpdateCompass,
+        .taskFunc = compassUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // Compass is updated at 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
     },
