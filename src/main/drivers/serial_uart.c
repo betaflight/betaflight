@@ -26,10 +26,13 @@
 #include "platform.h"
 
 #include "build/build_config.h"
+#include "build/atomic.h"
 
 #include "common/utils.h"
+
 #include "gpio.h"
 #include "inverter.h"
+#include "nvic.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -274,32 +277,34 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
 
 void uartStartTxDMA(uartPort_t *s)
 {
+    ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
 #ifdef STM32F4
-    DMA_Cmd(s->txDMAStream, DISABLE);
-    DMA_MemoryTargetConfig(s->txDMAStream, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
-    //s->txDMAStream->M0AR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
-    if (s->port.txBufferHead > s->port.txBufferTail) {
-        s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
-        s->port.txBufferTail = s->port.txBufferHead;
-    }
-    else {
-        s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
-        s->port.txBufferTail = 0;
-    }
-    s->txDMAEmpty = false;
-    DMA_Cmd(s->txDMAStream, ENABLE);
+        DMA_Cmd(s->txDMAStream, DISABLE);
+        DMA_MemoryTargetConfig(s->txDMAStream, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
+        //s->txDMAStream->M0AR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
+        if (s->port.txBufferHead > s->port.txBufferTail) {
+            s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
+            s->port.txBufferTail = s->port.txBufferHead;
+        }
+        else {
+            s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
+            s->port.txBufferTail = 0;
+        }
+        s->txDMAEmpty = false;
+        DMA_Cmd(s->txDMAStream, ENABLE);
 #else
-    s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
-    if (s->port.txBufferHead > s->port.txBufferTail) {
-        s->txDMAChannel->CNDTR = s->port.txBufferHead - s->port.txBufferTail;
-        s->port.txBufferTail = s->port.txBufferHead;
-    } else {
-        s->txDMAChannel->CNDTR = s->port.txBufferSize - s->port.txBufferTail;
-        s->port.txBufferTail = 0;
-    }
-    s->txDMAEmpty = false;
-    DMA_Cmd(s->txDMAChannel, ENABLE);
+        s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
+        if (s->port.txBufferHead > s->port.txBufferTail) {
+            s->txDMAChannel->CNDTR = s->port.txBufferHead - s->port.txBufferTail;
+            s->port.txBufferTail = s->port.txBufferHead;
+        } else {
+            s->txDMAChannel->CNDTR = s->port.txBufferSize - s->port.txBufferTail;
+            s->port.txBufferTail = 0;
+        }
+        s->txDMAEmpty = false;
+        DMA_Cmd(s->txDMAChannel, ENABLE);
 #endif
+    }
 }
 
 uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance)
