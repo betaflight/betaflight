@@ -66,7 +66,7 @@ void targetConfiguration(master_t *config)
     config->failsafeConfig.failsafe_procedure = 1;
     config->failsafeConfig.failsafe_throttle_low_delay = 10;
 
-    config->gyroConfig.gyro_sync_denom = 1;
+    gyroConfig()->gyro_sync_denom = 1;
     config->pidConfig.pid_process_denom = 3;
     config->blackboxConfig.rate_num = 1;
     config->blackboxConfig.rate_denom = 1;

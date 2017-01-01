@@ -37,8 +37,7 @@ typedef enum {
 #endif
 } pageId_e;
 
-struct rxConfig_s;
-void dashboardInit(struct rxConfig_s *intialRxConfig);
+void dashboardInit(void);
 void dashboardUpdate(timeUs_t currentTimeUs);
 
 void dashboardShowFixedPage(pageId_e pageId);

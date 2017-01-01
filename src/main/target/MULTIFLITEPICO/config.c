@@ -39,10 +39,12 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 
+#include "sensors/gyro.h"
+
 // alternative defaults settings for MULTIFLITEPICO targets
 void targetConfiguration(master_t *config)
 {
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    compassConfig()->mag_hardware = MAG_NONE;            // disabled by default
 
     config->batteryConfig.vbatscale = 100;
     config->batteryConfig.vbatresdivval = 15;
@@ -51,8 +53,8 @@ void targetConfiguration(master_t *config)
     config->batteryConfig.vbatmincellvoltage = 32;
     config->batteryConfig.vbatwarningcellvoltage = 33;
 
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->rxConfig.spektrum_sat_bind_autoreset = 1;
+    rxConfig()->spektrum_sat_bind = 5;
+    rxConfig()->spektrum_sat_bind_autoreset = 1;
 
     config->rcControlsConfig.yaw_deadband = 2;
     config->rcControlsConfig.deadband = 2;
@@ -71,7 +73,7 @@ void targetConfiguration(master_t *config)
 
     config->motorConfig.motorPwmRate = 17000;
 
-    config->gyroConfig.gyro_sync_denom = 4;
+    gyroConfig()->gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 1;
 
     config->profile[0].pidProfile.P8[ROLL] = 70;

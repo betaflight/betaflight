@@ -75,6 +75,7 @@
 
 #include "scheduler/scheduler.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 #include "sensors/sensors.h"
 #include "sensors/battery.h"
@@ -104,7 +105,6 @@
 #endif
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
-extern void resetProfile(profile_t *profile);
 
 static const char * const flightControllerIdentifier = BETAFLIGHT_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
 static const char * const boardIdentifier = TARGET_BOARD_IDENTIFIER;
@@ -898,8 +898,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
-        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
-        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
+        sbufWriteU16(dst, accelerometerConfig()->rollAndPitchTrims.values.pitch);
+        sbufWriteU16(dst, accelerometerConfig()->rollAndPitchTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -964,8 +964,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RXFAIL_CONFIG:
         for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            sbufWriteU8(dst, rxConfig()->failsafe_channel_configurations[i].mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
+            sbufWriteU8(dst, rxFailsafeChannelConfigs(i)->mode);
+            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
         }
         break;
 
@@ -1170,8 +1170,16 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_SENSOR_CONFIG:
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+#ifdef BARO
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
+#ifdef MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         break;
 
     case MSP_REBOOT:
@@ -1279,8 +1287,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
-        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfig()->rollAndPitchTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfig()->rollAndPitchTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig()->auto_disarm_delay = sbufReadU8(src);
@@ -1519,8 +1527,16 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_SENSOR_CONFIG:
         accelerometerConfig()->acc_hardware = sbufReadU8(src);
+#ifdef BARO
         barometerConfig()->baro_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
+#ifdef MAG
         compassConfig()->mag_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         break;
 
     case MSP_RESET_CONF:
@@ -1742,8 +1758,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RXFAIL_CONFIG:
         i = sbufReadU8(src);
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfig()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
-            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
+            rxFailsafeChannelConfigs(i)->mode = sbufReadU8(src);
+            rxFailsafeChannelConfigs(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
         } else {
             return MSP_RESULT_ERROR;
         }

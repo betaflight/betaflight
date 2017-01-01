@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -99,15 +100,19 @@ typedef enum {
 
 #define RX_FAILSAFE_TYPE_COUNT 2
 
-typedef struct rxFailsafeChannelConfiguration_s {
+typedef struct rxFailsafeChannelConfigur_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
-} rxFailsafeChannelConfiguration_t;
+} rxFailsafeChannelConfig_t;
 
-typedef struct rxChannelRangeConfiguration_s {
+PG_DECLARE_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
+
+typedef struct rxChannelRangeConfig_s {
     uint16_t min;
     uint16_t max;
-} rxChannelRangeConfiguration_t;
+} rxChannelRangeConfig_t;
+
+PG_DECLARE_ARR(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
@@ -132,10 +137,9 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
+
+PG_DECLARE(rxConfig_t, rxConfig);
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
@@ -153,17 +157,16 @@ typedef struct rxRuntimeConfig_s {
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
 struct modeActivationCondition_s;
-void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
-void useRxConfig(const rxConfig_t *rxConfigToUse);
+void rxInit(const struct modeActivationCondition_s *modeActivationConditions);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
-void parseRcChannels(const char *input, rxConfig_t *rxConfig);
+void parseRcChannels(const char *input);
 
 void updateRSSI(timeUs_t currentTimeUs);
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
+void resetAllRxChannelRangeConfigurations(void);
 
 void suspendRxSignal(void);
 void resumeRxSignal(void);

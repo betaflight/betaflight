@@ -117,8 +117,8 @@ float getRcDeflectionAbs(int axis) {
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
 {
-    accelerometerConfig()->accelerometerTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
-    accelerometerConfig()->accelerometerTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
+    accelerometerConfig()->rollAndPitchTrims.values.roll += rollAndPitchTrimsDelta->values.roll;
+    accelerometerConfig()->rollAndPitchTrims.values.pitch += rollAndPitchTrimsDelta->values.pitch;
 
     saveConfigAndNotify();
 }
@@ -126,14 +126,14 @@ void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsD
 bool isCalibrating()
 {
 #ifdef BARO
-    if (sensors(SENSOR_BARO) && !isBaroCalibrationComplete()) {
+    if (sensors(SENSOR_BARO) && !baroIsCalibrationComplete()) {
         return true;
     }
 #endif
 
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
-    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+    return (!accIsCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
 }
 
 #define RC_RATE_INCREMENTAL 14.54f
@@ -522,7 +522,7 @@ void processRx(timeUs_t currentTimeUs)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus(flight3DConfig()->deadband3d_throttle);
 
     if (isAirmodeActive() && ARMING_FLAG(ARMED)) {
         if (rcCommand[THROTTLE] >= rxConfig()->airModeActivateThreshold) airmodeIsActivated = true; // Prevent Iterm from being reset
@@ -588,7 +588,7 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch);
+    processRcStickPositions(throttleStatus, armingConfig()->disarm_kill_switch);
 
     if (feature(FEATURE_INFLIGHT_ACC_CAL)) {
         updateInflightCalibrationState();
@@ -598,7 +598,7 @@ void processRx(timeUs_t currentTimeUs)
 
     if (!cliMode) {
         updateAdjustmentStates(adjustmentProfile()->adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, rxConfig());
+        processRcAdjustments(currentControlRateProfile);
     }
 
     bool canUseHorizonMode = true;
@@ -694,10 +694,7 @@ void subTaskPidController(void)
     uint32_t startTime;
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(
-        &currentProfile->pidProfile,
-        &accelerometerConfig()->accelerometerTrims
-    );
+    pidController(&currentProfile->pidProfile, &accelerometerConfig()->rollAndPitchTrims);
     if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
 }
 

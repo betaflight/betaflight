@@ -838,8 +838,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         // Additional commands that are not compatible with MultiWii
         case BST_ACC_TRIM:
-            bstWrite16(accelerometerConfig()->accelerometerTrims.values.pitch);
-            bstWrite16(accelerometerConfig()->accelerometerTrims.values.roll);
+            bstWrite16(accelerometerConfig()->rollAndPitchTrims.values.pitch);
+            bstWrite16(accelerometerConfig()->rollAndPitchTrims.values.roll);
             break;
 
         case BST_UID:
@@ -894,8 +894,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         case BST_RXFAIL_CONFIG:
             for (i = NON_AUX_CHANNEL_COUNT; i < rxRuntimeConfig.channelCount; i++) {
-                bstWrite8(rxConfig()->failsafe_channel_configurations[i].mode);
-                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
+                bstWrite8(rxFailsafeChannelConfigs(i)->mode);
+                bstWrite16(RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
             }
             break;
 
@@ -1034,8 +1034,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 }
             }
         case BST_SET_ACC_TRIM:
-            accelerometerConfig()->accelerometerTrims.values.pitch = bstRead16();
-            accelerometerConfig()->accelerometerTrims.values.roll  = bstRead16();
+            accelerometerConfig()->rollAndPitchTrims.values.pitch = bstRead16();
+            accelerometerConfig()->rollAndPitchTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
             armingConfig()->auto_disarm_delay = bstRead8();
@@ -1315,8 +1315,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                    ret = BST_FAILED;
                } else {
                    for (i = NON_AUX_CHANNEL_COUNT; i < channelCount; i++) {
-                       rxConfig()->failsafe_channel_configurations[i].mode = bstRead8();
-                       rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
+                       rxFailsafeChannelConfigs(i)->mode = bstRead8();
+                       rxFailsafeChannelConfigs(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(bstRead16());
                    }
                }
            }

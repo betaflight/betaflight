@@ -114,7 +114,6 @@ extern const mixer_t mixers[];
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 struct motorConfig_s;
-struct rxConfig_s;
 
 uint8_t getMotorCount();
 
@@ -122,8 +121,7 @@ void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         struct motorConfig_s *motorConfigToUse,
         mixerConfig_t *mixerConfigToUse,
-        airplaneConfig_t *airplaneConfigToUse,
-        struct rxConfig_s *rxConfigToUse);
+        airplaneConfig_t *airplaneConfigToUse);
 
 void mixerLoadMix(int index, motorMixer_t *customMixers);
 void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);

@@ -22,6 +22,9 @@
 
 #include "common/axis.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/compass.h"
 #include "drivers/compass_ak8975.h"
 #include "drivers/compass_ak8963.h"
@@ -41,7 +44,16 @@
 #include "hardware_revision.h"
 #endif
 
-mag_t mag;                   // mag access functions
+mag_t mag;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(compassConfig_t, compassConfig, PG_COMPASS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(compassConfig_t, compassConfig,
+    .mag_align = ALIGN_DEFAULT,
+    // xxx_hardware: 0:default/autodetect, 1: disable
+    .mag_hardware = 1,
+    .mag_declination = 0
+);
 
 #ifdef MAG
 
@@ -143,20 +155,27 @@ retry:
     return true;
 }
 
-void compassInit(const compassConfig_t *compassConfig)
+bool compassInit(void)
 {
+    if (!compassDetect(&mag.dev, compassConfig()->mag_hardware)) {
+        return false;
+    }
     // initialize and calibration. turn on led during mag calibration (calibration routine blinks it)
     // calculate magnetic declination
-    const int16_t deg = compassConfig->mag_declination / 100;
-    const int16_t min = compassConfig->mag_declination % 100;
+    const int16_t deg = compassConfig()->mag_declination / 100;
+    const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units
     LED1_ON;
     mag.dev.init();
     LED1_OFF;
     magInit = 1;
+    if (compassConfig()->mag_align != ALIGN_DEFAULT) {
+        mag.dev.magAlign = compassConfig()->mag_align;
+    }
+    return true;
 }
 
-void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
+void compassUpdate(uint32_t currentTime)
 {
     static uint32_t tCal = 0;
     static flightDynamicsTrims_t magZeroTempMin;
@@ -171,7 +190,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     if (STATE(CALIBRATE_MAG)) {
         tCal = currentTime;
         for (int axis = 0; axis < 3; axis++) {
-            magZero->raw[axis] = 0;
+            compassConfig()->magZero.raw[axis] = 0;
             magZeroTempMin.raw[axis] = mag.magADC[axis];
             magZeroTempMax.raw[axis] = mag.magADC[axis];
         }
@@ -179,9 +198,9 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
     }
 
     if (magInit) {              // we apply offset only once mag calibration is done
-        mag.magADC[X] -= magZero->raw[X];
-        mag.magADC[Y] -= magZero->raw[Y];
-        mag.magADC[Z] -= magZero->raw[Z];
+        mag.magADC[X] -= compassConfig()->magZero.raw[X];
+        mag.magADC[Y] -= compassConfig()->magZero.raw[Y];
+        mag.magADC[Z] -= compassConfig()->magZero.raw[Z];
     }
 
     if (tCal != 0) {
@@ -196,7 +215,7 @@ void compassUpdate(uint32_t currentTime, flightDynamicsTrims_t *magZero)
         } else {
             tCal = 0;
             for (int axis = 0; axis < 3; axis++) {
-                magZero->raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
+                compassConfig()->magZero.raw[axis] = (magZeroTempMin.raw[axis] + magZeroTempMax.raw[axis]) / 2; // Calculate offsets
             }
 
             saveConfigAndNotify();
