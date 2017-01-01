@@ -22,6 +22,9 @@
 
 #include "build/build_config.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "system.h"
 #include "nvic.h"
 #include "io.h"
@@ -38,6 +41,17 @@
  */
 
 #if defined(SONAR)
+
+#if !defined(SONAR_TRIGGER_PIN) || !defined(SONAR_ECHO_PIN)
+#error Sonar PINS not defined for target
+#endif
+PG_REGISTER_WITH_RESET_TEMPLATE(sonarConfig_t, sonarConfig, PG_SONAR_CONFIG, 0);
+
+PG_RESET_TEMPLATE(sonarConfig_t, sonarConfig,
+    .triggerTag = IO_TAG(SONAR_TRIGGER_PIN),
+    .echoTag = IO_TAG(SONAR_ECHO_PIN)
+);
+
 STATIC_UNIT_TESTED volatile int32_t measurement = -1;
 static uint32_t lastMeasurementAt;
 
@@ -63,7 +77,7 @@ void hcsr04_extiHandler(extiCallbackRec_t* cb)
     }
 }
 
-void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
+void hcsr04_init(sonarRange_t *sonarRange)
 {
     sonarRange->maxRangeCm = HCSR04_MAX_RANGE_CM;
     sonarRange->detectionConeDeciDegrees = HCSR04_DETECTION_CONE_DECIDEGREES;
@@ -82,12 +96,12 @@ void hcsr04_init(const sonarConfig_t *sonarConfig, sonarRange_t *sonarRange)
 #endif
 
     // trigger pin
-    triggerIO = IOGetByTag(sonarConfig->triggerTag);
+    triggerIO = IOGetByTag(sonarConfig()->triggerTag);
     IOInit(triggerIO, OWNER_SONAR_TRIGGER, 0);
     IOConfigGPIO(triggerIO, IOCFG_OUT_PP);
 
     // echo pin
-    echoIO = IOGetByTag(sonarConfig->echoTag);
+    echoIO = IOGetByTag(sonarConfig()->echoTag);
     IOInit(echoIO, OWNER_SONAR_ECHO, 0);
     IOConfigGPIO(echoIO, IOCFG_IN_FLOATING);
 

@@ -838,8 +838,8 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 
         // Additional commands that are not compatible with MultiWii
         case BST_ACC_TRIM:
-            bstWrite16(accelerometerConfig()->accelerometerTrims.values.pitch);
-            bstWrite16(accelerometerConfig()->accelerometerTrims.values.roll);
+            bstWrite16(accelerometerConfig()->rollAndPitchTrims.values.pitch);
+            bstWrite16(accelerometerConfig()->rollAndPitchTrims.values.roll);
             break;
 
         case BST_UID:
@@ -1034,8 +1034,8 @@ static bool bstSlaveProcessWriteCommand(uint8_t bstWriteCommand)
                 }
             }
         case BST_SET_ACC_TRIM:
-            accelerometerConfig()->accelerometerTrims.values.pitch = bstRead16();
-            accelerometerConfig()->accelerometerTrims.values.roll  = bstRead16();
+            accelerometerConfig()->rollAndPitchTrims.values.pitch = bstRead16();
+            accelerometerConfig()->rollAndPitchTrims.values.roll  = bstRead16();
             break;
         case BST_SET_ARMING_CONFIG:
             armingConfig()->auto_disarm_delay = bstRead8();

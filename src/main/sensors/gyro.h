@@ -19,6 +19,7 @@
 
 #include "drivers/accgyro.h"
 #include "common/axis.h"
+#include "config/parameter_group.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -55,8 +56,10 @@ typedef struct gyroConfig_s {
     uint16_t gyro_soft_notch_cutoff_2;
 } gyroConfig_t;
 
+PG_DECLARE(gyroConfig_t, gyroConfig);
+
 void gyroSetCalibrationCycles(void);
-bool gyroInit(const gyroConfig_t *gyroConfigToUse);
+bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);

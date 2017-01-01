@@ -38,6 +38,7 @@
 
 #include "sensors/sensors.h"
 #include "sensors/compass.h"
+#include "sensors/gyro.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
@@ -76,13 +77,13 @@ void targetConfiguration(master_t *config)
         config->statusLedConfig.ledTags[2] = IO_TAG(LED2_A);
 #endif
     } else {
-        config->gyroConfig.gyro_sync_denom = 2;
+        gyroConfig()->gyro_sync_denom = 2;
         config->pidConfig.pid_process_denom = 2;
     }
 
     config->rxConfig.spektrum_sat_bind = 5;
     config->rxConfig.spektrum_sat_bind_autoreset = 1;
-    config->compassConfig.mag_hardware = MAG_NONE;            // disabled by default
+    compassConfig()->mag_hardware = MAG_NONE;            // disabled by default
 
     if (hardwareMotorType == MOTOR_BRUSHED) {
         config->motorConfig.motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
