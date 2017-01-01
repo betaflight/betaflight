@@ -156,8 +156,6 @@ void I2C4_EV_IRQHandler(void)
 
 static bool i2cHandleHardwareFailure(I2CDevice device)
 {
-    const i2cState_t *state = &(i2cState[device]);
-
     i2cErrorCount++;
 
     // reinit peripheral + clock out garbage
