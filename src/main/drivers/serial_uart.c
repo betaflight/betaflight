@@ -275,7 +275,7 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
     uartReconfigure(uartPort);
 }
 
-void uartStartTxDMA(uartPort_t *s)
+void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
 #ifdef STM32F4
@@ -283,6 +283,12 @@ void uartStartTxDMA(uartPort_t *s)
             return;
 
         DMA_Cmd(s->txDMAStream, DISABLE);
+
+        if (s->port.txBufferHead == s->port.txBufferTail) {
+            s->txDMAEmpty = true;
+            return;
+        }
+
         DMA_MemoryTargetConfig(s->txDMAStream, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
         //s->txDMAStream->M0AR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
         if (s->port.txBufferHead > s->port.txBufferTail) {
@@ -298,6 +304,11 @@ void uartStartTxDMA(uartPort_t *s)
 #else
         if (s->txDMAChannel->CCR & 1)
             return;
+
+        if (s->port.txBufferHead == s->port.txBufferTail) {
+            s->txDMAEmpty = true;
+            return;
+        }
 
         s->txDMAChannel->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
         if (s->port.txBufferHead > s->port.txBufferTail) {
@@ -434,7 +445,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
     if (s->txDMAChannel)
 #endif
     {
-        uartStartTxDMA(s);
+        uartTryStartTxDMA(s);
     } else {
         USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
     }
