@@ -29,7 +29,7 @@ From right to left when looking at the socket from the edge of the board.
 | 1   | Ground         |                                  |
 | 2   | +5V            |                                  |
 | 3   | RX_PPM         | Enable `feature RX_PPM`          | 
-| 4   | RSSI_ADC       | Enable `feature RSSI_ADC`.  Connect to the output of a PWM-RSSI conditioner, 0v-3.3v input | 
+| 4   | unused         |                                  | 
 | 5   | USART2 TX      |                                  | 
 | 6   | USART2 RX      |                                  | 
 | 7   | LED_STRIP      | Enable `feature LED_STRIP`       |
@@ -40,7 +40,7 @@ From right to left when looking at the socket from the edge of the board.
 
 | Value | Identifier   | RX         | TX                 | Notes                                                                                       |
 | ----- | ------------ | ---------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| 1     | USART1       | RX  / PA10 | TX  / PA9 / TELEM  | TELEM output is always inverted (for FrSky). Internally connected to USB port via CP2102 IC |
+| 1     | USART1       | RX  / PA10 | TX  / PA9          | Internally connected to USB port via CP2102 IC                                              |
 | 2     | USART2       | RC4 / PA3  | RC3 / PA2          |                                                                                             |
-| 3     | USART3       | F3  / PB11 | F2  / PB10         | Flex port is configured as UART3 when port is configured                                    |
+| 3     | USART3       | F3  / PB11 | F2  / PB10         |                                                                                             |
 

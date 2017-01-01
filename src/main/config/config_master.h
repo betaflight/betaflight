@@ -87,6 +87,8 @@
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
+#define ledStripConfig(x) (&masterConfig.ledStripConfig)
+#define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
 
 
 // System-wide
@@ -141,7 +143,7 @@ typedef struct master_s {
 #endif
 
     rxConfig_t rxConfig;
-    inputFilteringMode_e inputFilteringMode;  // Use hardware input filtering, e.g. for OrangeRX PPM/PWM receivers.
+    pwmRxConfig_t pwmRxConfig;
 
     armingConfig_t armingConfig;
 
@@ -156,11 +158,7 @@ typedef struct master_s {
 
 
 #ifdef LED_STRIP
-    ledConfig_t ledConfigs[LED_MAX_STRIP_LENGTH];
-    hsvColor_t colors[LED_CONFIGURABLE_COLOR_COUNT];
-    modeColorIndexes_t modeColors[LED_MODE_COUNT];
-    specialColorIndexes_t specialColors;
-    uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
+    ledStripConfig_t ledStripConfig;
 #endif
 
 #ifdef OSD
@@ -191,3 +189,5 @@ typedef struct master_s {
 extern master_t masterConfig;
 extern profile_t *currentProfile;
 extern controlRateConfig_t *currentControlRateProfile;
+
+void createDefaultConfig(master_t *config);

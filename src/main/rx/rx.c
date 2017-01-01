@@ -400,7 +400,7 @@ bool updateRx(timeUs_t currentTimeUs)
         const uint8_t frameStatus = rxMspFrameStatus();
         if (frameStatus & RX_FRAME_COMPLETE) {
             rxDataReceived = true;
-            rxSignalReceived = true;
+            rxIsInFailsafeMode = false;
             rxSignalReceived = !rxIsInFailsafeMode;
             needRxSignalBefore = currentTimeUs + DELAY_5_HZ;
         }
@@ -460,11 +460,6 @@ static uint16_t getRxfailValue(uint8_t channel)
 {
     const rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &rxConfig->failsafe_channel_configurations[channel];
     uint8_t mode = channelFailsafeConfiguration->mode;
-
-    // force auto mode to prevent fly away when failsafe stage 2 is disabled
-    if ( channel < NON_AUX_CHANNEL_COUNT && (!feature(FEATURE_FAILSAFE)) ) {
-        mode = RX_FAILSAFE_MODE_AUTO;
-    }
 
     switch(mode) {
         case RX_FAILSAFE_MODE_AUTO:

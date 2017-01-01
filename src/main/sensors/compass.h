@@ -26,13 +26,14 @@
 // Type of magnetometer used/detected
 typedef enum {
     MAG_NONE = 0,
-    MAG_HMC5883 = 1,
-    MAG_AK8975 = 2,
-    MAG_GPS = 3,
-    MAG_MAG3110 = 4,
-    MAG_AK8963 = 5,
-    MAG_IST8310 = 6,
-    MAG_FAKE = 7,
+    MAG_AUTODETECT = 1,
+    MAG_HMC5883 = 2,
+    MAG_AK8975 = 3,
+    MAG_GPS = 4,
+    MAG_MAG3110 = 5,
+    MAG_AK8963 = 6,
+    MAG_IST8310 = 7,
+    MAG_FAKE = 8,
     MAG_MAX = MAG_FAKE
 } magSensor_e;
 

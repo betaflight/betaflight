@@ -239,6 +239,7 @@ void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConf
     pidGainsUpdateRequired = false;
 }
 
+#ifdef USE_FLM_HEADLOCK
 static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidState)
 {
     // Heading lock mode is different from Heading hold using compass.
@@ -254,6 +255,7 @@ static void pidApplyHeadingLock(const pidProfile_t *pidProfile, pidState_t *pidS
         pidState->rateTarget = pidState->axisLockAccum * (pidProfile->P8[PIDMAG] / FP_PID_YAWHOLD_P_MULTIPLIER);
     }
 }
+#endif
 
 static float calcHorizonRateMagnitude(const pidProfile_t *pidProfile, const rxConfig_t *rxConfig)
 {
@@ -488,6 +490,7 @@ float pidMagHold(const pidProfile_t *pidProfile)
     return magHoldRate;
 }
 
+#ifdef USE_FLM_TURN_ASSIST
 /*
  * TURN ASSISTANT mode is an assisted mode to do a Yaw rotation on a ground plane, allowing one-stick turn in RATE more
  * and keeping ROLL and PITCH attitude though the turn.
@@ -507,6 +510,7 @@ static void pidTurnAssistant(pidState_t *pidState)
     pidState[PITCH].rateTarget += targetRates.V.Y;
     pidState[YAW].rateTarget = targetRates.V.Z;
 }
+#endif
 
 void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const rxConfig_t *rxConfig)
 {
@@ -541,13 +545,17 @@ void pidController(const pidProfile_t *pidProfile, const controlRateConfig_t *co
         pidLevel(pidProfile, controlRateConfig, &pidState[FD_PITCH], FD_PITCH, horizonRateMagnitude);
     }
 
+#ifdef USE_FLM_HEADLOCK
     if (FLIGHT_MODE(HEADING_LOCK) && magHoldState != MAG_HOLD_ENABLED) {
         pidApplyHeadingLock(pidProfile, &pidState[FD_YAW]);
     }
+#endif
 
+#ifdef USE_FLM_TURN_ASSIST
     if (FLIGHT_MODE(TURN_ASSISTANT)) {
         pidTurnAssistant(pidState);
     }
+#endif
 
     // Apply setpoint rate of change limits
     for (int axis = 0; axis < 3; axis++) {

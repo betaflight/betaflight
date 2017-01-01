@@ -198,7 +198,7 @@ void annexCode(void)
     if (ARMING_FLAG(ARMED)) {
         LED0_ON;
     } else {
-        if (!IS_RC_MODE_ACTIVE(BOXARM)) {
+        if (!IS_RC_MODE_ACTIVE(BOXARM) && failsafeIsReceivingRxData()) {
             ENABLE_ARMING_FLAG(OK_TO_ARM);
         }
 
@@ -398,6 +398,7 @@ void processRx(timeUs_t currentTimeUs)
         LED1_OFF;
     }
 
+#ifdef USE_FLM_HEADLOCK
     /* Heading lock mode */
     if (IS_RC_MODE_ACTIVE(BOXHEADINGLOCK)) {
         if (!FLIGHT_MODE(HEADING_LOCK)) {
@@ -406,7 +407,9 @@ void processRx(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(HEADING_LOCK);
     }
+#endif
 
+#ifdef USE_SERVOS
     /* Flaperon mode */
     if (IS_RC_MODE_ACTIVE(BOXFLAPERON) && STATE(FLAPERON_AVAILABLE)) {
         if (!FLIGHT_MODE(FLAPERON)) {
@@ -415,7 +418,9 @@ void processRx(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(FLAPERON);
     }
+#endif
 
+#ifdef USE_FLM_TURN_ASSIST
     /* Turn assistant mode */
     if (IS_RC_MODE_ACTIVE(BOXTURNASSIST)) {
         if (!FLIGHT_MODE(TURN_ASSISTANT)) {
@@ -424,6 +429,7 @@ void processRx(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(TURN_ASSISTANT);
     }
+#endif
 
 #if defined(MAG)
     if (sensors(SENSOR_ACC) || sensors(SENSOR_MAG)) {

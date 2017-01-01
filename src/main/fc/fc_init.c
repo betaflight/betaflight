@@ -303,7 +303,7 @@ void init(void)
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
 #ifndef SKIP_RX_PWM_PPM
-    pwmRxInit(masterConfig.inputFilteringMode);
+    pwmRxInit(pwmRxConfig());
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
@@ -546,7 +546,7 @@ void init(void)
 #endif
 
 #ifdef LED_STRIP
-    ledStripInit(masterConfig.ledConfigs, masterConfig.colors, masterConfig.modeColors, &masterConfig.specialColors);
+    ledStripInit(ledStripConfig()->ledConfigs, ledStripConfig()->colors, ledStripConfig()->modeColors, &ledStripConfig()->specialColors);
 
     if (feature(FEATURE_LED_STRIP)) {
         ledStripEnable();
