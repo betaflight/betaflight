@@ -45,6 +45,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
+#include "sensors/gyro.h"
+
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
@@ -427,7 +429,7 @@ static uint8_t cmsx_yaw_lpf_hz;
 static long cmsx_FilterPerProfileRead(void)
 {
     cmsx_dterm_lpf_hz = masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz;
-    cmsx_gyroSoftLpf  = masterConfig.profile[profileIndex].pidProfile.gyro_soft_lpf_hz;
+    cmsx_gyroSoftLpf  = gyroConfig()->gyro_soft_lpf_hz;
     cmsx_yaw_p_limit  = masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
     cmsx_yaw_lpf_hz   = masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
 
@@ -439,7 +441,7 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     UNUSED(self);
 
     masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz     = cmsx_dterm_lpf_hz;
-    masterConfig.profile[profileIndex].pidProfile.gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
+    gyroConfig()->gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
     masterConfig.profile[profileIndex].pidProfile.yaw_p_limit      = cmsx_yaw_p_limit;
     masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz       = cmsx_yaw_lpf_hz;
 

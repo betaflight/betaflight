@@ -19,6 +19,7 @@
 
 #include "drivers/accgyro.h"
 #include "common/axis.h"
+#include "config/parameter_group.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -48,17 +49,15 @@ typedef struct gyroConfig_s {
     uint8_t gyroSyncDenominator;            // Gyro sync Denominator
     uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
     uint8_t gyro_soft_lpf_hz;
-#ifdef USE_GYRO_NOTCH_1
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
-#endif
-#ifdef USE_GYRO_NOTCH_2
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-#endif
 } gyroConfig_t;
 
-bool gyroInit(const gyroConfig_t *gyroConfigToUse);
+PG_DECLARE(gyroConfig_t, gyroConfig);
+
+bool gyroInit(void);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
 void gyroUpdate(void);
 bool isGyroCalibrationComplete(void);

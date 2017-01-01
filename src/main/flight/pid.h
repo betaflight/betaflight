@@ -56,18 +56,9 @@ typedef struct pidProfile_s {
 
     uint8_t dterm_lpf_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
     uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
-    uint8_t gyro_soft_lpf_hz;               // Gyro FIR filtering
-#ifdef USE_GYRO_NOTCH_1
-    uint16_t gyro_soft_notch_hz_1;          // Gyro Notch 1 frequency
-    uint16_t gyro_soft_notch_cutoff_1;      // Gyro Notch 1 Cutoff frequency
-#endif
 #ifdef USE_DTERM_NOTCH
     uint16_t dterm_soft_notch_hz;           // Dterm Notch frequency
     uint16_t dterm_soft_notch_cutoff;       // Dterm Notch Cutoff frequency
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    uint16_t gyro_soft_notch_hz_2;          // Gyro Notch 2 frequency
-    uint16_t gyro_soft_notch_cutoff_2;      // Gyro Notch 2 Cutoff frequency
 #endif
     uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 

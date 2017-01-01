@@ -499,7 +499,6 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(
-            &masterConfig.gyroConfig,
             &masterConfig.accelerometerConfig,
             &masterConfig.compassConfig,
             &masterConfig.barometerConfig,

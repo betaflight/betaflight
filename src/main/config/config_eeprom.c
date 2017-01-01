@@ -35,15 +35,6 @@
 
 #include "fc/config.h"
 
-// declare a dummy PG, since scanEEPROM assumes there is at least one PG
-// !!TODO remove once first PG has been created out of masterConfg
-typedef struct dummpConfig_s {
-    uint8_t dummy;
-} dummyConfig_t;
-PG_DECLARE(dummyConfig_t, dummyConfig);
-#define PG_DUMMY_CONFIG 1
-PG_REGISTER(dummyConfig_t, dummyConfig, PG_DUMMY_CONFIG, 0);
-
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 

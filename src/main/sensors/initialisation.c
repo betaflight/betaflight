@@ -42,7 +42,7 @@ uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_AUTODETECT, ACC_NONE, BARO
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
-bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
+bool sensorsAutodetect(
                 accelerometerConfig_t *accConfig,
                 compassConfig_t *compassConfig,
                 barometerConfig_t *baroConfig,
@@ -50,7 +50,7 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
 {
     bool eepromUpdatePending = false;
 
-    if (!gyroInit(gyroConfig)) {
+    if (!gyroInit()) {
         return false;
     }
 
@@ -92,9 +92,6 @@ bool sensorsAutodetect(const gyroConfig_t *gyroConfig,
     const rangefinderType_e rangefinderType = rangefinderDetect();
     rangefinderInit(rangefinderType);
 #endif
-    if (gyroConfig->gyro_align != ALIGN_DEFAULT) {
-        gyro.dev.gyroAlign = gyroConfig->gyro_align;
-    }
     if (accConfig->acc_align != ALIGN_DEFAULT) {
         acc.dev.accAlign = accConfig->acc_align;
     }

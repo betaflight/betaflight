@@ -135,18 +135,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 10;    // NAV_VEL_Z_D * 100
 
     pidProfile->acc_soft_lpf_hz = 15;
-    pidProfile->gyro_soft_lpf_hz = 60;
-#ifdef USE_GYRO_NOTCH_1
-    pidProfile->gyro_soft_notch_cutoff_1 = 129;
-    pidProfile->gyro_soft_notch_hz_1 = 172;
-#endif
 #ifdef USE_DTERM_NOTCH
     pidProfile->dterm_soft_notch_cutoff = 43;
     pidProfile->dterm_soft_notch_hz = 86;
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    pidProfile->gyro_soft_notch_cutoff_2 = 43;
-    pidProfile->gyro_soft_notch_hz_2 = 86;
 #endif
     pidProfile->dterm_lpf_hz = 40;
     pidProfile->yaw_lpf_hz = 30;
@@ -502,11 +493,9 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
-    config->gyroConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero, &config->accelerometerConfig.accGain);
 
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
     config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     config->compassConfig.mag_align = ALIGN_DEFAULT;
 
@@ -514,7 +503,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
 
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     config->accelerometerConfig.acc_hardware = ACC_AUTODETECT;     // default/autodetect
 
@@ -603,10 +591,7 @@ void createDefaultConfig(master_t *config)
 
     resetSerialConfig(&config->serialConfig);
 
-    config->gyroConfig.looptime = 2000;
     config->i2c_overclock = 0;
-    config->gyroConfig.gyroSync = 0;
-    config->gyroConfig.gyroSyncDenominator = 2;
 
 #ifdef ASYNC_GYRO_PROCESSING
     config->accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
@@ -811,16 +796,6 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    gyroConfig()->gyro_soft_lpf_hz = currentProfile->pidProfile.gyro_soft_lpf_hz;
-#ifdef USE_GYRO_NOTCH_1
-    gyroConfig()->gyro_soft_notch_hz_1 = currentProfile->pidProfile.gyro_soft_notch_hz_1;
-    gyroConfig()->gyro_soft_notch_cutoff_1 = currentProfile->pidProfile.gyro_soft_notch_cutoff_1;
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    gyroConfig()->gyro_soft_notch_hz_2 = currentProfile->pidProfile.gyro_soft_notch_hz_2;
-    gyroConfig()->gyro_soft_notch_cutoff_2 = currentProfile->pidProfile.gyro_soft_notch_cutoff_2;
-#endif
-    
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
@@ -859,18 +834,18 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
 #ifdef USE_GYRO_NOTCH_1
-    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_1 >= currentProfile->pidProfile.gyro_soft_notch_hz_1) {
-        currentProfile->pidProfile.gyro_soft_notch_hz_1 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
+        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+    }
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
+        gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 #endif
 #ifdef USE_DTERM_NOTCH
     if (currentProfile->pidProfile.dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
         currentProfile->pidProfile.dterm_soft_notch_hz = 0;
-    }
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_2 >= currentProfile->pidProfile.gyro_soft_notch_hz_2) {
-        currentProfile->pidProfile.gyro_soft_notch_hz_2 = 0;
     }
 #endif
     // Disable unused features

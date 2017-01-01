@@ -41,6 +41,7 @@
 #define USE_FLM_HEADLOCK
 #define USE_FLM_TURN_ASSIST
 #else
+#define USE_PARAMETER_GROUPS // !!TODO temporarily set while implementing parameter groups
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_CLI_RESOURCES
