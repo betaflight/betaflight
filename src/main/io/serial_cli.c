@@ -2828,6 +2828,9 @@ static void cliRateProfile(char *cmdline)
             cliRateProfile("");
         }
     }
+
+    // restore configs from copies
+    restoreConfigs();
 }
 
 static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_t *defaultConfig)
