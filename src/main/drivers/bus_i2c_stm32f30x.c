@@ -106,7 +106,7 @@ static i2cDevice_t i2cHardwareMap[] = {
     { .dev = I2C2, .scl = IO_TAG(I2C2_SCL), .sda = IO_TAG(I2C2_SDA), .rcc = RCC_APB1(I2C2), .overClock = I2C2_OVERCLOCK }
 };
 
-static i2cBusState_t busState[I2CDEV_MAX] = { { 0 } };
+static i2cBusState_t busState[I2CDEV_COUNT] = { { 0 } };
 
 static void i2cResetInterface(i2cBusState_t * i2cBusState)
 {
