@@ -243,6 +243,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallbac
             DMA_Init(s->txDMAStream, &DMA_InitStructure);
             DMA_ITConfig(s->txDMAStream, DMA_IT_TC | DMA_IT_FE | DMA_IT_TE | DMA_IT_DME, ENABLE);
             DMA_SetCurrDataCounter(s->txDMAStream, 0);
+            // postpone USART_DMACmd until data are ready
 #else
             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
             DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
@@ -251,8 +252,8 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallbac
             DMA_ITConfig(s->txDMAChannel, DMA_IT_TC, ENABLE);
             DMA_SetCurrDataCounter(s->txDMAChannel, 0);
             s->txDMAChannel->CNDTR = 0;
-#endif
             USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
+#endif
         } else {
             USART_ITConfig(s->USARTx, USART_IT_TXE, ENABLE);
         }
@@ -281,15 +282,10 @@ void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
 #ifdef STM32F4
-        if (s->txDMAStream->CR & 1) // DMA is already in progress
+        if (s->txDMAStream->CR & DMA_SxCR_EN) // DMA is already in progress
             return;
 
         debug[0] += s->txDMAStream->NDTR;
-
-        if (s->txDMAStream->NDTR)
-            goto reenable;
-
-        // DMA_Cmd(s->txDMAStream, DISABLE); // XXX It's already disabled.
 
         if (s->port.txBufferHead == s->port.txBufferTail) {
             s->txDMAEmpty = true;
@@ -297,19 +293,22 @@ void uartTryStartTxDMA(uartPort_t *s)
         }
 
         DMA_MemoryTargetConfig(s->txDMAStream, (uint32_t)&s->port.txBuffer[s->port.txBufferTail], DMA_Memory_0);
-        //s->txDMAStream->M0AR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail];
-        if (s->port.txBufferHead > s->port.txBufferTail) {
-            s->txDMAStream->NDTR = s->port.txBufferHead - s->port.txBufferTail;
+        if (s->port.txBufferHead >= s->port.txBufferTail) {
+            DMA_SetCurrDataCounter(s->txDMAStream, s->port.txBufferHead - s->port.txBufferTail);
             s->port.txBufferTail = s->port.txBufferHead;
-        }
-        else {
-            s->txDMAStream->NDTR = s->port.txBufferSize - s->port.txBufferTail;
+        } else {
+            DMA_SetCurrDataCounter(s->txDMAStream, s->port.txBufferSize - s->port.txBufferTail);
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
 
-    reenable:
+        // disable USART DMA request - DMA controller needs time to preload data from memory
+        USART_DMACmd(s->USARTx, USART_DMAReq_Tx, DISABLE);
+
         DMA_Cmd(s->txDMAStream, ENABLE);
+        asm volatile("\tnop\n");  // just to be sure, remove after testing
+        // reenable USART DMA request
+        USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
 #else
         if (s->txDMAChannel->CCR & 1)
             return;
