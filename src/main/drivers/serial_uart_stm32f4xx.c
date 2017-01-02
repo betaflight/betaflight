@@ -264,8 +264,6 @@ void uartIrqHandler(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    DMA_Cmd(s->txDMAStream, DISABLE);
-
     uartTryStartTxDMA(s);
 }
 
