@@ -19,7 +19,7 @@
 
 #include "msp/msp.h"
 
-// Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 2 MSP ports.
+// Each MSP port requires state and a receive buffer, revisit this default if someone needs more than 3 MSP ports.
 #define MAX_MSP_PORT_COUNT 3
 
 typedef enum {
