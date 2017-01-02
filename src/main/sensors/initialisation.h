@@ -17,5 +17,4 @@
 
 #pragma once
 
-bool sensorsAutodetect(
-                pitotmeterConfig_t *pitotConfig);
+bool sensorsAutodetect(void);

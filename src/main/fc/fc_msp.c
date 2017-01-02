@@ -1155,7 +1155,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
+#ifdef PITOT
         sbufWriteU8(dst, pitotmeterConfig()->pitot_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, 0);    // rangefinder hardware
         sbufWriteU8(dst, 0);    // optical flow hardware
         break;
@@ -1580,7 +1584,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #else
         sbufReadU8(src);
 #endif
+#ifdef PITOT
         pitotmeterConfig()->pitot_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         sbufReadU8(src);        // rangefinder hardware
         sbufReadU8(src);        // optical flow hardware
         break;

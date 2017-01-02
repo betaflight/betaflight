@@ -57,7 +57,6 @@
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
-#include "sensors/pitotmeter.h"
 
 #include "telemetry/telemetry.h"
 
@@ -67,7 +66,6 @@
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
-#define pitotmeterConfig(x) (&masterConfig.pitotmeterConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
@@ -137,8 +135,6 @@ typedef struct master_s {
     boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;
-
-    pitotmeterConfig_t pitotmeterConfig;
 
     batteryConfig_t batteryConfig;
 

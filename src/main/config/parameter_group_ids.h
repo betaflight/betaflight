@@ -67,6 +67,9 @@
 //#define PG_DRIVER_PWM_RX_CONFIG 100
 //#define PG_DRIVER_FLASHCHIP_CONFIG 101
 
+// iNav specific parameter group ids start at 1000
+#define PG_PITOTMETER_CONFIG 1000
+
 // OSD configuration (subject to change)
 //#define PG_OSD_FONT_CONFIG 2047
 //#define PG_OSD_VIDEO_CONFIG 2046
