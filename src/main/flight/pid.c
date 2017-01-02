@@ -28,6 +28,9 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
+#include "config/config_master.h"
+
+#include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
@@ -72,7 +75,16 @@ typedef struct {
     rateLimitFilter_t axisAccelFilter;
     pt1Filter_t ptermLpfState;
     pt1Filter_t deltaLpfState;
+    
+    // Dterm notch filtering
+#ifdef USE_DTERM_NOTCH
+    biquadFilter_t deltaNotchFilter;
+#endif
 } pidState_t;
+
+#ifdef USE_DTERM_NOTCH
+    static filterApplyFnPtr notchFilterApplyFn;
+#endif
 
 extern uint8_t motorCount;
 extern bool motorLimitReached;
@@ -102,6 +114,27 @@ void pidInit(void)
         firFilterInit(&pidState[axis].gyroRateFilter, pidState[axis].gyroRateBuf, PID_GYRO_RATE_BUF_LENGTH, dtermCoeffs);
     }
 }
+
+#ifdef USE_DTERM_NOTCH
+bool pidInitFilters(const pidProfile_t *pidProfile)
+{
+    uint32_t refreshRate;
+    #ifdef ASYNC_GYRO_PROCESSING
+        refreshRate =  getPidUpdateRate();
+    #else
+        refreshRate= gyro.targetLooptime;
+    #endif
+    notchFilterApplyFn = nullFilterApply;
+    if(refreshRate != 0 && pidProfile->dterm_soft_notch_hz != 0){
+        notchFilterApplyFn = (filterApplyFnPtr)biquadFilterApply;
+        for (int axis = 0; axis < 3; ++ axis) {
+            biquadFilterInitNotch(&pidState[axis].deltaNotchFilter, refreshRate, pidProfile->dterm_soft_notch_hz, pidProfile->dterm_soft_notch_cutoff);
+        }
+        return true;
+    }
+    return false;
+}
+#endif
 
 void pidResetErrorAccumulators(void)
 {
@@ -342,14 +375,18 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
         // optimisation for when D8 is zero, often used by YAW axis
         newDTerm = 0;
     } else {
-        firFilterUpdate(&pidState->gyroRateFilter, pidState->gyroRate);
-        newDTerm = firFilterApply(&pidState->gyroRateFilter) * (-pidState->kD / dT);
+        firFilterUpdate(&pidState->gyroRateFilter, pidProfile->dterm_setpoint_weight * pidState->rateTarget - pidState->gyroRate);
+        newDTerm = firFilterApply(&pidState->gyroRateFilter) * (pidState->kD / dT);
 
         // Apply additional lowpass
         if (pidProfile->dterm_lpf_hz) {
             newDTerm = pt1FilterApply4(&pidState->deltaLpfState, newDTerm, pidProfile->dterm_lpf_hz, dT);
         }
 
+#ifdef USE_DTERM_NOTCH
+        newDTerm = notchFilterApplyFn(&pidState->deltaNotchFilter, newDTerm);
+#endif
+        
         // Additionally constrain D
         newDTerm = constrainf(newDTerm, -300.0f, 300.0f);
     }

@@ -929,7 +929,21 @@ const clivalue_t valueTable[] = {
     { "acc_soft_lpf_hz",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acc_soft_lpf_hz, .config.minmax = {0, 200 } },
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 200 } },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 200 } },
-
+    { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_setpoint_weight, .config.minmax = {0, 2 } },
+    
+#ifdef USE_GYRO_NOTCH_1
+    { "gyro_notch1_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_hz_1, .config.minmax = {0, 500 } },
+    { "gyro_notch1_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_cutoff_1, .config.minmax = {1, 500 } },
+#endif    
+#ifdef USE_GYRO_NOTCH_2
+    { "gyro_notch2_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_hz_2, .config.minmax = {0, 500 } },
+    { "gyro_notch2_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_cutoff_2, .config.minmax = {1, 500 } },
+#endif    
+#ifdef USE_DTERM_NOTCH
+    { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_soft_notch_hz, .config.minmax = {0, 500 } },
+    { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_soft_notch_cutoff, .config.minmax = {1, 500 } },
+#endif
+    
     { "yaw_p_limit",                VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_p_limit, .config.minmax = { YAW_P_LIMIT_MIN,  YAW_P_LIMIT_MAX }, },
 
     { "iterm_ignore_threshold",     VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.rollPitchItermIgnoreRate, .config.minmax = {15, 1000 } },

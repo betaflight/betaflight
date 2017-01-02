@@ -22,9 +22,18 @@
 
 #include "common/filter.h"
 #include "common/maths.h"
+#include "common/utils.h"
 
 #define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 #define BIQUAD_Q 1.0f / sqrtf(2.0f)     /* quality factor - butterworth*/
+
+// NULL filter
+
+float nullFilterApply(void *filter, float input)
+{
+    UNUSED(filter);
+    return input;
+}
 
 // PT1 Low Pass filter
 
@@ -81,6 +90,12 @@ float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff)
 {
     const float octaves = log2f((float)centerFreq  / (float)cutoff) * 2;
     return sqrtf(powf(2, octaves)) / (powf(2, octaves) - 1);
+}
+
+void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t refreshRate, uint16_t filterFreq, uint16_t cutoffHz)
+{
+    float Q = filterGetNotchQ(filterFreq, cutoffHz);
+    biquadFilterInit(filter, filterFreq, refreshRate, Q, FILTER_NOTCH);
 }
 
 // sets up a biquad Filter

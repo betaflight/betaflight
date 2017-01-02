@@ -1072,12 +1072,29 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, currentProfile->pidProfile.gyro_soft_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
         sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
+#ifdef USE_GYRO_NOTCH_1
+        sbufWriteU16(dst, currentProfile->pidProfile.gyro_soft_notch_hz_1); //masterConfig.gyro_soft_notch_hz_1
+        sbufWriteU16(dst, currentProfile->pidProfile.gyro_soft_notch_cutoff_1); //BF: masterConfig.gyro_soft_notch_cutoff_1
+#else
         sbufWriteU16(dst, 1); //masterConfig.gyro_soft_notch_hz_1
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_1
+#endif
+
+#ifdef USE_DTERM_NOTCH
+        sbufWriteU16(dst, currentProfile->pidProfile.dterm_soft_notch_hz); //BF: currentProfile->pidProfile.dterm_notch_hz
+        sbufWriteU16(dst, currentProfile->pidProfile.dterm_soft_notch_cutoff); //currentProfile->pidProfile.dterm_notch_cutoff
+#else       
         sbufWriteU16(dst, 1); //BF: currentProfile->pidProfile.dterm_notch_hz
         sbufWriteU16(dst, 1); //currentProfile->pidProfile.dterm_notch_cutoff
+#endif
+            
+#ifdef USE_GYRO_NOTCH_2
+        sbufWriteU16(dst, currentProfile->pidProfile.gyro_soft_notch_hz_2); //BF: masterConfig.gyro_soft_notch_hz_2
+        sbufWriteU16(dst, currentProfile->pidProfile.gyro_soft_notch_cutoff_2); //BF: masterConfig.gyro_soft_notch_cutoff_2
+#else
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_hz_2
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_2
+#endif
         break;
 
     case MSP_PID_ADVANCED:
@@ -1466,7 +1483,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         currentProfile->pidProfile.gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = constrain(sbufReadU16(src), 0, 255);
         currentProfile->pidProfile.yaw_lpf_hz = constrain(sbufReadU16(src), 0, 255);
-
+#ifdef USE_GYRO_NOTCH_1
+        currentProfile->pidProfile.gyro_soft_notch_hz_1 = constrain(sbufReadU16(src), 0, 500);
+        currentProfile->pidProfile.gyro_soft_notch_cutoff_1 = constrain(sbufReadU16(src), 1, 500);
+#endif
+#ifdef USE_DTERM_NOTCH
+        currentProfile->pidProfile.dterm_soft_notch_hz = constrain(sbufReadU16(src), 0, 500);
+        currentProfile->pidProfile.dterm_soft_notch_cutoff = constrain(sbufReadU16(src), 1, 500);
+        pidInitFilters(&currentProfile->pidProfile);
+#endif
+#ifdef USE_GYRO_NOTCH_2
+        currentProfile->pidProfile.gyro_soft_notch_hz_2 = constrain(sbufReadU16(src), 0, 500);
+        currentProfile->pidProfile.gyro_soft_notch_cutoff_2 = constrain(sbufReadU16(src), 1, 500);
+#endif
         //BF: masterConfig.gyro_soft_notch_hz_1 = read16();
         //BF: masterConfig.gyro_soft_notch_cutoff_1 = read16();
         //BF: currentProfile->pidProfile.dterm_notch_hz = read16();

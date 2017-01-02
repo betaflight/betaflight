@@ -136,8 +136,21 @@ void resetPidProfile(pidProfile_t *pidProfile)
 
     pidProfile->acc_soft_lpf_hz = 15;
     pidProfile->gyro_soft_lpf_hz = 60;
+#ifdef USE_GYRO_NOTCH_1
+    pidProfile->gyro_soft_notch_cutoff_1 = 129;
+    pidProfile->gyro_soft_notch_hz_1 = 172;
+#endif
+#ifdef USE_DTERM_NOTCH
+    pidProfile->dterm_soft_notch_cutoff = 43;
+    pidProfile->dterm_soft_notch_hz = 86;
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    pidProfile->gyro_soft_notch_cutoff_2 = 43;
+    pidProfile->gyro_soft_notch_hz_2 = 86;
+#endif
     pidProfile->dterm_lpf_hz = 40;
     pidProfile->yaw_lpf_hz = 30;
+    pidProfile->dterm_setpoint_weight = 0.0f;
 
     pidProfile->rollPitchItermIgnoreRate = 200;     // dps
     pidProfile->yawItermIgnoreRate = 50;            // dps
@@ -799,7 +812,15 @@ void activateConfig(void)
     );
 
     gyroConfig()->gyro_soft_lpf_hz = currentProfile->pidProfile.gyro_soft_lpf_hz;
-
+#ifdef USE_GYRO_NOTCH_1
+    gyroConfig()->gyro_soft_notch_hz_1 = currentProfile->pidProfile.gyro_soft_notch_hz_1;
+    gyroConfig()->gyro_soft_notch_cutoff_1 = currentProfile->pidProfile.gyro_soft_notch_cutoff_1;
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    gyroConfig()->gyro_soft_notch_hz_2 = currentProfile->pidProfile.gyro_soft_notch_hz_2;
+    gyroConfig()->gyro_soft_notch_cutoff_2 = currentProfile->pidProfile.gyro_soft_notch_cutoff_2;
+#endif
+    
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
@@ -837,6 +858,21 @@ void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
+#ifdef USE_GYRO_NOTCH_1
+    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_1 >= currentProfile->pidProfile.gyro_soft_notch_hz_1) {
+        currentProfile->pidProfile.gyro_soft_notch_hz_1 = 0;
+    }
+#endif
+#ifdef USE_DTERM_NOTCH
+    if (currentProfile->pidProfile.dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
+        currentProfile->pidProfile.dterm_soft_notch_hz = 0;
+    }
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_2 >= currentProfile->pidProfile.gyro_soft_notch_hz_2) {
+        currentProfile->pidProfile.gyro_soft_notch_hz_2 = 0;
+    }
+#endif
     // Disable unused features
     featureClear(FEATURE_UNUSED_1 | FEATURE_UNUSED_2);
 
