@@ -767,9 +767,11 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConfigs(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
     setProfile(0);
     setControlRateProfile(0);
@@ -1106,7 +1108,7 @@ void ensureEEPROMContainsValidData(void)
 
 void resetEEPROM(void)
 {
-    resetConf();
+    resetConfigs();
     writeEEPROM();
 }
 
