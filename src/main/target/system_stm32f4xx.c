@@ -373,6 +373,8 @@ uint32_t hse_value = HSE_VALUE;
  /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N */
 #if defined(COLIBRI)
  #define PLL_M      16
+#elif defined(PIXRACER)
+ #define PLL_M      24
 #else
  #define PLL_M      8
 #endif
@@ -396,7 +398,7 @@ uint32_t hse_value = HSE_VALUE;
 #endif /* STM32F446xx */
 
 #if defined(STM32F427_437xx) || defined(STM32F429_439xx) || defined(STM32F446xx) || defined(STM32F469_479xx)
-#define PLL_N      360
+#define PLL_N      336
 /* SYSCLK = PLL_VCO / PLL_P */
 #define PLL_P      2
 #endif /* STM32F427_437x || STM32F429_439xx || STM32F446xx || STM32F469_479xx */
@@ -763,6 +765,7 @@ void SetSysClock(void)
   else
   { /* If HSE fails to start-up, the application will have wrong clock
          configuration. User can add here some code to deal with this error */
+    while(1) { __NOP(); }
   }
 #elif defined(STM32F410xx) || defined(STM32F411xE)
 #if defined(USE_HSE_BYPASS)
@@ -871,6 +874,8 @@ void SetSysClock(void)
   }
 #endif /* USE_HSE_BYPASS */
 #endif /* STM32F40_41xxx || STM32F427_437xx || STM32F429_439xx || STM32F401xx || STM32F469_479xx */
+
+  SystemCoreClockUpdate();
 }
 
 /**

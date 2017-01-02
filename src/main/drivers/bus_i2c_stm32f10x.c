@@ -41,7 +41,7 @@ static void i2cUnstick(IO_t scl, IO_t sda);
 #ifdef STM32F4
 
 #if defined(USE_I2C_PULLUP)
-#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, 0, GPIO_OType_OD, GPIO_PuPd_UP)
+#define IOCFG_I2C IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_OD, GPIO_PuPd_UP)
 #else
 #define IOCFG_I2C IOCFG_AF_OD
 #endif

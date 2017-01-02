@@ -85,7 +85,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
 
