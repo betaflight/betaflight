@@ -27,12 +27,14 @@
 
 #include "build/build_config.h"
 #include "build/atomic.h"
+#include "build/debug.h"
 
 #include "common/utils.h"
 
 #include "gpio.h"
 #include "inverter.h"
 #include "nvic.h"
+#include "dma.h"
 
 #include "serial.h"
 #include "serial_uart.h"
@@ -279,10 +281,10 @@ void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
 #ifdef STM32F4
-        if (s->txDMAStream->CR & 1)
+        if (s->txDMAStream->CR & 1) // DMA is in progress
             return;
 
-        DMA_Cmd(s->txDMAStream, DISABLE);
+        // DMA_Cmd(s->txDMAStream, DISABLE); // XXX It's already disabled.
 
         if (s->port.txBufferHead == s->port.txBufferTail) {
             s->txDMAEmpty = true;
@@ -300,6 +302,7 @@ void uartTryStartTxDMA(uartPort_t *s)
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
+
         DMA_Cmd(s->txDMAStream, ENABLE);
 #else
         if (s->txDMAChannel->CCR & 1)
