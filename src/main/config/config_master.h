@@ -89,6 +89,8 @@
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
+#define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
+#define customServoMixer(i) (&masterConfig.customServoMixer[i])
 
 
 // System-wide
