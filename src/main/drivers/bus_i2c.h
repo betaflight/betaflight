@@ -39,6 +39,8 @@ typedef enum I2CDevice {
     I2CDEV_MAX = I2CDEV_3,
 } I2CDevice;
 
+#define I2CDEV_COUNT    (I2CDEV_MAX + 1)
+
 typedef struct i2cDevice_s {
     I2C_TypeDef *dev;
     ioTag_t scl;
