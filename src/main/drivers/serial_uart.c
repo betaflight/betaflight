@@ -284,6 +284,9 @@ void uartTryStartTxDMA(uartPort_t *s)
         if (s->txDMAStream->CR & 1) // DMA is in progress
             return;
 
+        if (s->txDMAStream->NDTR > debug[0])
+            debug[0] = s->txDMAStream->NDTR;
+
         // DMA_Cmd(s->txDMAStream, DISABLE); // XXX It's already disabled.
 
         if (s->port.txBufferHead == s->port.txBufferTail) {
