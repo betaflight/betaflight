@@ -58,7 +58,7 @@ typedef enum {
     FEATURE_RX_MSP = 1 << 14,
     FEATURE_RSSI_ADC = 1 << 15,
     FEATURE_LED_STRIP = 1 << 16,
-    FEATURE_DASHBOARD= 1 << 17,
+    FEATURE_DASHBOARD = 1 << 17,
     FEATURE_UNUSED_2 = 1 << 18,         // Unused in INAV
     FEATURE_BLACKBOX = 1 << 19,
     FEATURE_CHANNEL_FORWARDING = 1 << 20,
@@ -84,8 +84,10 @@ void setPreferredBeeperOffMask(uint32_t mask);
 
 void copyCurrentProfileToProfileSlot(uint8_t profileSlotIndex);
 
+void initEEPROM(void);
 void resetEEPROM(void);
-void readEEPROMAndNotify(void);
+void readEEPROM(void);
+void writeEEPROM();
 void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
@@ -94,11 +96,11 @@ void activateConfig(void);
 
 uint8_t getCurrentProfile(void);
 void changeProfile(uint8_t profileIndex);
+struct pidProfile_s;
+void resetPidProfile(struct pidProfile_s *pidProfile);
 
 void setProfile(uint8_t profileIndex);
 void setControlRateProfile(uint8_t profileIndex);
-struct pidProfile_s;
-void resetPidProfile(struct pidProfile_s *pidProfile);
 
 uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
@@ -106,6 +108,7 @@ bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 
 uint16_t getCurrentMinthrottle(void);
+
 struct master_s;
 void targetConfiguration(struct master_s *config);
 

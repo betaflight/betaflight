@@ -68,12 +68,12 @@
 #define PG_DRIVER_FLASHCHIP_CONFIG 101
 
 // OSD configuration (subject to change)
-#define PG_OSD_FONT_CONFIG 32768
-#define PG_OSD_VIDEO_CONFIG 32769
-#define PG_OSD_ELEMENT_CONFIG 32770
+#define PG_OSD_FONT_CONFIG 2047
+#define PG_OSD_VIDEO_CONFIG 2046
+#define PG_OSD_ELEMENT_CONFIG 2045
 
-
-#define PG_RESERVED_FOR_TESTING_1 65533
-#define PG_RESERVED_FOR_TESTING_2 65534
-#define PG_RESERVED_FOR_TESTING_3 65535
+// 4095 is currently the highest number that can be used for a PGN due to the top 4 bits of the 16 bit value being reserved for the version when the PG is stored in an EEPROM.
+#define PG_RESERVED_FOR_TESTING_1 4095
+#define PG_RESERVED_FOR_TESTING_2 4094
+#define PG_RESERVED_FOR_TESTING_3 4093
 
