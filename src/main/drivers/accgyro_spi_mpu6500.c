@@ -34,6 +34,7 @@
 #include "accgyro_mpu6500.h"
 #include "accgyro_spi_mpu6500.h"
 
+#if defined(USE_ACC_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6500)
 #define DISABLE_MPU6500       IOHi(mpuSpi6500CsPin)
 #define ENABLE_MPU6500        IOLo(mpuSpi6500CsPin)
 
@@ -141,3 +142,4 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
 
     return true;
 }
+#endif

@@ -123,6 +123,10 @@
 #include "hardware_revision.h"
 #endif
 
+#ifdef USE_HARDWARE_PREBOOT_SETUP
+extern void initialisePreBootHardware(void);
+#endif
+
 extern uint8_t motorControlEnable;
 
 typedef enum {
@@ -178,6 +182,10 @@ void init(void)
 
     // initialize IO (needed for all IO operations)
     IOInitGlobal();
+
+#ifdef USE_HARDWARE_PREBOOT_SETUP
+    initialisePreBootHardware();
+#endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();

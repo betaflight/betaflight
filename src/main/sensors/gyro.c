@@ -160,9 +160,8 @@ static bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
 #ifdef GYRO_MPU6500_ALIGN
             dev->gyroAlign = GYRO_MPU6500_ALIGN;
 #endif
-
-            break;
-        }
+                break;
+            }
 #endif
         ; // fallthrough
 

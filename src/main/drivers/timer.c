@@ -239,7 +239,7 @@ void configTimeBase(TIM_TypeDef *tim, uint16_t period, uint8_t mhz)
 
     // "The counter clock frequency (CK_CNT) is equal to f CK_PSC / (PSC[15:0] + 1)." - STM32F10x Reference Manual 14.4.11
     // Thus for 1Mhz: 72000000 / 1000000 = 72, 72 - 1 = 71 = TIM_Prescaler
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined (STM32F427_437xx)
     if (tim == TIM1 || tim == TIM8 || tim == TIM9 || tim == TIM10 || tim == TIM11) {
         TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / ((uint32_t)mhz * 1000000)) - 1;
     }
@@ -275,12 +275,12 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
         timerNVICConfigure(TIM1_UP_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx) || defined(STM32F411xE)
+#if defined (STM32F40_41xxx) || defined(STM32F411xE) || defined (STM32F427_437xx)
     case TIM1_CC_IRQn:
         timerNVICConfigure(TIM1_UP_TIM10_IRQn);
         break;
 #endif
-#if defined (STM32F40_41xxx)
+#if defined (STM32F40_41xxx) || defined (STM32F427_437xx)
     case TIM8_CC_IRQn:
         timerNVICConfigure(TIM8_UP_TIM13_IRQn);
         break;
