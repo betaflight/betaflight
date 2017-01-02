@@ -281,11 +281,13 @@ void uartTryStartTxDMA(uartPort_t *s)
 {
     ATOMIC_BLOCK(NVIC_PRIO_SERIALUART_TXDMA) {
 #ifdef STM32F4
-        if (s->txDMAStream->CR & 1) // DMA is in progress
+        if (s->txDMAStream->CR & 1) // DMA is already in progress
             return;
 
-        if (s->txDMAStream->NDTR > debug[0])
-            debug[0] = s->txDMAStream->NDTR;
+        debug[0] += s->txDMAStream->NDTR;
+
+        if (s->txDMAStream->NDTR)
+            goto reenable;
 
         // DMA_Cmd(s->txDMAStream, DISABLE); // XXX It's already disabled.
 
@@ -306,6 +308,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         }
         s->txDMAEmpty = false;
 
+    reenable:
         DMA_Cmd(s->txDMAStream, ENABLE);
 #else
         if (s->txDMAChannel->CCR & 1)

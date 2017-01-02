@@ -20,6 +20,8 @@
 
 #include "platform.h"
 
+#include "build/debug.h"
+
 #include "system.h"
 #include "io.h"
 #include "rcc.h"
@@ -262,7 +264,7 @@ void uartIrqHandler(uartPort_t *s)
 
 static void handleUsartTxDma(uartPort_t *s)
 {
-    // DMA_Cmd(s->txDMAStream, DISABLE);
+    DMA_Cmd(s->txDMAStream, DISABLE);
 
     uartTryStartTxDMA(s);
 }
@@ -277,6 +279,7 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
         if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
         {
             DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+            debug[1]++;
         }
         handleUsartTxDma(s);
     }
