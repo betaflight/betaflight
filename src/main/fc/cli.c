@@ -23,6 +23,7 @@
 #include <math.h>
 #include <ctype.h>
 
+//#define USE_PARAMETER_GROUPS
 #include "platform.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
@@ -47,6 +48,9 @@ uint8_t cliMode = 0;
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/accgyro.h"
 #include "drivers/buf_writer.h"
@@ -460,6 +464,7 @@ typedef enum {
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
     PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    CONTROL_RATE_VALUE = (3 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -483,6 +488,22 @@ typedef union {
     cliMinMaxConfig_t minmax;
 } cliValueConfig_t;
 
+#ifdef USE_PARAMETER_GROUPS
+typedef struct {
+    const char *name;
+    const uint8_t type; // see cliValueFlag_e
+    const cliValueConfig_t config;
+
+    pgn_t pgn;
+    uint16_t offset;
+} __attribute__((packed)) clivalue_t;
+
+static const clivalue_t valueTable[] = {
+        { "dummy",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  255 }, 0, 0 }
+};
+
+#else
+
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
@@ -490,7 +511,7 @@ typedef struct {
     const cliValueConfig_t config;
 } clivalue_t;
 
-const clivalue_t valueTable[] = {
+static const clivalue_t valueTable[] = {
 #ifndef SKIP_TASK_STATISTICS
     { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.task_statistics, .config.lookup = { TABLE_OFF_ON } },
 #endif
@@ -808,8 +829,7 @@ const clivalue_t valueTable[] = {
     { "displayport_max7456_row_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMax7456()->rowAdjust, .config.minmax = { -3, 0 } },
 #endif
 };
-
-#define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
+#endif
 
 static void cliPrint(const char *str)
 {
@@ -928,6 +948,24 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
+#ifdef USE_PARAMETER_GROUPS
+static void* getValuePointer(const clivalue_t *var)
+{
+    const pgRegistry_t* rec = pgFind(var->pgn);
+
+    switch (var->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return rec->address + var->offset;
+    case PROFILE_RATE_VALUE:
+        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfile();
+    case CONTROL_RATE_VALUE:
+        return rec->address + var->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return *rec->ptr + var->offset;
+    }
+    return NULL;
+}
+#else
 void *getValuePointer(const clivalue_t *value)
 {
     void *ptr = value->ptr;
@@ -942,6 +980,7 @@ void *getValuePointer(const clivalue_t *value)
 
     return ptr;
 }
+#endif
 
 static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
 {
@@ -1003,7 +1042,7 @@ static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const maste
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
 {
     const clivalue_t *value;
-    for (uint32_t i = 0; i < VALUE_COUNT; i++) {
+    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         value = &valueTable[i];
 
         if ((value->type & VALUE_SECTION_MASK) != valueSection) {
@@ -1050,13 +1089,7 @@ typedef union {
 
 static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
 {
-    void *ptr = var->ptr;
-    if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
-    }
-    if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
-    }
+    void *ptr = getValuePointer(var);
 
     switch (var->type & VALUE_TYPE_MASK) {
         case VAR_UINT8:
@@ -3072,7 +3105,7 @@ static void cliGet(char *cmdline)
     const clivalue_t *val;
     int matchedCommands = 0;
 
-    for (uint32_t i = 0; i < VALUE_COUNT; i++) {
+    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         if (strstr(valueTable[i].name, cmdline)) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
@@ -3103,7 +3136,7 @@ static void cliSet(char *cmdline)
 
     if (len == 0 || (len == 1 && cmdline[0] == '*')) {
         cliPrint("Current settings: \r\n");
-        for (uint32_t i = 0; i < VALUE_COUNT; i++) {
+        for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
             val = &valueTable[i];
             cliPrintf("%s = ", valueTable[i].name);
             cliPrintVar(val, len); // when len is 1 (when * is passed as argument), it will print min/max values as well, for gui
@@ -3124,7 +3157,7 @@ static void cliSet(char *cmdline)
             eqptr++;
         }
 
-        for (uint32_t i = 0; i < VALUE_COUNT; i++) {
+        for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
             val = &valueTable[i];
             // ensure exact match when setting to prevent setting variables with shorter names
             if (strncasecmp(cmdline, valueTable[i].name, strlen(valueTable[i].name)) == 0 && variableNameLength == strlen(valueTable[i].name)) {
@@ -3540,6 +3573,18 @@ static void cliResource(char *cmdline)
 }
 #endif /* USE_RESOURCE_MGMT */
 
+#ifdef USE_PARAMETER_GROUPS
+static void backupConfigs(void)
+{
+     // make copies of configs to do differencing
+
+}
+
+static void restoreConfigs(void)
+{
+}
+#endif
+
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3556,13 +3601,21 @@ static void printConfig(char *cmdline, bool doDiff)
         options = cmdline;
     }
 
-    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
 
+    static master_t defaultConfig;
     createDefaultConfig(&defaultConfig);
 
+#ifdef USE_PARAMETER_GROUPS
+    backupConfigs();
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+#if defined(TARGET_CONFIG)
+    targetConfiguration(&defaultConfig);
+#endif
+#endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -3685,6 +3738,10 @@ static void printConfig(char *cmdline, bool doDiff)
     if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
     }
+#ifdef USE_PARAMETER_GROUPS
+    // restore configs from copies
+    restoreConfigs();
+#endif
 }
 
 static void cliDump(char *cmdline)
@@ -3811,13 +3868,11 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
 };
-#define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
-
 static void cliHelp(char *cmdline)
 {
     UNUSED(cmdline);
 
-    for (uint32_t i = 0; i < CMD_COUNT; i++) {
+    for (uint32_t i = 0; i < ARRAYLEN(cmdTable); i++) {
         cliPrint(cmdTable[i].name);
 #ifndef SKIP_CLI_COMMAND_HELP
         if (cmdTable[i].description) {
@@ -3846,7 +3901,7 @@ void cliProcess(void)
             // do tab completion
             const clicmd_t *cmd, *pstart = NULL, *pend = NULL;
             uint32_t i = bufferIndex;
-            for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
+            for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
                 if (bufferIndex && (strncasecmp(cliBuffer, cmd->name, bufferIndex) != 0))
                     continue;
                 if (!pstart)
@@ -3907,12 +3962,12 @@ void cliProcess(void)
 
                 const clicmd_t *cmd;
                 char *options;
-                for (cmd = cmdTable; cmd < cmdTable + CMD_COUNT; cmd++) {
+                for (cmd = cmdTable; cmd < cmdTable + ARRAYLEN(cmdTable); cmd++) {
                     if ((options = checkCommand(cliBuffer, cmd->name))) {
                         break;
-            }
+                    }
                 }
-                if(cmd < cmdTable + CMD_COUNT)
+                if(cmd < cmdTable + ARRAYLEN(cmdTable))
                     cmd->func(options);
                 else
                     cliPrint("Unknown command, try 'help'");
