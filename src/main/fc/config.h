@@ -91,6 +91,7 @@ bool canSoftwareSerialBeUsed(void);
 
 uint16_t getCurrentMinthrottle(void);
 
+void resetConfigs(void);
 struct master_s;
 void targetConfiguration(struct master_s *config);
 void targetValidateConfiguration(struct master_s *config);
