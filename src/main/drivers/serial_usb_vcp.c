@@ -188,6 +188,8 @@ serialPort_t *usbVcpOpen(void)
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
     USBD_Init(&USB_OTG_dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 #elif defined(STM32F7)
+    IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, RESOURCE_INPUT, 0);
+    IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, RESOURCE_OUTPUT, 0);
     /* Init Device Library */
     USBD_Init(&USBD_Device, &VCP_Desc, 0);
 

@@ -77,7 +77,7 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallbac
 // serialPort API
 void uartWrite(serialPort_t *instance, uint8_t ch);
 uint32_t uartTotalRxBytesWaiting(const serialPort_t *instance);
-uint8_t uartTotalTxBytesFree(const serialPort_t *instance);
+uint32_t uartTotalTxBytesFree(const serialPort_t *instance);
 uint8_t uartRead(serialPort_t *instance);
 void uartSetBaudRate(serialPort_t *s, uint32_t baudRate);
 bool isUartTransmitBufferEmpty(const serialPort_t *s);
