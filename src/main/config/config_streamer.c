@@ -122,33 +122,7 @@ static uint32_t getFLASHSectorForEEPROM(void)
     }
 }
 
-static int write_word(config_streamer_t *c, uint32_t value)
-{
-    if (c->err != 0) {
-        return c->err;
-    }
-
-    HAL_StatusTypeDef status;
-    if (c->address % FLASH_PAGE_SIZE == 0) {
-        FLASH_EraseInitTypeDef EraseInitStruct = {0};
-        EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
-        EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_3; // 2.7-3.6V
-        EraseInitStruct.Sector        = getFLASHSectorForEEPROM();
-        EraseInitStruct.NbSectors     = 1;
-        uint32_t SECTORError;
-        status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
-        if (status != HAL_OK){
-            return -1;
-        }
-    }
-    status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, c->address, value);
-    if (status != HAL_OK) {
-        return -2;
-    }
-    c->address += sizeof(value);
-    return 0;
-}
-#else
+#elif defined(STM32F4)
 /*
 Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
 Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
@@ -164,7 +138,6 @@ Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
 Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
 */
 
-#if defined(STM32F4)
 static uint32_t getFLASHSectorForEEPROM(void)
 {
     if ((uint32_t)&__config_start <= 0x08003FFF)
@@ -204,27 +177,43 @@ static int write_word(config_streamer_t *c, uint32_t value)
     if (c->err != 0) {
         return c->err;
     }
-
-    FLASH_Status status;
-
+#if defined(STM32F7)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+        FLASH_EraseInitTypeDef EraseInitStruct = {
+            .TypeErase     = FLASH_TYPEERASE_SECTORS,
+            .VoltageRange  = FLASH_VOLTAGE_RANGE_3, // 2.7-3.6V
+            .NbSectors     = 1
+        };
+        EraseInitStruct.Sector = getFLASHSectorForEEPROM();
+        uint32_t SECTORError;
+        const HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&EraseInitStruct, &SECTORError);
+        if (status != HAL_OK){
+            return -1;
+        }
+    }
+    const HAL_StatusTypeDef status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, c->address, value);
+    if (status != HAL_OK) {
+        return -2;
+    }
+#else
     if (c->address % FLASH_PAGE_SIZE == 0) {
 #if defined(STM32F4)
-        status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
+        const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
 #else
-        status = FLASH_ErasePage(c->address);
+        const FLASH_Status status = FLASH_ErasePage(c->address);
 #endif
         if (status != FLASH_COMPLETE) {
             return -1;
         }
     }
-    status = FLASH_ProgramWord(c->address, value);
+    const FLASH_Status status = FLASH_ProgramWord(c->address, value);
     if (status != FLASH_COMPLETE) {
         return -2;
     }
+#endif
     c->address += sizeof(value);
     return 0;
 }
-#endif
 
 int config_streamer_write(config_streamer_t *c, const uint8_t *p, uint32_t size)
 {
