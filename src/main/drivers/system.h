@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "common/time.h"
 
 void systemInit(void);
