@@ -106,10 +106,7 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
     DMA_Cmd(descriptor->channel, DISABLE);
 
-    if (s->port.txBufferHead != s->port.txBufferTail)
-        uartStartTxDMA(s);
-    else
-        s->txDMAEmpty = true;
+    uartTryStartTxDMA(s);
 }
 #endif
 

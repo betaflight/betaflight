@@ -248,6 +248,7 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
     uartReconfigure(uartPort);
 }
 
+// XXX Not modified yet
 void uartStartTxDMA(uartPort_t *s)
 {
     uint16_t size = 0;
