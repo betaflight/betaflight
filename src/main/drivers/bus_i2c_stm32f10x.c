@@ -140,7 +140,7 @@ static i2cDevice_t i2cHardwareMap[] = {
 #endif
 };
 
-static i2cBusState_t busState[I2CDEV_MAX] = { { 0 } };
+static i2cBusState_t busState[I2CDEV_COUNT] = { { 0 } };
 
 static void i2cResetInterface(i2cBusState_t * i2cBusState)
 {
