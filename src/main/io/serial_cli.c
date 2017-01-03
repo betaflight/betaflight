@@ -505,7 +505,7 @@ static const clivalue_t valueTable[] = {
 #endif
 
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_HW_ACC }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACC_HARDWARE }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },
     { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 200 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_lpf_hz) },
     { "acczero_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw[X]) },
     { "acczero_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw[Y]) },
@@ -1065,15 +1065,18 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, voi
 }
 
 static gyroConfig_t gyroConfigCopy;
+static accelerometerConfig_t accelerometerConfigCopy;
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     gyroConfigCopy = *gyroConfig();
+    accelerometerConfigCopy = *accelerometerConfig();
 
 }
 static void restoreConfigs(void)
 {
     *gyroConfig() = gyroConfigCopy;
+    *accelerometerConfig() = accelerometerConfigCopy;
 }
 
 #endif
@@ -1106,6 +1109,7 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
     if (valueSection == MASTER_VALUE) {
         // gyroConfig() has been set to default, gyroConfigCopy contains current value
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
         return;
     }
 #endif
