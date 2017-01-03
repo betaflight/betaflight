@@ -107,8 +107,6 @@ uint8_t cliMode = 0;
 
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 
-void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort);
-
 static serialPort_t *cliPort;
 static bufWriter_t *cliWriter;
 static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
@@ -158,6 +156,7 @@ static const rxFailsafeChannelMode_e rxFailsafeModesTable[RX_FAILSAFE_TYPE_COUNT
     { RX_FAILSAFE_MODE_INVALID, RX_FAILSAFE_MODE_HOLD, RX_FAILSAFE_MODE_SET }
 };
 
+// sync this with accelerationSensor_e
 static const char * const lookupTableAccHardware[] = {
     "AUTO",
     "NONE",
@@ -174,6 +173,7 @@ static const char * const lookupTableAccHardware[] = {
 };
 
 #ifdef BARO
+// sync this with baroSensor_e
 static const char * const lookupTableBaroHardware[] = {
     "AUTO",
     "NONE",
@@ -184,6 +184,7 @@ static const char * const lookupTableBaroHardware[] = {
 #endif
 
 #ifdef MAG
+// sync this with magSensor_e
 static const char * const lookupTableMagHardware[] = {
     "AUTO",
     "NONE",
@@ -783,26 +784,271 @@ const clivalue_t valueTable[] = {
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))
 
+static void cliPrint(const char *str)
+{
+    while (*str) {
+        bufWriterAppend(cliWriter, *str++);
+    }
+    bufWriterFlush(cliWriter);
+}
+
+#ifdef CLI_MINIMAL_VERBOSITY
+#define cliPrintHashLine(str)
+#else
+static void cliPrintHashLine(const char *str)
+{
+    cliPrint("\r\n# ");
+    cliPrint(str);
+    cliPrint("\r\n");
+}
+#endif
+
+static void cliPutp(void *p, char ch)
+{
+    bufWriterAppend(p, ch);
+}
+
+static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
+{
+    if (!((dumpMask & DO_DIFF) && equalsDefault)) {
+        va_list va;
+        va_start(va, format);
+        tfp_format(cliWriter, cliPutp, format, va);
+        va_end(va);
+        bufWriterFlush(cliWriter);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static void cliWrite(uint8_t ch)
+{
+    bufWriterAppend(cliWriter, ch);
+}
+
+static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
+{
+    if ((dumpMask & SHOW_DEFAULTS) && !equalsDefault) {
+        cliWrite('#');
+
+        va_list va;
+        va_start(va, format);
+        tfp_format(cliWriter, cliPutp, format, va);
+        va_end(va);
+        bufWriterFlush(cliWriter);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static void cliPrintf(const char *format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    tfp_format(cliWriter, cliPutp, format, va);
+    va_end(va);
+    bufWriterFlush(cliWriter);
+}
+
+static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_t full)
+{
+    int32_t value = 0;
+    char buf[8];
+
+    switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            value = *(uint8_t *)valuePointer;
+            break;
+
+        case VAR_INT8:
+            value = *(int8_t *)valuePointer;
+            break;
+
+        case VAR_UINT16:
+            value = *(uint16_t *)valuePointer;
+            break;
+
+        case VAR_INT16:
+            value = *(int16_t *)valuePointer;
+            break;
+
+        case VAR_UINT32:
+            value = *(uint32_t *)valuePointer;
+            break;
+
+        case VAR_FLOAT:
+            cliPrintf("%s", ftoa(*(float *)valuePointer, buf));
+            if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
+                cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
+                cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
+            }
+            return; // return from case for float only
+    }
+
+    switch(var->type & VALUE_MODE_MASK) {
+        case MODE_DIRECT:
+            cliPrintf("%d", value);
+            if (full) {
+                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
+            }
+            break;
+        case MODE_LOOKUP:
+            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+            break;
+    }
+}
+
+void *getValuePointer(const clivalue_t *value)
+{
+    void *ptr = value->ptr;
+
+    if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+    }
+
+    if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+    }
+
+    return ptr;
+}
+
+static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
+{
+    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
+}
+
+static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
+{
+    void *ptr = getValuePointer(value);
+
+    void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
+
+    bool result = false;
+    switch (value->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+            result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
+            break;
+
+        case VAR_INT8:
+            result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
+            break;
+
+        case VAR_UINT16:
+            result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
+            break;
+
+        case VAR_INT16:
+            result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
+            break;
+
+        case VAR_UINT32:
+            result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
+            break;
+
+        case VAR_FLOAT:
+            result = *(float *)ptr == *(float *)ptrDefault;
+            break;
+    }
+    return result;
+}
+
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
+{
+    void *ptr = getValuePointer(var);
+
+    printValuePointer(var, ptr, full);
+}
+
+static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
+{
+    void *ptr = getValuePointer(var);
+
+    void *defaultPtr = getDefaultPointer(ptr, defaultConfig);
+
+    printValuePointer(var, defaultPtr, full);
+}
+
+static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
+{
+    const clivalue_t *value;
+    for (uint32_t i = 0; i < VALUE_COUNT; i++) {
+        value = &valueTable[i];
+
+        if ((value->type & VALUE_SECTION_MASK) != valueSection) {
+            continue;
+        }
+
+        const char *format = "set %s = ";
+        if (cliDefaultPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
+            cliPrintVarDefault(value, 0, defaultConfig);
+            cliPrint("\r\n");
+        }
+        if (cliDumpPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
+            cliPrintVar(value, 0);
+            cliPrint("\r\n");
+        }
+    }
+}
+
+static void cliPrintVarRange(const clivalue_t *var)
+{
+    switch (var->type & VALUE_MODE_MASK) {
+        case (MODE_DIRECT): {
+            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
+        }
+        break;
+        case (MODE_LOOKUP): {
+            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
+            cliPrint("Allowed values:");
+            for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
+                if (i > 0)
+                    cliPrint(",");
+                cliPrintf(" %s", tableEntry->values[i]);
+            }
+            cliPrint("\r\n");
+        }
+        break;
+    }
+}
+
 typedef union {
     int32_t int_value;
     float float_value;
 } int_float_value_t;
 
-static void cliSetVar(const clivalue_t *var, const int_float_value_t value);
-static void cliPrintVar(const clivalue_t *var, uint32_t full);
-static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig);
-static void cliPrintVarRange(const clivalue_t *var);
-static void cliPrint(const char *str);
-#ifdef CLI_MINIMAL_VERBOSITY
-#define cliPrintHashLine(str)
-#else
-static void cliPrintHashLine(const char *str);
-#endif
-static void cliPrintf(const char *fmt, ...);
-static void cliWrite(uint8_t ch);
+static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
+{
+    void *ptr = var->ptr;
+    if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+    }
+    if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
+    }
 
-static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
-static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...);
+    switch (var->type & VALUE_TYPE_MASK) {
+        case VAR_UINT8:
+        case VAR_INT8:
+            *(int8_t *)ptr = value.int_value;
+            break;
+
+        case VAR_UINT16:
+        case VAR_INT16:
+            *(int16_t *)ptr = value.int_value;
+            break;
+
+        case VAR_UINT32:
+            *(uint32_t *)ptr = value.int_value;
+            break;
+
+        case VAR_FLOAT:
+            *(float *)ptr = (float)value.float_value;
+            break;
+    }
+}
 
 #ifndef CLI_MINIMAL_VERBOSITY
 static void cliRepeat(char ch, uint8_t len)
@@ -2471,84 +2717,7 @@ static void cliMap(char *cmdline)
     cliPrintf("%s\r\n", out);
 }
 
-void *getValuePointer(const clivalue_t *value)
-{
-    void *ptr = value->ptr;
-
-    if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
-    }
-
-    if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
-    }
-
-    return ptr;
-}
-
-static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
-{
-    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
-}
-
-static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(value);
-
-    void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
-
-    bool result = false;
-    switch (value->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
-            break;
-
-        case VAR_INT8:
-            result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
-            break;
-
-        case VAR_UINT16:
-            result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
-            break;
-
-        case VAR_INT16:
-            result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
-            break;
-
-        case VAR_UINT32:
-            result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
-            break;
-
-        case VAR_FLOAT:
-            result = *(float *)ptr == *(float *)ptrDefault;
-            break;
-    }
-    return result;
-}
-
-static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
-{
-    const clivalue_t *value;
-    for (uint32_t i = 0; i < VALUE_COUNT; i++) {
-        value = &valueTable[i];
-
-        if ((value->type & VALUE_SECTION_MASK) != valueSection) {
-            continue;
-        }
-
-        const char *format = "set %s = ";
-        if (cliDefaultPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVarDefault(value, 0, defaultConfig);
-            cliPrint("\r\n");
-        }
-        if (cliDumpPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVar(value, 0);
-            cliPrint("\r\n");
-        }
-    }
-}
-
-char *checkCommand(char *cmdLine, const char *command)
+static char *checkCommand(char *cmdLine, const char *command)
 {
     if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
@@ -2556,24 +2725,6 @@ char *checkCommand(char *cmdLine, const char *command)
     } else {
         return 0;
     }
-}
-
-void cliEnter(serialPort_t *serialPort)
-{
-    cliMode = 1;
-    cliPort = serialPort;
-    setPrintfSerialPort(cliPort);
-    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
-                              (bufWrite_t)serialWriteBufShim, serialPort);
-
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
-#else
-    cliPrint("\r\nCLI\r\n");
-#endif
-    cliPrompt();
-
-    ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
 
 static void cliRebootEx(bool bootLoader)
@@ -2592,6 +2743,15 @@ static void cliRebootEx(bool bootLoader)
 static void cliReboot(void)
 {
     cliRebootEx(false);
+}
+
+static void cliDfu(char *cmdLine)
+{
+    UNUSED(cmdLine);
+#ifndef CLI_MINIMAL_VERBOSITY
+    cliPrint("\r\nRestarting in DFU mode");
+#endif
+    cliRebootEx(true);
 }
 
 static void cliExit(char *cmdline)
@@ -2878,188 +3038,6 @@ static void cliDefaults(char *cmdline)
     cliPrint("Resetting to defaults");
     resetEEPROM();
     cliReboot();
-}
-
-static void cliPrint(const char *str)
-{
-    while (*str) {
-        bufWriterAppend(cliWriter, *str++);
-    }
-    bufWriterFlush(cliWriter);
-}
-
-#ifndef CLI_MINIMAL_VERBOSITY
-static void cliPrintHashLine(const char *str)
-{
-    cliPrint("\r\n# ");
-    cliPrint(str);
-    cliPrint("\r\n");
-}
-#endif
-
-static void cliPutp(void *p, char ch)
-{
-    bufWriterAppend(p, ch);
-}
-
-static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
-{
-    if (!((dumpMask & DO_DIFF) && equalsDefault)) {
-        va_list va;
-        va_start(va, format);
-        tfp_format(cliWriter, cliPutp, format, va);
-        va_end(va);
-        bufWriterFlush(cliWriter);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static bool cliDefaultPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
-{
-    if ((dumpMask & SHOW_DEFAULTS) && !equalsDefault) {
-        cliWrite('#');
-
-        va_list va;
-        va_start(va, format);
-        tfp_format(cliWriter, cliPutp, format, va);
-        va_end(va);
-        bufWriterFlush(cliWriter);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static void cliPrintf(const char *format, ...)
-{
-    va_list va;
-    va_start(va, format);
-    tfp_format(cliWriter, cliPutp, format, va);
-    va_end(va);
-    bufWriterFlush(cliWriter);
-}
-
-static void cliWrite(uint8_t ch)
-{
-    bufWriterAppend(cliWriter, ch);
-}
-
-static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_t full)
-{
-    int32_t value = 0;
-    char buf[8];
-
-    switch (var->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            value = *(uint8_t *)valuePointer;
-            break;
-
-        case VAR_INT8:
-            value = *(int8_t *)valuePointer;
-            break;
-
-        case VAR_UINT16:
-            value = *(uint16_t *)valuePointer;
-            break;
-
-        case VAR_INT16:
-            value = *(int16_t *)valuePointer;
-            break;
-
-        case VAR_UINT32:
-            value = *(uint32_t *)valuePointer;
-            break;
-
-        case VAR_FLOAT:
-            cliPrintf("%s", ftoa(*(float *)valuePointer, buf));
-            if (full && (var->type & VALUE_MODE_MASK) == MODE_DIRECT) {
-                cliPrintf(" %s", ftoa((float)var->config.minmax.min, buf));
-                cliPrintf(" %s", ftoa((float)var->config.minmax.max, buf));
-            }
-            return; // return from case for float only
-    }
-
-    switch(var->type & VALUE_MODE_MASK) {
-        case MODE_DIRECT:
-            cliPrintf("%d", value);
-            if (full) {
-                cliPrintf(" %d %d", var->config.minmax.min, var->config.minmax.max);
-            }
-            break;
-        case MODE_LOOKUP:
-            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
-            break;
-    }
-}
-
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
-{
-    void *ptr = getValuePointer(var);
-
-    printValuePointer(var, ptr, full);
-}
-
-static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(var);
-
-    void *defaultPtr = getDefaultPointer(ptr, defaultConfig);
-
-    printValuePointer(var, defaultPtr, full);
-}
-
-static void cliPrintVarRange(const clivalue_t *var)
-{
-    switch (var->type & VALUE_MODE_MASK) {
-        case (MODE_DIRECT): {
-            cliPrintf("Allowed range: %d - %d\r\n", var->config.minmax.min, var->config.minmax.max);
-        }
-        break;
-        case (MODE_LOOKUP): {
-            const lookupTableEntry_t *tableEntry = &lookupTables[var->config.lookup.tableIndex];
-            cliPrint("Allowed values:");
-            for (uint32_t i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0)
-                    cliPrint(",");
-                cliPrintf(" %s", tableEntry->values[i]);
-            }
-            cliPrint("\r\n");
-        }
-        break;
-    }
-}
-
-static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
-{
-    void *ptr = var->ptr;
-    if ((var->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
-    }
-    if ((var->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
-    }
-
-    switch (var->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-        case VAR_INT8:
-            *(int8_t *)ptr = value.int_value;
-            break;
-
-        case VAR_UINT16:
-        case VAR_INT16:
-            *(int16_t *)ptr = value.int_value;
-            break;
-
-        case VAR_UINT32:
-            *(uint32_t *)ptr = value.int_value;
-            break;
-
-        case VAR_FLOAT:
-            *(float *)ptr = (float)value.float_value;
-            break;
-    }
 }
 
 static void cliGet(char *cmdline)
@@ -3528,20 +3506,6 @@ static void cliResource(char *cmdline)
 }
 #endif
 
-void cliDfu(char *cmdLine)
-{
-    UNUSED(cmdLine);
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\nRestarting in DFU mode");
-#endif
-    cliRebootEx(true);
-}
-
-void cliInit(serialConfig_t *serialConfig)
-{
-    UNUSED(serialConfig);
-}
-
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3954,4 +3918,26 @@ void cliProcess(void)
     }
 }
 
+void cliEnter(serialPort_t *serialPort)
+{
+    cliMode = 1;
+    cliPort = serialPort;
+    setPrintfSerialPort(cliPort);
+    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
+                              (bufWrite_t)serialWriteBufShim, serialPort);
+
+#ifndef CLI_MINIMAL_VERBOSITY
+    cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
+#else
+    cliPrint("\r\nCLI\r\n");
+#endif
+    cliPrompt();
+
+    ENABLE_ARMING_FLAG(PREVENT_ARMING);
+}
+
+void cliInit(serialConfig_t *serialConfig)
+{
+    UNUSED(serialConfig);
+}
 #endif // USE_CLI

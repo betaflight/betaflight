@@ -121,3 +121,6 @@ struct serialConfig_s;
 void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
 void gpsUpdate(timeUs_t currentTimeUs);
 bool gpsNewFrame(uint8_t c);
+struct serialPort_s;
+void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
+
