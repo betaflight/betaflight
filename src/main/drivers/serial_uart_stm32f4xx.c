@@ -272,10 +272,10 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
     uint32_t flags = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_DMEIF | DMA_IT_FEIF);
     DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_DMEIF | DMA_IT_FEIF);
-    debug[3]++;
     if (flags & DMA_IT_TCIF) {
+        debug[1]++;
         if(flags & DMA_IT_FEIF) {
-            debug[1]++;
+            debug[2]++; 
             debug[3] += s->txDMAStream->NDTR;
             return;
         }

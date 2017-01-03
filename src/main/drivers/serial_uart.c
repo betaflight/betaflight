@@ -285,6 +285,9 @@ void uartTryStartTxDMA(uartPort_t *s)
 
         debug[0] += s->txDMAStream->NDTR;
 
+        if (s->txDMAStream->NDTR)
+            goto reenable;
+
         if (s->port.txBufferHead == s->port.txBufferTail) {
             s->txDMAEmpty = true;
             return;
@@ -299,6 +302,7 @@ void uartTryStartTxDMA(uartPort_t *s)
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
+    reenable:
         DMA_Cmd(s->txDMAStream, ENABLE);
 #else
         if (s->txDMAChannel->CCR & DMA_CCR1_EN)
