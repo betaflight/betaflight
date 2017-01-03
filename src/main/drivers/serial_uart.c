@@ -302,7 +302,16 @@ void uartTryStartTxDMA(uartPort_t *s)
             s->port.txBufferTail = 0;
         }
         s->txDMAEmpty = false;
+
     reenable:
+        // disable USART DMA request - DMA controller needs time to preload data from memory
+        USART_DMACmd(s->USARTx, USART_DMAReq_Tx, DISABLE);
+
+        DMA_Cmd(s->txDMAStream, ENABLE);
+        asm volatile("\tnop\n");  // just to be sure, remove after testing
+        // reenable USART DMA request
+        USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
+
         DMA_Cmd(s->txDMAStream, ENABLE);
 #else
         if (s->txDMAChannel->CCR & DMA_CCR1_EN)
