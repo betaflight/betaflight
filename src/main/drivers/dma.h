@@ -76,9 +76,21 @@ typedef enum {
                                                                     dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
                                                             }
 
-#define DMA_CLEAR_FLAG(d, flag) if(d->flagsShift > 31) d->dma->HIFCR = (flag << (d->flagsShift - 32)); else d->dma->LIFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->flagsShift > 31 ? d->dma->HISR & (flag << (d->flagsShift - 32)): d->dma->LISR & (flag << d->flagsShift))
+static inline void DMA_CLEAR_FLAG(dmaChannelDescriptor_t* d, uint32_t flag)
+{
+    if(d->flagsShift > 31)
+        d->dma->HIFCR = (flag << (d->flagsShift - 32));
+    else
+        d->dma->LIFCR = (flag << d->flagsShift);
+}
 
+static inline uint32_t DMA_GET_FLAG_STATUS(dmaChannelDescriptor_t* d, uint32_t flag)
+{
+    if(d->flagsShift > 31)
+        return (d->dma->HISR >> (d->flagsShift - 32)) & flag;
+    else
+        return (d->dma->HISR >> (d->flagsShift)) & flag;
+}
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
 #define DMA_IT_HTIF         ((uint32_t)0x00000010)
@@ -119,8 +131,8 @@ typedef enum {
                                                                             dmaDescriptors[i].irqHandlerCallback(&dmaDescriptors[i]);\
                                                                     }
 
-#define DMA_CLEAR_FLAG(d, flag) d->dma->IFCR = (flag << d->flagsShift)
-#define DMA_GET_FLAG_STATUS(d, flag) (d->dma->ISR & (flag << d->flagsShift))
+#define DMA_CLEAR_FLAG(d, flag) do { (d)->dma->IFCR = ((flag) << (d)->flagsShift); } while(0)
+#define DMA_GET_FLAG_STATUS(d, flag) (((d)->dma->ISR >> (d)->flagsShift) & (flag))
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000002)
 #define DMA_IT_HTIF         ((uint32_t)0x00000004)
