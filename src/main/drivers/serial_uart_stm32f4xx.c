@@ -270,7 +270,6 @@ static void handleUsartTxDma(uartPort_t *s)
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
-    debug[3]++;
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
     {
         debug[1]++;
@@ -279,18 +278,19 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
         if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
         {
             debug[2]++;
+            //debug[3] += descriptor->stream->NDTR;
+            debug[3] += s->txDMAStream->NDTR;
             DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
+            return;
         }
         handleUsartTxDma(s);
     }
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
     {
-        //debug[3]++;
         DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
     }
     if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
     {
-        //debug[3]++; // Same counter with TEIF
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
     }
 }
