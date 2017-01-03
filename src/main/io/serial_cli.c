@@ -452,8 +452,8 @@ typedef enum {
     // value section
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
-    CONTROL_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
-
+    PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    CONTROL_RATE_VALUE = (3 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -961,6 +961,24 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
+#ifdef USE_PARAMETER_GROUPS
+static void* getValuePointer(const clivalue_t *var)
+{
+    const pgRegistry_t* rec = pgFind(var->pgn);
+
+    switch (var->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return rec->address + var->offset;
+    case PROFILE_RATE_VALUE:
+        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfile();
+    case CONTROL_RATE_VALUE:
+        return rec->address + var->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return *rec->ptr + var->offset;
+    }
+    return NULL;
+}
+#else
 void *getValuePointer(const clivalue_t *value)
 {
     void *ptr = value->ptr;
@@ -969,12 +987,17 @@ void *getValuePointer(const clivalue_t *value)
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
 
+    if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfile());
+    }
+
     if ((value->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
 
     return ptr;
 }
+#endif
 
 static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
 {
@@ -2827,11 +2850,6 @@ static void cliRateProfile(char *cmdline)
             cliRateProfile("");
         }
     }
-
-#ifdef USE_PARAMETER_GROUPS
-    // restore configs from copies
-    restoreConfigs();
-#endif
 }
 
 static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_t *defaultConfig)
@@ -3109,7 +3127,6 @@ static void cliPFlags(char *cmdline)
 
     cliPrintf("# Persistent config flags: 0x%08x\r\n", masterConfig.persistentFlags );
 }
-#endif
 
 #if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
 static void cliResource(char *cmdline)
@@ -3132,6 +3149,18 @@ static void cliResource(char *cmdline)
 }
 #endif
 
+#ifdef USE_PARAMETER_GROUPS
+static void backupConfigs(void)
+{
+     // make copies of configs to do differencing
+
+}
+
+static void restoreConfigs(void)
+{
+}
+#endif
+
 static void printConfig(char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3148,13 +3177,21 @@ static void printConfig(char *cmdline, bool doDiff)
         options = cmdline;
     }
 
-    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
 
+    static master_t defaultConfig;
     createDefaultConfig(&defaultConfig);
 
+#ifdef USE_PARAMETER_GROUPS
+    backupConfigs();
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+#if defined(TARGET_CONFIG)
+    targetConfiguration(&defaultConfig);
+#endif
+#endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -3268,6 +3305,10 @@ static void printConfig(char *cmdline, bool doDiff)
     if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
     }
+#ifdef USE_PARAMETER_GROUPS
+    // restore configs from copies
+    restoreConfigs();
+#endif
 }
 
 static void cliDump(char *cmdline)

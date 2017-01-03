@@ -61,4 +61,4 @@ bool gyroInit(void);
 void gyroInitFilters(void);
 void gyroUpdate(void);
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
-bool isGyroCalibrationComplete(void);
+bool gyroIsCalibrationComplete(void);

@@ -217,7 +217,7 @@ static bool gyroDetect(gyroDev_t *dev, const extiConfig_t *extiConfig)
     return true;
 }
 
-bool gyroInit()
+bool gyroInit(void)
 {
     memset(&gyro, 0, sizeof(gyro));
 #if defined(USE_GYRO_MPU6050) || defined(USE_GYRO_MPU3050) || defined(USE_GYRO_MPU6500) || defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) || defined(USE_ACC_MPU6050)
@@ -297,12 +297,13 @@ void gyroInitFilters(void)
     }
 #endif
 }
+
 void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired)
 {
     calibratingG = calibrationCyclesRequired;
 }
 
-bool isGyroCalibrationComplete(void)
+bool gyroIsCalibrationComplete(void)
 {
     return calibratingG == 0;
 }
@@ -368,7 +369,7 @@ void gyroUpdate(void)
     gyro.gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
     gyro.gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
 
-    if (!isGyroCalibrationComplete()) {
+    if (!gyroIsCalibrationComplete()) {
         performAcclerationCalibration(gyroConfig()->gyroMovementCalibrationThreshold);
     }
 
