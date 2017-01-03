@@ -101,6 +101,8 @@
 
 #define USE_SPI
 
+#define USE_SPI_DEVICE_1
+
 #ifdef OMNIBUSF4SD
   #define USE_SPI_DEVICE_2
   #define SPI2_NSS_PIN          PB12
@@ -183,8 +185,6 @@
 
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11 // USART3 RX
-
-#define AVOID_UART1_FOR_PWM_PPM
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
