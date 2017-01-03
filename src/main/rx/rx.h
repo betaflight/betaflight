@@ -17,7 +17,11 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define STICK_CHANNEL_COUNT 4
 
@@ -58,16 +62,12 @@ typedef enum {
     SERIALRX_PROVIDER_MAX = SERIALRX_JETIEXBUS
 } SerialRXType;
 
-#define SERIALRX_PROVIDER_COUNT (SERIALRX_PROVIDER_MAX + 1)
-
-#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT 12
-#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT 8
-#define MAX_SUPPORTED_RC_CHANNEL_COUNT (18)
+#define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
+#define MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT  8
+#define MAX_SUPPORTED_RC_CHANNEL_COUNT              18
 
 #define NON_AUX_CHANNEL_COUNT 4
 #define MAX_AUX_CHANNEL_COUNT (MAX_SUPPORTED_RC_CHANNEL_COUNT - NON_AUX_CHANNEL_COUNT)
-
-
 
 #if MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT > MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT
 #define MAX_SUPPORTED_RX_PARALLEL_PWM_OR_PPM_CHANNEL_COUNT MAX_SUPPORTED_RC_PARALLEL_PWM_CHANNEL_COUNT
@@ -89,27 +89,29 @@ typedef enum {
     RX_FAILSAFE_MODE_AUTO = 0,
     RX_FAILSAFE_MODE_HOLD,
     RX_FAILSAFE_MODE_SET,
-    RX_FAILSAFE_MODE_INVALID,
+    RX_FAILSAFE_MODE_INVALID
 } rxFailsafeChannelMode_e;
 
 #define RX_FAILSAFE_MODE_COUNT 3
 
 typedef enum {
     RX_FAILSAFE_TYPE_FLIGHT = 0,
-    RX_FAILSAFE_TYPE_AUX,
+    RX_FAILSAFE_TYPE_AUX
 } rxFailsafeChannelType_e;
 
 #define RX_FAILSAFE_TYPE_COUNT 2
 
-typedef struct rxFailsafeChannelConfiguration_s {
+typedef struct rxFailsafeChannelConfig_s {
     uint8_t mode; // See rxFailsafeChannelMode_e
     uint8_t step;
-} rxFailsafeChannelConfiguration_t;
+} rxFailsafeChannelConfig_t;
+PG_DECLARE_ARR(rxFailsafeChannelConfig_t, MAX_SUPPORTED_RC_CHANNEL_COUNT, rxFailsafeChannelConfigs);
 
-typedef struct rxChannelRangeConfiguration_s {
+typedef struct rxChannelRangeConfig_s {
     uint16_t min;
     uint16_t max;
-} rxChannelRangeConfiguration_t;
+} rxChannelRangeConfig_t;
+PG_DECLARE_ARR(rxChannelRangeConfig_t, NON_AUX_CHANNEL_COUNT, rxChannelRangeConfigs);
 
 typedef struct rxConfig_s {
     uint8_t rcmap[MAX_MAPPABLE_RX_INPUTS];  // mapping of radio channels to internal RPYTA+ order
@@ -130,10 +132,9 @@ typedef struct rxConfig_s {
 
     uint16_t rx_min_usec;
     uint16_t rx_max_usec;
-    rxFailsafeChannelConfiguration_t failsafe_channel_configurations[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
-    rxChannelRangeConfiguration_t channelRanges[NON_AUX_CHANNEL_COUNT];
 } rxConfig_t;
+
+PG_DECLARE(rxConfig_t, rxConfig);
 
 #define REMAPPABLE_CHANNEL_COUNT (sizeof(((rxConfig_t *)0)->rcmap) / sizeof(((rxConfig_t *)0)->rcmap[0]))
 
@@ -151,19 +152,18 @@ typedef struct rxRuntimeConfig_s {
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
 
 struct modeActivationCondition_s;
-void rxInit(const rxConfig_t *rxConfig, const struct modeActivationCondition_s *modeActivationConditions);
-void useRxConfig(const rxConfig_t *rxConfigToUse);
+void rxInit(const struct modeActivationCondition_s *modeActivationConditions);
 bool updateRx(timeUs_t currentTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 
-void parseRcChannels(const char *input, rxConfig_t *rxConfig);
+void parseRcChannels(const char *input);
 
 void updateRSSI(timeUs_t currentTimeUs);
-void resetAllRxChannelRangeConfigurations(rxChannelRangeConfiguration_t *rxChannelRangeConfiguration);
+void resetAllRxChannelRangeConfigurations(void);
 
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-uint16_t rxRefreshRate(void);
+uint16_t rxGetRefreshRate(void);

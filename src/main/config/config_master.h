@@ -52,8 +52,6 @@
 #include "io/serial.h"
 #include "io/servos.h"
 
-#include "rx/rx.h"
-
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/battery.h"
@@ -69,7 +67,6 @@
 #define batteryConfig(x) (&masterConfig.batteryConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
-#define rxConfig(x) (&masterConfig.rxConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define mixerConfig(x) (&masterConfig.mixerConfig)
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
@@ -146,7 +143,6 @@ typedef struct master_s {
     navConfig_t navConfig;
 #endif
 
-    rxConfig_t rxConfig;
     pwmRxConfig_t pwmRxConfig;
 
     armingConfig_t armingConfig;

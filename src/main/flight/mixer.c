@@ -67,7 +67,6 @@ bool motorLimitReached = false;
 mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
 static motorConfig_t *motorConfig;
-static rxConfig_t *rxConfig;
 
 mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
@@ -265,13 +264,11 @@ static motorMixer_t *customMixers;
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         motorConfig_t *motorConfigToUse,
-        mixerConfig_t *mixerConfigToUse,
-        rxConfig_t *rxConfigToUse)
+        mixerConfig_t *mixerConfigToUse)
 {
     flight3DConfig = flight3DConfigToUse;
     motorConfig = motorConfigToUse;
     mixerConfig = mixerConfigToUse;
-    rxConfig = rxConfigToUse;
 }
 
 bool isMixerEnabled(mixerMode_e mixerMode)
@@ -432,17 +429,17 @@ void mixTable(void)
 
     // Find min and max throttle based on condition.
     if (feature(FEATURE_3D)) {
-        if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
+        if (!ARMING_FLAG(ARMED)) throttlePrevious = rxConfig()->midrc; // When disarmed set to mid_rc. It always results in positive direction after arming.
 
-        if ((rcCommand[THROTTLE] <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
+        if ((rcCommand[THROTTLE] <= (rxConfig()->midrc - flight3DConfig->deadband3d_throttle))) { // Out of band handling
             throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = motorConfig->minthrottle;
             throttlePrevious = throttleCommand = rcCommand[THROTTLE];
-        } else if (rcCommand[THROTTLE] >= (rxConfig->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
+        } else if (rcCommand[THROTTLE] >= (rxConfig()->midrc + flight3DConfig->deadband3d_throttle)) { // Positive handling
             throttleMax = motorConfig->maxthrottle;
             throttleMin = flight3DConfig->deadband3d_high;
             throttlePrevious = throttleCommand = rcCommand[THROTTLE];
-        } else if ((throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
+        } else if ((throttlePrevious <= (rxConfig()->midrc - flight3DConfig->deadband3d_throttle)))  { // Deadband handling from negative to positive
             throttleCommand = throttleMax = flight3DConfig->deadband3d_low;
             throttleMin = motorConfig->minthrottle;
         } else {  // Deadband handling from positive to negative
@@ -486,7 +483,7 @@ void mixTable(void)
             if (isFailsafeActive) {
                 motor[i] = constrain(motor[i], motorConfig->mincommand, motorConfig->maxthrottle);
             } else if (feature(FEATURE_3D)) {
-                if (throttlePrevious <= (rxConfig->midrc - flight3DConfig->deadband3d_throttle)) {
+                if (throttlePrevious <= (rxConfig()->midrc - flight3DConfig->deadband3d_throttle)) {
                     motor[i] = constrain(motor[i], motorConfig->minthrottle, flight3DConfig->deadband3d_low);
                 } else {
                     motor[i] = constrain(motor[i], flight3DConfig->deadband3d_high, motorConfig->maxthrottle);
@@ -497,7 +494,7 @@ void mixTable(void)
 
             // Motor stop handling
             if (feature(FEATURE_MOTOR_STOP) && ARMING_FLAG(ARMED) && !feature(FEATURE_3D) && !isFailsafeActive) {
-                if (((rcData[THROTTLE]) < rxConfig->mincheck) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
+                if (((rcData[THROTTLE]) < rxConfig()->mincheck) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
                     motor[i] = motorConfig->mincommand;
                 }
             }

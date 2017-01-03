@@ -28,6 +28,8 @@
 #include "flight/failsafe.h"
 #include "flight/mixer.h"
 
+#include "rx/rx.h"
+
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;
 extern uint16_t             GPS_distanceToHome;        // distance to home point in meters

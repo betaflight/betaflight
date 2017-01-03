@@ -125,5 +125,5 @@ void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 struct gimbalConfig_s;
-void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse, struct rxConfig_s *rxConfigToUse);
+void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse, struct gimbalConfig_s *gimbalConfigToUse);
 void servosInit(servoMixer_t *customServoMixers);

@@ -76,14 +76,14 @@ void targetConfiguration(struct master_s *config)
 {
     gyroConfig()->looptime = 1000;
 
-    config->rxConfig.rcmap[0] = 1;
-    config->rxConfig.rcmap[1] = 2;
-    config->rxConfig.rcmap[2] = 3;
-    config->rxConfig.rcmap[3] = 0;
-    config->rxConfig.rcmap[4] = 4;
-    config->rxConfig.rcmap[5] = 5;
-    config->rxConfig.rcmap[6] = 6;
-    config->rxConfig.rcmap[7] = 7;
+    rxConfig()->rcmap[0] = 1;
+    rxConfig()->rcmap[1] = 2;
+    rxConfig()->rcmap[2] = 3;
+    rxConfig()->rcmap[3] = 0;
+    rxConfig()->rcmap[4] = 4;
+    rxConfig()->rcmap[5] = 5;
+    rxConfig()->rcmap[6] = 6;
+    rxConfig()->rcmap[7] = 7;
 
     featureSet(FEATURE_VBAT);
     featureSet(FEATURE_LED_STRIP);

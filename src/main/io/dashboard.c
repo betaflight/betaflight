@@ -60,8 +60,6 @@
 #include "sensors/gyro.h"
 #include "sensors/barometer.h"
 
-#include "rx/rx.h"
-
 #include "config/feature.h"
 
 
@@ -75,7 +73,6 @@ controlRateConfig_t *getControlRateConfig(uint8_t profileIndex);
 static timeUs_t nextDisplayUpdateAt = 0;
 static bool displayPresent = false;
 
-static const rxConfig_t *rxConfig;
 static displayPort_t *displayPort;
 
 #define PAGE_TITLE_LINE_COUNT 1
@@ -476,10 +473,8 @@ void dashboardSetPage(pageId_e newPageId)
     forcePageChange = true;
 }
 
-void dashboardInit(const rxConfig_t *rxConfigToUse)
+void dashboardInit(void)
 {
-    rxConfig = rxConfigToUse;
-
     delay(200);
     resetDisplay();
     delay(200);
@@ -488,8 +483,6 @@ void dashboardInit(const rxConfig_t *rxConfigToUse)
 #if defined(CMS)
     cmsDisplayPortRegister(displayPort);
 #endif
-
-    rxConfig = rxConfigToUse;
 
     dashboardSetPage(PAGE_WELCOME);
     const uint32_t now = micros();

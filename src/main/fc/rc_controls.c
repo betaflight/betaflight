@@ -120,26 +120,26 @@ bool areSticksInApModePosition(uint16_t ap_mode)
     return ABS(rcCommand[ROLL]) < ap_mode && ABS(rcCommand[PITCH]) < ap_mode;
 }
 
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+throttleStatus_e calculateThrottleStatus(uint16_t deadband3d_throttle)
 {
-    if (feature(FEATURE_3D) && (rcData[THROTTLE] > (rxConfig->midrc - deadband3d_throttle) && rcData[THROTTLE] < (rxConfig->midrc + deadband3d_throttle)))
+    if (feature(FEATURE_3D) && (rcData[THROTTLE] > (rxConfig()->midrc - deadband3d_throttle) && rcData[THROTTLE] < (rxConfig()->midrc + deadband3d_throttle)))
         return THROTTLE_LOW;
-    else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->mincheck))
+    else if (!feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->mincheck))
         return THROTTLE_LOW;
 
     return THROTTLE_HIGH;
 }
 
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig)
+rollPitchStatus_e calculateRollPitchCenterStatus(void)
 {
-    if (((rcData[PITCH] < (rxConfig->midrc + AIRMODE_DEADBAND)) && (rcData[PITCH] > (rxConfig->midrc -AIRMODE_DEADBAND)))
-            && ((rcData[ROLL] < (rxConfig->midrc + AIRMODE_DEADBAND)) && (rcData[ROLL] > (rxConfig->midrc -AIRMODE_DEADBAND))))
+    if (((rcData[PITCH] < (rxConfig()->midrc + AIRMODE_DEADBAND)) && (rcData[PITCH] > (rxConfig()->midrc -AIRMODE_DEADBAND)))
+            && ((rcData[ROLL] < (rxConfig()->midrc + AIRMODE_DEADBAND)) && (rcData[ROLL] > (rxConfig()->midrc -AIRMODE_DEADBAND))))
         return CENTERED;
 
     return NOT_CENTERED;
 }
 
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm)
+void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm)
 {
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint8_t rcSticks;            // this hold sticks position for command combos
@@ -151,9 +151,9 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
     // checking sticks positions
     for (i = 0; i < 4; i++) {
         stTmp >>= 2;
-        if (rcData[i] > rxConfig->mincheck)
+        if (rcData[i] > rxConfig()->mincheck)
             stTmp |= 0x80;  // check for MIN
-        if (rcData[i] < rxConfig->maxcheck)
+        if (rcData[i] < rxConfig()->maxcheck)
             stTmp |= 0x40;  // check for MAX
     }
     if (stTmp == rcSticks) {
@@ -640,7 +640,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig)
+void processRcAdjustments(controlRateConfig_t *controlRateConfig)
 {
     uint8_t adjustmentIndex;
     uint32_t now = millis();
@@ -675,9 +675,9 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rx
 
         if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
             int delta;
-            if (rcData[channelIndex] > rxConfig->midrc + 200) {
+            if (rcData[channelIndex] > rxConfig()->midrc + 200) {
                 delta = adjustmentState->config->data.stepConfig.step;
-            } else if (rcData[channelIndex] < rxConfig->midrc - 200) {
+            } else if (rcData[channelIndex] < rxConfig()->midrc - 200) {
                 delta = 0 - adjustmentState->config->data.stepConfig.step;
             } else {
                 // returning the switch to the middle immediately resets the ready state

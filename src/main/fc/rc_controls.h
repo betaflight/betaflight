@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "rx/rx.h"
-
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -173,9 +171,9 @@ typedef struct armingConfig_s {
 bool areUsingSticksToArm(void);
 
 bool areSticksInApModePosition(uint16_t ap_mode);
-throttleStatus_e calculateThrottleStatus(rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
-rollPitchStatus_e calculateRollPitchCenterStatus(rxConfig_t *rxConfig);
-void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm);
+throttleStatus_e calculateThrottleStatus(uint16_t deadband3d_throttle);
+rollPitchStatus_e calculateRollPitchCenterStatus(void);
+void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm);
 
 void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, modeActivationOperator_e modeActivationOperator);
 
@@ -262,7 +260,7 @@ typedef struct adjustmentState_s {
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig, rxConfig_t *rxConfig);
+void processRcAdjustments(controlRateConfig_t *controlRateConfig);
 
 bool isUsingSticksForArming(void);
 bool isUsingNavigationModes(void);

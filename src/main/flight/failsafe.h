@@ -84,8 +84,7 @@ typedef struct failsafeState_s {
     failsafeRxLinkState_e rxLinkState;
 } failsafeState_t;
 
-struct rxConfig_s;
-void failsafeInit(struct rxConfig_s *intialRxConfig, uint16_t deadband3d_throttle);
+void failsafeInit(uint16_t deadband3d_throttle);
 void useFailsafeConfig(failsafeConfig_t *failsafeConfigToUse);
 failsafeConfig_t * getActiveFailsafeConfig(void);
 

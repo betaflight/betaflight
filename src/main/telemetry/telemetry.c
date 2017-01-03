@@ -137,10 +137,10 @@ void telemetryCheckState(void)
 
 }
 
-void telemetryProcess(timeUs_t currentTimeUs, rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
+void telemetryProcess(timeUs_t currentTimeUs, uint16_t deadband3d_throttle)
 {
 #if defined(TELEMETRY_FRSKY)
-    handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
+    handleFrSkyTelemetry(deadband3d_throttle);
 #else
     UNUSED(rxConfig);
     UNUSED(deadband3d_throttle);
