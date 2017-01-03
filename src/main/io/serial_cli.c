@@ -2637,7 +2637,6 @@ static void cliRebootEx(bool bootLoader)
     }
     systemReset();
 }
-#endif
 
 static void cliReboot(void)
 {
@@ -2829,8 +2828,10 @@ static void cliRateProfile(char *cmdline)
         }
     }
 
+#ifdef USE_PARAMETER_GROUPS
     // restore configs from copies
     restoreConfigs();
+#endif
 }
 
 static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_t *defaultConfig)
@@ -3108,6 +3109,7 @@ static void cliPFlags(char *cmdline)
 
     cliPrintf("# Persistent config flags: 0x%08x\r\n", masterConfig.persistentFlags );
 }
+#endif
 
 #if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
 static void cliResource(char *cmdline)
