@@ -41,7 +41,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
-#include "sensors/pitotmeter.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -241,13 +240,6 @@ void validateNavConfig(navConfig_t * navConfig)
     navConfig->general.land_slowdown_minalt = MIN(navConfig->general.land_slowdown_minalt, navConfig->general.land_slowdown_maxalt - 100);
 }
 #endif
-
-void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
-{
-    pitotmeterConfig->use_median_filtering = 1;
-    pitotmeterConfig->pitot_noise_lpf = 0.6f;
-    pitotmeterConfig->pitot_scale = 1.00f;
-}
 
 void resetMotorConfig(motorConfig_t *motorConfig)
 {
@@ -472,12 +464,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
 
-#ifdef PITOT
-    config->pitotmeterConfig.pitot_hardware = PITOT_AUTODETECT;
-#else
-    config->pitotmeterConfig.pitot_hardware = PITOT_NONE;
-#endif
-
     resetBatteryConfig(&config->batteryConfig);
 
 #ifdef TELEMETRY
@@ -561,8 +547,6 @@ void createDefaultConfig(master_t *config)
     //     cfg.activate[i] = 0;
 
     config->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
-
-    resetPitotmeterConfig(&config->pitotmeterConfig);
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -769,10 +753,6 @@ static void activateConfig(void)
     navigationUseRxConfig(&masterConfig.rxConfig);
     navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
     navigationUsemotorConfig(&masterConfig.motorConfig);
-#endif
-
-#ifdef PITOT
-    usePitotmeterConfig(&masterConfig.pitotmeterConfig);
 #endif
 }
 

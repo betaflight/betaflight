@@ -528,6 +528,14 @@ static const clivalue_t valueTable[] = {
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, use_median_filtering) },
 #endif
+
+#ifdef PITOT
+    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_PITOT_HARDWARE }, PG_PITOTMETER_CONFIG, offsetof(pitotmeterConfig_t, pitot_hardware) },
+    { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_PITOTMETER_CONFIG, offsetof(pitotmeterConfig_t, use_median_filtering) },
+    { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_PITOTMETER_CONFIG, offsetof(pitotmeterConfig_t, pitot_noise_lpf) },
+    { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_PITOTMETER_CONFIG, offsetof(pitotmeterConfig_t, pitot_scale) },
+#endif
+
 };
 
 #else
@@ -763,13 +771,6 @@ const clivalue_t valueTable[] = {
 
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
-
-#ifdef PITOT
-    { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &pitotmeterConfig()->pitot_hardware, .config.lookup = { TABLE_PITOT_HARDWARE } },
-    { "pitot_use_median_filter",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &pitotmeterConfig()->use_median_filtering, .config.lookup = { TABLE_OFF_ON } },
-    { "pitot_noise_lpf",            VAR_FLOAT  | MASTER_VALUE, &pitotmeterConfig()->pitot_noise_lpf, .config.minmax = { 0, 1 } },
-    { "pitot_scale",                VAR_FLOAT  | MASTER_VALUE, &pitotmeterConfig()->pitot_scale, .config.minmax = { 0, 100 } },
-#endif
 
     { "p_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PITCH], .config.minmax = { 0,  200 }, },
     { "i_pitch",                    VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PITCH], .config.minmax = { 0,  200 }, },
@@ -1068,6 +1069,9 @@ static compassConfig_t compassConfigCopy;
 #ifdef BARO
 static barometerConfig_t barometerConfigCopy;
 #endif
+#ifdef PITOT
+static pitotmeterConfig_t pitotmeterConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1080,8 +1084,11 @@ static void backupConfigs(void)
 #ifdef BARO
     barometerConfigCopy = *barometerConfig();
 #endif
-
+#ifdef PITOT
+    pitotmeterConfigCopy = *pitotmeterConfig();
+#endif
 }
+
 static void restoreConfigs(void)
 {
     *gyroConfig() = gyroConfigCopy;
@@ -1091,6 +1098,9 @@ static void restoreConfigs(void)
 #endif
 #ifdef BARO
     *barometerConfig() = barometerConfigCopy;
+#endif
+#ifdef PITOT
+    *pitotmeterConfig() = pitotmeterConfigCopy;
 #endif
 }
 
@@ -1130,6 +1140,9 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
 #endif
 #ifdef BARO
         dumpPgValues(MASTER_VALUE, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
+#endif
+#ifdef PITOT
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_PITOT_CONFIG, &pitotmeterConfigCopy, pitotmeterConfig());
 #endif
         return;
     }

@@ -42,8 +42,7 @@ uint8_t requestedSensors[SENSOR_INDEX_COUNT] = { GYRO_AUTODETECT, ACC_NONE, BARO
 uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, MAG_NONE, RANGEFINDER_NONE, PITOT_NONE };
 
 
-bool sensorsAutodetect(
-                pitotmeterConfig_t *pitotConfig)
+bool sensorsAutodetect(void)
 {
     bool eepromUpdatePending = false;
 
@@ -64,9 +63,7 @@ bool sensorsAutodetect(
 #endif
 
 #ifdef PITOT
-    pitotDetect(&pitot.dev, pitotConfig->pitot_hardware);
-#else
-    UNUSED(pitotConfig);
+    pitotInit();
 #endif
 
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
@@ -97,10 +94,12 @@ bool sensorsAutodetect(
         eepromUpdatePending = true;
     }
 
-    if (pitotConfig->pitot_hardware == PITOT_AUTODETECT) {
-        pitotConfig->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
+#ifdef PITOT
+    if (pitotmeterConfig()->pitot_hardware == PITOT_AUTODETECT) {
+        pitotmeterConfig()->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
         eepromUpdatePending = true;
     }
+#endif
 
     if (eepromUpdatePending) {
         writeEEPROM();
