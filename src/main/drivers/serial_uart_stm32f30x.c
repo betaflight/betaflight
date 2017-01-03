@@ -157,7 +157,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->USARTx = USART1;
 
 #ifdef USE_UART1_RX_DMA
-    dmaInit(DMA1_CH5_HANDLER, OWNER_SERIAL, 1);
+    dmaInit(DMA1_CH5_HANDLER, OWNER_SERIAL_RX, 1);
     s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
 #endif
@@ -175,7 +175,7 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     serialUARTInit(IOGetByTag(IO_TAG(UART1_TX_PIN)), IOGetByTag(IO_TAG(UART1_RX_PIN)), mode, options, GPIO_AF_7, 1);
 
 #ifdef USE_UART1_TX_DMA
-    dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL, 1);
+    dmaInit(DMA1_CH4_HANDLER, OWNER_SERIAL_TX, 1);
     dmaSetHandler(DMA1_CH4_HANDLER, handleUsartTxDma, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
 #endif
 
@@ -218,7 +218,7 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
 #endif
 #ifdef USE_UART2_TX_DMA
-    dmaInit(DMA1_CH7_HANDLER, OWNER_SERIAL, 2);
+    dmaInit(DMA1_CH7_HANDLER, OWNER_SERIAL_TX, 2);
     s->txDMAChannel = DMA1_Channel7;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
@@ -270,12 +270,12 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->USARTx = USART3;
 
 #ifdef USE_UART3_RX_DMA
-    dmaInit(DMA1_CH3_HANDLER, OWNER_SERIAL, 3);
+    dmaInit(DMA1_CH3_HANDLER, OWNER_SERIAL_RX, 3);
     s->rxDMAChannel = DMA1_Channel3;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
 #endif
 #ifdef USE_UART3_TX_DMA
-    dmaInit(DMA1_CH2_HANDLER, OWNER_SERIAL, 3);
+    dmaInit(DMA1_CH2_HANDLER, OWNER_SERIAL_TX, 3);
     s->txDMAChannel = DMA1_Channel2;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
 #endif
