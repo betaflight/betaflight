@@ -45,6 +45,7 @@
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
 #include "sensors/acceleration.h"
+#include "sensors/compass.h"
 
 
 typedef struct {
@@ -521,7 +522,7 @@ float pidMagHold(const pidProfile_t *pidProfile)
     */
 
     magHoldRate = error * pidProfile->P8[PIDMAG] / 30;
-    magHoldRate = constrainf(magHoldRate, -pidProfile->mag_hold_rate_limit, pidProfile->mag_hold_rate_limit);
+    magHoldRate = constrainf(magHoldRate, -compassConfig()->mag_hold_rate_limit, compassConfig()->mag_hold_rate_limit);
     magHoldRate = pt1FilterApply4(&magHoldRateFilter, magHoldRate, MAG_HOLD_ERROR_LPF_FREQ, dT);
 
     return magHoldRate;

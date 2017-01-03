@@ -1128,7 +1128,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, 0);
     #endif
     #ifdef MAG
-        sbufWriteU8(dst, currentProfile->pidProfile.mag_hold_rate_limit);
+        sbufWriteU8(dst, compassConfig()->mag_hold_rate_limit);
         sbufWriteU8(dst, MAG_HOLD_ERROR_LPF_FREQ);
     #else
         sbufWriteU8(dst, 0);
@@ -1146,7 +1146,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     case MSP_SENSOR_CONFIG:
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
+#ifdef MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, pitotmeterConfig()->pitot_hardware);
         sbufWriteU8(dst, 0);    // rangefinder hardware
         sbufWriteU8(dst, 0);    // optical flow hardware
@@ -1385,7 +1389,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         rxConfig()->rssi_channel = sbufReadU8(src);
         sbufReadU8(src);
 
+#ifdef MAG
         compassConfig()->mag_declination = sbufReadU16(src) * 10;
+#else
+        sbufReadU16(src);
+#endif
 
         batteryConfig()->vbatscale = sbufReadU8(src);           // actual vbatscale as intended
         batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
@@ -1462,7 +1470,11 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_SENSOR_ALIGNMENT:
         gyroConfig()->gyro_align = sbufReadU8(src);
         accelerometerConfig()->acc_align = sbufReadU8(src);
+#ifdef MAG
         compassConfig()->mag_align = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         break;
 
     case MSP_SET_ADVANCED_CONFIG:
@@ -1537,7 +1549,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             sbufReadU16(src);
         #endif
         #ifdef MAG
-            currentProfile->pidProfile.mag_hold_rate_limit = sbufReadU8(src);
+            compassConfig()->mag_hold_rate_limit = sbufReadU8(src);
             sbufReadU8(src); //MAG_HOLD_ERROR_LPF_FREQ
         #else
             sbufReadU8(src);

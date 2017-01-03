@@ -43,7 +43,6 @@ uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, 
 
 
 bool sensorsAutodetect(
-                compassConfig_t *compassConfig,
                 barometerConfig_t *baroConfig,
                 pitotmeterConfig_t *pitotConfig)
 {
@@ -76,25 +75,13 @@ bool sensorsAutodetect(
     // FIXME extract to a method to reduce dependencies, maybe move to sensors_compass.c
     mag.magneticDeclination = 0.0f; // TODO investigate if this is actually needed if there is no mag sensor or if the value stored in the config should be used.
 #ifdef MAG
-    if (compassDetect(&mag.dev, compassConfig->mag_hardware)) {
-        // calculate magnetic declination
-        if (!compassInit(compassConfig)) {
-            addBootlogEvent2(BOOT_EVENT_MAG_INIT_FAILED, BOOT_EVENT_FLAGS_ERROR);
-            sensorsClear(SENSOR_MAG);
-        }
-    }
-#else
-    UNUSED(compassConfig);
+    compassInit();
 #endif
 
 #ifdef SONAR
     const rangefinderType_e rangefinderType = rangefinderDetect();
     rangefinderInit(rangefinderType);
 #endif
-
-    if (compassConfig->mag_align != ALIGN_DEFAULT) {
-        mag.dev.magAlign = compassConfig->mag_align;
-    }
 
     if (accelerometerConfig()->acc_hardware == ACC_AUTODETECT) {
         accelerometerConfig()->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
@@ -106,8 +93,8 @@ bool sensorsAutodetect(
         eepromUpdatePending = true;
     }
 
-    if (compassConfig->mag_hardware == MAG_AUTODETECT) {
-        compassConfig->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
+    if (compassConfig()->mag_hardware == MAG_AUTODETECT) {
+        compassConfig()->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
         eepromUpdatePending = true;
     }
 

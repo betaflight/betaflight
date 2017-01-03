@@ -63,7 +63,7 @@ hardwareSensorStatus_e getHwCompassStatus(void)
 {
 #if defined(MAG)
     if (detectedSensors[SENSOR_INDEX_MAG] != MAG_NONE) {
-        if (isCompassHealthy()) {
+        if (compassIsHealthy()) {
             return HW_SENSOR_OK;
         }
         else {

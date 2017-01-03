@@ -144,7 +144,7 @@ void taskProcessGPS(timeUs_t currentTimeUs)
 void taskUpdateCompass(timeUs_t currentTimeUs)
 {
     if (sensors(SENSOR_MAG)) {
-        compassUpdate(currentTimeUs, &compassConfig()->magZero);
+        compassUpdate(currentTimeUs);
     }
 }
 #endif
