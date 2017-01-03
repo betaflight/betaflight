@@ -999,51 +999,95 @@ void *getValuePointer(const clivalue_t *value)
 }
 #endif
 
-static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
+{
+    void *ptr = getValuePointer(var);
+
+    printValuePointer(var, ptr, full);
+}
+
+static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptrDefault)
+{
+    bool result = false;
+    switch (type & VALUE_TYPE_MASK) {
+    case VAR_UINT8:
+        result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
+        break;
+
+    case VAR_INT8:
+        result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
+        break;
+
+    case VAR_UINT16:
+        result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
+        break;
+
+    case VAR_INT16:
+        result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
+        break;
+
+    case VAR_UINT32:
+        result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
+        break;
+
+    case VAR_FLOAT:
+        result = *(float *)ptr == *(float *)ptrDefault;
+        break;
+    }
+    return result;
+}
+
+#ifdef USE_PARAMETER_GROUPS
+static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, void *currentConfig, void *defaultConfig)
+{
+    const char *format = "set %s = ";
+    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
+        const clivalue_t *value = &valueTable[i];
+        if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
+            if (dumpMask == DUMP_MASTER) {
+                cliPrintf(format, valueTable[i].name);
+                printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
+                cliPrint("\r\n");
+            } else if (dumpMask == (DUMP_MASTER | SHOW_DEFAULTS)) {
+                cliPrintf(format, valueTable[i].name);
+                printValuePointer(value, (uint8_t*)defaultConfig + value->offset, 0);
+                cliPrint("\r\n");
+            } else if (dumpMask == (DUMP_MASTER | DO_DIFF)) {
+                const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)currentConfig + value->offset, (uint8_t*)defaultConfig + value->offset);
+                if (!equalsDefault) {
+                    cliPrintf(format, valueTable[i].name);
+                    printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
+                    cliPrint("\r\n");
+                }
+            }
+        }
+    }
+}
+
+static gyroConfig_t gyroConfigCopy;
+static void backupConfigs(void)
+{
+    // make copies of configs to do differencing
+    gyroConfigCopy = *gyroConfig();
+
+}
+static void restoreConfigs(void)
+{
+    *gyroConfig() = gyroConfigCopy;
+}
+
+#endif
+
+static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
 {
     return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
 }
 
 static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
 {
-    void *ptr = getValuePointer(value);
-
-    void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
-
-    bool result = false;
-    switch (value->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
-            break;
-
-        case VAR_INT8:
-            result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
-            break;
-
-        case VAR_UINT16:
-            result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
-            break;
-
-        case VAR_INT16:
-            result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
-            break;
-
-        case VAR_UINT32:
-            result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
-            break;
-
-        case VAR_FLOAT:
-            result = *(float *)ptr == *(float *)ptrDefault;
-            break;
-    }
-    return result;
-}
-
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
-{
-    void *ptr = getValuePointer(var);
-
-    printValuePointer(var, ptr, full);
+    const void *ptr = getValuePointer(value);
+    const void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
+    return valuePtrEqualsDefault(value->type, ptr, ptrDefault);
 }
 
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
@@ -1057,24 +1101,29 @@ static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const maste
 
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
 {
-    const clivalue_t *value;
+    const char *format = "set %s = ";
+#ifdef USE_PARAMETER_GROUPS
+    if (valueSection == MASTER_VALUE) {
+        // gyroConfig() has been set to default, gyroConfigCopy contains current value
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
+        return;
+    }
+#endif
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
-        value = &valueTable[i];
-
-        if ((value->type & VALUE_SECTION_MASK) != valueSection) {
-            continue;
-        }
-
-        const char *format = "set %s = ";
-        if (cliDefaultPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVarDefault(value, 0, defaultConfig);
-            cliPrint("\r\n");
-        }
-        if (cliDumpPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVar(value, 0);
-            cliPrint("\r\n");
+        const clivalue_t *value = &valueTable[i];
+        if ((value->type & VALUE_SECTION_MASK) == valueSection) {
+            const bool equalsDefault = valueEqualsDefault(value, defaultConfig);
+            if (cliDefaultPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
+                cliPrintVarDefault(value, 0, defaultConfig);
+                cliPrint("\r\n");
+            }
+            if (cliDumpPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
+                cliPrintVar(value, 0);
+                cliPrint("\r\n");
+            }
         }
     }
+    cliPrint("\r\n");
 }
 
 static void cliPrintVarRange(const clivalue_t *var)
@@ -1554,7 +1603,6 @@ static void cliSerial(char *cmdline)
     }
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
-
 }
 
 static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges)
@@ -3146,18 +3194,6 @@ static void cliResource(char *cmdline)
             cliPrintf("%c%02d: %s %s\r\n", IO_GPIOPortIdx(ioRecs + i) + 'A', IO_GPIOPinIdx(ioRecs + i), owner, resource);
         }
     }
-}
-#endif
-
-#ifdef USE_PARAMETER_GROUPS
-static void backupConfigs(void)
-{
-     // make copies of configs to do differencing
-
-}
-
-static void restoreConfigs(void)
-{
 }
 #endif
 

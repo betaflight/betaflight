@@ -445,6 +445,8 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
     };
 }
 
+void cliEnter(serialPort_t *serialPort);
+
 void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
 {
 #ifndef USE_CLI
