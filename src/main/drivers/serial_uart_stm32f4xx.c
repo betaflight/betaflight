@@ -270,28 +270,20 @@ static void handleUsartTxDma(uartPort_t *s)
 void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = &(((uartDevice_t*)(descriptor->userParam))->port);
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF))
-    {
+    uint32_t flags = DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_DMEIF | DMA_IT_FEIF);
+    DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF | DMA_IT_HTIF | DMA_IT_TEIF | DMA_IT_DMEIF | DMA_IT_FEIF);
+    if (flags & DMA_IT_TCIF) {
         debug[1]++;
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TCIF);
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_HTIF);
-        if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_FEIF))
-        {
-            debug[2]++;
-            //debug[3] += descriptor->stream->NDTR;
+        if(flags & DMA_IT_FEIF) {
+            debug[2]++; 
             debug[3] += s->txDMAStream->NDTR;
-            DMA_CLEAR_FLAG(descriptor, DMA_IT_FEIF);
             return;
         }
         handleUsartTxDma(s);
     }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_TEIF))
-    {
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_TEIF);
+    if (flags & DMA_IT_TEIF) {
     }
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_IT_DMEIF))
-    {
-        DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
+    if (flags & DMA_IT_DMEIF) {
     }
 }
 
@@ -343,8 +335,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
-    }
-    else {
+    } else {
         if (mode & MODE_TX) {
             IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(tx, IOCFG_AF_PP_UP, uart->af);
