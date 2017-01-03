@@ -15,10 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Touch up configuration
+
 #pragma once
 
-extern uint8_t cliMode;
-
-struct serialConfig_s;
-void cliInit(struct serialConfig_s *serialConfig);
-void cliProcess(void);
+// Targets with built-in vtx do not need external vtx
+#if defined(VTX) || defined(USE_RTC6705)
+# undef VTX_CONTROL
+# undef VTX_SMARTAUDIO
+#endif
