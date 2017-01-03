@@ -18,7 +18,6 @@
 #pragma once
 
 bool sensorsAutodetect(
-                accelerometerConfig_t *accConfig,
                 compassConfig_t *compassConfig,
                 barometerConfig_t *baroConfig,
                 pitotmeterConfig_t *pitotConfig);

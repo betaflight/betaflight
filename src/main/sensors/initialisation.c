@@ -43,7 +43,6 @@ uint8_t detectedSensors[SENSOR_INDEX_COUNT] = { GYRO_NONE, ACC_NONE, BARO_NONE, 
 
 
 bool sensorsAutodetect(
-                accelerometerConfig_t *accConfig,
                 compassConfig_t *compassConfig,
                 barometerConfig_t *baroConfig,
                 pitotmeterConfig_t *pitotConfig)
@@ -56,10 +55,10 @@ bool sensorsAutodetect(
 
 #ifdef ASYNC_GYRO_PROCESSING
      // ACC will be updated at its own rate
-    accInit(accConfig, getAccUpdateRate());
+    accInit(getAccUpdateRate());
 #else
     // acc updated at same frequency in taskMainPidLoop in mw.c
-    accInit(accConfig, gyro.targetLooptime);
+    accInit(gyro.targetLooptime);
 #endif
 
 #ifdef BARO
@@ -92,16 +91,13 @@ bool sensorsAutodetect(
     const rangefinderType_e rangefinderType = rangefinderDetect();
     rangefinderInit(rangefinderType);
 #endif
-    if (accConfig->acc_align != ALIGN_DEFAULT) {
-        acc.dev.accAlign = accConfig->acc_align;
-    }
+
     if (compassConfig->mag_align != ALIGN_DEFAULT) {
         mag.dev.magAlign = compassConfig->mag_align;
     }
 
-    /* Check if sensor autodetection was requested for some sensors and */
-    if (accConfig->acc_hardware == ACC_AUTODETECT) {
-        accConfig->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
+    if (accelerometerConfig()->acc_hardware == ACC_AUTODETECT) {
+        accelerometerConfig()->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
         eepromUpdatePending = true;
     }
 

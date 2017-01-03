@@ -24,6 +24,7 @@
 
 #include "fc/config.h"
 
+#include "sensors/acceleration.h"
 #include "sensors/gyro.h"
 
 #include "hardware_revision.h"
@@ -33,6 +34,6 @@ void targetConfiguration(master_t *config)
 {
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         gyroConfig()->gyro_align = CW180_DEG;
-        config->accelerometerConfig.acc_align  = CW180_DEG;
+        accelerometerConfig()->acc_align  = CW180_DEG;
     }
 }

@@ -503,6 +503,16 @@ static const clivalue_t valueTable[] = {
     { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2)  },
     { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = {1, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2)  },
 #endif
+
+    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_align) },
+    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ACC_HARDWARE }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_hardware) },
+    { "acc_lpf_hz",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 200 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, acc_lpf_hz) },
+    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw[X]) },
+    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw[Y]) },
+    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accZero.raw[Z]) },
+    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { 1,  8192 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accGain.raw[X]) },
+    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { 1,  8192 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accGain.raw[Y]) },
+    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { 1,  8192 }, PG_ACCELEROMETER_CONFIG, offsetof(accelerometerConfig_t, accGain.raw[Z]) },
 };
 
 #else
@@ -679,7 +689,6 @@ const clivalue_t valueTable[] = {
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR } },
 
-    { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &accelerometerConfig()->acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &compassConfig()->mag_align, .config.lookup = { TABLE_ALIGNMENT } },
 
     { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &boardAlignment()->rollDeciDegrees, .config.minmax = { -1800,  3600 } },
@@ -742,8 +751,6 @@ const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
 
-    { "acc_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &accelerometerConfig()->acc_hardware, .config.lookup = { TABLE_ACC_HARDWARE } },
-
 #ifdef BARO
     { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &barometerConfig()->use_median_filtering, .config.lookup = { TABLE_OFF_ON } },
     { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &barometerConfig()->baro_hardware, .config.lookup = { TABLE_BARO_HARDWARE } },
@@ -779,7 +786,6 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination_rll",  VAR_INT16  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.max_angle_inclination[FD_ROLL], .config.minmax = { 100,  900 }, },
     { "max_angle_inclination_pit",  VAR_INT16  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.max_angle_inclination[FD_PITCH], .config.minmax = { 100,  900 }, },
 
-    { "acc_soft_lpf_hz",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acc_soft_lpf_hz, .config.minmax = {0, 200 } },
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 200 } },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 200 } },
     { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_setpoint_weight, .config.minmax = {0, 2 } },
@@ -809,12 +815,6 @@ const clivalue_t valueTable[] = {
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, &compassConfig()->magZero.raw[Z], .config.minmax = { -32768,  32767 } },
 #endif
 
-    { "acczero_x",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[X], .config.minmax = { -32768,  32767 } },
-    { "acczero_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Y], .config.minmax = { -32768,  32767 } },
-    { "acczero_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accZero.raw[Z], .config.minmax = { -32768,  32767 } },
-    { "accgain_x",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[X], .config.minmax = { 1,  8192 } },
-    { "accgain_y",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[Y], .config.minmax = { 1,  8192 } },
-    { "accgain_z",                  VAR_INT16  | MASTER_VALUE, &accelerometerConfig()->accGain.raw[Z], .config.minmax = { 1,  8192 } },
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
 #endif
@@ -1065,15 +1065,18 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, voi
 }
 
 static gyroConfig_t gyroConfigCopy;
+static accelerometerConfig_t accelerometerConfigCopy;
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     gyroConfigCopy = *gyroConfig();
+    accelerometerConfigCopy = *accelerometerConfig();
 
 }
 static void restoreConfigs(void)
 {
     *gyroConfig() = gyroConfigCopy;
+    *accelerometerConfig() = accelerometerConfigCopy;
 }
 
 #endif
@@ -1106,6 +1109,7 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
     if (valueSection == MASTER_VALUE) {
         // gyroConfig() has been set to default, gyroConfigCopy contains current value
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
         return;
     }
 #endif
