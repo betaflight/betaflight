@@ -70,7 +70,7 @@ void targetConfiguration(master_t *config)
         config->profile[profileId].pidProfile.I8[YAW] = 45;
         config->profile[profileId].pidProfile.P8[PIDLEVEL] = 30;
         config->profile[profileId].pidProfile.D8[PIDLEVEL] = 30;
-        config->profile[profileId].pidProfile.levelSensitivity = 50.0f;
+        config->profile[profileId].pidProfile.levelSensitivity = 50;
 
         for (int rateProfileId = 0; rateProfileId < MAX_RATEPROFILES; rateProfileId++) {
             config->profile[profileId].controlRateProfile[rateProfileId].rcRate8 = 100;
