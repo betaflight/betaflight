@@ -19,6 +19,7 @@
 
 #include "drivers/accgyro.h"
 #include "common/axis.h"
+#include "config/parameter_group.h"
 
 typedef enum {
     GYRO_NONE = 0,
@@ -42,23 +43,22 @@ extern gyro_t gyro;
 
 typedef struct gyroConfig_s {
     sensor_align_e gyro_align;              // gyro alignment
-    uint8_t gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t  gyroMovementCalibrationThreshold; // people keep forgetting that moving model while init results in wrong gyro offsets. and then they never reset gyro. so this is now on by default.
+    uint8_t  gyroSyncDenominator;           // Gyro sync Denominator
+    uint8_t  gyroSync;                      // Enable interrupt based loop
     uint16_t looptime;                      // imu loop time in us
-    uint8_t gyroSync;                       // Enable interrupt based loop
-    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    uint8_t gyro_soft_lpf_hz;
-#ifdef USE_GYRO_NOTCH_1
+    uint8_t  gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint8_t  gyro_soft_lpf_hz;
     uint16_t gyro_soft_notch_hz_1;
     uint16_t gyro_soft_notch_cutoff_1;
-#endif
-#ifdef USE_GYRO_NOTCH_2
     uint16_t gyro_soft_notch_hz_2;
     uint16_t gyro_soft_notch_cutoff_2;
-#endif
 } gyroConfig_t;
 
-bool gyroInit(const gyroConfig_t *gyroConfigToUse);
-void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+PG_DECLARE(gyroConfig_t, gyroConfig);
+
+bool gyroInit(void);
+void gyroInitFilters(void);
 void gyroUpdate(void);
-bool isGyroCalibrationComplete(void);
+void gyroSetCalibrationCycles(uint16_t calibrationCyclesRequired);
+bool gyroIsCalibrationComplete(void);

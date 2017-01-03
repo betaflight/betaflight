@@ -135,18 +135,9 @@ void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 10;    // NAV_VEL_Z_D * 100
 
     pidProfile->acc_soft_lpf_hz = 15;
-    pidProfile->gyro_soft_lpf_hz = 60;
-#ifdef USE_GYRO_NOTCH_1
-    pidProfile->gyro_soft_notch_cutoff_1 = 129;
-    pidProfile->gyro_soft_notch_hz_1 = 172;
-#endif
 #ifdef USE_DTERM_NOTCH
     pidProfile->dterm_soft_notch_cutoff = 43;
     pidProfile->dterm_soft_notch_hz = 86;
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    pidProfile->gyro_soft_notch_cutoff_2 = 43;
-    pidProfile->gyro_soft_notch_hz_2 = 86;
 #endif
     pidProfile->dterm_lpf_hz = 40;
     pidProfile->yaw_lpf_hz = 30;
@@ -364,7 +355,8 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+{
     controlRateConfig->rcExpo8 = 70;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
@@ -382,7 +374,8 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
 
 }
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
+void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
+{
     rcControlsConfig->deadband = 5;
     rcControlsConfig->yaw_deadband = 5;
     rcControlsConfig->pos_hold_deadband = 20;
@@ -438,31 +431,6 @@ uint8_t getAsyncMode(void) {
 }
 #endif
 
-uint8_t getCurrentProfile(void)
-{
-    return masterConfig.current_profile_index;
-}
-
-void setProfile(uint8_t profileIndex)
-{
-    currentProfile = &masterConfig.profile[profileIndex];
-}
-
-uint8_t getCurrentControlRateProfile(void)
-{
-    return currentControlRateProfileIndex;
-}
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.controlRateProfiles[profileIndex];
-}
-
-void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
-}
-
 uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
@@ -495,18 +463,18 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
-    // global settings
-    config->current_profile_index = 0;     // default profile
+    // profile
+    config->current_profile_index = 0;
+
+    // IMU
     config->imuConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
     config->imuConfig.dcm_ki_acc = 50;               // 0.005 * 10000
     config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
-    config->gyroConfig.gyro_lpf = 3;                  // INV_FILTER_42HZ, In case of ST gyro, will default to 32Hz instead
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero, &config->accelerometerConfig.accGain);
 
-    config->gyroConfig.gyro_align = ALIGN_DEFAULT;
     config->accelerometerConfig.acc_align = ALIGN_DEFAULT;
     config->compassConfig.mag_align = ALIGN_DEFAULT;
 
@@ -514,7 +482,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
 
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
 
     config->accelerometerConfig.acc_hardware = ACC_AUTODETECT;     // default/autodetect
 
@@ -603,10 +570,7 @@ void createDefaultConfig(master_t *config)
 
     resetSerialConfig(&config->serialConfig);
 
-    config->gyroConfig.looptime = 2000;
     config->i2c_overclock = 0;
-    config->gyroConfig.gyroSync = 0;
-    config->gyroConfig.gyroSyncDenominator = 2;
 
 #ifdef ASYNC_GYRO_PROCESSING
     config->accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
@@ -782,45 +746,32 @@ void createDefaultConfig(master_t *config)
     }
 }
 
-static void resetConf(void)
+void resetConfigs(void)
 {
     createDefaultConfig(&masterConfig);
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
 
-    setProfile(0);
-    setControlRateProfile(0);
-
+    setProfile(masterConfig.current_profile_index);
+    setControlRateProfile(masterConfig.current_profile_index);
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
 }
 
-void activateControlRateConfig(void)
+static void activateControlRateConfig(void)
 {
     generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
     activateControlRateConfig();
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        masterConfig.modeActivationConditions,
-        &masterConfig.motorConfig,
-        &currentProfile->pidProfile
-    );
+    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
 
-    gyroConfig()->gyro_soft_lpf_hz = currentProfile->pidProfile.gyro_soft_lpf_hz;
-#ifdef USE_GYRO_NOTCH_1
-    gyroConfig()->gyro_soft_notch_hz_1 = currentProfile->pidProfile.gyro_soft_notch_hz_1;
-    gyroConfig()->gyro_soft_notch_cutoff_1 = currentProfile->pidProfile.gyro_soft_notch_cutoff_1;
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    gyroConfig()->gyro_soft_notch_hz_2 = currentProfile->pidProfile.gyro_soft_notch_hz_2;
-    gyroConfig()->gyro_soft_notch_cutoff_2 = currentProfile->pidProfile.gyro_soft_notch_cutoff_2;
-#endif
-    
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
@@ -859,18 +810,18 @@ void activateConfig(void)
 void validateAndFixConfig(void)
 {
 #ifdef USE_GYRO_NOTCH_1
-    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_1 >= currentProfile->pidProfile.gyro_soft_notch_hz_1) {
-        currentProfile->pidProfile.gyro_soft_notch_hz_1 = 0;
+    if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
+        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+    }
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
+        gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 #endif
 #ifdef USE_DTERM_NOTCH
     if (currentProfile->pidProfile.dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
         currentProfile->pidProfile.dterm_soft_notch_hz = 0;
-    }
-#endif
-#ifdef USE_GYRO_NOTCH_2
-    if (currentProfile->pidProfile.gyro_soft_notch_cutoff_2 >= currentProfile->pidProfile.gyro_soft_notch_hz_2) {
-        currentProfile->pidProfile.gyro_soft_notch_hz_2 = 0;
     }
 #endif
     // Disable unused features
@@ -1097,14 +1048,9 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfile());
-//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
-
-    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
-        masterConfig.current_profile_index = 0;
-    }
-
     setProfile(masterConfig.current_profile_index);
+    setControlRateProfile(masterConfig.current_profile_index);
+    pgActivateProfile(masterConfig.current_profile_index);
 
     validateAndFixConfig();
     activateConfig();
@@ -1131,7 +1077,7 @@ void ensureEEPROMContainsValidData(void)
 
 void resetEEPROM(void)
 {
-    resetConf();
+    resetConfigs();
     writeEEPROM();
 }
 
@@ -1140,6 +1086,20 @@ void saveConfigAndNotify(void)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(1);
+}
+
+uint8_t getCurrentProfile(void)
+{
+    return masterConfig.current_profile_index;
+}
+
+void setProfile(uint8_t profileIndex)
+{
+    if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
+        profileIndex = 0;
+    }
+    masterConfig.current_profile_index = profileIndex;
+    currentProfile = &masterConfig.profile[masterConfig.current_profile_index];
 }
 
 void changeProfile(uint8_t profileIndex)
@@ -1151,6 +1111,17 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
+}
+
+uint8_t getCurrentControlRateProfile(void)
+{
+    return currentControlRateProfileIndex;
+}
+
+void setControlRateProfile(uint8_t profileIndex)
+{
+    currentControlRateProfileIndex = profileIndex;
+    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
 }
 
 void changeControlRateProfile(uint8_t profileIndex)

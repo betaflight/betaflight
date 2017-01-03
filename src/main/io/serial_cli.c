@@ -23,6 +23,7 @@
 #include <math.h>
 #include <ctype.h>
 
+//#define USE_PARAMETER_GROUPS
 #include "platform.h"
 
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
@@ -45,6 +46,9 @@ uint8_t cliMode = 0;
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 
 #include "drivers/accgyro.h"
 #include "drivers/buf_writer.h"
@@ -448,8 +452,8 @@ typedef enum {
     // value section
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
-    CONTROL_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
-
+    PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
+    CONTROL_RATE_VALUE = (3 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -473,6 +477,36 @@ typedef union {
     cliMinMaxConfig_t minmax;
 } cliValueConfig_t;
 
+#ifdef USE_PARAMETER_GROUPS
+typedef struct {
+    const char *name;
+    const uint8_t type; // see cliValueFlag_e
+    const cliValueConfig_t config;
+
+    pgn_t pgn;
+    uint16_t offset;
+} __attribute__((packed)) clivalue_t;
+
+static const clivalue_t valueTable[] = {
+    { "looptime",                   VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 9000}, PG_GYRO_CONFIG, offsetof(gyroConfig_t, looptime) },
+    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroSync) },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  32 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroSyncDenominator) },
+    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_align) },
+    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GYRO_LPF }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_lpf) },
+    { "gyro_soft_lpf_hz",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 200 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_lpf_hz)  },
+    { "moron_threshold",            VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  128 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyroMovementCalibrationThreshold) },
+#ifdef USE_GYRO_NOTCH_1
+    { "gyro_notch1_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_1)  },
+    { "gyro_notch1_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = {1, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_1)  },
+#endif
+#ifdef USE_GYRO_NOTCH_2
+    { "gyro_notch2_hz",             VAR_UINT16 | MASTER_VALUE, .config.minmax = {0, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_hz_2)  },
+    { "gyro_notch2_cutoff",         VAR_UINT16 | MASTER_VALUE, .config.minmax = {1, 500 }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, gyro_soft_notch_cutoff_2)  },
+#endif
+};
+
+#else
+
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
@@ -481,10 +515,7 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
-    { "looptime",                   VAR_UINT16 | MASTER_VALUE,  &gyroConfig()->looptime, .config.minmax = {0, 9000} },
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON } },
-    { "gyro_sync",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyroSync, .config.lookup = { TABLE_OFF_ON } },
-    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyroSyncDenominator, .config.minmax = { 1,  32 } },
 
 #ifdef ASYNC_GYRO_PROCESSING
     { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.accTaskFrequency, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX } },
@@ -648,16 +679,12 @@ const clivalue_t valueTable[] = {
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_type",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &batteryConfig()->currentMeterType, .config.lookup = { TABLE_CURRENT_SENSOR } },
 
-    { "align_gyro",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_acc",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &accelerometerConfig()->acc_align, .config.lookup = { TABLE_ALIGNMENT } },
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &compassConfig()->mag_align, .config.lookup = { TABLE_ALIGNMENT } },
 
     { "align_board_roll",           VAR_INT16  | MASTER_VALUE,  &boardAlignment()->rollDeciDegrees, .config.minmax = { -1800,  3600 } },
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE,  &boardAlignment()->pitchDeciDegrees, .config.minmax = { -1800,  3600 } },
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment()->yawDeciDegrees, .config.minmax = { -1800,  3600 } },
-
-    { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
-    { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
 
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_kp_acc, .config.minmax = { 0,  65535 } },
     { "imu_dcm_ki",                 VAR_UINT16 | MASTER_VALUE,  &imuConfig()->dcm_ki_acc, .config.minmax = { 0,  65535 } },
@@ -752,20 +779,11 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination_rll",  VAR_INT16  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.max_angle_inclination[FD_ROLL], .config.minmax = { 100,  900 }, },
     { "max_angle_inclination_pit",  VAR_INT16  | PROFILE_VALUE,  &masterConfig.profile[0].pidProfile.max_angle_inclination[FD_PITCH], .config.minmax = { 100,  900 }, },
 
-    { "gyro_soft_lpf_hz",           VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_lpf_hz, .config.minmax = {0, 200 } },
     { "acc_soft_lpf_hz",            VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.acc_soft_lpf_hz, .config.minmax = {0, 200 } },
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 200 } },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.yaw_lpf_hz, .config.minmax = {0, 200 } },
     { "dterm_setpoint_weight",      VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_setpoint_weight, .config.minmax = {0, 2 } },
     
-#ifdef USE_GYRO_NOTCH_1
-    { "gyro_notch1_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_hz_1, .config.minmax = {0, 500 } },
-    { "gyro_notch1_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_cutoff_1, .config.minmax = {1, 500 } },
-#endif    
-#ifdef USE_GYRO_NOTCH_2
-    { "gyro_notch2_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_hz_2, .config.minmax = {0, 500 } },
-    { "gyro_notch2_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.gyro_soft_notch_cutoff_2, .config.minmax = {1, 500 } },
-#endif    
 #ifdef USE_DTERM_NOTCH
     { "dterm_notch_hz",             VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_soft_notch_hz, .config.minmax = {0, 500 } },
     { "dterm_notch_cutoff",         VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_soft_notch_cutoff, .config.minmax = {1, 500 } },
@@ -827,6 +845,7 @@ const clivalue_t valueTable[] = {
     { "osd_altitude_pos",           VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, UINT16_MAX } },
 #endif
 };
+#endif
 
 static void cliPrint(const char *str)
 {
@@ -942,6 +961,24 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
+#ifdef USE_PARAMETER_GROUPS
+static void* getValuePointer(const clivalue_t *var)
+{
+    const pgRegistry_t* rec = pgFind(var->pgn);
+
+    switch (var->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return rec->address + var->offset;
+    case PROFILE_RATE_VALUE:
+        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfile();
+    case CONTROL_RATE_VALUE:
+        return rec->address + var->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return *rec->ptr + var->offset;
+    }
+    return NULL;
+}
+#else
 void *getValuePointer(const clivalue_t *value)
 {
     void *ptr = value->ptr;
@@ -950,58 +987,107 @@ void *getValuePointer(const clivalue_t *value)
         ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
     }
 
+    if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfile());
+    }
+
     if ((value->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
         ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
     }
 
     return ptr;
 }
-
-static void *getDefaultPointer(void *valuePointer, const master_t *defaultConfig)
-{
-    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
-}
-
-static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(value);
-
-    void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
-
-    bool result = false;
-    switch (value->type & VALUE_TYPE_MASK) {
-        case VAR_UINT8:
-            result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
-            break;
-
-        case VAR_INT8:
-            result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
-            break;
-
-        case VAR_UINT16:
-            result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
-            break;
-
-        case VAR_INT16:
-            result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
-            break;
-
-        case VAR_UINT32:
-            result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
-            break;
-
-        case VAR_FLOAT:
-            result = *(float *)ptr == *(float *)ptrDefault;
-            break;
-    }
-    return result;
-}
+#endif
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
     void *ptr = getValuePointer(var);
 
     printValuePointer(var, ptr, full);
+}
+
+static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptrDefault)
+{
+    bool result = false;
+    switch (type & VALUE_TYPE_MASK) {
+    case VAR_UINT8:
+        result = *(uint8_t *)ptr == *(uint8_t *)ptrDefault;
+        break;
+
+    case VAR_INT8:
+        result = *(int8_t *)ptr == *(int8_t *)ptrDefault;
+        break;
+
+    case VAR_UINT16:
+        result = *(uint16_t *)ptr == *(uint16_t *)ptrDefault;
+        break;
+
+    case VAR_INT16:
+        result = *(int16_t *)ptr == *(int16_t *)ptrDefault;
+        break;
+
+    case VAR_UINT32:
+        result = *(uint32_t *)ptr == *(uint32_t *)ptrDefault;
+        break;
+
+    case VAR_FLOAT:
+        result = *(float *)ptr == *(float *)ptrDefault;
+        break;
+    }
+    return result;
+}
+
+#ifdef USE_PARAMETER_GROUPS
+static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, void *currentConfig, void *defaultConfig)
+{
+    const char *format = "set %s = ";
+    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
+        const clivalue_t *value = &valueTable[i];
+        if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
+            if (dumpMask == DUMP_MASTER) {
+                cliPrintf(format, valueTable[i].name);
+                printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
+                cliPrint("\r\n");
+            } else if (dumpMask == (DUMP_MASTER | SHOW_DEFAULTS)) {
+                cliPrintf(format, valueTable[i].name);
+                printValuePointer(value, (uint8_t*)defaultConfig + value->offset, 0);
+                cliPrint("\r\n");
+            } else if (dumpMask == (DUMP_MASTER | DO_DIFF)) {
+                const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)currentConfig + value->offset, (uint8_t*)defaultConfig + value->offset);
+                if (!equalsDefault) {
+                    cliPrintf(format, valueTable[i].name);
+                    printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
+                    cliPrint("\r\n");
+                }
+            }
+        }
+    }
+}
+
+static gyroConfig_t gyroConfigCopy;
+static void backupConfigs(void)
+{
+    // make copies of configs to do differencing
+    gyroConfigCopy = *gyroConfig();
+
+}
+static void restoreConfigs(void)
+{
+    *gyroConfig() = gyroConfigCopy;
+}
+
+#endif
+
+static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
+{
+    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
+}
+
+static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
+{
+    const void *ptr = getValuePointer(value);
+    const void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
+    return valuePtrEqualsDefault(value->type, ptr, ptrDefault);
 }
 
 static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
@@ -1015,24 +1101,29 @@ static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const maste
 
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
 {
-    const clivalue_t *value;
+    const char *format = "set %s = ";
+#ifdef USE_PARAMETER_GROUPS
+    if (valueSection == MASTER_VALUE) {
+        // gyroConfig() has been set to default, gyroConfigCopy contains current value
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
+        return;
+    }
+#endif
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
-        value = &valueTable[i];
-
-        if ((value->type & VALUE_SECTION_MASK) != valueSection) {
-            continue;
-        }
-
-        const char *format = "set %s = ";
-        if (cliDefaultPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVarDefault(value, 0, defaultConfig);
-            cliPrint("\r\n");
-        }
-        if (cliDumpPrintf(dumpMask, valueEqualsDefault(value, defaultConfig), format, valueTable[i].name)) {
-            cliPrintVar(value, 0);
-            cliPrint("\r\n");
+        const clivalue_t *value = &valueTable[i];
+        if ((value->type & VALUE_SECTION_MASK) == valueSection) {
+            const bool equalsDefault = valueEqualsDefault(value, defaultConfig);
+            if (cliDefaultPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
+                cliPrintVarDefault(value, 0, defaultConfig);
+                cliPrint("\r\n");
+            }
+            if (cliDumpPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
+                cliPrintVar(value, 0);
+                cliPrint("\r\n");
+            }
         }
     }
+    cliPrint("\r\n");
 }
 
 static void cliPrintVarRange(const clivalue_t *var)
@@ -1512,7 +1603,6 @@ static void cliSerial(char *cmdline)
     }
 
     memcpy(currentConfig, &portConfig, sizeof(portConfig));
-
 }
 
 static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adjustmentRanges, const adjustmentRange_t *defaultAdjustmentRanges)
@@ -3123,13 +3213,21 @@ static void printConfig(char *cmdline, bool doDiff)
         options = cmdline;
     }
 
-    static master_t defaultConfig;
     if (doDiff) {
         dumpMask = dumpMask | DO_DIFF;
     }
 
+    static master_t defaultConfig;
     createDefaultConfig(&defaultConfig);
 
+#ifdef USE_PARAMETER_GROUPS
+    backupConfigs();
+    // reset all configs to defaults to do differencing
+    resetConfigs();
+#if defined(TARGET_CONFIG)
+    targetConfiguration(&defaultConfig);
+#endif
+#endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -3243,6 +3341,10 @@ static void printConfig(char *cmdline, bool doDiff)
     if (dumpMask & DUMP_RATES) {
         cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
     }
+#ifdef USE_PARAMETER_GROUPS
+    // restore configs from copies
+    restoreConfigs();
+#endif
 }
 
 static void cliDump(char *cmdline)

@@ -74,7 +74,7 @@
 
 void targetConfiguration(struct master_s *config)
 {
-    config->gyroConfig.looptime = 1000;
+    gyroConfig()->looptime = 1000;
 
     config->rxConfig.rcmap[0] = 1;
     config->rxConfig.rcmap[1] = 2;

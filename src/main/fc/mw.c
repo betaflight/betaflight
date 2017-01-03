@@ -114,7 +114,7 @@ bool isCalibrating(void)
 
     // Note: compass calibration is handled completely differently, outside of the main loop, see f.CALIBRATE_MAG
 
-    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!isGyroCalibrationComplete());
+    return (!isAccelerationCalibrationComplete() && sensors(SENSOR_ACC)) || (!gyroIsCalibrationComplete());
 }
 
 int16_t getAxisRcCommand(int16_t rawData, int16_t rate, int16_t deadband)
