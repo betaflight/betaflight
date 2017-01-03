@@ -1062,20 +1062,36 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, voi
 
 static gyroConfig_t gyroConfigCopy;
 static accelerometerConfig_t accelerometerConfigCopy;
+#ifdef MAG
 static compassConfig_t compassConfigCopy;
+#endif
+#ifdef BARO
+static barometerConfig_t barometerConfigCopy;
+#endif
+
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     gyroConfigCopy = *gyroConfig();
     accelerometerConfigCopy = *accelerometerConfig();
+#ifdef MAG
     compassConfigCopy = *compassConfig();
+#endif
+#ifdef BARO
+    barometerConfigCopy = *barometerConfig();
+#endif
 
 }
 static void restoreConfigs(void)
 {
     *gyroConfig() = gyroConfigCopy;
     *accelerometerConfig() = accelerometerConfigCopy;
+#ifdef MAG
     *compassConfig() = compassConfigCopy;
+#endif
+#ifdef BARO
+    *barometerConfig() = barometerConfigCopy;
+#endif
 }
 
 #endif
@@ -1109,7 +1125,12 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         // gyroConfig() has been set to default, gyroConfigCopy contains current value
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
+#ifdef MAG
         dumpPgValues(MASTER_VALUE, dumpMask, PG_COMPASS_CONFIG, &compassConfigCopy, compassConfig());
+#endif
+#ifdef BARO
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
+#endif
         return;
     }
 #endif
