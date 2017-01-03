@@ -98,8 +98,7 @@ static float throttlePIDAttenuation;
 uint16_t filteredCycleTime;
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
-static float setpointRate[3];
-static float rcDeflection[3];
+static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
 
 float getThrottlePIDAttenuation(void) {
     return throttlePIDAttenuation;
@@ -111,6 +110,10 @@ float getSetpointRate(int axis) {
 
 float getRcDeflection(int axis) {
     return rcDeflection[axis];
+}
+
+float getRcDeflectionAbs(int axis) {
+    return rcDeflectionAbs[axis];
 }
 
 void applyAndSaveAccelerometerTrimsDelta(rollAndPitchTrims_t *rollAndPitchTrimsDelta)
@@ -150,7 +153,8 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcRate > 2.0f) rcRate = rcRate + (RC_RATE_INCREMENTAL * (rcRate - 2.0f));
     rcCommandf = rc / 500.0f;
-    rcDeflection[axis] = ABS(rcCommandf);
+    rcDeflection[axis] = rcCommandf;
+    rcDeflectionAbs[axis] = ABS(rcCommandf);
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;

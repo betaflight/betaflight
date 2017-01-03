@@ -205,6 +205,13 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
+<<<<<<< HEAD
+#ifdef USE_RSSI_SOFTPWM
+static void taskRssiSoftPwm(uint32_t currentTime)
+{
+    // Feature switch here?
+    rssiSoftPwmUpdate(currentTime);
+=======
 #ifdef VTX_CONTROL
 // Everything that listens to VTX devices
 void taskVtxControl(uint32_t currentTime)
@@ -215,14 +222,7 @@ void taskVtxControl(uint32_t currentTime)
 #ifdef VTX_SMARTAUDIO
     smartAudioProcess(currentTime);
 #endif
-}
-#endif
-
-#ifdef USE_RSSI_SOFTPWM
-static void taskRssiSoftPwm(uint32_t currentTime)
-{
-    // Feature switch here?
-    rssiSoftPwmUpdate(currentTime);
+>>>>>>> betaflight/master
 }
 #endif
 
@@ -304,13 +304,15 @@ void fcTasksInit(void)
 #ifdef STACK_CHECK
     setTaskEnabled(TASK_STACK_CHECK, true);
 #endif
+<<<<<<< HEAD
+#ifdef USE_RSSI_SOFTPWM
+    setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
+=======
 #ifdef VTX_CONTROL
 #ifdef VTX_SMARTAUDIO
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
-#endif
-#ifdef USE_RSSI_SOFTPWM
-    setTaskEnabled(TASK_RSSI_SOFTPWM, true); // XXX Feature switch?
+>>>>>>> betaflight/master
 #endif
 }
 
@@ -499,21 +501,21 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
-#ifdef VTX_CONTROL
-    [TASK_VTXCTRL] = {
-        .taskName = "VTXCTRL",
-        .taskFunc = taskVtxControl,
-        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
-        .staticPriority = TASK_PRIORITY_IDLE,
-    },
-#endif
-
+<<<<<<< HEAD
 #ifdef USE_RSSI_SOFTPWM
     [TASK_RSSI_SOFTPWM] = {
         .taskName = "RSSIPWM",
         .taskFunc = taskRssiSoftPwm,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10 Hz
         .staticPriority = TASK_PRIORITY_LOW,
+=======
+#ifdef VTX_CONTROL
+    [TASK_VTXCTRL] = {
+        .taskName = "VTXCTRL",
+        .taskFunc = taskVtxControl,
+        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
+        .staticPriority = TASK_PRIORITY_IDLE,
+>>>>>>> betaflight/master
     },
 #endif
 };

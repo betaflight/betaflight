@@ -45,6 +45,9 @@
 #include "cms/cms_menu_ledstrip.h"
 #include "cms/cms_menu_misc.h"
 
+// User supplied menus
+
+#include "io/vtx_smartaudio_cms.h"
 
 // Info
 
@@ -93,6 +96,9 @@ static OSD_Entry menuFeaturesEntries[] =
 #if defined(VTX) || defined(USE_RTC6705)
     {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
 #endif // VTX || USE_RTC6705
+#if defined(VTX_SMARTAUDIO)
+    {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
+#endif
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP

@@ -340,7 +340,10 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
-        IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
+        if (options & SERIAL_BIDIR_PP)
+            IOConfigGPIOAF(tx, IOCFG_AF_PP, uart->af);
+        else
+            IOConfigGPIOAF(tx, IOCFG_AF_OD, uart->af);
     }
     else {
         if (mode & MODE_TX) {

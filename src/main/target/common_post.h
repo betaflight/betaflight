@@ -15,26 +15,12 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Touch up configuration
+
 #pragma once
 
-#include "common/time.h"
-
-extern int16_t magHold;
-extern bool isRXDataNew;
-
-union rollAndPitchTrims_u;
-void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
-void handleInflightCalibrationStickPosition();
-
-void mwDisarm(void);
-void mwArm(void);
-
-void processRx(timeUs_t currentTimeUs);
-void updateLEDs(void);
-void updateRcCommands(void);
-
-void taskMainPidLoop(timeUs_t currentTimeUs);
-float getThrottlePIDAttenuation(void);
-float getSetpointRate(int axis);
-float getRcDeflection(int axis);
-float getRcDeflectionAbs(int axis);
+// Targets with built-in vtx do not need external vtx
+#if defined(VTX) || defined(USE_RTC6705)
+# undef VTX_CONTROL
+# undef VTX_SMARTAUDIO
+#endif

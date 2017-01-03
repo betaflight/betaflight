@@ -100,11 +100,13 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
-#ifdef VTX_CONTROL
-    TASK_VTXCTRL,
-#endif
+<<<<<<< HEAD
 #ifdef USE_RSSI_SOFTPWM
     TASK_RSSI_SOFTPWM,
+=======
+#ifdef VTX_CONTROL
+    TASK_VTXCTRL,
+>>>>>>> betaflight/master
 #endif
 
     /* Count of real tasks */

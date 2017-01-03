@@ -176,15 +176,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->max_angle_inclination = 70.0f;    // 70 degrees
-
-    // Betaflight PID controller parameters
+    pidProfile->levelAngleLimit = 70.0f;    // 70 degrees
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 20.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
-    pidProfile->levelSensitivity = 2.0f;
+    pidProfile->levelSensitivity = 100.0f;
 }
 
 void resetProfile(profile_t *profile)
@@ -1099,7 +1097,7 @@ void changeProfile(uint8_t profileIndex)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (profileIndex > MAX_RATEPROFILES) {
+    if (profileIndex >= MAX_RATEPROFILES) {
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);
