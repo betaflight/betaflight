@@ -117,7 +117,7 @@ static uint8_t armedBitmapRLE [] = { 128, 32,
 #endif
 
 static const char* const pageTitles[] = {
-    FC_NAME,
+    FC_FIRMWARE_NAME,
     "ARMED",
     "STATUS"
 };

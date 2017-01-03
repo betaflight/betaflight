@@ -140,3 +140,5 @@ void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig)
 void gpsThread(void);
 void updateGpsIndicator(timeUs_t currentTimeUs);
 bool isGPSHealthy(void);
+struct serialPort_s;
+void gpsEnablePassthrough(struct serialPort_s *gpsPassthroughPort);
