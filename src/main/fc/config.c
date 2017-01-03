@@ -39,7 +39,6 @@
 #include "sensors/gyro.h"
 #include "sensors/compass.h"
 #include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
 #include "sensors/pitotmeter.h"
@@ -242,11 +241,6 @@ void validateNavConfig(navConfig_t * navConfig)
     navConfig->general.land_slowdown_minalt = MIN(navConfig->general.land_slowdown_minalt, navConfig->general.land_slowdown_maxalt - 100);
 }
 #endif
-
-void resetBarometerConfig(barometerConfig_t *barometerConfig)
-{
-    barometerConfig->use_median_filtering = 1;
-}
 
 void resetPitotmeterConfig(pitotmeterConfig_t *pitotmeterConfig)
 {
@@ -478,12 +472,6 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.pitchDeciDegrees = 0;
     config->boardAlignment.yawDeciDegrees = 0;
 
-#ifdef BARO
-    config->barometerConfig.baro_hardware = BARO_AUTODETECT;
-#else
-    config->barometerConfig.baro_hardware = BARO_NONE;
-#endif
-
 #ifdef PITOT
     config->pitotmeterConfig.pitot_hardware = PITOT_AUTODETECT;
 #else
@@ -574,7 +562,6 @@ void createDefaultConfig(master_t *config)
 
     config->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
 
-    resetBarometerConfig(&config->barometerConfig);
     resetPitotmeterConfig(&config->pitotmeterConfig);
 
     // Radio
@@ -784,9 +771,6 @@ static void activateConfig(void)
     navigationUsemotorConfig(&masterConfig.motorConfig);
 #endif
 
-#ifdef BARO
-    useBarometerConfig(&masterConfig.barometerConfig);
-#endif
 #ifdef PITOT
     usePitotmeterConfig(&masterConfig.pitotmeterConfig);
 #endif

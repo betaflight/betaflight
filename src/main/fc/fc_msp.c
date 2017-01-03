@@ -1145,7 +1145,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_SENSOR_CONFIG:
         sbufWriteU8(dst, accelerometerConfig()->acc_hardware);
+#ifdef BARO
         sbufWriteU8(dst, barometerConfig()->baro_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
 #ifdef MAG
         sbufWriteU8(dst, compassConfig()->mag_hardware);
 #else
@@ -1566,8 +1570,16 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_SENSOR_CONFIG:
         accelerometerConfig()->acc_hardware = sbufReadU8(src);
+#ifdef BARO
         barometerConfig()->baro_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
+#ifdef MAG
         compassConfig()->mag_hardware = sbufReadU8(src);
+#else
+        sbufReadU8(src);
+#endif
         pitotmeterConfig()->pitot_hardware = sbufReadU8(src);
         sbufReadU8(src);        // rangefinder hardware
         sbufReadU8(src);        // optical flow hardware

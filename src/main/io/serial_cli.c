@@ -516,12 +516,17 @@ static const clivalue_t valueTable[] = {
 
 #ifdef MAG
     { "align_mag",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ALIGNMENT }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_align) },
-    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_HW_MAG }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hardware) },
+    { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_MAG_HARDWARE }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hardware) },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -18000,  18000 }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_declination) },
     { "magzero_x",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[X]) },
     { "magzero_y",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Y]) },
     { "magzero_z",                  VAR_INT16  | MASTER_VALUE, .config.minmax = { INT16_MIN,  INT16_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, magZero.raw[Z]) },
     { "mag_hold_rate_limit",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { MAG_HOLD_RATE_LIMIT_MIN,  MAG_HOLD_RATE_LIMIT_MAX }, PG_COMPASS_CONFIG, offsetof(compassConfig_t, mag_hold_rate_limit) },
+#endif
+
+#ifdef BARO
+    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BARO_HARDWARE }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, baro_hardware) },
+    { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_BAROMETER_CONFIG, offsetof(barometerConfig_t, use_median_filtering) },
 #endif
 };
 
@@ -758,11 +763,6 @@ const clivalue_t valueTable[] = {
 
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &rxConfig()->rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
-
-#ifdef BARO
-    { "baro_use_median_filter",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &barometerConfig()->use_median_filtering, .config.lookup = { TABLE_OFF_ON } },
-    { "baro_hardware",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &barometerConfig()->baro_hardware, .config.lookup = { TABLE_BARO_HARDWARE } },
-#endif
 
 #ifdef PITOT
     { "pitot_hardware",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &pitotmeterConfig()->pitot_hardware, .config.lookup = { TABLE_PITOT_HARDWARE } },
@@ -1062,20 +1062,36 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, voi
 
 static gyroConfig_t gyroConfigCopy;
 static accelerometerConfig_t accelerometerConfigCopy;
+#ifdef MAG
 static compassConfig_t compassConfigCopy;
+#endif
+#ifdef BARO
+static barometerConfig_t barometerConfigCopy;
+#endif
+
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
     gyroConfigCopy = *gyroConfig();
     accelerometerConfigCopy = *accelerometerConfig();
+#ifdef MAG
     compassConfigCopy = *compassConfig();
+#endif
+#ifdef BARO
+    barometerConfigCopy = *barometerConfig();
+#endif
 
 }
 static void restoreConfigs(void)
 {
     *gyroConfig() = gyroConfigCopy;
     *accelerometerConfig() = accelerometerConfigCopy;
+#ifdef MAG
     *compassConfig() = compassConfigCopy;
+#endif
+#ifdef BARO
+    *barometerConfig() = barometerConfigCopy;
+#endif
 }
 
 #endif
@@ -1109,7 +1125,12 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         // gyroConfig() has been set to default, gyroConfigCopy contains current value
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
+#ifdef MAG
         dumpPgValues(MASTER_VALUE, dumpMask, PG_COMPASS_CONFIG, &compassConfigCopy, compassConfig());
+#endif
+#ifdef BARO
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
+#endif
         return;
     }
 #endif
