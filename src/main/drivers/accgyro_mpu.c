@@ -127,8 +127,9 @@ mpuDetectionResult_t *mpuDetect(gyroDev_t *gyro)
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
 #ifdef USE_GYRO_SPI_MPU6500
-    if (mpu6500SpiDetect()) {
-        gyro->mpuDetectionResult.sensor = MPU_65xx_SPI;
+    uint8_t mpu6500Sensor = mpu6500SpiDetect();
+    if (mpu6500Sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.read = mpu6500ReadRegister;
         gyro->mpuConfiguration.write = mpu6500WriteRegister;

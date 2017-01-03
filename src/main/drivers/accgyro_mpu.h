@@ -168,7 +168,9 @@ typedef enum {
     MPU_65xx_I2C,
     MPU_65xx_SPI,
     MPU_9250_SPI,
-    ICM_20689_SPI
+    ICM_20689_SPI,
+    ICM_20608_SPI,
+    ICM_20602_SPI
 } detectedMPUSensor_e;
 
 typedef enum {
