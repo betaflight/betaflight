@@ -100,6 +100,9 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
+#ifdef VTX_CONTROL
+    TASK_VTXCTRL,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

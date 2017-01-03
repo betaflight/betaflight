@@ -30,6 +30,7 @@
 #include "common/printf.h"
 
 #include "cms/cms.h"
+#include "cms/cms_types.h"
 
 #include "drivers/nvic.h"
 #include "drivers/sensor.h"
@@ -90,6 +91,7 @@
 #include "io/osd.h"
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
+#include "io/vtx_smartaudio.h"
 
 #include "scheduler/scheduler.h"
 
@@ -515,6 +517,10 @@ void init(void)
     gyroSetCalibrationCycles();
 #ifdef BARO
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
+#endif
+
+#ifdef VTX_SMARTAUDIO
+    smartAudioInit();
 #endif
 
     // start all timers

@@ -51,6 +51,7 @@
 #include "io/serial.h"
 #include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+#include "io/vtx_smartaudio.h"
 
 #include "msp/msp_serial.h"
 
@@ -203,6 +204,19 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
+#ifdef VTX_CONTROL
+// Everything that listens to VTX devices
+void taskVtxControl(uint32_t currentTime)
+{
+    if (ARMING_FLAG(ARMED))
+        return;
+
+#ifdef VTX_SMARTAUDIO
+    smartAudioProcess(currentTime);
+#endif
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -280,6 +294,11 @@ void fcTasksInit(void)
 #endif
 #ifdef STACK_CHECK
     setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
+#ifdef VTX_CONTROL
+#ifdef VTX_SMARTAUDIO
+    setTaskEnabled(TASK_VTXCTRL, true);
+#endif
 #endif
 }
 
@@ -464,6 +483,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "STACKCHECK",
         .taskFunc = taskStackCheck,
         .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef VTX_CONTROL
+    [TASK_VTXCTRL] = {
+        .taskName = "VTXCTRL",
+        .taskFunc = taskVtxControl,
+        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

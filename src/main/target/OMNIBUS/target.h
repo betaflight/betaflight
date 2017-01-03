@@ -162,7 +162,7 @@
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
-#define AVOID_UART3_FOR_PWM_PPM
+//#define AVOID_UART3_FOR_PWM_PPM // Disable this for using UART3
 
 #define SPEKTRUM_BIND
 // USART3,
