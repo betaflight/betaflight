@@ -92,18 +92,17 @@ void ensureEEPROMContainsValidData(void);
 
 void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
-void activateConfig(void);
 
 uint8_t getCurrentProfile(void);
+void setProfile(uint8_t profileIndex);
 void changeProfile(uint8_t profileIndex);
 struct pidProfile_s;
 void resetPidProfile(struct pidProfile_s *pidProfile);
 
-void setProfile(uint8_t profileIndex);
 void setControlRateProfile(uint8_t profileIndex);
-
-uint8_t getCurrentControlRateProfile(void);
 void changeControlRateProfile(uint8_t profileIndex);
+uint8_t getCurrentControlRateProfile(void);
+
 bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 

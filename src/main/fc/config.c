@@ -355,7 +355,8 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
+static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
+{
     controlRateConfig->rcExpo8 = 70;
     controlRateConfig->thrMid8 = 50;
     controlRateConfig->thrExpo8 = 0;
@@ -373,7 +374,8 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig) {
 
 }
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig) {
+void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
+{
     rcControlsConfig->deadband = 5;
     rcControlsConfig->yaw_deadband = 5;
     rcControlsConfig->pos_hold_deadband = 20;
@@ -429,31 +431,6 @@ uint8_t getAsyncMode(void) {
 }
 #endif
 
-uint8_t getCurrentProfile(void)
-{
-    return masterConfig.current_profile_index;
-}
-
-void setProfile(uint8_t profileIndex)
-{
-    currentProfile = &masterConfig.profile[profileIndex];
-}
-
-uint8_t getCurrentControlRateProfile(void)
-{
-    return currentControlRateProfileIndex;
-}
-
-controlRateConfig_t *getControlRateConfig(uint8_t profileIndex) {
-    return &masterConfig.controlRateProfiles[profileIndex];
-}
-
-void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
-}
-
 uint16_t getCurrentMinthrottle(void)
 {
     return motorConfig()->minthrottle;
@@ -486,8 +463,10 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
-    // global settings
-    config->current_profile_index = 0;     // default profile
+    // profile
+    config->current_profile_index = 0;
+
+    // IMU
     config->imuConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
     config->imuConfig.dcm_ki_acc = 50;               // 0.005 * 10000
     config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
@@ -773,30 +752,25 @@ void resetConfigs(void)
     pgResetAll(MAX_PROFILE_COUNT);
     pgActivateProfile(0);
 
-    setProfile(0);
-    setControlRateProfile(0);
-
+    setProfile(masterConfig.current_profile_index);
+    setControlRateProfile(masterConfig.current_profile_index);
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
 }
 
-void activateControlRateConfig(void)
+static void activateControlRateConfig(void)
 {
     generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
 }
 
-void activateConfig(void)
+static void activateConfig(void)
 {
     activateControlRateConfig();
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(
-        masterConfig.modeActivationConditions,
-        &masterConfig.motorConfig,
-        &currentProfile->pidProfile
-    );
+    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -1074,14 +1048,9 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-//    pgActivateProfile(getCurrentProfile());
-//    setControlRateProfile(rateProfileSelection()->defaultRateProfileIndex);
-
-    if (masterConfig.current_profile_index > MAX_PROFILE_COUNT - 1) {// sanity check
-        masterConfig.current_profile_index = 0;
-    }
-
     setProfile(masterConfig.current_profile_index);
+    setControlRateProfile(masterConfig.current_profile_index);
+    pgActivateProfile(masterConfig.current_profile_index);
 
     validateAndFixConfig();
     activateConfig();
@@ -1119,6 +1088,20 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
+uint8_t getCurrentProfile(void)
+{
+    return masterConfig.current_profile_index;
+}
+
+void setProfile(uint8_t profileIndex)
+{
+    if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
+        profileIndex = 0;
+    }
+    masterConfig.current_profile_index = profileIndex;
+    currentProfile = &masterConfig.profile[masterConfig.current_profile_index];
+}
+
 void changeProfile(uint8_t profileIndex)
 {
     if (profileIndex >= MAX_PROFILE_COUNT) {
@@ -1128,6 +1111,17 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
+}
+
+uint8_t getCurrentControlRateProfile(void)
+{
+    return currentControlRateProfileIndex;
+}
+
+void setControlRateProfile(uint8_t profileIndex)
+{
+    currentControlRateProfileIndex = profileIndex;
+    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
 }
 
 void changeControlRateProfile(uint8_t profileIndex)
