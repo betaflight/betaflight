@@ -89,7 +89,7 @@ static inline uint32_t DMA_GET_FLAG_STATUS(dmaChannelDescriptor_t* d, uint32_t f
     if(d->flagsShift > 31)
         return (d->dma->HISR >> (d->flagsShift - 32)) & flag;
     else
-        return (d->dma->HISR >> (d->flagsShift)) & flag;
+        return (d->dma->LISR >> (d->flagsShift)) & flag;
 }
 
 #define DMA_IT_TCIF         ((uint32_t)0x00000020)
