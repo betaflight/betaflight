@@ -248,7 +248,7 @@ void uartSetMode(serialPort_t *instance, portMode_t mode)
     uartReconfigure(uartPort);
 }
 
-void uartStartTxDMA(uartPort_t *s)
+void uartTryStartTxDMA(uartPort_t *s)
 {
     uint16_t size = 0;
     uint32_t fromwhere=0;
@@ -371,7 +371,7 @@ void uartWrite(serialPort_t *instance, uint8_t ch)
 
     if (s->txDMAStream) {
         if (!(s->txDMAStream->CR & 1))
-            uartStartTxDMA(s);
+            uartTryStartTxDMA(s);
     } else {
         __HAL_UART_ENABLE_IT(&s->Handle, UART_IT_TXE);
     }

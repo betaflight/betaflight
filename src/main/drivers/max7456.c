@@ -37,6 +37,8 @@
 #include "max7456.h"
 #include "max7456_symbols.h"
 
+//#define MAX7456_VIDEO_FORMAT_DEBUG
+
 //MAX7456 opcodes
 //XXX These are not opcodes but reg addrs. Substitute with MAX7456ADD_xxx.
 #define DMM_REG   0x04
@@ -503,9 +505,11 @@ void max7456DrawScreen(void)
             videoSense = max7456Send(MAX7456ADD_STAT, 0x00);
             DISABLE_MAX7456;
 
+#ifdef MAX7456_VIDEO_FORMAT_DEBUG
             debug[0] = videoSignalReg & VIDEO_MODE_MASK;
             debug[1] = videoSense & 0x7;
             debug[3] = max7456GetRowsCount();
+#endif
 
             if (videoSense & STAT_LOS) {
                 videoDetectTimeMs = 0;
