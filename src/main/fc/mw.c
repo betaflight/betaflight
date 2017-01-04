@@ -313,7 +313,7 @@ void processRx(timeUs_t currentTimeUs)
         failsafeUpdateState();
     }
 
-    throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    const throttleStatus_e throttleStatus = calculateThrottleStatus(flight3DConfig()->deadband3d_throttle);
 
     // When armed and motors aren't spinning, do beeps and then disarm
     // board after delay so users without buzzer won't lose fingers.
@@ -359,13 +359,13 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    processRcStickPositions(&masterConfig.rxConfig, throttleStatus, armingConfig()->disarm_kill_switch, armingConfig()->fixed_wing_auto_arm);
+    processRcStickPositions(throttleStatus, armingConfig()->disarm_kill_switch, armingConfig()->fixed_wing_auto_arm);
 
     updateActivatedModes(masterConfig.modeActivationConditions, masterConfig.modeActivationOperator);
 
     if (!cliMode) {
         updateAdjustmentStates(masterConfig.adjustmentRanges);
-        processRcAdjustments(currentControlRateProfile, &masterConfig.rxConfig);
+        processRcAdjustments(currentControlRateProfile);
     }
 
     bool canUseHorizonMode = true;
@@ -471,7 +471,7 @@ void processRx(timeUs_t currentTimeUs)
     else {
         if (throttleStatus == THROTTLE_LOW) {
             if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
-                rollPitchStatus_e rollPitchStatus = calculateRollPitchCenterStatus(&masterConfig.rxConfig);
+                rollPitchStatus_e rollPitchStatus = calculateRollPitchCenterStatus();
 
                 // ANTI_WINDUP at centred stick with MOTOR_STOP is needed on MRs and not needed on FWs
                 if ((rollPitchStatus == CENTERED) || (feature(FEATURE_MOTOR_STOP) && !STATE(FIXED_WING))) {
@@ -530,7 +530,7 @@ void filterRc(bool isRXDataNew)
     }
 
     const uint16_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
-    rcInterpolationFactor = rxRefreshRate() / filteredCycleTime + 1;
+    rcInterpolationFactor = rxGetRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
         for (int channel=0; channel < 4; channel++) {
@@ -664,7 +664,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.motorConfig);
 
     // Calculate stabilisation
-    pidController(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.rxConfig);
+    pidController(&currentProfile->pidProfile, currentControlRateProfile, rxConfig());
 
 #ifdef HIL
     if (hilActive) {

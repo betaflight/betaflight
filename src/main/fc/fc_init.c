@@ -214,7 +214,7 @@ void init(void)
                 // Spektrum satellite binding if enabled on startup.
                 // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
                 // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(&masterConfig.rxConfig);
+                spektrumBind(rxConfig());
                 break;
         }
     }
@@ -482,7 +482,7 @@ void init(void)
 
 #ifdef USE_DASHBOARD
     if (feature(FEATURE_DASHBOARD)) {
-        dashboardInit(&masterConfig.rxConfig);
+        dashboardInit();
     }
 #endif
 
@@ -525,9 +525,9 @@ void init(void)
     cliInit(&masterConfig.serialConfig);
 #endif
 
-    failsafeInit(&masterConfig.rxConfig, flight3DConfig()->deadband3d_throttle);
+    failsafeInit(flight3DConfig()->deadband3d_throttle);
 
-    rxInit(&masterConfig.rxConfig, masterConfig.modeActivationConditions);
+    rxInit(masterConfig.modeActivationConditions);
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
@@ -545,7 +545,7 @@ void init(void)
         &masterConfig.navConfig,
         &currentProfile->pidProfile,
         &masterConfig.rcControlsConfig,
-        &masterConfig.rxConfig,
+        rxConfig(),
         &masterConfig.flight3DConfig,
         &masterConfig.motorConfig
     );

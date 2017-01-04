@@ -602,7 +602,6 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         }
         break;
 
-
 #ifdef USE_SERVOS
     case MSP_SERVO:
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
@@ -912,8 +911,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_RXFAIL_CONFIG:
         for (int i = 0; i < rxRuntimeConfig.channelCount; i++) {
-            sbufWriteU8(dst, rxConfig()->failsafe_channel_configurations[i].mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxConfig()->failsafe_channel_configurations[i].step));
+            sbufWriteU8(dst, rxFailsafeChannelConfigs(i)->mode);
+            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
         }
         break;
 
@@ -1268,11 +1267,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 return MSP_RESULT_ERROR;
             } else {
                 uint16_t frame[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-
                 for (int i = 0; i < channelCount; i++) {
                     frame[i] = sbufReadU16(src);
                 }
-
                 rxMspFrameReceive(frame, channelCount);
             }
         }
@@ -1788,8 +1785,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RXFAIL_CONFIG:
         i = sbufReadU8(src);
         if (i < MAX_SUPPORTED_RC_CHANNEL_COUNT) {
-            rxConfig()->failsafe_channel_configurations[i].mode = sbufReadU8(src);
-            rxConfig()->failsafe_channel_configurations[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
+            rxFailsafeChannelConfigs(i)->mode = sbufReadU8(src);
+            rxFailsafeChannelConfigs(i)->step = CHANNEL_VALUE_TO_RXFAIL_STEP(sbufReadU16(src));
         } else {
             return MSP_RESULT_ERROR;
         }
@@ -1831,7 +1828,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
             if (dataSize % portConfigSize != 0) {
                 return MSP_RESULT_ERROR;
-                break;
             }
 
             uint8_t remainingPortsInPacket = dataSize / portConfigSize;
@@ -1842,7 +1838,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 serialPortConfig_t *portConfig = serialFindPortConfiguration(identifier);
                 if (!portConfig) {
                     return MSP_RESULT_ERROR;
-                    break;
                 }
 
                 portConfig->identifier = identifier;
@@ -1870,7 +1865,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             i = sbufReadU8(src);
             if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
                 return MSP_RESULT_ERROR;
-                break;
             }
             ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
             *ledConfig = sbufReadU32(src);

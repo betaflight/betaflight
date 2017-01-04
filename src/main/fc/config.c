@@ -456,38 +456,6 @@ void createDefaultConfig(master_t *config)
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
 
-#ifdef SERIALRX_PROVIDER
-    config->rxConfig.serialrx_provider = SERIALRX_PROVIDER;
-#else
-    config->rxConfig.serialrx_provider = 0;
-#endif
-    config->rxConfig.rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL;
-    config->rxConfig.spektrum_sat_bind = 0;
-    config->rxConfig.midrc = 1500;
-    config->rxConfig.mincheck = 1100;
-    config->rxConfig.maxcheck = 1900;
-    config->rxConfig.rx_min_usec = 885;          // any of first 4 channels below this value will trigger rx loss detection
-    config->rxConfig.rx_max_usec = 2115;         // any of first 4 channels above this value will trigger rx loss detection
-
-    for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
-        rxFailsafeChannelConfiguration_t *channelFailsafeConfiguration = &config->rxConfig.failsafe_channel_configurations[i];
-        if (i < NON_AUX_CHANNEL_COUNT) {
-            channelFailsafeConfiguration->mode = (i == THROTTLE) ? RX_FAILSAFE_MODE_HOLD : RX_FAILSAFE_MODE_AUTO;
-        }
-        else {
-            channelFailsafeConfiguration->mode = RX_FAILSAFE_MODE_HOLD;
-        }
-
-        channelFailsafeConfiguration->step = (i == THROTTLE) ? CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.rx_min_usec) : CHANNEL_VALUE_TO_RXFAIL_STEP(config->rxConfig.midrc);
-    }
-
-    config->rxConfig.rssi_channel = 0;
-    config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
-    config->rxConfig.rssi_ppm_invert = 0;
-    config->rxConfig.rcSmoothing = 1;
-
-    resetAllRxChannelRangeConfigurations(config->rxConfig.channelRanges);
-
     config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     config->armingConfig.disarm_kill_switch = 1;
@@ -536,9 +504,9 @@ void createDefaultConfig(master_t *config)
 
     // Radio
 #ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234", &config->rxConfig);
+    parseRcChannels("TAER1234");
 #else
-    parseRcChannels("AETR1234", &config->rxConfig);
+    parseRcChannels("AETR1234");
 #endif
 
     resetRcControlsConfig(&config->rcControlsConfig);
@@ -618,7 +586,7 @@ void createDefaultConfig(master_t *config)
     config->controlRateProfiles[0].rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
     config->controlRateProfiles[0].rates[FD_ROLL] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
     config->controlRateProfiles[0].rates[FD_YAW] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
-    parseRcChannels("TAER1234", &config->rxConfig);
+    parseRcChannels("TAER1234");
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
     config->customMotorMixer[0].throttle = 1.0f;
@@ -690,9 +658,10 @@ void createDefaultConfig(master_t *config)
 
 void resetConfigs(void)
 {
-    createDefaultConfig(&masterConfig);
     pgResetAll(MAX_PROFILE_COUNT);
     pgActivateProfile(0);
+
+    createDefaultConfig(&masterConfig);
 
     setProfile(masterConfig.current_profile_index);
     setControlRateProfile(masterConfig.current_profile_index);
@@ -723,9 +692,9 @@ static void activateConfig(void)
     setAccelerationCalibrationValues();
     setAccelerationFilter();
 
-    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig, &masterConfig.rxConfig);
+    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig, &masterConfig.rxConfig);
+    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
 #endif
 
     imuConfigure(&masterConfig.imuConfig, &currentProfile->pidProfile);
@@ -736,7 +705,7 @@ static void activateConfig(void)
     navigationUseConfig(&masterConfig.navConfig);
     navigationUsePIDs(&currentProfile->pidProfile);
     navigationUseRcControlsConfig(&masterConfig.rcControlsConfig);
-    navigationUseRxConfig(&masterConfig.rxConfig);
+    navigationUseRxConfig(rxConfig());
     navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
     navigationUsemotorConfig(&masterConfig.motorConfig);
 #endif
@@ -919,8 +888,6 @@ void validateAndFixConfig(void)
 #ifndef USE_PMW_SERVO_DRIVER
     featureClear(FEATURE_PWM_SERVO_DRIVER);
 #endif
-
-    useRxConfig(&masterConfig.rxConfig);
 
     serialConfig_t *serialConfig = &masterConfig.serialConfig;
 

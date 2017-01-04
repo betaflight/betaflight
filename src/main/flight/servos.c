@@ -63,8 +63,6 @@ extern mixerMode_e currentMixerMode;
 extern const mixer_t mixers[];
 extern mixerConfig_t *mixerConfig;
 
-static rxConfig_t *rxConfig;
-
 servoMixerConfig_t *servoMixerConfig;
 
 static uint8_t servoRuleCount = 0;
@@ -134,12 +132,11 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse, rxConfig_t *rxConfigToUse)
+void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse)
 {
     servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
     gimbalConfig = gimbalConfigToUse;
-    rxConfig = rxConfigToUse;
 }
 
 int16_t getFlaperonDirection(uint8_t servoPin) {
@@ -346,7 +343,7 @@ void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
         input[INPUT_STABILIZED_YAW] = axisPID[YAW];
 
         // Reverse yaw servo when inverted in 3D mode
-        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {
+        if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig()->midrc)) {
             input[INPUT_STABILIZED_YAW] *= -1;
         }
     }
@@ -362,14 +359,14 @@ void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
     // 2000 - 1500 = +500
     // 1500 - 1500 = 0
     // 1000 - 1500 = -500
-    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig->midrc;
-    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig->midrc;
-    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig->midrc;
-    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig->midrc;
-    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig->midrc;
-    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig->midrc;
-    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig->midrc;
-    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig->midrc;
+    input[INPUT_RC_ROLL]     = rcData[ROLL]     - rxConfig()->midrc;
+    input[INPUT_RC_PITCH]    = rcData[PITCH]    - rxConfig()->midrc;
+    input[INPUT_RC_YAW]      = rcData[YAW]      - rxConfig()->midrc;
+    input[INPUT_RC_THROTTLE] = rcData[THROTTLE] - rxConfig()->midrc;
+    input[INPUT_RC_AUX1]     = rcData[AUX1]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX2]     = rcData[AUX2]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX3]     = rcData[AUX3]     - rxConfig()->midrc;
+    input[INPUT_RC_AUX4]     = rcData[AUX4]     - rxConfig()->midrc;
 
     for (i = 0; i < MAX_SUPPORTED_SERVOS; i++)
         servo[i] = 0;
