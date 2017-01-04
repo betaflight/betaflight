@@ -43,6 +43,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -50,7 +51,6 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"

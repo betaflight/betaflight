@@ -69,6 +69,7 @@ uint8_t cliMode = 0;
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -85,7 +86,6 @@ uint8_t cliMode = 0;
 #include "io/motors.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/servos.h"
 #include "io/vtx.h"
 
@@ -3924,8 +3924,7 @@ void cliEnter(serialPort_t *serialPort)
     cliMode = 1;
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
-    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer),
-                              (bufWrite_t)serialWriteBufShim, serialPort);
+    cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
 
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");

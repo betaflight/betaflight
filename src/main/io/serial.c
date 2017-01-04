@@ -42,6 +42,7 @@
 #endif
 
 #include "io/serial.h"
+#include "fc/serial_cli.h" // for cliEnter()
 
 #include "msp/msp_serial.h"
 
@@ -456,8 +457,6 @@ void waitForSerialPortToFinishTransmitting(serialPort_t *serialPort)
         delay(10);
     };
 }
-
-void cliEnter(serialPort_t *serialPort);
 
 void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
 {
