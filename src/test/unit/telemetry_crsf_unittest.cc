@@ -54,6 +54,7 @@ extern "C" {
     #include "flight/gps_conversion.h"
 
     bool airMode;
+    uint16_t vbat;
     serialPort_t *telemetrySharedPort;
 }
 
@@ -282,7 +283,6 @@ uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint16_t GPS_altitude;              // altitude in m
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_ground_course = 0;     // degrees * 10
-uint16_t vbat;
 
 int32_t amperage;
 int32_t mAhDrawn;
@@ -314,6 +314,6 @@ uint8_t calculateBatteryCapacityRemainingPercentage(void) {return 67;}
 uint8_t calculateBatteryPercentage(void) {return 67;}
 batteryState_e getBatteryState(void) {return BATTERY_OK;}
 bool isAirmodeActive(void) {return airMode;}
-
+uint16_t getVbat(void) { return vbat; }
 }
 

@@ -3164,7 +3164,7 @@ static void cliStatus(char *cmdline)
 
     cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), CPU:%d%%\r\n",
         millis() / 1000,
-        vbat,
+        getVbat(),
         batteryCellCount,
         getBatteryStateString(),
         constrain(averageSystemLoadPercent, 0, 100)
