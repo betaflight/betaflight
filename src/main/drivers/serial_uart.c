@@ -308,11 +308,11 @@ void uartTryStartTxDMA(uartPort_t *s)
         USART_DMACmd(s->USARTx, USART_DMAReq_Tx, DISABLE);
 
         DMA_Cmd(s->txDMAStream, ENABLE);
-        asm volatile("\tnop\n");  // just to be sure, remove after testing
+        //asm volatile("\tnop\n");  // just to be sure, remove after testing
         // reenable USART DMA request
         USART_DMACmd(s->USARTx, USART_DMAReq_Tx, ENABLE);
 
-        DMA_Cmd(s->txDMAStream, ENABLE);
+        //DMA_Cmd(s->txDMAStream, ENABLE); // XXX BOGUS?
 #else
         if (s->txDMAChannel->CCR & DMA_CCR1_EN)
             return;
