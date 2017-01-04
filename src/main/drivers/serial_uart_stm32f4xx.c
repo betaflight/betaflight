@@ -52,11 +52,9 @@ typedef struct uartDevice_s {
     ioTag_t tx;
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
-    uint32_t rcc_ahb1;
     rccPeriphTag_t rcc_apb2;
     rccPeriphTag_t rcc_apb1;
     uint8_t af;
-    uint8_t txIrq;
     uint8_t rxIrq;
     uint32_t txPriority;
     uint32_t rxPriority;
@@ -77,11 +75,7 @@ static uartDevice_t uart1 =
     .rx = IO_TAG(UART1_RX_PIN),
     .tx = IO_TAG(UART1_TX_PIN),
     .af = GPIO_AF_USART1,
-#ifdef UART1_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART1_AHB1_PERIPHERALS,
-#endif
     .rcc_apb2 = RCC_APB2(USART1),
-    .txIrq = DMA2_ST7_HANDLER,
     .rxIrq = USART1_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART1
@@ -102,11 +96,7 @@ static uartDevice_t uart2 =
     .rx = IO_TAG(UART2_RX_PIN),
     .tx = IO_TAG(UART2_TX_PIN),
     .af = GPIO_AF_USART2,
-#ifdef UART2_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART2_AHB1_PERIPHERALS,
-#endif
     .rcc_apb1 = RCC_APB1(USART2),
-    .txIrq = DMA1_ST6_HANDLER,
     .rxIrq = USART2_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART2
@@ -127,11 +117,7 @@ static uartDevice_t uart3 =
     .rx = IO_TAG(UART3_RX_PIN),
     .tx = IO_TAG(UART3_TX_PIN),
     .af = GPIO_AF_USART3,
-#ifdef UART3_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART3_AHB1_PERIPHERALS,
-#endif
     .rcc_apb1 = RCC_APB1(USART3),
-    .txIrq = DMA1_ST3_HANDLER,
     .rxIrq = USART3_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART3
@@ -152,11 +138,7 @@ static uartDevice_t uart4 =
     .rx = IO_TAG(UART4_RX_PIN),
     .tx = IO_TAG(UART4_TX_PIN),
     .af = GPIO_AF_UART4,
-#ifdef UART4_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART4_AHB1_PERIPHERALS,
-#endif
     .rcc_apb1 = RCC_APB1(UART4),
-    .txIrq = DMA1_ST4_HANDLER,
     .rxIrq = UART4_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART4
@@ -177,11 +159,7 @@ static uartDevice_t uart5 =
     .rx = IO_TAG(UART5_RX_PIN),
     .tx = IO_TAG(UART5_TX_PIN),
     .af = GPIO_AF_UART5,
-#ifdef UART5_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART5_AHB1_PERIPHERALS,
-#endif
     .rcc_apb1 = RCC_APB1(UART5),
-    .txIrq = DMA1_ST7_HANDLER,
     .rxIrq = UART5_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART5
@@ -195,18 +173,14 @@ static uartDevice_t uart6 =
 #ifdef USE_UART6_RX_DMA
     .rxDMAStream = DMA2_Stream1,
 #endif
-#ifdef USE_UART6_RX_DMA
+#ifdef USE_UART6_TX_DMA
     .txDMAStream = DMA2_Stream6,
 #endif
     .dev = USART6,
     .rx = IO_TAG(UART6_RX_PIN),
     .tx = IO_TAG(UART6_TX_PIN),
     .af = GPIO_AF_USART6,
-#ifdef UART6_AHB1_PERIPHERALS
-    .rcc_ahb1 = UART6_AHB1_PERIPHERALS,
-#endif
     .rcc_apb2 = RCC_APB2(USART6),
-    .txIrq = DMA2_ST6_HANDLER,
     .rxIrq = USART6_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART6
@@ -272,7 +246,6 @@ void uartIrqHandler(uartPort_t *s)
     }
 }
 
-#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA) || defined(USE_UART4_TX_DMA) || defined(USE_UART5_TX_DMA) || defined(USE_UART6_TX_DMA)
 static void handleUsartTxDma(uartPort_t *s)
 {
     DMA_Cmd(s->txDMAStream, DISABLE);
@@ -305,7 +278,6 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
         DMA_CLEAR_FLAG(descriptor, DMA_IT_DMEIF);
     }
 }
-#endif
 
 uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
@@ -334,7 +306,10 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     if (uart->txDMAStream) {
         s->txDMAChannel = uart->DMAChannel;
         s->txDMAStream = uart->txDMAStream;
-        dmaInit(dmaGetIdentifier(uart->txDMAStream), OWNER_SERIAL_TX, RESOURCE_INDEX(device));
+        const dmaIdentifier_e identifier = dmaGetIdentifier(uart->txDMAStream);
+        dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
+        // DMA TX Interrupt
+        dmaSetHandler(identifier, dmaIRQHandler, uart->txPriority, (uint32_t)uart);
     }
 
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
@@ -348,9 +323,6 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     if (uart->rcc_apb1)
         RCC_ClockCmd(uart->rcc_apb1, ENABLE);
-
-    if (uart->rcc_ahb1)
-        RCC_AHB1PeriphClockCmd(uart->rcc_ahb1, ENABLE);
 
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
@@ -370,11 +342,6 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
             IOConfigGPIOAF(rx, IOCFG_AF_PP_UP, uart->af);
         }
     }
-
-#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA) || defined(USE_UART4_TX_DMA) || defined(USE_UART5_TX_DMA) || defined(USE_UART6_TX_DMA)
-    // DMA TX Interrupt
-    dmaSetHandler(uart->txIrq, dmaIRQHandler, uart->txPriority, (uint32_t)uart);
-#endif
 
     if (!(s->rxDMAChannel)) {
         NVIC_InitStructure.NVIC_IRQChannel = uart->rxIrq;
