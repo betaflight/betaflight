@@ -282,8 +282,10 @@ void dmaIRQHandler(dmaChannelDescriptor_t* descriptor)
         handleUsartTxDma(s);
     }
     if (flags & DMA_IT_TEIF) {
+        debug[0]++;
     }
     if (flags & DMA_IT_DMEIF) {
+        debug[0]++;
     }
 }
 

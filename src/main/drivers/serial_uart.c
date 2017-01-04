@@ -283,7 +283,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         if (s->txDMAStream->CR & DMA_SxCR_EN) // DMA is already in progress
             return;
 
-        debug[0] += s->txDMAStream->NDTR;
+        //debug[0] += s->txDMAStream->NDTR;
 
         if (s->txDMAStream->NDTR)
             goto reenable;
