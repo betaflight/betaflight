@@ -65,6 +65,7 @@
 #define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
+#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
