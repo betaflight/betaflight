@@ -252,7 +252,6 @@ void i2c_OLED_send_string(const char *string)
 /**
 * according to http://www.adafruit.com/datasheets/UG-2864HSWEG01.pdf Chapter 4.4 Page 15
 */
-#if 1
 bool ug2864hsweg01InitI2C(void)
 {
 
@@ -326,5 +325,4 @@ void ug2864hsweg01InitI2C(void)
     i2c_OLED_clear_display();
 }
 
-#endif
 #endif
