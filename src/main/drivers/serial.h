@@ -62,7 +62,7 @@ struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
 
     uint32_t (*serialTotalRxWaiting)(const serialPort_t *instance);
-    uint8_t (*serialTotalTxFree)(const serialPort_t *instance);
+    uint32_t (*serialTotalTxFree)(const serialPort_t *instance);
 
     uint8_t (*serialRead)(serialPort_t *instance);
 
@@ -81,7 +81,7 @@ struct serialPortVTable {
 
 void serialWrite(serialPort_t *instance, uint8_t ch);
 uint32_t serialRxBytesWaiting(const serialPort_t *instance);
-uint8_t serialTxBytesFree(const serialPort_t *instance);
+uint32_t serialTxBytesFree(const serialPort_t *instance);
 void serialWriteBuf(serialPort_t *instance, const uint8_t *data, int count);
 uint8_t serialRead(serialPort_t *instance);
 void serialSetBaudRate(serialPort_t *instance, uint32_t baudRate);
