@@ -69,6 +69,7 @@
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -86,7 +87,6 @@
 #include "io/ledstrip.h"
 #include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
-#include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/osd.h"
 #include "io/displayport_msp.h"

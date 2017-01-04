@@ -530,6 +530,7 @@ COMMON_SRC = \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/serial_cli.c \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -541,7 +542,6 @@ COMMON_SRC = \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/serial_cli.c \
             io/statusindicator.c \
             msp/msp_serial.c \
             rx/ibus.c \
