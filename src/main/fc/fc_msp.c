@@ -737,7 +737,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ANALOG:
-        sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+        sbufWriteU8(dst, (uint8_t)constrain(getVbat(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
         if(batteryConfig()->multiwiiCurrentMeterOutput) {
