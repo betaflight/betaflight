@@ -52,8 +52,7 @@ typedef struct uartDevice_s {
     ioTag_t tx;
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
     volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
-    rccPeriphTag_t rcc_apb2;
-    rccPeriphTag_t rcc_apb1;
+    rccPeriphTag_t rcc_uart;
     uint8_t af;
     uint8_t rxIrq;
     uint32_t txPriority;
@@ -75,7 +74,7 @@ static uartDevice_t uart1 =
     .rx = IO_TAG(UART1_RX_PIN),
     .tx = IO_TAG(UART1_TX_PIN),
     .af = GPIO_AF_USART1,
-    .rcc_apb2 = RCC_APB2(USART1),
+    .rcc_uart = RCC_APB2(USART1),
     .rxIrq = USART1_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART1
@@ -96,7 +95,7 @@ static uartDevice_t uart2 =
     .rx = IO_TAG(UART2_RX_PIN),
     .tx = IO_TAG(UART2_TX_PIN),
     .af = GPIO_AF_USART2,
-    .rcc_apb1 = RCC_APB1(USART2),
+    .rcc_uart = RCC_APB1(USART2),
     .rxIrq = USART2_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART2
@@ -117,7 +116,7 @@ static uartDevice_t uart3 =
     .rx = IO_TAG(UART3_RX_PIN),
     .tx = IO_TAG(UART3_TX_PIN),
     .af = GPIO_AF_USART3,
-    .rcc_apb1 = RCC_APB1(USART3),
+    .rcc_uart = RCC_APB1(USART3),
     .rxIrq = USART3_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART3
@@ -138,7 +137,7 @@ static uartDevice_t uart4 =
     .rx = IO_TAG(UART4_RX_PIN),
     .tx = IO_TAG(UART4_TX_PIN),
     .af = GPIO_AF_UART4,
-    .rcc_apb1 = RCC_APB1(UART4),
+    .rcc_uart = RCC_APB1(UART4),
     .rxIrq = UART4_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART4
@@ -159,7 +158,7 @@ static uartDevice_t uart5 =
     .rx = IO_TAG(UART5_RX_PIN),
     .tx = IO_TAG(UART5_TX_PIN),
     .af = GPIO_AF_UART5,
-    .rcc_apb1 = RCC_APB1(UART5),
+    .rcc_uart = RCC_APB1(UART5),
     .rxIrq = UART5_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART5
@@ -180,7 +179,7 @@ static uartDevice_t uart6 =
     .rx = IO_TAG(UART6_RX_PIN),
     .tx = IO_TAG(UART6_TX_PIN),
     .af = GPIO_AF_USART6,
-    .rcc_apb2 = RCC_APB2(USART6),
+    .rcc_uart = RCC_APB2(USART6),
     .rxIrq = USART6_IRQn,
     .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
     .rxPriority = NVIC_PRIO_SERIALUART6
@@ -318,11 +317,9 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     IO_t tx = IOGetByTag(uart->tx);
     IO_t rx = IOGetByTag(uart->rx);
 
-    if (uart->rcc_apb2)
-        RCC_ClockCmd(uart->rcc_apb2, ENABLE);
-
-    if (uart->rcc_apb1)
-        RCC_ClockCmd(uart->rcc_apb1, ENABLE);
+    if (uart->rcc_uart) {
+        RCC_ClockCmd(uart->rcc_uart, ENABLE);
+    }
 
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
