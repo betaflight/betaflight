@@ -314,7 +314,15 @@ void uartTryStartTxDMA(uartPort_t *s)
 
         //DMA_Cmd(s->txDMAStream, ENABLE); // XXX BOGUS?
 #else
+
+// XXX Isn't there arch indep macro for this?
+# if defined(STM32F1)
         if (s->txDMAChannel->CCR & DMA_CCR1_EN)
+# elif defined(STM32F3)
+        if (s->txDMAChannel->CCR & DMA_CCR_EN)
+# else
+#  error Unknown arch
+# endif
             return;
 
         if (s->txDMAChannel->CNDTR)
