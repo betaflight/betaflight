@@ -39,6 +39,7 @@
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "flight/pid.h"
 
@@ -51,7 +52,6 @@
 #include "io/servos.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 
 #include "msp/msp_serial.h"
 

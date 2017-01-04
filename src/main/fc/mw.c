@@ -49,6 +49,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
@@ -57,7 +58,6 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 
