@@ -27,7 +27,6 @@
 
 #include "build/build_config.h"
 #include "build/atomic.h"
-#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -283,8 +282,6 @@ void uartTryStartTxDMA(uartPort_t *s)
 #ifdef STM32F4
         if (s->txDMAStream->CR & 1) // DMA is already in progress
             return;
-
-        debug[0] += s->txDMAStream->NDTR;
 
         if (s->txDMAStream->NDTR)
             goto reenable;
