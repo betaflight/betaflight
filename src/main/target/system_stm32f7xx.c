@@ -80,6 +80,8 @@
 
 #define PLL_SAIN  384
 #define PLL_SAIQ  7
+#define PLL_SAIP  RCC_PLLSAIP_DIV8
+
 /**
   * @}
   */
@@ -181,7 +183,7 @@
       PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
       PeriphClkInitStruct.PLLSAI.PLLSAIN = PLL_SAIN;
       PeriphClkInitStruct.PLLSAI.PLLSAIQ = PLL_SAIQ;
-      PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV8;
+      PeriphClkInitStruct.PLLSAI.PLLSAIP = PLL_SAIP;
       if(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct)  != HAL_OK)
       {
         while(1) {};
