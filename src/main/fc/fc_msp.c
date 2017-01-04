@@ -1528,6 +1528,17 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src);        // optical flow hardware
         break;
 
+    case MSP_SET_NAV_POSHOLD:
+        navConfig()->general.flags.user_control_mode = sbufReadU8(src);
+        navConfig()->general.max_speed = sbufReadU16(src);
+        navConfig()->general.max_climb_rate = sbufReadU16(src);
+        navConfig()->general.max_manual_speed = sbufReadU16(src);
+        navConfig()->general.max_manual_climb_rate = sbufReadU16(src);
+        navConfig()->mc.max_bank_angle = sbufReadU8(src);
+        navConfig()->general.flags.use_thr_mid_for_althold = sbufReadU8(src);
+        navConfig()->mc.hover_throttle = sbufReadU16(src);
+        break;
+
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
             resetEEPROM();
