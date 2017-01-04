@@ -1706,7 +1706,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         failsafeConfig()->failsafe_kill_switch = sbufReadU8(src);
         failsafeConfig()->failsafe_throttle_low_delay = sbufReadU16(src);
         failsafeConfig()->failsafe_procedure = sbufReadU8(src);
-        failsafeConfig()->failsafe_recovery_delay = sbufReadU8(src);
+        if (dataSize > 8) {
+            failsafeConfig()->failsafe_recovery_delay = sbufReadU8(src);
+        }
         break;
 
     case MSP_SET_RXFAIL_CONFIG:
