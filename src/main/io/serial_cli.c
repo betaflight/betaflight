@@ -3377,6 +3377,7 @@ static bool resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
                 if (resourceTable[r].maxIndex > 0) {
                     cliPrintf(" %d", RESOURCE_INDEX(i));
                 }
+                cliPrint("\r\n");
                 if (error) {
                     return false;
                 }
@@ -3488,7 +3489,7 @@ static void cliResource(char *cmdline)
                         if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
                             return;
                         }
-                        cliPrintf("Resource is set to %c%02d!\r\n", port + 'A', pin);
+                        cliPrintf("\r\nResource is set to %c%02d!\r\n", port + 'A', pin);
 #else
                         cliPrintf("Set to %c%02d!", port + 'A', pin);
 #endif
@@ -3724,7 +3725,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
 #endif
 #ifdef USE_ESCSERIAL
-    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki]> <index>", cliEscPassthrough),
+    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef LED_STRIP
