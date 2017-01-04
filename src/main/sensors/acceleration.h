@@ -53,7 +53,7 @@ typedef struct accelerometerConfig_s {
     flightDynamicsTrims_t accGain;          // Accelerometer gain to read exactly 1G
 } accelerometerConfig_t;
 
-PG_DECLARE_PROFILE(accelerometerConfig_t, accelerometerConfig);
+PG_DECLARE(accelerometerConfig_t, accelerometerConfig);
 
 bool accInit(uint32_t accTargetLooptime);
 bool isAccelerationCalibrationComplete(void);

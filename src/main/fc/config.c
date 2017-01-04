@@ -89,18 +89,6 @@ profile_t *currentProfile;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-
-static void resetAccelerometerTrims(flightDynamicsTrims_t * accZero, flightDynamicsTrims_t * accGain)
-{
-    accZero->values.pitch = 0;
-    accZero->values.roll = 0;
-    accZero->values.yaw = 0;
-
-    accGain->values.pitch = 4096;
-    accGain->values.roll = 4096;
-    accGain->values.yaw = 4096;
-}
-
 void resetPidProfile(pidProfile_t *pidProfile)
 {
     pidProfile->P8[ROLL] = 40;
@@ -457,8 +445,6 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
-
-    resetAccelerometerTrims(&accelerometerConfig()->accZero, &accelerometerConfig()->accGain);
 
     config->boardAlignment.rollDeciDegrees = 0;
     config->boardAlignment.pitchDeciDegrees = 0;

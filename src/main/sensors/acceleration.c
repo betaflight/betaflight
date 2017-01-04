@@ -68,7 +68,7 @@ static uint16_t calibratingA = 0;      // the calibration is done is the main lo
 
 static biquadFilter_t accFilter[XYZ_AXIS_COUNT];
 
-PG_REGISTER_PROFILE_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
+PG_REGISTER_WITH_RESET_FN(accelerometerConfig_t, accelerometerConfig, PG_ACCELEROMETER_CONFIG, 0);
 
 void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
 {
@@ -83,11 +83,12 @@ void pgResetFn_accelerometerConfig(accelerometerConfig_t *instance)
         .raw[Z] = 0
     );
     RESET_CONFIG_2(flightDynamicsTrims_t, &instance->accGain,
-         .raw[X] = 0,
-         .raw[Y] = 0,
-         .raw[Z] = 0
+         .raw[X] = 4096,
+         .raw[Y] = 4096,
+         .raw[Z] = 4096
     );
 }
+
 static bool accDetect(accDev_t *dev, accelerationSensor_e accHardwareToUse)
 {
     accelerationSensor_e accHardware = ACC_NONE;
