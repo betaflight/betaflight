@@ -522,9 +522,11 @@ COMMON_SRC = \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
-            fc/fc_tasks.c \
-            fc/fc_msp.c \
+            fc/fc_init.c \
+            fc/fc_hardfaults.c \
             fc/fc_main.c \
+            fc/fc_msp.c \
+            fc/fc_tasks.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
@@ -606,6 +608,7 @@ HIGHEND_SRC = \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             sensors/esc_sensor.c \
+            io/vtx_smartaudio.c
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -709,7 +712,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c
+            cms/cms_menu_vtx.c \
+            io/vtx_smartaudio.c
 endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))

@@ -1139,6 +1139,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->motorPwmRate);
+        sbufWriteU16(dst, (uint16_t)(motorConfig()->digitalIdleOffsetPercent * 100));
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1166,6 +1167,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit * 10);
         sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1461,7 +1464,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RESET_CURR_PID:
         resetProfile(currentProfile);
         break;
-
     case MSP_SET_SENSOR_ALIGNMENT:
         gyroConfig()->gyro_align = sbufReadU8(src);
         accelerometerConfig()->acc_align = sbufReadU8(src);
@@ -1478,6 +1480,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
+        if (dataSize > 7) {
+            motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+        }
         break;
 
     case MSP_SET_FILTER_CONFIG:
@@ -1514,6 +1519,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src) / 10.0f;
         currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src) / 10.0f;
+        if (dataSize > 17) {
+            currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
+            currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
+        }
         pidInitConfig(&currentProfile->pidProfile);
         break;
 

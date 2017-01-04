@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -176,13 +177,13 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->levelAngleLimit = 70.0f;    // 70 degrees
+    pidProfile->levelAngleLimit = 70;    // 70 degrees
+    pidProfile->levelSensitivity = 100;  // 100 degrees at full stick
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 20.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
-    pidProfile->levelSensitivity = 100.0f;
 }
 
 void resetProfile(profile_t *profile)
@@ -1040,9 +1041,46 @@ void validateAndFixGyroConfig(void)
         gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 
+    float samplingTime = 0.000125f;
+
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfig()->gyro_sync_denom = 1;
+        samplingTime = 0.001f;
+    }
+
+    // check for looptime restrictions based on motor protocol. Motor times have safety margin
+    const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
+    float motorUpdateRestriction;
+    switch(motorConfig()->motorPwmProtocol) {
+        case (PWM_TYPE_STANDARD):
+            motorUpdateRestriction = 0.002f;
+            break;
+        case (PWM_TYPE_ONESHOT125):
+            motorUpdateRestriction = 0.0005f;
+            break;
+        case (PWM_TYPE_ONESHOT42):
+            motorUpdateRestriction = 0.0001f;
+            break;
+        case (PWM_TYPE_DSHOT150):
+            motorUpdateRestriction = 0.000125f;
+            break;
+        case (PWM_TYPE_DSHOT300):
+            motorUpdateRestriction = 0.0000625f;
+            break;
+        default:
+            motorUpdateRestriction = 0.00003125f;
+    }
+
+    if(pidLooptime < motorUpdateRestriction)
+        pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+
+    // Prevent overriding the max rate of motors
+    if(motorConfig()->useUnsyncedPwm) {
+        uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
+
+        if(motorConfig()->motorPwmRate > maxEscRate)
+            motorConfig()->motorPwmRate = maxEscRate;
     }
 }
 
