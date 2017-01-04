@@ -523,11 +523,11 @@ COMMON_SRC = \
             fc/fc_msp.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            fc/serial_cli.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/serial_cli.c \
             io/statusindicator.c \
             io/pwmdriver_i2c.c \
             msp/msp_serial.c \

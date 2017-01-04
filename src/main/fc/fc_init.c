@@ -71,6 +71,7 @@
 #include "fc/rc_controls.h"
 #include "fc/fc_msp.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -83,7 +84,6 @@
 #include "io/dashboard.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/pwmdriver_i2c.h"
-#include "io/serial_cli.h"
 #include "io/osd.h"
 #include "io/displayport_msp.h"
 

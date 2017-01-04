@@ -69,6 +69,7 @@ uint8_t cliMode = 0;
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "flight/failsafe.h"
 #include "flight/imu.h"
@@ -86,7 +87,6 @@ uint8_t cliMode = 0;
 #include "io/motors.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/servos.h"
 
 #include "rx/rx.h"
