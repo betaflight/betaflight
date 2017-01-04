@@ -57,6 +57,7 @@
 #include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
+#include "io/motors.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -661,7 +662,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 
     // Update PID coefficients
-    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, &masterConfig.motorConfig);
+    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, motorConfig());
 
     // Calculate stabilisation
     pidController(&currentProfile->pidProfile, currentControlRateProfile, rxConfig());

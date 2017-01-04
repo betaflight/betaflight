@@ -45,7 +45,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motors.h"
 #include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
@@ -228,22 +227,6 @@ void validateNavConfig(navConfig_t * navConfig)
     navConfig->general.land_slowdown_minalt = MIN(navConfig->general.land_slowdown_minalt, navConfig->general.land_slowdown_maxalt - 100);
 }
 #endif
-
-void resetMotorConfig(motorConfig_t *motorConfig)
-{
-#ifdef BRUSHED_MOTORS
-    motorConfig->minthrottle = 1000;
-    motorConfig->motorPwmProtocol = PWM_TYPE_BRUSHED;
-    motorConfig->motorPwmRate = BRUSHED_MOTORS_PWM_RATE;
-#else
-    motorConfig->minthrottle = 1150;
-    motorConfig->motorPwmProtocol = PWM_TYPE_STANDARD;
-    motorConfig->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
-#endif
-    motorConfig->maxthrottle = 1850;
-    motorConfig->mincommand = 1000;
-
-}
 
 #ifdef USE_SERVOS
 void resetServoConfig(servoConfig_t *servoConfig)
@@ -467,7 +450,6 @@ void createDefaultConfig(master_t *config)
     resetServoConfig(&config->servoConfig);
 #endif
 
-    resetMotorConfig(&config->motorConfig);
     resetFlight3DConfig(&config->flight3DConfig);
 
 #ifdef GPS
@@ -672,7 +654,7 @@ void resetConfigs(void)
 
 static void activateControlRateConfig(void)
 {
-    generateThrottleCurve(currentControlRateProfile, &masterConfig.motorConfig);
+    generateThrottleCurve(currentControlRateProfile);
 }
 
 static void activateConfig(void)
@@ -681,7 +663,7 @@ static void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+    useRcControlsConfig(masterConfig.modeActivationConditions, &currentProfile->pidProfile);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -692,7 +674,7 @@ static void activateConfig(void)
     setAccelerationCalibrationValues();
     setAccelerationFilter();
 
-    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.motorConfig, &masterConfig.mixerConfig);
+    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.mixerConfig);
 #ifdef USE_SERVOS
     servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
 #endif
@@ -707,7 +689,7 @@ static void activateConfig(void)
     navigationUseRcControlsConfig(&masterConfig.rcControlsConfig);
     navigationUseRxConfig(rxConfig());
     navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
-    navigationUsemotorConfig(&masterConfig.motorConfig);
+    navigationUsemotorConfig(motorConfig());
 #endif
 }
 

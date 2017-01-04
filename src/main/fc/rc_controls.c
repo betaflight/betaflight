@@ -57,7 +57,6 @@
 
 #define AIRMODE_DEADBAND 25
 
-static motorConfig_t *motorConfig;
 static pidProfile_t *pidProfile;
 
 // true if arming is done via the sticks (as opposed to a switch)
@@ -521,7 +520,7 @@ void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustm
         case ADJUSTMENT_THROTTLE_EXPO:
             newValue = constrain((int)controlRateConfig->thrExpo8 + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             controlRateConfig->thrExpo8 = newValue;
-            generateThrottleCurve(controlRateConfig, motorConfig);
+            generateThrottleCurve(controlRateConfig);
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_THROTTLE_EXPO, newValue);
         break;
         case ADJUSTMENT_PITCH_ROLL_RATE:
@@ -720,9 +719,8 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, motorConfig_t *motorConfigToUse, pidProfile_t *pidProfileToUse)
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, pidProfile_t *pidProfileToUse)
 {
-    motorConfig = motorConfigToUse;
     pidProfile = pidProfileToUse;
 
     isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);

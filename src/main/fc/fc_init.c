@@ -547,7 +547,7 @@ void init(void)
         &masterConfig.rcControlsConfig,
         rxConfig(),
         &masterConfig.flight3DConfig,
-        &masterConfig.motorConfig
+        motorConfig()
     );
 #endif
 
