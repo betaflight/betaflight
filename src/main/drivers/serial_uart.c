@@ -304,6 +304,9 @@ void uartTryStartTxDMA(uartPort_t *s)
         s->txDMAEmpty = false;
 
     reenable:
+        if (s->txDMAStream->NDTR == 0)
+            debug[0]++;
+
         // disable USART DMA request - DMA controller needs time to preload data from memory
         USART_DMACmd(s->USARTx, USART_DMAReq_Tx, DISABLE);
 
