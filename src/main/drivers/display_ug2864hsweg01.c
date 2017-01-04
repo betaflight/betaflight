@@ -23,6 +23,8 @@
 #include "bus_i2c.h"
 #include "system.h"
 
+#ifdef USE_I2C
+
 #include "display_ug2864hsweg01.h"
 
 #ifndef OLED_I2C_INSTANCE
@@ -324,4 +326,5 @@ void ug2864hsweg01InitI2C(void)
     i2c_OLED_clear_display();
 }
 
+#endif
 #endif
