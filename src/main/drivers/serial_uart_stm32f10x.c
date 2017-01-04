@@ -76,6 +76,7 @@ void uartIrqCallback(uartPort_t *s)
     }
 }
 
+#ifdef USE_UART1_TX_DMA
 // USART1 Tx DMA Handler
 void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -88,6 +89,7 @@ void uart_tx_dma_IRQHandler(dmaChannelDescriptor_t* descriptor)
     else
         s->txDMAEmpty = true;
 }
+#endif
 
 #ifdef USE_UART1
 // USART1 - Telemetry (RX/TX by DMA)
@@ -114,8 +116,10 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
     s->rxDMAChannel = DMA1_Channel5;
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
 #endif
+#ifdef USE_UART1_TX_DMA
     s->txDMAChannel = DMA1_Channel4;
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
 
     RCC_ClockCmd(RCC_APB2(USART1), ENABLE);
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
@@ -137,8 +141,10 @@ uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t option
         }
     }
 
+#ifdef USE_UART1_TX_DMA
     // DMA TX Interrupt
     dmaSetHandler(DMA1_CH4_HANDLER, uart_tx_dma_IRQHandler, NVIC_PRIO_SERIALUART1_TXDMA, (uint32_t)&uartPort1);
+#endif
 
 #ifndef USE_UART1_RX_DMA
     // RX/TX Interrupt
@@ -185,8 +191,12 @@ uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s->USARTx = USART2;
 
+#ifdef USE_UART2_TX_DMA
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
+#ifdef USE_UART2_RX_DMA
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
 
     RCC_ClockCmd(RCC_APB1(USART2), ENABLE);
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
@@ -250,8 +260,12 @@ uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t option
 
     s->USARTx = USART3;
 
+#ifdef USE_UART3_TX_DMA
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
+#ifdef USE_UART3_RX_DMA
     s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
+#endif
 
     RCC_ClockCmd(RCC_APB1(USART3), ENABLE);
 
