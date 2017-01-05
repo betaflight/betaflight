@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #if defined(USE_QUAD_MIXER_ONLY)
 #define MAX_SUPPORTED_MOTORS 4
 #define MAX_SUPPORTED_SERVOS 1
@@ -79,6 +81,8 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
+PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+
 // Custom mixer configuration
 typedef struct mixer_s {
     uint8_t motorCount;
@@ -113,7 +117,6 @@ void mixerUseConfigs(
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *customMotorMixers);
 void mixerUsePWMIOConfiguration(void);
 void mixerResetDisarmedMotors(void);
 void mixTable(void);

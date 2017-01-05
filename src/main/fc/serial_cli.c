@@ -1093,6 +1093,7 @@ static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
 static gimbalConfig_t gimbalConfigCopy;
 #endif
+static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 
 static void backupConfigs(void)
 {
@@ -1120,6 +1121,9 @@ static void backupConfigs(void)
 #ifdef USE_SERVOS
     gimbalConfigCopy = *gimbalConfig();
 #endif
+    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
+        customMotorMixerCopy[ii] = *customMotorMixer(ii);
+    }
 }
 
 static void restoreConfigs(void)
@@ -1147,6 +1151,9 @@ static void restoreConfigs(void)
 #ifdef USE_SERVOS
     *gimbalConfig() = gimbalConfigCopy;
 #endif
+    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
+        *customMotorMixer(ii) = customMotorMixerCopy[ii];
+    }
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -1842,7 +1849,7 @@ static void cliMotorMix(char *cmdline)
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
         for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-            masterConfig.customMotorMixer[i].throttle = 0.0f;
+            customMotorMixer(i)->throttle = 0.0f;
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
@@ -1853,7 +1860,7 @@ static void cliMotorMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    mixerLoadMix(i, masterConfig.customMotorMixer);
+                    mixerLoadMix(i, customMotorMixer(0));
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
                     break;
@@ -1866,22 +1873,22 @@ static void cliMotorMix(char *cmdline)
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].throttle = fastA2F(ptr);
+                customMotorMixer(i)->throttle = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].roll = fastA2F(ptr);
+                customMotorMixer(i)->roll = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].pitch = fastA2F(ptr);
+                customMotorMixer(i)->pitch = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                masterConfig.customMotorMixer[i].yaw = fastA2F(ptr);
+                customMotorMixer(i)->yaw = fastA2F(ptr);
                 check++;
             }
             if (check != 4) {
@@ -3339,9 +3346,9 @@ static void printConfig(char *cmdline, bool doDiff)
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[defaultConfig.mixerConfig.mixerMode - 1]);
         cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[masterConfig.mixerConfig.mixerMode - 1]);
 
-        cliDumpPrintf(dumpMask, masterConfig.customMotorMixer[0].throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
+        cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
-        printMotorMix(dumpMask, customMotorMixer(0), defaultConfig.customMotorMixer);
+        printMotorMix(dumpMask, customMotorMixerCopy, customMotorMixer(0));
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");

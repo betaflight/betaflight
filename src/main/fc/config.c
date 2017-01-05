@@ -508,11 +508,6 @@ void createDefaultConfig(master_t *config)
 
 #endif
 
-    // custom mixer. clear by defaults.
-    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
-        config->customMotorMixer[i].throttle = 0.0f;
-    }
-
 #ifdef LED_STRIP
     applyDefaultColors(config->ledStripConfig.colors);
     applyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
