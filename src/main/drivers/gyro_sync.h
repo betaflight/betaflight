@@ -5,8 +5,8 @@
  *      Author: borisb
  */
 
-struct gyroDev_s;
+#include "drivers/accgyro.h"
 
-bool gyroSyncCheckUpdate(struct gyroDev_s *gyro);
-uint8_t gyroMPU6xxxGetDividerDrops(void);
-uint32_t gyroSetSampleRate(uint8_t lpf, uint8_t gyroSyncDenominator);
+bool gyroSyncCheckUpdate(gyroDev_t *gyro);
+uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro);
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz);

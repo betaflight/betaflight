@@ -144,6 +144,7 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
 void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 uint32_t getTaskDeltaTime(cfTaskId_e taskId);
+void schedulerResetTaskStatistics(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
