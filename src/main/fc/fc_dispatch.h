@@ -19,5 +19,13 @@
 
 typedef void (*dispatchFuncPtr)(void);
 
-void dispatchProcess(void);
-void dispatchAdd(dispatchFuncPtr ptr, uint32_t delayUs);
+typedef struct dispatchTask_s {
+    dispatchFuncPtr ptr;
+    uint16_t minimumDelayUs;
+
+    uint32_t delayedUntil;
+    struct dispatchTask_s *next;
+} dispatchTask_t;
+
+void dispatchProcess(uint32_t currentTime);
+void dispatchAdd(dispatchTask_t *task);

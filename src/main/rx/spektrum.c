@@ -113,6 +113,7 @@ static void spektrumDataReceive(uint16_t c)
 }
 
 static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
+static dispatchTask_t srxlTelemetryTask = { .ptr = srxlRxSendTelemetryData, .minimumDelayUs = 100 };
 
 static uint8_t spektrumFrameStatus(void)
 {
@@ -156,7 +157,7 @@ static uint8_t spektrumFrameStatus(void)
 
     /* only process if 2048, some data in buffer AND servos in phase 0 */
     if (spekHiRes && telemetryBufLen && (spekFrame[2] & 0x80)) {
-        dispatchAdd(srxlRxSendTelemetryData, 100);
+        dispatchAdd(&srxlTelemetryTask);
     }
     return RX_FRAME_COMPLETE;
 }

@@ -218,13 +218,6 @@ void taskVtxControl(uint32_t currentTime)
 }
 #endif
 
-/* simplified task for dispatching a call to *(void x(void)) after a set period of time */
-void taskDispatch(uint32_t currentTime)
-{
-    UNUSED(currentTime);
-    dispatchProcess();
-}
-
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -359,9 +352,9 @@ cfTask_t cfTasks[TASK_COUNT] = {
 
     [TASK_DISPATCH] = {
         .taskName = "DISPATCH",
-        .taskFunc = taskDispatch,
-        .desiredPeriod = TASK_PERIOD_US(100),
-        .staticPriority = TASK_PRIORITY_REALTIME,
+        .taskFunc = dispatchProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_BATTERY] = {

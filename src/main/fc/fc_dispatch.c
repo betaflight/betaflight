@@ -21,61 +21,62 @@
 
 #include <platform.h>
 
+#include "common/utils.h"
+
 #include "drivers/system.h"
 #include "fc/fc_dispatch.h"
 
-#define DISPATCH_QUEUE_SIZE     5
+static dispatchTask_t *head = NULL;
 
-typedef struct {
-    dispatchFuncPtr ptr;
-    uint32_t delayedUntil;
-} dispatchItem_t;
-
-static dispatchItem_t queue[DISPATCH_QUEUE_SIZE];
-static int next = 0;
-
-static void dispatchRemove(int index)
+void dispatchProcess(uint32_t currentTime)
 {
-    if (index == (DISPATCH_QUEUE_SIZE-1)) {
-        queue[index].ptr = NULL;
-        next = index;
+    if (!head || currentTime < head->delayedUntil) {
         return;
     }
 
-    for (int i = index; i < DISPATCH_QUEUE_SIZE-1; i++) {
-        queue[i].ptr = queue[i+1].ptr;
-
-        if (queue[i].ptr == NULL) {
-            next = i;
-            break;
+    dispatchTask_t *current = head;
+    dispatchTask_t *previous = NULL;
+    while (current && current->delayedUntil < currentTime) {
+        if (current->ptr) {
+            (*current->ptr)();
         }
-        queue[i].delayedUntil = queue[i+1].delayedUntil;
+
+        /* remove item from list */
+        if (previous) {
+            previous->next = current->next;
+        } else {
+            head = current->next;
+        }     
+        current->delayedUntil = 0;
+        current = current->next;
     }
 }
 
-void dispatchProcess(void)
+void dispatchAdd(dispatchTask_t *task)
 {
-    if (queue[0].ptr == NULL) {
+    if (!task || task->delayedUntil) {
+        /* invalid or already in the list */
         return;
     }
 
-    for (int i = 0; i < DISPATCH_QUEUE_SIZE; i++) {
-        if (queue[i].ptr == NULL) {
-            break;
-        }
-        if (queue[i].delayedUntil < micros()) {
-            (*queue[i].ptr)();
-            queue[i].ptr = NULL;
-            dispatchRemove(i);
-        }
-    }
-}
+    task->next = NULL;
+    task->delayedUntil = micros() + task->minimumDelayUs;
 
-void dispatchAdd(dispatchFuncPtr ptr, uint32_t delayUs)
-{
-    if (next < DISPATCH_QUEUE_SIZE) {
-        queue[next].ptr = ptr;
-        queue[next].delayedUntil = micros() + delayUs;
-        next++;
+    if (!head) {
+        head = task;
+        return;
     }
+
+    if (task->delayedUntil < head->delayedUntil) {
+        task->next = head;
+        head = task;
+        return;
+    }
+
+    dispatchTask_t *pos = head;
+    while (pos->next && pos->next->delayedUntil < task->delayedUntil) {
+        pos = pos->next;
+    }
+    task->next = pos->next;
+    pos->next = task;
 }
