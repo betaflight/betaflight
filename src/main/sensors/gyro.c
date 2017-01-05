@@ -54,6 +54,8 @@
 #include "io/beeper.h"
 #include "io/statusindicator.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/sensors.h"
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
@@ -359,6 +361,7 @@ static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
     }
 
     if (isOnFinalGyroCalibrationCycle()) {
+        schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         beeper(BEEPER_GYRO_CALIBRATED);
     }
     calibratingG--;
@@ -403,11 +406,11 @@ void gyroUpdate(void)
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
 #if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
-            // SPI-based gyro so can read and update in ISR
-            if (gyroConfig->gyro_isr_update) {
-                mpuGyroSetIsrUpdate(&gyro.dev, gyroUpdateISR);
-                return;
-            }
+        // SPI-based gyro so can read and update in ISR
+        if (gyroConfig->gyro_isr_update) {
+            mpuGyroSetIsrUpdate(&gyro.dev, gyroUpdateISR);
+            return;
+        }
 #endif
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
         debug[3] = (uint16_t)(micros() & 0xffff);
