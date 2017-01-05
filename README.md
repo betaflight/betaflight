@@ -1,5 +1,3 @@
-# Betaflight
-
 ![Betaflight](https://camo.githubusercontent.com/8178215d6cb90842dc95c9d437b1bdf09b2d57a7/687474703a2f2f7374617469632e726367726f7570732e6e65742f666f72756d732f6174746163686d656e74732f362f312f302f332f372f362f61393038383930302d3232382d62665f6c6f676f2e6a7067)
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
