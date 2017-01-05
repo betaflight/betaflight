@@ -94,7 +94,7 @@ typedef enum {
 #define ESC_BOOTTIME 5000               // 5 seconds
 #define ESC_REQUEST_TIMEOUT 100         // 100 ms (data transfer takes only 900us)
 
-static bool tlmFrameDone = false;
+static volatile bool tlmFramePending = false;
 static uint8_t tlm[ESC_SENSOR_BUFFSIZE] = { 0, };
 static uint8_t tlmFramePosition = 0;
 
@@ -159,15 +159,16 @@ static void escSensorDataReceive(uint16_t c)
     // KISS ESC sends some data during startup, ignore this for now (maybe future use)
     // startup data could be firmware version and serialnumber
 
-    if (escSensorTriggerState == ESC_SENSOR_TRIGGER_STARTUP || tlmFrameDone) {
+    if (!tlmFramePending) {
         return;
     }
 
     tlm[tlmFramePosition] = (uint8_t)c;
 
     if (tlmFramePosition == ESC_SENSOR_BUFFSIZE - 1) {
-        tlmFrameDone = true;
         tlmFramePosition = 0;
+
+        tlmFramePending = false;
     } else {
         tlmFramePosition++;
     }
@@ -213,7 +214,7 @@ static uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 
 static uint8_t decodeEscFrame(void)
 {
-    if (!tlmFrameDone) {
+    if (tlmFramePending) {
         return ESC_SENSOR_FRAME_PENDING;
     }
 
@@ -235,8 +236,6 @@ static uint8_t decodeEscFrame(void)
     } else {
         frameStatus = ESC_SENSOR_FRAME_FAILED;
     }
-
-    tlmFrameDone = false;
 
     return frameStatus;
 }
@@ -277,6 +276,7 @@ void escSensorProcess(timeUs_t currentTimeUs)
         case ESC_SENSOR_TRIGGER_READY:
             escTriggerTimestamp = currentTimeMs;
 
+            tlmFramePending = true;
             motorDmaOutput_t * const motor = getMotorDmaOutput(escSensorMotor);
             motor->requestTelemetry = true;
             escSensorTriggerState = ESC_SENSOR_TRIGGER_PENDING;
