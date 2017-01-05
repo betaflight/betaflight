@@ -240,7 +240,8 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     if (!gyroDetect(&gyro.dev)) {
         return false;
     }
-    gyro.targetLooptime = gyroSetSampleRate(gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom);    // Set gyro sample rate before initialisation
+    // Must set gyro sample rate before initialisation
+    gyro.targetLooptime = gyroSetSampleRate(&gyro.dev, gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom, gyroConfig->gyro_use_32khz);
     gyro.dev.lpf = gyroConfig->gyro_lpf;
     gyro.dev.init(&gyro.dev);
     gyroInitFilters();
