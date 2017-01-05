@@ -34,6 +34,7 @@
 #include "io/serial.h"
 
 #include "fc/config.h"
+#include "fc/fc_dispatch.h"
 
 #ifdef TELEMETRY
 #include "telemetry/telemetry.h"
@@ -153,8 +154,9 @@ static uint8_t spektrumFrameStatus(void)
         }
     }
 
-    if (telemetryBufLen) {
-        srxlRxSendTelemetryData();
+    /* only process if 2048, some data in buffer AND servos in phase 0 */
+    if (spekHiRes && telemetryBufLen && (spekFrame[2] & 0x80)) {
+        dispatchAdd(srxlRxSendTelemetryData, 100);
     }
     return RX_FRAME_COMPLETE;
 }
