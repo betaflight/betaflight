@@ -51,7 +51,6 @@
 #include "io/servos.h"
 
 #include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
 #include "sensors/battery.h"
 
 #include "telemetry/telemetry.h"
@@ -59,7 +58,6 @@
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
-#define boardAlignment(x) (&masterConfig.boardAlignment)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define batteryConfig(x) (&masterConfig.batteryConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
@@ -124,8 +122,6 @@ typedef struct master_s {
     uint8_t flaperon_throw_inverted;
 
 #endif
-
-    boardAlignment_t boardAlignment;
 
     imuConfig_t imuConfig;
 

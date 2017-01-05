@@ -429,10 +429,6 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
 
-    config->boardAlignment.rollDeciDegrees = 0;
-    config->boardAlignment.pitchDeciDegrees = 0;
-    config->boardAlignment.yawDeciDegrees = 0;
-
     resetBatteryConfig(&config->batteryConfig);
 
 #ifdef TELEMETRY
@@ -909,7 +905,7 @@ void validateAndFixConfig(void)
 
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)
 {
-    updateBoardAlignment(&masterConfig.boardAlignment, roll, pitch);
+    updateBoardAlignment(roll, pitch);
 
     saveConfigAndNotify();
 }
