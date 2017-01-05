@@ -9,11 +9,9 @@ This fork differs from baseflight and cleanflight in that it focuses on flight p
 Betaflight has the following features:
 
 * Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
-* Oneshot ESC support
+* DSHOT (600, 300 and 150), Oneshot (125 and 42) and Multishot motor protocol support 
 * Blackbox flight recorder logging (to onboard flash or external SD card - where fitted)
 * Support for targets that use the STM32 F7, F4, F3 and F1 processors
-* Support for more than 8 RC channels - (e.g. 16 Channels via FrSky X4RSB SBus)
-* Support for N-Position switches via flexible channel ranges
 * PWM, PPM and serial input with failsafe detection
 * Multiple Telemetry protocols (CRSF, FrSky, HoTT smart-port, MSP etc)
 * RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
@@ -21,7 +19,7 @@ Betaflight has the following features:
 * In-flight manual PID tuning and rate adjustment.
 * Rate profiles and in-flight selection of them.
 * Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
-* and much much more.
+* and much, much more.
 
 ## Installation & Documentation
 
