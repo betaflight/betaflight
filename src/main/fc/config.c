@@ -503,9 +503,6 @@ void createDefaultConfig(master_t *config)
         config->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
-    // gimbal
-    config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
-
     config->flaperon_throw_offset = FLAPERON_THROW_DEFAULT;
     config->flaperon_throw_inverted = 0;
 
@@ -663,7 +660,7 @@ static void activateConfig(void)
 
     mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.mixerConfig);
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
 
     imuConfigure(&masterConfig.imuConfig, &currentProfile->pidProfile);

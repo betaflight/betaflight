@@ -583,6 +583,11 @@ static const clivalue_t valueTable[] = {
     { "align_board_roll",           VAR_INT16  | MASTER_VALUE, .config.minmax = { -1800,  3600 }, PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, rollDeciDegrees) },
     { "align_board_pitch",          VAR_INT16  | MASTER_VALUE, .config.minmax = { -1800,  3600 }, PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, pitchDeciDegrees) },
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE, .config.minmax = { -1800,  3600 }, PG_BOARD_ALIGNMENT, offsetof(boardAlignment_t, yawDeciDegrees) },
+
+// PG_GIMBAL_CONFIG
+#ifdef USE_SERVOS
+    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GIMBAL_MODE }, PG_GIMBAL_CONFIG, offsetof(gimbalConfig_t, mode) },
+#endif
 };
 
 #else
@@ -755,7 +760,6 @@ const clivalue_t valueTable[] = {
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_freq",         VAR_INT16  | MASTER_VALUE, &servoMixerConfig()->servo_lowpass_freq, .config.minmax = { 10,  400} },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
-    { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.gimbalConfig.mode, .config.lookup = { TABLE_GIMBAL_MODE } },
     { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoPwmRate, .config.minmax = { 50,  498 } },
     { "fw_iterm_throw_limit",       VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.fixedWingItermThrowLimit, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX} },
@@ -1086,6 +1090,9 @@ static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_C
 static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
 static boardAlignment_t boardAlignmentCopy;
+#ifdef USE_SERVOS
+static gimbalConfig_t gimbalConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1110,6 +1117,9 @@ static void backupConfigs(void)
     }
     motorConfigCopy = *motorConfig();
     boardAlignmentCopy = *boardAlignment();
+#ifdef USE_SERVOS
+    gimbalConfigCopy = *gimbalConfig();
+#endif
 }
 
 static void restoreConfigs(void)
@@ -1134,6 +1144,9 @@ static void restoreConfigs(void)
     }
     *motorConfig() = motorConfigCopy;
     *boardAlignment() = boardAlignmentCopy;
+#ifdef USE_SERVOS
+    *gimbalConfig() = gimbalConfigCopy;
+#endif
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -1177,6 +1190,9 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
+#ifdef USE_SERVOS
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
+#endif
         return;
     }
 #endif

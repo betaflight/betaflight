@@ -43,7 +43,6 @@
 #include "flight/navigation_rewrite.h"
 #include "flight/pid.h"
 
-#include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
@@ -115,8 +114,6 @@ typedef struct master_s {
 #ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-    // gimbal-related configuration
-    gimbalConfig_t gimbalConfig;
 
     uint16_t flaperon_throw_offset;
     uint8_t flaperon_throw_inverted;
