@@ -837,6 +837,9 @@ void createDefaultConfig(master_t *config)
 
     resetStatusLedConfig(&config->statusLedConfig);
 
+    /* merely to force a reset if the person inadvertently flashes the wrong target */
+    strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, MIN(sizeof(TARGET_BOARD_IDENTIFIER), sizeof(config->boardIdentifier)));
+    
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
