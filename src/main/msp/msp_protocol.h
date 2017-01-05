@@ -105,6 +105,8 @@
 #define MSP_NAME                        10   //out message          Returns user set board name - betaflight
 #define MSP_SET_NAME                    11   //in message           Sets board name - betaflight
 
+#define MSP_NAV_POSHOLD                 12
+#define MSP_SET_NAV_POSHOLD             13
 
 //
 // MSP commands for Cleanflight original features

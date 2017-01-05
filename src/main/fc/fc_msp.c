@@ -1163,6 +1163,18 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0);    // optical flow hardware
         break;
 
+#ifdef NAV
+    case MSP_NAV_POSHOLD:
+        sbufWriteU8(dst, navConfig()->general.flags.user_control_mode);
+        sbufWriteU16(dst, navConfig()->general.max_speed);
+        sbufWriteU16(dst, navConfig()->general.max_climb_rate);
+        sbufWriteU16(dst, navConfig()->general.max_manual_speed);
+        sbufWriteU16(dst, navConfig()->general.max_manual_climb_rate);
+        sbufWriteU8(dst, navConfig()->mc.max_bank_angle);
+        sbufWriteU8(dst, navConfig()->general.flags.use_thr_mid_for_althold);
+        sbufWriteU16(dst, navConfig()->mc.hover_throttle);
+        break;
+#endif
     case MSP_REBOOT:
         if (!ARMING_FLAG(ARMED)) {
             if (mspPostProcessFn) {
@@ -1589,6 +1601,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src);        // rangefinder hardware
         sbufReadU8(src);        // optical flow hardware
         break;
+
+#ifdef NAV
+    case MSP_SET_NAV_POSHOLD:
+        navConfig()->general.flags.user_control_mode = sbufReadU8(src);
+        navConfig()->general.max_speed = sbufReadU16(src);
+        navConfig()->general.max_climb_rate = sbufReadU16(src);
+        navConfig()->general.max_manual_speed = sbufReadU16(src);
+        navConfig()->general.max_manual_climb_rate = sbufReadU16(src);
+        navConfig()->mc.max_bank_angle = sbufReadU8(src);
+        navConfig()->general.flags.use_thr_mid_for_althold = sbufReadU8(src);
+        navConfig()->mc.hover_throttle = sbufReadU16(src);
+        break;
+#endif
 
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
