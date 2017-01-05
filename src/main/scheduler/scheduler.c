@@ -198,8 +198,6 @@ void schedulerResetTaskStatistics(cfTaskId_e taskId)
         cfTasks[taskId].movingSumExecutionTime = 0;
         cfTasks[taskId].totalExecutionTime = 0;
         cfTasks[taskId].totalExecutionTime = 0;
-    } else {
-        return 0;
     }
 #endif
 }
