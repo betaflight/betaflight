@@ -37,7 +37,6 @@
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 
-#include "flight/failsafe.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/imu.h"
@@ -68,7 +67,6 @@
 #define navConfig(x) (&masterConfig.navConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define mixerConfig(x) (&masterConfig.mixerConfig)
-#define failsafeConfig(x) (&masterConfig.failsafeConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -148,7 +146,6 @@ typedef struct master_s {
     // mixer-related configuration
     mixerConfig_t mixerConfig;
 
-    failsafeConfig_t failsafeConfig;
     serialConfig_t serialConfig;
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;

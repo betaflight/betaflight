@@ -495,15 +495,6 @@ void createDefaultConfig(master_t *config)
 
     config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
-    // Failsafe Variables
-    config->failsafeConfig.failsafe_delay = 5;               // 0.5 sec
-    config->failsafeConfig.failsafe_recovery_delay = 5;      // 0.5 seconds (plus 200ms explicit delay)
-    config->failsafeConfig.failsafe_off_delay = 200;         // 20sec
-    config->failsafeConfig.failsafe_throttle = 1000;         // default throttle off.
-    config->failsafeConfig.failsafe_kill_switch = 0;         // default failsafe switch action is identical to rc link loss
-    config->failsafeConfig.failsafe_throttle_low_delay = 100;// default throttle low delay for "just disarm" on failsafe condition
-    config->failsafeConfig.failsafe_procedure = 0;           // default full failsafe procedure is 0: auto-landing, 1: drop, 2 : RTH
-
 #ifdef USE_SERVOS
     // servos
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -669,7 +660,7 @@ static void activateConfig(void)
     telemetryUseConfig(&masterConfig.telemetryConfig);
 #endif
 
-    useFailsafeConfig(&masterConfig.failsafeConfig);
+    failsafeReset();
 
     setAccelerationCalibrationValues();
     setAccelerationFilter();
