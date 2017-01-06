@@ -8,7 +8,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 
 Betaflight has the following features:
 
-* Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initilization Troubleshooting, etc)
+* Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
 * DShot (600, 300 and 150), Multishot, and Oneshot (125 and 42) motor protocol support
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
 * Support for targets that use the STM32 F7, F4, F3 and F1 processors
