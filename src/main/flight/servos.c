@@ -31,6 +31,9 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/system.h"
@@ -67,7 +70,6 @@ servoMixerConfig_t *servoMixerConfig;
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-static gimbalConfig_t *gimbalConfig;
 int16_t servo[MAX_SUPPORTED_SERVOS];
 static int servoOutputEnabled;
 
@@ -132,11 +134,13 @@ const mixerRules_t servoMixers[] = {
 
 static servoMixer_t *customServoMixers;
 
-void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse, gimbalConfig_t *gimbalConfigToUse)
+// no template required since default is zero
+PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
+
+void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse)
 {
     servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
-    gimbalConfig = gimbalConfigToUse;
 }
 
 int16_t getFlaperonDirection(uint8_t servoPin) {
@@ -417,7 +421,7 @@ void processServoTilt(void)
     servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
     if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
-        if (gimbalConfig->mode == GIMBAL_MODE_MIXTILT) {
+        if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
             servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
             servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
         } else {

@@ -18,7 +18,7 @@
 // FC configuration
 #define PG_FAILSAFE_CONFIG 1
 #define PG_BOARD_ALIGNMENT 2
-//#define PG_GIMBAL_CONFIG 3
+#define PG_GIMBAL_CONFIG 3
 //#define PG_MOTOR_MIXER 4
 //#define PG_BLACKBOX_CONFIG 5
 #define PG_MOTOR_CONFIG 6
