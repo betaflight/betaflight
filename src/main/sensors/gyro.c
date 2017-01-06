@@ -66,11 +66,7 @@
 
 gyro_t gyro;                      // gyro access functions
 
-#if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
-static volatile int32_t gyroADC[XYZ_AXIS_COUNT];
-#else
 static int32_t gyroADC[XYZ_AXIS_COUNT];
-#endif
 
 static int32_t gyroZero[XYZ_AXIS_COUNT] = { 0, 0, 0 };
 static const gyroConfig_t *gyroConfig;
