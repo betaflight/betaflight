@@ -36,9 +36,10 @@
 #include "fc/config.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
@@ -49,8 +50,8 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/transponder_ir.h"
+#include "io/vtx_smartaudio.h"
 
 #include "msp/msp_serial.h"
 
@@ -91,7 +92,7 @@ static void taskUpdateAccelerometer(timeUs_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    imuUpdateAccelerometer(&masterConfig.accelerometerTrims);
+    accUpdate(&accelerometerConfig()->accelerometerTrims);
 }
 
 static void taskHandleSerial(timeUs_t currentTimeUs)
@@ -110,8 +111,8 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 static void taskUpdateBattery(timeUs_t currentTimeUs)
 {
 #if defined(USE_ADC) || defined(USE_ESC_SENSOR)
-    static uint32_t vbatLastServiced = 0;
     if (feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) {
+        static uint32_t vbatLastServiced = 0;
         if (cmp32(currentTimeUs, vbatLastServiced) >= VBATINTERVAL) {
             vbatLastServiced = currentTimeUs;
             updateBattery();
@@ -119,8 +120,8 @@ static void taskUpdateBattery(timeUs_t currentTimeUs)
     }
 #endif
 
-    static uint32_t ibatLastServiced = 0;
     if (feature(FEATURE_CURRENT_METER) || feature(FEATURE_ESC_SENSOR)) {
+        static uint32_t ibatLastServiced = 0;
         const int32_t ibatTimeSinceLastServiced = cmp32(currentTimeUs, ibatLastServiced);
 
         if (ibatTimeSinceLastServiced >= IBATINTERVAL) {
@@ -203,6 +204,19 @@ static void taskTelemetry(timeUs_t currentTimeUs)
 }
 #endif
 
+#ifdef VTX_CONTROL
+// Everything that listens to VTX devices
+void taskVtxControl(uint32_t currentTime)
+{
+    if (ARMING_FLAG(ARMED))
+        return;
+
+#ifdef VTX_SMARTAUDIO
+    smartAudioProcess(currentTime);
+#endif
+}
+#endif
+
 void fcTasksInit(void)
 {
     schedulerInit();
@@ -280,6 +294,11 @@ void fcTasksInit(void)
 #endif
 #ifdef STACK_CHECK
     setTaskEnabled(TASK_STACK_CHECK, true);
+#endif
+#ifdef VTX_CONTROL
+#ifdef VTX_SMARTAUDIO
+    setTaskEnabled(TASK_VTXCTRL, true);
+#endif
 #endif
 }
 
@@ -464,6 +483,15 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "STACKCHECK",
         .taskFunc = taskStackCheck,
         .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+
+#ifdef VTX_CONTROL
+    [TASK_VTXCTRL] = {
+        .taskName = "VTXCTRL",
+        .taskFunc = taskVtxControl,
+        .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif

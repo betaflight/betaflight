@@ -63,16 +63,17 @@
 
 /* Periodically, the state of the buffer "UserTxBuffer" is checked.
    The period depends on CDC_POLLING_INTERVAL */
-#define CDC_POLLING_INTERVAL             1 /* in ms. The max is 65 and the min is 1 */
+#define CDC_POLLING_INTERVAL             10 /* in ms. The max is 65 and the min is 1 */
 
 extern USBD_CDC_ItfTypeDef  USBD_CDC_fops;
 
-uint8_t vcpRead();
-uint8_t vcpAvailable();
-uint32_t vcpWrite(const uint8_t* Buf, uint32_t Len);
-uint32_t vcpBaudrate();
-uint8_t vcpIsConnected();
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength);
 uint32_t CDC_Send_FreeBytes(void);
+uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len);
+uint32_t CDC_Receive_BytesAvailable(void);
+uint8_t usbIsConfigured(void);
+uint8_t usbIsConnected(void);
+uint32_t CDC_BaudRate(void);
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */

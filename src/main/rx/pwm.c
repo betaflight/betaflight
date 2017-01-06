@@ -25,13 +25,13 @@
 
 #if defined(USE_PWM) || defined(USE_PPM)
 
-#include "build/build_config.h"
+#include "drivers/rx_pwm.h"
 
-#include "drivers/pwm_rx.h"
-
-#include "fc/config.h"
+#include "common/utils.h"
 
 #include "config/feature.h"
+
+#include "fc/config.h"
 
 #include "rx/rx.h"
 #include "rx/pwm.h"

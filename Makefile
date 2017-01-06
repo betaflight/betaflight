@@ -76,13 +76,14 @@ LINKER_DIR      = $(ROOT)/src/main/target/link
 # Build tools, so we all share the same versions
 # import macros common to all supported build systems
 include $(ROOT)/make/system-id.mk
+
 # developer preferences, edit these at will, they'll be gitignored
-include $(ROOT)/make/local.mk
+-include $(ROOT)/make/local.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT)/tools
 BUILD_DIR := $(ROOT)/build
-DL_DIR := $(ROOT)/downloads
+DL_DIR    := $(ROOT)/downloads
 
 export RM := rm
 
@@ -102,7 +103,6 @@ SAMPLE_TARGETS  = ALIENFLIGHTF3 ALIENFLIGHTF4 ANYFCF7 BETAFLIGHTF3 BLUEJAYF4 CC3
 ALT_TARGETS     = $(sort $(filter-out target, $(basename $(notdir $(wildcard $(ROOT)/src/main/target/*/*.mk)))))
 OPBL_TARGETS    = $(filter %_OPBL, $(ALT_TARGETS))
 
-#VALID_TARGETS  = $(F1_TARGETS) $(F3_TARGETS) $(F4_TARGETS)
 VALID_TARGETS   = $(dir $(wildcard $(ROOT)/src/main/target/*/target.mk))
 VALID_TARGETS  := $(subst /,, $(subst ./src/main/target/,, $(VALID_TARGETS)))
 VALID_TARGETS  := $(VALID_TARGETS) $(ALT_TARGETS)
@@ -123,7 +123,7 @@ endif
 -include $(ROOT)/src/main/target/$(BASE_TARGET)/target.mk
 
 F4_TARGETS      = $(F405_TARGETS) $(F411_TARGETS)
-F7_TARGETS      = $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
+F7_TARGETS      = $(F7X2RE_TARGETS) $(F7X5XE_TARGETS) $(F7X5XG_TARGETS) $(F7X5XI_TARGETS) $(F7X6XG_TARGETS)
 
 ifeq ($(filter $(TARGET),$(VALID_TARGETS)),)
 $(error Target '$(TARGET)' is not valid, must be one of $(VALID_TARGETS). Have you prepared a valid target.mk?)
@@ -135,7 +135,7 @@ endif
 
 128K_TARGETS  = $(F1_TARGETS)
 256K_TARGETS  = $(F3_TARGETS)
-512K_TARGETS  = $(F411_TARGETS) $(F7X5XE_TARGETS)
+512K_TARGETS  = $(F411_TARGETS) $(F7X2RE_TARGETS) $(F7X5XE_TARGETS)
 1024K_TARGETS = $(F405_TARGETS) $(F7X5XG_TARGETS) $(F7X6XG_TARGETS)
 2048K_TARGETS = $(F7X5XI_TARGETS)
 
@@ -192,6 +192,7 @@ STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F30x_StdPeriph_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f30x_crc.c \
                   stm32f30x_can.c
+STARTUP_SRC     = startup_stm32f30x_md_gcc.S
 
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
@@ -256,12 +257,11 @@ EXCLUDES        = stm32f4xx_crc.c \
                   stm32f4xx_cryp_tdes.c \
                   stm32f4xx_hash_sha1.c
 
-
 ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
-EXCLUDES += stm32f4xx_fsmc.c
+EXCLUDES        += stm32f4xx_fsmc.c
 endif
 
-STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/STM32_USB_Device_Library/Core
@@ -312,9 +312,11 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -march=armv7e-m -mfloat-abi=hard -mfpu
 ifeq ($(TARGET),$(filter $(TARGET),$(F411_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F411xE
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f411.ld
+STARTUP_SRC     = startup_stm32f411xe.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F405_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F40_41xxx
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f405.ld
+STARTUP_SRC     = startup_stm32f40xx.s
 else
 $(error Unknown MCU for F4 target)
 endif
@@ -329,10 +331,10 @@ else ifeq ($(TARGET),$(filter $(TARGET), $(F7_TARGETS)))
 STDPERIPH_DIR   = $(ROOT)/lib/main/STM32F7xx_HAL_Driver
 STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/Src/*.c))
 EXCLUDES        = stm32f7xx_hal_timebase_rtc_wakeup_template.c \
-				  stm32f7xx_hal_timebase_rtc_alarm_template.c \
-				  stm32f7xx_hal_timebase_tim_template.c
+                  stm32f7xx_hal_timebase_rtc_alarm_template.c \
+                  stm32f7xx_hal_timebase_tim_template.c
 
-STDPERIPH_SRC := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
+STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 #USB
 USBCORE_DIR = $(ROOT)/lib/main/Middlewares/ST/STM32_USB_Device_Library/Core
@@ -376,15 +378,21 @@ ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fs
 ifeq ($(TARGET),$(filter $(TARGET),$(F7X5XG_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F745xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f745.ld
+STARTUP_SRC     = startup_stm32f745xx.s
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7X6XG_TARGETS)))
 DEVICE_FLAGS    = -DSTM32F746xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f746.ld
+STARTUP_SRC     = startup_stm32f746xx.s
+else ifeq ($(TARGET),$(filter $(TARGET),$(F7X2RE_TARGETS)))
+DEVICE_FLAGS    = -DSTM32F722xx -DUSE_HAL_DRIVER -D__FPU_PRESENT
+LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f722.ld
+STARTUP_SRC     = startup_stm32f722xx.s
 else
 $(error Unknown MCU for F7 target)
 endif
 DEVICE_FLAGS    += -DHSE_VALUE=$(HSE_VALUE)
 
-TARGET_FLAGS = -D$(TARGET)
+TARGET_FLAGS    = -D$(TARGET)
 
 # End F7 targets
 #
@@ -396,7 +404,7 @@ STDPERIPH_SRC   = $(notdir $(wildcard $(STDPERIPH_DIR)/src/*.c))
 EXCLUDES        = stm32f10x_crc.c \
                   stm32f10x_cec.c \
                   stm32f10x_can.c
-
+STARTUP_SRC     = startup_stm32f10x_md_gcc.S
 STDPERIPH_SRC   := $(filter-out ${EXCLUDES}, $(STDPERIPH_SRC))
 
 # Search path and source files for the CMSIS sources
@@ -505,8 +513,8 @@ COMMON_SRC = \
             drivers/rx_xn297.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -514,12 +522,15 @@ COMMON_SRC = \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
-            fc/fc_tasks.c \
+            fc/fc_init.c \
+            fc/fc_hardfaults.c \
+            fc/fc_main.c \
             fc/fc_msp.c \
-            fc/mw.c \
+            fc/fc_tasks.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/serial_cli.c \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -531,7 +542,6 @@ COMMON_SRC = \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/serial_cli.c \
             io/statusindicator.c \
             msp/msp_serial.c \
             rx/ibus.c \
@@ -578,7 +588,6 @@ HIGHEND_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
-            flight/gtune.c \
             flight/navigation.c \
             flight/gps_conversion.c \
             io/dashboard.c \
@@ -592,12 +601,14 @@ HIGHEND_SRC = \
             sensors/barometer.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
+            telemetry/srxl.c \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             sensors/esc_sensor.c \
+            io/vtx_smartaudio.c
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -622,8 +633,8 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
             drivers/pwm_output.c \
-            drivers/pwm_rx.c \
             drivers/rcc.c \
+            drivers/rx_pwm.c \
             drivers/serial.c \
             drivers/serial_uart.c \
             drivers/sound_beeper.c \
@@ -701,7 +712,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_ledstrip.c \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
-            cms/cms_menu_vtx.c
+            cms/cms_menu_vtx.c \
+            io/vtx_smartaudio.c
 endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
@@ -717,7 +729,7 @@ VCP_SRC = \
             vcp_hal/usbd_desc.c \
             vcp_hal/usbd_conf.c \
             vcp_hal/usbd_cdc_interface.c \
-            drivers/serial_usb_vcp_hal.c
+            drivers/serial_usb_vcp.c
 else
 VCP_SRC = \
             vcp/hw_config.c \
@@ -732,7 +744,6 @@ VCP_SRC = \
 endif
 
 STM32F10x_COMMON_SRC = \
-            startup_stm32f10x_md_gcc.S \
             drivers/adc_stm32f10x.c \
             drivers/bus_i2c_stm32f10x.c \
             drivers/dma.c \
@@ -744,7 +755,6 @@ STM32F10x_COMMON_SRC = \
             drivers/timer_stm32f10x.c
 
 STM32F30x_COMMON_SRC = \
-            startup_stm32f30x_md_gcc.S \
             target/system_stm32f30x.c \
             drivers/adc_stm32f30x.c \
             drivers/bus_i2c_stm32f30x.c \
@@ -757,7 +767,6 @@ STM32F30x_COMMON_SRC = \
             drivers/timer_stm32f30x.c
 
 STM32F4xx_COMMON_SRC = \
-            startup_stm32f40xx.s \
             target/system_stm32f4xx.c \
             drivers/accgyro_mpu.c \
             drivers/adc_stm32f4xx.c \
@@ -772,7 +781,6 @@ STM32F4xx_COMMON_SRC = \
             drivers/timer_stm32f4xx.c
 
 STM32F7xx_COMMON_SRC = \
-            startup_stm32f745xx.s \
             target/system_stm32f7xx.c \
             drivers/accgyro_mpu.c \
             drivers/adc_stm32f7xx.c \
@@ -784,7 +792,6 @@ STM32F7xx_COMMON_SRC = \
             drivers/pwm_output_stm32f7xx.c \
             drivers/timer_hal.c \
             drivers/timer_stm32f7xx.c \
-            drivers/pwm_output_hal.c \
             drivers/system_stm32f7xx.c \
             drivers/serial_uart_stm32f7xx.c \
             drivers/serial_uart_hal.c
@@ -792,18 +799,17 @@ STM32F7xx_COMMON_SRC = \
 F7EXCLUDES = drivers/bus_spi.c \
             drivers/bus_i2c.c \
             drivers/timer.c \
-            drivers/pwm_output.c \
             drivers/serial_uart.c
 
 # check if target.mk supplied
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))
-TARGET_SRC := $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
+TARGET_SRC := $(STARTUP_SRC) $(STM32F4xx_COMMON_SRC) $(TARGET_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F7_TARGETS)))
-TARGET_SRC := $(STM32F7xx_COMMON_SRC) $(TARGET_SRC)
+TARGET_SRC := $(STARTUP_SRC) $(STM32F7xx_COMMON_SRC) $(TARGET_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F3_TARGETS)))
-TARGET_SRC := $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
+TARGET_SRC := $(STARTUP_SRC) $(STM32F30x_COMMON_SRC) $(TARGET_SRC)
 else ifeq ($(TARGET),$(filter $(TARGET),$(F1_TARGETS)))
-TARGET_SRC := $(STM32F10x_COMMON_SRC) $(TARGET_SRC)
+TARGET_SRC := $(STARTUP_SRC) $(STM32F10x_COMMON_SRC) $(TARGET_SRC)
 endif
 
 ifneq ($(filter ONBOARDFLASH,$(FEATURES)),)

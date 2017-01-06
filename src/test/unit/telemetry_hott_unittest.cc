@@ -33,6 +33,7 @@ extern "C" {
 
     #include "sensors/sensors.h"
     #include "sensors/battery.h"
+    #include "sensors/barometer.h"
 
     #include "io/serial.h"
     #include "io/gps.h"
@@ -164,13 +165,15 @@ int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
 uint16_t GPS_altitude;              // altitude in 0.1m
-uint16_t vbat;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
+uint16_t vbat;
 
 int32_t amperage;
 int32_t mAhDrawn;
 
 uint32_t fixedMillis = 0;
+
+baro_t baro;
 
 uint32_t millis(void) {
     return fixedMillis;
@@ -253,5 +256,9 @@ batteryState_e getBatteryState(void)
 	return BATTERY_OK;
 }
 
+uint16_t getVbat(void)
+{
+    return vbat;
+}
 }
 

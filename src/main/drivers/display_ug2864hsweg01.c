@@ -26,7 +26,7 @@
 #include "display_ug2864hsweg01.h"
 
 #ifndef OLED_I2C_INSTANCE
-#define OLED_I2C_INSTANCE I2CDEV_1
+#define OLED_I2C_INSTANCE I2C_DEVICE
 #endif
 
 #define INVERSE_CHAR_FORMAT 0x7f // 0b01111111

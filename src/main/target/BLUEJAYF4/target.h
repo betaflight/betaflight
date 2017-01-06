@@ -19,6 +19,7 @@
 #define TARGET_BOARD_IDENTIFIER "BJF4"
 #define TARGET_CONFIG
 #define TARGET_VALIDATECONFIG
+#define TARGET_PREINIT
 
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
@@ -39,6 +40,8 @@
 
 #define INVERTER                PB15
 #define INVERTER_USART          USART6
+
+#define UART1_INVERTER          PC9
 
 // MPU6500 interrupt
 #define USE_EXTI
@@ -143,6 +146,7 @@
 
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
+#define CURRENT_METER_ADC_PIN   PC2
 
 #define USE_ESC_SENSOR
 #define LED_STRIP
@@ -159,10 +163,10 @@
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTA         	0xffff
+#define TARGET_IO_PORTB         	0xffff
+#define TARGET_IO_PORTC         	0xffff
+#define TARGET_IO_PORTD         	(BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USABLE_TIMER_CHANNEL_COUNT 	7
+#define USED_TIMERS               	( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )

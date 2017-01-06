@@ -51,8 +51,8 @@
 #define JEDEC_ID_WINBOND_W25Q128       0xEF4018
 #define JEDEC_ID_MACRONIX_MX25L25635E  0xC22019
 
-#define DISABLE_M25P16       IOHi(m25p16CsPin)
-#define ENABLE_M25P16        IOLo(m25p16CsPin)
+#define DISABLE_M25P16       IOHi(m25p16CsPin); __NOP()
+#define ENABLE_M25P16        __NOP(); IOLo(m25p16CsPin)
 
 // The timeout we expect between being able to issue page program instructions
 #define DEFAULT_TIMEOUT_MILLIS       6

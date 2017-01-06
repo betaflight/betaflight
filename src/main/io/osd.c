@@ -40,6 +40,9 @@
 #include "drivers/max7456_symbols.h"
 #include "drivers/display.h"
 #include "drivers/system.h"
+#ifdef USE_RTC6705
+#include "drivers/vtx_soft_spi_rtc6705.h"
+#endif
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"
@@ -47,6 +50,9 @@
 
 #include "io/flashfs.h"
 #include "io/osd.h"
+
+#include "io/vtx.h"
+
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -155,7 +161,7 @@ static void osdDrawSingleElement(uint8_t item)
         case OSD_MAIN_BATT_VOLTAGE:
         {
             buff[0] = SYM_BATT_5;
-            sprintf(buff + 1, "%d.%1dV", vbat / 10, vbat % 10);
+            sprintf(buff + 1, "%d.%1dV", getVbat() / 10, getVbat() % 10);
             break;
         }
 
@@ -251,7 +257,7 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
-#ifdef VTX
+#ifdef USE_RTC6705
         case OSD_VTX_CHANNEL:
         {
             sprintf(buff, "CH:%d", current_vtx_channel % CHANNELS_PER_BAND + 1);
@@ -354,6 +360,12 @@ static void osdDrawSingleElement(uint8_t item)
             break;
         }
 
+        case OSD_POWER:
+        {
+            sprintf(buff, "%dW", amperage * getVbat() / 1000);
+            break;
+        }
+
         default:
             return;
     }
@@ -396,6 +408,7 @@ void osdDrawElements(void)
     osdDrawSingleElement(OSD_ROLL_PIDS);
     osdDrawSingleElement(OSD_PITCH_PIDS);
     osdDrawSingleElement(OSD_YAW_PIDS);
+    osdDrawSingleElement(OSD_POWER);
 
 #ifdef GPS
 #ifdef CMS
@@ -430,6 +443,7 @@ void osdResetConfig(osd_profile_t *osdProfile)
     osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
     osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
+    osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
 
     osdProfile->rssi_alarm = 20;
     osdProfile->cap_alarm = 2200;
@@ -486,7 +500,7 @@ void osdUpdateAlarms(void)
     else
         pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
-    if (vbat <= (batteryWarningVoltage - 1))
+    if (getVbat() <= (batteryWarningVoltage - 1))
         pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
     else
         pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
@@ -542,8 +556,8 @@ static void osdUpdateStats(void)
     if (stats.max_speed < value)
         stats.max_speed = value;
 
-    if (stats.min_voltage > vbat)
-        stats.min_voltage = vbat;
+    if (stats.min_voltage > getVbat())
+        stats.min_voltage = getVbat();
 
     value = amperage / 100;
     if (stats.max_current < value)

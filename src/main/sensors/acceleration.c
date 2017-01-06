@@ -51,9 +51,10 @@
 
 #include "io/beeper.h"
 
-#include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
 
 #include "config/feature.h"
 
@@ -168,6 +169,9 @@ retry:
 #endif
         ; // fallthrough
     case ACC_MPU6500:
+    case ACC_ICM20608G:
+    case ACC_ICM20602:
+    case ACC_MPU9250:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
@@ -178,7 +182,19 @@ retry:
 #ifdef ACC_MPU6500_ALIGN
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
-            accHardware = ACC_MPU6500;
+            switch(dev->mpuDetectionResult.sensor) {
+            case MPU_9250_SPI:
+                accHardware = ACC_MPU9250;
+                break;
+            case ICM_20608_SPI:
+                accHardware = ACC_ICM20608G;
+                break;
+            case ICM_20602_SPI:
+                accHardware = ACC_ICM20602;
+                break;
+            default:        
+                accHardware = ACC_MPU6500;
+            }            
             break;
         }
 #endif
@@ -230,6 +246,9 @@ retry:
 bool accInit(const accelerometerConfig_t *accelerometerConfig, uint32_t gyroSamplingInverval)
 {
     memset(&acc, 0, sizeof(acc));
+    // copy over the common gyro mpu settings
+    acc.dev.mpuConfiguration = gyro.dev.mpuConfiguration;
+    acc.dev.mpuDetectionResult = gyro.dev.mpuDetectionResult;
     if (!accDetect(&acc.dev, accelerometerConfig->acc_hardware)) {
         return false;
     }
@@ -377,11 +396,12 @@ static void applyAccelerationTrims(const flightDynamicsTrims_t *accelerationTrim
     acc.accSmooth[Z] -= accelerationTrims->raw[Z];
 }
 
-void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
+void accUpdate(rollAndPitchTrims_t *rollAndPitchTrims)
 {
     if (!acc.dev.read(&acc.dev)) {
         return;
     }
+    acc.isAccelUpdatedAtLeastOnce = true;
 
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         DEBUG_SET(DEBUG_ACCELEROMETER, axis, acc.dev.ADCRaw[axis]);

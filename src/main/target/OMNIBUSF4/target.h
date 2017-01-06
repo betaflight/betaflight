@@ -43,11 +43,17 @@
 
 #define ACC
 #define USE_ACC_SPI_MPU6000
-#define GYRO_MPU6000_ALIGN      CW180_DEG
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
-#define ACC_MPU6000_ALIGN       CW180_DEG
+
+#ifdef OMNIBUSF4SD
+  #define GYRO_MPU6000_ALIGN      CW270_DEG
+  #define ACC_MPU6000_ALIGN       CW270_DEG
+#else
+  #define GYRO_MPU6000_ALIGN      CW180_DEG
+  #define ACC_MPU6000_ALIGN       CW180_DEG
+#endif
 
 // MPU6000 interrupts
 #define USE_EXTI
@@ -121,14 +127,13 @@
 #define UART6_TX_PIN            PC6
 
 #define USE_SOFTSERIAL1
-#define SOFTSERIAL1_RX_PIN      PC8 // S5_IN
-#define SOFTSERIAL1_TX_PIN      PC9 // S6_IN
+//#define SOFTSERIAL1_RX_PIN      PC8 // S5_IN (TIM8 CH3)
+//#define SOFTSERIAL1_TX_PIN      PC9 // S6_IN (TIM8 CH4)
 
 #define USE_SOFTSERIAL2
 // Special case of using different timers for RX and TX
-#define SOFTSERIAL2_RX_PIN      PA1 // PWM5, LED_STRIP
-#define SOFTSERIAL2_TX_PIN      PA8 // PWM6
-
+//#define SOFTSERIAL2_RX_PIN      PA1 // PWM5, LED_STRIP
+//#define SOFTSERIAL2_TX_PIN      PA8 // PWM6
 // Experimental (untested)
 //#define SOFTSERIAL2_RX_PIN      PA8 // PWM6
 //#define SOFTSERIAL2_TX_PIN      PB15 // S2_IN

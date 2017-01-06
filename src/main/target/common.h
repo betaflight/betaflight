@@ -17,6 +17,13 @@
 
 #pragma once
 
+// type conversion warnings.
+// -Wconversion can be turned on to enable the process of eliminating these warnings
+//#pragma GCC diagnostic warning "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+// -Wpadded can be turned on to check padding of structs
+//#pragma GCC diagnostic warning "-Wpadded"
+
 //#define SCHEDULER_DEBUG // define this to use scheduler debug[] values. Undefined by default for performance reasons
 #define DEBUG_MODE DEBUG_NONE // change this to change initial debug mode
 
@@ -25,6 +32,8 @@
 
 #ifdef STM32F7
 #define STM_FAST_TARGET
+#define I2C3_OVERCLOCK true
+#define I2C4_OVERCLOCK true
 #endif
 
 /****************************
@@ -87,10 +96,13 @@
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
 #define TELEMETRY_CRSF
+#define TELEMETRY_SRXL
 #define TELEMETRY_JETIEXBUS
 #define TELEMETRY_MAVLINK
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
+#define VTX_CONTROL
+#define VTX_SMARTAUDIO
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif

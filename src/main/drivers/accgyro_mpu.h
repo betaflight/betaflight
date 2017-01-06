@@ -121,16 +121,16 @@ typedef bool (*mpuReadRegisterFunc)(uint8_t reg, uint8_t length, uint8_t* data);
 typedef bool (*mpuWriteRegisterFunc)(uint8_t reg, uint8_t data);
 typedef void(*mpuResetFuncPtr)(void);
 
+extern mpuResetFuncPtr mpuReset;
+
 typedef struct mpuConfiguration_s {
-    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
     mpuReadRegisterFunc read;
     mpuWriteRegisterFunc write;
     mpuReadRegisterFunc slowread;
     mpuWriteRegisterFunc verifywrite;
     mpuResetFuncPtr reset;
+    uint8_t gyroReadXRegister; // Y and Z must registers follow this, 2 words each
 } mpuConfiguration_t;
-
-extern mpuConfiguration_t mpuConfiguration;
 
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
@@ -168,7 +168,9 @@ typedef enum {
     MPU_65xx_I2C,
     MPU_65xx_SPI,
     MPU_9250_SPI,
-    ICM_20689_SPI
+    ICM_20689_SPI,
+    ICM_20608_SPI,
+    ICM_20602_SPI
 } detectedMPUSensor_e;
 
 typedef enum {
@@ -181,13 +183,10 @@ typedef struct mpuDetectionResult_s {
     mpu6050Resolution_e resolution;
 } mpuDetectionResult_t;
 
-extern mpuDetectionResult_t mpuDetectionResult;
-
-void mpuConfigureDataReadyInterruptHandling(void);
 struct gyroDev_s;
 void mpuGyroInit(struct gyroDev_s *gyro);
 struct accDev_s;
 bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
-mpuDetectionResult_t *mpuDetect(const extiConfig_t *configToUse);
+mpuDetectionResult_t *mpuDetect(struct gyroDev_s *gyro);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);

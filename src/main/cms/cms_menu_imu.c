@@ -31,11 +31,11 @@
 
 #include "drivers/system.h"
 
-//#include "common/typeconversion.h"
-
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 #include "cms/cms_menu_imu.h"
+
+#include "common/utils.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -362,14 +362,13 @@ static OSD_Entry cmsx_menuImuEntries[] =
 
     {"PID PROF",  OME_UINT8,   cmsx_profileIndexOnChange,     &(OSD_UINT8_t){ &tmpProfileIndex, 1, MAX_PROFILE_COUNT, 1},    0},
     {"PID",       OME_Submenu, cmsMenuChange,                 &cmsx_menuPid,                                                 0},
-    {"OTHER PP",  OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
+    {"MISC PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuProfileOther,                                        0},
+    {"FILT PP",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
 
     {"RATE PROF", OME_UINT8,   cmsx_rateProfileIndexOnChange, &(OSD_UINT8_t){ &tmpRateProfileIndex, 1, MAX_RATEPROFILES, 1}, 0},
     {"RATE",      OME_Submenu, cmsMenuChange,                 &cmsx_menuRateProfile,                                         0},
 
-    {"FLT PP",    OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterPerProfile,                                    0},
-
-    {"FLT GLB",   OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
+    {"FILT GLB",  OME_Submenu, cmsMenuChange,                 &cmsx_menuFilterGlobal,                                        0},
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}

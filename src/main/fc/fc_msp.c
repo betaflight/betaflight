@@ -49,7 +49,7 @@
 #include "drivers/serial_escserial.h"
 
 #include "fc/config.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -262,10 +262,8 @@ static void serializeNames(sbuf_t *dst, const char *s)
 
 static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 {
-    uint8_t boxIndex;
-    const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->boxId == activeBoxId) {
             return candidate;
         }
@@ -275,10 +273,8 @@ static const box_t *findBoxByActiveBoxId(uint8_t activeBoxId)
 
 static const box_t *findBoxByPermenantId(uint8_t permenantId)
 {
-    uint8_t boxIndex;
-    const box_t *candidate;
-    for (boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
-        candidate = &boxes[boxIndex];
+    for (uint8_t boxIndex = 0; boxIndex < sizeof(boxes) / sizeof(box_t); boxIndex++) {
+        const box_t *candidate = &boxes[boxIndex];
         if (candidate->permanentId == permenantId) {
             return candidate;
         }
@@ -397,18 +393,12 @@ void initActiveBoxIds(void)
         activeBoxIds[activeBoxIdCount++] = BOXCALIB;
     }
 
-    if (feature(FEATURE_OSD)) {
-        activeBoxIds[activeBoxIdCount++] = BOXOSD;
-    }
+    activeBoxIds[activeBoxIdCount++] = BOXOSD;
 
 #ifdef TELEMETRY
     if (feature(FEATURE_TELEMETRY) && telemetryConfig()->telemetry_switch) {
         activeBoxIds[activeBoxIdCount++] = BOXTELEMETRY;
     }
-#endif
-
-#ifdef GTUNE
-    activeBoxIds[activeBoxIdCount++] = BOXGTUNE;
 #endif
 
 #ifdef USE_SERVOS
@@ -683,25 +673,25 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
     case MSP_SERVO_CONFIGURATIONS:
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            sbufWriteU16(dst, masterConfig.servoConf[i].min);
-            sbufWriteU16(dst, masterConfig.servoConf[i].max);
-            sbufWriteU16(dst, masterConfig.servoConf[i].middle);
-            sbufWriteU8(dst, masterConfig.servoConf[i].rate);
-            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMin);
-            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMax);
-            sbufWriteU8(dst, masterConfig.servoConf[i].forwardFromChannel);
-            sbufWriteU32(dst, masterConfig.servoConf[i].reversedSources);
+            sbufWriteU16(dst, servoProfile()->servoConf[i].min);
+            sbufWriteU16(dst, servoProfile()->servoConf[i].max);
+            sbufWriteU16(dst, servoProfile()->servoConf[i].middle);
+            sbufWriteU8(dst, servoProfile()->servoConf[i].rate);
+            sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMin);
+            sbufWriteU8(dst, servoProfile()->servoConf[i].angleAtMax);
+            sbufWriteU8(dst, servoProfile()->servoConf[i].forwardFromChannel);
+            sbufWriteU32(dst, servoProfile()->servoConf[i].reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
         for (int i = 0; i < MAX_SERVO_RULES; i++) {
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].targetChannel);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].inputSource);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].rate);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].speed);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].min);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].max);
-            sbufWriteU8(dst, masterConfig.customServoMixer[i].box);
+            sbufWriteU8(dst, customServoMixer(i)->targetChannel);
+            sbufWriteU8(dst, customServoMixer(i)->inputSource);
+            sbufWriteU8(dst, customServoMixer(i)->rate);
+            sbufWriteU8(dst, customServoMixer(i)->speed);
+            sbufWriteU8(dst, customServoMixer(i)->min);
+            sbufWriteU8(dst, customServoMixer(i)->max);
+            sbufWriteU8(dst, customServoMixer(i)->box);
         }
         break;
 #endif
@@ -747,7 +737,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ANALOG:
-        sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+        sbufWriteU8(dst, (uint8_t)constrain(getVbat(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
         if(batteryConfig()->multiwiiCurrentMeterOutput) {
@@ -797,7 +787,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_MODE_RANGES:
         for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             const box_t *box = &boxes[mac->modeId];
             sbufWriteU8(dst, box->permanentId);
             sbufWriteU8(dst, mac->auxChannelIndex);
@@ -808,7 +798,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_ADJUSTMENT_RANGES:
         for (int i = 0; i < MAX_ADJUSTMENT_RANGE_COUNT; i++) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             sbufWriteU8(dst, adjRange->adjustmentIndex);
             sbufWriteU8(dst, adjRange->auxChannelIndex);
             sbufWriteU8(dst, adjRange->range.startStep);
@@ -908,8 +898,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     // Additional commands that are not compatible with MultiWii
     case MSP_ACC_TRIM:
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.pitch);
-        sbufWriteU16(dst, masterConfig.accelerometerTrims.values.roll);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.pitch);
+        sbufWriteU16(dst, accelerometerConfig()->accelerometerTrims.values.roll);
         break;
 
     case MSP_UID:
@@ -1149,6 +1139,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->motorPwmRate);
+        sbufWriteU16(dst, (uint16_t)(motorConfig()->digitalIdleOffsetPercent * 100));
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1173,9 +1164,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, currentProfile->pidProfile.dtermSetpointWeight);
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
-        sbufWriteU8(dst, currentProfile->pidProfile.itermThrottleGain);
-        sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit);
-        sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit);
+        sbufWriteU8(dst, 0); // reserved
+        sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit * 10);
+        sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1289,8 +1282,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
         break;
     case MSP_SET_ACC_TRIM:
-        masterConfig.accelerometerTrims.values.pitch = sbufReadU16(src);
-        masterConfig.accelerometerTrims.values.roll  = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.pitch = sbufReadU16(src);
+        accelerometerConfig()->accelerometerTrims.values.roll  = sbufReadU16(src);
         break;
     case MSP_SET_ARMING_CONFIG:
         armingConfig()->auto_disarm_delay = sbufReadU8(src);
@@ -1316,7 +1309,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_MODE_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = &modeActivationProfile()->modeActivationConditions[i];
             i = sbufReadU8(src);
             const box_t *box = findBoxByPermenantId(i);
             if (box) {
@@ -1325,7 +1318,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
+                useRcControlsConfig(modeActivationProfile()->modeActivationConditions, &masterConfig.motorConfig, &currentProfile->pidProfile);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1337,7 +1330,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_ADJUSTMENT_RANGE:
         i = sbufReadU8(src);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *adjRange = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *adjRange = &adjustmentProfile()->adjustmentRanges[i];
             i = sbufReadU8(src);
             if (i < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT) {
                 adjRange->adjustmentIndex = i;
@@ -1420,20 +1413,19 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_SERVOS
         if (dataSize != 1 + sizeof(servoParam_t)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         i = sbufReadU8(src);
         if (i >= MAX_SUPPORTED_SERVOS) {
             return MSP_RESULT_ERROR;
         } else {
-            masterConfig.servoConf[i].min = sbufReadU16(src);
-            masterConfig.servoConf[i].max = sbufReadU16(src);
-            masterConfig.servoConf[i].middle = sbufReadU16(src);
-            masterConfig.servoConf[i].rate = sbufReadU8(src);
-            masterConfig.servoConf[i].angleAtMin = sbufReadU8(src);
-            masterConfig.servoConf[i].angleAtMax = sbufReadU8(src);
-            masterConfig.servoConf[i].forwardFromChannel = sbufReadU8(src);
-            masterConfig.servoConf[i].reversedSources = sbufReadU32(src);
+            servoProfile()->servoConf[i].min = sbufReadU16(src);
+            servoProfile()->servoConf[i].max = sbufReadU16(src);
+            servoProfile()->servoConf[i].middle = sbufReadU16(src);
+            servoProfile()->servoConf[i].rate = sbufReadU8(src);
+            servoProfile()->servoConf[i].angleAtMin = sbufReadU8(src);
+            servoProfile()->servoConf[i].angleAtMax = sbufReadU8(src);
+            servoProfile()->servoConf[i].forwardFromChannel = sbufReadU8(src);
+            servoProfile()->servoConf[i].reversedSources = sbufReadU32(src);
         }
 #endif
         break;
@@ -1444,13 +1436,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SERVO_RULES) {
             return MSP_RESULT_ERROR;
         } else {
-            masterConfig.customServoMixer[i].targetChannel = sbufReadU8(src);
-            masterConfig.customServoMixer[i].inputSource = sbufReadU8(src);
-            masterConfig.customServoMixer[i].rate = sbufReadU8(src);
-            masterConfig.customServoMixer[i].speed = sbufReadU8(src);
-            masterConfig.customServoMixer[i].min = sbufReadU8(src);
-            masterConfig.customServoMixer[i].max = sbufReadU8(src);
-            masterConfig.customServoMixer[i].box = sbufReadU8(src);
+            customServoMixer(i)->targetChannel = sbufReadU8(src);
+            customServoMixer(i)->inputSource = sbufReadU8(src);
+            customServoMixer(i)->rate = sbufReadU8(src);
+            customServoMixer(i)->speed = sbufReadU8(src);
+            customServoMixer(i)->min = sbufReadU8(src);
+            customServoMixer(i)->max = sbufReadU8(src);
+            customServoMixer(i)->box = sbufReadU8(src);
             loadCustomServoMixer();
         }
 #endif
@@ -1472,7 +1464,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RESET_CURR_PID:
         resetProfile(currentProfile);
         break;
-
     case MSP_SET_SENSOR_ALIGNMENT:
         gyroConfig()->gyro_align = sbufReadU8(src);
         accelerometerConfig()->acc_align = sbufReadU8(src);
@@ -1489,6 +1480,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
+        if (dataSize > 7) {
+            motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+        }
         break;
 
     case MSP_SET_FILTER_CONFIG:
@@ -1522,9 +1516,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         currentProfile->pidProfile.dtermSetpointWeight = sbufReadU8(src);
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        currentProfile->pidProfile.itermThrottleGain = sbufReadU8(src);
-        currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src);
-        currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src);
+        sbufReadU8(src); // reserved
+        currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src) / 10.0f;
+        currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src) / 10.0f;
+        if (dataSize > 17) {
+            currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
+            currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
+        }
         pidInitConfig(&currentProfile->pidProfile);
         break;
 
@@ -1574,7 +1572,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_TRANSPONDER_CONFIG:
         if (dataSize != sizeof(masterConfig.transponderData)) {
             return MSP_RESULT_ERROR;
-            break;
         }
         for (unsigned int i = 0; i < sizeof(masterConfig.transponderData); i++) {
             masterConfig.transponderData[i] = sbufReadU8(src);

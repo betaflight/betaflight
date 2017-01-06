@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 
 #include "platform.h"
 
@@ -36,18 +37,19 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/rx_spi.h"
-#include "drivers/serial.h"
+#include "drivers/io.h"
+#include "drivers/light_ws2811strip.h"
+#include "drivers/max7456.h"
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_output.h"
-#include "drivers/vcd.h"
-#include "drivers/max7456.h"
-#include "drivers/sound_beeper.h"
-#include "drivers/light_ws2811strip.h"
+#include "drivers/rx_pwm.h"
+#include "drivers/rx_spi.h"
 #include "drivers/sdcard.h"
+#include "drivers/serial.h"
+#include "drivers/sound_beeper.h"
+#include "drivers/system.h"
+#include "drivers/timer.h"
+#include "drivers/vcd.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -167,34 +169,21 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->yaw_p_limit = YAW_P_LIMIT_MAX;
     pidProfile->pidSumLimit = PIDSUM_LIMIT;
     pidProfile->yaw_lpf_hz = 0;
-    pidProfile->rollPitchItermIgnoreRate = 130;
-    pidProfile->yawItermIgnoreRate = 32;
+    pidProfile->rollPitchItermIgnoreRate = 200;
+    pidProfile->yawItermIgnoreRate = 55;
     pidProfile->dterm_filter_type = FILTER_BIQUAD;
     pidProfile->dterm_lpf_hz = 100;    // filtering ON by default
     pidProfile->dterm_notch_hz = 260;
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-
-    // Betaflight PID controller parameters
+    pidProfile->levelAngleLimit = 70;    // 70 degrees
+    pidProfile->levelSensitivity = 100;  // 100 degrees at full stick
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
-    pidProfile->yawRateAccelLimit = 220;
-    pidProfile->rateAccelLimit = 0;
-    pidProfile->itermThrottleGain = 0;
-    pidProfile->levelSensitivity = 2.0f;
-
-#ifdef GTUNE
-    pidProfile->gtune_lolimP[ROLL] = 10;          // [0..200] Lower limit of ROLL P during G tune.
-    pidProfile->gtune_lolimP[PITCH] = 10;         // [0..200] Lower limit of PITCH P during G tune.
-    pidProfile->gtune_lolimP[YAW] = 10;           // [0..200] Lower limit of YAW P during G tune.
-    pidProfile->gtune_hilimP[ROLL] = 100;         // [0..200] Higher limit of ROLL P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[PITCH] = 100;        // [0..200] Higher limit of PITCH P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_hilimP[YAW] = 100;          // [0..200] Higher limit of YAW P during G tune. 0 Disables tuning for that axis.
-    pidProfile->gtune_pwr = 0;                    // [0..10] Strength of adjustment
-    pidProfile->gtune_settle_time = 450;          // [200..1000] Settle time in ms
-    pidProfile->gtune_average_cycles = 16;        // [8..128] Number of looptime cycles used for gyro average calculation
-#endif
+    pidProfile->yawRateAccelLimit = 20.0f;
+    pidProfile->rateAccelLimit = 0.0f;
+    pidProfile->itermThrottleThreshold = 350;
 }
 
 void resetProfile(profile_t *profile)
@@ -407,6 +396,7 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
     telemetryConfig->telemetry_inversion = 1;
+    telemetryConfig->sportHalfDuplex = 1;
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -791,7 +781,6 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_sync_denom = 4;
     config->pidConfig.pid_process_denom = 2;
 #endif
-    config->pidConfig.max_angle_inclination = 700;    // 70 degrees
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
     config->gyroConfig.gyro_soft_lpf_hz = 90;
     config->gyroConfig.gyro_soft_notch_hz_1 = 400;
@@ -917,7 +906,7 @@ void createDefaultConfig(master_t *config)
 
     resetProfile(&config->profile[0]);
 
-    resetRollAndPitchTrims(&config->accelerometerTrims);
+    resetRollAndPitchTrims(&config->accelerometerConfig.accelerometerTrims);
 
     config->compassConfig.mag_declination = 0;
     config->accelerometerConfig.acc_lpf_hz = 10.0f;
@@ -953,13 +942,13 @@ void createDefaultConfig(master_t *config)
 #ifdef USE_SERVOS
     // servos
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        config->servoConf[i].min = DEFAULT_SERVO_MIN;
-        config->servoConf[i].max = DEFAULT_SERVO_MAX;
-        config->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        config->servoConf[i].rate = 100;
-        config->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        config->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        config->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
+        config->servoProfile.servoConf[i].min = DEFAULT_SERVO_MIN;
+        config->servoProfile.servoConf[i].max = DEFAULT_SERVO_MAX;
+        config->servoProfile.servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
+        config->servoProfile.servoConf[i].rate = 100;
+        config->servoProfile.servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
+        config->servoProfile.servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
+        config->servoProfile.servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
 
     // gimbal
@@ -1052,7 +1041,7 @@ void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(
-        masterConfig.modeActivationConditions,
+        modeActivationProfile()->modeActivationConditions,
         &masterConfig.motorConfig,
         &currentProfile->pidProfile
     );
@@ -1079,7 +1068,7 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig);
 #endif
 
 
@@ -1223,9 +1212,46 @@ void validateAndFixGyroConfig(void)
         gyroConfig()->gyro_soft_notch_hz_2 = 0;
     }
 
+    float samplingTime = 0.000125f;
+
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfig()->gyro_sync_denom = 1;
+        samplingTime = 0.001f;
+    }
+
+    // check for looptime restrictions based on motor protocol. Motor times have safety margin
+    const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
+    float motorUpdateRestriction;
+    switch(motorConfig()->motorPwmProtocol) {
+        case (PWM_TYPE_STANDARD):
+            motorUpdateRestriction = 0.002f;
+            break;
+        case (PWM_TYPE_ONESHOT125):
+            motorUpdateRestriction = 0.0005f;
+            break;
+        case (PWM_TYPE_ONESHOT42):
+            motorUpdateRestriction = 0.0001f;
+            break;
+        case (PWM_TYPE_DSHOT150):
+            motorUpdateRestriction = 0.000125f;
+            break;
+        case (PWM_TYPE_DSHOT300):
+            motorUpdateRestriction = 0.0000625f;
+            break;
+        default:
+            motorUpdateRestriction = 0.00003125f;
+    }
+
+    if(pidLooptime < motorUpdateRestriction)
+        pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
+
+    // Prevent overriding the max rate of motors
+    if(motorConfig()->useUnsyncedPwm) {
+        uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
+
+        if(motorConfig()->motorPwmRate > maxEscRate)
+            motorConfig()->motorPwmRate = maxEscRate;
     }
 }
 
@@ -1253,6 +1279,9 @@ void saveConfigAndNotify(void)
 
 void changeProfile(uint8_t profileIndex)
 {
+    if (profileIndex >= MAX_PROFILE_COUNT) {
+        profileIndex = MAX_PROFILE_COUNT - 1;
+    }
     masterConfig.current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
@@ -1261,7 +1290,7 @@ void changeProfile(uint8_t profileIndex)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (profileIndex > MAX_RATEPROFILES) {
+    if (profileIndex >= MAX_RATEPROFILES) {
         profileIndex = MAX_RATEPROFILES - 1;
     }
     setControlRateProfile(profileIndex);

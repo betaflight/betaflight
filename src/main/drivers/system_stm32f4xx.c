@@ -31,8 +31,9 @@ void SetSysClock(void);
 
 void systemReset(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
+    if (mpuReset) {
+        mpuReset();
+    }
 
     __disable_irq();
     NVIC_SystemReset();
@@ -40,8 +41,9 @@ void systemReset(void)
 
 void systemResetToBootloader(void)
 {
-    if (mpuConfiguration.reset)
-        mpuConfiguration.reset();
+    if (mpuReset) {
+        mpuReset();
+    }
 
     *((uint32_t *)0x2001FFFC) = 0xDEADBEEF; // 128KB SRAM STM32F4XX
 

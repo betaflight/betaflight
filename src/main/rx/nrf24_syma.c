@@ -124,7 +124,7 @@ static uint32_t hopTimeout = 10000; // 10ms
 STATIC_UNIT_TESTED bool symaCheckBindPacket(const uint8_t *packet)
 {
     bool bindPacket = false;
-    if (symaProtocol == NRF24RX_SYMA_X) {
+    if (symaProtocol == RX_SPI_NRF24_SYMA_X) {
         if ((packet[5] == 0xaa) && (packet[6] == 0xaa) && (packet[7] == 0xaa)) {
             bindPacket = true;
             rxTxAddr[4] = packet[0];
@@ -162,7 +162,7 @@ void symaNrf24SetRcDataFromPayload(uint16_t *rcData, const uint8_t *packet)
 {
     rcData[RC_SPI_THROTTLE] = symaConvertToPwmUnsigned(packet[0]); // throttle
     rcData[RC_SPI_ROLL] = symaConvertToPwmSigned(packet[3]); // aileron
-    if (symaProtocol == NRF24RX_SYMA_X) {
+    if (symaProtocol == RX_SPI_NRF24_SYMA_X) {
         rcData[RC_SPI_PITCH] = symaConvertToPwmSigned(packet[1]); // elevator
         rcData[RC_SPI_YAW] = symaConvertToPwmSigned(packet[2]); // rudder
         const uint8_t rate = (packet[5] & 0xc0) >> 6;
@@ -271,7 +271,7 @@ static void symaNrf24Setup(rx_spi_protocol_e protocol)
     NRF24L01_Initialize(BV(NRF24L01_00_CONFIG_EN_CRC) | BV( NRF24L01_00_CONFIG_CRCO)); // sets PWR_UP, EN_CRC, CRCO - 2 byte CRC
     NRF24L01_SetupBasic();
 
-    if (symaProtocol == NRF24RX_SYMA_X) {
+    if (symaProtocol == RX_SPI_NRF24_SYMA_X) {
         payloadSize = SYMA_X_PROTOCOL_PAYLOAD_SIZE;
         NRF24L01_WriteReg(NRF24L01_06_RF_SETUP, NRF24L01_06_RF_SETUP_RF_DR_250Kbps | NRF24L01_06_RF_SETUP_RF_PWR_n12dbm);
         protocolState = STATE_BIND;
