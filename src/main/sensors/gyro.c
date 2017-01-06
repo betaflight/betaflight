@@ -441,7 +441,9 @@ void gyroUpdate(void)
 
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
 
-        gyro.gyroADCf[axis] = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+        gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+
+        gyro.gyroADCf[axis] = gyroADCf;
 
         if (!calibrationComplete) {
             gyroADC[axis] = lrintf(gyro.gyroADCf[axis] / gyro.dev.scale);
