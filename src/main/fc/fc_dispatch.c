@@ -26,57 +26,26 @@
 #include "drivers/system.h"
 #include "fc/fc_dispatch.h"
 
-static dispatchTask_t *head = NULL;
+static dispatchEntry_t *head = NULL;
 
 void dispatchProcess(uint32_t currentTime)
 {
-    if (!head || currentTime < head->delayedUntil) {
-        return;
-    }
-
-    dispatchTask_t *current = head;
-    dispatchTask_t *previous = NULL;
-    while (current && current->delayedUntil < currentTime) {
-        if (current->ptr) {
-            (*current->ptr)();
-        }
-
-        /* remove item from list */
-        if (previous) {
-            previous->next = current->next;
-        } else {
-            head = current->next;
-        }     
-        current->delayedUntil = 0;
-        current = current->next;
+    for(dispatchEntry_t **p = &head; *p; ) {
+        if(cmp32(currentTime, (*p)->delayedUntil) < 0)
+            break;
+        // unlink entry first, so handler can replan self
+        dispatchEntry_t *current = *p;
+        *p = (*p)->next;
+        (*current->dispatch)(current);
     }
 }
 
-void dispatchAdd(dispatchTask_t *task)
+void dispatchAdd(dispatchEntry_t *entry, int delayUs)
 {
-    if (!task || task->delayedUntil) {
-        /* invalid or already in the list */
-        return;
-    }
-
-    task->next = NULL;
-    task->delayedUntil = micros() + task->minimumDelayUs;
-
-    if (!head) {
-        head = task;
-        return;
-    }
-
-    if (task->delayedUntil < head->delayedUntil) {
-        task->next = head;
-        head = task;
-        return;
-    }
-
-    dispatchTask_t *pos = head;
-    while (pos->next && pos->next->delayedUntil < task->delayedUntil) {
-        pos = pos->next;
-    }
-    task->next = pos->next;
-    pos->next = task;
+    uint32_t delayedUntil = micros() + delayUs;
+    dispatchEntry_t **p = &head;
+    while(*p && cmp32((*p)->delayedUntil, delayedUntil) < 0)
+        p = &(*p)->next;
+    entry->next = *p;
+    *p = entry;
 }

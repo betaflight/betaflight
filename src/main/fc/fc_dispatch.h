@@ -17,15 +17,14 @@
 
 #pragma once
 
-typedef void (*dispatchFuncPtr)(void);
+struct dispatchEntry_s;
+typedef void dispatchFunc(struct dispatchEntry_s* self);
 
-typedef struct dispatchTask_s {
-    dispatchFuncPtr ptr;
-    uint16_t minimumDelayUs;
-
+typedef struct dispatchEntry_s {
+    dispatchFunc *dispatch;
     uint32_t delayedUntil;
-    struct dispatchTask_s *next;
-} dispatchTask_t;
+    struct dispatchEntry_s *next;
+} dispatchEntry_t;
 
 void dispatchProcess(uint32_t currentTime);
-void dispatchAdd(dispatchTask_t *task);
+void dispatchAdd(dispatchEntry_t *entry, int delayUs);

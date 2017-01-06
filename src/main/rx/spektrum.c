@@ -85,7 +85,7 @@ static IO_t BindPlug = DEFIO_IO(NONE);
 static uint8_t telemetryBuf[SRXL_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
 
-void srxlRxSendTelemetryData(void);
+void srxlRxSendTelemetryDataDispatch(dispatchEntry_t *self);
 
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
@@ -113,7 +113,7 @@ static void spektrumDataReceive(uint16_t c)
 }
 
 static uint32_t spekChannelData[SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT];
-static dispatchTask_t srxlTelemetryTask = { .ptr = srxlRxSendTelemetryData, .minimumDelayUs = 100 };
+static dispatchEntry_t srxlTelemetryDispatch = { .dispatch = srxlRxSendTelemetryDataDispatch};
 
 static uint8_t spektrumFrameStatus(void)
 {
@@ -157,7 +157,7 @@ static uint8_t spektrumFrameStatus(void)
 
     /* only process if 2048, some data in buffer AND servos in phase 0 */
     if (spekHiRes && telemetryBufLen && (spekFrame[2] & 0x80)) {
-        dispatchAdd(&srxlTelemetryTask);
+        dispatchAdd(&srxlTelemetryDispatch, 100);
     }
     return RX_FRAME_COMPLETE;
 }
@@ -322,8 +322,9 @@ void srxlRxWriteTelemetryData(const void *data, int len)
     telemetryBufLen = len;
 }
 
-void srxlRxSendTelemetryData(void)
+void srxlRxSendTelemetryDataDispatch(dispatchEntry_t* self)
 {
+    UNUSED(self);
     // if there is telemetry data to write
     if (telemetryBufLen > 0) {
         serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
