@@ -48,7 +48,6 @@
 #include "io/gps.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/serial.h"
 #include "io/servos.h"
 
@@ -58,7 +57,6 @@
 
 #include "telemetry/telemetry.h"
 
-#define motorConfig(x) (&masterConfig.motorConfig)
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
@@ -99,7 +97,6 @@ typedef struct master_s {
 
     // motor/esc/servo related stuff
     motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-    motorConfig_t motorConfig;
     flight3DConfig_t flight3DConfig;
 
 #ifdef USE_SERVOS

@@ -39,6 +39,7 @@
 #include "flight/navigation_rewrite.h"
 
 #include "io/gps.h"
+#include "io/motors.h"
 
 #include "rx/rx.h"
 
@@ -192,7 +193,7 @@ void schedulePidGainsUpdate(void)
     pidGainsUpdateRequired = true;
 }
 
-void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const struct motorConfig_s *motorConfig)
+void updatePIDCoefficients(const pidProfile_t *pidProfile, const controlRateConfig_t *controlRateConfig, const motorConfig_t *motorConfig)
 {
     static uint16_t prevThrottle = 0;
 

@@ -109,7 +109,6 @@ extern bool motorLimitReached;
 struct motorConfig_s;
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
-        struct motorConfig_s *motorConfigToUse,
         mixerConfig_t *mixerConfigToUse);
 
 void writeAllMotors(int16_t mc);
