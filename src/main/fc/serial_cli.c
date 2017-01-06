@@ -563,6 +563,13 @@ static const clivalue_t valueTable[] = {
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_max_usec) },
 
+// PG_BLACKBOX_CONFIG
+#ifdef BLACKBOX
+    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  255 }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_num) },
+    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 1,  255 }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, rate_denom) },
+    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_BLACKBOX_DEVICE }, PG_BLACKBOX_CONFIG, offsetof(blackboxConfig_t, device) },
+#endif
+
 // PG_MOTOR_CONFIG
     { "min_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, minthrottle) },
     { "max_throttle",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_CONFIG, offsetof(motorConfig_t, maxthrottle) },
@@ -817,12 +824,6 @@ const clivalue_t valueTable[] = {
 
     { "rate_accel_limit_roll_pitch",VAR_UINT32 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.axisAccelerationLimitRollPitch, .config.minmax = {0, 500000 } },
     { "rate_accel_limit_yaw",       VAR_UINT32 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.axisAccelerationLimitYaw, .config.minmax = {0, 500000 } },
-
-#ifdef BLACKBOX
-    { "blackbox_rate_num",          VAR_UINT8  | MASTER_VALUE,  &blackboxConfig()->rate_num, .config.minmax = { 1,  32 } },
-    { "blackbox_rate_denom",        VAR_UINT8  | MASTER_VALUE,  &blackboxConfig()->rate_denom, .config.minmax = { 1,  32 } },
-    { "blackbox_device",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &blackboxConfig()->device, .config.lookup = { TABLE_BLACKBOX_DEVICE } },
-#endif
 
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },

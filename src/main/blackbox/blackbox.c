@@ -31,6 +31,9 @@
 #include "common/encoding.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/sensor.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
@@ -80,6 +83,22 @@
 #include "blackbox.h"
 #include "blackbox_io.h"
 
+#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_FLASH
+#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SDCARD
+#else
+#define DEFAULT_BLACKBOX_DEVICE BLACKBOX_DEVICE_SERIAL
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig, PG_BLACKBOX_CONFIG, 0);
+
+PG_RESET_TEMPLATE(blackboxConfig_t, blackboxConfig,
+    .device = DEFAULT_BLACKBOX_DEVICE,
+    .rate_num = 1,
+    .rate_denom = 1,
+);
+
 #ifndef BLACKBOX_PRINT_HEADER_LINE
 #define BLACKBOX_PRINT_HEADER_LINE(x, ...) case __COUNTER__: \
                                                 blackboxPrintfHeaderLine(x, __VA_ARGS__); \
@@ -92,8 +111,6 @@
 #define BLACKBOX_I_INTERVAL 32
 #define BLACKBOX_SHUTDOWN_TIMEOUT_MILLIS 200
 #define SLOW_FRAME_INTERVAL 4096
-
-#define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
 
 #define STATIC_ASSERT(condition, name ) \
     typedef char assert_failed_ ## name [(condition) ? 1 : -1 ]
@@ -130,7 +147,7 @@ typedef struct blackboxFieldDefinition_s {
     uint8_t arr[1];
 } blackboxFieldDefinition_t;
 
-#define BLACKBOX_DELTA_FIELD_HEADER_COUNT       ARRAY_LENGTH(blackboxFieldHeaderNames)
+#define BLACKBOX_DELTA_FIELD_HEADER_COUNT       ARRAYLEN(blackboxFieldHeaderNames)
 #define BLACKBOX_SIMPLE_FIELD_HEADER_COUNT      (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 #define BLACKBOX_CONDITIONAL_FIELD_HEADER_COUNT (BLACKBOX_DELTA_FIELD_HEADER_COUNT - 2)
 
@@ -1573,7 +1590,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
         break;
         case BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAY_LENGTH(blackboxMainFields),
+            if (!sendFieldDefinition('I', 'P', blackboxMainFields, blackboxMainFields + 1, ARRAYLEN(blackboxMainFields),
                     &blackboxMainFields[0].condition, &blackboxMainFields[1].condition)) {
 #ifdef GPS
                 if (feature(FEATURE_GPS)) {
@@ -1586,14 +1603,14 @@ void handleBlackbox(timeUs_t currentTimeUs)
 #ifdef GPS
         case BLACKBOX_STATE_SEND_GPS_H_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAY_LENGTH(blackboxGpsHFields),
+            if (!sendFieldDefinition('H', 0, blackboxGpsHFields, blackboxGpsHFields + 1, ARRAYLEN(blackboxGpsHFields),
                     NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_GPS_G_HEADER);
             }
         break;
         case BLACKBOX_STATE_SEND_GPS_G_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAY_LENGTH(blackboxGpsGFields),
+            if (!sendFieldDefinition('G', 0, blackboxGpsGFields, blackboxGpsGFields + 1, ARRAYLEN(blackboxGpsGFields),
                     &blackboxGpsGFields[0].condition, &blackboxGpsGFields[1].condition)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SLOW_HEADER);
             }
@@ -1601,7 +1618,7 @@ void handleBlackbox(timeUs_t currentTimeUs)
 #endif
         case BLACKBOX_STATE_SEND_SLOW_HEADER:
             //On entry of this state, xmitState.headerIndex is 0 and xmitState.u.fieldIndex is -1
-            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAY_LENGTH(blackboxSlowFields),
+            if (!sendFieldDefinition('S', 0, blackboxSlowFields, blackboxSlowFields + 1, ARRAYLEN(blackboxSlowFields),
                     NULL, NULL)) {
                 blackboxSetState(BLACKBOX_STATE_SEND_SYSINFO);
             }

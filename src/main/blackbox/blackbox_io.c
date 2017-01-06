@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "blackbox.h"
 #include "blackbox_io.h"
 
 #include "build/version.h"
@@ -79,7 +80,6 @@
 #include "fc/runtime_config.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 
 #include "io/flashfs.h"
 #include "io/asyncfatfs/asyncfatfs.h"
