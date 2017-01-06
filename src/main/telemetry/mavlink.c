@@ -301,9 +301,9 @@ void mavlinkSendPosition(timeUs_t currentTimeUs)
         // alt Altitude in 1E3 meters (millimeters) above MSL
         gpsSol.llh.alt * 10,
         // eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.eph,
         // epv GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-        65535,
+        gpsSol.epv,
         // vel GPS ground speed (m/s * 100). If unknown, set to: 65535
         gpsSol.groundSpeed,
         // cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
