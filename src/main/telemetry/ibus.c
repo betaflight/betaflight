@@ -288,7 +288,7 @@ static void dispatchMeasurementReply(ibusAddress_t address)
     
     switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
-        value = vbat * 10;
+        value = getVbat() * 10;
         if (ibusTelemetryConfig()->report_cell_voltage) {
             value /= batteryCellCount;
         }
