@@ -3247,7 +3247,7 @@ static void cliTasks(char *cmdline)
                     cliPrintf("%02d - (%9s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
-                taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+                taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
             }
             const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
