@@ -335,7 +335,7 @@ void init(void)
     #endif
 
     #ifdef USE_I2C
-        i2cInit(I2C_DEVICE);
+        i2cInitAll(i2cPinConfig());
     #endif
 #endif
 
