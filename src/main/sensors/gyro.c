@@ -400,9 +400,16 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
+#if defined(MPU_INT_EXTI)
     if (!gyro.dev.dataReady || !gyro.dev.read(&gyro.dev)) {
         return;
     }
+#else
+    if (!gyro.dev.read(&gyro.dev)) {
+        return;
+    }
+#endif
+
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
 #if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
