@@ -186,6 +186,23 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
     }
 }
 
+void schedulerResetTaskStatistics(cfTaskId_e taskId)
+{
+#ifdef SKIP_TASK_STATISTICS
+    UNUSED(taskId);
+#else
+    if (taskId == TASK_SELF) {
+        currentTask->movingSumExecutionTime = 0;
+        currentTask->totalExecutionTime = 0;
+        currentTask->maxExecutionTime = 0;
+    } else if (taskId < TASK_COUNT) {
+        cfTasks[taskId].movingSumExecutionTime = 0;
+        cfTasks[taskId].totalExecutionTime = 0;
+        cfTasks[taskId].totalExecutionTime = 0;
+    }
+#endif
+}
+
 void schedulerInit(void)
 {
     queueClear();

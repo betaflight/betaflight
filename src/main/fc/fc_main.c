@@ -43,6 +43,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -50,7 +51,6 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -157,7 +157,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcDeflection[axis]) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcDeflectionAbs[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;

@@ -169,6 +169,9 @@ retry:
 #endif
         ; // fallthrough
     case ACC_MPU6500:
+    case ACC_ICM20608G:
+    case ACC_ICM20602:
+    case ACC_MPU9250:
 #if defined(USE_ACC_MPU6500) || defined(USE_ACC_SPI_MPU6500)
 #ifdef USE_ACC_SPI_MPU6500
         if (mpu6500AccDetect(dev) || mpu6500SpiAccDetect(dev))
@@ -179,7 +182,19 @@ retry:
 #ifdef ACC_MPU6500_ALIGN
             dev->accAlign = ACC_MPU6500_ALIGN;
 #endif
-            accHardware = ACC_MPU6500;
+            switch(dev->mpuDetectionResult.sensor) {
+            case MPU_9250_SPI:
+                accHardware = ACC_MPU9250;
+                break;
+            case ICM_20608_SPI:
+                accHardware = ACC_ICM20608G;
+                break;
+            case ICM_20602_SPI:
+                accHardware = ACC_ICM20602;
+                break;
+            default:        
+                accHardware = ACC_MPU6500;
+            }            
             break;
         }
 #endif

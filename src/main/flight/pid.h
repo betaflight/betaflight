@@ -72,7 +72,8 @@ typedef struct pidProfile_s {
     uint8_t dterm_average_count;            // Configurable delta count for dterm
     uint8_t vbatPidCompensation;            // Scale PIDsum to battery voltage
     uint8_t pidAtMinThrottle;               // Disable/Enable pids on zero throttle. Normally even without airmode P and D would be active.
-    float levelAngleLimit;
+    uint8_t levelAngleLimit;                // Max angle in degrees in level mode
+    uint8_t levelSensitivity;               // Angle mode sensitivity reflected in degrees assuming user using full stick
 
     // Betaflight PID controller parameters
     uint16_t itermThrottleThreshold;        // max allowed throttle delta before errorGyroReset in ms
@@ -80,7 +81,6 @@ typedef struct pidProfile_s {
     uint8_t dtermSetpointWeight;            // Setpoint weight for Dterm (0= measurement, 1= full error, 1 > agressive derivative)
     float yawRateAccelLimit;                // yaw accel limiter for deg/sec/ms
     float rateAccelLimit;                   // accel limiter roll/pitch deg/sec/ms
-    float levelSensitivity;
 } pidProfile_t;
 
 typedef struct pidConfig_s {
