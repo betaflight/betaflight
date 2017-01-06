@@ -223,6 +223,8 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         idlePulse = 0;
         break;
 #ifdef USE_DSHOT
+    case PWM_TYPE_DSHOT1200:
+    case PWM_TYPE_DSHOT900:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:

@@ -30,16 +30,6 @@
 
 #ifdef USE_DSHOT
 
-#define MAX_DMA_TIMERS 8
-
-#define MOTOR_DSHOT600_MHZ    12
-#define MOTOR_DSHOT300_MHZ    6
-#define MOTOR_DSHOT150_MHZ    3
-
-#define MOTOR_BIT_0     7
-#define MOTOR_BIT_1     14
-#define MOTOR_BITLENGTH 19
-
 static uint8_t dmaMotorTimerCount = 0;
 static motorDmaTimer_t dmaMotorTimers[MAX_DMA_TIMERS];
 static motorDmaOutput_t dmaMotors[MAX_SUPPORTED_MOTORS];

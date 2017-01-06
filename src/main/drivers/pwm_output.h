@@ -30,10 +30,26 @@ typedef enum {
     PWM_TYPE_DSHOT600,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT150,
+    PWM_TYPE_DSHOT900,
+    PWM_TYPE_DSHOT1200,
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
 #define PWM_TIMER_MHZ         1
+
+#ifdef USE_DSHOT
+#define MAX_DMA_TIMERS        8
+
+#define MOTOR_DSHOT1200_MHZ   24
+#define MOTOR_DSHOT900_MHZ    18
+#define MOTOR_DSHOT600_MHZ    12
+#define MOTOR_DSHOT300_MHZ    6
+#define MOTOR_DSHOT150_MHZ    3
+
+#define MOTOR_BIT_0           7
+#define MOTOR_BIT_1           14
+#define MOTOR_BITLENGTH       19
+#endif
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
