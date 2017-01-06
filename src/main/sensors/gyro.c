@@ -445,16 +445,14 @@ void gyroUpdate(void)
         // scale gyro output to degrees per second
         float gyroADCf = (float)gyroADC[axis] * gyro.dev.scale;
 
+        // Apply LPF
         DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
-
         gyroADCf = softLpfFilterApplyFn(softLpfFilter[axis], gyroADCf);
 
+        // Apply Notch filtering
         DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
-
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
-
         gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
-
         gyro.gyroADCf[axis] = gyroADCf;
 
         if (!calibrationComplete) {
