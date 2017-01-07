@@ -43,7 +43,6 @@
 #define STM_FAST_TARGET
 #define USE_DSHOT
 #define I2C3_OVERCLOCK true
-#define GPS
 #endif
 
 #ifdef STM32F3
@@ -82,6 +81,7 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
+#define GPS
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
