@@ -86,6 +86,7 @@
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ibusTelemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ppmConfig(x) (&masterConfig.ppmConfig)
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)

@@ -79,8 +79,6 @@ static portSharing_e frskyPortSharing;
 
 extern batteryConfig_t *batteryConfig;
 
-extern int16_t telemTemperature1; // FIXME dependency on mw.c
-
 #define CYCLETIME             125
 
 #define PROTOCOL_HEADER       0x5E
