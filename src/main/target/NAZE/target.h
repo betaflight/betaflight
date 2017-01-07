@@ -49,6 +49,7 @@
 
 #define USE_EXTI
 #define MAG_INT_EXTI            PC14
+#define MPU_INT_EXTI            PC13
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 //#define DEBUG_MAG_DATA_READY_INTERRUPT

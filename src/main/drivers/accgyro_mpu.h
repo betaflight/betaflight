@@ -18,6 +18,13 @@
 #pragma once
 
 #include "exti.h"
+#include "sensor.h"
+
+//#define DEBUG_MPU_DATA_READY_INTERRUPT
+
+#if defined(USE_GYRO_SPI_MPU6500) || defined(USE_GYRO_SPI_MPU6000) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
+#define GYRO_USES_SPI
+#endif
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
@@ -190,3 +197,5 @@ bool mpuAccRead(struct accDev_s *acc);
 bool mpuGyroRead(struct gyroDev_s *gyro);
 mpuDetectionResult_t *mpuDetect(struct gyroDev_s *gyro);
 bool mpuCheckDataReady(struct gyroDev_s *gyro);
+void mpuGyroSetIsrUpdate(struct gyroDev_s *gyro, sensorGyroUpdateFuncPtr updateFn);
+

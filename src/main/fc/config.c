@@ -1008,6 +1008,9 @@ void createDefaultConfig(master_t *config)
 
     resetStatusLedConfig(&config->statusLedConfig);
 
+    /* merely to force a reset if the person inadvertently flashes the wrong target */
+    strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));
+    
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
@@ -1213,6 +1216,18 @@ void validateAndFixGyroConfig(void)
     }
 
     float samplingTime = 0.000125f;
+
+    if (gyroConfig()->gyro_use_32khz) {
+#ifdef GYRO_SUPPORTS_32KHZ
+        samplingTime = 0.00003125;
+#else
+        gyroConfig()->gyro_use_32khz = false;
+#endif
+    }
+
+#if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
+    gyroConfig()->gyro_isr_update = false;
+#endif
 
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed

@@ -142,6 +142,9 @@ bool isEEPROMContentValid(void)
     if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
         return false;
 
+    if (strncasecmp(temp->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER)))
+        return false;
+
     // verify integrity of temporary copy
     checksum = calculateChecksum((const uint8_t *) temp, sizeof(master_t));
     if (checksum != 0)

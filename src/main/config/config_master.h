@@ -243,6 +243,7 @@ typedef struct master_s {
     uint32_t preferred_beeper_off_flags;
 
     char name[MAX_NAME_LENGTH + 1];
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
