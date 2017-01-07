@@ -324,12 +324,6 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
     rcControlsConfig->alt_hold_deadband = 50;
 }
 
-static void resetMixerConfig(mixerConfig_t *mixerConfig)
-{
-    mixerConfig->yaw_motor_direction = 1;
-    mixerConfig->yaw_jump_prevention_limit = 200;
-}
-
 #ifdef USE_SERVOS
 static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 {
@@ -385,7 +379,6 @@ void createDefaultConfig(master_t *config)
     memset(config, 0, sizeof(master_t));
 
     config->version = EEPROM_CONF_VERSION;
-    config->mixerConfig.mixerMode = MIXER_QUADX;
 
     uint32_t *featuresPtr = &config->enabledFeatures;
     intFeatureClearAll(featuresPtr);
@@ -424,7 +417,6 @@ void createDefaultConfig(master_t *config)
     config->armingConfig.disarm_kill_switch = 1;
     config->armingConfig.auto_disarm_delay = 5;
 
-    resetMixerConfig(&config->mixerConfig);
 #ifdef USE_SERVOS
     resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
@@ -632,7 +624,7 @@ static void activateConfig(void)
     setAccelerationCalibrationValues();
     setAccelerationFilter();
 
-    mixerUseConfigs(&masterConfig.flight3DConfig, &masterConfig.mixerConfig);
+    mixerUseConfigs(&masterConfig.flight3DConfig);
 #ifdef USE_SERVOS
     servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif

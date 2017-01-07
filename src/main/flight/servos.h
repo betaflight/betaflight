@@ -96,14 +96,6 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
-// Custom mixer configuration
-typedef struct mixerRules_s {
-    uint8_t servoRuleCount;
-    uint8_t minServoIndex;
-    uint8_t maxServoIndex;
-    const servoMixer_t *rule;
-} mixerRules_t;
-
 typedef struct servoParam_s {
     int16_t min;                            // servo min
     int16_t max;                            // servo max

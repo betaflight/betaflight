@@ -65,8 +65,6 @@
 #define navConfigMutable(x) (&masterConfig.navConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define armingConfigMutable(x) (&masterConfig.armingConfig)
-#define mixerConfig(x) (&masterConfig.mixerConfig)
-#define mixerConfigMutable(x) (&masterConfig.mixerConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define serialConfigMutable(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
@@ -138,9 +136,6 @@ typedef struct master_s {
     pwmRxConfig_t pwmRxConfig;
 
     armingConfig_t armingConfig;
-
-    // mixer-related configuration
-    mixerConfig_t mixerConfig;
 
     serialConfig_t serialConfig;
 #ifdef TELEMETRY

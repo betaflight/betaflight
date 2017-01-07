@@ -74,7 +74,7 @@
 
 void targetConfiguration(master_t *config)
 {
-    config->mixerConfig.mixerMode = MIXER_HEX6X;
+    mixerConfigMutable()->mixerMode = MIXER_HEX6X;
     rxConfigMutable()->serialrx_provider = 2;
     featureSet(FEATURE_RX_SERIAL);
     config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;

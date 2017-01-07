@@ -90,7 +90,7 @@ void targetConfiguration(master_t *config)
     featureSet(FEATURE_FAILSAFE);
 
     config->serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
-    if(featureConfigured(FEATURE_RX_SERIAL)) {
+    if (featureConfigured(FEATURE_RX_SERIAL)) {
         config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 }
