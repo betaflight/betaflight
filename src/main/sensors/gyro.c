@@ -391,7 +391,8 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
         float gyroADCf = (float)gyroADC[axis] * gyroDev->scale;
         gyroADCf = softLpfFilterApplyFn(softLpfFilter[axis], gyroADCf);
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
-        gyro.gyroADCf[axis] = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+        gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+        gyro.gyroADCf[axis] = gyroADCf;
     }
     return true;
 }
@@ -400,9 +401,16 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
+#if defined(MPU_INT_EXTI)
     if (!gyro.dev.dataReady || !gyro.dev.read(&gyro.dev)) {
         return;
     }
+#else
+    if (!gyro.dev.read(&gyro.dev)) {
+        return;
+    }
+#endif
+
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
 #if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
@@ -433,15 +441,15 @@ void gyroUpdate(void)
         // scale gyro output to degrees per second
         float gyroADCf = (float)gyroADC[axis] * gyro.dev.scale;
 
+        // Apply LPF
         DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
-
         gyroADCf = softLpfFilterApplyFn(softLpfFilter[axis], gyroADCf);
 
+        // Apply Notch filtering
         DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
-
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
-
-        gyro.gyroADCf[axis] = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+        gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
+        gyro.gyroADCf[axis] = gyroADCf;
 
         if (!calibrationComplete) {
             gyroADC[axis] = lrintf(gyro.gyroADCf[axis] / gyro.dev.scale);

@@ -703,11 +703,10 @@ void subTaskPidController(void)
 
 void subTaskMainSubprocesses(void)
 {
-
     const uint32_t startTime = micros();
 
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature) {
+    // Read out gyro temperature if used for telemmetry
+    if (feature(FEATURE_TELEMETRY) && gyro.dev.temperature) {
         gyro.dev.temperature(&gyro.dev, &telemTemperature1);
     }
 
@@ -715,10 +714,6 @@ void subTaskMainSubprocesses(void)
         if (sensors(SENSOR_MAG)) {
             updateMagHold();
         }
-#endif
-
-#ifdef GTUNE
-        updateGtuneState();
 #endif
 
 #if defined(BARO) || defined(SONAR)

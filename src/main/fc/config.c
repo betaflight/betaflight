@@ -1063,6 +1063,10 @@ void validateAndFixGyroConfig(void)
 #endif
     }
 
+#if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
+    gyroConfig()->gyro_isr_update = false;
+#endif
+
     if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
         pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
         gyroConfig()->gyro_sync_denom = 1;
