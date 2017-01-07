@@ -956,20 +956,18 @@ static int gcd(int num, int denom)
 
 static void validateBlackboxConfig()
 {
-    int div;
-
     if (blackboxConfig()->rate_num == 0 || blackboxConfig()->rate_denom == 0
             || blackboxConfig()->rate_num >= blackboxConfig()->rate_denom) {
-        blackboxConfig()->rate_num = 1;
-        blackboxConfig()->rate_denom = 1;
+        blackboxConfigMutable()->rate_num = 1;
+        blackboxConfigMutable()->rate_denom = 1;
     } else {
         /* Reduce the fraction the user entered as much as possible (makes the recorded/skipped frame pattern repeat
          * itself more frequently)
          */
-        div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
+        const int div = gcd(blackboxConfig()->rate_num, blackboxConfig()->rate_denom);
 
-        blackboxConfig()->rate_num /= div;
-        blackboxConfig()->rate_denom /= div;
+        blackboxConfigMutable()->rate_num /= div;
+        blackboxConfigMutable()->rate_denom /= div;
     }
 
     // If we've chosen an unsupported device, change the device to serial
@@ -985,7 +983,7 @@ static void validateBlackboxConfig()
         break;
 
         default:
-            blackboxConfig()->device = BLACKBOX_DEVICE_SERIAL;
+            blackboxConfigMutable()->device = BLACKBOX_DEVICE_SERIAL;
     }
 }
 

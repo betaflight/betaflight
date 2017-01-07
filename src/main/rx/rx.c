@@ -122,8 +122,8 @@ void resetAllRxChannelRangeConfigurations(void)
 {
     // set default calibration to full range and 1:1 mapping
     for (int i = 0; i < NON_AUX_CHANNEL_COUNT; i++) {
-        rxChannelRangeConfigs(i)->min = PWM_RANGE_MIN;
-        rxChannelRangeConfigs(i)->max = PWM_RANGE_MAX;
+        rxChannelRangeConfigsMutable(i)->min = PWM_RANGE_MIN;
+        rxChannelRangeConfigsMutable(i)->max = PWM_RANGE_MAX;
     }
 }
 
@@ -523,7 +523,7 @@ static uint16_t getRxfailValue(uint8_t channel)
     }
 }
 
-STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, rxChannelRangeConfig_t *range)
+STATIC_UNIT_TESTED uint16_t applyRxChannelRangeConfiguraton(int sample, const rxChannelRangeConfig_t *range)
 {
     // Avoid corruption of channel with a value of PPM_RCVR_TIMEOUT
     if (sample == PPM_RCVR_TIMEOUT) {
@@ -639,12 +639,10 @@ void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
 void parseRcChannels(const char *input)
 {
-    const char *c, *s;
-
-    for (c = input; *c; c++) {
-        s = strchr(rcChannelLetters, *c);
+    for (const char *c = input; *c; c++) {
+        const char *s = strchr(rcChannelLetters, *c);
         if (s && (s < rcChannelLetters + MAX_MAPPABLE_RX_INPUTS))
-            rxConfig()->rcmap[s - rcChannelLetters] = c - input;
+            rxConfigMutable()->rcmap[s - rcChannelLetters] = c - input;
     }
 }
 

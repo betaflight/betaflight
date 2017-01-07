@@ -358,7 +358,7 @@ void performAcclerationCalibration(void)
         sensorCalibrationSolveForOffset(&calState, accTmp);
 
         for (int axis = 0; axis < 3; axis++) {
-            accelerometerConfig()->accZero.raw[axis] = lrintf(accTmp[axis]);
+            accelerometerConfigMutable()->accZero.raw[axis] = lrintf(accTmp[axis]);
         }
 
         /* Not we can offset our accumulated averages samples and calculate scale factors and calculate gains */
@@ -375,7 +375,7 @@ void performAcclerationCalibration(void)
         sensorCalibrationSolveForScale(&calState, accTmp);
 
         for (int axis = 0; axis < 3; axis++) {
-            accelerometerConfig()->accGain.raw[axis] = lrintf(accTmp[axis] * 4096);
+            accelerometerConfigMutable()->accGain.raw[axis] = lrintf(accTmp[axis] * 4096);
         }
 
         saveConfigAndNotify();

@@ -72,18 +72,18 @@
 
 #include "config/config_master.h"
 
-void targetConfiguration(struct master_s *config)
+void targetConfiguration(master_t *config)
 {
-    gyroConfig()->looptime = 1000;
+    gyroConfigMutable()->looptime = 1000;
 
-    rxConfig()->rcmap[0] = 1;
-    rxConfig()->rcmap[1] = 2;
-    rxConfig()->rcmap[2] = 3;
-    rxConfig()->rcmap[3] = 0;
-    rxConfig()->rcmap[4] = 4;
-    rxConfig()->rcmap[5] = 5;
-    rxConfig()->rcmap[6] = 6;
-    rxConfig()->rcmap[7] = 7;
+    rxConfigMutable()->rcmap[0] = 1;
+    rxConfigMutable()->rcmap[1] = 2;
+    rxConfigMutable()->rcmap[2] = 3;
+    rxConfigMutable()->rcmap[3] = 0;
+    rxConfigMutable()->rcmap[4] = 4;
+    rxConfigMutable()->rcmap[5] = 5;
+    rxConfigMutable()->rcmap[6] = 6;
+    rxConfigMutable()->rcmap[7] = 7;
 
     featureSet(FEATURE_VBAT);
     featureSet(FEATURE_LED_STRIP);

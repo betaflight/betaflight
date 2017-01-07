@@ -78,25 +78,25 @@ bool sensorsAutodetect(void)
 #endif
 
     if (accelerometerConfig()->acc_hardware == ACC_AUTODETECT) {
-        accelerometerConfig()->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
+        accelerometerConfigMutable()->acc_hardware = detectedSensors[SENSOR_INDEX_ACC];
         eepromUpdatePending = true;
     }
 
 #ifdef BARO
     if (barometerConfig()->baro_hardware == BARO_AUTODETECT) {
-        barometerConfig()->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
+        barometerConfigMutable()->baro_hardware = detectedSensors[SENSOR_INDEX_BARO];
         eepromUpdatePending = true;
     }
 #endif
 
     if (compassConfig()->mag_hardware == MAG_AUTODETECT) {
-        compassConfig()->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
+        compassConfigMutable()->mag_hardware = detectedSensors[SENSOR_INDEX_MAG];
         eepromUpdatePending = true;
     }
 
 #ifdef PITOT
     if (pitotmeterConfig()->pitot_hardware == PITOT_AUTODETECT) {
-        pitotmeterConfig()->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
+        pitotmeterConfigMutable()->pitot_hardware = detectedSensors[SENSOR_INDEX_PITOT];
         eepromUpdatePending = true;
     }
 #endif

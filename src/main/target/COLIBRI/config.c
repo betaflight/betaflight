@@ -72,10 +72,10 @@
 
 #include "config/config_master.h"
 
-void targetConfiguration(struct master_s *config)
+void targetConfiguration(master_t *config)
 {
     config->mixerConfig.mixerMode = MIXER_HEX6X;
-    rxConfig()->serialrx_provider = 2;
+    rxConfigMutable()->serialrx_provider = 2;
     featureSet(FEATURE_RX_SERIAL);
     config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
 }

@@ -1048,7 +1048,7 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
 }
 
 #ifdef USE_PARAMETER_GROUPS
-static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, void *currentConfig, void *defaultConfig)
+static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, const void *currentConfig, const void *defaultConfig)
 {
     const char *format = "set %s = ";
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
@@ -1129,31 +1129,31 @@ static void backupConfigs(void)
 
 static void restoreConfigs(void)
 {
-    *gyroConfig() = gyroConfigCopy;
-    *accelerometerConfig() = accelerometerConfigCopy;
+    *gyroConfigMutable() = gyroConfigCopy;
+    *accelerometerConfigMutable() = accelerometerConfigCopy;
 #ifdef MAG
-    *compassConfig() = compassConfigCopy;
+    *compassConfigMutable() = compassConfigCopy;
 #endif
 #ifdef BARO
-    *barometerConfig() = barometerConfigCopy;
+    *barometerConfigMutable() = barometerConfigCopy;
 #endif
 #ifdef PITOT
-    *pitotmeterConfig() = pitotmeterConfigCopy;
+    *pitotmeterConfigMutable() = pitotmeterConfigCopy;
 #endif
-    *rxConfig() = rxConfigCopy;
+    *rxConfigMutable() = rxConfigCopy;
     for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
-        *rxFailsafeChannelConfigs(ii) = rxFailsafeChannelConfigsCopy[ii];
+        *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
     }
     for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
-        *rxChannelRangeConfigs(ii) = rxChannelRangeConfigsCopy[ii];
+        *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
     }
-    *motorConfig() = motorConfigCopy;
-    *boardAlignment() = boardAlignmentCopy;
+    *motorConfigMutable() = motorConfigCopy;
+    *boardAlignmentMutable() = boardAlignmentCopy;
 #ifdef USE_SERVOS
-    *gimbalConfig() = gimbalConfigCopy;
+    *gimbalConfigMutable() = gimbalConfigCopy;
 #endif
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
-        *customMotorMixer(ii) = customMotorMixerCopy[ii];
+        *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
     }
 }
 
@@ -1381,7 +1381,8 @@ static void cliRxFail(char *cmdline)
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
-            rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigs(channel);
+            // const cast
+            rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(channel);
 
             uint16_t value;
             rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
@@ -1849,8 +1850,9 @@ static void cliMotorMix(char *cmdline)
         printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
-        for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++)
-            customMotorMixer(i)->throttle = 0.0f;
+        for (uint32_t i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+            customMotorMixerMutable(i)->throttle = 0.0f;
+        }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
         if (ptr) {
@@ -1861,7 +1863,7 @@ static void cliMotorMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    mixerLoadMix(i, customMotorMixer(0));
+                    mixerLoadMix(i, customMotorMixerMutable(0));
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliMotorMix("");
                     break;
@@ -1874,22 +1876,22 @@ static void cliMotorMix(char *cmdline)
         if (i < MAX_SUPPORTED_MOTORS) {
             ptr = nextArg(ptr);
             if (ptr) {
-                customMotorMixer(i)->throttle = fastA2F(ptr);
+                customMotorMixerMutable(i)->throttle = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                customMotorMixer(i)->roll = fastA2F(ptr);
+                customMotorMixerMutable(i)->roll = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                customMotorMixer(i)->pitch = fastA2F(ptr);
+                customMotorMixerMutable(i)->pitch = fastA2F(ptr);
                 check++;
             }
             ptr = nextArg(ptr);
             if (ptr) {
-                customMotorMixer(i)->yaw = fastA2F(ptr);
+                customMotorMixerMutable(i)->yaw = fastA2F(ptr);
                 check++;
             }
             if (check != 4) {
@@ -1958,7 +1960,7 @@ static void cliRxRange(char *cmdline)
             } else if (rangeMin < PWM_PULSE_MIN || rangeMin > PWM_PULSE_MAX || rangeMax < PWM_PULSE_MIN || rangeMax > PWM_PULSE_MAX) {
                 cliShowParseError();
             } else {
-                rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigs(i);
+                rxChannelRangeConfig_t *channelRangeConfig = rxChannelRangeConfigsMutable(i);
                 channelRangeConfig->min = rangeMin;
                 channelRangeConfig->max = rangeMax;
             }
