@@ -63,8 +63,8 @@ void updateBoardAlignment(int16_t roll, int16_t pitch)
     const float sinAlignYaw = sin_approx(DECIDEGREES_TO_RADIANS(boardAlignment()->yawDeciDegrees));
     const float cosAlignYaw = cos_approx(DECIDEGREES_TO_RADIANS(boardAlignment()->yawDeciDegrees));
 
-    boardAlignment()->rollDeciDegrees += -sinAlignYaw * pitch + cosAlignYaw * roll;
-    boardAlignment()->pitchDeciDegrees += cosAlignYaw * pitch + sinAlignYaw * roll;
+    boardAlignmentMutable()->rollDeciDegrees += -sinAlignYaw * pitch + cosAlignYaw * roll;
+    boardAlignmentMutable()->pitchDeciDegrees += cosAlignYaw * pitch + sinAlignYaw * roll;
 
     initBoardAlignment();
 }

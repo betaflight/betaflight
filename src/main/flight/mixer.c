@@ -340,7 +340,7 @@ void mixerLoadMix(int index, motorMixer_t *customMixers)
     // we're 1-based
     index++;
     // clear existing
-    for (i = 0; i < MAX_SUPPORTED_MOTORS; i++)
+    for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++)
         customMixers[i].throttle = 0.0f;
 
     // do we have anything here to begin with?

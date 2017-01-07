@@ -233,18 +233,18 @@ typedef struct {
     navWaypointActions_e    activeWpAction;
 } navSystemStatus_t;
 
-void navigationUsePIDs(pidProfile_t *pidProfile);
-void navigationUseConfig(navConfig_t *navConfigToUse);
-void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig);
-void navigationUseRxConfig(rxConfig_t * initialRxConfig);
-void navigationUsemotorConfig(motorConfig_t * initialmotorConfig);
-void navigationUseFlight3DConfig(flight3DConfig_t * initialFlight3DConfig);
-void navigationInit(navConfig_t *initialnavConfig,
-                    pidProfile_t *initialPidProfile,
-                    rcControlsConfig_t *initialRcControlsConfig,
-                    rxConfig_t * initialRxConfig,
-                    flight3DConfig_t * initialFlight3DConfig,
-                    motorConfig_t * initialmotorConfig);
+void navigationUsePIDs(const pidProfile_t *pidProfile);
+void navigationUseConfig(const navConfig_t *navConfigToUse);
+void navigationUseRcControlsConfig(const rcControlsConfig_t *initialRcControlsConfig);
+void navigationUseRxConfig(const rxConfig_t * initialRxConfig);
+void navigationUsemotorConfig(const motorConfig_t * initialmotorConfig);
+void navigationUseFlight3DConfig(const flight3DConfig_t * initialFlight3DConfig);
+void navigationInit(const navConfig_t *initialnavConfig,
+                    const pidProfile_t *initialPidProfile,
+                    const rcControlsConfig_t *initialRcControlsConfig,
+                    const rxConfig_t * initialRxConfig,
+                    const flight3DConfig_t * initialFlight3DConfig,
+                    const motorConfig_t * initialmotorConfig);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);

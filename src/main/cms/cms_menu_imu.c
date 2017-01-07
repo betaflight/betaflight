@@ -441,7 +441,7 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
     UNUSED(self);
 
     masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz     = cmsx_dterm_lpf_hz;
-    gyroConfig()->gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
+    gyroConfigMutable()->gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
     masterConfig.profile[profileIndex].pidProfile.yaw_p_limit      = cmsx_yaw_p_limit;
     masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz       = cmsx_yaw_lpf_hz;
 
@@ -487,9 +487,9 @@ static long cmsx_menuGyro_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    gyroConfig()->gyroSync = cmsx_gyroSync;
-    gyroConfig()->gyroSyncDenominator = cmsx_gyroSyncDenom;
-    gyroConfig()->gyro_lpf = cmsx_gyroLpf;
+    gyroConfigMutable()->gyroSync = cmsx_gyroSync;
+    gyroConfigMutable()->gyroSyncDenominator = cmsx_gyroSyncDenom;
+    gyroConfigMutable()->gyro_lpf = cmsx_gyroLpf;
 
     return 0;
 }

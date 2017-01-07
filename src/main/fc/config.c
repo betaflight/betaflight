@@ -671,12 +671,12 @@ void validateAndFixConfig(void)
 {
 #ifdef USE_GYRO_NOTCH_1
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
-        gyroConfig()->gyro_soft_notch_hz_1 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
     }
 #endif
 #ifdef USE_GYRO_NOTCH_2
     if (gyroConfig()->gyro_soft_notch_cutoff_2 >= gyroConfig()->gyro_soft_notch_hz_2) {
-        gyroConfig()->gyro_soft_notch_hz_2 = 0;
+        gyroConfigMutable()->gyro_soft_notch_hz_2 = 0;
     }
 #endif
 #ifdef USE_DTERM_NOTCH
@@ -726,8 +726,8 @@ void validateAndFixConfig(void)
         // There is a timer clash between PWM RX pins and motor output pins - this forces us to have same timer tick rate for these timers
         // which is only possible when using brushless motors w/o oneshot (timer tick rate is PWM_TIMER_MHZ)
         // On CC3D OneShot is incompatible with PWM RX
-        motorConfig()->motorPwmProtocol = PWM_TYPE_STANDARD;
-        motorConfig()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
+        motorConfigMutable()->motorPwmProtocol = PWM_TYPE_STANDARD;
+        motorConfigMutable()->motorPwmRate = BRUSHLESS_MOTORS_PWM_RATE;
 #endif
 #endif
 
@@ -760,7 +760,7 @@ void validateAndFixConfig(void)
      * When async processing mode is enabled, gyroSync has to be forced to "ON"
      */
     if (getAsyncMode() != ASYNC_MODE_NONE) {
-        gyroConfig()->gyroSync = 1;
+        gyroConfigMutable()->gyroSync = 1;
     }
 #endif
 
@@ -777,11 +777,11 @@ void validateAndFixConfig(void)
         }
 
         if (gyroConfig()->gyroSyncDenominator < denominatorLimit) {
-            gyroConfig()->gyroSyncDenominator = denominatorLimit;
+            gyroConfigMutable()->gyroSyncDenominator = denominatorLimit;
         }
 
         if (gyroConfig()->looptime < 2000) {
-            gyroConfig()->looptime = 2000;
+            gyroConfigMutable()->looptime = 2000;
         }
 
     }
@@ -855,7 +855,7 @@ void validateAndFixConfig(void)
      * If provided predefined mixer setup is disabled, fallback to default one
      */
     if (!isMixerEnabled(mixerConfig()->mixerMode)) {
-        mixerConfig()->mixerMode = DEFAULT_MIXER;
+        mixerConfigMutable()->mixerMode = DEFAULT_MIXER;
     }
 
 #if defined(NAV)
@@ -865,26 +865,26 @@ void validateAndFixConfig(void)
 
     /* Limitations of different protocols */
 #ifdef BRUSHED_MOTORS
-    motorConfig()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 500, 32000);
+    motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 500, 32000);
 #else
     switch (motorConfig()->motorPwmProtocol) {
     case PWM_TYPE_STANDARD: // Limited to 490 Hz
-        motorConfig()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 490);
+        motorConfigMutable()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 490);
         break;
 
     case PWM_TYPE_ONESHOT125:   // Limited to 3900 Hz
-        motorConfig()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 3900);
+        motorConfigMutable()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 3900);
         break;
 
     case PWM_TYPE_ONESHOT42:    // 2-8 kHz
-        motorConfig()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 8000);
+        motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 8000);
         break;
 
     case PWM_TYPE_MULTISHOT:    // 2-16 kHz
-        motorConfig()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 16000);
+        motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 16000);
         break;
     case PWM_TYPE_BRUSHED:      // 500Hz - 32kHz
-        motorConfig()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 500, 32000);
+        motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 500, 32000);
         break;
     }
 #endif

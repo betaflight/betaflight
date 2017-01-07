@@ -214,7 +214,7 @@ void init(void)
                 // Spektrum satellite binding if enabled on startup.
                 // Must be called before that 100ms sleep so that we don't lose satellite's binding window after startup.
                 // The rest of Spektrum initialization will happen later - via spektrumInit()
-                spektrumBind(rxConfig());
+                spektrumBind(rxConfigMutable());
                 break;
         }
     }

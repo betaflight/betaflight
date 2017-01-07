@@ -294,7 +294,7 @@ void compassUpdate(timeUs_t currentTimeUs)
         calStartedAt = currentTimeUs;
 
         for (int axis = 0; axis < 3; axis++) {
-            compassConfig()->magZero.raw[axis] = 0;
+            compassConfigMutable()->magZero.raw[axis] = 0;
             magPrev[axis] = 0;
         }
 
@@ -333,7 +333,7 @@ void compassUpdate(timeUs_t currentTimeUs)
             sensorCalibrationSolveForOffset(&calState, magZerof);
 
             for (int axis = 0; axis < 3; axis++) {
-                compassConfig()->magZero.raw[axis] = lrintf(magZerof[axis]);
+                compassConfigMutable()->magZero.raw[axis] = lrintf(magZerof[axis]);
             }
 
             calStartedAt = 0;

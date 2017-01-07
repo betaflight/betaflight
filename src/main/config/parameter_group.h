@@ -102,14 +102,16 @@ extern const uint8_t __pg_resetdata_end[];
 // Declare system config
 #define PG_DECLARE(_type, _name)                                        \
     extern _type _name ## _System;                                      \
-    static inline _type* _name(void) { return &_name ## _System; }      \
+    static inline const _type* _name(void) { return &_name ## _System; }\
+    static inline _type* _name ## Mutable(void) { return &_name ## _System; }\
     struct _dummy                                                       \
     /**/
 
 // Declare system config array
 #define PG_DECLARE_ARR(_type, _size, _name)                             \
     extern _type _name ## _SystemArray[_size];                          \
-    static inline _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
+    static inline const _type* _name(int _index) { return &_name ## _SystemArray[_index]; } \
+    static inline _type* _name ## Mutable(int _index) { return &_name ## _SystemArray[_index]; } \
     static inline _type (* _name ## _arr(void))[_size] { return &_name ## _SystemArray; } \
     struct _dummy                                                       \
     /**/
@@ -117,7 +119,8 @@ extern const uint8_t __pg_resetdata_end[];
 // Declare profile config
 #define PG_DECLARE_PROFILE(_type, _name)                                \
     extern _type *_name ## _ProfileCurrent;                             \
-    static inline _type* _name(void) { return _name ## _ProfileCurrent; } \
+    static inline const _type* _name(void) { return _name ## _ProfileCurrent; } \
+    static inline _type* _name ## Mutable(void) { return _name ## _ProfileCurrent; } \
     struct _dummy                                                       \
     /**/
 

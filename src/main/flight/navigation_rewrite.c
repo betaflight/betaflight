@@ -2473,32 +2473,32 @@ void updateWaypointsAndNavigationMode(void)
 /*-----------------------------------------------------------
  * NAV main control functions
  *-----------------------------------------------------------*/
-void navigationUseConfig(navConfig_t *navConfigToUse)
+void navigationUseConfig(const navConfig_t *navConfigToUse)
 {
     posControl.navConfig = navConfigToUse;
 }
 
-void navigationUseRcControlsConfig(rcControlsConfig_t *initialRcControlsConfig)
+void navigationUseRcControlsConfig(const rcControlsConfig_t *initialRcControlsConfig)
 {
     posControl.rcControlsConfig = initialRcControlsConfig;
 }
 
-void navigationUseFlight3DConfig(flight3DConfig_t * initialFlight3DConfig)
+void navigationUseFlight3DConfig(const flight3DConfig_t * initialFlight3DConfig)
 {
     posControl.flight3DConfig = initialFlight3DConfig;
 }
 
-void navigationUseRxConfig(rxConfig_t * initialRxConfig)
+void navigationUseRxConfig(const rxConfig_t * initialRxConfig)
 {
     posControl.rxConfig = initialRxConfig;
 }
 
-void navigationUsemotorConfig(motorConfig_t * initialmotorConfig)
+void navigationUsemotorConfig(const motorConfig_t * initialmotorConfig)
 {
     posControl.motorConfig = initialmotorConfig;
 }
 
-void navigationUsePIDs(pidProfile_t *initialPidProfile)
+void navigationUsePIDs(const pidProfile_t *initialPidProfile)
 {
     posControl.pidProfile = initialPidProfile;
 
@@ -2539,12 +2539,12 @@ void navigationUsePIDs(pidProfile_t *initialPidProfile)
                                         (float)posControl.pidProfile->D8[PIDALT] / 100.0f);
 }
 
-void navigationInit(navConfig_t *initialnavConfig,
-                    pidProfile_t *initialPidProfile,
-                    rcControlsConfig_t *initialRcControlsConfig,
-                    rxConfig_t * initialRxConfig,
-                    flight3DConfig_t * initialFlight3DConfig,
-                    motorConfig_t * initialmotorConfig)
+void navigationInit(const navConfig_t *initialnavConfig,
+                    const pidProfile_t *initialPidProfile,
+                    const rcControlsConfig_t *initialRcControlsConfig,
+                    const rxConfig_t * initialRxConfig,
+                    const flight3DConfig_t * initialFlight3DConfig,
+                    const motorConfig_t * initialmotorConfig)
 {
     /* Initial state */
     posControl.navState = NAV_STATE_IDLE;
