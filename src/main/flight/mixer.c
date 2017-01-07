@@ -247,11 +247,19 @@ uint8_t getMotorCount()
 
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
-    if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
+    switch(motorConfig->motorPwmProtocol) {
+    case PWM_TYPE_DSHOT1200:
+    case PWM_TYPE_DSHOT900:
+    case PWM_TYPE_DSHOT600:
+    case PWM_TYPE_DSHOT300:
+    case PWM_TYPE_DSHOT150:
         return true;
-    else
+    default:
+        return false;        
+    }
+#else
+    return false;
 #endif
-        return false;
 }
 
 // Add here scaled ESC outputs for digital protol
