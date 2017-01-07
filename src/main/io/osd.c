@@ -33,48 +33,45 @@
 
 // XXX Must review what's included
 
+#include "build/debug.h"
 #include "build/version.h"
 
-#include "common/utils.h"
-
-#include "drivers/system.h"
+#include "cms/cms.h"
+#include "cms/cms_types.h"
+#include "cms/cms_menu_osd.h"
 
 #include "common/axis.h"
-#include "io/gimbal.h"
-
-#include "flight/pid.h"
-#include "flight/mixer.h"
-#include "flight/servos.h"
-
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/runtime_config.h"
+#include "common/printf.h"
+#include "common/utils.h"
 
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
 
 #include "drivers/display.h"
-
-#include "cms/cms.h"
-#include "cms/cms_types.h"
-#include "cms/cms_menu_osd.h"
+#include "drivers/max7456.h"
+#include "drivers/max7456_symbols.h"
+#include "drivers/system.h"
 
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"
+#include "io/gimbal.h"
 #include "io/osd.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
+
+#include "flight/pid.h"
+#include "flight/mixer.h"
+#include "flight/servos.h"
+
+#include "sensors/battery.h"
+#include "sensors/sensors.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
-
-#include "drivers/max7456.h"
-#include "drivers/max7456_symbols.h"
-
-#include "common/printf.h"
-
-#include "build/debug.h"
 
 // Character coordinate and attributes
 

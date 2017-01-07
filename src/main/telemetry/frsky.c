@@ -69,8 +69,6 @@ static bool frskyTelemetryEnabled =  false;
 static portSharing_e frskyPortSharing;
 
 
-extern batteryConfig_t *batteryConfig;
-
 extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define CYCLETIME             125
@@ -200,7 +198,7 @@ static void sendThrottleOrBatterySizeAsRpm(uint16_t deadband3d_throttle)
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
     } else {
-        serialize16((batteryConfig->batteryCapacity / BLADE_NUMBER_DIVIDER));
+        serialize16((batteryConfig()->batteryCapacity / BLADE_NUMBER_DIVIDER));
     }
 
 }
@@ -429,7 +427,7 @@ static void sendFuelLevel(void)
 {
     sendDataHead(ID_FUEL_LEVEL);
 
-    if (batteryConfig->batteryCapacity > 0) {
+    if (batteryConfig()->batteryCapacity > 0) {
         serialize16((uint16_t)calculateBatteryCapacityRemainingPercentage());
     } else {
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
