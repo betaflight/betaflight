@@ -266,20 +266,6 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 }
 #endif
 
-void resetBatteryConfig(batteryConfig_t *batteryConfig)
-{
-    batteryConfig->vbatscale = VBAT_SCALE_DEFAULT;
-    batteryConfig->vbatresdivval = VBAT_RESDIVVAL_DEFAULT;
-    batteryConfig->vbatresdivmultiplier = VBAT_RESDIVMULTIPLIER_DEFAULT;
-    batteryConfig->vbatmaxcellvoltage = 43;
-    batteryConfig->vbatmincellvoltage = 33;
-    batteryConfig->vbatwarningcellvoltage = 35;
-    batteryConfig->currentMeterOffset = 0;
-    batteryConfig->currentMeterScale = 400; // for Allegro ACS758LCB-100U (40mV/A)
-    batteryConfig->batteryCapacity = 0;
-    batteryConfig->currentMeterType = CURRENT_SENSOR_ADC;
-}
-
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
 #define SECOND_PORT_INDEX 0
@@ -428,8 +414,6 @@ void createDefaultConfig(master_t *config)
     config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
     config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
     config->imuConfig.small_angle = 25;
-
-    resetBatteryConfig(&config->batteryConfig);
 
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);

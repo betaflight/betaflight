@@ -47,9 +47,6 @@
 #include "io/serial.h"
 #include "io/servos.h"
 
-#include "sensors/sensors.h"
-#include "sensors/battery.h"
-
 #include "telemetry/telemetry.h"
 
 #define flight3DConfig(x) (&masterConfig.flight3DConfig)
@@ -60,8 +57,6 @@
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
 #define imuConfig(x) (&masterConfig.imuConfig)
 #define imuConfigMutable(x) (&masterConfig.imuConfig)
-#define batteryConfig(x) (&masterConfig.batteryConfig)
-#define batteryConfigMutable(x) (&masterConfig.batteryConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
 #define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
@@ -131,8 +126,6 @@ typedef struct master_s {
 #endif
 
     imuConfig_t imuConfig;
-
-    batteryConfig_t batteryConfig;
 
 #ifdef GPS
     gpsConfig_t gpsConfig;
