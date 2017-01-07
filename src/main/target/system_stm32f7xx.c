@@ -66,12 +66,21 @@
 #include "stm32f7xx.h"
 
 #if !defined  (HSE_VALUE)
-  #define HSE_VALUE    ((uint32_t)25000000) /*!< Default value of the External oscillator in Hz */
+  #define HSE_VALUE    ((uint32_t)8000000) /*!< Default value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 #if !defined  (HSI_VALUE)
   #define HSI_VALUE    ((uint32_t)16000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
+
+#define PLL_M     8
+#define PLL_N     432
+#define PLL_P     RCC_PLLP_DIV2 /* 2 */
+#define PLL_Q     9
+
+#define PLL_SAIN  384
+#define PLL_SAIQ  7
+#define PLL_SAIP  RCC_PLLSAIP_DIV8
 
 /**
   * @}
@@ -122,7 +131,7 @@
                is no need to call the 2 first functions listed above, since SystemCoreClock
                variable is updated automatically.
   */
-  uint32_t SystemCoreClock = 216000000;
+  uint32_t SystemCoreClock = (PLL_N / PLL_P) * 1000000;
   const uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
   const uint8_t APBPrescTable[8] = {0, 0, 0, 0, 1, 2, 3, 4};
 
@@ -152,10 +161,10 @@
       RCC_OscInitStruct.HSEState = RCC_HSE_ON;
       RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
       RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-      RCC_OscInitStruct.PLL.PLLM = 8;
-      RCC_OscInitStruct.PLL.PLLN = 432;
-      RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-      RCC_OscInitStruct.PLL.PLLQ = 9;
+      RCC_OscInitStruct.PLL.PLLM = PLL_M;
+      RCC_OscInitStruct.PLL.PLLN = PLL_N;
+      RCC_OscInitStruct.PLL.PLLP = PLL_P;
+      RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
 
       ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
       if(ret != HAL_OK)
@@ -172,9 +181,9 @@
       /* Select PLLSAI output as USB clock source */
       PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_CLK48;
       PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
-      PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
-      PeriphClkInitStruct.PLLSAI.PLLSAIQ = 7;
-      PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV8;
+      PeriphClkInitStruct.PLLSAI.PLLSAIN = PLL_SAIN;
+      PeriphClkInitStruct.PLLSAI.PLLSAIQ = PLL_SAIQ;
+      PeriphClkInitStruct.PLLSAI.PLLSAIP = PLL_SAIP;
       if(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct)  != HAL_OK)
       {
         while(1) {};
