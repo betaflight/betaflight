@@ -68,8 +68,15 @@ int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 
 bool motorLimitReached = false;
 
-mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(mixerConfig_t, mixerConfig, PG_MIXER_CONFIG, 0);
+
+PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
+    .mixerMode = MIXER_QUADX,
+    .yaw_motor_direction = 1,
+    .yaw_jump_prevention_limit = 200
+);
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
@@ -263,11 +270,9 @@ const mixer_t mixers[] = {
 #endif // USE_QUAD_MIXER_ONLY
 
 void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        mixerConfig_t *mixerConfigToUse)
+        flight3DConfig_t *flight3DConfigToUse)
 {
     flight3DConfig = flight3DConfigToUse;
-    mixerConfig = mixerConfigToUse;
 }
 
 bool isMixerEnabled(mixerMode_e mixerMode)
@@ -394,9 +399,9 @@ void mixTable(void)
 {
     int i;
 
-    if (motorCount >= 4 && mixerConfig->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
+    if (motorCount >= 4 && mixerConfig()->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
         // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
     }
 
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
@@ -409,7 +414,7 @@ void mixTable(void)
         rpyMix[i] =
             axisPID[PITCH] * currentMixer[i].pitch +
             axisPID[ROLL] * currentMixer[i].roll +
-            -mixerConfig->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+            -mixerConfig()->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
 
         if (rpyMix[i] > rpyMixMax) rpyMixMax = rpyMix[i];
         if (rpyMix[i] < rpyMixMin) rpyMixMin = rpyMix[i];

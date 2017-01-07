@@ -102,6 +102,14 @@ static const servoMixer_t servoMixerTri[] = {
     { SERVO_RUDDER, INPUT_STABILIZED_YAW,   100, 0, 0, 100 },
 };
 
+// Custom mixer configuration
+typedef struct mixerRules_s {
+    uint8_t servoRuleCount;
+    uint8_t minServoIndex;
+    uint8_t maxServoIndex;
+    const servoMixer_t *rule;
+} mixerRules_t;
+
 const mixerRules_t servoMixers[] = {
     { 0, 0, 0, NULL },                // entry 0
     { COUNT_SERVO_RULES(servoMixerTri), SERVO_RUDDER, SERVO_RUDDER, servoMixerTri },       // MULTITYPE_TRI

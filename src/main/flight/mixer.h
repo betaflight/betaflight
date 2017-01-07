@@ -97,6 +97,8 @@ typedef struct mixerConfig_s {
     uint16_t yaw_jump_prevention_limit;      // make limit configurable (original fixed value was 100)
 } mixerConfig_t;
 
+PG_DECLARE(mixerConfig_t, mixerConfig);
+
 typedef struct flight3DConfig_s {
     uint16_t deadband3d_low;                // min 3d value
     uint16_t deadband3d_high;               // max 3d value
@@ -110,10 +112,8 @@ extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern bool motorLimitReached;
 
-struct motorConfig_s;
 void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse,
-        mixerConfig_t *mixerConfigToUse);
+        flight3DConfig_t *flight3DConfigToUse);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
