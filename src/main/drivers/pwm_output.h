@@ -30,9 +30,9 @@ typedef enum {
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
+    PWM_TYPE_MAX,
     PWM_TYPE_DSHOT900,
     PWM_TYPE_DSHOT1200,
-    PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
 #define PWM_TIMER_MHZ         1
