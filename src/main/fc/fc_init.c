@@ -545,7 +545,7 @@ void init(void)
         &currentProfile->pidProfile,
         &masterConfig.rcControlsConfig,
         rxConfig(),
-        &masterConfig.flight3DConfig,
+        flight3DConfig(),
         motorConfig()
     );
 #endif

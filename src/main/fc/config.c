@@ -236,14 +236,6 @@ void resetServoConfig(servoConfig_t *servoConfig)
 }
 #endif
 
-void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
-{
-    flight3DConfig->deadband3d_low = 1406;
-    flight3DConfig->deadband3d_high = 1514;
-    flight3DConfig->neutral3d = 1460;
-    flight3DConfig->deadband3d_throttle = 50;
-}
-
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
@@ -421,8 +413,6 @@ void createDefaultConfig(master_t *config)
     resetServoMixerConfig(&config->servoMixerConfig);
     resetServoConfig(&config->servoConfig);
 #endif
-
-    resetFlight3DConfig(&config->flight3DConfig);
 
 #ifdef GPS
     // gps/nav stuff
@@ -624,7 +614,6 @@ static void activateConfig(void)
     setAccelerationCalibrationValues();
     setAccelerationFilter();
 
-    mixerUseConfigs(&masterConfig.flight3DConfig);
 #ifdef USE_SERVOS
     servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
@@ -638,7 +627,7 @@ static void activateConfig(void)
     navigationUsePIDs(&currentProfile->pidProfile);
     navigationUseRcControlsConfig(&masterConfig.rcControlsConfig);
     navigationUseRxConfig(rxConfig());
-    navigationUseFlight3DConfig(&masterConfig.flight3DConfig);
+    navigationUseFlight3DConfig(flight3DConfig());
     navigationUsemotorConfig(motorConfig());
 #endif
 }

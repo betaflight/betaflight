@@ -49,8 +49,6 @@
 
 #include "telemetry/telemetry.h"
 
-#define flight3DConfig(x) (&masterConfig.flight3DConfig)
-#define flight3DConfigMutable(x) (&masterConfig.flight3DConfig)
 #define servoConfig(x) (&masterConfig.servoConfig)
 #define servoConfigMutable(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
@@ -94,8 +92,6 @@ typedef struct master_s {
     uint16_t attitudeTaskFrequency;
     uint8_t asyncMode;
 #endif
-
-    flight3DConfig_t flight3DConfig;
 
 #ifdef USE_SERVOS
     servoConfig_t servoConfig;

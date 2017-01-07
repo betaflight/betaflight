@@ -106,14 +106,13 @@ typedef struct flight3DConfig_s {
     uint16_t deadband3d_throttle;           // default throttle deadband from MIDRC
 } flight3DConfig_t;
 
+PG_DECLARE(flight3DConfig_t, flight3DConfig);
+
 #define CHANNEL_FORWARDING_DISABLED (uint8_t)0xFF
 
 extern int16_t motor[MAX_SUPPORTED_MOTORS];
 extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern bool motorLimitReached;
-
-void mixerUseConfigs(
-        flight3DConfig_t *flight3DConfigToUse);
 
 void writeAllMotors(int16_t mc);
 void mixerLoadMix(int index, motorMixer_t *customMixers);
