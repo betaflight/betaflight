@@ -70,7 +70,6 @@
 #define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
-#define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
 
 
@@ -90,8 +89,6 @@ typedef struct master_s {
     uint8_t asyncMode;
 #endif
 
-    // motor/esc/servo related stuff
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
     flight3DConfig_t flight3DConfig;
 
 #ifdef USE_SERVOS

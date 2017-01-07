@@ -28,6 +28,9 @@
 #include "common/maths.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
@@ -54,6 +57,7 @@
 
 #include "config/config_profile.h"
 #include "config/feature.h"
+#include "config/config_master.h"
 
 //#define MIXER_DEBUG
 
@@ -67,9 +71,9 @@ bool motorLimitReached = false;
 mixerConfig_t *mixerConfig;
 static flight3DConfig_t *flight3DConfig;
 
-mixerMode_e currentMixerMode;
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
+PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R
@@ -258,8 +262,6 @@ const mixer_t mixers[] = {
 };
 #endif // USE_QUAD_MIXER_ONLY
 
-static motorMixer_t *customMixers;
-
 void mixerUseConfigs(
         flight3DConfig_t *flight3DConfigToUse,
         mixerConfig_t *mixerConfigToUse)
@@ -278,13 +280,6 @@ bool isMixerEnabled(mixerMode_e mixerMode)
 #endif
 }
 
-// mixerInit must be called before servosInit
-void mixerInit(mixerMode_e mixerMode, motorMixer_t *initialCustomMixers)
-{
-    currentMixerMode = mixerMode;
-    customMixers = initialCustomMixers;
-}
-
 #ifdef USE_SERVOS
 void mixerUsePWMIOConfiguration(void)
 {
@@ -292,13 +287,14 @@ void mixerUsePWMIOConfiguration(void)
 
     motorCount = 0;
 
+    const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
     if (currentMixerMode == MIXER_CUSTOM || currentMixerMode == MIXER_CUSTOM_TRI || currentMixerMode == MIXER_CUSTOM_AIRPLANE) {
         // load custom mixer into currentMixer
         for (i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
             // check if done
-            if (customMixers[i].throttle == 0.0f)
+            if (customMotorMixer(i)->throttle == 0.0f)
                 break;
-            currentMixer[i] = customMixers[i];
+            currentMixer[i] = *customMotorMixer(i);
             motorCount++;
         }
     } else {

@@ -238,7 +238,6 @@ void init(void)
     serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
-    mixerInit(mixerConfig()->mixerMode, masterConfig.customMotorMixer);
 #ifdef USE_SERVOS
     servosInit(masterConfig.customServoMixer);
 #endif

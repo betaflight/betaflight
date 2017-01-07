@@ -60,11 +60,10 @@
 
 #include "config/config_profile.h"
 #include "config/feature.h"
+#include "config/config_master.h"
 
 
-extern mixerMode_e currentMixerMode;
 extern const mixer_t mixers[];
-extern mixerConfig_t *mixerConfig;
 
 servoMixerConfig_t *servoMixerConfig;
 
@@ -176,6 +175,7 @@ void servosInit(servoMixer_t *initialCustomServoMixers)
 {
     int i;
 
+    const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
     // set flag that we're on something with wings
     if (currentMixerMode == MIXER_FLYING_WING ||
         currentMixerMode == MIXER_AIRPLANE ||
@@ -301,6 +301,7 @@ void writeServos(void)
     /*
      * in case of tricopters, there might me a need to zero servo output when unarmed
      */
+    const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
     if ((currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI) && !ARMING_FLAG(ARMED) && !servoMixerConfig->tri_unarmed_servo) {
         zeroServoValue = true;
     }
