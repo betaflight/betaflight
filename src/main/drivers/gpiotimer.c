@@ -34,6 +34,8 @@ static extiCallbackRec_t gtim_extiCallbackRec;
 static uint32_t lastPulseMs = 0;
 uint32_t gpioTimerValueMs = 0;
 
+uint16_t guardTimeMs;
+
 static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 {
     UNUSED(cb);
@@ -44,6 +46,9 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
     lastPulseMs = newPulseMs;
 
     debug[0] = gpioTimerValueMs;
+
+    if (guardTimeMs)
+        EXTIEnable(gtimIO, false);
 }
 
 void gpioTimerReset(void)
@@ -58,8 +63,10 @@ bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig)
     if (!gtimIO)
         return false;
 
+    guardTimeMs = gpioTimerConfig->guardTimeMs;
+
     IOInit(gtimIO, OWNER_GPIOTIMER, 0);
-    IOConfigGPIO(gtimIO, IOCFG_IPD);
+    IOConfigGPIO(gtimIO, IOCFG_IPU);
 
     EXTIHandlerInit(&gtim_extiCallbackRec, gpioTimerExtiHandler);
 
@@ -67,6 +74,18 @@ bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig)
     EXTIConfig(gtimIO, &gtim_extiCallbackRec, NVIC_PRIO_GPIOTIMER, gpioTimerConfig->polarity ? EXTI_Trigger_Rising : EXTI_Trigger_Falling);
 
     return true;
+}
+
+void gpioTimerRearm(uint32_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    debug[1]++;
+
+    if (millis() - lastPulseMs > guardTimeMs) {
+        debug[2]++;
+        EXTIEnable(gtimIO, true);
+    }
 }
 
 #endif // USE_GPIOTIMER

@@ -100,6 +100,9 @@ typedef enum {
 #ifdef CMS
     TASK_CMS,
 #endif
+#ifdef USE_GPIOTIMER
+    TASK_GPIOTIMER,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,

@@ -1004,6 +1004,7 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_GPIOTIMER
     { "gpiotimer_polarity",         VAR_UINT8   | MASTER_VALUE, &gpioTimerConfig()->polarity, .config.minmax = { 0, 1 } },
+    { "gpiotimer_guardtime",        VAR_UINT16  | MASTER_VALUE, &gpioTimerConfig()->guardTimeMs, .config.minmax = { 0, 1000 } },
 #endif
 };
 
