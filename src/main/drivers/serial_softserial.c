@@ -24,6 +24,7 @@
 
 #include "build/build_config.h"
 #include "build/atomic.h"
+#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -141,6 +142,12 @@ static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32
     uint8_t mhz = SystemCoreClock / 1000000;
 
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
+
+#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
+static int tpoff = 0;
+debug[2 + tpoff] = timerPeriod;
+tpoff = (tpoff + 1) % 2;
+#endif
 }
 
 static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
@@ -185,6 +192,10 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
+static softSerial_t *tx_softSerial;
+static uint8_t tx_reference;
+static uint32_t tx_baud;
+
 serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
@@ -205,6 +216,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     softSerial->rxIO = IOGetByTag(tagRx);
     softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
     softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
+
+    // Should take care of timer collisions?
 
     softSerial->port.vTable = softSerialVTable;
     softSerial->port.baudRate = baud;
@@ -231,6 +244,10 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
 
+tx_softSerial = softSerial;
+tx_reference = portIndex;
+tx_baud = baud;
+
     // If RX is on a different timer, initialize it as TX to set timebase,
     // then re-initialize it as RX.
 
@@ -240,6 +257,11 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
 
     return &softSerial->port;
+}
+
+void REINIT_serialTimerTxConfig(void)
+{
+    serialTimerConfigure(tx_softSerial->txTimerHardware, tx_baud);
 }
 
 /*********************************************/
@@ -368,10 +390,20 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
     processTxState(softSerial);
     processRxState(softSerial);
+
+#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
+    debug[0]++;
+    if (debug[0] == 10) {
+        REINIT_serialTimerTxConfig();
+    }
+#endif
 }
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
+#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
+    debug[1]++;
+#endif
     UNUSED(capture);
 
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
