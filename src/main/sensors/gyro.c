@@ -401,15 +401,14 @@ static bool gyroUpdateISR(gyroDev_t* gyroDev)
 void gyroUpdate(void)
 {
     // range: +/- 8192; +/- 2000 deg/sec
-#if defined(MPU_INT_EXTI)
-    if (!gyro.dev.dataReady || !gyro.dev.read(&gyro.dev)) {
+    if (gyro.dev.update) {
+        // if the gyro update function is set then return, since the gyro is read in gyroUpdateISR
         return;
     }
-#else
     if (!gyro.dev.read(&gyro.dev)) {
         return;
     }
-#endif
+    gyro.dev.dataReady = false;
 
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
@@ -424,7 +423,6 @@ void gyroUpdate(void)
         debug[3] = (uint16_t)(micros() & 0xffff);
 #endif
     }
-    gyro.dev.dataReady = false;
     // move gyro data into 32-bit variables to avoid overflows in calculations
     gyroADC[X] = gyro.dev.gyroADCRaw[X];
     gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
