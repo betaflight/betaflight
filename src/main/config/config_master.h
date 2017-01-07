@@ -21,8 +21,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "blackbox/blackbox.h"
-
 #include "common/axis.h"
 #include "common/color.h"
 #include "common/maths.h"
@@ -67,7 +65,6 @@
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
-#define blackboxConfig(x) (&masterConfig.blackboxConfig)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
 #define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
@@ -153,10 +150,6 @@ typedef struct master_s {
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
     controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
-
-#ifdef BLACKBOX
-    blackboxConfig_t blackboxConfig;
-#endif
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;

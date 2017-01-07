@@ -519,12 +519,7 @@ void createDefaultConfig(master_t *config)
 #ifdef BLACKBOX
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
     featureSet(FEATURE_BLACKBOX);
-    config->blackboxConfig.device = BLACKBOX_DEVICE_FLASH;
-#else
-    config->blackboxConfig.device = BLACKBOX_DEVICE_SERIAL;
 #endif
-    config->blackboxConfig.rate_num = 1;
-    config->blackboxConfig.rate_denom = 1;
 #endif
 
     // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets

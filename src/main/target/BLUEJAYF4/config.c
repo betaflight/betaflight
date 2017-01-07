@@ -32,6 +32,7 @@
 // alternative defaults settings for BlueJayF4 targets
 void targetConfiguration(master_t *config)
 {
+    (void)config;
     if (hardwareRevision == BJF4_REV1 || hardwareRevision == BJF4_REV2) {
         gyroConfig()->gyro_align = CW180_DEG;
         accelerometerConfig()->acc_align  = CW180_DEG;
