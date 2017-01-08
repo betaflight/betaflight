@@ -10,4 +10,4 @@ typedef struct gpioTimerConfig_s {
 bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig);
 void gpioTimerRearm(uint32_t currentTimeUs);
 
-uint32_t gpioTimerValueMs;
+uint32_t gpioTimerLapMs;

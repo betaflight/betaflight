@@ -236,7 +236,8 @@ const mixer_t mixers[] = {
 
 static motorMixer_t *customMixers;
 
-static uint16_t disarmMotorOutput, motorOutputHigh, motorOutputLow, deadbandMotor3dHigh, deadbandMotor3dLow;
+static uint16_t disarmMotorOutput, deadbandMotor3dHigh, deadbandMotor3dLow;
+uint16_t motorOutputHigh, motorOutputLow;
 static float rcCommandThrottleRange, rcCommandThrottleRange3dLow, rcCommandThrottleRange3dHigh;
 
 uint8_t getMotorCount()
@@ -246,11 +247,19 @@ uint8_t getMotorCount()
 
 bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
-    if (motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT150 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT300 || motorConfig->motorPwmProtocol == PWM_TYPE_DSHOT600)
+    switch(motorConfig->motorPwmProtocol) {
+    case PWM_TYPE_DSHOT1200:
+    case PWM_TYPE_DSHOT900:
+    case PWM_TYPE_DSHOT600:
+    case PWM_TYPE_DSHOT300:
+    case PWM_TYPE_DSHOT150:
         return true;
-    else
+    default:
+        return false;        
+    }
+#else
+    return false;
 #endif
-        return false;
 }
 
 // Add here scaled ESC outputs for digital protol
@@ -530,19 +539,6 @@ void mixTable(pidProfile_t *pidProfile)
             if (((rcData[THROTTLE]) < rxConfig->mincheck)) {
                 motor[i] = disarmMotorOutput;
             }
-        }
-    }
-
-    // Anti Desync feature for ESC's. Limit rapid throttle changes
-    if (motorConfig->maxEscThrottleJumpMs) {
-        const int16_t maxThrottleStep = constrain(motorConfig->maxEscThrottleJumpMs / (1000 / targetPidLooptime), 2, 10000);
-
-        // Only makes sense when it's within the range
-        if (maxThrottleStep < motorOutputRange) {
-            static int16_t motorPrevious[MAX_SUPPORTED_MOTORS];
-
-            motor[i] = constrain(motor[i], motorOutputMin, motorPrevious[i] + maxThrottleStep);  // Only limit accelerating situation
-            motorPrevious[i] = motor[i];
         }
     }
 

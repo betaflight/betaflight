@@ -32,7 +32,8 @@ static IO_t gtimIO;
 static extiCallbackRec_t gtim_extiCallbackRec;
 
 static uint32_t lastPulseMs = 0;
-uint32_t gpioTimerValueMs = 0;
+uint32_t gpioTimerLapMs = 0;
+uint32_t gpioTimerRunningMs;
 
 uint16_t guardTimeMs;
 
@@ -42,10 +43,10 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 
     uint32_t newPulseMs = millis();
 
-    gpioTimerValueMs = newPulseMs - lastPulseMs;
+    gpioTimerLapMs = newPulseMs - lastPulseMs;
     lastPulseMs = newPulseMs;
 
-    debug[0] = gpioTimerValueMs;
+    debug[0] = gpioTimerLapMs;
 
     if (guardTimeMs)
         EXTIEnable(gtimIO, false);
@@ -53,16 +54,18 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 
 void gpioTimerReset(void)
 {
-    lastPulseMs = 0;
+    lastPulseMs = millis();
 }
 
 bool gpioTimerInit(gpioTimerConfig_t *gpioTimerConfig)
 {
     gtimIO = IOGetByTag(gpioTimerConfig->ioTag);
 
+debug[2]++;
     if (!gtimIO)
         return false;
 
+debug[3]++;
     guardTimeMs = gpioTimerConfig->guardTimeMs;
 
     IOInit(gtimIO, OWNER_GPIOTIMER, 0);
@@ -80,10 +83,9 @@ void gpioTimerRearm(uint32_t currentTimeUs)
 {
     UNUSED(currentTimeUs);
 
-    debug[1]++;
+    gpioTimerRunningMs = millis();
 
-    if (millis() - lastPulseMs > guardTimeMs) {
-        debug[2]++;
+    if (gpioTimerRunningMs - lastPulseMs >= guardTimeMs) {
         EXTIEnable(gtimIO, true);
     }
 }

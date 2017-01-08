@@ -17,6 +17,13 @@
 
 #pragma once
 
+#ifdef TINYBEEF3
+#define TARGET_BOARD_IDENTIFIER "TBF3"
+
+#define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
+
+#define LED0                    PB8
+#else
 #define TARGET_BOARD_IDENTIFIER "SRFM"
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_NONE
@@ -25,6 +32,7 @@
 //#define SPRACINGF3MINI_MKII_REVA
 
 #define LED0                    PB3
+#endif
 
 #define BEEPER                  PC15
 #define BEEPER_INVERTED
@@ -39,32 +47,46 @@
 #define ENSURE_MAG_DATA_READY_IS_HIGH
 
 #define GYRO
-//#define USE_FAKE_GYRO
-#define USE_GYRO_MPU6500
-#define GYRO_MPU6500_ALIGN      CW180_DEG
-
 #define ACC
-//#define USE_FAKE_ACC
-#define USE_ACC_MPU6500
-#define ACC_MPU6500_ALIGN       CW180_DEG
 
 #define BARO
 #define USE_BARO_BMP280
 
-//#define MAG
-//#define USE_MPU9250_MAG // Enables bypass configuration
-//#define USE_MAG_AK8975
-//#define USE_MAG_HMC5883 // External
-//#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
+#ifdef TINYBEEF3
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
+
+#define MAG_AK8963_ALIGN CW90_DEG_FLIP
+#else
+//#define USE_FAKE_GYRO
+#define USE_GYRO_MPU6500
+#define GYRO_MPU6500_ALIGN      CW180_DEG
+
+//#define USE_FAKE_ACC
+#define USE_ACC_MPU6500
+#define ACC_MPU6500_ALIGN       CW180_DEG
+
+#define MAG
+#define USE_MPU9250_MAG // Enables bypass configuration
+#define USE_MAG_AK8975
+#define USE_MAG_HMC5883 // External
+#define MAG_AK8975_ALIGN        CW90_DEG_FLIP
+#endif
 
 //#define SONAR
 //#define SONAR_ECHO_PIN          PB1
 //#define SONAR_TRIGGER_PIN       PB0
 
 #define USB_IO
+
+#ifndef TINYBEEF3
 #define USB_CABLE_DETECTION
 
 #define USB_DETECT_PIN          PB5
+#endif
 
 #define USE_VCP
 #define USE_UART1
@@ -100,6 +122,18 @@
 #define SPI2_SCK_PIN            PB13
 #define SPI2_MISO_PIN           PB14
 #define SPI2_MOSI_PIN           PB15
+
+#ifdef TINYBEEF3
+#define USE_SPI_DEVICE_1 // PB9,3,4,5 on AF5 SPI1 (MPU)
+
+#define SPI1_NSS_PIN            PB9
+#define SPI1_SCK_PIN            PB3
+#define SPI1_MISO_PIN           PB4
+#define SPI1_MOSI_PIN           PB5
+
+#define MPU6500_CS_PIN                   PB9
+#define MPU6500_SPI_INSTANCE             SPI1
+#endif
 
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
@@ -138,18 +172,24 @@
 #define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
+#ifdef TINYBEEF3
+#define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY)
+#else
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
+#endif
 
+#ifndef TINYBEEF3
 #define BUTTONS
 #define BUTTON_A_PIN            PB1
 #define BUTTON_B_PIN            PB0
 
+#define HARDWARE_BIND_PLUG
+#define BINDPLUG_PIN            PB0
+#endif
+
 #define SPEKTRUM_BIND
 // USART3,
 #define BIND_PIN                PB11
-
-#define HARDWARE_BIND_PLUG
-#define BINDPLUG_PIN            PB0
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -159,5 +199,8 @@
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 8 Outputs; PPM; LED Strip; 2 additional PWM pins also on UART3 RX/TX pins.
+#ifdef TINYBEEF3
+#define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15))
+#else
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
-
+#endif

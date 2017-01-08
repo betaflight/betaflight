@@ -35,7 +35,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
-#include "fc/mw.h"
+#include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
@@ -615,10 +615,12 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
             newValue = constrain((int)pidProfile->dtermSetpointWeight + delta, 0, 254); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->dtermSetpointWeight = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT, newValue);
+            break;
         case ADJUSTMENT_D_SETPOINT_TRANSITION:
             newValue = constrain((int)pidProfile->setpointRelaxRatio + delta, 0, 100); // FIXME magic numbers repeated in serial_cli.c
             pidProfile->setpointRelaxRatio = newValue;
             blackboxLogInflightAdjustmentEvent(ADJUSTMENT_D_SETPOINT_TRANSITION, newValue);
+            break;
         default:
             break;
     };

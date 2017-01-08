@@ -146,6 +146,7 @@
 
 #define USE_ADC
 #define VBAT_ADC_PIN            PC3
+#define CURRENT_METER_ADC_PIN   PC2
 
 #define USE_ESC_SENSOR
 #define LED_STRIP
@@ -162,10 +163,10 @@
 #define SPEKTRUM_BIND
 #define BIND_PIN                PB11
 
-#define TARGET_IO_PORTA         0xffff
-#define TARGET_IO_PORTB         0xffff
-#define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         (BIT(2))
+#define TARGET_IO_PORTA         	0xffff
+#define TARGET_IO_PORTB         	0xffff
+#define TARGET_IO_PORTC         	0xffff
+#define TARGET_IO_PORTD         	(BIT(2))
 
-#define USABLE_TIMER_CHANNEL_COUNT 7
-#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9))
+#define USABLE_TIMER_CHANNEL_COUNT 	7
+#define USED_TIMERS               	( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(8) | TIM_N(9) )

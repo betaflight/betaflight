@@ -22,6 +22,7 @@
 
 #include "platform.h"
 
+#include "build/atomic.h"
 #include "build/build_config.h"
 #include "build/debug.h"
 
@@ -46,7 +47,6 @@
 #include "accgyro_spi_mpu9250.h"
 #include "accgyro_mpu.h"
 
-//#define DEBUG_MPU_DATA_READY_INTERRUPT
 
 mpuResetFuncPtr mpuReset;
 
@@ -127,8 +127,9 @@ mpuDetectionResult_t *mpuDetect(gyroDev_t *gyro)
 static bool detectSPISensorsAndUpdateDetectionResult(gyroDev_t *gyro)
 {
 #ifdef USE_GYRO_SPI_MPU6500
-    if (mpu6500SpiDetect()) {
-        gyro->mpuDetectionResult.sensor = MPU_65xx_SPI;
+    uint8_t mpu6500Sensor = mpu6500SpiDetect();
+    if (mpu6500Sensor != MPU_NONE) {
+        gyro->mpuDetectionResult.sensor = mpu6500Sensor;
         gyro->mpuConfiguration.gyroReadXRegister = MPU_RA_GYRO_XOUT_H;
         gyro->mpuConfiguration.read = mpu6500ReadRegister;
         gyro->mpuConfiguration.write = mpu6500WriteRegister;
@@ -219,15 +220,20 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 #if defined(MPU_INT_EXTI)
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+    static uint32_t lastCalledAtUs = 0;
+    const uint32_t nowUs = micros();
+    debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
+    lastCalledAtUs = nowUs;
+#endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
-
+    if (gyro->update) {
+        gyro->update(gyro);
+    }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static uint32_t lastCalledAt = 0;
-    uint32_t now = micros();
-    uint32_t callDelta = now - lastCalledAt;
-    debug[0] = callDelta;
-    lastCalledAt = now;
+    const uint32_t now2Us = micros();
+    debug[1] = (uint16_t)(now2Us - nowUs);
 #endif
 }
 #endif
@@ -293,6 +299,13 @@ bool mpuAccRead(accDev_t *acc)
     acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
+}
+
+void mpuGyroSetIsrUpdate(gyroDev_t *gyro, sensorGyroUpdateFuncPtr updateFn)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_MPU_INT_EXTI) {
+        gyro->update = updateFn;
+    }
 }
 
 bool mpuGyroRead(gyroDev_t *gyro)

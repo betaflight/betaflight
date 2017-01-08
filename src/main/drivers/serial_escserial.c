@@ -345,17 +345,18 @@ void escSerialInputPortDeConfig(const timerHardware_t *timerHardwarePtr)
 }
 
 
-void closeEscSerial(escSerialPortIndex_e portIndex, uint16_t output)
+void closeEscSerial(escSerialPortIndex_e portIndex, uint8_t mode)
 {
     escSerial_t *escSerial = &(escSerialPorts[portIndex]);
 
-    escSerial->rxTimerHardware = &(timerHardware[output]);
-    escSerial->txTimerHardware = &(timerHardware[ESCSERIAL_TIMER_TX_HARDWARE]);
-    escSerialInputPortDeConfig(escSerial->rxTimerHardware);
+    if(mode != PROTOCOL_KISSALL){
+        escSerialInputPortDeConfig(escSerial->rxTimerHardware);
+        timerChConfigCallbacks(escSerial->rxTimerHardware,NULL,NULL);
+        TIM_DeInit(escSerial->rxTimerHardware->tim);
+    }
+
     timerChConfigCallbacks(escSerial->txTimerHardware,NULL,NULL);
-    timerChConfigCallbacks(escSerial->rxTimerHardware,NULL,NULL);
     TIM_DeInit(escSerial->txTimerHardware->tim);
-    TIM_DeInit(escSerial->rxTimerHardware->tim);
 }
 
 /*********************************************/
@@ -982,7 +983,7 @@ void escEnablePassthrough(serialPort_t *escPassthroughPort, uint16_t output, uin
                     serialWrite(escPassthroughPort, 0x00);
                     serialWrite(escPassthroughPort, 0xF4);
                     serialWrite(escPassthroughPort, 0xF4);
-                    closeEscSerial(ESCSERIAL1, output);
+                    closeEscSerial(ESCSERIAL1, mode);
                     return;
                 }
                 if(mode==PROTOCOL_BLHELI){

@@ -72,6 +72,9 @@
 #define UART3_TX_PIN            PB10
 #define UART3_RX_PIN            PB11
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_I2C
 #define I2C_DEVICE              (I2CDEV_1) // PB6/SCL, PB7/SDA
 
@@ -165,6 +168,7 @@
 
 #define OSD
 
+#undef GPS
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_TRANSPONDER | FEATURE_BLACKBOX | FEATURE_RSSI_ADC | FEATURE_CURRENT_METER | FEATURE_TELEMETRY | FEATURE_OSD)
@@ -179,7 +183,6 @@
 #define HARDWARE_BIND_PLUG
 #define BINDPLUG_PIN            PD2
 
-
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
 // IO - assuming 303 in 64pin package, TODO
@@ -191,4 +194,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 12 // 2xPPM, 6xPWM, UART3 RX/TX, LED Strip, IR.
 #define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(8) | TIM_N(15) | TIM_N(16))
-
