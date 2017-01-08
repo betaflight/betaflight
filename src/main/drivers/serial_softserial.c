@@ -189,10 +189,6 @@ static void resetBuffers(softSerial_t *softSerial)
     softSerial->port.txBufferHead = 0;
 }
 
-static softSerial_t *tx_softSerial;
-static uint8_t tx_reference;
-static uint32_t tx_baud;
-
 serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options)
 {
     softSerial_t *softSerial = &(softSerialPorts[portIndex]);
@@ -241,10 +237,6 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
 
-tx_softSerial = softSerial;
-tx_reference = portIndex;
-tx_baud = baud;
-
     // If RX is on a different timer, initialize it as TX to set timebase,
     // then re-initialize it as RX.
 
@@ -254,11 +246,6 @@ tx_baud = baud;
     serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
 
     return &softSerial->port;
-}
-
-void REINIT_serialTimerTxConfig(void)
-{
-    serialTimerConfigure(tx_softSerial->txTimerHardware, tx_baud);
 }
 
 /*********************************************/
