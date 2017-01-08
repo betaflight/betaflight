@@ -21,15 +21,17 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "common/maths.h"
+#include "build/build_config.h"
 
 #include "platform.h"
 
-#include "build/build_config.h"
-#include "build/debug.h"
+#include "blackbox/blackbox.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
+#include "common/maths.h"
+
+#include "config/feature.h"
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -246,6 +248,43 @@ static float imuGetPGainScaleFactor(void)
     }
 }
 
+static void imuResetOrientationQuaternion(const float ax, const float ay, const float az)
+{
+    const float accNorm = sqrtf(ax * ax + ay * ay + az * az);
+
+    q0 = az + accNorm;
+    q1 = ay;
+    q2 = -ax;
+    q3 = 0.0f;
+
+    const float recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+
+    q0 *= recipNorm;
+    q1 *= recipNorm;
+    q2 *= recipNorm;
+    q3 *= recipNorm;
+}
+
+static void imuCheckAndResetOrientationQuaternion(const float ax, const float ay, const float az)
+{
+    // Check if some calculation in IMU update yield NAN or zero quaternion
+    // Reset quaternion from accelerometer - this might be incorrect, but it's better than no attitude at all
+
+    const bool isNan = (isnan(q0) || isnan(q1) || isnan(q2) || isnan(q3));
+    const bool isInf = (isinf(q0) || isinf(q1) || isinf(q2) || isinf(q3));
+    const bool isZero = (ABS(q0) < 1e-3f && ABS(q1) < 1e-3f && ABS(q2) < 1e-3f && ABS(q3) < 1e-3f);
+
+    if (isNan || isZero || isInf) {
+        imuResetOrientationQuaternion(ax, ay, az);
+
+#ifdef BLACKBOX
+        if (feature(FEATURE_BLACKBOX)) {
+            blackboxLogEvent(FLIGHT_LOG_EVENT_IMU_FAILURE, NULL);
+        }
+#endif
+    }
+}
+
 static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
                                 int accWeight, float ax, float ay, float az,
                                 bool useMag, float mx, float my, float mz,
@@ -390,6 +429,9 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     q1 *= recipNorm;
     q2 *= recipNorm;
     q3 *= recipNorm;
+
+    // Check for invalid quaternion
+    imuCheckAndResetOrientationQuaternion(ax, ay, az);
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix();
