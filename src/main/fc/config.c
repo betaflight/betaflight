@@ -1029,6 +1029,9 @@ void validateAndFixConfig(void)
     }
 
     validateAndFixGyroConfig();
+    if (gyroConfig()->gyro_use_32khz && pidConfig()->pid_process_denom == 1) {
+        schedulerSetCalulateTaskStatistics(false);
+    }
 
 #if defined(TARGET_VALIDATECONFIG)
     targetValidateConfiguration(&masterConfig);
