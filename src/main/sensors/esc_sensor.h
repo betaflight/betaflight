@@ -20,7 +20,7 @@
 #include "common/time.h"
 
 typedef struct {
-    bool stale;
+    uint8_t dataAge;
     int8_t temperature;
     int16_t voltage;
     int16_t current;
@@ -28,10 +28,12 @@ typedef struct {
     int16_t rpm;
 } escSensorData_t;
 
+#define ESC_DATA_INVALID 255
+
 bool escSensorInit(void);
 void escSensorProcess(timeUs_t currentTime);
 
 #define ESC_SENSOR_COMBINED 255
 
-escSensorData_t getEscSensorData(uint8_t motorNumber);
+escSensorData_t *getEscSensorData(uint8_t motorNumber);
 

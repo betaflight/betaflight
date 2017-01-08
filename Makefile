@@ -415,7 +415,7 @@ CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/CM3/CoreSupport \
-                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
@@ -522,12 +522,15 @@ COMMON_SRC = \
             drivers/system.c \
             drivers/timer.c \
             fc/config.c \
-            fc/fc_tasks.c \
-            fc/fc_msp.c \
+            fc/fc_init.c \
+            fc/fc_hardfaults.c \
             fc/fc_main.c \
+            fc/fc_msp.c \
+            fc/fc_tasks.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
             fc/runtime_config.c \
+            fc/serial_cli.c \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
@@ -539,7 +542,6 @@ COMMON_SRC = \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            io/serial_cli.c \
             io/statusindicator.c \
             msp/msp_serial.c \
             rx/ibus.c \
@@ -605,6 +607,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/ibus.c \
             sensors/esc_sensor.c \
             io/vtx_smartaudio.c
 

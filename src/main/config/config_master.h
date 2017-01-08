@@ -87,6 +87,7 @@
 #define failsafeConfig(x) (&masterConfig.failsafeConfig)
 #define serialConfig(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
+#define ibusTelemetryConfig(x) (&masterConfig.telemetryConfig)
 #define ppmConfig(x) (&masterConfig.ppmConfig)
 #define pwmConfig(x) (&masterConfig.pwmConfig)
 #define adcConfig(x) (&masterConfig.adcConfig)
@@ -246,6 +247,7 @@ typedef struct master_s {
 #endif
 
     char name[MAX_NAME_LENGTH + 1];
+    char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum

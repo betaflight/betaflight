@@ -677,7 +677,7 @@ static bool bstSlaveProcessFeedbackCommand(uint8_t bstRequest)
 #endif
             break;
         case BST_ANALOG:
-            bstWrite8((uint8_t)constrain(vbat, 0, 255));
+            bstWrite8((uint8_t)constrain(getVbat(), 0, 255));
             bstWrite16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
             bstWrite16(rssi);
             if(batteryConfig()->multiwiiCurrentMeterOutput) {

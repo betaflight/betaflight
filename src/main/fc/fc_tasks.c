@@ -40,6 +40,7 @@
 #include "fc/fc_main.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
@@ -50,7 +51,6 @@
 #include "io/ledstrip.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_smartaudio.h"
 

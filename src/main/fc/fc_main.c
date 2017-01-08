@@ -44,6 +44,7 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
+#include "fc/serial_cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -51,7 +52,6 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "io/serial.h"
-#include "io/serial_cli.h"
 #include "io/statusindicator.h"
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -158,7 +158,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcDeflection[axis]) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcDeflectionAbs[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -704,11 +704,10 @@ void subTaskPidController(void)
 
 void subTaskMainSubprocesses(void)
 {
-
     const uint32_t startTime = micros();
 
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature) {
+    // Read out gyro temperature if used for telemmetry
+    if (feature(FEATURE_TELEMETRY) && gyro.dev.temperature) {
         gyro.dev.temperature(&gyro.dev, &telemTemperature1);
     }
 
@@ -716,10 +715,6 @@ void subTaskMainSubprocesses(void)
         if (sensors(SENSOR_MAG)) {
             updateMagHold();
         }
-#endif
-
-#ifdef GTUNE
-        updateGtuneState();
 #endif
 
 #if defined(BARO) || defined(SONAR)

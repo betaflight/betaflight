@@ -55,6 +55,10 @@
         #define FLASH_PAGE_SIZE                 ((uint32_t)0x40000)
     #endif
 
+    #if defined(STM32F722xx)
+        #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
+    #endif
+
     #if defined(STM32F40_41xxx)
         #define FLASH_PAGE_SIZE                 ((uint32_t)0x20000)
     #endif
@@ -77,13 +81,15 @@
 
 #if defined(FLASH_SIZE)
 #if defined(STM32F40_41xxx)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
+#define FLASH_PAGE_COUNT 4
 #elif defined (STM32F411xE)
-#define FLASH_PAGE_COUNT 3  // just to make calculations work
+#define FLASH_PAGE_COUNT 3
+#elif defined (STM32F722xx)
+#define FLASH_PAGE_COUNT 3
 #elif defined (STM32F745xx)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
+#define FLASH_PAGE_COUNT 4
 #elif defined (STM32F746xx)
-#define FLASH_PAGE_COUNT 4 // just to make calculations work
+#define FLASH_PAGE_COUNT 4
 #else
 #define FLASH_PAGE_COUNT ((FLASH_SIZE * 0x400) / FLASH_PAGE_SIZE)
 #endif
@@ -140,6 +146,9 @@ bool isEEPROMContentValid(void)
 
     // check size and magic numbers
     if (temp->size != sizeof(master_t) || temp->magic_be != 0xBE || temp->magic_ef != 0xEF)
+        return false;
+
+    if (strncasecmp(temp->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER)))
         return false;
 
     // verify integrity of temporary copy

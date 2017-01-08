@@ -737,7 +737,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_ANALOG:
-        sbufWriteU8(dst, (uint8_t)constrain(vbat, 0, 255));
+        sbufWriteU8(dst, (uint8_t)constrain(getVbat(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(mAhDrawn, 0, 0xFFFF)); // milliamp hours drawn from battery
         sbufWriteU16(dst, rssi);
         if(batteryConfig()->multiwiiCurrentMeterOutput) {
@@ -1139,6 +1139,10 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->useUnsyncedPwm);
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->motorPwmRate);
+        sbufWriteU16(dst, (uint16_t)(motorConfig()->digitalIdleOffsetPercent * 100));
+        sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
+        //!!TODO gyro_isr_update to be added pending decision
+        //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1166,6 +1170,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU16(dst, currentProfile->pidProfile.rateAccelLimit * 10);
         sbufWriteU16(dst, currentProfile->pidProfile.yawRateAccelLimit * 10);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelAngleLimit);
+        sbufWriteU8(dst, currentProfile->pidProfile.levelSensitivity);
         break;
 
     case MSP_SENSOR_CONFIG:
@@ -1461,7 +1467,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RESET_CURR_PID:
         resetProfile(currentProfile);
         break;
-
     case MSP_SET_SENSOR_ALIGNMENT:
         gyroConfig()->gyro_align = sbufReadU8(src);
         accelerometerConfig()->acc_align = sbufReadU8(src);
@@ -1478,6 +1483,17 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
+        if (dataSize > 7) {
+            motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
+        }
+        if (sbufBytesRemaining(src)) {
+            gyroConfig()->gyro_use_32khz = sbufReadU8(src);
+        }
+        //!!TODO gyro_isr_update to be added pending decision
+        /*if (sbufBytesRemaining(src)) {
+            gyroConfig()->gyro_isr_update = sbufReadU8(src);
+        }*/
+        validateAndFixGyroConfig();
         break;
 
     case MSP_SET_FILTER_CONFIG:
@@ -1514,6 +1530,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src) / 10.0f;
         currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src) / 10.0f;
+        if (dataSize > 17) {
+            currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
+            currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
+        }
         pidInitConfig(&currentProfile->pidProfile);
         break;
 

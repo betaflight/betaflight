@@ -22,17 +22,20 @@
 
 // Type of accelerometer used/detected
 typedef enum {
-    ACC_DEFAULT = 0,
-    ACC_NONE = 1,
-    ACC_ADXL345 = 2,
-    ACC_MPU6050 = 3,
-    ACC_MMA8452 = 4,
-    ACC_BMA280 = 5,
-    ACC_LSM303DLHC = 6,
-    ACC_MPU6000 = 7,
-    ACC_MPU6500 = 8,
-    ACC_ICM20689 = 9,
-    ACC_FAKE = 10
+    ACC_DEFAULT,
+    ACC_NONE,
+    ACC_ADXL345,
+    ACC_MPU6050,
+    ACC_MMA8452,
+    ACC_BMA280,
+    ACC_LSM303DLHC,
+    ACC_MPU6000,
+    ACC_MPU6500,
+    ACC_ICM20689,
+    ACC_MPU9250,
+    ACC_ICM20608G,
+    ACC_ICM20602,    
+    ACC_FAKE
 } accelerationSensor_e;
 
 typedef struct acc_s {
