@@ -840,6 +840,7 @@ void createDefaultConfig(master_t *config)
 #ifdef USE_GPIOTIMER
     config->gpioTimerConfig.ioTag = IO_TAG_NONE;
     config->gpioTimerConfig.polarity = 0;
+    config->gpioTimerConfig.guardTimeMs = 200;
 #endif
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */

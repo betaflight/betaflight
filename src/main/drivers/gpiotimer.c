@@ -25,6 +25,9 @@
 #include "io.h"
 #include "gpio.h"
 #include "nvic.h"
+#include "io/beeper.h" // XXX Upward call!!!
+
+// XXX Should be a io/laptimer.c or something that make use of driver level timer !?
 
 #include "drivers/gpiotimer.h"
 
@@ -50,6 +53,10 @@ static void gpioTimerExtiHandler(extiCallbackRec_t* cb)
 
     if (guardTimeMs)
         EXTIEnable(gtimIO, false);
+
+#ifdef BEEPER
+    beeper(BEEPER_LAP_TRIGGER);
+#endif
 }
 
 void gpioTimerReset(void)

@@ -36,6 +36,7 @@ typedef enum {
     BEEPER_DISARM_REPEAT,           // Beeps sounded while stick held in disarm position
     BEEPER_ACC_CALIBRATION,         // ACC inflight calibration completed confirmation
     BEEPER_ACC_CALIBRATION_FAIL,    // ACC inflight calibration failed
+    BEEPER_LAP_TRIGGER,             // Beep when lap was triggered
     BEEPER_READY_BEEP,              // Ring a tone when GPS is locked and ready
     BEEPER_MULTI_BEEPS,             // Internal value used by 'beeperConfirmationBeeps()'.
     BEEPER_ARMED,                   // Warning beeps when board is armed (repeats until board is disarmed or throttle is increased)
