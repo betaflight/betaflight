@@ -409,6 +409,12 @@ void gyroUpdate(void)
         return;
     }
     gyro.dev.dataReady = false;
+    // move gyro data into 32-bit variables to avoid overflows in calculations
+    gyroADC[X] = gyro.dev.gyroADCRaw[X];
+    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
+    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
+
+    alignSensors(gyroADC, gyro.dev.gyroAlign);
 
     const bool calibrationComplete = isGyroCalibrationComplete();
     if (calibrationComplete) {
@@ -422,15 +428,7 @@ void gyroUpdate(void)
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
         debug[3] = (uint16_t)(micros() & 0xffff);
 #endif
-    }
-    // move gyro data into 32-bit variables to avoid overflows in calculations
-    gyroADC[X] = gyro.dev.gyroADCRaw[X];
-    gyroADC[Y] = gyro.dev.gyroADCRaw[Y];
-    gyroADC[Z] = gyro.dev.gyroADCRaw[Z];
-
-    alignSensors(gyroADC, gyro.dev.gyroAlign);
-
-    if (!calibrationComplete) {
+    } else {
         performGyroCalibration(gyroConfig->gyroMovementCalibrationThreshold);
     }
 
@@ -448,9 +446,11 @@ void gyroUpdate(void)
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
         gyroADCf = notchFilter2ApplyFn(notchFilter2[axis], gyroADCf);
         gyro.gyroADCf[axis] = gyroADCf;
+    }
 
-        if (!calibrationComplete) {
-            gyroADC[axis] = lrintf(gyro.gyroADCf[axis] / gyro.dev.scale);
-        }
+    if (!calibrationComplete) {
+        gyroADC[X] = lrintf(gyro.gyroADCf[X] / gyro.dev.scale);
+        gyroADC[Y] = lrintf(gyro.gyroADCf[Y] / gyro.dev.scale);
+        gyroADC[Z] = lrintf(gyro.gyroADCf[Z] / gyro.dev.scale);
     }
 }
