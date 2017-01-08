@@ -157,7 +157,7 @@ void pidInitConfig(const pidProfile_t *pidProfile) {
     maxVelocity[FD_YAW] = pidProfile->yawRateAccelLimit * 1000 * dT;
 }
 
-float calcHorizonLevelStrength(void) {
+static float calcHorizonLevelStrength(void) {
     float horizonLevelStrength = 0.0f;
     if (horizonTransition > 0.0f) {
         const float mostDeflectedPos = MAX(getRcDeflectionAbs(FD_ROLL), getRcDeflectionAbs(FD_PITCH));
@@ -167,7 +167,7 @@ float calcHorizonLevelStrength(void) {
     return horizonLevelStrength;
 }
 
-float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
+static float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float currentPidSetpoint) {
     // calculate error angle and limit the angle to the max inclination
     float errorAngle = pidProfile->levelSensitivity * getRcDeflection(axis);
 #ifdef GPS
@@ -187,7 +187,7 @@ float pidLevel(int axis, const pidProfile_t *pidProfile, const rollAndPitchTrims
     return currentPidSetpoint;
 }
 
-float accelerationLimit(int axis, float currentPidSetpoint) {
+static float accelerationLimit(int axis, float currentPidSetpoint) {
     static float previousSetpoint[3];
     const float currentVelocity = currentPidSetpoint- previousSetpoint[axis];
 
@@ -200,14 +200,12 @@ float accelerationLimit(int axis, float currentPidSetpoint) {
 
 // Betaflight pid controller, which will be maintained in the future with additional features specialised for current (mini) multirotor usage.
 // Based on 2DOF reference design (matlab)
-void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim)
+void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *angleTrim, float tpaFactor)
 {
     static float previousRateError[2];
     static float previousSetpoint[3];
 
     // ----------PID controller----------
-    const float tpaFactor = getThrottlePIDAttenuation();
-
     for (int axis = FD_ROLL; axis <= FD_YAW; axis++) {
         float currentPidSetpoint = getSetpointRate(axis);
 

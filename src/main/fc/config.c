@@ -620,6 +620,7 @@ void createDefaultConfig(master_t *config)
     config->gyroConfig.gyro_soft_notch_cutoff_2 = 100;
 
     config->debug_mode = DEBUG_MODE;
+    config->task_statistics = true;
 
     resetAccelerometerTrims(&config->accelerometerConfig.accZero);
 
