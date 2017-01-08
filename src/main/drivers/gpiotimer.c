@@ -81,7 +81,16 @@ debug[3]++;
     EXTIHandlerInit(&gtim_extiCallbackRec, gpioTimerExtiHandler);
 
     // Configure EXTI according to polarity config.
+#ifdef STM32F7
+#  ifdef notyet
+    // Doesn't work for F7 (yet); EXTIConfig() doesn't have edge selection.
+    EXTIConfig(gtimIO, &gtim_extiCallbackRec, NVIC_PRIO_GPIOTIMER,
+        gpioTimerConfig->polarity ? 
+        ioConfig_t ioconfig ) ; // XXX ioConfig_t encodes edge type???
+#  endif
+#else
     EXTIConfig(gtimIO, &gtim_extiCallbackRec, NVIC_PRIO_GPIOTIMER, gpioTimerConfig->polarity ? EXTI_Trigger_Rising : EXTI_Trigger_Falling);
+#endif
 
     return true;
 }

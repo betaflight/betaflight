@@ -104,6 +104,7 @@
 #define USE_SERIALRX_JETIEXBUS
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
+#define USE_GPIOTIMER
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif

@@ -588,6 +588,7 @@ HIGHEND_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
+            drivers/gpiotimer.c \
             flight/navigation.c \
             flight/gps_conversion.c \
             io/dashboard.c \
