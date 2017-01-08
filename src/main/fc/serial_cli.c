@@ -3172,33 +3172,22 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), CPU:%d%%\r\n",
-        millis() / 1000,
-        getVbat(),
-        batteryCellCount,
-        getBatteryStateString(),
-        constrain(averageSystemLoadPercent, 0, 100)
-    );
+    cliPrintf("System Uptime: %d seconds\r\n", millis() / 1000);
+    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getVbat(), batteryCellCount, getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
 #if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
-    uint32_t mask;
-    uint32_t detectedSensorsMask = sensorsMask();
-
+    const uint32_t detectedSensorsMask = sensorsMask();
     for (uint32_t i = 0; ; i++) {
-
-        if (sensorTypeNames[i] == NULL)
+        if (sensorTypeNames[i] == NULL) {
             break;
-
-        mask = (1 << i);
+        }
+        const uint32_t mask = (1 << i);
         if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
-            const char *sensorHardware;
-            uint8_t sensorHardwareIndex = detectedSensors[i];
-            sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
-
+            const uint8_t sensorHardwareIndex = detectedSensors[i];
+            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
-
             if (mask == SENSOR_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
@@ -3207,10 +3196,14 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrint("\r\n");
 
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif
+
 #ifdef USE_I2C
-    uint16_t i2cErrorCounter = i2cGetErrorCounter();
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
 #else
-    uint16_t i2cErrorCounter = 0;
+    const uint16_t i2cErrorCounter = 0;
 #endif
 
 #ifdef STACK_CHECK
@@ -3218,11 +3211,14 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", getTaskDeltaTime(TASK_GYROPID), i2cErrorCounter, sizeof(master_t));
+    cliPrintf("I2C Errors: %d, config size: %d\r\n", i2cErrorCounter, sizeof(master_t));
 
-#ifdef USE_SDCARD
-    cliSdInfo(NULL);
-#endif
+    const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
+    const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
+    const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
+    cliPrintf("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d\r\n",
+            constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
+
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -3233,7 +3229,11 @@ static void cliTasks(char *cmdline)
     int averageLoadSum = 0;
 
 #ifndef CLI_MINIMAL_VERBOSITY
-    cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+    if (masterConfig.task_statistics) {
+        cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+    } else {
+        cliPrintf("Task list           rate/hz\r\n");
+    }
 #endif
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
         cfTaskInfo_t taskInfo;
@@ -3254,24 +3254,30 @@ static void cliTasks(char *cmdline)
                 taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
             }
-            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
-            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
+            const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
+            const int averageLoad = taskInfo.averageExecutionTime == 0 ? 0 : (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
             if (taskId != TASK_SERIAL) {
                 maxLoadSum += maxLoad;
                 averageLoadSum += averageLoad;
             }
-            cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
-                    taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
-                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+            if (masterConfig.task_statistics) {
+                cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
+                        taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+            } else {
+                cliPrintf("%6d\r\n", taskFrequency);
+            }
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
-    cfCheckFuncInfo_t checkFuncInfo;
-    getCheckFuncInfo(&checkFuncInfo);
-    cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
-    cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    if (masterConfig.task_statistics) {
+        cfCheckFuncInfo_t checkFuncInfo;
+        getCheckFuncInfo(&checkFuncInfo);
+        cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
+        cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    }
 }
 #endif
 
