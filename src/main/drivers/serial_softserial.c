@@ -22,9 +22,10 @@
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 
+#define SOFTSERIAL_MULTI_TIMER_DEBUG
+
 #include "build/build_config.h"
 #include "build/atomic.h"
-#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -125,8 +126,10 @@ static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
 
 static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32_t baud)
 {
-    uint32_t clock = SystemCoreClock;
+    uint32_t baseClock = SystemCoreClock / timerClockDivisor(timerHardwarePtr->tim);
+    uint32_t clock = baseClock;
     uint32_t timerPeriod;
+
     do {
         timerPeriod = clock / baud;
         if (isTimerPeriodTooLarge(timerPeriod)) {
@@ -139,15 +142,9 @@ static void serialTimerConfigure(const timerHardware_t *timerHardwarePtr, uint32
         }
     } while (isTimerPeriodTooLarge(timerPeriod));
 
-    uint8_t mhz = SystemCoreClock / 1000000;
+    uint8_t mhz = baseClock / 1000000;
 
     timerConfigure(timerHardwarePtr, timerPeriod, mhz);
-
-#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
-static int tpoff = 0;
-debug[2 + tpoff] = timerPeriod;
-tpoff = (tpoff + 1) % 2;
-#endif
 }
 
 static void serialTimerTxConfig(const timerHardware_t *timerHardwarePtr, uint8_t reference, uint32_t baud)
@@ -390,20 +387,10 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
     processTxState(softSerial);
     processRxState(softSerial);
-
-#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
-    debug[0]++;
-    if (debug[0] == 10) {
-        REINIT_serialTimerTxConfig();
-    }
-#endif
 }
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
-#ifdef SOFTSERIAL_MULTI_TIMER_DEBUG
-    debug[1]++;
-#endif
     UNUSED(capture);
 
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
