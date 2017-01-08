@@ -105,8 +105,6 @@ uint8_t cliMode = 0;
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
-
 static serialPort_t *cliPort;
 static bufWriter_t *cliWriter;
 static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
@@ -3217,7 +3215,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", getTaskDeltaTime(TASK_GYROPID), i2cErrorCounter, sizeof(master_t));
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
@@ -3241,7 +3239,7 @@ static void cliTasks(char *cmdline)
             int taskFrequency;
             int subTaskFrequency;
             if (taskId == TASK_GYROPID) {
-                subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
+                subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
                 if (pidConfig()->pid_process_denom > 1) {
                     cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);

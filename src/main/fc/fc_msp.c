@@ -614,7 +614,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -638,7 +638,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
