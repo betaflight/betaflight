@@ -3938,6 +3938,8 @@ void cliEnter(serialPort_t *serialPort)
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
 
+    schedulerSetCalulateTaskStatistics(masterConfig.task_statistics);
+
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
 #else
