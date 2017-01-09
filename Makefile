@@ -610,7 +610,9 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             telemetry/ibus.c \
             sensors/esc_sensor.c \
-            io/vtx_smartaudio.c
+            drivers/vtx_var.c \
+            io/vtx_smartaudio.c \
+            io/vtx_tramp.c
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
