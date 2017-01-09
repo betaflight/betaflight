@@ -154,6 +154,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
 #ifdef USE_SERIALRX_SPEKTRUM
+    case SERIALRX_SRXL:
     case SERIALRX_SPEKTRUM1024:
     case SERIALRX_SPEKTRUM2048:
         enabled = spektrumInit(rxConfig, rxRuntimeConfig);

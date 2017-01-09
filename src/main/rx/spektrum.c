@@ -62,6 +62,7 @@ static uint8_t spek_chan_shift;
 static uint8_t spek_chan_mask;
 static bool rcFrameComplete = false;
 static bool spekHiRes = false;
+static bool srxlEnabled = false;
 
 // Variables used for calculating a signal strength from satellite fade.
 //  This is time-variant and computed every second based on the fade
@@ -155,8 +156,8 @@ static uint8_t spektrumFrameStatus(void)
         }
     }
 
-    /* only process if 2048, some data in buffer AND servos in phase 0 */
-    if (spekHiRes && telemetryBufLen && (spekFrame[2] & 0x80)) {
+    /* only process if srxl enabled, some data in buffer AND servos in phase 0 */
+    if (srxlEnabled && telemetryBufLen && (spekFrame[2] & 0x80)) {
         dispatchAdd(&srxlTelemetryDispatch, 100);
     }
     return RX_FRAME_COMPLETE;
@@ -259,7 +260,23 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
+    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    if (!portConfig) {
+        return false;
+    }
+
+    srxlEnabled = false;
+#ifdef TELEMETRY
+    bool portShared = telemetryCheckRxPortShared(portConfig);
+#else
+    bool portShared = false;
+#endif
+
     switch (rxConfig->serialrx_provider) {
+    case SERIALRX_SRXL:
+#ifdef TELEMETRY
+        srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared && rxConfig->serialrx_provider == SERIALRX_SRXL);
+#endif    
     case SERIALRX_SPEKTRUM2048:
         // 11 bit frames
         spek_chan_shift = 3;
@@ -280,19 +297,6 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 
     rxRuntimeConfig->rcReadRawFn = spektrumReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = spektrumFrameStatus;
-
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
-    if (!portConfig) {
-        return false;
-    }
-
-#ifdef TELEMETRY
-    bool portShared = telemetryCheckRxPortShared(portConfig);
-    bool srxlEnabled = (feature(FEATURE_TELEMETRY) && !portShared && rxConfig->serialrx_provider == SERIALRX_SPEKTRUM2048);
-#else
-    bool srxlEnabled = false;
-    bool portShared = false;
-#endif
 
     serialPort = openSerialPort(portConfig->identifier, 
         FUNCTION_RX_SERIAL, 
