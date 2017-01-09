@@ -88,6 +88,7 @@ typedef enum {
 #define DMA_IT_FEIF         ((uint32_t)0x00000001)
 
 dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream);
+dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream);
 
 #else
 

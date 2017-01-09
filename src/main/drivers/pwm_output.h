@@ -87,11 +87,7 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
-#ifdef STM32F3
     dmaChannelDescriptor_t* dmaDescriptor;
-#else
-    uint32_t dmaFlag;
-#endif
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;

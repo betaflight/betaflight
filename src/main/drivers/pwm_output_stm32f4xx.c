@@ -82,11 +82,10 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    DMA_Stream_TypeDef *stream = motor->timerHardware->dmaStream;
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
-    DMA_SetCurrDataCounter(stream, MOTOR_DMA_BUFFER_SIZE);
-    DMA_ClearITPendingBit(stream, motor->dmaFlag);
-    DMA_Cmd(stream, ENABLE);
+    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
+    DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
+    DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
@@ -169,6 +168,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     }
 
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+    motor->dmaDescriptor = getDmaDescriptor(stream);
 
     DMA_Cmd(stream, DISABLE);
     DMA_DeInit(stream);
@@ -191,8 +191,6 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
 
     DMA_Init(stream, &DMA_InitStructure);
-
-    motor->dmaFlag = dmaFlag_IT_TCIF(stream);
 }
 
 #endif
