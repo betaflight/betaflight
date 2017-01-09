@@ -1051,6 +1051,13 @@ void validateAndFixGyroConfig(void)
     if (gyroConfig()->gyro_use_32khz) {
 #ifdef GYRO_SUPPORTS_32KHZ
         samplingTime = 0.00003125;
+        // F1 and F3 can't handle high pid speed.
+#if defined(STM32F1)
+        pidConfig()->pid_process_denom = constrain(pidConfig()->pid_process_denom, 16, 16);
+#endif
+#if defined(STM32F3)
+        pidConfig()->pid_process_denom = constrain(pidConfig()->pid_process_denom, 4, 16);
+#endif
 #else
         gyroConfig()->gyro_use_32khz = false;
 #endif
@@ -1080,9 +1087,12 @@ void validateAndFixGyroConfig(void)
             motorUpdateRestriction = 0.0001f;
             break;
         case (PWM_TYPE_DSHOT150):
-            motorUpdateRestriction = 0.000125f;
+            motorUpdateRestriction = 0.000250f;
             break;
         case (PWM_TYPE_DSHOT300):
+            motorUpdateRestriction = 0.0001f;
+            break;
+        case (PWM_TYPE_DSHOT600):
             motorUpdateRestriction = 0.0000625f;
             break;
         default:
@@ -1093,7 +1103,7 @@ void validateAndFixGyroConfig(void)
         pidConfig()->pid_process_denom = motorUpdateRestriction / (samplingTime * gyroConfig()->gyro_sync_denom);
 
     // Prevent overriding the max rate of motors
-    if(motorConfig()->useUnsyncedPwm) {
+    if(motorConfig()->useUnsyncedPwm && (motorConfig()->motorPwmProtocol <= PWM_TYPE_BRUSHED)) {
         uint32_t maxEscRate = lrintf(1.0f / motorUpdateRestriction);
 
         if(motorConfig()->motorPwmRate > maxEscRate)

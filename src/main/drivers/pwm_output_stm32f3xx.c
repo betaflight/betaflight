@@ -84,6 +84,7 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
+    DMA_Cmd(motor->timerHardware->dmaChannel, DISABLE);
     TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
     DMA_SetCurrDataCounter(motor->timerHardware->dmaChannel, MOTOR_DMA_BUFFER_SIZE);
     DMA_CLEAR_FLAG(motor->dmaDescriptor, DMA_IT_TCIF);
@@ -172,7 +173,6 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
     dmaInit(timerHardware->dmaIrqHandler, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
     motor->dmaDescriptor = getDmaDescriptor(channel);
 
-    DMA_Cmd(channel, DISABLE);
     DMA_DeInit(channel);
     DMA_StructInit(&DMA_InitStructure);
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)timerChCCR(timerHardware);
