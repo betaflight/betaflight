@@ -439,10 +439,11 @@ void resetBatteryConfig(batteryConfig_t *batteryConfig)
 
 void resetSerialConfig(serialConfig_t *serialConfig)
 {
-    uint8_t index;
     memset(serialConfig, 0, sizeof(serialConfig_t));
+    serialConfig->serial_update_rate_hz =  100;
+    serialConfig->reboot_character = 'R';
 
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
         serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
         serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
         serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_57600;
@@ -451,13 +452,10 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-
 #if defined(USE_VCP)
     // This allows MSP connection via USART & VCP so the board can be reconfigured.
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
 #endif
-
-    serialConfig->reboot_character = 'R';
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
