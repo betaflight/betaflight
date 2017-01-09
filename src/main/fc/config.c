@@ -181,7 +181,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->levelSensitivity = 100;  // 100 degrees at full stick
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
-    pidProfile->yawRateAccelLimit = 20.0f;
+    pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
     pidProfile->itermThrottleThreshold = 350;
 }
@@ -693,6 +693,7 @@ void createDefaultConfig(master_t *config)
     config->rxConfig.rssi_scale = RSSI_SCALE_DEFAULT;
     config->rxConfig.rssi_ppm_invert = 0;
     config->rxConfig.rcInterpolation = RC_SMOOTHING_AUTO;
+    config->rxConfig.rcInterpolationChannels = 0;
     config->rxConfig.rcInterpolationInterval = 19;
     config->rxConfig.fpvCamAngleDegrees = 0;
     config->rxConfig.max_aux_channel = MAX_AUX_CHANNELS;

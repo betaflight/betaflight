@@ -340,6 +340,10 @@ static const char * const lookupTableRcInterpolation[] = {
     "OFF", "PRESET", "AUTO", "MANUAL"
 };
 
+static const char * const lookupTableRcInterpolationChannels[] = {
+    "RP", "RPY", "RPYT"
+};
+
 static const char * const lookupTableLowpassType[] = {
     "PT1", "BIQUAD", "FIR"
 };
@@ -387,6 +391,7 @@ typedef enum {
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_RC_INTERPOLATION,
+    TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
 #ifdef OSD
@@ -428,6 +433,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
+    { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },    
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
 #ifdef OSD
@@ -492,6 +498,7 @@ const clivalue_t valueTable[] = {
     { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &rxConfig()->rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT } },
     { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
     { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
+    { "rc_interpolation_channels",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolationChannels, .config.lookup = { TABLE_RC_INTERPOLATION_CHANNELS } },
     { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rcInterpolationInterval, .config.minmax = { 1,  50 } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
 #if defined(USE_PWM)
