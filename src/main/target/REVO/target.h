@@ -31,6 +31,10 @@
 #define TARGET_BOARD_IDENTIFIER "SOUL"
 #define USBD_PRODUCT_STRING     "DemonSoulF4"
 
+#elif defined(PODIUMF4)
+#define TARGET_BOARD_IDENTIFIER "PODI"
+#define USBD_PRODUCT_STRING     "PodiumF4"
+
 #else
 #define TARGET_BOARD_IDENTIFIER "REVO"
 #define USBD_PRODUCT_STRING     "Revolution"
@@ -44,6 +48,11 @@
 #define USE_ESC_SENSOR
 
 #define LED0                    PB5
+#if defined(PODIUMF4)
+#define LED1                    PB4
+#define LED2                    PB6
+#endif
+
 // Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
 #if defined(AIRBOTF4)
 #define BEEPER                  PB4
@@ -78,7 +87,7 @@
 #define USE_GYRO_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW180_DEG
 
-#elif defined(REVOLT)
+#elif defined(REVOLT) || defined(PODIUMF4)
 
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
@@ -112,7 +121,7 @@
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
 
-#if !defined(AIRBOTF4) && !defined(REVOLT) && !defined(SOULF4)
+#if !defined(AIRBOTF4) && !defined(REVOLT) && !defined(SOULF4) && !defined(PODIUMF4)
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
@@ -129,7 +138,11 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
+#if defined(PODIUMF4)
+#define VBUS_SENSING_PIN        PA8
+#else
 #define VBUS_SENSING_PIN        PC5
+#endif
 
 #define USE_UART1
 #define UART1_RX_PIN            PA10
@@ -163,16 +176,26 @@
 #define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
+#if !defined(PODIUMF4)
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-//#define RSSI_ADC_PIN            PA0
+#else
+#define VBAT_ADC_PIN           PC3
+#define VBAT_ADC_CHANNEL       ADC_Channel_13
+#endif
 
 #define LED_STRIP
 
 #define SENSORS_SET             (SENSOR_ACC)
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#if defined(PODIUMF4)
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define DEFAULT_FEATURES        FEATURE_TELEMETRY
+#else
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+#endif
 
 #define SPEKTRUM_BIND
 // USART3,
