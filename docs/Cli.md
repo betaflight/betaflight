@@ -187,7 +187,9 @@ Re-apply any new defaults as desired.
 |  nav_fw_launch_accel  | 1863 | Forward acceleration threshold for bungee launch of throw launch (cm/s/s, 1G = 981 cm/s/s) |
 |  nav_fw_launch_detect_time  | 40 | Time for which thresholds have to breached to consider launch happened (ms) |
 |  nav_fw_launch_thr  | 1700 | Launch throttle - throttle to be set during launch sequence (pwm units) |
-|  nav_fw_launch_motor_delay  | 500 | Delay between detected launch and launch sequence start and throttling up (ms) |
+|  nav_fw_launch_idle_thr       | 1000  | Launch idle throttle - throttle to be set before launch sequence is initiated. If set below min_throttle it will force motor stop or at idle throttle (depending if the MOTOR_STOP is enabled). If set above min_throttle it will force throttle to this value (if MOTOR_STOP is enabled it will be handled according to throttle stick position)	|
+|  nav_fw_launch_motor_delay    | 500 | Delay between detected launch and launch sequence start and throttling up (ms) |
+|  nav_fw_launch_spinup_time    | 100 | Time to bring power from min_throttle to nav_fw_launch_thr - to avoid big stress on ESC and large torque from propeller |
 |  nav_fw_launch_timeout  | 5000 | Maximum time for launch sequence to be executed. After this time LAUNCH mode will be turned off and regular flight mode will take over (ms) |
 |  nav_fw_launch_climb_angle  | 10 | Climb angle for launch sequence (degrees), is also restrained by global max_angle_inclination_pit |
 |  serialrx_provider  | SPEK1024 | When feature SERIALRX is enabled, this allows connection to several receivers which output data via digital interface resembling serial. See RX section. |

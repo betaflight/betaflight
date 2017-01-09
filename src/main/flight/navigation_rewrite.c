@@ -58,6 +58,68 @@ uint16_t      GPS_distanceToHome;        // distance to home point in meters
 int16_t       GPS_directionToHome;       // direction to home point in degrees
 
 #if defined(NAV)
+PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
+
+PG_RESET_TEMPLATE(navConfig_t, navConfig,
+    .general = {
+
+        .flags = {
+            .use_thr_mid_for_althold = 0,
+            .extra_arming_safety = 1,
+            .user_control_mode = NAV_GPS_ATTI,
+            .rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT,
+            .rth_climb_first = 1,                         // Climb first, turn after reaching safe altitude
+            .rth_tail_first = 0,
+            .disarm_on_landing = 0,
+        },
+
+        // General navigation parameters
+        .pos_failure_timeout = 5,     // 5 sec
+        .waypoint_radius = 100,       // 2m diameter
+        .max_speed = 300,             // 3 m/s = 10.8 km/h
+        .max_climb_rate = 500,        // 5 m/s
+        .max_manual_speed = 500,
+        .max_manual_climb_rate = 200,
+        .land_descent_rate = 200,     // 2 m/s
+        .land_slowdown_minalt = 500,  // 5 meters of altitude
+        .land_slowdown_maxalt = 2000, // 20 meters of altitude
+        .emerg_descent_rate = 500,    // 5 m/s
+        .min_rth_distance = 500,      // If closer than 5m - land immediately
+        .rth_altitude = 1000,         // 10m
+    },
+
+    // MC-specific
+    .mc = {
+        .max_bank_angle = 30,      // 30 deg
+        .hover_throttle = 1500,
+        .auto_disarm_delay = 2000,
+    },
+
+    // Fixed wing
+    .fw = {
+        .max_bank_angle = 20,      // 30 deg
+        .max_climb_angle = 20,
+        .max_dive_angle = 15,
+        .cruise_throttle = 1400,
+        .max_throttle = 1700,
+        .min_throttle = 1200,
+        .pitch_to_throttle = 10,   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
+        .roll_to_pitch = 75,       // percent of coupling
+        .loiter_radius = 5000,     // 50m
+
+        // Fixed wing launch
+        .launch_velocity_thresh = 300,         // 3 m/s
+        .launch_accel_thresh = 1.9f * 981,     // cm/s/s (1.9*G)
+        .launch_time_thresh = 40,              // 40ms
+        .launch_throttle = 1700,
+        .launch_idle_throttle = 1000,          // Motor idle or MOTOR_STOP
+        .launch_motor_timer = 500,             // ms
+        .launch_motor_spinup_time = 100,       // ms, time to gredually increase throttle from idle to launch
+        .launch_timeout = 5000,                // ms, timeout for launch procedure
+        .launch_climb_angle = 10              // 10 deg
+    }
+);
+
 navigationPosControl_t  posControl;
 navSystemStatus_t       NAV_Status;
 
@@ -683,66 +745,6 @@ static const navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         }
     },
 };
-
-PG_REGISTER_WITH_RESET_TEMPLATE(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
-
-PG_RESET_TEMPLATE(navConfig_t, navConfig,
-    .general = {
-
-        .flags = {
-            .use_thr_mid_for_althold = 0,
-            .extra_arming_safety = 1,
-            .user_control_mode = NAV_GPS_ATTI,
-            .rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT,
-            .rth_climb_first = 1,                         // Climb first, turn after reaching safe altitude
-            .rth_tail_first = 0,
-            .disarm_on_landing = 0,
-        },
-
-        // General navigation parameters
-        .pos_failure_timeout = 5,     // 5 sec
-        .waypoint_radius = 100,       // 2m diameter
-        .max_speed = 300,             // 3 m/s = 10.8 km/h
-        .max_climb_rate = 500,        // 5 m/s
-        .max_manual_speed = 500,
-        .max_manual_climb_rate = 200,
-        .land_descent_rate = 200,     // 2 m/s
-        .land_slowdown_minalt = 500,  // 5 meters of altitude
-        .land_slowdown_maxalt = 2000, // 20 meters of altitude
-        .emerg_descent_rate = 500,    // 5 m/s
-        .min_rth_distance = 500,      // If closer than 5m - land immediately
-        .rth_altitude = 1000,         // 10m
-    },
-
-    // MC-specific
-    .mc = {
-        .max_bank_angle = 30,      // 30 deg
-        .hover_throttle = 1500,
-        .auto_disarm_delay = 2000,
-    },
-
-    // Fixed wing
-    .fw = {
-        .max_bank_angle = 20,      // 30 deg
-        .max_climb_angle = 20,
-        .max_dive_angle = 15,
-        .cruise_throttle = 1400,
-        .max_throttle = 1700,
-        .min_throttle = 1200,
-        .pitch_to_throttle = 10,   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
-        .roll_to_pitch = 75,       // percent of coupling
-        .loiter_radius = 5000,     // 50m
-
-        // Fixed wing launch
-        .launch_velocity_thresh = 300,         // 3 m/s
-        .launch_accel_thresh = 1.9f * 981,     // cm/s/s (1.9*G)
-        .launch_time_thresh = 40,              // 40ms
-        .launch_throttle = 1700,
-        .launch_motor_timer = 500,             // ms
-        .launch_timeout = 5000,                // ms, timeout for launch procedure
-        .launch_climb_angle = 10              // 10 deg
-    }
-);
 
 static navigationFSMStateFlags_t navGetStateFlags(navigationFSMState_t state)
 {

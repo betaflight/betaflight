@@ -135,8 +135,10 @@ typedef struct navConfig_s {
         uint16_t launch_velocity_thresh;     // Velocity threshold for swing launch detection
         uint16_t launch_accel_thresh;        // Acceleration threshold for launch detection (cm/s/s)
         uint16_t launch_time_thresh;         // Time threshold for launch detection (ms)
+        uint16_t launch_idle_throttle;       // Throttle to keep at launch idle
         uint16_t launch_throttle;            // Launch throttle
         uint16_t launch_motor_timer;         // Time to wait before setting launch_throttle (ms)
+        uint16_t launch_motor_spinup_time;   // Time to speed-up motors from idle to launch_throttle (ESC desync prevention)
         uint16_t launch_timeout;             // Launch timeout to disable launch mode and swith to normal flight (ms)
         uint8_t  launch_climb_angle;         // Target climb angle for launch (deg)
     } fw;
