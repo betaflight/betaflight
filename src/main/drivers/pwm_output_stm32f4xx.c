@@ -192,8 +192,7 @@ void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t
 
     DMA_Init(stream, &DMA_InitStructure);
 
-    motor->dmaFlag = dmaFlag_IT_TCIF(timerHardware->dmaStream);
-    DMA_ClearITPendingBit(stream, motor->dmaFlag);
+    motor->dmaFlag = dmaFlag_IT_TCIF(stream);
 }
 
 #endif
