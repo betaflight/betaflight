@@ -568,6 +568,5 @@ void init(void)
     motorControlEnable = true;
 
     fcTasksInit();
-    schedulerSetCalulateTaskStatistics(masterConfig.task_statistics);
     systemState |= SYSTEM_STATE_READY;
 }
