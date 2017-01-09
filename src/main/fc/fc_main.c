@@ -209,6 +209,7 @@ void processRcCommand(void)
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     static uint16_t currentRxRefreshRate;
+    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 1;
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
 
@@ -240,7 +241,7 @@ void processRcCommand(void)
                 debug[3] = rxRefreshRate;
             }
 
-            for (int channel=0; channel < 4; channel++) {
+            for (int channel=ROLL; channel <= interpolationChannels; channel++) {
                 deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
                 lastCommand[channel] = rcCommand[channel];
             }
@@ -252,7 +253,8 @@ void processRcCommand(void)
 
         // Interpolate steps of rcCommand
         if (factor > 0) {
-            for (int channel=0; channel < 4; channel++) rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+            for (int channel=ROLL; channel <= interpolationChannels; channel++)
+                rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
         } else {
             factor = 0;
         }
