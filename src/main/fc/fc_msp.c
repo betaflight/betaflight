@@ -1351,7 +1351,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RC_TUNING:
-        if (dataSize >= 10) {
+        if (sbufBytesRemaining(src) >= 10) {
             currentControlRateProfile->rcRate8 = sbufReadU8(src);
             currentControlRateProfile->rcExpo8 = sbufReadU8(src);
             for (int i = 0; i < 3; i++) {
@@ -1363,10 +1363,10 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             currentControlRateProfile->thrMid8 = sbufReadU8(src);
             currentControlRateProfile->thrExpo8 = sbufReadU8(src);
             currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
-            if (dataSize >= 11) {
+            if (sbufBytesRemaining(src)) {
                 currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
             }
-            if (dataSize >= 12) {
+            if (sbufBytesRemaining(src)) {
                 currentControlRateProfile->rcYawRate8 = sbufReadU8(src);
             }
         } else {
@@ -1414,7 +1414,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_SERVO_CONFIGURATION:
 #ifdef USE_SERVOS
-        if (dataSize != 1 + sizeof(servoParam_t)) {
+        if (sbufBytesRemaining(src) != 1 + sizeof(servoParam_t)) {
             return MSP_RESULT_ERROR;
         }
         i = sbufReadU8(src);
@@ -1483,7 +1483,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         motorConfig()->motorPwmProtocol = constrain(sbufReadU8(src), 0, PWM_TYPE_BRUSHED);
 #endif
         motorConfig()->motorPwmRate = sbufReadU16(src);
-        if (dataSize > 7) {
+        if (sbufBytesRemaining(src) >= 2) {
             motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
         if (sbufBytesRemaining(src)) {
@@ -1500,13 +1500,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroConfig()->gyro_soft_lpf_hz = sbufReadU8(src);
         currentProfile->pidProfile.dterm_lpf_hz = sbufReadU16(src);
         currentProfile->pidProfile.yaw_lpf_hz = sbufReadU16(src);
-        if (dataSize > 5) {
+        if (sbufBytesRemaining(src) >= 8) {
             gyroConfig()->gyro_soft_notch_hz_1 = sbufReadU16(src);
             gyroConfig()->gyro_soft_notch_cutoff_1 = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_hz = sbufReadU16(src);
             currentProfile->pidProfile.dterm_notch_cutoff = sbufReadU16(src);
         }
-        if (dataSize > 13) {
+        if (sbufBytesRemaining(src) >= 4) {
             gyroConfig()->gyro_soft_notch_hz_2 = sbufReadU16(src);
             gyroConfig()->gyro_soft_notch_cutoff_2 = sbufReadU16(src);
         }
@@ -1530,7 +1530,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); // reserved
         currentProfile->pidProfile.rateAccelLimit = sbufReadU16(src) / 10.0f;
         currentProfile->pidProfile.yawRateAccelLimit = sbufReadU16(src) / 10.0f;
-        if (dataSize > 17) {
+        if (sbufBytesRemaining(src) >= 2) {
             currentProfile->pidProfile.levelAngleLimit = sbufReadU8(src);
             currentProfile->pidProfile.levelSensitivity = sbufReadU8(src);
         }
@@ -1710,7 +1710,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         batteryConfig()->vbatmincellvoltage = sbufReadU8(src);  // vbatlevel_warn1 in MWC2.3 GUI
         batteryConfig()->vbatmaxcellvoltage = sbufReadU8(src);  // vbatlevel_warn2 in MWC2.3 GUI
         batteryConfig()->vbatwarningcellvoltage = sbufReadU8(src);  // vbatlevel when buzzer starts to alert
-        if (dataSize > 4) {
+        if (sbufBytesRemaining(src)) {
             batteryConfig()->batteryMeterType = sbufReadU8(src);
         }
         break;
@@ -1734,16 +1734,16 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         rxConfig()->midrc = sbufReadU16(src);
         rxConfig()->mincheck = sbufReadU16(src);
         rxConfig()->spektrum_sat_bind = sbufReadU8(src);
-        if (dataSize > 8) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfig()->rx_min_usec = sbufReadU16(src);
             rxConfig()->rx_max_usec = sbufReadU16(src);
         }
-        if (dataSize > 12) {
+        if (sbufBytesRemaining(src) >= 4) {
             rxConfig()->rcInterpolation = sbufReadU8(src);
             rxConfig()->rcInterpolationInterval = sbufReadU8(src);
             rxConfig()->airModeActivateThreshold = sbufReadU16(src);
         }
-        if (dataSize > 16) {
+        if (sbufBytesRemaining(src) >= 6) {
             rxConfig()->rx_spi_protocol = sbufReadU8(src);
             rxConfig()->rx_spi_id = sbufReadU32(src);
             rxConfig()->rx_spi_rf_channel_count = sbufReadU8(src);
@@ -1840,7 +1840,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_LED_STRIP_CONFIG:
         {
             i = sbufReadU8(src);
-            if (i >= LED_MAX_STRIP_LENGTH || dataSize != (1 + 4)) {
+            if (i >= LED_MAX_STRIP_LENGTH || sbufBytesRemaining(src) != 4) {
                 return MSP_RESULT_ERROR;
             }
             ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[i];
