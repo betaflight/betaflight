@@ -614,7 +614,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -638,7 +638,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -1140,6 +1140,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, motorConfig()->motorPwmProtocol);
         sbufWriteU16(dst, motorConfig()->motorPwmRate);
         sbufWriteU16(dst, (uint16_t)(motorConfig()->digitalIdleOffsetPercent * 100));
+        sbufWriteU8(dst, gyroConfig()->gyro_use_32khz);
+        //!!TODO gyro_isr_update to be added pending decision
+        //sbufWriteU8(dst, gyroConfig()->gyro_isr_update);
         break;
 
     case MSP_FILTER_CONFIG :
@@ -1483,6 +1486,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (dataSize > 7) {
             motorConfig()->digitalIdleOffsetPercent = sbufReadU16(src) / 100.0f;
         }
+        if (sbufBytesRemaining(src)) {
+            gyroConfig()->gyro_use_32khz = sbufReadU8(src);
+        }
+        //!!TODO gyro_isr_update to be added pending decision
+        /*if (sbufBytesRemaining(src)) {
+            gyroConfig()->gyro_isr_update = sbufReadU8(src);
+        }*/
+        validateAndFixGyroConfig();
         break;
 
     case MSP_SET_FILTER_CONFIG:

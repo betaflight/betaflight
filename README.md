@@ -2,24 +2,25 @@
 
 Betaflight is flight controller software (firmware) used to fly multi-rotor craft and fixed wing craft.
 
-This fork differs from baseflight and cleanflight in that it focuses on flight performance and wide target support.
+This fork differs from Baseflight and Cleanflight in that it focuses on flight performance, leading-edge feature additions, and wide target support.
 
 ## Features
 
 Betaflight has the following features:
 
-* Multi-color RGB LED Strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, etc)
-* DSHOT (600, 300 and 150), Oneshot (125 and 42) and Multishot motor protocol support 
-* Blackbox flight recorder logging (to onboard flash or external SD card - where fitted)
+* Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
+* DShot (600, 300 and 150), Multishot, and Oneshot (125 and 42) motor protocol support
+* Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
 * Support for targets that use the STM32 F7, F4, F3 and F1 processors
-* PWM, PPM and serial input with failsafe detection
-* Multiple Telemetry protocols (CRSF, FrSky, HoTT smart-port, MSP etc)
-* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II and X8R.
-* OLED Displays - Display information on: Battery voltage, profile, rate profile, version, sensors, RC, etc.
-* In-flight manual PID tuning and rate adjustment.
-* Rate profiles and in-flight selection of them.
-* Configurable serial ports for Serial RX, Telemetry, MSP, GPS - Use most devices on any port, softserial too.
-* and much, much more.
+* PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
+* Multiple telemetry protocols (CSRF, FrSky, HoTT smart-port, MSP, etc)
+* RSSI via ADC - Uses ADC to read PWM RSSI signals, tested with FrSky D4R-II, X8R, X4R-SB, & XSR
+* OSD support & configuration without needing third-party OSD software/firmware/comm devices
+* OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc
+* In-flight manual PID tuning and rate adjustment
+* Rate profiles and in-flight selection of them
+* Configurable serial ports for Serial RX, Telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
+* and MUCH, MUCH more.
 
 ## Installation & Documentation
 
@@ -48,10 +49,9 @@ https://github.com/betaflight/betaflight-configurator
 Contributions are welcome and encouraged.  You can contribute in many ways:
 
 * Documentation updates and corrections.
-* How-To guides - received help?  help others!
-* Bug fixes.
-* New features.
-* Telling us your ideas and suggestions.
+* How-To guides - received help? Help others!
+* Bug reporting & fixes.
+* New feature ideas & suggestions.
 
 The best place to start is the IRC channel on gitter (see above), drop in, say hi. Next place is the github issue tracker:
 

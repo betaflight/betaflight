@@ -20,15 +20,15 @@
 #include <stdbool.h>
 
 #define PID_CONTROLLER_BETAFLIGHT 1
-#define PID_MIXER_SCALING 900.0f
+#define PID_MIXER_SCALING 100.0f
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define PIDSUM_LIMIT 0.5f
 
 // Scaling factors for Pids for better tunable range in configurator for betaflight pid controller. The scaling is based on legacy pid controller or previous float
-#define PTERM_SCALE 0.032029f
-#define ITERM_SCALE 0.244381f
-#define DTERM_SCALE 0.000529f
+#define PTERM_SCALE 0.003558774f
+#define ITERM_SCALE 0.027153417f
+#define DTERM_SCALE 0.000058778f
 
 typedef enum {
     PIDROLL,
@@ -88,7 +88,7 @@ typedef struct pidConfig_s {
 } pidConfig_t;
 
 union rollAndPitchTrims_u;
-void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim);
+void pidController(const pidProfile_t *pidProfile, const union rollAndPitchTrims_u *angleTrim, float tpaFactor);
 
 extern float axisPIDf[3];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];

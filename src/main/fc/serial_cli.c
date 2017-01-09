@@ -105,8 +105,6 @@ uint8_t cliMode = 0;
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
-
 static serialPort_t *cliPort;
 static bufWriter_t *cliWriter;
 static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
@@ -335,12 +333,16 @@ static const char * const lookupTableSuperExpoYaw[] = {
 static const char * const lookupTablePwmProtocol[] = {
     "OFF", "ONESHOT125", "ONESHOT42", "MULTISHOT", "BRUSHED",
 #ifdef USE_DSHOT
-    "DSHOT600", "DSHOT300", "DSHOT150"
+    "DSHOT150", "DSHOT300", "DSHOT600", "DSHOT900", "DSHOT1200",
 #endif
 };
 
 static const char * const lookupTableRcInterpolation[] = {
     "OFF", "PRESET", "AUTO", "MANUAL"
+};
+
+static const char * const lookupTableRcInterpolationChannels[] = {
+    "RP", "RPY", "RPYT"
 };
 
 static const char * const lookupTableLowpassType[] = {
@@ -390,6 +392,7 @@ typedef enum {
     TABLE_SUPEREXPO_YAW,
     TABLE_MOTOR_PWM_PROTOCOL,
     TABLE_RC_INTERPOLATION,
+    TABLE_RC_INTERPOLATION_CHANNELS,
     TABLE_LOWPASS_TYPE,
     TABLE_FAILSAFE,
 #ifdef OSD
@@ -431,6 +434,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
+    { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },    
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
 #ifdef OSD
@@ -486,12 +490,16 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
+#ifndef SKIP_TASK_STATISTICS
+    { "task_statistics",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.task_statistics, .config.lookup = { TABLE_OFF_ON } },
+#endif
     { "mid_rc",                     VAR_UINT16 | MASTER_VALUE,  &rxConfig()->midrc, .config.minmax = { 1200,  1700 } },
     { "min_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->mincheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "max_check",                  VAR_UINT16 | MASTER_VALUE,  &rxConfig()->maxcheck, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
     { "rssi_channel",               VAR_INT8   | MASTER_VALUE,  &rxConfig()->rssi_channel, .config.minmax = { 0,  MAX_SUPPORTED_RC_CHANNEL_COUNT } },
     { "rssi_scale",                 VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rssi_scale, .config.minmax = { RSSI_SCALE_MIN,  RSSI_SCALE_MAX } },
     { "rc_interpolation",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolation, .config.lookup = { TABLE_RC_INTERPOLATION } },
+    { "rc_interpolation_channels",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &rxConfig()->rcInterpolationChannels, .config.lookup = { TABLE_RC_INTERPOLATION_CHANNELS } },
     { "rc_interpolation_interval",  VAR_UINT8  | MASTER_VALUE,  &rxConfig()->rcInterpolationInterval, .config.minmax = { 1,  50 } },
     { "rssi_ppm_invert",            VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &rxConfig()->rssi_ppm_invert, .config.lookup = { TABLE_OFF_ON } },
 #if defined(USE_PWM)
@@ -523,7 +531,8 @@ const clivalue_t valueTable[] = {
 
     { "fixedwing_althold_dir",      VAR_INT8   | MASTER_VALUE,  &airplaneConfig()->fixedwing_althold_dir, .config.minmax = { -1,  1 } },
 
-    { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &serialConfig()->reboot_character, .config.minmax = { 48,  126 } },
+    { "reboot_character",           VAR_UINT8  | MASTER_VALUE, &serialConfig()->reboot_character, .config.minmax = { 48,  126 } },
+    { "serial_update_rate_hz",      VAR_UINT16 | MASTER_VALUE, &serialConfig()->serial_update_rate_hz, .config.minmax = { 100,  2000 } },
 
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->provider, .config.lookup = { TABLE_GPS_PROVIDER } },
@@ -575,6 +584,9 @@ const clivalue_t valueTable[] = {
     { "frsky_vfas_cell_voltage",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->frsky_vfas_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
     { "hott_alarm_sound_interval",  VAR_UINT8  | MASTER_VALUE,  &telemetryConfig()->hottAlarmSoundInterval, .config.minmax = { 0,  120 } },
     { "pid_values_as_telemetry",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->pidValuesAsTelemetry, .config.lookup = {TABLE_OFF_ON } },
+#if defined(TELEMETRY_IBUS)
+    { "ibus_report_cell_voltage",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &ibusTelemetryConfig()->report_cell_voltage, .config.lookup = { TABLE_OFF_ON } },
+#endif
 #endif
 
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE,  &batteryConfig()->batteryCapacity, .config.minmax = { 0,  20000 } },
@@ -601,7 +613,13 @@ const clivalue_t valueTable[] = {
     { "align_board_yaw",            VAR_INT16  | MASTER_VALUE,  &boardAlignment()->yawDegrees, .config.minmax = { -180,  360 } },
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
-    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyro_sync_denom, .config.minmax = { 1,  8 } },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyro_sync_denom, .config.minmax = { 1,  32 } },
+#if defined(GYRO_USES_SPI) && defined(USE_MPU_DATA_READY_SIGNAL)
+    { "gyro_isr_update",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_isr_update, .config.lookup = { TABLE_OFF_ON } },
+#endif
+#ifdef GYRO_SUPPORTS_32KHZ
+    { "gyro_use_32khz",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_use_32khz, .config.lookup = { TABLE_OFF_ON } },
+#endif
     { "gyro_lowpass_type",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gyroConfig()->gyro_soft_lpf_type, .config.lookup = { TABLE_LOWPASS_TYPE } },
     { "gyro_lowpass",               VAR_UINT8  | MASTER_VALUE,  &gyroConfig()->gyro_soft_lpf_hz, .config.minmax = { 0,  255 } },
     { "gyro_notch1_hz",             VAR_UINT16 | MASTER_VALUE,  &gyroConfig()->gyro_soft_notch_hz_1, .config.minmax = { 0,  1000 } },
@@ -3163,33 +3181,22 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), CPU:%d%%\r\n",
-        millis() / 1000,
-        getVbat(),
-        batteryCellCount,
-        getBatteryStateString(),
-        constrain(averageSystemLoadPercent, 0, 100)
-    );
+    cliPrintf("System Uptime: %d seconds\r\n", millis() / 1000);
+    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", getVbat(), batteryCellCount, getBatteryStateString());
 
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
 #if (FLASH_SIZE > 64) && !defined(CLI_MINIMAL_VERBOSITY)
-    uint32_t mask;
-    uint32_t detectedSensorsMask = sensorsMask();
-
+    const uint32_t detectedSensorsMask = sensorsMask();
     for (uint32_t i = 0; ; i++) {
-
-        if (sensorTypeNames[i] == NULL)
+        if (sensorTypeNames[i] == NULL) {
             break;
-
-        mask = (1 << i);
+        }
+        const uint32_t mask = (1 << i);
         if ((detectedSensorsMask & mask) && (mask & SENSOR_NAMES_MASK)) {
-            const char *sensorHardware;
-            uint8_t sensorHardwareIndex = detectedSensors[i];
-            sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
-
+            const uint8_t sensorHardwareIndex = detectedSensors[i];
+            const char *sensorHardware = sensorHardwareNames[i][sensorHardwareIndex];
             cliPrintf(", %s=%s", sensorTypeNames[i], sensorHardware);
-
             if (mask == SENSOR_ACC && acc.dev.revisionCode) {
                 cliPrintf(".%c", acc.dev.revisionCode);
             }
@@ -3198,10 +3205,14 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrint("\r\n");
 
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif
+
 #ifdef USE_I2C
-    uint16_t i2cErrorCounter = i2cGetErrorCounter();
+    const uint16_t i2cErrorCounter = i2cGetErrorCounter();
 #else
-    uint16_t i2cErrorCounter = 0;
+    const uint16_t i2cErrorCounter = 0;
 #endif
 
 #ifdef STACK_CHECK
@@ -3209,11 +3220,14 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("I2C Errors: %d, config size: %d\r\n", i2cErrorCounter, sizeof(master_t));
 
-#ifdef USE_SDCARD
-    cliSdInfo(NULL);
-#endif
+    const int gyroRate = getTaskDeltaTime(TASK_GYROPID) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_GYROPID)));
+    const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
+    const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
+    cliPrintf("CPU:%d%%, cycle time: %d, GYRO rate: %d, RX rate: %d, System rate: %d\r\n",
+            constrain(averageSystemLoadPercent, 0, 100), getTaskDeltaTime(TASK_GYROPID), gyroRate, rxRate, systemRate);
+
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -3224,7 +3238,11 @@ static void cliTasks(char *cmdline)
     int averageLoadSum = 0;
 
 #ifndef CLI_MINIMAL_VERBOSITY
-    cliPrintf("Task list          rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+    if (masterConfig.task_statistics) {
+        cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
+    } else {
+        cliPrintf("Task list           rate/hz\r\n");
+    }
 #endif
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
         cfTaskInfo_t taskInfo;
@@ -3233,7 +3251,7 @@ static void cliTasks(char *cmdline)
             int taskFrequency;
             int subTaskFrequency;
             if (taskId == TASK_GYROPID) {
-                subTaskFrequency = (int)(1000000.0f / ((float)cycleTime));
+                subTaskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 taskFrequency = subTaskFrequency / pidConfig()->pid_process_denom;
                 if (pidConfig()->pid_process_denom > 1) {
                     cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
@@ -3242,27 +3260,33 @@ static void cliTasks(char *cmdline)
                     cliPrintf("%02d - (%9s/%3s) ", taskId, taskInfo.subTaskName, taskInfo.taskName);
                 }
             } else {
-                taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+                taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
                 cliPrintf("%02d - (%13s) ", taskId, taskInfo.taskName);
             }
-            const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
-            const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
+            const int maxLoad = taskInfo.maxExecutionTime == 0 ? 0 :(taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
+            const int averageLoad = taskInfo.averageExecutionTime == 0 ? 0 : (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
             if (taskId != TASK_SERIAL) {
                 maxLoadSum += maxLoad;
                 averageLoadSum += averageLoad;
             }
-            cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
-                    taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
-                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+            if (masterConfig.task_statistics) {
+                cliPrintf("%6d %7d %7d %4d.%1d%% %4d.%1d%% %9d\r\n",
+                        taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
+                        maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+            } else {
+                cliPrintf("%6d\r\n", taskFrequency);
+            }
             if (taskId == TASK_GYROPID && pidConfig()->pid_process_denom > 1) {
                 cliPrintf("   - (%13s) %6d\r\n", taskInfo.subTaskName, subTaskFrequency);
             }
         }
     }
-    cfCheckFuncInfo_t checkFuncInfo;
-    getCheckFuncInfo(&checkFuncInfo);
-    cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
-    cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    if (masterConfig.task_statistics) {
+        cfCheckFuncInfo_t checkFuncInfo;
+        getCheckFuncInfo(&checkFuncInfo);
+        cliPrintf("RX Check Function %17d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
+        cliPrintf("Total (excluding SERIAL) %23d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
+    }
 }
 #endif
 
@@ -3698,9 +3722,12 @@ static void cliHelp(char *cmdline);
 const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("adjrange", "configure adjustment ranges", NULL, cliAdjustmentRange),
     CLI_COMMAND_DEF("aux", "configure modes", NULL, cliAux),
+#ifdef BEEPER
+    CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
+        "\t<+|->[name]", cliBeeper),
+#endif
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("color", "configure colors", NULL, cliColor),
-    CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
     CLI_COMMAND_DEF("defaults", "reset to defaults and reboot", NULL, cliDefaults),
     CLI_COMMAND_DEF("dfu", "DFU mode on reboot", NULL, cliDfu),
@@ -3708,6 +3735,9 @@ const clicmd_t cmdTable[] = {
         "[master|profile|rates|all] {showdefaults}", cliDiff),
     CLI_COMMAND_DEF("dump", "dump configuration",
         "[master|profile|rates|all] {showdefaults}", cliDump),
+#ifdef USE_ESCSERIAL
+    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
+#endif
     CLI_COMMAND_DEF("exit", NULL, NULL, cliExit),
     CLI_COMMAND_DEF("feature", "configure features",
         "list\r\n"
@@ -3720,13 +3750,9 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("flash_write", NULL, "<address> <message>", cliFlashWrite),
 #endif
 #endif
-    CLI_COMMAND_DEF("get", "get variable value",
-            "[name]", cliGet),
+    CLI_COMMAND_DEF("get", "get variable value", "[name]", cliGet),
 #ifdef GPS
     CLI_COMMAND_DEF("gpspassthrough", "passthrough gps to serial", NULL, cliGpsPassthrough),
-#endif
-#ifdef USE_ESCSERIAL
-    CLI_COMMAND_DEF("escprog", "passthrough esc to serial", "<mode [sk/bl/ki/cc]> <index>", cliEscPassthrough),
 #endif
     CLI_COMMAND_DEF("help", NULL, NULL, cliHelp),
 #ifdef LED_STRIP
@@ -3735,16 +3761,19 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("map", "configure rc channel order",
         "[<map>]", cliMap),
 #ifndef USE_QUAD_MIXER_ONLY
-    CLI_COMMAND_DEF("mixer", "configure mixer",
-        "list\r\n"
+    CLI_COMMAND_DEF("mixer", "configure mixer", "list\r\n"
         "\t<name>", cliMixer),
 #endif
     CLI_COMMAND_DEF("mmix", "custom motor mixer", NULL, cliMotorMix),
+#ifdef LED_STRIP
+    CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
+#endif
     CLI_COMMAND_DEF("motor",  "get/set motor",
        "<index> [<value>]", cliMotor),
+    CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #if (FLASH_SIZE > 128)
     CLI_COMMAND_DEF("play_sound", NULL,
-        "[<index>]\r\n", cliPlaySound),
+        "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
@@ -3752,43 +3781,34 @@ const clicmd_t cmdTable[] = {
 #if (FLASH_SIZE > 64)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
-    CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
+    CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
+#ifdef USE_SDCARD
+    CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
+#endif
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifndef SKIP_SERIAL_PASSTHROUGH
-    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port",
-                    "<id> [baud] [mode] : passthrough to serial",
-                    cliSerialPassthrough),
+    CLI_COMMAND_DEF("serialpassthrough", "passthrough serial data to port", "<id> [baud] [mode] : passthrough to serial", cliSerialPassthrough),
 #endif
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
-    CLI_COMMAND_DEF("set", "change setting",
-        "[<name>=<value>]", cliSet),
+    CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
 #ifdef USE_SERVOS
-    CLI_COMMAND_DEF("smix", "servo mixer",
-        "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
+    CLI_COMMAND_DEF("smix", "servo mixer", "<rule> <servo> <source> <rate> <speed> <min> <max> <box>\r\n"
         "\treset\r\n"
         "\tload <mixer>\r\n"
         "\treverse <servo> <source> r|n", cliServoMix),
-#endif
-#ifdef USE_SDCARD
-    CLI_COMMAND_DEF("sd_info", "sdcard info", NULL, cliSdInfo),
 #endif
     CLI_COMMAND_DEF("status", "show status", NULL, cliStatus),
 #ifndef SKIP_TASK_STATISTICS
     CLI_COMMAND_DEF("tasks", "show task stats", NULL, cliTasks),
 #endif
     CLI_COMMAND_DEF("version", "show version", NULL, cliVersion),
-#ifdef BEEPER
-    CLI_COMMAND_DEF("beeper", "turn on/off beeper", "list\r\n"
-            "\t<+|->[name]", cliBeeper),
-#endif
 #ifdef VTX
     CLI_COMMAND_DEF("vtx", "vtx channels on switch", NULL, cliVtx),
 #endif
-    CLI_COMMAND_DEF("name", "Name of craft", NULL, cliName),
 };
 #define CMD_COUNT (sizeof(cmdTable) / sizeof(clicmd_t))
 
@@ -3926,6 +3946,8 @@ void cliEnter(serialPort_t *serialPort)
     cliPort = serialPort;
     setPrintfSerialPort(cliPort);
     cliWriter = bufWriterInit(cliWriteBuffer, sizeof(cliWriteBuffer), (bufWrite_t)serialWriteBufShim, serialPort);
+
+    schedulerSetCalulateTaskStatistics(masterConfig.task_statistics);
 
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");

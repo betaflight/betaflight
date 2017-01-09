@@ -138,13 +138,14 @@ void icm20689GyroInit(gyroDev_t *gyro)
 //    delay(100);
     gyro->mpuConfiguration.write(MPU_RA_PWR_MGMT_1, INV_CLK_PLL);
     delay(15);
-    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3);
+    const uint8_t raGyroConfigData = gyro->gyroRateKHz > GYRO_RATE_8_kHz ? (INV_FSR_2000DPS << 3 | FCB_3600_32) : (INV_FSR_2000DPS << 3 | FCB_DISABLED);
+    gyro->mpuConfiguration.write(MPU_RA_GYRO_CONFIG, raGyroConfigData);
     delay(15);
     gyro->mpuConfiguration.write(MPU_RA_ACCEL_CONFIG, INV_FSR_16G << 3);
     delay(15);
     gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops()); // Get Divider Drops
+    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider Drops
     delay(100);
 
     // Data ready interrupt configuration

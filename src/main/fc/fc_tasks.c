@@ -231,6 +231,7 @@ void fcTasksInit(void)
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+    rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 
@@ -310,7 +311,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
-        .staticPriority = TASK_PRIORITY_HIGH,
+        .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
     [TASK_GYROPID] = {

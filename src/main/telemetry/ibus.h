@@ -17,23 +17,18 @@
 
 #pragma once
 
-#include "common/time.h"
+/*
+typedef struct ibusTelemetryConfig_s {
+    uint8_t report_cell_voltage;            // report vbatt divided with cellcount
+} ibusTelemetryConfig_t;
 
-extern int16_t magHold;
-extern bool isRXDataNew;
+PG_DECLARE(ibusTelemetryConfig_t, ibusTelemetryConfig);
+*/
 
-union rollAndPitchTrims_u;
-void applyAndSaveAccelerometerTrimsDelta(union rollAndPitchTrims_u *rollAndPitchTrimsDelta);
-void handleInflightCalibrationStickPosition();
+void initIbusTelemetry(void);
 
-void mwDisarm(void);
-void mwArm(void);
+void handleIbusTelemetry(void);
+bool checkIbusTelemetryState(void);
 
-void processRx(timeUs_t currentTimeUs);
-void updateLEDs(void);
-void updateRcCommands(void);
-
-void taskMainPidLoop(timeUs_t currentTimeUs);
-float getSetpointRate(int axis);
-float getRcDeflection(int axis);
-float getRcDeflectionAbs(int axis);
+void configureIbusTelemetryPort(void);
+void freeIbusTelemetryPort(void);

@@ -85,9 +85,6 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 
 void adcInit(adcConfig_t *config)
 {
-    DMA_HandleTypeDef DmaHandle;
-    ADC_HandleTypeDef ADCHandle;
-
     uint8_t i;
     uint8_t configuredAdcChannels = 0;
 
@@ -136,47 +133,47 @@ void adcInit(adcConfig_t *config)
     RCC_ClockCmd(adc.rccADC, ENABLE);
     dmaInit(dmaGetIdentifier(adc.DMAy_Streamx), OWNER_ADC, 0);
 
-    ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
-    ADCHandle.Init.ContinuousConvMode    = ENABLE;
-    ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
-    ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-    ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    ADCHandle.Init.NbrOfConversion       = configuredAdcChannels;
-    ADCHandle.Init.ScanConvMode          = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
-    ADCHandle.Init.DiscontinuousConvMode = DISABLE;
-    ADCHandle.Init.NbrOfDiscConversion   = 0;
-    ADCHandle.Init.DMAContinuousRequests = ENABLE;
-    ADCHandle.Init.EOCSelection          = DISABLE;
-    ADCHandle.Instance = adc.ADCx;
+    adc.ADCHandle.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV8;
+    adc.ADCHandle.Init.ContinuousConvMode    = ENABLE;
+    adc.ADCHandle.Init.Resolution            = ADC_RESOLUTION_12B;
+    adc.ADCHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
+    adc.ADCHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    adc.ADCHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    adc.ADCHandle.Init.NbrOfConversion       = configuredAdcChannels;
+    adc.ADCHandle.Init.ScanConvMode          = configuredAdcChannels > 1 ? ENABLE : DISABLE; // 1=scan more that one channel in group
+    adc.ADCHandle.Init.DiscontinuousConvMode = DISABLE;
+    adc.ADCHandle.Init.NbrOfDiscConversion   = 0;
+    adc.ADCHandle.Init.DMAContinuousRequests = ENABLE;
+    adc.ADCHandle.Init.EOCSelection          = DISABLE;
+    adc.ADCHandle.Instance = adc.ADCx;
 
     /*##-1- Configure the ADC peripheral #######################################*/
-    if (HAL_ADC_Init(&ADCHandle) != HAL_OK)
+    if (HAL_ADC_Init(&adc.ADCHandle) != HAL_OK)
     {
       /* Initialization Error */
     }
 
-    DmaHandle.Init.Channel = adc.channel;
-    DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    DmaHandle.Init.PeriphInc = DMA_PINC_DISABLE;
-    DmaHandle.Init.MemInc = configuredAdcChannels > 1 ? DMA_MINC_ENABLE : DMA_MINC_DISABLE;
-    DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    DmaHandle.Init.Mode = DMA_CIRCULAR;
-    DmaHandle.Init.Priority = DMA_PRIORITY_HIGH;
-    DmaHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    DmaHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-    DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
-    DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-    DmaHandle.Instance = adc.DMAy_Streamx;
+    adc.DmaHandle.Init.Channel = adc.channel;
+    adc.DmaHandle.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    adc.DmaHandle.Init.PeriphInc = DMA_PINC_DISABLE;
+    adc.DmaHandle.Init.MemInc = configuredAdcChannels > 1 ? DMA_MINC_ENABLE : DMA_MINC_DISABLE;
+    adc.DmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    adc.DmaHandle.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    adc.DmaHandle.Init.Mode = DMA_CIRCULAR;
+    adc.DmaHandle.Init.Priority = DMA_PRIORITY_HIGH;
+    adc.DmaHandle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    adc.DmaHandle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    adc.DmaHandle.Init.MemBurst = DMA_MBURST_SINGLE;
+    adc.DmaHandle.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    adc.DmaHandle.Instance = adc.DMAy_Streamx;
 
     /*##-2- Initialize the DMA stream ##########################################*/
-    if (HAL_DMA_Init(&DmaHandle) != HAL_OK)
+    if (HAL_DMA_Init(&adc.DmaHandle) != HAL_OK)
     {
         /* Initialization Error */
     }
 
-    __HAL_LINKDMA(&ADCHandle, DMA_Handle, DmaHandle);
+    __HAL_LINKDMA(&adc.ADCHandle, DMA_Handle, adc.DmaHandle);
 
     uint8_t rank = 1;
     for (i = 0; i < ADC_CHANNEL_COUNT; i++) {
@@ -190,14 +187,15 @@ void adcInit(adcConfig_t *config)
         sConfig.Offset       = 0;
 
         /*##-3- Configure ADC regular channel ######################################*/
-        if (HAL_ADC_ConfigChannel(&ADCHandle, &sConfig) != HAL_OK)
+        if (HAL_ADC_ConfigChannel(&adc.ADCHandle, &sConfig) != HAL_OK)
         {
           /* Channel Configuration Error */
         }
     }
 
+    HAL_CLEANINVALIDATECACHE((uint32_t*)&adcValues, configuredAdcChannels);
     /*##-4- Start the conversion process #######################################*/
-    if(HAL_ADC_Start_DMA(&ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
+    if(HAL_ADC_Start_DMA(&adc.ADCHandle, (uint32_t*)&adcValues, configuredAdcChannels) != HAL_OK)
     {
         /* Start Conversation Error */
     }

@@ -570,4 +570,3 @@ void init(void)
     fcTasksInit();
     systemState |= SYSTEM_STATE_READY;
 }
-

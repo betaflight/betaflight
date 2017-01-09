@@ -415,7 +415,7 @@ CMSIS_SRC       = $(notdir $(wildcard $(CMSIS_DIR)/CM3/CoreSupport/*.c \
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(STDPERIPH_DIR)/inc \
                    $(CMSIS_DIR)/CM3/CoreSupport \
-                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x \
+                   $(CMSIS_DIR)/CM3/DeviceSupport/ST/STM32F10x
 
 DEVICE_STDPERIPH_SRC = $(STDPERIPH_SRC)
 
@@ -608,6 +608,7 @@ HIGHEND_SRC = \
             telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
+            telemetry/ibus.c \
             sensors/esc_sensor.c \
             io/vtx_smartaudio.c
 

@@ -105,7 +105,7 @@ typedef struct
                             This parameter must be a number between Min_Data = 2 and Max_Data = 15. 
                             This parameter will be used only when PLLI2S is selected as Clock Source SAI */
 
-#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+#if defined (STM32F722xx) || defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
     defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
   uint32_t PLLI2SP;    /*!< Specifies the division factor for SPDIF-RX clock.
                             This parameter must be a value of @ref RCCEx_PLLI2SP_Clock_Divider. 
@@ -126,7 +126,7 @@ typedef struct
                             This parameter must be a number between Min_Data = 2 and Max_Data = 15.
                             This parameter will be used only when PLLSAI is selected as Clock Source SAI or LTDC */
   
-#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+#if defined (STM32F722xx) || defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
     defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
   uint32_t PLLSAIR;    /*!< specifies the division factor for LTDC clock
                             This parameter must be a number between Min_Data = 2 and Max_Data = 7.
@@ -285,7 +285,7 @@ typedef struct
   * @}
   */
 
-#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
+#if defined (STM32F722xx) || defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || defined (STM32F767xx) || \
     defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
 /** @defgroup RCCEx_PLLI2SP_Clock_Divider RCCEx PLLI2SP Clock Divider
   * @{
@@ -3181,7 +3181,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk);
                (((VALUE) == RCC_TIMPRES_DESACTIVATED) || \
                 ((VALUE) == RCC_TIMPRES_ACTIVATED))
 
-#if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx)
+#if defined (STM32F722xx) || defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx)
 #define IS_RCC_SAI1CLKSOURCE(SOURCE)  (((SOURCE) == RCC_SAI1CLKSOURCE_PLLSAI) || \
                                        ((SOURCE) == RCC_SAI1CLKSOURCE_PLLI2S) || \
                                        ((SOURCE) == RCC_SAI1CLKSOURCE_PIN))

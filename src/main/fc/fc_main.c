@@ -82,8 +82,6 @@ enum {
 
 #define AIRMODE_THOTTLE_THRESHOLD 1350 // Make configurable in the future. ~35% throttle should be fine
 
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
-
 int16_t magHold;
 int16_t headFreeModeHold;
 
@@ -94,14 +92,9 @@ static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the m
 
 static float throttlePIDAttenuation;
 
-uint16_t filteredCycleTime;
 bool isRXDataNew;
 static bool armingCalibrationWasInitialised;
 static float setpointRate[3], rcDeflection[3], rcDeflectionAbs[3];
-
-float getThrottlePIDAttenuation(void) {
-    return throttlePIDAttenuation;
-}
 
 float getSetpointRate(int axis) {
     return setpointRate[axis];
@@ -157,7 +150,7 @@ void calculateSetpointRate(int axis, int16_t rc) {
 
     if (rcExpo) {
         float expof = rcExpo / 100.0f;
-        rcCommandf = rcCommandf * power3(rcDeflection[axis]) * expof + rcCommandf * (1-expof);
+        rcCommandf = rcCommandf * power3(rcDeflectionAbs[axis]) * expof + rcCommandf * (1-expof);
     }
 
     angleRate = 200.0f * rcRate * rcCommandf;
@@ -216,6 +209,7 @@ void processRcCommand(void)
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     static uint16_t currentRxRefreshRate;
+    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 1;
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
 
@@ -247,7 +241,7 @@ void processRcCommand(void)
                 debug[3] = rxRefreshRate;
             }
 
-            for (int channel=0; channel < 4; channel++) {
+            for (int channel=ROLL; channel <= interpolationChannels; channel++) {
                 deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
                 lastCommand[channel] = rcCommand[channel];
             }
@@ -259,7 +253,8 @@ void processRcCommand(void)
 
         // Interpolate steps of rcCommand
         if (factor > 0) {
-            for (int channel=0; channel < 4; channel++) rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+            for (int channel=ROLL; channel <= interpolationChannels; channel++)
+                rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
         } else {
             factor = 0;
         }
@@ -689,46 +684,39 @@ void processRx(timeUs_t currentTimeUs)
 #endif
 }
 
-void subTaskPidController(void)
+static void subTaskPidController(void)
 {
     uint32_t startTime;
-    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     // PID - note this is function pointer set by setPIDController()
-    pidController(
-        &currentProfile->pidProfile,
-        &accelerometerConfig()->accelerometerTrims
-    );
-    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[1] = micros() - startTime;}
+    pidController(&currentProfile->pidProfile, &accelerometerConfig()->accelerometerTrims, throttlePIDAttenuation);
+    DEBUG_SET(DEBUG_PIDLOOP, 1, micros() - startTime);
 }
 
-void subTaskMainSubprocesses(void)
+static void subTaskMainSubprocesses(timeUs_t currentTimeUs)
 {
+    uint32_t startTime;
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
 
-    const uint32_t startTime = micros();
-
-    // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
-    if (gyro.dev.temperature) {
+    // Read out gyro temperature if used for telemmetry
+    if (feature(FEATURE_TELEMETRY) && gyro.dev.temperature) {
         gyro.dev.temperature(&gyro.dev, &telemTemperature1);
     }
 
 #ifdef MAG
-        if (sensors(SENSOR_MAG)) {
-            updateMagHold();
-        }
-#endif
-
-#ifdef GTUNE
-        updateGtuneState();
+    if (sensors(SENSOR_MAG)) {
+        updateMagHold();
+    }
 #endif
 
 #if defined(BARO) || defined(SONAR)
-        // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
-        updateRcCommands();
-        if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
-            if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
-                applyAltHold(&masterConfig.airplaneConfig);
-            }
+    // updateRcCommands sets rcCommand, which is needed by updateAltHoldState and updateSonarAltHoldState
+    updateRcCommands();
+    if (sensors(SENSOR_BARO) || sensors(SENSOR_SONAR)) {
+        if (FLIGHT_MODE(BARO_MODE) || FLIGHT_MODE(SONAR_MODE)) {
+            applyAltHold(&masterConfig.airplaneConfig);
         }
+    }
 #endif
 
     // If we're armed, at minimum throttle, and we do arming via the
@@ -768,25 +756,28 @@ void subTaskMainSubprocesses(void)
 
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
-        handleBlackbox(startTime);
+        handleBlackbox(currentTimeUs);
     }
 #endif
 
 #ifdef TRANSPONDER
-    transponderUpdate(startTime);
+    transponderUpdate(currentTimeUs);
 #endif
     DEBUG_SET(DEBUG_PIDLOOP, 2, micros() - startTime);
 }
 
-void subTaskMotorUpdate(void)
+static void subTaskMotorUpdate(void)
 {
-    const uint32_t startTime = micros();
+    uint32_t startTime;
     if (debugMode == DEBUG_CYCLETIME) {
+        startTime = micros();
         static uint32_t previousMotorUpdateTime;
         const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
         debug[2] = currentDeltaTime;
         debug[3] = currentDeltaTime - targetPidLooptime;
         previousMotorUpdateTime = startTime;
+    } else if (debugMode == DEBUG_PIDLOOP) {
+        startTime = micros();
     }
 
     mixTable(&currentProfile->pidProfile);
@@ -818,20 +809,16 @@ uint8_t setPidUpdateCountDown(void)
 // Function for loop trigger
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
-
     static bool runTaskMainSubprocesses;
     static uint8_t pidUpdateCountdown;
 
-    cycleTime = getTaskDeltaTime(TASK_SELF);
-
     if (debugMode == DEBUG_CYCLETIME) {
-        debug[0] = cycleTime;
+        debug[0] = getTaskDeltaTime(TASK_SELF);
         debug[1] = averageSystemLoadPercent;
     }
 
     if (runTaskMainSubprocesses) {
-        subTaskMainSubprocesses();
+        subTaskMainSubprocesses(currentTimeUs);
         runTaskMainSubprocesses = false;
     }
 
@@ -841,9 +828,9 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     // 2 - subTaskMainSubprocesses()
     // 3 - subTaskMotorUpdate()
     uint32_t startTime;
-    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {startTime = micros();}
+    if (debugMode == DEBUG_PIDLOOP) {startTime = micros();}
     gyroUpdate();
-    if (debugMode == DEBUG_PIDLOOP || debugMode == DEBUG_SCHEDULER) {debug[0] = micros() - startTime;}
+    DEBUG_SET(DEBUG_PIDLOOP, 0, micros() - startTime);
 
     if (pidUpdateCountdown) {
         pidUpdateCountdown--;
