@@ -31,7 +31,6 @@ typedef enum {
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
-    PWM_TYPE_DSHOT900,
     PWM_TYPE_DSHOT1200,
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
@@ -42,7 +41,6 @@ typedef enum {
 #define MAX_DMA_TIMERS        8
 
 #define MOTOR_DSHOT1200_MHZ   24
-#define MOTOR_DSHOT900_MHZ    18
 #define MOTOR_DSHOT600_MHZ    12
 #define MOTOR_DSHOT300_MHZ    6
 #define MOTOR_DSHOT150_MHZ    3

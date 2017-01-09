@@ -249,7 +249,6 @@ bool isMotorProtocolDshot(void) {
 #ifdef USE_DSHOT
     switch(motorConfig->motorPwmProtocol) {
     case PWM_TYPE_DSHOT1200:
-    case PWM_TYPE_DSHOT900:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:

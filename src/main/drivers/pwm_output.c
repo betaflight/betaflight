@@ -224,7 +224,6 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         break;
 #ifdef USE_DSHOT
     case PWM_TYPE_DSHOT1200:
-    case PWM_TYPE_DSHOT900:
     case PWM_TYPE_DSHOT600:
     case PWM_TYPE_DSHOT300:
     case PWM_TYPE_DSHOT150:
@@ -292,8 +291,6 @@ uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType)
     switch (pwmProtocolType) {
         case(PWM_TYPE_DSHOT1200):
             return MOTOR_DSHOT1200_MHZ * 1000000;
-        case(PWM_TYPE_DSHOT900):
-            return MOTOR_DSHOT900_MHZ * 1000000;
         case(PWM_TYPE_DSHOT600):
             return MOTOR_DSHOT600_MHZ * 1000000;
         case(PWM_TYPE_DSHOT300):

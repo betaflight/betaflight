@@ -180,8 +180,8 @@
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
 #else
-#define VBAT_ADC_PIN           PC3
-#define VBAT_ADC_CHANNEL       ADC_Channel_13
+#define VBAT_ADC_PIN            PC3
+#define VBAT_ADC_CHANNEL        ADC_Channel_13
 #endif
 
 #define LED_STRIP
