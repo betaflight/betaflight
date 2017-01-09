@@ -82,9 +82,11 @@ void pwmWriteDigital(uint8_t index, uint16_t value)
         packet <<= 1;
     }
 
-    DMA_ClearITPendingBit(motor->timerHardware->dmaStream, motor->dmaFlag);
-    DMA_SetCurrDataCounter(motor->timerHardware->dmaStream, MOTOR_DMA_BUFFER_SIZE);
-    DMA_Cmd(motor->timerHardware->dmaStream, ENABLE);
+    DMA_Stream_TypeDef *stream = motor->timerHardware->dmaStream;
+    TIM_DMACmd(motor->timerHardware->tim, motor->timerDmaSource, DISABLE);
+    DMA_SetCurrDataCounter(stream, MOTOR_DMA_BUFFER_SIZE);
+    DMA_ClearITPendingBit(stream, motor->dmaFlag);
+    DMA_Cmd(stream, ENABLE);
 }
 
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount)
