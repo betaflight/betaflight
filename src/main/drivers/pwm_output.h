@@ -86,6 +86,7 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
+    uint32_t dmaFlag;
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
