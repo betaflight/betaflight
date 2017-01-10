@@ -45,12 +45,9 @@
 #include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/servos.h"
 
 #include "telemetry/telemetry.h"
 
-#define servoConfig(x) (&masterConfig.servoConfig)
-#define servoConfigMutable(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
 #define imuConfig(x) (&masterConfig.imuConfig)
@@ -94,7 +91,6 @@ typedef struct master_s {
 #endif
 
 #ifdef USE_SERVOS
-    servoConfig_t servoConfig;
     servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif

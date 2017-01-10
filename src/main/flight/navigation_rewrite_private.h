@@ -246,7 +246,7 @@ typedef struct {
     navigationFSMState_t                onEvent[NAV_FSM_EVENT_COUNT];
 } navigationFSMStateDescriptor_t;
 
-
+struct motorConfig_s;
 typedef struct {
     /* Flags and navigation system state */
     navigationFSMState_t        navState;
@@ -291,7 +291,7 @@ typedef struct {
     const pidProfile_t *              pidProfile;
     const rxConfig_t *                rxConfig;
     const flight3DConfig_t *          flight3DConfig;
-    const motorConfig_t *             motorConfig;
+    const struct motorConfig_s *             motorConfig;
 } navigationPosControl_t;
 
 extern navigationPosControl_t posControl;

@@ -49,8 +49,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 

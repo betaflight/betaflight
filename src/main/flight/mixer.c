@@ -37,9 +37,6 @@
 
 #include "rx/rx.h"
 
-#include "io/gimbal.h"
-#include "io/motors.h"
-
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
 #include "sensors/gyro.h"
@@ -84,6 +81,26 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
     .mixerMode = MIXER_QUADX,
     .yaw_motor_direction = 1,
     .yaw_jump_prevention_limit = 200
+);
+
+#ifdef BRUSHED_MOTORS
+#define DEFAULT_PWM_PROTOCOL    PWM_TYPE_BRUSHED
+#define DEFAULT_PWM_RATE        16000
+#define DEFAULT_MIN_THROTTLE    1000
+#else
+#define DEFAULT_PWM_PROTOCOL    PWM_TYPE_STANDARD
+#define DEFAULT_PWM_RATE        400
+#define DEFAULT_MIN_THROTTLE    1150
+#endif
+
+PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
+
+PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
+    .minthrottle = DEFAULT_MIN_THROTTLE,
+    .motorPwmProtocol = DEFAULT_PWM_PROTOCOL,
+    .motorPwmRate = DEFAULT_PWM_RATE,
+    .maxthrottle = 1850,
+    .mincommand = 1000
 );
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];

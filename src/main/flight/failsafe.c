@@ -32,7 +32,6 @@
 #include "drivers/system.h"
 
 #include "io/beeper.h"
-#include "io/motors.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"

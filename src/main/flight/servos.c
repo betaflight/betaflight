@@ -39,7 +39,6 @@
 #include "drivers/system.h"
 
 #include "io/gimbal.h"
-#include "io/servos.h"
 
 #include "rx/rx.h"
 
@@ -66,6 +65,13 @@
 extern const mixer_t mixers[];
 
 servoMixerConfig_t *servoMixerConfig;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
+
+PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
+    .servoCenterPulse = 1500,
+    .servoPwmRate = 50,
+);
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];

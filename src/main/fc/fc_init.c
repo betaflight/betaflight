@@ -77,8 +77,6 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/dashboard.h"
@@ -118,6 +116,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
