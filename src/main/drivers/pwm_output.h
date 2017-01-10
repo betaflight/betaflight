@@ -28,10 +28,12 @@ typedef enum {
     PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
+#ifdef USE_DSHOT
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
     PWM_TYPE_DSHOT1200,
+#endif
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
