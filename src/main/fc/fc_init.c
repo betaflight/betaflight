@@ -495,6 +495,10 @@ void init(void)
     }
 #endif
 
+#ifdef USE_GPIOTIMER
+    gpioTimerInit(gpioTimerConfig());
+#endif
+
 #ifdef USE_FLASHFS
 #if defined(USE_FLASH_M25P16)
     m25p16_init(flashConfig());

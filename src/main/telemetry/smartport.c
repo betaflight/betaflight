@@ -20,6 +20,7 @@
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 #include "drivers/compass.h"
+#include "drivers/gpiotimer.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -806,6 +807,11 @@ void handleSmartPortTelemetry(void)
                     smartPortSendPackage(id, GPS_altitude * 100); // given in 0.1m , requested in 10 = 1m (should be in mm, probably a bug in opentx, tested on 2.0.1.7)
                     smartPortHasRequest = 0;
                 }
+                break;
+#endif
+#ifdef USE_GPIOTIMER
+            case FSSP_DATAID_A3         :
+                smartPortSendPackage(id, gpioTimerLapMs);
                 break;
 #endif
             case FSSP_DATAID_A4         :

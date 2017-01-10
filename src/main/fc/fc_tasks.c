@@ -301,6 +301,9 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif
+#ifdef USE_GPIOTIMER
+    setTaskEnabled(TASK_GPIOTIMER, true);
+#endif
 }
 
 cfTask_t cfTasks[TASK_COUNT] = {
@@ -494,6 +497,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskVtxControl,
         .desiredPeriod = TASK_PERIOD_HZ(5),          // 5Hz @200msec
         .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
+#ifdef USE_GPIOTIMER
+    [TASK_GPIOTIMER] = {
+        .taskName = "GPIOTIMER",
+        .taskFunc = gpioTimerRearm,
+        .desiredPeriod = TASK_PERIOD_HZ(10),          // 10 Hz
+        .staticPriority = TASK_PRIORITY_LOW,
     },
 #endif
 };

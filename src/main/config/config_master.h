@@ -33,6 +33,7 @@
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
+#include "drivers/gpiotimer.h"
 
 #include "fc/rc_controls.h"
 
@@ -105,6 +106,7 @@
 #define servoProfile(x) (&masterConfig.servoProfile)
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
+#define gpioTimerConfig(x) (&masterConfig.gpioTimerConfig)
 
 
 // System-wide
@@ -241,6 +243,10 @@ typedef struct master_s {
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+
+#ifdef USE_GPIOTIMER
+    gpioTimerConfig_t gpioTimerConfig;
+#endif
 
     char name[MAX_NAME_LENGTH + 1];
     char boardIdentifier[sizeof(TARGET_BOARD_IDENTIFIER)];

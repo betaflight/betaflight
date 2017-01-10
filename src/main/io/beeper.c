@@ -118,6 +118,10 @@ static const uint8_t beep_gyroCalibrated[] = {
     20, 10, 20, 10, 20, 10, BEEPER_COMMAND_STOP
 };
 
+static const uint8_t beep_lapTrigger[] = {
+    10, 5, 10, BEEPER_COMMAND_STOP
+};
+
 // array used for variable # of beeps (reporting GPS sat count, etc)
 static uint8_t beep_multiBeeps[MAX_MULTI_BEEPS + 2];
 
@@ -165,15 +169,16 @@ typedef struct beeperTableEntry_s {
     { BEEPER_ENTRY(BEEPER_RX_SET,                9, beep_shortBeep,        "RX_SET") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION,       10, beep_2shortBeeps,     "ACC_CALIBRATION") },
     { BEEPER_ENTRY(BEEPER_ACC_CALIBRATION_FAIL,  11, beep_2longerBeeps,    "ACC_CALIBRATION_FAIL") },
-    { BEEPER_ENTRY(BEEPER_READY_BEEP,            12, beep_readyBeep,       "READY_BEEP") },
-    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           13, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
-    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         14, beep_disarmRepeatBeep, "DISARM_REPEAT") },
-    { BEEPER_ENTRY(BEEPER_ARMED,                 15, beep_armedBeep,       "ARMED") },
-    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           16, NULL,                 "SYSTEM_INIT") },
-    { BEEPER_ENTRY(BEEPER_USB,                   17, NULL,                 "ON_USB") },
+    { BEEPER_ENTRY(BEEPER_LAP_TRIGGER,           12, beep_lapTrigger,      "LAP_TRIGGER") },
+    { BEEPER_ENTRY(BEEPER_READY_BEEP,            13, beep_readyBeep,       "READY_BEEP") },
+    { BEEPER_ENTRY(BEEPER_MULTI_BEEPS,           14, beep_multiBeeps,      "MULTI_BEEPS") }, // FIXME having this listed makes no sense since the beep array will not be initialised.
+    { BEEPER_ENTRY(BEEPER_DISARM_REPEAT,         15, beep_disarmRepeatBeep, "DISARM_REPEAT") },
+    { BEEPER_ENTRY(BEEPER_ARMED,                 16, beep_armedBeep,       "ARMED") },
+    { BEEPER_ENTRY(BEEPER_SYSTEM_INIT,           17, NULL,                 "SYSTEM_INIT") },
+    { BEEPER_ENTRY(BEEPER_USB,                   18, NULL,                 "ON_USB") },
 
-    { BEEPER_ENTRY(BEEPER_ALL,                   18, NULL,                 "ALL") },
-    { BEEPER_ENTRY(BEEPER_PREFERENCE,            19, NULL,                 "PREFERRED") },
+    { BEEPER_ENTRY(BEEPER_ALL,                   19, NULL,                 "ALL") },
+    { BEEPER_ENTRY(BEEPER_PREFERENCE,            20, NULL,                 "PREFERRED") },
 };
 
 static const beeperTableEntry_t *currentBeeperEntry = NULL;

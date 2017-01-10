@@ -104,6 +104,9 @@ typedef enum {
 #ifdef VTX_CONTROL
     TASK_VTXCTRL,
 #endif
+#ifdef USE_GPIOTIMER
+    TASK_GPIOTIMER,
+#endif
 
     /* Count of real tasks */
     TASK_COUNT,
