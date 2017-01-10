@@ -92,13 +92,14 @@ debug[2] = vtx58FreqTable[band - 1][chan - 1];
     trampSetFreq(vtx58FreqTable[band - 1][chan - 1]);
 }
 
-void trampSetRFPower(uint8_t level)
+void trampSetRFPower(uint16_t level)
 {
     if (!trampSerialPort)
         return;
 
-    trampPrepareBuffer(trampCmdBuffer, 'F');
-    trampCmdBuffer[2] = level;
+    trampPrepareBuffer(trampCmdBuffer, 'P');
+    trampCmdBuffer[2] = level & 0xff;
+    trampCmdBuffer[3] = (level >> 8) & 0xff;
     trampChecksum(trampCmdBuffer);
     trampWriteBuf(trampCmdBuffer);
 }
@@ -133,12 +134,44 @@ bool trampInit()
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
+uint8_t trampCmsPitmode = 0;
 uint8_t trampCmsBand = 1;
 uint8_t trampCmsChan = 1;
+uint16_t trampCmsFreqRef;
 
 static OSD_TAB_t trampCmsEntBand = { &trampCmsBand, 5, vtx58BandNames, NULL };
 
 static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChanNames, NULL };
+
+static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
+
+static const char * const trampCmsPowerNames[] = {
+    "25", "100", "200", "400", "600"
+};
+
+static const uint16_t trampCmsPowerTable[] = {
+    25, 100, 200, 400, 600
+};
+
+static uint8_t trampCmsPower = 0;
+
+static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 5, trampCmsPowerNames, NULL };
+
+static const char * const trampCmsPitmodeNames[] = {
+    "OFF", "ON "
+};
+
+static OSD_TAB_t trampCmsEntPitmode = { &trampCmsPitmode, 2, trampCmsPitmodeNames, NULL };
+
+static long trampCmsSetPitmode(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    trampSetPitmode(trampCmsPitmode);
+
+    return 0;
+}
 
 static long trampCmsCommence(displayPort_t *pDisp, const void *self)
 {
@@ -146,6 +179,9 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     trampSetBandChan(trampCmsBand, trampCmsChan);
+    trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
+
+    trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 
     return MENU_CHAIN_BACK;
 }
@@ -171,10 +207,11 @@ static OSD_Entry trampMenuEntries[] =
     { "- TRAMP -", OME_Label, NULL, NULL, 0 },
 
     //{ "",       OME_Label,   NULL,                   saCmsStatusString,  DYNAMIC },
+    { "PIT",    OME_TAB,     trampCmsSetPitmode,    &trampCmsEntPitmode,   0 },
     { "BAND",   OME_TAB,     NULL,                   &trampCmsEntBand,      0 },
     { "CHAN",   OME_TAB,     NULL,                   &trampCmsEntChan,      0 },
-    //{ "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
-    //{ "POWER",  OME_TAB,     saCmsConfigPowerByGvar, &saCmsEntPower,     0 },
+    { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
+    { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
     //{ "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig,   0 },
 
