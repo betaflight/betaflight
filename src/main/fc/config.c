@@ -624,7 +624,7 @@ void createDefaultConfig(master_t *config)
     config->pidConfig.pid_process_denom = 4;
 #else
     config->gyroConfig.gyro_sync_denom = 4;
-    config->pidConfig.pid_process_denom = 2;
+    config->pidConfig.pid_process_denom = 4;
 #endif
     config->gyroConfig.gyro_soft_lpf_type = FILTER_PT1;
     config->gyroConfig.gyro_soft_lpf_hz = 90;

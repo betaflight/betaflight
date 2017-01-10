@@ -28,20 +28,15 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 #include "io/ledstrip.h"
+#include "drivers/pwm_output.h"
 
 void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 {
     const ledConfig_t defaultLedStripConfig[] = {
-        DEFINE_LED( 0,   0,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 0,   1,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 0,   8,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 7,  15,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 8,  15,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 7,  14,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 8,  14,     6,  0,        LF(COLOR), 0,             0 ),
-        DEFINE_LED( 15,  8,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 15,  1,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
-        DEFINE_LED( 15,  0,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 0,   0,     6,  0,        LF(COLOR), 0,   0 ),
+        DEFINE_LED( 1,   0,     6,  0,        LF(COLOR), 0,   0 ),
+        DEFINE_LED( 1,  15,     6,  0,        LF(COLOR), 0,   0 ),
+        DEFINE_LED( 0,  15,     6,  0,        LF(COLOR), 0,   0 ),
     };
     memcpy(ledConfigs, &defaultLedStripConfig, MIN(LED_MAX_STRIP_LENGTH, sizeof(defaultLedStripConfig)));
 }
@@ -49,9 +44,9 @@ void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
 // alternative defaults settings for COLIBRI RACE targets
 void targetConfiguration(master_t *config)
 {
-    config->motorConfig.minthrottle = 1025;
+    config->motorConfig.minthrottle = 1045;
     config->motorConfig.maxthrottle = 1980;
-    config->motorConfig.mincommand = 1000;
+    config->motorConfig.mincommand = 980;
     config->servoConfig.servoCenterPulse = 1500;
 
     config->batteryConfig.vbatmaxcellvoltage = 45;
@@ -66,8 +61,8 @@ void targetConfiguration(master_t *config)
     config->failsafeConfig.failsafe_procedure = 1;
     config->failsafeConfig.failsafe_throttle_low_delay = 10;
 
-    config->gyroConfig.gyro_sync_denom = 1;
-    config->pidConfig.pid_process_denom = 3;
+    config->gyroConfig.gyro_sync_denom = 2;
+    config->pidConfig.pid_process_denom = 1;
     config->blackboxConfig.rate_num = 1;
     config->blackboxConfig.rate_denom = 1;
 
@@ -80,19 +75,21 @@ void targetConfiguration(master_t *config)
 
     config->profile[0].pidProfile.vbatPidCompensation = 1;
 
-    config->profile[0].pidProfile.P8[ROLL] = 46;     // new PID with preliminary defaults test carefully
-    config->profile[0].pidProfile.I8[ROLL] = 48;
+    config->profile[0].pidProfile.P8[ROLL] = 47;     // new PID with preliminary defaults test carefully
+    config->profile[0].pidProfile.I8[ROLL] = 74;
     config->profile[0].pidProfile.D8[ROLL] = 23;
-    config->profile[0].pidProfile.P8[PITCH] = 89;
-    config->profile[0].pidProfile.I8[PITCH] = 59;
+    config->profile[0].pidProfile.P8[PITCH] = 50;
+    config->profile[0].pidProfile.I8[PITCH] = 110;
     config->profile[0].pidProfile.D8[PITCH] = 25;
-    config->profile[0].pidProfile.P8[YAW] = 129;
-    config->profile[0].pidProfile.I8[YAW] = 50;
-    config->profile[0].pidProfile.D8[YAW] = 20;
+    config->profile[0].pidProfile.P8[YAW] = 96;
+    config->profile[0].pidProfile.I8[YAW] = 63;
+    config->profile[0].pidProfile.D8[YAW] = 50;
 
-    config->profile[0].controlRateProfile[0].rates[FD_ROLL] = 86;
-    config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
+    config->profile[0].controlRateProfile[0].rates[FD_ROLL] = 80;
+    config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 80;
     config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
+
+    config->motorConfig.motorPwmProtocol = PWM_TYPE_MULTISHOT;
 
     targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
 
