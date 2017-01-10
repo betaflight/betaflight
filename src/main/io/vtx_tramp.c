@@ -85,10 +85,6 @@ void trampSetBandChan(uint8_t band, uint8_t chan)
     if (!trampSerialPort)
         return;
 
-debug[0] = band;
-debug[1] = chan;
-debug[2] = vtx58FreqTable[band - 1][chan - 1];
-
     trampSetFreq(vtx58FreqTable[band - 1][chan - 1]);
 }
 
