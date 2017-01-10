@@ -20,7 +20,7 @@
 
 #include "platform.h"
 
-#ifndef SKIP_RX_MSP
+#ifdef USE_RX_MSP
 
 #include "build/build_config.h"
 
@@ -67,6 +67,7 @@ void rxMspInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
     UNUSED(rxConfig);
 
     rxRuntimeConfig->channelCount = MAX_SUPPORTED_RC_CHANNEL_COUNT;
+    rxRuntimeConfig->rxRefreshRate = 20000;
     rxRuntimeConfig->rcReadRawFn = rxMspReadRawRC;
     rxRuntimeConfig->rcFrameStatusFn = rxMspFrameStatus;
 }

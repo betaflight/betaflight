@@ -95,7 +95,7 @@ bool CheckGPIOPinSource(ioTag_t tag, GPIO_TypeDef *gpio, uint16_t pin)
 
 pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 {
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
     int channelIndex = 0;
 #endif
 
@@ -359,7 +359,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
 #endif
 
         if (type == MAP_TO_PPM_INPUT) {
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_RX_PPM)
 #ifdef CC3D_PPM1
             if (init->useFastPwm || init->pwmProtocolType == PWM_TYPE_BRUSHED) {
                 ppmAvoidPWMTimerClash(timerHardwarePtr, TIM4);
@@ -377,7 +377,7 @@ pwmIOConfiguration_t *pwmInit(drv_pwm_config_t *init)
             addBootlogEvent6(BOOT_EVENT_TIMER_CH_MAPPED, BOOT_EVENT_FLAGS_NONE, i, pwmIOConfiguration.motorCount, pwmIOConfiguration.servoCount, 0);
 #endif
         } else if (type == MAP_TO_PWM_INPUT) {
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_RX_PWM)
             pwmInConfig(timerHardwarePtr, channelIndex);
             pwmIOConfiguration.ioConfigurations[pwmIOConfiguration.ioCount].flags = PWM_PF_PWM;
             pwmIOConfiguration.pwmInputCount++;

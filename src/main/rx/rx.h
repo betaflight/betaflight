@@ -59,7 +59,7 @@ typedef enum {
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
     SERIALRX_IBUS = 7,
     SERIALRX_JETIEXBUS = 8,
-    SERIALRX_PROVIDER_MAX = SERIALRX_JETIEXBUS
+    SERIALRX_CRSF = 9
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -153,7 +153,7 @@ extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only need
 
 struct modeActivationCondition_s;
 void rxInit(const struct modeActivationCondition_s *modeActivationConditions);
-bool updateRx(timeUs_t currentTimeUs);
+bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
 void calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
