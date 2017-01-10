@@ -59,7 +59,7 @@
 
 #define SERIAL_RX
 #define USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
-#define USE_SERIALRX_SPEKTRUM   // DSM2 and DSMX protocol
+#define USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
 #define USE_SERIALRX_SBUS       // Frsky and Futaba receivers
 #define USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
 #define USE_SERIALRX_SUMD       // Graupner Hott protocol
@@ -89,6 +89,7 @@
 #define TELEMETRY_LTM
 #define TELEMETRY_SMARTPORT
 #define USE_SERVOS
+#define USE_RESOURCE_MGMT
 #endif
 
 #if (FLASH_SIZE > 128)
@@ -104,6 +105,8 @@
 #define USE_SERIALRX_JETIEXBUS
 #define VTX_CONTROL
 #define VTX_SMARTAUDIO
+#define USE_SENSOR_NAMES
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif
+

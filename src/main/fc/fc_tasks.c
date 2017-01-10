@@ -40,6 +40,7 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/serial_cli.h"
+#include "fc/fc_dispatch.h"
 
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
@@ -234,6 +235,8 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 
+    setTaskEnabled(TASK_DISPATCH, true);
+
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
 #endif
@@ -346,6 +349,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskHandleSerial,
         .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+
+    [TASK_DISPATCH] = {
+        .taskName = "DISPATCH",
+        .taskFunc = dispatchProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_BATTERY] = {
