@@ -239,11 +239,11 @@ static int saDacToPowerIndex(int dac)
 {
     int idx;
 
-    for (idx = 0 ; idx < 4 ; idx++) {
+    for (idx = 3 ; idx >= 0 ; idx--) {
         if (saPowerTable[idx].valueV1 <= dac)
             return(idx);
     }
-    return(3);
+    return(0);
 }
 
 //
