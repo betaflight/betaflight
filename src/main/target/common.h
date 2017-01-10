@@ -81,7 +81,6 @@
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
-#define GPS
 #define TELEMETRY
 #define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
@@ -93,6 +92,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
+#define GPS
 #define CMS
 #define USE_DASHBOARD
 #define USE_MSP_DISPLAYPORT
