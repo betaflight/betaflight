@@ -42,6 +42,7 @@
 #define TELEMETRY_LTM
 #define USE_FLM_HEADLOCK
 #define USE_FLM_TURN_ASSIST
+#define TELEMETRY_FRSKY
 #else
 #define USE_PARAMETER_GROUPS // !!TODO temporarily set while implementing parameter groups
 #define SKIP_TASK_STATISTICS
@@ -63,7 +64,6 @@
 #define GPS_PROTO_NAZA
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
 #define TELEMETRY_IBUS
 #define TELEMETRY_MAVLINK
