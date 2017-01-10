@@ -4,6 +4,16 @@
 bool smartAudioInit();
 void smartAudioProcess(uint32_t);
 
+typedef struct smartAudioSettings_s {
+    int8_t band;
+    int8_t chan;
+    int8_t power;
+} smartAudioSettings_t;
+
+int getSmartAudioSettings(smartAudioSettings_t *dev);
+void setSmartAudioSettings(smartAudioSettings_t dev);
+
+
 #if 0
 #ifdef CMS
 
