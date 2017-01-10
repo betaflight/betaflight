@@ -317,7 +317,7 @@ bool spektrumInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 
     if (serialPort && srxlEnabled) {
-        dispatchStart();
+        dispatchEnable();
     }
     return serialPort != NULL;
 }

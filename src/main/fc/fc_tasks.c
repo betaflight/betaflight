@@ -235,9 +235,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
 
-    if (isDispatchEnabled()) {
-        setTaskEnabled(TASK_DISPATCH, true);
-    }
+    setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);

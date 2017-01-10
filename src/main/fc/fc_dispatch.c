@@ -29,12 +29,12 @@
 static dispatchEntry_t *head = NULL;
 static bool dispatchEnabled = false;
 
-bool isDispatchEnabled(void)
+bool dispatchIsEnabled(void)
 {
     return dispatchEnabled;
 }
 
-void dispatchStart(void)
+void dispatchEnable(void)
 {
     dispatchEnabled = true;
 }
