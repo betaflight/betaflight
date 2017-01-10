@@ -70,6 +70,8 @@ static IO_t BindPin = DEFIO_IO(NONE);
 static IO_t BindPlug = DEFIO_IO(NONE);
 #endif
 
+SPM_VTX_DATA vtxData = {0xFF,0xFF,0xFF,0xFF,0xFF};
+
 bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRawDataPtr *callback)
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
@@ -157,6 +159,19 @@ uint8_t spektrumFrameStatus(void)
         if (spekChannel < rxRuntimeConfigPtr->channelCount && spekChannel < SPEKTRUM_MAX_SUPPORTED_CHANNEL_COUNT) {
             spekChannelData[spekChannel] = ((uint32_t)(spekFrame[b - 1] & spek_chan_mask) << 8) + spekFrame[b];
         }
+    }
+
+    //Check for vtx data
+    if (spekFrame[12] == 0xE0) {
+		vtxData.vtxChannel = (spekFrame[13] & 0x0F) + 1;
+		vtxData.vtxBand = (spekFrame[13] >> 5) & 0x07;
+    }
+
+    //Check channel slot 7 for vtx power, pit, and region data
+    if (spekFrame[14] == 0xE0) {
+		vtxData.vtxPower = spekFrame[15] & 0x03;
+		vtxData.vtxRegion = (spekFrame[15] >> 3) & 0x01;
+		vtxData.vtxPit = (spekFrame[15] >> 4) & 0x01;
     }
 
     return SERIAL_RX_FRAME_COMPLETE;

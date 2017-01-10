@@ -46,6 +46,7 @@
 #include "drivers/vtx_soft_spi_rtc6705.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
+#include "rx/spektrum.h"
 
 #include "io/beeper.h"
 #include "io/escservo.h"
@@ -104,6 +105,8 @@ static serialPort_t *mspSerialPort;
 extern uint16_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 extern void resetProfile(profile_t *profile);
+
+extern SPM_VTX_DATA vtxData;
 
 void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, escAndServoConfig_t *escAndServoConfigToUse, pidProfile_t *pidProfileToUse);
 
@@ -1290,7 +1293,16 @@ static bool processOutCommand(uint8_t cmdMSP)
         serialize8(masterConfig.baro_hardware);
         serialize8(masterConfig.mag_hardware);
         break;
-
+    case MSP_SPM_VTX_CONFIG:
+        headSerialReply(5);
+        serialize8(vtxData.vtxChannel);
+        serialize8(vtxData.vtxBand);
+        serialize8(vtxData.vtxPower);
+        serialize8(vtxData.vtxRegion);
+        serialize8(vtxData.vtxPit);
+        // reset spm vtx data
+        memset(&vtxData, 0xFF, sizeof(SPM_VTX_DATA));
+        break;
     default:
         return false;
     }

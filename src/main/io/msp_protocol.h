@@ -210,6 +210,8 @@
 #define MSP_SENSOR_CONFIG               96
 #define MSP_SET_SENSOR_CONFIG           97
 
+#define MSP_SPM_VTX_CONFIG				98
+
 //
 // OSD specific
 //
