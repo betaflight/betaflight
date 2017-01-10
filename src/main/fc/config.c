@@ -45,8 +45,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 #include "io/osd.h"
@@ -64,6 +62,9 @@
 #include "flight/navigation_rewrite.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
+#include "fc/rc_controls.h"
+#include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
 #include "config/config_eeprom.h"
@@ -83,9 +84,6 @@
 
 master_t masterConfig;                 // master config struct with data independent from profiles
 profile_t *currentProfile;
-
-static uint8_t currentControlRateProfileIndex = 0;
-controlRateConfig_t *currentControlRateProfile;
 
 void resetPidProfile(pidProfile_t *pidProfile)
 {
@@ -280,24 +278,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     serialConfig->reboot_character = 'R';
 }
 
-static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
-{
-    controlRateConfig->rcExpo8 = 70;
-    controlRateConfig->thrMid8 = 50;
-    controlRateConfig->thrExpo8 = 0;
-    controlRateConfig->dynThrPID = 0;
-    controlRateConfig->rcYawExpo8 = 20;
-    controlRateConfig->tpa_breakpoint = 1500;
-
-    for (uint8_t axis = 0; axis < FLIGHT_DYNAMICS_INDEX_COUNT; axis++) {
-        if (axis == FD_YAW) {
-            controlRateConfig->rates[axis] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
-        } else {
-            controlRateConfig->rates[axis] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
-        }
-    }
-
-}
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
@@ -429,8 +409,6 @@ void createDefaultConfig(master_t *config)
 
     resetPidProfile(&config->profile[0].pidProfile);
 
-    resetControlRateConfig(&config->controlRateProfiles[0]);
-
     // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
 
@@ -558,11 +536,6 @@ void createDefaultConfig(master_t *config)
         memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
     }
 
-    // copy first control rate config into remaining profile
-    for (int i = 1; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        memcpy(&config->controlRateProfiles[i], &config->controlRateProfiles[0], sizeof(controlRateConfig_t));
-    }
-
     for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
         config->profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
     }
@@ -580,11 +553,6 @@ void resetConfigs(void)
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
-}
-
-static void activateControlRateConfig(void)
-{
-    generateThrottleCurve(currentControlRateProfile);
 }
 
 static void activateConfig(void)
@@ -924,26 +892,6 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
-}
-
-uint8_t getCurrentControlRateProfile(void)
-{
-    return currentControlRateProfileIndex;
-}
-
-void setControlRateProfile(uint8_t profileIndex)
-{
-    currentControlRateProfileIndex = profileIndex;
-    currentControlRateProfile = &masterConfig.controlRateProfiles[profileIndex];
-}
-
-void changeControlRateProfile(uint8_t profileIndex)
-{
-    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
-    }
-    setControlRateProfile(profileIndex);
-    activateControlRateConfig();
 }
 
 void persistentFlagClearAll()

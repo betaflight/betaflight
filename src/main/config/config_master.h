@@ -145,7 +145,6 @@ typedef struct master_s {
 
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
-    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
@@ -162,6 +161,5 @@ typedef struct master_s {
 
 extern master_t masterConfig;
 extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
 
 void createDefaultConfig(master_t *config);

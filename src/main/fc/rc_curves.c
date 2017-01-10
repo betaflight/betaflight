@@ -20,11 +20,13 @@
 
 #include "platform.h"
 
-#include "rx/rx.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 
 #include "flight/mixer.h"
+
+#include "rx/rx.h"
 
 
 #define PITCH_LOOKUP_LENGTH 7
@@ -34,7 +36,7 @@
 static int16_t lookupThrottleRC[THROTTLE_LOOKUP_LENGTH];    // lookup table for expo & mid THROTTLE
 int16_t lookupThrottleRCMid;                         // THROTTLE curve mid point
 
-void generateThrottleCurve(controlRateConfig_t *controlRateConfig)
+void generateThrottleCurve(const controlRateConfig_t *controlRateConfig)
 {
     lookupThrottleRCMid = motorConfig()->minthrottle + (int32_t)(motorConfig()->maxthrottle - motorConfig()->minthrottle) * controlRateConfig->thrMid8 / 100; // [MINTHROTTLE;MAXTHROTTLE]
 
