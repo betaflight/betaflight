@@ -65,6 +65,7 @@
 #include "io/transponder_ir.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/serial_4way.h"
+#include "io/vtx_smartaudio.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -821,6 +822,20 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
             sbufWriteU8(dst, box->permanentId);
         }
         break;
+
+#ifdef VTX_SMARTAUDIO
+    case MSP_VTX_CONFIG:
+        {
+            smartAudioSettings_t s;
+            if (!getSmartAudioSettings(&s)) {
+                sbufWriteU8(dst, s.band);
+                sbufWriteU8(dst, s.chan);
+                sbufWriteU8(dst, s.power);
+                sbufWriteU8(dst, 0);
+            }
+        }
+        break;
+#endif
 
     case MSP_MISC:
         sbufWriteU16(dst, rxConfig()->midrc);
@@ -1645,6 +1660,21 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (current_vtx_channel != masterConfig.vtx_channel) {
             current_vtx_channel = masterConfig.vtx_channel;
             rtc6705_soft_spi_set_channel(vtx_freq[current_vtx_channel]);
+        }
+        break;
+#endif
+
+#ifdef VTX_SMARTAUDIO
+    case MSP_SET_VTX_CONFIG:
+        {
+            smartAudioSettings_t s;
+
+            s.band = sbufReadU8(src);
+            s.chan = sbufReadU8(src);
+            s.power = sbufReadU8(src);
+            sbufReadU8(src);
+
+            setSmartAudioSettings(s);
         }
         break;
 #endif
