@@ -27,6 +27,17 @@
 #include "fc/fc_dispatch.h"
 
 static dispatchEntry_t *head = NULL;
+static bool dispatchEnabled = false;
+
+bool isDispatchEnabled(void)
+{
+    return dispatchEnabled;
+}
+
+void dispatchStart(void)
+{
+    dispatchEnabled = true;
+}
 
 void dispatchProcess(uint32_t currentTime)
 {

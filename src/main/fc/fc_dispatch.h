@@ -26,5 +26,7 @@ typedef struct dispatchEntry_s {
     struct dispatchEntry_s *next;
 } dispatchEntry_t;
 
+bool isDispatchEnabled(void);
+void dispatchStart(void);
 void dispatchProcess(uint32_t currentTime);
 void dispatchAdd(dispatchEntry_t *entry, int delayUs);
