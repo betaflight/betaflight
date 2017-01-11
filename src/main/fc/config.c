@@ -356,15 +356,6 @@ void createDefaultConfig(master_t *config)
     resetServoMixerConfig(&config->servoMixerConfig);
 #endif
 
-#ifdef GPS
-    // gps/nav stuff
-    config->gpsConfig.provider = GPS_UBLOX;
-    config->gpsConfig.sbasMode = SBAS_NONE;
-    config->gpsConfig.autoConfig = GPS_AUTOCONFIG_ON;
-    config->gpsConfig.autoBaud = GPS_AUTOBAUD_ON;
-    config->gpsConfig.dynModel = GPS_DYNMODEL_AIR_1G;
-#endif
-
 #ifdef NAV
     resetNavConfig(&config->navConfig);
 #endif

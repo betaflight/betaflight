@@ -52,8 +52,6 @@
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
 #define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
-#define gpsConfig(x) (&masterConfig.gpsConfig)
-#define gpsConfigMutable(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
 #define navConfigMutable(x) (&masterConfig.navConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
@@ -107,10 +105,6 @@ typedef struct master_s {
     uint16_t flaperon_throw_offset;
     uint8_t flaperon_throw_inverted;
 
-#endif
-
-#ifdef GPS
-    gpsConfig_t gpsConfig;
 #endif
 
 #ifdef NAV

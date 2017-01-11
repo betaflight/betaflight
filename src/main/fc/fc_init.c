@@ -484,7 +484,7 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsPreInit(&masterConfig.gpsConfig);
+        gpsPreInit();
     }
 #endif
 
@@ -521,7 +521,7 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(serialConfig(), gpsConfig());
+        gpsInit();
         addBootlogEvent2(BOOT_EVENT_GPS_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif
