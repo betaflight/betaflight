@@ -1042,6 +1042,13 @@ void validateAndFixGyroConfig(void)
 
     float samplingTime = 0.000125f;
 
+    if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
+        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
+        gyroConfig()->gyro_sync_denom = 1;
+        gyroConfig()->gyro_use_32khz = false;
+        samplingTime = 0.001f;
+    }
+
     if (gyroConfig()->gyro_use_32khz) {
         samplingTime = 0.00003125;
         // F1 and F3 can't handle high sample speed.
@@ -1055,12 +1062,6 @@ void validateAndFixGyroConfig(void)
 #if !defined(GYRO_USES_SPI) || !defined(USE_MPU_DATA_READY_SIGNAL)
     gyroConfig()->gyro_isr_update = false;
 #endif
-
-    if (gyroConfig()->gyro_lpf != GYRO_LPF_256HZ && gyroConfig()->gyro_lpf != GYRO_LPF_NONE) {
-        pidConfig()->pid_process_denom = 1; // When gyro set to 1khz always set pid speed 1:1 to sampling speed
-        gyroConfig()->gyro_sync_denom = 1;
-        samplingTime = 0.001f;
-    }
 
     // check for looptime restrictions based on motor protocol. Motor times have safety margin
     const float pidLooptime = samplingTime * gyroConfig()->gyro_sync_denom * pidConfig()->pid_process_denom;
