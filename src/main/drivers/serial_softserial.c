@@ -200,17 +200,21 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
     ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
 
-    if (!(tagTx && tagRx)) {
-        // Future enhancement: half duplex case
-        return NULL;
+    if (options & MODE_RX) {
+        if (!tagRx)
+            return;
+        softSerial->rxIO = IOGetByTag(tagRx);
+        softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
+        // XXX Should take care of timer collisions?
     }
 
-    softSerial->txIO = IOGetByTag(tagTx);
-    softSerial->rxIO = IOGetByTag(tagRx);
-    softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
-    softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
-
-    // Should take care of timer collisions?
+    if (options & MODE_TX) {
+        if (!tagTx)
+            return;
+        softSerial->txIO = IOGetByTag(tagTx);
+        softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
+        // XXX Should take care of timer collisions?
+    }
 
     softSerial->port.vTable = softSerialVTable;
     softSerial->port.baudRate = baud;
@@ -230,20 +234,28 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    serialOutputPortConfig(tagTx, portIndex);
-    serialInputPortConfig(tagRx, portIndex);
-    setTxSignal(softSerial, ENABLE);
+    if (options & MODE_TX) {
+        serialOutputPortConfig(tagTx, portIndex);
+        setTxSignal(softSerial, ENABLE);
+    }
+
+    if (options & MODE_RX) {
+        serialInputPortConfig(tagRx, portIndex);
+    }
+
     delay(50);
 
-    serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
+    if (options & MODE_TX)
+        serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
 
-    // If RX is on a different timer, initialize it as TX to set timebase,
-    // then re-initialize it as RX.
+    if (options & MODE_RX) {
+        // If RX is on a different timer from TX, or TX doesn't exist,
+        // then initialize its own timer.
+        if (!(options & MODE_TX) || (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim))
+            serialTimerConfigure(softSerial->rxTimerHardware, baud);
 
-    if (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim)
-        serialTimerConfigure(softSerial->rxTimerHardware, baud);
-
-    serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
+        serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
+    }
 
     return &softSerial->port;
 }
