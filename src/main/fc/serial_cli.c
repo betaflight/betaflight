@@ -597,7 +597,6 @@ static const clivalue_t valueTable[] = {
     { "gimbal_mode",                VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GIMBAL_MODE }, PG_GIMBAL_CONFIG, offsetof(gimbalConfig_t, mode) },
 #endif
 
-
 // PG_BATTERY_CONFIG
     { "battery_capacity",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  20000 }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, batteryCapacity) },
     { "vbat_scale",                 VAR_UINT8  | MASTER_VALUE, .config.minmax = { VBAT_SCALE_MIN,  VBAT_SCALE_MAX }, PG_BATTERY_CONFIG, offsetof(batteryConfig_t, vbatscale) },
@@ -649,6 +648,13 @@ static const clivalue_t valueTable[] = {
     { "imu_dcm_ki_mag",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0,  UINT16_MAX }, PG_IMU_CONFIG, offsetof(imuConfig_t, dcm_ki_mag) },
     { "small_angle",                VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  180 }, PG_IMU_CONFIG, offsetof(imuConfig_t, small_angle) },
 
+// PG_ARMING_CONFIG
+    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ARMING_CONFIG, offsetof(armingConfig_t, fixed_wing_auto_arm) },
+    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ARMING_CONFIG, offsetof(armingConfig_t, disarm_kill_switch) },
+    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
+
+
+
 };
 
 #else
@@ -670,11 +676,6 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmRxConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
-
-    { "fixed_wing_auto_arm",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->fixed_wing_auto_arm, .config.lookup = { TABLE_OFF_ON } },
-    { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &armingConfig()->disarm_kill_switch, .config.lookup = { TABLE_OFF_ON } },
-    { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &armingConfig()->auto_disarm_delay, .config.minmax = { 0,  60 } },
-
 
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->provider, .config.lookup = { TABLE_GPS_PROVIDER } },
@@ -1112,6 +1113,7 @@ static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
 static serialConfig_t serialConfigCopy;
 static imuConfig_t imuConfigCopy;
+static armingConfig_t armingConfigCopy;
 
 static void backupConfigs(void)
 {
@@ -1147,6 +1149,7 @@ static void backupConfigs(void)
     flight3DConfigCopy = *flight3DConfig();
     serialConfigCopy = *serialConfig();
     imuConfigCopy = *imuConfig();
+    armingConfigCopy = *armingConfig();
 }
 
 static void restoreConfigs(void)
@@ -1182,6 +1185,7 @@ static void restoreConfigs(void)
     *flight3DConfigMutable() = flight3DConfigCopy;
     *serialConfigMutable() = serialConfigCopy;
     *imuConfigMutable() = imuConfigCopy;
+    *armingConfigMutable() = armingConfigCopy;
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -1231,6 +1235,11 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
 #endif
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &mixerConfigCopy, mixerConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &flight3DConfigCopy, flight3DConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &serialConfigCopy, serialConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &imuConfigCopy, imuConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
         return;
     }
 #endif

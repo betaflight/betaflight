@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -140,6 +142,8 @@ typedef struct armingConfig_s {
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
+
+PG_DECLARE(armingConfig_t, armingConfig);
 
 bool areUsingSticksToArm(void);
 

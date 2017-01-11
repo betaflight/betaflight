@@ -56,8 +56,6 @@
 #define gpsConfigMutable(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
 #define navConfigMutable(x) (&masterConfig.navConfig)
-#define armingConfig(x) (&masterConfig.armingConfig)
-#define armingConfigMutable(x) (&masterConfig.armingConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define telemetryConfigMutable(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -120,8 +118,6 @@ typedef struct master_s {
 #endif
 
     pwmRxConfig_t pwmRxConfig;
-
-    armingConfig_t armingConfig;
 
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
