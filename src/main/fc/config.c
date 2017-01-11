@@ -452,10 +452,6 @@ void resetSerialConfig(serialConfig_t *serialConfig)
     }
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-#if defined(USE_VCP)
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
 }
 
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
