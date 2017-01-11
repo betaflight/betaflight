@@ -242,6 +242,22 @@ bool gyroInit(const gyroConfig_t *gyroConfigToUse)
     if (!gyroDetect(&gyro.dev)) {
         return false;
     }
+
+    switch (detectedSensors[SENSOR_INDEX_GYRO]) {
+    default:
+        // gyro does not support 32kHz
+        // cast away constness, legitimate as this is cross-validation
+        ((gyroConfig_t*)gyroConfig)->gyro_use_32khz = false;
+        break;
+    case GYRO_MPU6500:
+    case GYRO_MPU9250:
+    case GYRO_ICM20689:
+    case GYRO_ICM20608G:
+    case GYRO_ICM20602:
+        // do nothing, as gyro supports 32kHz
+        break;
+    }
+
     // Must set gyro sample rate before initialisation
     gyro.targetLooptime = gyroSetSampleRate(&gyro.dev, gyroConfig->gyro_lpf, gyroConfig->gyro_sync_denom, gyroConfig->gyro_use_32khz);
     gyro.dev.lpf = gyroConfig->gyro_lpf;

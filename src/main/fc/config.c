@@ -1047,17 +1047,12 @@ void validateAndFixGyroConfig(void)
     float samplingTime = 0.000125f;
 
     if (gyroConfig()->gyro_use_32khz) {
-#ifdef GYRO_SUPPORTS_32KHZ
         samplingTime = 0.00003125;
-        // F1 and F3 can't handle high pid speed.
+        // F1 and F3 can't handle high pid speed
 #if defined(STM32F1)
         pidConfig()->pid_process_denom = constrain(pidConfig()->pid_process_denom, 16, 16);
-#endif
-#if defined(STM32F3)
+#elif defined(STM32F3)
         pidConfig()->pid_process_denom = constrain(pidConfig()->pid_process_denom, 4, 16);
-#endif
-#else
-        gyroConfig()->gyro_use_32khz = false;
 #endif
     }
 
