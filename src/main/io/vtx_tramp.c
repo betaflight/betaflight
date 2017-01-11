@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "platform.h"
 
@@ -38,77 +39,53 @@ static serialPort_t *trampSerialPort = NULL;
 
 static uint8_t trampCmdBuffer[16];
 
-void trampClearBuffer(uint8_t *buf)
-{
-    for (int i = 0 ; i < 16 ; i++) {
-        buf[i] = 0;
-    }
-}
-
-void trampPrepareBuffer(uint8_t *buf, uint8_t cmd)
-{
-    trampClearBuffer(buf);
-
-    trampCmdBuffer[0] = 15;
-    trampCmdBuffer[1] = cmd;
-}
-
-void trampWriteBuf(uint8_t *buf)
+static void trampWriteBuf(uint8_t *buf)
 {
     serialWriteBuf(trampSerialPort, buf, 16);
 }
 
-void trampChecksum(uint8_t *buf)
+static uint8_t trampChecksum(uint8_t *buf)
 {
     uint8_t cksum = 0;
 
     for (int i = 0 ; i < 14 ; i++)
         cksum += buf[i];
 
-    buf[14] = cksum;
+    return cksum;
+}
+
+void trampCmdU16(uint8_t cmd, uint16_t param)
+{
+    if (!trampSerialPort)
+        return;
+
+    memset(trampCmdBuffer, 0, ARRAYLEN(trampCmdBuffer));
+    trampCmdBuffer[0] = 15;
+    trampCmdBuffer[1] = cmd;
+    trampCmdBuffer[2] = param & 0xff;
+    trampCmdBuffer[3] = (param >> 8) & 0xff;
+    trampCmdBuffer[14] = trampChecksum(trampCmdBuffer);
+    trampWriteBuf(trampCmdBuffer);
 }
 
 void trampSetFreq(uint16_t freq)
 {
-    if (!trampSerialPort)
-        return;
-
-    trampPrepareBuffer(trampCmdBuffer, 'F');
-    trampCmdBuffer[2] = freq & 0xff;
-    trampCmdBuffer[3] = (freq >> 8) & 0xff;
-    trampChecksum(trampCmdBuffer);
-    trampWriteBuf(trampCmdBuffer);
+    trampCmdU16('F', freq);
 }
 
 void trampSetBandChan(uint8_t band, uint8_t chan)
 {
-    if (!trampSerialPort)
-        return;
-
-    trampSetFreq(vtx58FreqTable[band - 1][chan - 1]);
+    trampCmdU16('F', vtx58FreqTable[band - 1][chan - 1]);
 }
 
 void trampSetRFPower(uint16_t level)
 {
-    if (!trampSerialPort)
-        return;
-
-    trampPrepareBuffer(trampCmdBuffer, 'P');
-    trampCmdBuffer[2] = level & 0xff;
-    trampCmdBuffer[3] = (level >> 8) & 0xff;
-    trampChecksum(trampCmdBuffer);
-    trampWriteBuf(trampCmdBuffer);
+    trampCmdU16('P', level);
 }
 
 void trampSetPitmode(uint8_t onoff)
 {
-    if (!trampSerialPort)
-        return;
-
-    trampPrepareBuffer(trampCmdBuffer, 'I');
-    trampCmdBuffer[2] = onoff;
-    trampChecksum(trampCmdBuffer);
-    trampWriteBuf(trampCmdBuffer);
+    trampCmdU16('I', (uint16_t)onoff);
 }
 
 bool trampInit()
@@ -116,7 +93,7 @@ bool trampInit()
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
 
     if (portConfig) {
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 9600, MODE_RXTX, 0); // MODE_TX possible?
+        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 9600, MODE_RXTX, 0);
     }
 
     if (!trampSerialPort) {
@@ -174,8 +151,11 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
+    // XXX Does Tramp handles back-to-back commands properly!?
     trampSetBandChan(trampCmsBand, trampCmsChan);
-    trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
+
+    // Test without back-to-back commands.
+    // trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
 
     trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 
