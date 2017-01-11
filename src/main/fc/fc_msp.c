@@ -1101,7 +1101,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); //BF: pidProfile()->deltaMethod
         sbufWriteU8(dst, 0); //BF: pidProfile()->vbatPidCompensation
         sbufWriteU8(dst, 0); //BF: pidProfile()->setpointRelaxRatio
-        sbufWriteU8(dst, 0); //BF: pidProfile()->dtermSetpointWeight
+        sbufWriteU8(dst, constrain(pidProfile()->dterm_setpoint_weight * 100, 0, 255));
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); //BF: pidProfile()->itermThrottleGain
@@ -1516,12 +1516,6 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         gyroConfigMutable()->gyro_soft_notch_hz_2 = constrain(sbufReadU16(src), 0, 500);
         gyroConfigMutable()->gyro_soft_notch_cutoff_2 = constrain(sbufReadU16(src), 1, 500);
 #endif
-        //BF: masterConfig.gyro_soft_notch_hz_1 = read16();
-        //BF: masterConfig.gyro_soft_notch_cutoff_1 = read16();
-        //BF: pidProfileMutable()->dterm_notch_hz = read16();
-        //BF: pidProfileMutable()->dterm_notch_cutoff = read16();
-        //BF: masterConfig.gyro_soft_notch_hz_2 = read16();
-        //BF: masterConfig.gyro_soft_notch_cutoff_2 = read16();
         break;
 
     case MSP_SET_PID_ADVANCED:
@@ -1532,7 +1526,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); //BF: pidProfileMutable()->deltaMethod
         sbufReadU8(src); //BF: pidProfileMutable()->vbatPidCompensation
         sbufReadU8(src); //BF: pidProfileMutable()->setpointRelaxRatio
-        sbufReadU8(src); //BF: pidProfileMutable()->dtermSetpointWeight
+        pidProfileMutable()->dterm_setpoint_weight = constrainf(sbufReadU8(src) / 1.0f, 0.0f, 2.0f);
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); //BF: pidProfileMutable()->itermThrottleGain
