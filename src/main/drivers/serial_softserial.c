@@ -26,6 +26,7 @@
 
 #include "build/build_config.h"
 #include "build/atomic.h"
+#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -197,20 +198,21 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     pinCfgIndex = portIndex + RESOURCE_SOFT_OFFSET;
 
-    ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
     ioTag_t tagRx = serialPinConfig()->ioTagRx[pinCfgIndex];
 
-    if (options & MODE_RX) {
+    if (mode & MODE_RX) {
         if (!tagRx)
-            return;
+            return NULL;
         softSerial->rxIO = IOGetByTag(tagRx);
         softSerial->rxTimerHardware = timerGetByTag(tagRx, TIM_USE_ANY);
         // XXX Should take care of timer collisions?
     }
 
-    if (options & MODE_TX) {
+    ioTag_t tagTx = serialPinConfig()->ioTagTx[pinCfgIndex];
+
+    if (mode & MODE_TX) {
         if (!tagTx)
-            return;
+            return NULL;
         softSerial->txIO = IOGetByTag(tagTx);
         softSerial->txTimerHardware = timerGetByTag(tagTx, TIM_USE_ANY);
         // XXX Should take care of timer collisions?
@@ -234,25 +236,28 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
 
     softSerial->softSerialPortIndex = portIndex;
 
-    if (options & MODE_TX) {
+    if (mode & MODE_TX) {
         serialOutputPortConfig(tagTx, portIndex);
         setTxSignal(softSerial, ENABLE);
     }
 
-    if (options & MODE_RX) {
+    if (mode & MODE_RX) {
         serialInputPortConfig(tagRx, portIndex);
     }
 
     delay(50);
 
-    if (options & MODE_TX)
+    if (mode & MODE_TX)
         serialTimerTxConfig(softSerial->txTimerHardware, portIndex, baud);
 
-    if (options & MODE_RX) {
+    if (mode & MODE_RX) {
         // If RX is on a different timer from TX, or TX doesn't exist,
-        // then initialize its own timer.
-        if (!(options & MODE_TX) || (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim))
+        // then initialize it's own timer.
+        if (!(options & MODE_TX) || (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim)) {
+            // XXX Should initialize it as TX first, to set up
+            // XXX onSerialTimer() interrupt handler.
             serialTimerConfigure(softSerial->rxTimerHardware, baud);
+        }
 
         serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
     }
@@ -381,11 +386,15 @@ void processRxState(softSerial_t *softSerial)
 
 void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
+debug[0]++;
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, timerCb);
 
-    processTxState(softSerial);
-    processRxState(softSerial);
+    if (softSerial->port.mode & MODE_TX)
+        processTxState(softSerial);
+
+    if (softSerial->port.mode & MODE_RX)
+        processRxState(softSerial);
 }
 
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
