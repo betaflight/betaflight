@@ -342,13 +342,6 @@ void createDefaultConfig(master_t *config)
     // profile
     config->current_profile_index = 0;
 
-    // IMU
-    config->imuConfig.dcm_kp_acc = 2500;             // 0.25 * 10000
-    config->imuConfig.dcm_ki_acc = 50;               // 0.005 * 10000
-    config->imuConfig.dcm_kp_mag = 10000;            // 1.00 * 10000
-    config->imuConfig.dcm_ki_mag = 0;                // 0.00 * 10000
-    config->imuConfig.small_angle = 25;
-
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);
 #endif
@@ -552,7 +545,7 @@ static void activateConfig(void)
     servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
 
-    imuConfigure(&masterConfig.imuConfig, &currentProfile->pidProfile);
+    imuConfigure(&currentProfile->pidProfile);
 
     pidInit();
 
