@@ -42,7 +42,7 @@
 #endif
 
 #include "io/serial.h"
-#include "fc/serial_cli.h" // for cliEnter()
+#include "fc/cli.h" // for cliEnter()
 
 #include "msp/msp_serial.h"
 
