@@ -1090,9 +1090,6 @@ void validateAndFixGyroConfig(void)
         case (PWM_TYPE_DSHOT300):
             motorUpdateRestriction = 0.0001f;
             break;
-        case (PWM_TYPE_DSHOT600):
-            motorUpdateRestriction = 0.0000625f;
-            break;
         default:
             motorUpdateRestriction = 0.00003125f;
     }
