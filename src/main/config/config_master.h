@@ -50,8 +50,6 @@
 
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
-#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
-#define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
 #define navConfigMutable(x) (&masterConfig.navConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
@@ -93,8 +91,6 @@ typedef struct master_s {
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
     // Radio/ESC-related configuration
-
-    rcControlsConfig_t rcControlsConfig;
 
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 

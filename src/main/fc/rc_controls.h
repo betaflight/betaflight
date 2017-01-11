@@ -137,6 +137,8 @@ typedef struct rcControlsConfig_s {
     uint8_t alt_hold_deadband;             // Defines the neutral zone of throttle stick during altitude hold
 } rcControlsConfig_t;
 
+PG_DECLARE(rcControlsConfig_t, rcControlsConfig);
+
 typedef struct armingConfig_s {
     uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value

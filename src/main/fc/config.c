@@ -259,14 +259,6 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 #define SECOND_PORT_INDEX 1
 #endif
 
-void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
-{
-    rcControlsConfig->deadband = 5;
-    rcControlsConfig->yaw_deadband = 5;
-    rcControlsConfig->pos_hold_deadband = 20;
-    rcControlsConfig->alt_hold_deadband = 50;
-}
-
 #ifdef USE_SERVOS
 static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
 {
@@ -381,8 +373,6 @@ void createDefaultConfig(master_t *config)
 #else
     parseRcChannels("AETR1234");
 #endif
-
-    resetRcControlsConfig(&config->rcControlsConfig);
 
     config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
@@ -544,7 +534,7 @@ static void activateConfig(void)
 #ifdef NAV
     navigationUseConfig(&masterConfig.navConfig);
     navigationUsePIDs(&currentProfile->pidProfile);
-    navigationUseRcControlsConfig(&masterConfig.rcControlsConfig);
+    navigationUseRcControlsConfig(rcControlsConfig());
     navigationUseRxConfig(rxConfig());
     navigationUseFlight3DConfig(flight3DConfig());
     navigationUsemotorConfig(motorConfig());

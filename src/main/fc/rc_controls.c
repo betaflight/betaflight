@@ -73,11 +73,20 @@ int16_t rcCommand[4];           // interval [1000;2000] for THROTTLE and [-500;+
 
 uint32_t rcModeActivationMask; // one bit per mode defined in boxId_e
 
+PG_REGISTER_WITH_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig, PG_RC_CONTROLS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(rcControlsConfig_t, rcControlsConfig,
+    .deadband = 5,
+    .yaw_deadband = 5,
+    .pos_hold_deadband = 20,
+    .alt_hold_deadband = 50
+);
+
 PG_REGISTER_WITH_RESET_TEMPLATE(armingConfig_t, armingConfig, PG_ARMING_CONFIG, 0);
 
 PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
-        .disarm_kill_switch = 1,
-        .auto_disarm_delay = 5
+    .disarm_kill_switch = 1,
+    .auto_disarm_delay = 5
 );
 
 void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {

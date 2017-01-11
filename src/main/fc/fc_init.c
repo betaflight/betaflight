@@ -530,7 +530,7 @@ void init(void)
     navigationInit(
         &masterConfig.navConfig,
         &currentProfile->pidProfile,
-        &masterConfig.rcControlsConfig,
+        rcControlsConfig(),
         rxConfig(),
         flight3DConfig(),
         motorConfig()
