@@ -69,7 +69,7 @@
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
+#include "fc/cli.h"
 
 #include "msp/msp_serial.h"
 
