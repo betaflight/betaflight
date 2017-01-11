@@ -23,7 +23,8 @@
 #include "rx/rx.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
-#include "io/motors.h"
+
+#include "flight/mixer.h"
 
 
 #define PITCH_LOOKUP_LENGTH 7

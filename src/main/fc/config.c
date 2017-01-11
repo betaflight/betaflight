@@ -45,7 +45,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/servos.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "io/ledstrip.h"
@@ -228,14 +227,6 @@ void validateNavConfig(navConfig_t * navConfig)
 }
 #endif
 
-#ifdef USE_SERVOS
-void resetServoConfig(servoConfig_t *servoConfig)
-{
-    servoConfig->servoCenterPulse = 1500;
-    servoConfig->servoPwmRate = 50;
-}
-#endif
-
 #ifdef TELEMETRY
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
@@ -411,7 +402,6 @@ void createDefaultConfig(master_t *config)
 
 #ifdef USE_SERVOS
     resetServoMixerConfig(&config->servoMixerConfig);
-    resetServoConfig(&config->servoConfig);
 #endif
 
 #ifdef GPS

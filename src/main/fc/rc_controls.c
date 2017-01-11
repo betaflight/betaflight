@@ -45,7 +45,6 @@
 
 #include "io/gps.h"
 #include "io/beeper.h"
-#include "io/motors.h"
 
 #include "rx/rx.h"
 

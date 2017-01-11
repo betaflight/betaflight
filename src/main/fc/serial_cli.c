@@ -83,10 +83,8 @@ uint8_t cliMode = 0;
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/osd.h"
 #include "io/serial.h"
-#include "io/servos.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -620,6 +618,11 @@ static const clivalue_t valueTable[] = {
     { "3d_neutral",                 VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_3D_CONFIG, offsetof(flight3DConfig_t, neutral3d) },
     { "3d_deadband_throttle",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_MOTOR_3D_CONFIG, offsetof(flight3DConfig_t, deadband3d_throttle) },
 
+#ifdef USE_SERVOS
+// PG_SERVO_CONFIG
+    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX }, PG_SERVO_CONFIG, offsetof(servoConfig_t, servoCenterPulse) },
+    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 50,  498 }, PG_SERVO_CONFIG, offsetof(servoConfig_t, servoPwmRate) },
+#endif
 };
 
 #else
@@ -775,8 +778,6 @@ const clivalue_t valueTable[] = {
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
     { "servo_lowpass_freq",         VAR_INT16  | MASTER_VALUE, &servoMixerConfig()->servo_lowpass_freq, .config.minmax = { 10,  400} },
     { "servo_lowpass_enable",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &servoMixerConfig()->servo_lowpass_enable, .config.lookup = { TABLE_OFF_ON } },
-    { "servo_center_pulse",         VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoCenterPulse, .config.minmax = { PWM_RANGE_ZERO,  PWM_RANGE_MAX } },
-    { "servo_pwm_rate",             VAR_UINT16 | MASTER_VALUE,  &servoConfig()->servoPwmRate, .config.minmax = { 50,  498 } },
     { "fw_iterm_throw_limit",       VAR_INT16  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.fixedWingItermThrowLimit, .config.minmax = { FW_ITERM_THROW_LIMIT_MIN,  FW_ITERM_THROW_LIMIT_MAX} },
 #endif
 
@@ -1100,6 +1101,7 @@ static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
 static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
+static servoConfig_t servoConfigCopy;
 static gimbalConfig_t gimbalConfigCopy;
 #endif
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
@@ -1130,6 +1132,7 @@ static void backupConfigs(void)
     motorConfigCopy = *motorConfig();
     boardAlignmentCopy = *boardAlignment();
 #ifdef USE_SERVOS
+    servoConfigCopy = *servoConfig();
     gimbalConfigCopy = *gimbalConfig();
 #endif
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
@@ -1162,6 +1165,7 @@ static void restoreConfigs(void)
     *motorConfigMutable() = motorConfigCopy;
     *boardAlignmentMutable() = boardAlignmentCopy;
 #ifdef USE_SERVOS
+    *servoConfigMutable() = servoConfigCopy;
     *gimbalConfigMutable() = gimbalConfigCopy;
 #endif
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
@@ -1212,11 +1216,12 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
-#ifdef USE_SERVOS
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
-#endif
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
+#ifdef USE_SERVOS
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
+#endif
         return;
     }
 #endif

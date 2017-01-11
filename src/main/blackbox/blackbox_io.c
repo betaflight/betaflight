@@ -52,8 +52,6 @@
 #include "sensors/battery.h"
 
 #include "io/beeper.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "fc/rc_controls.h"
 
 #include "io/gimbal.h"

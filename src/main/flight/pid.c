@@ -39,7 +39,6 @@
 #include "flight/navigation_rewrite.h"
 
 #include "io/gps.h"
-#include "io/motors.h"
 
 #include "rx/rx.h"
 

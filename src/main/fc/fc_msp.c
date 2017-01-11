@@ -66,10 +66,8 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
-#include "io/servos.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"

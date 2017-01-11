@@ -36,8 +36,6 @@
 #include "sensors/acceleration.h"
 #include "sensors/boardalignment.h"
 
-#include "io/motors.h"
-
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"

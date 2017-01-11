@@ -524,7 +524,6 @@ COMMON_SRC = \
             fc/rc_curves.c \
             fc/serial_cli.c \
             io/beeper.c \
-            io/motors.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \

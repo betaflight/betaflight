@@ -48,8 +48,6 @@
 #include "io/gps.h"
 #include "io/ledstrip.h"
 #include "io/osd.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/pwmdriver_i2c.h"
 #include "io/serial.h"
 

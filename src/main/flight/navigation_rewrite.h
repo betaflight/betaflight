@@ -21,7 +21,6 @@
 #include "common/filter.h"
 
 #include "fc/rc_controls.h"
-#include "io/motors.h"
 #include "io/gps.h"
 
 #include "flight/pid.h"
@@ -237,14 +236,15 @@ void navigationUsePIDs(const pidProfile_t *pidProfile);
 void navigationUseConfig(const navConfig_t *navConfigToUse);
 void navigationUseRcControlsConfig(const rcControlsConfig_t *initialRcControlsConfig);
 void navigationUseRxConfig(const rxConfig_t * initialRxConfig);
-void navigationUsemotorConfig(const motorConfig_t * initialmotorConfig);
+struct motorConfig_s;
+void navigationUsemotorConfig(const struct motorConfig_s * initialmotorConfig);
 void navigationUseFlight3DConfig(const flight3DConfig_t * initialFlight3DConfig);
 void navigationInit(const navConfig_t *initialnavConfig,
                     const pidProfile_t *initialPidProfile,
                     const rcControlsConfig_t *initialRcControlsConfig,
                     const rxConfig_t * initialRxConfig,
                     const flight3DConfig_t * initialFlight3DConfig,
-                    const motorConfig_t * initialmotorConfig);
+                    const struct motorConfig_s * initialmotorConfig);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);
