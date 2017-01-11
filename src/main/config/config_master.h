@@ -50,8 +50,6 @@
 
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
-#define imuConfig(x) (&masterConfig.imuConfig)
-#define imuConfigMutable(x) (&masterConfig.imuConfig)
 #define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
 #define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
 #define gpsConfig(x) (&masterConfig.gpsConfig)
@@ -112,8 +110,6 @@ typedef struct master_s {
     uint8_t flaperon_throw_inverted;
 
 #endif
-
-    imuConfig_t imuConfig;
 
 #ifdef GPS
     gpsConfig_t gpsConfig;

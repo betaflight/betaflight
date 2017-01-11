@@ -23,26 +23,21 @@
 
 #include "common/maths.h"
 
-#include "build/build_config.h"
-
 #include "platform.h"
-#include "build/debug.h"
 
 #include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 #include "common/filter.h"
+
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/system.h"
 
 #include "fc/config.h"
 #include "fc/runtime_config.h"
-
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -50,6 +45,13 @@
 #include "flight/hil.h"
 
 #include "io/gps.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/compass.h"
+#include "sensors/gyro.h"
+#include "sensors/sensors.h"
+
 
 /**
  * In Cleanflight accelerometer is aligned in the following way:
@@ -90,6 +92,17 @@ static pidProfile_t *pidProfile;
 static float gyroScale;
 
 static bool gpsHeadingInitialized = false;
+
+PG_REGISTER_WITH_RESET_TEMPLATE(imuConfig_t, imuConfig, PG_IMU_CONFIG, 0);
+
+PG_RESET_TEMPLATE(imuConfig_t, imuConfig,
+    .dcm_kp_acc = 2500,             // 0.25 * 10000
+    .dcm_ki_acc = 50,               // 0.005 * 10000
+    .dcm_kp_mag = 10000,            // 1.00 * 10000
+    .dcm_ki_mag = 0,                // 0.00 * 10000
+    .small_angle = 25
+
+);
 
 #ifdef ASYNC_GYRO_PROCESSING
 /* Asynchronous update accumulators */
@@ -139,13 +152,13 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
-void imuConfigure(imuConfig_t *imuConfig, pidProfile_t *initialPidProfile)
+void imuConfigure(pidProfile_t *initialPidProfile)
 {
-    imuRuntimeConfig.dcm_kp_acc = imuConfig->dcm_kp_acc / 10000.0f;
-    imuRuntimeConfig.dcm_ki_acc = imuConfig->dcm_ki_acc / 10000.0f;
-    imuRuntimeConfig.dcm_kp_mag = imuConfig->dcm_kp_mag / 10000.0f;
-    imuRuntimeConfig.dcm_ki_mag = imuConfig->dcm_ki_mag / 10000.0f;
-    imuRuntimeConfig.small_angle = imuConfig->small_angle;
+    imuRuntimeConfig.dcm_kp_acc = imuConfig()->dcm_kp_acc / 10000.0f;
+    imuRuntimeConfig.dcm_ki_acc = imuConfig()->dcm_ki_acc / 10000.0f;
+    imuRuntimeConfig.dcm_kp_mag = imuConfig()->dcm_kp_mag / 10000.0f;
+    imuRuntimeConfig.dcm_ki_mag = imuConfig()->dcm_ki_mag / 10000.0f;
+    imuRuntimeConfig.small_angle = imuConfig()->small_angle;
     pidProfile = initialPidProfile;
 }
 
