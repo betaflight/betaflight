@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <string.h>
+
 #ifndef __UNIQL
 # define __UNIQL_CONCAT2(x,y) x ## y
 # define __UNIQL_CONCAT(x,y) __UNIQL_CONCAT2(x,y)

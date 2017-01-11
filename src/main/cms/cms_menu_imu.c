@@ -36,14 +36,17 @@
 #include "cms/cms_menu_imu.h"
 
 #include "common/axis.h"
-#include "io/gimbal.h"
+
 #include "flight/pid.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
+
+#include "io/gimbal.h"
 
 #include "sensors/gyro.h"
 
@@ -295,7 +298,7 @@ static uint16_t cmsx_rateYaw;
 
 static long cmsx_RateProfileRead(void)
 {
-    memcpy(&rateProfile, &masterConfig.controlRateProfiles[rateProfileIndex], sizeof(controlRateConfig_t));
+    memcpy(&rateProfile, controlRateProfiles(rateProfileIndex), sizeof(controlRateConfig_t));
 
     cmsx_rateRoll  = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_ROLL]);
     cmsx_ratePitch = DEKADEGREES_TO_DEGREES(rateProfile.rates[FD_PITCH]);
@@ -312,7 +315,7 @@ static long cmsx_RateProfileWriteback(const OSD_Entry *self)
     rateProfile.rates[FD_PITCH] = DEGREES_TO_DEKADEGREES(cmsx_ratePitch);
     rateProfile.rates[FD_YAW]   = DEGREES_TO_DEKADEGREES(cmsx_rateYaw);
 
-    memcpy(&masterConfig.controlRateProfiles[rateProfileIndex], &rateProfile, sizeof(controlRateConfig_t));
+    memcpy((controlRateConfig_t *)controlRateProfiles(rateProfileIndex), &rateProfile, sizeof(controlRateConfig_t));
 
     return 0;
 }
@@ -329,6 +332,8 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 {
     { "-- RATE --", OME_Label, NULL, rateProfileIndexString, 0 },
 
+//!!TODO - fix up CMS menu entries to use parameter groups
+/*
 #if 0
     { "RC RATE",     OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcRate8,    0, 255, 1, 10 }, 0 },
     { "RC YAW RATE", OME_FLOAT,  NULL, &(OSD_FLOAT_t){ &rateProfile.rcYawRate8, 0, 255, 1, 10 }, 0 },
@@ -346,7 +351,7 @@ static OSD_Entry cmsx_menuRateProfileEntries[] =
 
     { "THRPID ATT",  OME_UINT8,  NULL, &(OSD_UINT8_t){ &rateProfile.dynThrPID,  0, 100, 1 },     0 },
     { "TPA BRKPT",   OME_UINT16, NULL, &(OSD_UINT16_t){ &rateProfile.tpa_breakpoint, 1000, 2000, 10}, 0 },
-
+*/
     { "BACK", OME_Back, NULL, NULL, 0 },
     { NULL, OME_END, NULL, NULL, 0 }
 };

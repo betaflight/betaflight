@@ -34,6 +34,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/mw.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
@@ -502,7 +503,7 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
-void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
+static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
 
     if (delta > 0) {
@@ -638,7 +639,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 
 #define RESET_FREQUENCY_2HZ (1000 / 2)
 
-void processRcAdjustments(controlRateConfig_t *controlRateConfig)
+void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
 {
     uint8_t adjustmentIndex;
     uint32_t now = millis();
@@ -687,7 +688,8 @@ void processRcAdjustments(controlRateConfig_t *controlRateConfig)
                 continue;
             }
 
-            applyStepAdjustment(controlRateConfig, adjustmentFunction, delta);
+            // it is legitimate to adjust an otherwise const item here
+            applyStepAdjustment((controlRateConfig_t*)controlRateConfig, adjustmentFunction, delta);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;

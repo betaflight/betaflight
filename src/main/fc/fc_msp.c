@@ -43,6 +43,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -1349,23 +1350,24 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RC_TUNING:
         if (dataSize >= 10) {
             sbufReadU8(src); //Read rcRate8, kept for protocol compatibility reasons
-            currentControlRateProfile->rcExpo8 = sbufReadU8(src);
+            // need to cast away const to set controlRateProfile
+            ((controlRateConfig_t*)currentControlRateProfile)->rcExpo8 = sbufReadU8(src);
             for (int i = 0; i < 3; i++) {
                 rate = sbufReadU8(src);
                 if (i == FD_YAW) {
-                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
+                    ((controlRateConfig_t*)currentControlRateProfile)->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
                 }
                 else {
-                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                    ((controlRateConfig_t*)currentControlRateProfile)->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
                 }
             }
             rate = sbufReadU8(src);
-            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
-            currentControlRateProfile->thrMid8 = sbufReadU8(src);
-            currentControlRateProfile->thrExpo8 = sbufReadU8(src);
-            currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            ((controlRateConfig_t*)currentControlRateProfile)->thrMid8 = sbufReadU8(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->thrExpo8 = sbufReadU8(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->tpa_breakpoint = sbufReadU16(src);
             if (dataSize >= 11) {
-                currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
+                ((controlRateConfig_t*)currentControlRateProfile)->rcYawExpo8 = sbufReadU8(src);
             }
 
             schedulePidGainsUpdate();

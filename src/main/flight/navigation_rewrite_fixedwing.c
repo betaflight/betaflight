@@ -42,6 +42,7 @@
 #include "flight/navigation_rewrite_private.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/runtime_config.h"
 
 // If we are going slower than NAV_FW_MIN_VEL_SPEED_BOOST - boost throttle to fight against the wind
@@ -55,10 +56,6 @@ static bool isPitchAdjustmentValid = false;
 static bool isRollAdjustmentValid = false;
 static float throttleSpeedAdjustment = 0;
 
-/*-----------------------------------------------------------
- * Backdoor to MW
- *-----------------------------------------------------------*/
-extern controlRateConfig_t *currentControlRateProfile;
 
 /*-----------------------------------------------------------
  * Altitude controller

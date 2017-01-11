@@ -103,23 +103,6 @@ typedef enum {
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
-/*
-Max and min available values for rates are now stored as absolute
-tenths of degrees-per-second [dsp/10]
-That means, max. rotation rate 180 equals 1800dps
-
-New defaults of 200dps for pitch,roll and yaw are more less
-equivalent of rates 0 from previous versions of iNav, Cleanflight, Baseflight
-and so on.
-*/
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  180
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN  6
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT  20
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         180
-#define CONTROL_RATE_CONFIG_YAW_RATE_MIN         2
-#define CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT     20
-
-#define CONTROL_RATE_CONFIG_TPA_MAX              100
 
 // steps are 25 apart
 // a value of 0 corresponds to a channel value of 900 or less
@@ -142,16 +125,6 @@ typedef enum {
     MODE_OPERATOR_OR,
     MODE_OPERATOR_AND
 } modeActivationOperator_e;
-
-typedef struct controlRateConfig_s {
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rates[3];
-    uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-} controlRateConfig_t;
 
 extern int16_t rcCommand[4];
 
@@ -260,7 +233,8 @@ typedef struct adjustmentState_s {
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig);
+struct controlRateConfig_s;
+void processRcAdjustments(const struct controlRateConfig_s *controlRateConfig);
 
 bool isUsingSticksForArming(void);
 bool isUsingNavigationModes(void);

@@ -21,7 +21,6 @@
 #include <stdbool.h>
 
 #define MAX_PROFILE_COUNT 3
-#define MAX_CONTROL_RATE_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 #define MAX_NAME_LENGTH 16
 
@@ -98,10 +97,6 @@ void setProfile(uint8_t profileIndex);
 void changeProfile(uint8_t profileIndex);
 struct pidProfile_s;
 void resetPidProfile(struct pidProfile_s *pidProfile);
-
-void setControlRateProfile(uint8_t profileIndex);
-void changeControlRateProfile(uint8_t profileIndex);
-uint8_t getCurrentControlRateProfile(void);
 
 bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
