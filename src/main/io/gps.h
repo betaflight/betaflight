@@ -136,7 +136,7 @@ struct magDev_s;
 bool gpsMagDetect(struct magDev_s *mag);
 void gpsPreInit(gpsConfig_t *initialGpsConfig);
 struct serialConfig_s;
-void gpsInit(struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
+void gpsInit(const struct serialConfig_s *serialConfig, gpsConfig_t *initialGpsConfig);
 void gpsThread(void);
 void updateGpsIndicator(timeUs_t currentTimeUs);
 bool isGPSHealthy(void);

@@ -26,6 +26,9 @@
 
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -52,7 +55,6 @@
 #include "telemetry/telemetry.h"
 #endif
 
-static serialConfig_t *serialConfig;
 static serialPortUsage_t serialPortUsageList[SERIAL_PORT_COUNT];
 
 const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
@@ -96,6 +98,30 @@ static uint8_t serialPortCount;
 const uint32_t baudRates[] = {0, 9600, 19200, 38400, 57600, 115200, 230400, 250000}; // see baudRate_e
 
 #define BAUD_RATE_COUNT (sizeof(baudRates) / sizeof(baudRates[0]))
+
+PG_REGISTER_WITH_RESET_FN(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
+
+void pgResetFn_serialConfig(serialConfig_t *serialConfig)
+{
+    memset(serialConfig, 0, sizeof(serialConfig_t));
+
+    for (int i = 0; i < SERIAL_PORT_COUNT; i++) {
+        serialConfig->portConfigs[i].identifier = serialPortIdentifiers[i];
+        serialConfig->portConfigs[i].msp_baudrateIndex = BAUD_115200;
+        serialConfig->portConfigs[i].gps_baudrateIndex = BAUD_38400;
+        serialConfig->portConfigs[i].telemetry_baudrateIndex = BAUD_AUTO;
+        serialConfig->portConfigs[i].blackbox_baudrateIndex = BAUD_115200;
+    }
+
+    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
+
+#ifdef CC3D
+    // This allows MSP connection via USART & VCP so the board can be reconfigured.
+    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
+#endif
+
+    serialConfig->reboot_character = 'R';
+}
 
 baudRate_e lookupBaudRateIndex(uint32_t baudRate)
 {
@@ -148,7 +174,7 @@ serialPortConfig_t *findSerialPortConfig(serialPortFunction_e function)
 serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
 {
     while (findSerialPortConfigState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSerialPortConfigState.lastIndex++];
+        serialPortConfig_t *candidate = &serialConfigMutable()->portConfigs[findSerialPortConfigState.lastIndex++];
 
         if (candidate->functionMask & function) {
             return candidate;
@@ -161,7 +187,7 @@ typedef struct findSharedSerialPortState_s {
     uint8_t lastIndex;
 } findSharedSerialPortState_t;
 
-portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFunction_e function)
+portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
 {
     if (!portConfig || (portConfig->functionMask & function) == 0) {
         return PORTSHARING_UNUSED;
@@ -169,7 +195,7 @@ portSharing_e determinePortSharing(serialPortConfig_t *portConfig, serialPortFun
     return portConfig->functionMask == function ? PORTSHARING_NOT_SHARED : PORTSHARING_SHARED;
 }
 
-bool isSerialPortShared(serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction)
+bool isSerialPortShared(const serialPortConfig_t *portConfig, uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
     return (portConfig) && (portConfig->functionMask & sharedWithFunction) && (portConfig->functionMask & functionMask);
 }
@@ -186,10 +212,10 @@ serialPort_t *findSharedSerialPort(uint16_t functionMask, serialPortFunction_e s
 serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction_e sharedWithFunction)
 {
     while (findSharedSerialPortState.lastIndex < SERIAL_PORT_COUNT) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[findSharedSerialPortState.lastIndex++];
+        const serialPortConfig_t *candidate = &serialConfig()->portConfigs[findSharedSerialPortState.lastIndex++];
 
         if (isSerialPortShared(candidate, functionMask, sharedWithFunction)) {
-            serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
+            const serialPortUsage_t *serialPortUsage = findSerialPortUsageByIdentifier(candidate->identifier);
             if (!serialPortUsage) {
                 continue;
             }
@@ -202,7 +228,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
 #define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_MAVLINK | FUNCTION_TELEMETRY_IBUS)
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
 
-bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
+bool isSerialConfigValid(const serialConfig_t *serialConfigToCheck)
 {
     UNUSED(serialConfigToCheck);
     /*
@@ -214,9 +240,8 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
      */
     uint8_t mspPortCount = 0;
 
-    uint8_t index;
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
+        const serialPortConfig_t *portConfig = &serialConfigToCheck->portConfigs[index];
 
         if (portConfig->functionMask & FUNCTION_MSP) {
             mspPortCount++;
@@ -250,9 +275,8 @@ bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
 
 serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier)
 {
-    uint8_t index;
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialPortConfig_t *candidate = &serialConfig->portConfigs[index];
+    for (int index = 0; index < SERIAL_PORT_COUNT; index++) {
+        serialPortConfig_t *candidate = &serialConfigMutable()->portConfigs[index];
         if (candidate->identifier == identifier) {
             return candidate;
         }
@@ -379,11 +403,9 @@ void closeSerialPort(serialPort_t *serialPort)
     serialPortUsage->serialPort = NULL;
 }
 
-void serialInit(serialConfig_t *initialSerialConfig, bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
+void serialInit(bool softserialEnabled, serialPortIdentifier_e serialPortToDisable)
 {
     uint8_t index;
-
-    serialConfig = initialSerialConfig;
 
     serialPortCount = SERIAL_PORT_COUNT;
     memset(&serialPortUsageList, 0, sizeof(serialPortUsageList));
@@ -455,7 +477,7 @@ void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
         cliEnter(serialPort);
     }
 #endif
-    if (receivedChar == serialConfig->reboot_character) {
+    if (receivedChar == serialConfig()->reboot_character) {
         systemResetToBootloader();
     }
 }
