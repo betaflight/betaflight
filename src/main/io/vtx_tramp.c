@@ -44,12 +44,12 @@ static void trampWriteBuf(uint8_t *buf)
     serialWriteBuf(trampSerialPort, buf, 16);
 }
 
-static uint8_t trampChecksum(uint8_t *buf)
+static uint8_t trampChecksum(uint8_t *trampBuf)
 {
     uint8_t cksum = 0;
 
-    for (int i = 0 ; i < 14 ; i++)
-        cksum += buf[i];
+    for (int i = 1 ; i < 14 ; i++)
+        cksum += trampBuf[i];
 
     return cksum;
 }
