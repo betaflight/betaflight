@@ -60,8 +60,6 @@
 #define navConfigMutable(x) (&masterConfig.navConfig)
 #define armingConfig(x) (&masterConfig.armingConfig)
 #define armingConfigMutable(x) (&masterConfig.armingConfig)
-#define serialConfig(x) (&masterConfig.serialConfig)
-#define serialConfigMutable(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define telemetryConfigMutable(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -129,7 +127,6 @@ typedef struct master_s {
 
     armingConfig_t armingConfig;
 
-    serialConfig_t serialConfig;
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
 #endif

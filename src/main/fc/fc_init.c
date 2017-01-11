@@ -230,13 +230,13 @@ void init(void)
 #endif
 
 #if defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
 #ifdef USE_SERVOS
@@ -510,7 +510,7 @@ void init(void)
 #endif
 
 #ifdef USE_CLI
-    cliInit(&masterConfig.serialConfig);
+    cliInit(serialConfig());
 #endif
 
     failsafeInit(flight3DConfig()->deadband3d_throttle);
@@ -519,11 +519,7 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            &masterConfig.serialConfig,
-            &masterConfig.gpsConfig
-        );
-
+        gpsInit(serialConfig(), gpsConfig());
         addBootlogEvent2(BOOT_EVENT_GPS_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif

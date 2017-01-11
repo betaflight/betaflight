@@ -30,6 +30,13 @@
 #include "common/maths.h"
 #include "common/filter.h"
 
+#include "config/config_eeprom.h"
+#include "config/config_profile.h"
+#include "config/config_master.h"
+#include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/system.h"
 #include "drivers/rx_spi.h"
 #include "drivers/pwm_output.h"
@@ -66,11 +73,6 @@
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
-
-#include "config/config_eeprom.h"
-#include "config/config_profile.h"
-#include "config/config_master.h"
-#include "config/feature.h"
 
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
@@ -255,30 +257,6 @@ void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 #define SECOND_PORT_INDEX 1
 #endif
 
-void resetSerialConfig(serialConfig_t *serialConfig)
-{
-    uint8_t index;
-    memset(serialConfig, 0, sizeof(serialConfig_t));
-
-    for (index = 0; index < SERIAL_PORT_COUNT; index++) {
-        serialConfig->portConfigs[index].identifier = serialPortIdentifiers[index];
-        serialConfig->portConfigs[index].msp_baudrateIndex = BAUD_115200;
-        serialConfig->portConfigs[index].gps_baudrateIndex = BAUD_38400;
-        serialConfig->portConfigs[index].telemetry_baudrateIndex = BAUD_AUTO;
-        serialConfig->portConfigs[index].blackbox_baudrateIndex = BAUD_115200;
-    }
-
-    serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
-
-#ifdef CC3D
-    // This allows MSP connection via USART & VCP so the board can be reconfigured.
-    serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
-#endif
-
-    serialConfig->reboot_character = 'R';
-}
-
-
 void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 {
     rcControlsConfig->deadband = 5;
@@ -396,8 +374,6 @@ void createDefaultConfig(master_t *config)
 #ifdef NAV
     resetNavConfig(&config->navConfig);
 #endif
-
-    resetSerialConfig(&config->serialConfig);
 
     config->i2c_overclock = 0;
 
@@ -768,10 +744,8 @@ void validateAndFixConfig(void)
     featureClear(FEATURE_PWM_SERVO_DRIVER);
 #endif
 
-    serialConfig_t *serialConfig = &masterConfig.serialConfig;
-
-    if (!isSerialConfigValid(serialConfig)) {
-        resetSerialConfig(serialConfig);
+    if (!isSerialConfigValid(serialConfigMutable())) {
+        pgResetCopy(serialConfigMutable(), PG_SERIAL_CONFIG);
     }
 
     /*

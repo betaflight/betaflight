@@ -639,6 +639,9 @@ static const clivalue_t valueTable[] = {
 
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID) },
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint) },
+// PG_SERIAL_CONFIG
+    { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 48,  126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },
+
 };
 
 #else
@@ -666,7 +669,6 @@ const clivalue_t valueTable[] = {
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE,  &armingConfig()->auto_disarm_delay, .config.minmax = { 0,  60 } },
     { "small_angle",                VAR_UINT8  | MASTER_VALUE,  &imuConfig()->small_angle, .config.minmax = { 0,  180 } },
 
-    { "reboot_character",           VAR_UINT8  | MASTER_VALUE,  &serialConfig()->reboot_character, .config.minmax = { 48,  126 } },
 
 #ifdef GPS
     { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->provider, .config.lookup = { TABLE_GPS_PROVIDER } },
@@ -1107,6 +1109,7 @@ static gimbalConfig_t gimbalConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
+static serialConfig_t serialConfigCopy;
 
 static void backupConfigs(void)
 {
@@ -1140,6 +1143,7 @@ static void backupConfigs(void)
     }
     mixerConfigCopy = *mixerConfig();
     flight3DConfigCopy = *flight3DConfig();
+    serialConfigCopy = *serialConfig();
 }
 
 static void restoreConfigs(void)
@@ -1173,6 +1177,7 @@ static void restoreConfigs(void)
     }
     *mixerConfigMutable() = mixerConfigCopy;
     *flight3DConfigMutable() = flight3DConfigCopy;
+    *serialConfigMutable() = serialConfigCopy;
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -3397,7 +3402,7 @@ static void printConfig(char *cmdline, bool doDiff)
         printMap(dumpMask, &rxConfigCopy, rxConfig());
 
         cliPrintHashLine("serial");
-        printSerial(dumpMask, serialConfig(), &defaultConfig.serialConfig);
+        printSerial(dumpMask, &serialConfigCopy, serialConfig());
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
@@ -3731,7 +3736,7 @@ void cliEnter(serialPort_t *serialPort)
     ENABLE_ARMING_FLAG(PREVENT_ARMING);
 }
 
-void cliInit(serialConfig_t *serialConfig)
+void cliInit(const serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
 }
