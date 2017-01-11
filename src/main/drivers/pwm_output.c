@@ -25,8 +25,10 @@
 #include "timer.h"
 #include "pwm_output.h"
 
-#define MULTISHOT_5US_PW    (MULTISHOT_TIMER_MHZ * 5)
-#define MULTISHOT_20US_MULT (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
+#define MULTISHOT_5US_IDLE          (MULTISHOT_TIMER_MHZ * 5)
+#define MULTISHOT_20US_THROTTLE     (MULTISHOT_TIMER_MHZ * 20 / 1000.0f)
+#define ONESHOT_2US_IDLE            (MULTISHOT_TIMER_MHZ * 2)
+#define ONESHOT_10US_THROTTLE       (MULTISHOT_TIMER_MHZ * 10 / 1000.0f)
 
 static pwmWriteFuncPtr pwmWritePtr;
 static pwmOutputPort_t motors[MAX_SUPPORTED_MOTORS];
@@ -128,9 +130,14 @@ static void pwmWriteOneShot42(uint8_t index, uint16_t value)
     *motors[index].ccr = lrintf((float)(value * ONESHOT42_TIMER_MHZ/24.0f));
 }
 
+static void pwmWriteOneShot10(uint8_t index, uint16_t value)
+{
+    *motors[index].ccr = lrintf(((float)(value-1000) * ONESHOT_10US_THROTTLE) + ONESHOT_2US_IDLE);
+}
+
 static void pwmWriteMultiShot(uint8_t index, uint16_t value)
 {
-    *motors[index].ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_MULT) + MULTISHOT_5US_PW);
+    *motors[index].ccr = lrintf(((float)(value-1000) * MULTISHOT_20US_THROTTLE) + MULTISHOT_5US_IDLE);
 }
 
 void pwmWriteMotor(uint8_t index, uint16_t value)
@@ -207,6 +214,10 @@ void motorInit(const motorConfig_t *motorConfig, uint16_t idlePulse, uint8_t mot
         timerMhzCounter = ONESHOT42_TIMER_MHZ;
         pwmWritePtr = pwmWriteOneShot42;
         break;
+    case PWM_TYPE_ONESHOT10:
+        timerMhzCounter = MULTISHOT_TIMER_MHZ;
+        pwmWritePtr = pwmWriteOneShot10;
+        break;        
     case PWM_TYPE_MULTISHOT:
         timerMhzCounter = MULTISHOT_TIMER_MHZ;
         pwmWritePtr = pwmWriteMultiShot;
