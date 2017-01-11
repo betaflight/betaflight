@@ -24,12 +24,6 @@ bool gyroSyncCheckUpdate(gyroDev_t *gyro)
 
 uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint8_t lpf, uint8_t gyroSyncDenominator, bool gyro_use_32khz)
 {
-#ifndef GYRO_SUPPORTS_32KHZ
-    if (gyro_use_32khz) {
-        gyro_use_32khz = false;
-    }
-#endif
-
     float gyroSamplePeriod;
 
     if (lpf == GYRO_LPF_256HZ || lpf == GYRO_LPF_NONE) {
