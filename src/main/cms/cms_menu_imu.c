@@ -67,21 +67,21 @@ static char rateProfileIndexString[] = " r";
 
 static void cmsx_ReadPidToArray(uint8_t *dst, int pidIndex)
 {
-    dst[0] = masterConfig.profile[profileIndex].pidProfile.P8[pidIndex];
-    dst[1] = masterConfig.profile[profileIndex].pidProfile.I8[pidIndex];
-    dst[2] = masterConfig.profile[profileIndex].pidProfile.D8[pidIndex];
+    dst[0] = pidProfile()->P8[pidIndex];
+    dst[1] = pidProfile()->I8[pidIndex];
+    dst[2] = pidProfile()->D8[pidIndex];
 }
 
 static void cmsx_WritebackPidFromArray(uint8_t *src, int pidIndex)
 {
-    masterConfig.profile[profileIndex].pidProfile.P8[pidIndex] = src[0];
-    masterConfig.profile[profileIndex].pidProfile.I8[pidIndex] = src[1];
-    masterConfig.profile[profileIndex].pidProfile.D8[pidIndex] = src[2];
+    pidProfileMutable()->P8[pidIndex] = src[0];
+    pidProfileMutable()->I8[pidIndex] = src[1];
+    pidProfileMutable()->D8[pidIndex] = src[2];
 }
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = masterConfig.current_profile_index;
+    profileIndex = getCurrentProfile();
     tmpProfileIndex = profileIndex + 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
 
@@ -96,7 +96,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.current_profile_index = profileIndex;
+    setProfile(profileIndex);
     changeControlRateProfile(rateProfileIndex); // XXX setControlRateProfile???
 
     return 0;
@@ -195,7 +195,7 @@ static long cmsx_menuPidAltMag_onEnter(void)
 {
     cmsx_ReadPidToArray(cmsx_pidAlt, PIDALT);
     cmsx_ReadPidToArray(cmsx_pidVel, PIDVEL);
-    cmsx_pidMag[0] = masterConfig.profile[profileIndex].pidProfile.P8[PIDMAG];
+    cmsx_pidMag[0] = pidProfile()->P8[PIDMAG];
 
     return 0;
 }
@@ -206,9 +206,9 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
 
     cmsx_WritebackPidFromArray(cmsx_pidAlt, PIDALT);
     cmsx_WritebackPidFromArray(cmsx_pidVel, PIDVEL);
-    masterConfig.profile[profileIndex].pidProfile.P8[PIDMAG] = cmsx_pidMag[0];
+    pidProfileMutable()->P8[PIDMAG] = cmsx_pidMag[0];
 
-    navigationUsePIDs(&masterConfig.profile[profileIndex].pidProfile);
+    navigationUsePIDs(pidProfile());
 
     return 0;
 }
@@ -258,7 +258,7 @@ static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidPosR, PIDPOSR);
     cmsx_WritebackPidFromArray(cmsx_pidNavR, PIDNAVR);
 
-    navigationUsePIDs(&masterConfig.profile[profileIndex].pidProfile);
+    navigationUsePIDs(pidProfile());
 
     return 0;
 }
@@ -376,12 +376,12 @@ static long cmsx_profileOtherOnEnter(void)
 {
     profileIndexString[1] = '0' + tmpProfileIndex;
 
-    cmsx_dtermSetpointWeight = masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight;
-    cmsx_setpointRelaxRatio  = masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio;
+    cmsx_dtermSetpointWeight = pidProfile()->dtermSetpointWeight;
+    cmsx_setpointRelaxRatio  = pidProfile()->setpointRelaxRatio;
 
-    cmsx_angleStrength       = masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL];
-    cmsx_horizonStrength     = masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL];
-    cmsx_horizonTransition   = masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL];
+    cmsx_angleStrength       = pidProfile()->P8[PIDLEVEL];
+    cmsx_horizonStrength     = pidProfile()->I8[PIDLEVEL];
+    cmsx_horizonTransition   = pidProfile()->D8[PIDLEVEL];
 
     return 0;
 }
@@ -390,12 +390,12 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.profile[profileIndex].pidProfile.dtermSetpointWeight = cmsx_dtermSetpointWeight;
-    masterConfig.profile[profileIndex].pidProfile.setpointRelaxRatio  = cmsx_setpointRelaxRatio;
+    pidProfileMutable()->dtermSetpointWeight = cmsx_dtermSetpointWeight;
+    pidProfileMutable()->setpointRelaxRatio  = cmsx_setpointRelaxRatio;
 
-    masterConfig.profile[profileIndex].pidProfile.P8[PIDLEVEL]        = cmsx_angleStrength;
-    masterConfig.profile[profileIndex].pidProfile.I8[PIDLEVEL]        = cmsx_horizonStrength;
-    masterConfig.profile[profileIndex].pidProfile.D8[PIDLEVEL]        = cmsx_horizonTransition;
+    pidProfileMutable()->P8[PIDLEVEL]        = cmsx_angleStrength;
+    pidProfileMutable()->I8[PIDLEVEL]        = cmsx_horizonStrength;
+    pidProfileMutable()->D8[PIDLEVEL]        = cmsx_horizonTransition;
 
     return 0;
 }
@@ -433,10 +433,10 @@ static uint8_t cmsx_yaw_lpf_hz;
 
 static long cmsx_FilterPerProfileRead(void)
 {
-    cmsx_dterm_lpf_hz = masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz;
+    cmsx_dterm_lpf_hz = pidProfile()->dterm_lpf_hz;
     cmsx_gyroSoftLpf  = gyroConfig()->gyro_soft_lpf_hz;
-    cmsx_yaw_p_limit  = masterConfig.profile[profileIndex].pidProfile.yaw_p_limit;
-    cmsx_yaw_lpf_hz   = masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz;
+    cmsx_yaw_p_limit  = pidProfile()->yaw_p_limit;
+    cmsx_yaw_lpf_hz   = pidProfile()->yaw_lpf_hz;
 
     return 0;
 }
@@ -445,10 +445,10 @@ static long cmsx_FilterPerProfileWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    masterConfig.profile[profileIndex].pidProfile.dterm_lpf_hz     = cmsx_dterm_lpf_hz;
+    pidProfileMutable()->dterm_lpf_hz     = cmsx_dterm_lpf_hz;
     gyroConfigMutable()->gyro_soft_lpf_hz = cmsx_gyroSoftLpf;
-    masterConfig.profile[profileIndex].pidProfile.yaw_p_limit      = cmsx_yaw_p_limit;
-    masterConfig.profile[profileIndex].pidProfile.yaw_lpf_hz       = cmsx_yaw_lpf_hz;
+    pidProfileMutable()->yaw_p_limit      = cmsx_yaw_p_limit;
+    pidProfileMutable()->yaw_lpf_hz       = cmsx_yaw_lpf_hz;
 
     return 0;
 }

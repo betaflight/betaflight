@@ -29,6 +29,8 @@
 #include "common/maths.h"
 
 #include "config/config_master.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
@@ -105,6 +107,58 @@ int32_t axisPID_P[FLIGHT_DYNAMICS_INDEX_COUNT], axisPID_I[FLIGHT_DYNAMICS_INDEX_
 #endif
 
 static pidState_t pidState[FLIGHT_DYNAMICS_INDEX_COUNT];
+
+PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE, 0);
+
+PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
+        .P8[ROLL] = 40,
+        .I8[ROLL] = 30,
+        .D8[ROLL] = 23,
+        .P8[PITCH] = 40,
+        .I8[PITCH] = 30,
+        .D8[PITCH] = 23,
+        .P8[YAW] = 85,
+        .I8[YAW] = 45,
+        .D8[YAW] = 0,        // not used
+        .P8[PIDALT] = 50,    // NAV_POS_Z_P * 100
+        .I8[PIDALT] = 0,     // not used
+        .D8[PIDALT] = 0,     // not used
+        .P8[PIDPOS] = 65,    // NAV_POS_XY_P * 100
+        .I8[PIDPOS] = 120,   // posDecelerationTime * 100
+        .D8[PIDPOS] = 10,    // posResponseExpo * 100
+        .P8[PIDPOSR] = 180,  // NAV_VEL_XY_P * 100
+        .I8[PIDPOSR] = 15,   // NAV_VEL_XY_I * 100
+        .D8[PIDPOSR] = 100,  // NAV_VEL_XY_D * 100
+        .P8[PIDNAVR] = 10,   // FW_NAV_P * 100
+        .I8[PIDNAVR] = 5,    // FW_NAV_I * 100
+        .D8[PIDNAVR] = 8,    // FW_NAV_D * 100
+        .P8[PIDLEVEL] = 20,  // Self-level strength
+        .I8[PIDLEVEL] = 15,  // Self-leveing low-pass frequency (0 - disabled)
+        .D8[PIDLEVEL] = 75,  // 75% horizon strength
+        .P8[PIDMAG] = 60,
+        .P8[PIDVEL] = 100,   // NAV_VEL_Z_P * 100
+        .I8[PIDVEL] = 50,    // NAV_VEL_Z_I * 100
+        .D8[PIDVEL] = 10,    // NAV_VEL_Z_D * 100
+
+        .acc_soft_lpf_hz = 15,
+        .dterm_soft_notch_cutoff = 43,
+        .dterm_soft_notch_hz = 86,
+        .dterm_lpf_hz = 40,
+        .yaw_lpf_hz = 30,
+        .dterm_setpoint_weight = 0.0f,
+
+        .rollPitchItermIgnoreRate = 200,     // dps
+        .yawItermIgnoreRate = 50,            // dps
+
+        .axisAccelerationLimitYaw = 10000,       // dps/s
+        .axisAccelerationLimitRollPitch = 0,     // dps/s
+
+        .yaw_p_limit = YAW_P_LIMIT_DEFAULT,
+
+        .max_angle_inclination[FD_ROLL] = 300,    // 30 degrees
+        .max_angle_inclination[FD_PITCH] = 300,    // 30 degrees
+        .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
+);
 
 void pidInit(void)
 {
