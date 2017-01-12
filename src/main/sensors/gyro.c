@@ -79,6 +79,8 @@ static void *notchFilter1[3];
 static filterApplyFnPtr notchFilter2ApplyFn;
 static void *notchFilter2[3];
 
+#define DEBUG_GYRO_CALIBRATION 3
+
 static const extiConfig_t *selectMPUIntExtiConfig(void)
 {
 #if defined(MPU_INT_EXTI)
@@ -367,6 +369,9 @@ static void performGyroCalibration(uint8_t gyroMovementCalibrationThreshold)
 
         if (isOnFinalGyroCalibrationCycle()) {
             float dev = devStandardDeviation(&var[axis]);
+
+            DEBUG_SET(DEBUG_GYRO, DEBUG_GYRO_CALIBRATION, lrintf(dev));
+
             // check deviation and startover in case the model was moved
             if (gyroMovementCalibrationThreshold && dev > gyroMovementCalibrationThreshold) {
                 gyroSetCalibrationCycles();

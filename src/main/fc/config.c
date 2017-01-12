@@ -627,7 +627,7 @@ void createDefaultConfig(master_t *config)
     config->boardAlignment.yawDegrees = 0;
     config->accelerometerConfig.acc_hardware = ACC_DEFAULT;     // default/autodetect
     config->rcControlsConfig.yaw_control_direction = 1;
-    config->gyroConfig.gyroMovementCalibrationThreshold = 32;
+    config->gyroConfig.gyroMovementCalibrationThreshold = 48;
 
     // xxx_hardware: 0:default/autodetect, 1: disable
     config->compassConfig.mag_hardware = 1;
