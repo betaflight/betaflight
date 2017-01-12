@@ -57,7 +57,9 @@ uint32_t trampRFPowerMax;
 uint32_t trampCurFreq = 0;
 uint8_t trampCurBand = 0;
 uint8_t trampCurChan = 0;
-uint16_t trampCurPower = 0;
+uint16_t trampCurPower = 0;       // Actual transmitting power
+uint16_t trampCurConfigPower = 0; // Configured transmitting power
+int16_t trampCurTemp = 0;
 
 #ifdef CMS
 void trampCmsUpdateStatusString(void); // Forward
@@ -167,10 +169,13 @@ void trampHandleResponse(void)
 
     case 'v':
         trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+        trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+        trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
         vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
         break;
 
     case 's':
+        trampCurTemp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
         break;
     }
 
@@ -207,7 +212,7 @@ void trampReceive(uint32_t currentTimeUs)
     if (!trampSerialPort)
         return;
 
-    if ((trampReceiveState != S_WAIT_LEN) && (currentTimeUs - trampFrameStartUs > TRAMP_FRAME_TIMO_US)) {
+    if ((trampReceiveState != S_WAIT_LEN) && cmp32(currentTimeUs, trampFrameStartUs > TRAMP_FRAME_TIMO_US)) {
         trampReceiveState = S_WAIT_LEN;
         trampReceivePos = 0;
     }
@@ -216,7 +221,7 @@ void trampReceive(uint32_t currentTimeUs)
         uint8_t c = serialRead(trampSerialPort);
         trampRespBuffer[trampReceivePos++] = c;
 
-        switch(c) {
+        switch(trampReceiveState) {
         case S_WAIT_LEN:
             if (c == 0x0F) {
                 trampReceiveState = S_WAIT_CODE;
@@ -254,18 +259,18 @@ void trampProcess(uint32_t currentTimeUs)
     if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
         return;
 
-debug[0]++;
     trampReceive(currentTimeUs);
 
     if (trampStatus == TRAMP_STATUS_OFFLINE) {
-        if (currentTimeUs - lastQueryRTimeUs > 1000 * 1000) {
+        if (cmp32(currentTimeUs, lastQueryRTimeUs) > 1000 * 1000) {
             trampQueryR();
             lastQueryRTimeUs = currentTimeUs;
         }
-    } else if (trampPendingQuery) {
-        trampQuery(trampPendingQuery);
-    } else {
-        trampQueryV();
+    } else if (trampReceiveState == S_WAIT_LEN) {
+        if (trampPendingQuery)
+            trampQuery(trampPendingQuery);
+        else
+            trampQueryV();
     }
 
 #ifdef CMS
@@ -277,25 +282,29 @@ debug[0]++;
 #include "cms/cms.h"
 #include "cms/cms_types.h"
 
-char trampCmsStatusString[16];
+
+char trampCmsStatusString[31] = "- -- ---- ----";
+//                               m bc ffff tppp
+//                               01234567890123
 
 void trampCmsUpdateStatusString(void)
 {
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
-    trampCmsStatusString[3] = vtx58BandLetter[trampCurBand];
-    trampCmsStatusString[4] = vtx58ChanNames[trampCurChan][0];
-    trampCmsStatusString[5] = ' ';
+    trampCmsStatusString[2] = vtx58BandLetter[trampCurBand];
+    trampCmsStatusString[3] = vtx58ChanNames[trampCurChan][0];
+    trampCmsStatusString[4] = ' ';
 
     if (trampCurFreq)
-        tfp_sprintf(&trampCmsStatusString[6], "%4d", trampCurFreq);
+        tfp_sprintf(&trampCmsStatusString[5], "%4d", trampCurFreq);
     else
-        tfp_sprintf(&trampCmsStatusString[6], "----");
+        tfp_sprintf(&trampCmsStatusString[5], "----");
 
-    if (trampCurPower)
-        tfp_sprintf(&trampCmsStatusString[10], " %3d", trampCurPower);
+    if (trampCurPower) {
+        tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampCurPower == trampCurConfigPower) ? ' ' : '*', trampCurPower);
+    }
     else
-        tfp_sprintf(&trampCmsStatusString[10], " ---");
+        tfp_sprintf(&trampCmsStatusString[9], " ---");
 }
 
 uint8_t trampCmsPitmode = 0;
@@ -319,7 +328,9 @@ static const uint16_t trampCmsPowerTable[] = {
 
 static uint8_t trampCmsPower = 0;
 
-static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 5, trampCmsPowerNames, NULL };
+static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampCmsPowerNames, NULL };
+
+static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
 
 static const char * const trampCmsPitmodeNames[] = {
     "OFF", "ON "
@@ -379,6 +390,7 @@ static OSD_Entry trampMenuEntries[] =
     { "CHAN",   OME_TAB,     NULL,                   &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
+    { "TEMP",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
     //{ "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig,   0 },
 
