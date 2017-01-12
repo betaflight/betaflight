@@ -226,6 +226,8 @@ void trampReceive(uint32_t currentTimeUs)
             if (c == 0x0F) {
                 trampReceiveState = S_WAIT_CODE;
                 trampFrameStartUs = currentTimeUs;
+            } else {
+                trampReceivePos = 0;
             }
             break;
 
@@ -241,8 +243,9 @@ void trampReceive(uint32_t currentTimeUs)
         case S_DATA:
             if (trampReceivePos == 16) {
                 uint8_t cksum = trampChecksum(trampRespBuffer);
-                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0))
-                    trampHandleResponse();
+                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0)) {
+                    // trampHandleResponse();
+                }
 
                 trampReceiveState = S_WAIT_LEN;
                 trampReceivePos = 0;
@@ -259,7 +262,7 @@ void trampProcess(uint32_t currentTimeUs)
     if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
         return;
 
-    trampReceive(currentTimeUs);
+    // trampReceive(currentTimeUs);
 
     if (trampStatus == TRAMP_STATUS_OFFLINE) {
         if (cmp32(currentTimeUs, lastQueryRTimeUs) > 1000 * 1000) {
