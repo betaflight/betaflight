@@ -662,6 +662,20 @@ static const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ARMING_CONFIG, offsetof(armingConfig_t, disarm_kill_switch) },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
 
+// PG_GPS_CONFIG
+#ifdef GPS
+    { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_PROVIDER }, PG_GPS_CONFIG, offsetof(gpsConfig_t, provider) },
+    { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_SBAS_MODE }, PG_GPS_CONFIG, offsetof(gpsConfig_t, sbasMode) },
+    { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_DYN_MODEL }, PG_GPS_CONFIG, offsetof(gpsConfig_t, dynModel) },
+    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoConfig) },
+    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GPS_CONFIG, offsetof(gpsConfig_t, autoBaud) },
+#endif
+
+// PG_RC_CONTROLS_CONFIG
+    { "deadband",                   VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  32 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, deadband) },
+    { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, yaw_deadband) },
+    { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  250 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, pos_hold_deadband) },
+    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 10,  250 }, PG_RC_CONTROLS_CONFIG, offsetof(rcControlsConfig_t, alt_hold_deadband) },
 };
 
 #else
@@ -685,14 +699,6 @@ const clivalue_t valueTable[] = {
 #endif
 
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmRxConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
-
-#ifdef GPS
-    { "gps_provider",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->provider, .config.lookup = { TABLE_GPS_PROVIDER } },
-    { "gps_sbas_mode",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->sbasMode, .config.lookup = { TABLE_GPS_SBAS_MODE } },
-    { "gps_dyn_model",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->dynModel, .config.lookup = { TABLE_GPS_DYN_MODEL } },
-    { "gps_auto_config",            VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoConfig, .config.lookup = { TABLE_OFF_ON } },
-    { "gps_auto_baud",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &gpsConfig()->autoBaud, .config.lookup = { TABLE_OFF_ON } },
-#endif
 
 #ifdef NAV
     { "nav_alt_p",                  VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.P8[PIDALT], .config.minmax = { 0,  255 }, },
@@ -792,11 +798,6 @@ const clivalue_t valueTable[] = {
     { "smartport_uart_unidir",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &telemetryConfig()->smartportUartUnidirectional, .config.lookup = { TABLE_OFF_ON } },
 #endif
 #endif
-
-    { "deadband",                   VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.deadband, .config.minmax = { 0,  32 }, },
-    { "yaw_deadband",               VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.yaw_deadband, .config.minmax = { 0,  100 }, },
-    { "pos_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.pos_hold_deadband, .config.minmax = { 10,  250 }, },
-    { "alt_hold_deadband",          VAR_UINT8  | MASTER_VALUE, &masterConfig.rcControlsConfig.alt_hold_deadband, .config.minmax = { 10,  250 }, },
 
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, &masterConfig.throttle_tilt_compensation_strength, .config.minmax = { 0,  100 }, },
 
@@ -1123,6 +1124,10 @@ static flight3DConfig_t flight3DConfigCopy;
 static serialConfig_t serialConfigCopy;
 static imuConfig_t imuConfigCopy;
 static armingConfig_t armingConfigCopy;
+static rcControlsConfig_t rcControlsConfigCopy;
+#ifdef GPS
+static gpsConfig_t gpsConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1158,7 +1163,11 @@ static void backupConfigs(void)
     flight3DConfigCopy = *flight3DConfig();
     serialConfigCopy = *serialConfig();
     imuConfigCopy = *imuConfig();
+    rcControlsConfigCopy = *rcControlsConfig();
     armingConfigCopy = *armingConfig();
+#ifdef GPS
+    gpsConfigCopy = *gpsConfig();
+#endif
 }
 
 static void restoreConfigs(void)
@@ -1194,7 +1203,11 @@ static void restoreConfigs(void)
     *flight3DConfigMutable() = flight3DConfigCopy;
     *serialConfigMutable() = serialConfigCopy;
     *imuConfigMutable() = imuConfigCopy;
+    *rcControlsConfigMutable() = rcControlsConfigCopy;
     *armingConfigMutable() = armingConfigCopy;
+#ifdef GPS
+    *gpsConfigMutable() = gpsConfigCopy;
+#endif
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -1244,11 +1257,14 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
 #endif
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &mixerConfigCopy, mixerConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &flight3DConfigCopy, flight3DConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &serialConfigCopy, serialConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &imuConfigCopy, imuConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_SERIAL_CONFIG, &serialConfigCopy, serialConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_IMU_CONFIG, &imuConfigCopy, imuConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
+#ifdef GPS
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_GPS_CONFIG, &gpsConfigCopy, gpsConfig());
+#endif
         return;
     }
 #endif

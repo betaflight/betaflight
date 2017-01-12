@@ -32,6 +32,9 @@
 #include "common/axis.h"
 #include "common/utils.h"
 
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 #include "drivers/compass.h"
 #include "drivers/light_led.h"
 #include "drivers/serial.h"
@@ -110,6 +113,16 @@ static gpsProviderDescriptor_t  gpsProviders[GPS_PROVIDER_COUNT] = {
 #endif
 };
 
+PG_REGISTER_WITH_RESET_TEMPLATE(gpsConfig_t, gpsConfig, PG_GPS_CONFIG, 0);
+
+PG_RESET_TEMPLATE(gpsConfig_t, gpsConfig,
+    .provider = GPS_UBLOX,
+    .sbasMode = SBAS_NONE,
+    .autoConfig = GPS_AUTOCONFIG_ON,
+    .autoBaud = GPS_AUTOBAUD_ON,
+    .dynModel = GPS_DYNMODEL_AIR_1G
+);
+
 void gpsSetState(gpsState_e state)
 {
     gpsState.state = state;
@@ -166,16 +179,16 @@ static void gpsResetSolution(void)
     gpsSol.flags.validEPE = 0;
 }
 
-void gpsPreInit(gpsConfig_t *initialGpsConfig)
+void gpsPreInit(void)
 {
     // Make sure gpsProvider is known when gpsMagDetect is called
-    gpsState.gpsConfig = initialGpsConfig;
+    gpsState.gpsConfig = gpsConfig();
 }
 
-void gpsInit(const serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
+void gpsInit(void)
 {
-    gpsState.serialConfig = initialSerialConfig;
-    gpsState.gpsConfig = initialGpsConfig;
+    gpsState.serialConfig = serialConfig();
+    gpsState.gpsConfig = gpsConfig();
     gpsState.baudrateIndex = 0;
 
     gpsStats.errors = 0;

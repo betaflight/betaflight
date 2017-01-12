@@ -1407,8 +1407,8 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        currentProfile->pidProfile.yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(currentProfile->pidProfile.yaw_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(currentProfile->pidProfile.dterm_lpf_hz * 100.0f));
-        BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           masterConfig.rcControlsConfig.deadband);
-        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       masterConfig.rcControlsConfig.yaw_deadband);
+        BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                           rcControlsConfig()->deadband);
+        BLACKBOX_PRINT_HEADER_LINE("yaw_deadband:%d",                       rcControlsConfig()->yaw_deadband);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lpf:%d",                           gyroConfig()->gyro_lpf);
         BLACKBOX_PRINT_HEADER_LINE("gyro_lowpass_hz:%d",                    gyroConfig()->gyro_soft_lpf_hz);
         BLACKBOX_PRINT_HEADER_LINE("acc_lpf_hz:%d",                         (int)(currentProfile->pidProfile.acc_soft_lpf_hz * 100.0f));
