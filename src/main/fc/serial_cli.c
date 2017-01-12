@@ -333,21 +333,8 @@ static const char * const lookupTableAsyncMode[] = {
 
 static const char * const lookupTableDebug[DEBUG_COUNT] = {
     "NONE",
-    "CYCLETIME",
-    "BATTERY",
     "GYRO",
-    "ACCELEROMETER",
-    "MIXER",
-    "AIRMODE",
-    "PIDLOOP",
-    "NOTCH",
-    "RC_INTERPOLATION",
-    "VELOCITY",
-    "DFILTER",
-    "ANGLERATE",
-    "ESC_SENSOR",
-    "SCHEDULER",
-    "STACK"
+    "NOTCH"
 };
 
 typedef struct lookupTableEntry_s {
