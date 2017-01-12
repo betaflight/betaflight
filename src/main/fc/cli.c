@@ -2765,9 +2765,8 @@ static void cliReboot(void)
 static void cliDfu(char *cmdLine)
 {
     UNUSED(cmdLine);
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\nRestarting in DFU mode");
-#endif
+
+    cliPrintHashLine("restarting in DFU mode");
     cliRebootEx(true);
 }
 
@@ -2775,9 +2774,7 @@ static void cliExit(char *cmdline)
 {
     UNUSED(cmdline);
 
-#ifndef CLI_MINIMAL_VERBOSITY
-    cliPrint("\r\nLeaving CLI mode, unsaved changes lost.\r\n");
-#endif
+    cliPrintHashLine("leaving CLI mode, unsaved changes lost");
     bufWriterFlush(cliWriter);
 
     *cliBuffer = '\0';
@@ -3043,7 +3040,7 @@ static void cliSave(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrint("Saving");
+    cliPrintHashLine("saving");
     writeEEPROM();
     cliReboot();
 }
@@ -3052,7 +3049,7 @@ static void cliDefaults(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrint("Resetting to defaults");
+    cliPrintHashLine("resetting to defaults");
     resetEEPROM();
     cliReboot();
 }
@@ -3561,13 +3558,12 @@ static void printConfig(char *cmdline, bool doDiff)
         cliPrintHashLine("version");
         cliVersion(NULL);
 
-#ifndef CLI_MINIMAL_VERBOSITY
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
-            cliPrintHashLine("reset configuration to default settings\r\ndefaults");
+            cliPrintHashLine("reset configuration to default settings");
+            cliPrint("defaults\r\n");
         }
 
         cliPrintHashLine("name");
-#endif
         printName(dumpMask);
 
 #ifdef USE_RESOURCE_MGMT
@@ -3653,19 +3649,16 @@ static void printConfig(char *cmdline, bool doDiff)
                 }
 
                 changeControlRateProfile(currentRateIndex);
-#ifndef CLI_MINIMAL_VERBOSITY
                 cliPrintHashLine("restore original rateprofile selection");
                 cliRateProfile("");
-#endif
             }
 
             changeProfile(activeProfile);
-#ifndef CLI_MINIMAL_VERBOSITY
             cliPrintHashLine("restore original profile selection");
             cliProfile("");
 
-            cliPrintHashLine("save configuration\r\nsave");
-#endif
+            cliPrintHashLine("save configuration");
+            cliPrint("save");
         } else {
             cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
             cliDumpRateProfile(currentProfile->activeRateProfile, dumpMask, &defaultConfig);
