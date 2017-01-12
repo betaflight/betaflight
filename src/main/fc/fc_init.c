@@ -177,6 +177,8 @@ void init(void)
     addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
+    debugMode = masterConfig.debug_mode;
+
     systemInit();
 
     i2cSetOverclock(masterConfig.i2c_overclock);

@@ -74,6 +74,8 @@
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
 
+#include "build/debug.h"
+
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
@@ -341,6 +343,8 @@ void createDefaultConfig(master_t *config)
 
     // profile
     config->current_profile_index = 0;
+
+    config->debug_mode = DEBUG_NONE;
 
 #ifdef TELEMETRY
     resetTelemetryConfig(&config->telemetryConfig);

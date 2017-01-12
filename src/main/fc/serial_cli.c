@@ -104,6 +104,7 @@ uint8_t cliMode = 0;
 
 #include "telemetry/frsky.h"
 #include "telemetry/telemetry.h"
+#include "build/debug.h"
 
 #if FLASH_SIZE > 128
 #define PLAY_SOUND
@@ -330,6 +331,12 @@ static const char * const lookupTableAsyncMode[] = {
 };
 #endif
 
+static const char * const lookupTableDebug[DEBUG_COUNT] = {
+    "NONE",
+    "GYRO",
+    "NOTCH"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -384,6 +391,7 @@ typedef enum {
 #ifdef OSD
     TABLE_OSD,
 #endif
+    TABLE_DEBUG,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -434,6 +442,7 @@ static const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
+    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
 #endif
 };
 
@@ -653,8 +662,6 @@ static const clivalue_t valueTable[] = {
     { "disarm_kill_switch",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_ARMING_CONFIG, offsetof(armingConfig_t, disarm_kill_switch) },
     { "auto_disarm_delay",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  60 }, PG_ARMING_CONFIG, offsetof(armingConfig_t, auto_disarm_delay) },
 
-
-
 };
 
 #else
@@ -668,6 +675,8 @@ typedef struct {
 
 const clivalue_t valueTable[] = {
     { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON } },
+
+    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
 
 #ifdef ASYNC_GYRO_PROCESSING
     { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.accTaskFrequency, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX } },

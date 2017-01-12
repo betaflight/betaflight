@@ -57,6 +57,8 @@
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
 
+#include "build/debug.h"
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
@@ -376,7 +378,13 @@ void gyroUpdate(void)
     for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         gyro.gyroADC[axis] -= gyroZero[axis];
         float gyroADCf = (float)gyro.gyroADC[axis];
+
+        DEBUG_SET(DEBUG_GYRO, axis, lrintf(gyroADCf));
+
         gyroADCf = softLpfFilterApplyFn(softLpfFilter[axis], gyroADCf);
+
+        DEBUG_SET(DEBUG_NOTCH, axis, lrintf(gyroADCf));
+
 #ifdef USE_GYRO_NOTCH_1
         gyroADCf = notchFilter1ApplyFn(notchFilter1[axis], gyroADCf);
 #endif
