@@ -111,10 +111,18 @@
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
+//#undef USE_SERVOS
 #undef BARO
 #undef SONAR
 #undef LED_STRIP
 #undef USE_SERIAL_4WAY_BLHELI_INTERFACE
+//#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
+//#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+//#undef USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#undef USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
+#undef USE_SERIALRX_SUMD       // Graupner Hott protocol
+#undef USE_SERIALRX_SUMH       // Graupner legacy protocol
+#undef USE_SERIALRX_XBUS       // JR
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
