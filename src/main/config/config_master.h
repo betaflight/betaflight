@@ -140,6 +140,8 @@ typedef struct master_s {
 
     char name[MAX_NAME_LENGTH + 1];
 
+    uint8_t debug_mode;
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
     /*
