@@ -135,8 +135,8 @@ void trampQueryS(void)
     trampQuery('s');
 }
 
-//#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
-#define TRAMP_SERIAL_OPTIONS (0)
+#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
+//#define TRAMP_SERIAL_OPTIONS (0) // For debugging with tramp emulator
 
 bool trampInit()
 {
