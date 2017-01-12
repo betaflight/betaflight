@@ -372,6 +372,8 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     // XXX Does Tramp handles back-to-back commands properly!?
     // Test without back-to-back commands.
 
+    delay(1000);
+
     trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
 
     trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
