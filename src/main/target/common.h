@@ -102,7 +102,7 @@
 #define TELEMETRY_IBUS
 #define USE_RX_MSP
 #define USE_SERIALRX_JETIEXBUS
-//#define VTX_CONTROL
+#define VTX_CONTROL
 //#define VTX_SMARTAUDIO
 #define VTX_TRAMP
 #else

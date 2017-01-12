@@ -19,6 +19,8 @@ const char * const vtx58BandNames[] = {
     "RACEBAND",
 };
 
+const char vtx58BandLetter[] = "-ABEFR";
+
 const char * const vtx58ChanNames[] = {
     "-", "1", "2", "3", "4", "5", "6", "7", "8",
 };

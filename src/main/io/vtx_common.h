@@ -33,3 +33,5 @@ typedef struct vtxVTable_s {
 // PIT mode is defined as LOWEST POSSIBLE RF POWER.
 // - It can be a dedicated mode, or lowest RF power possible.
 // - It is *NOT* RF on/off control.
+
+bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChan);

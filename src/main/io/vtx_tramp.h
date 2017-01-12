@@ -1,6 +1,7 @@
 #pragma once
 
 bool trampInit();
+void trampProcess(uint32_t currentTimeUs);
 
 #ifdef CMS
 #include "cms/cms.h"
