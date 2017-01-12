@@ -111,7 +111,7 @@ void trampSetRFPower(uint16_t level)
 
 void trampSetPitmode(uint8_t onoff)
 {
-    trampCmdU16('I', (uint16_t)onoff);
+    trampCmdU16('I', onoff ? 0x0100 : 0);
 }
 
 static uint8_t trampPendingQuery = 0; // XXX Assume no code/resp == 0
@@ -304,7 +304,7 @@ void trampCmsUpdateStatusString(void)
         tfp_sprintf(&trampCmsStatusString[9], " %c%3d", (trampCurPower == trampCurConfigPower) ? ' ' : '*', trampCurPower);
     }
     else
-        tfp_sprintf(&trampCmsStatusString[9], " ---");
+        tfp_sprintf(&trampCmsStatusString[9], " ----");
 }
 
 uint8_t trampCmsPitmode = 0;
@@ -317,6 +317,17 @@ static OSD_TAB_t trampCmsEntBand = { &trampCmsBand, 5, vtx58BandNames, NULL };
 static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChanNames, NULL };
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
+
+static long trampCmsUpdateFreqRef(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    if (trampCmsBand > 0 && trampCmsChan > 0)
+        trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
+
+    return 0;
+}
 
 static const char * const trampCmsPowerNames[] = {
     "25", "100", "200", "400", "600"
@@ -353,11 +364,12 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    // XXX Does Tramp handles back-to-back commands properly!?
     trampSetBandChan(trampCmsBand, trampCmsChan);
 
+    // XXX Does Tramp handles back-to-back commands properly!?
     // Test without back-to-back commands.
-    // trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
+
+    trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
 
     trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 
@@ -386,8 +398,8 @@ static OSD_Entry trampMenuEntries[] =
 
     { "",       OME_Label,   NULL,                   trampCmsStatusString,  DYNAMIC },
     { "PIT",    OME_TAB,     trampCmsSetPitmode,     &trampCmsEntPitmode,   0 },
-    { "BAND",   OME_TAB,     NULL,                   &trampCmsEntBand,      0 },
-    { "CHAN",   OME_TAB,     NULL,                   &trampCmsEntChan,      0 },
+    { "BAND",   OME_TAB,     trampCmsUpdateFreqRef,  &trampCmsEntBand,      0 },
+    { "CHAN",   OME_TAB,     trampCmsUpdateFreqRef,  &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
     { "TEMP",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
