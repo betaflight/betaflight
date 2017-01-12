@@ -29,15 +29,39 @@
 #include "build/debug.h"
 
 #include "common/utils.h"
+#include "common/printf.h"
 
 #include "io/serial.h"
 #include "drivers/serial.h"
 #include "drivers/vtx_var.h"
 #include "io/vtx_tramp.h"
+#include "io/vtx_common.h"
 
 static serialPort_t *trampSerialPort = NULL;
 
-static uint8_t trampCmdBuffer[16];
+static uint8_t trampReqBuffer[16];
+static uint8_t trampRespBuffer[16];
+
+typedef enum {
+    TRAMP_STATUS_BAD_DEVICE = -1,
+    TRAMP_STATUS_OFFLINE = 0,
+    TRAMP_STATUS_ONLINE
+} trampStatus_e;
+
+trampStatus_e trampStatus = TRAMP_STATUS_OFFLINE;
+
+uint32_t trampRFFreqMin;
+uint32_t trampRFFreqMax;
+uint32_t trampRFPowerMax;
+
+uint32_t trampCurFreq = 0;
+uint8_t trampCurBand = 0;
+uint8_t trampCurChan = 0;
+uint16_t trampCurPower = 0;
+
+#ifdef CMS
+void trampCmsUpdateStatusString(void); // Forward
+#endif
 
 static void trampWriteBuf(uint8_t *buf)
 {
@@ -59,13 +83,13 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
     if (!trampSerialPort)
         return;
 
-    memset(trampCmdBuffer, 0, ARRAYLEN(trampCmdBuffer));
-    trampCmdBuffer[0] = 15;
-    trampCmdBuffer[1] = cmd;
-    trampCmdBuffer[2] = param & 0xff;
-    trampCmdBuffer[3] = (param >> 8) & 0xff;
-    trampCmdBuffer[14] = trampChecksum(trampCmdBuffer);
-    trampWriteBuf(trampCmdBuffer);
+    memset(trampReqBuffer, 0, ARRAYLEN(trampReqBuffer));
+    trampReqBuffer[0] = 15;
+    trampReqBuffer[1] = cmd;
+    trampReqBuffer[2] = param & 0xff;
+    trampReqBuffer[3] = (param >> 8) & 0xff;
+    trampReqBuffer[14] = trampChecksum(trampReqBuffer);
+    trampWriteBuf(trampReqBuffer);
 }
 
 void trampSetFreq(uint16_t freq)
@@ -88,12 +112,38 @@ void trampSetPitmode(uint8_t onoff)
     trampCmdU16('I', (uint16_t)onoff);
 }
 
+static uint8_t trampPendingQuery = 0; // XXX Assume no code/resp == 0
+
+void trampQuery(uint8_t cmd)
+{
+    trampPendingQuery = cmd;
+    trampCmdU16(cmd, 0);
+}
+
+void trampQueryR(void)
+{
+    trampQuery('r');
+}
+
+void trampQueryV(void)
+{
+    trampQuery('v');
+}
+
+void trampQueryS(void)
+{
+    trampQuery('s');
+}
+
+//#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
+#define TRAMP_SERIAL_OPTIONS (0)
+
 bool trampInit()
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
 
     if (portConfig) {
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 9600, MODE_RXTX, 0);
+        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 9600, MODE_RXTX, TRAMP_SERIAL_OPTIONS);
     }
 
     if (!trampSerialPort) {
@@ -103,9 +153,150 @@ bool trampInit()
     return true;
 }
 
+void trampHandleResponse(void)
+{
+    uint8_t respCode = trampRespBuffer[1];
+
+    switch (respCode) {
+    case 'r':
+        trampRFFreqMin = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+        trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+        trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
+        trampStatus = TRAMP_STATUS_ONLINE;
+        break;
+
+    case 'v':
+        trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+        vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+        break;
+
+    case 's':
+        break;
+    }
+
+    if (trampPendingQuery == respCode)
+        trampPendingQuery = 0;
+}
+
+static bool trampIsValidResponseCode(uint8_t code)
+{
+    if (code == 'r' || code == 'v' || code == 's')
+        return true;
+    else
+        return false;
+}
+
+typedef enum {
+    S_WAIT_LEN = 0,   // Waiting for a packet len
+    S_WAIT_CODE,      // Waiting for a response code
+    S_DATA,           // Waiting for rest of the packet.
+} trampReceiveState_e;
+
+static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
+static int trampReceivePos = 0;
+static uint32_t trampFrameStartUs = 0;
+
+// Frame timeout. An actual frame (16B) takes only 16.6 msec,
+// but a frame arrival may span two scheduling intervals (200msec * 2).
+// Effectively same as waiting for a next trampProcess() to run.
+
+#define TRAMP_FRAME_TIMO_US (200 * 1000)
+
+void trampReceive(uint32_t currentTimeUs)
+{
+    if (!trampSerialPort)
+        return;
+
+    if ((trampReceiveState != S_WAIT_LEN) && (currentTimeUs - trampFrameStartUs > TRAMP_FRAME_TIMO_US)) {
+        trampReceiveState = S_WAIT_LEN;
+        trampReceivePos = 0;
+    }
+
+    while (serialRxBytesWaiting(trampSerialPort)) {
+        uint8_t c = serialRead(trampSerialPort);
+        trampRespBuffer[trampReceivePos++] = c;
+
+        switch(c) {
+        case S_WAIT_LEN:
+            if (c == 0x0F) {
+                trampReceiveState = S_WAIT_CODE;
+                trampFrameStartUs = currentTimeUs;
+            }
+            break;
+
+        case S_WAIT_CODE:
+            if (trampIsValidResponseCode(c)) {
+                trampReceiveState = S_DATA;
+            } else {
+                trampReceiveState = S_WAIT_LEN;
+                trampReceivePos = 0;
+            }
+            break;
+
+        case S_DATA:
+            if (trampReceivePos == 16) {
+                uint8_t cksum = trampChecksum(trampRespBuffer);
+                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0))
+                    trampHandleResponse();
+
+                trampReceiveState = S_WAIT_LEN;
+                trampReceivePos = 0;
+            }
+            break;
+        }
+    }
+}
+
+void trampProcess(uint32_t currentTimeUs)
+{
+    static uint32_t lastQueryRTimeUs = 0;
+
+    if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
+        return;
+
+debug[0]++;
+    trampReceive(currentTimeUs);
+
+    if (trampStatus == TRAMP_STATUS_OFFLINE) {
+        if (currentTimeUs - lastQueryRTimeUs > 1000 * 1000) {
+            trampQueryR();
+            lastQueryRTimeUs = currentTimeUs;
+        }
+    } else if (trampPendingQuery) {
+        trampQuery(trampPendingQuery);
+    } else {
+        trampQueryV();
+    }
+
+#ifdef CMS
+    trampCmsUpdateStatusString();
+#endif
+}
+
 #ifdef CMS
 #include "cms/cms.h"
 #include "cms/cms_types.h"
+
+char trampCmsStatusString[16];
+
+void trampCmsUpdateStatusString(void)
+{
+    trampCmsStatusString[0] = '*';
+    trampCmsStatusString[1] = ' ';
+    trampCmsStatusString[3] = vtx58BandLetter[trampCurBand];
+    trampCmsStatusString[4] = vtx58ChanNames[trampCurChan][0];
+    trampCmsStatusString[5] = ' ';
+
+    if (trampCurFreq)
+        tfp_sprintf(&trampCmsStatusString[6], "%4d", trampCurFreq);
+    else
+        tfp_sprintf(&trampCmsStatusString[6], "----");
+
+    if (trampCurPower)
+        tfp_sprintf(&trampCmsStatusString[10], " %3d", trampCurPower);
+    else
+        tfp_sprintf(&trampCmsStatusString[10], " ---");
+}
 
 uint8_t trampCmsPitmode = 0;
 uint8_t trampCmsBand = 1;
@@ -182,8 +373,8 @@ static OSD_Entry trampMenuEntries[] =
 {
     { "- TRAMP -", OME_Label, NULL, NULL, 0 },
 
-    //{ "",       OME_Label,   NULL,                   saCmsStatusString,  DYNAMIC },
-    { "PIT",    OME_TAB,     trampCmsSetPitmode,    &trampCmsEntPitmode,   0 },
+    { "",       OME_Label,   NULL,                   trampCmsStatusString,  DYNAMIC },
+    { "PIT",    OME_TAB,     trampCmsSetPitmode,     &trampCmsEntPitmode,   0 },
     { "BAND",   OME_TAB,     NULL,                   &trampCmsEntBand,      0 },
     { "CHAN",   OME_TAB,     NULL,                   &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },

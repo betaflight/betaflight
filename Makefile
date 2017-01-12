@@ -611,6 +611,7 @@ HIGHEND_SRC = \
             telemetry/ibus.c \
             sensors/esc_sensor.c \
             drivers/vtx_var.c \
+            io/vtx_common.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
 
