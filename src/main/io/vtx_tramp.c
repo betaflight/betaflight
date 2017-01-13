@@ -34,6 +34,7 @@
 #include "io/serial.h"
 #include "drivers/serial.h"
 #include "drivers/vtx_var.h"
+#include "drivers/system.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_common.h"
 
@@ -199,23 +200,13 @@ typedef enum {
 
 static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
 static int trampReceivePos = 0;
-static uint32_t trampFrameStartUs = 0;
-
-// Frame timeout. An actual frame (16B) takes only 16.6 msec,
-// but a frame arrival may span two scheduling intervals (200msec * 2).
-// Effectively same as waiting for a next trampProcess() to run.
-
-#define TRAMP_FRAME_TIMO_US (200 * 1000)
 
 void trampReceive(uint32_t currentTimeUs)
 {
+    UNUSED(currentTimeUs);
+
     if (!trampSerialPort)
         return;
-
-    if ((trampReceiveState != S_WAIT_LEN) && cmp32(currentTimeUs, trampFrameStartUs > TRAMP_FRAME_TIMO_US)) {
-        trampReceiveState = S_WAIT_LEN;
-        trampReceivePos = 0;
-    }
 
     while (serialRxBytesWaiting(trampSerialPort)) {
         uint8_t c = serialRead(trampSerialPort);
@@ -225,7 +216,6 @@ void trampReceive(uint32_t currentTimeUs)
         case S_WAIT_LEN:
             if (c == 0x0F) {
                 trampReceiveState = S_WAIT_CODE;
-                trampFrameStartUs = currentTimeUs;
             } else {
                 trampReceivePos = 0;
             }
@@ -251,6 +241,15 @@ void trampReceive(uint32_t currentTimeUs)
                 trampReceivePos = 0;
             }
             break;
+
+        default:
+            trampReceiveState = S_WAIT_LEN;
+            trampReceivePos = 0;
+        }
+
+        // Debugging...
+        if (trampReceivePos >= 16) {
+            debug[0]++;
         }
     }
 }
@@ -321,13 +320,36 @@ static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChanNames, NULL };
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
 
-static long trampCmsUpdateFreqRef(displayPort_t *pDisp, const void *self)
+static void trampCmsUpdateFreqRef(void)
+{
+    if (trampCmsBand > 0 && trampCmsChan > 0)
+        trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
+}
+
+static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
     UNUSED(self);
 
-    if (trampCmsBand > 0 && trampCmsChan > 0)
-        trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
+    if (trampCmsBand == 0)
+        // Bounce back
+        trampCmsBand = 1;
+    else
+        trampCmsUpdateFreqRef();
+
+    return 0;
+}
+
+static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
+{
+    UNUSED(pDisp);
+    UNUSED(self);
+
+    if (trampCmsChan == 0)
+        // Bounce back
+        trampCmsChan = 1;
+    else
+        trampCmsUpdateFreqRef();
 
     return 0;
 }
@@ -347,7 +369,7 @@ static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampCmsPowerNames, NUL
 static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
 
 static const char * const trampCmsPitmodeNames[] = {
-    "OFF", "ON "
+    "---", "OFF", "ON "
 };
 
 static OSD_TAB_t trampCmsEntPitmode = { &trampCmsPitmode, 2, trampCmsPitmodeNames, NULL };
@@ -357,7 +379,12 @@ static long trampCmsSetPitmode(displayPort_t *pDisp, const void *self)
     UNUSED(pDisp);
     UNUSED(self);
 
-    trampSetPitmode(trampCmsPitmode);
+    if (trampCmsPitmode == 0) {
+        // Bouce back
+        trampCmsPitmode = 1;
+    } else {
+        trampSetPitmode(trampCmsPitmode - 1);
+    }
 
     return 0;
 }
@@ -369,10 +396,11 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
 
     trampSetBandChan(trampCmsBand, trampCmsChan);
 
-    // XXX Does Tramp handles back-to-back commands properly!?
-    // Test without back-to-back commands.
+    // Tramp doesn't handle back-to-back commands properly.
+    // Insert some delay here. Will do no harm provided CMS is activated
+    // only when disarmed.
 
-    delay(1000);
+    delay(100);
 
     trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
 
@@ -403,8 +431,8 @@ static OSD_Entry trampMenuEntries[] =
 
     { "",       OME_Label,   NULL,                   trampCmsStatusString,  DYNAMIC },
     { "PIT",    OME_TAB,     trampCmsSetPitmode,     &trampCmsEntPitmode,   0 },
-    { "BAND",   OME_TAB,     trampCmsUpdateFreqRef,  &trampCmsEntBand,      0 },
-    { "CHAN",   OME_TAB,     trampCmsUpdateFreqRef,  &trampCmsEntChan,      0 },
+    { "BAND",   OME_TAB,     trampCmsConfigBand,     &trampCmsEntBand,      0 },
+    { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
     { "TEMP",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
