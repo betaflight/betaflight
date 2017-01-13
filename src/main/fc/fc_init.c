@@ -524,7 +524,7 @@ void init(void)
 #endif
 
 #ifdef VTX_SMARTAUDIO
-    smartAudioInit();
+    smartAudioInit(smartAudioConfig());
 #endif
 
     // start all timers

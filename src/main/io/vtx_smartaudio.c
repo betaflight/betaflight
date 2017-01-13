@@ -68,6 +68,7 @@ static void saUpdateStatusString(void); // Forward
 #endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
+static smartAudioConfig_t *saConfig;
 
 // SmartAudio command and response codes
 enum {
@@ -250,11 +251,9 @@ static int saDacToPowerIndex(int dac)
 // Autobauding
 //
 
-#define SMARTBAUD_MIN 4800
-#define SMARTBAUD_MAX 4950
-uint16_t sa_smartbaud = SMARTBAUD_MIN;
-static int sa_adjdir = 1; // -1=going down, 1=going up
-static int sa_baudstep = 50;
+uint16_t sa_smartbaud;
+static int sa_baudstep;
+static int sa_adjdir;     // -1=going down, 1=going up
 
 #define SMARTAUDIO_CMD_TIMEOUT    120
 
@@ -278,15 +277,17 @@ static void saAutobaud(void)
 
     dprintf(("autobaud: adjusting\r\n"));
 
-    if ((sa_adjdir == 1) && (sa_smartbaud == SMARTBAUD_MAX)) {
+    if ((sa_adjdir == 1) && (sa_smartbaud >= saConfig->autobaud_max)) {
        sa_adjdir = -1;
        dprintf(("autobaud: now going down\r\n"));
-    } else if ((sa_adjdir == -1 && sa_smartbaud == SMARTBAUD_MIN)) {
+    } else if ((sa_adjdir == -1) && (sa_smartbaud <= saConfig->autobaud_min)) {
        sa_adjdir = 1;
        dprintf(("autobaud: now going up\r\n"));
     }
 
     sa_smartbaud += sa_baudstep * sa_adjdir;
+
+debug[0] = sa_smartbaud;
 
     dprintf(("autobaud: %d\r\n", sa_smartbaud));
 
@@ -651,7 +652,7 @@ void saSetPowerByIndex(uint8_t index)
     saQueueCmd(buf, 6);
 }
 
-bool smartAudioInit()
+bool smartAudioInit(smartAudioConfig_t *configToUse)
 {
 #ifdef SMARTAUDIO_DPRINTF
     // Setup debugSerialPort
@@ -671,6 +672,12 @@ bool smartAudioInit()
     if (!smartAudioSerialPort) {
         return false;
     }
+
+    saConfig = configToUse;
+
+    sa_smartbaud = saConfig->autobaud_min;
+    sa_baudstep = 50;
+    sa_adjdir = 1;
 
     return true;
 }

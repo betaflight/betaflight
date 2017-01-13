@@ -88,6 +88,7 @@ uint8_t cliMode = 0;
 #include "io/serial.h"
 #include "io/servos.h"
 #include "io/vtx.h"
+#include "io/vtx_smartaudio.h"
 
 #include "rx/rx.h"
 #include "rx/spektrum.h"
@@ -796,6 +797,10 @@ const clivalue_t valueTable[] = {
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &vcdProfile()->video_system, .config.minmax = { 0, 2 } },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->h_offset, .config.minmax = { -32, 31 } },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->v_offset, .config.minmax = { -15, 16 } },
+#endif
+#ifdef VTX_SMARTAUDIO
+    { "smartaudio_autobaud_min",    VAR_UINT16  | MASTER_VALUE, &smartAudioConfig()->autobaud_min, .config.minmax = { 4550, 4800 } },
+    { "smartaudio_autobaud_max",    VAR_UINT16  | MASTER_VALUE, &smartAudioConfig()->autobaud_max, .config.minmax = { 4850, 5100 } },
 #endif
 };
 
