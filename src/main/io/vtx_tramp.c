@@ -63,6 +63,7 @@ uint8_t trampCurChan = 0;
 uint16_t trampCurPower = 0;       // Actual transmitting power
 uint16_t trampCurConfigPower = 0; // Configured transmitting power
 int16_t trampCurTemp = 0;
+uint8_t trampCurPitmode = 0;
 
 uint32_t trampConfFreq = 0;
 uint16_t trampConfPower = 0;
@@ -138,7 +139,7 @@ bool trampCommitChanges()
 
 void trampSetPitmode(uint8_t onoff)
 {
-    trampCmdU16('I', onoff ? 0x0100 : 0);
+    trampCmdU16('I', onoff ? 0 : 1);
 }
 
 static uint8_t trampPendingQuery = 0; // XXX Assume no code/resp == 0
@@ -201,6 +202,7 @@ void trampHandleResponse(void)
             trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
             trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
             vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+            trampCurPitmode = trampRespBuffer[7];
 
 #ifdef CMS
             if(!oldCurFreq && trampCurFreq)
@@ -406,6 +408,7 @@ static void trampCmsUpdateBandChan()
     if(trampCurBand > 0) trampCmsBand = trampCurBand;
     if(trampCurChan > 0) trampCmsChan = trampCurChan;
     trampCmsUpdateFreqRef();
+    trampCmsPitmode = trampCurPitmode + 1;
 }
 
 static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
