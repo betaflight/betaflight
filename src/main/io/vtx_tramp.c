@@ -70,7 +70,6 @@ uint16_t trampConfPower = 0;
 
 #ifdef CMS
 static void trampCmsUpdateStatusString(void); // Forward
-static void trampCmsUpdateBandChan(void); // Forward
 #endif
 
 static void trampWriteBuf(uint8_t *buf)
@@ -197,18 +196,12 @@ void trampHandleResponse(void)
 
     case 'v':
         {
-            uint32_t oldCurFreq = trampCurFreq;
             trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
             trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
             trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
             vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
             trampCurPitmode = trampRespBuffer[7];
 
-#ifdef CMS
-            if(!oldCurFreq && trampCurFreq)
-                trampCmsUpdateBandChan();
-#endif
-            
             if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
                 trampStatus = TRAMP_STATUS_SET_FREQ_PW;
         }
@@ -397,18 +390,22 @@ static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChanNames, NULL };
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
 
+static const char * const trampCmsPowerNames[] = {
+    "25 ", "100", "200", "400", "600"
+};
+
+static const uint16_t trampCmsPowerTable[] = {
+    25, 100, 200, 400, 600
+};
+
+static uint8_t trampCmsPower = 0;
+
+static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampCmsPowerNames, NULL };
+
 static void trampCmsUpdateFreqRef(void)
 {
     if (trampCmsBand > 0 && trampCmsChan > 0)
         trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
-}
-
-static void trampCmsUpdateBandChan()
-{
-    if(trampCurBand > 0) trampCmsBand = trampCurBand;
-    if(trampCurChan > 0) trampCmsChan = trampCurChan;
-    trampCmsUpdateFreqRef();
-    trampCmsPitmode = trampCurPitmode + 1;
 }
 
 static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
@@ -438,18 +435,6 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
 
     return 0;
 }
-
-static const char * const trampCmsPowerNames[] = {
-    "25 ", "100", "200", "400", "600"
-};
-
-static const uint16_t trampCmsPowerTable[] = {
-    25, 100, 200, 400, 600
-};
-
-static uint8_t trampCmsPower = 0;
-
-static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampCmsPowerNames, NULL };
 
 static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
 
@@ -490,6 +475,30 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     return MENU_CHAIN_BACK;
 }
 
+static void trampCmsInitSettings()
+{
+    if(trampCurBand > 0) trampCmsBand = trampCurBand;
+    if(trampCurChan > 0) trampCmsChan = trampCurChan;
+    
+    trampCmsUpdateFreqRef();
+    trampCmsPitmode = trampCurPitmode + 1;
+
+    if (trampCurConfigPower > 0) {
+        for (uint8_t i = 0; i < sizeof(trampCmsPowerTable); i++) {
+            if (trampCurConfigPower <= trampCmsPowerTable[i]) {
+                trampCmsPower = i;
+                break;
+            }
+        }
+    }
+}
+
+static long trampCmsOnEnter()
+{
+    trampCmsInitSettings();
+    return 0;
+}
+
 static OSD_Entry trampCmsMenuCommenceEntries[] = {
     { "CONFIRM", OME_Label,   NULL,          NULL, 0 },
     { "YES",     OME_Funcall, trampCmsCommence, NULL, 0 },
@@ -527,7 +536,7 @@ static OSD_Entry trampMenuEntries[] =
 CMS_Menu cmsx_menuVtxTramp = {
     .GUARD_text = "XVTXTR",
     .GUARD_type = OME_MENU,
-    .onEnter = NULL,
+    .onEnter = trampCmsOnEnter,
     .onExit = NULL,
     .onGlobalExit = NULL,
     .entries = trampMenuEntries,
