@@ -46,7 +46,9 @@ static uint8_t trampRespBuffer[16];
 typedef enum {
     TRAMP_STATUS_BAD_DEVICE = -1,
     TRAMP_STATUS_OFFLINE = 0,
-    TRAMP_STATUS_ONLINE
+    TRAMP_STATUS_ONLINE,
+    TRAMP_STATUS_SET_FREQ_PW,
+    TRAMP_STATUS_CHECK_FREQ_PW
 } trampStatus_e;
 
 trampStatus_e trampStatus = TRAMP_STATUS_OFFLINE;
@@ -62,8 +64,12 @@ uint16_t trampCurPower = 0;       // Actual transmitting power
 uint16_t trampCurConfigPower = 0; // Configured transmitting power
 int16_t trampCurTemp = 0;
 
+uint32_t trampConfFreq = 0;
+uint16_t trampConfPower = 0;
+
 #ifdef CMS
-void trampCmsUpdateStatusString(void); // Forward
+static void trampCmsUpdateStatusString(void); // Forward
+static void trampCmsUpdateBandChan(void); // Forward
 #endif
 
 static void trampWriteBuf(uint8_t *buf)
@@ -97,17 +103,37 @@ void trampCmdU16(uint8_t cmd, uint16_t param)
 
 void trampSetFreq(uint16_t freq)
 {
+    trampConfFreq = freq;
+}
+
+void trampSendFreq(uint16_t freq)
+{
     trampCmdU16('F', freq);
 }
 
 void trampSetBandChan(uint8_t band, uint8_t chan)
 {
-    trampCmdU16('F', vtx58FreqTable[band - 1][chan - 1]);
+    trampSetFreq(vtx58FreqTable[band - 1][chan - 1]);
 }
 
 void trampSetRFPower(uint16_t level)
 {
+    trampConfPower = level;
+}
+
+void trampSendRFPower(uint16_t level)
+{
     trampCmdU16('P', level);
+}
+
+// return false if error
+bool trampCommitChanges()
+{
+    if(trampStatus != TRAMP_STATUS_ONLINE)
+        return false;
+
+    trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+    return true;
 }
 
 void trampSetPitmode(uint8_t onoff)
@@ -169,10 +195,21 @@ void trampHandleResponse(void)
         break;
 
     case 'v':
-        trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-        trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-        trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
-        vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+        {
+            uint32_t oldCurFreq = trampCurFreq;
+            trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+            trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+            trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
+            vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+
+#ifdef CMS
+            if(!oldCurFreq && trampCurFreq)
+                trampCmsUpdateBandChan();
+#endif
+            
+            if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
+                trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+        }
         break;
 
     case 's':
@@ -234,7 +271,7 @@ void trampReceive(uint32_t currentTimeUs)
             if (trampReceivePos == 16) {
                 uint8_t cksum = trampChecksum(trampRespBuffer);
                 if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0)) {
-                    // trampHandleResponse();
+                    trampHandleResponse();
                 }
 
                 trampReceiveState = S_WAIT_LEN;
@@ -257,22 +294,60 @@ void trampReceive(uint32_t currentTimeUs)
 void trampProcess(uint32_t currentTimeUs)
 {
     static uint32_t lastQueryRTimeUs = 0;
+    static uint32_t lastQueryVTimeUs = 0;
 
     if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
         return;
 
-    // trampReceive(currentTimeUs);
+    trampReceive(currentTimeUs);
 
     if (trampStatus == TRAMP_STATUS_OFFLINE) {
-        if (cmp32(currentTimeUs, lastQueryRTimeUs) > 1000 * 1000) {
+        if (cmp32(currentTimeUs, lastQueryRTimeUs) > 1000 * 1000) { // 1s
             trampQueryR();
             lastQueryRTimeUs = currentTimeUs;
         }
-    } else if (trampReceiveState == S_WAIT_LEN) {
-        if (trampPendingQuery)
-            trampQuery(trampPendingQuery);
-        else
-            trampQueryV();
+    } else {
+        if (trampStatus == TRAMP_STATUS_SET_FREQ_PW) {
+
+            bool done = false;
+            if (trampConfFreq != trampCurFreq) {
+                trampSendFreq(trampConfFreq);
+            }
+            else if (trampConfPower != trampCurPower) {
+                trampSendRFPower(trampConfPower);
+            }
+
+            if(!done) {
+                trampStatus = TRAMP_STATUS_CHECK_FREQ_PW;
+
+                // delay next status query by 200ms
+                lastQueryVTimeUs = currentTimeUs + 200 * 1000;
+            }
+            else {
+                // everything has been done, let's return to original state
+                trampStatus = TRAMP_STATUS_ONLINE;
+            }
+        }
+        else if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW) {
+            if (cmp32(currentTimeUs, lastQueryVTimeUs) > 50 * 1000) {
+                trampQueryV();
+                lastQueryVTimeUs = currentTimeUs;
+            }
+        }
+        else if (trampStatus == TRAMP_STATUS_ONLINE) {
+            
+            if (cmp32(currentTimeUs, lastQueryVTimeUs) > 1000 * 1000) {
+                trampQueryV();
+                lastQueryVTimeUs = currentTimeUs;
+            }
+        }
+
+        /* if (trampReceiveState == S_WAIT_LEN) { */
+        /*     if (trampPendingQuery) */
+        /*         trampQuery(trampPendingQuery); */
+        /*     else */
+        /*         trampQueryV(); */
+        /* } */
     }
 
 #ifdef CMS
@@ -289,7 +364,7 @@ char trampCmsStatusString[31] = "- -- ---- ----";
 //                               m bc ffff tppp
 //                               01234567890123
 
-void trampCmsUpdateStatusString(void)
+static void trampCmsUpdateStatusString(void)
 {
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
@@ -326,6 +401,13 @@ static void trampCmsUpdateFreqRef(void)
         trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 }
 
+static void trampCmsUpdateBandChan()
+{
+    if(trampCurBand > 0) trampCmsBand = trampCurBand;
+    if(trampCurChan > 0) trampCmsChan = trampCurChan;
+    trampCmsUpdateFreqRef();
+}
+
 static long trampCmsConfigBand(displayPort_t *pDisp, const void *self)
 {
     UNUSED(pDisp);
@@ -355,7 +437,7 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
 }
 
 static const char * const trampCmsPowerNames[] = {
-    "25", "100", "200", "400", "600"
+    "25 ", "100", "200", "400", "600"
 };
 
 static const uint16_t trampCmsPowerTable[] = {
@@ -395,14 +477,10 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     trampSetBandChan(trampCmsBand, trampCmsChan);
-
-    // Tramp doesn't handle back-to-back commands properly.
-    // Insert some delay here. Will do no harm provided CMS is activated
-    // only when disarmed.
-
-    delay(100);
-
     trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
+
+    // TODO: error handling
+    trampCommitChanges();
 
     trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 
