@@ -209,9 +209,10 @@ void processRcCommand(void)
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     static uint16_t currentRxRefreshRate;
-    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 1;
+    const uint8_t interpolationChannels = rxConfig()->rcInterpolationChannels + 2;
     uint16_t rxRefreshRate;
     bool readyToCalculateRate = false;
+    uint8_t readyToCalculateRateAxisCnt = 0;
 
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
@@ -241,7 +242,7 @@ void processRcCommand(void)
                 debug[3] = rxRefreshRate;
             }
 
-            for (int channel=ROLL; channel <= interpolationChannels; channel++) {
+            for (int channel=ROLL; channel < interpolationChannels; channel++) {
                 deltaRC[channel] = rcCommand[channel] -  (lastCommand[channel] - deltaRC[channel] * factor / rcInterpolationFactor);
                 lastCommand[channel] = rcCommand[channel];
             }
@@ -252,16 +253,18 @@ void processRcCommand(void)
         }
 
         // Interpolate steps of rcCommand
-        if (factor > 0) {
-            for (int channel=ROLL; channel <= interpolationChannels; channel++)
+        for (int channel=ROLL; channel < interpolationChannels; channel++) {
+            if (factor > 0) {
                 rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-        } else {
-            factor = 0;
+                readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
+            } else {
+                factor = 0;
+            }
         }
-
         readyToCalculateRate = true;
     } else {
         factor = 0; // reset factor in case of level modes flip flopping
+        readyToCalculateRateAxisCnt = FD_YAW;
     }
 
     if (readyToCalculateRate || isRXDataNew) {
@@ -269,7 +272,8 @@ void processRcCommand(void)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
 
-        for (int axis = 0; axis < 3; axis++) calculateSetpointRate(axis, rcCommand[axis]);
+        for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
+            calculateSetpointRate(axis, rcCommand[axis]);
 
         isRXDataNew = false;
     }
