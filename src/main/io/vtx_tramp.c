@@ -165,7 +165,6 @@ void trampQueryS(void)
 }
 
 #define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
-//#define TRAMP_SERIAL_OPTIONS (0) // For debugging with tramp emulator
 
 bool trampInit()
 {
@@ -467,10 +466,9 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     trampSetBandChan(trampCmsBand, trampCmsChan);
     trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
 
-    // TODO: error handling
+    // If it fails, the user should retry later
     trampCommitChanges();
 
-    trampCmsFreqRef = vtx58FreqTable[trampCmsBand - 1][trampCmsChan - 1];
 
     return MENU_CHAIN_BACK;
 }
@@ -527,7 +525,6 @@ static OSD_Entry trampMenuEntries[] =
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
     { "TEMP",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
-    //{ "CONFIG", OME_Submenu, cmsMenuChange,          &saCmsMenuConfig,   0 },
 
     { "BACK",   OME_Back, NULL, NULL, 0 },
     { NULL,     OME_END, NULL, NULL, 0 }
