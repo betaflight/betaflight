@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "common/time.h"
+
 #define VISIBLE_FLAG  0x0800
 #define BLINK_FLAG    0x0400
 #define VISIBLE(x)    (x & VISIBLE_FLAG)
@@ -40,6 +42,10 @@ typedef enum {
     OSD_GPS_SPEED,
     OSD_GPS_SATS,
     OSD_ALTITUDE,
+    OSD_ROLL_PIDS,
+    OSD_PITCH_PIDS,
+    OSD_YAW_PIDS,
+    OSD_POWER,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 
