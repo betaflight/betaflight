@@ -624,6 +624,11 @@ static void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
+    // FIXME: Completely disable sonar
+#if defined(SONAR)
+    featureClear(FEATURE_SONAR);
+#endif
+
 #ifdef USE_GYRO_NOTCH_1
     if (gyroConfig()->gyro_soft_notch_cutoff_1 >= gyroConfig()->gyro_soft_notch_hz_1) {
         gyroConfigMutable()->gyro_soft_notch_hz_1 = 0;
