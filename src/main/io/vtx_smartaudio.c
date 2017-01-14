@@ -33,6 +33,8 @@
 #include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/vtx_var.h"
+#include "drivers/vtx_common.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 
@@ -68,6 +70,25 @@ static void saUpdateStatusString(void); // Forward
 #endif
 
 static serialPort_t *smartAudioSerialPort = NULL;
+
+#if defined(CMS) || defined(VTX_COMMON)
+static const char * const saPowerNames[] = {
+    "---", "25 ", "200", "500", "800",
+};
+#endif
+
+#ifdef VTX_COMMON
+static vtxVTable_t saVTable;    // Forward
+static vtxDevice_t vtxSmartAudio = {
+    .vTable = &saVTable,
+    .numBand = 5,
+    .numChan = 8,
+    .numPower = 4,
+    .bandNames = (char **)vtx58BandNames,
+    .chanNames = (char **)vtx58ChanNames,
+    .powerNames = (char **)saPowerNames,
+};
+#endif
 
 // SmartAudio command and response codes
 enum {
@@ -378,6 +399,10 @@ static void saProcessResponse(uint8_t *buf, int len)
         saPrintSettings();
     saDevicePrev = saDevice;
 
+#ifdef VTX_COMMON
+    // Todo: Update states in saVtxDevice?
+#endif
+
 #ifdef CMS
     // Export current device status for CMS
     saCmsUpdate();
@@ -672,6 +697,9 @@ bool smartAudioInit()
         return false;
     }
 
+    vtxSmartAudio.vTable = &saVTable;
+    vtxCommonRegisterDevice(&vtxSmartAudio);
+
     return true;
 }
 
@@ -715,6 +743,98 @@ void smartAudioProcess(uint32_t now)
         saSendQueue();
     }
 }
+
+#ifdef VTX_COMMON
+// Interface to common VTX API
+
+vtxDevType_e vtxSAGetDeviceType(void)
+{
+    return VTXDEV_SMARTAUDIO;
+}
+
+bool vtxSAIsReady(void)
+{
+    return !(saDevice.version == 0);
+}
+
+void vtxSASetBandChan(uint8_t band, uint8_t chan)
+{
+    if (band && chan)
+        saSetBandChan(band - 1, chan - 1);
+}
+
+void vtxSASetPowerByIndex(uint8_t index)
+{
+    if (index == 0) {
+        // SmartAudio doesn't support power off.
+        return;
+    }
+
+    saSetPowerByIndex(index - 1);
+}
+
+void vtxSASetPitmode(uint8_t onoff)
+{
+    if (!(vtxSAIsReady() && (saDevice.version == 2)))
+        return;
+
+    if (onoff) {
+        // SmartAudio can not turn pit mode on by software.
+        return;
+    }
+
+    uint8_t newmode = SA_MODE_CLR_PITMODE;
+
+    if (saDevice.mode & SA_MODE_GET_IN_RANGE_PITMODE)
+        newmode |= SA_MODE_SET_IN_RANGE_PITMODE;
+
+    if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
+        newmode |= SA_MODE_SET_OUT_RANGE_PITMODE;
+
+    saSetMode(newmode);
+
+    return true;
+}
+
+bool vtxSAGetBandChan(uint8_t *pBand, uint8_t *pChan)
+{
+    if (!vtxSAIsReady())
+        return false;
+
+    *pBand = (saDevice.chan / 8) + 1;
+    *pChan = (saDevice.chan % 8) + 1;
+    return true;
+}
+
+bool vtxSAGetPowerIndex(uint8_t *pIndex)
+{
+    if (!vtxSAIsReady())
+        return false;
+
+    *pIndex = (saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power;
+    return true;
+}
+
+bool vtxSAGetPitmode(uint8_t *pOnoff)
+{
+    if (!(vtxSAIsReady() && (saDevice.version == 2)))
+        return false;
+
+    *pOnoff = (saDevice.mode & SA_MODE_GET_PITMODE) ? 1 : 0;
+    return true;
+}
+
+static vtxVTable_t saVTable = {
+    .getDeviceType = vtxSAGetDeviceType,
+    .isReady = vtxSAIsReady,
+    .setBandChan = vtxSASetBandChan,
+    .setPowerByIndex = vtxSASetPowerByIndex,
+    .setPitmode = vtxSASetPitmode,
+    .getBandChan = vtxSAGetBandChan,
+    .getPowerIndex = vtxSAGetPowerIndex,
+    .getPitmode = vtxSAGetPitmode,
+};
+#endif // VTX_COMMON
 
 #ifdef CMS
 
@@ -994,32 +1114,11 @@ static CMS_Menu saCmsMenuStats = {
     .entries = saCmsMenuStatsEntries
 };
 
-static const char * const saCmsBandNames[] = {
-    "--------",
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
+static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, &saCmsBandNames[0], NULL };
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChanNames, NULL };
 
-static const char * const saCmsChanNames[] = {
-    "-", "1", "2", "3", "4", "5", "6", "7", "8",
-};
-
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &saCmsChanNames[0], NULL };
-
-static const char * const saCmsPowerNames[] = {
-    "---",
-    "25 ",
-    "200",
-    "500",
-    "800",
-};
-
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saCmsPowerNames};
+static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saPowerNames};
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 
