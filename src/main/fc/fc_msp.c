@@ -563,7 +563,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU8(dst, getCurrentProfileIndex());
         sbufWriteU16(dst, averageSystemLoadPercent);
         sbufWriteU16(dst, armingFlags);
         break;
@@ -577,7 +577,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU8(dst, getCurrentProfileIndex());
         break;
 
     case MSP_RAW_IMU:
@@ -1251,10 +1251,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = sbufReadU8(src);
-            if (masterConfig.current_profile_index > 2) {
-                masterConfig.current_profile_index = 0;
-            }
+            const uint8_t profileIndex = sbufReadU8(src);
+            setProfile(profileIndex);
             writeEEPROM();
             readEEPROM();
         }

@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "config/parameter_group.h"
+
 #define MAX_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
 #define MAX_NAME_LENGTH 16
@@ -72,6 +74,12 @@ typedef enum {
     FEATURE_OSD = 1 << 29,
 } features_e;
 
+typedef struct profileSelection_s {
+    uint8_t current_profile_index;
+} profileSelection_t;
+
+PG_DECLARE(profileSelection_t, profileSelection);
+
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);
 void beeperOffClear(uint32_t mask);
@@ -92,7 +100,7 @@ void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
 
-uint8_t getCurrentProfile(void);
+uint8_t getCurrentProfileIndex(void);
 void setProfile(uint8_t profileIndex);
 void changeProfile(uint8_t profileIndex);
 

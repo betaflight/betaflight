@@ -1009,7 +1009,7 @@ static void* getValuePointer(const clivalue_t *var)
     case MASTER_VALUE:
         return rec->address + var->offset;
     case PROFILE_RATE_VALUE:
-        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfile();
+        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfileIndex();
     case CONTROL_RATE_VALUE:
         return rec->address + var->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
     case PROFILE_VALUE:
@@ -1023,11 +1023,11 @@ void *getValuePointer(const clivalue_t *value)
     void *ptr = value->ptr;
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * masterConfig.current_profile_index);
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfileIndex());
     }
 
     if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfile());
+        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfileIndex());
     }
 
     if ((value->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
@@ -3035,12 +3035,12 @@ static void cliProfile(char *cmdline)
     int i;
 
     if (isEmpty(cmdline)) {
-        cliPrintf("profile %d\r\n", getCurrentProfile());
+        cliPrintf("profile %d\r\n", getCurrentProfileIndex());
         return;
     } else {
         i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            masterConfig.current_profile_index = i;
+            setProfile(i);
             writeEEPROM();
             readEEPROM();
             cliProfile("");
@@ -3095,7 +3095,7 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("Saving");
-    //copyCurrentProfileToProfileSlot(masterConfig.current_profile_index);
+    //copyCurrentProfileToProfileSlot(getCurrentProfileIndex();
     writeEEPROM();
     cliReboot();
 }
@@ -3475,7 +3475,7 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
 
         if (dumpMask & DUMP_ALL) {
-            uint8_t activeProfile = masterConfig.current_profile_index;
+            const uint8_t activeProfile = getCurrentProfileIndex();
             for (uint32_t profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
                 cliDumpProfile(profileCount, dumpMask, &defaultConfig);
             }
@@ -3493,13 +3493,13 @@ static void printConfig(char *cmdline, bool doDiff)
             cliRateProfile("");
             cliPrintHashLine("save configuration\r\nsave");
         } else {
-            cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
+            cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
             cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(masterConfig.current_profile_index, dumpMask, &defaultConfig);
+        cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
     }
 
     if (dumpMask & DUMP_RATES) {

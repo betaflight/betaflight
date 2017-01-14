@@ -89,6 +89,8 @@
 master_t masterConfig;                 // master config struct with data independent from profiles
 const profile_t *currentProfile;
 
+PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
+
 #ifdef NAV
 void resetNavConfig(navConfig_t * navConfig)
 {
@@ -277,9 +279,6 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
-    // profile
-    config->current_profile_index = 0;
-
     config->debug_mode = DEBUG_NONE;
 
 #ifdef TELEMETRY
@@ -441,8 +440,8 @@ void resetConfigs(void)
 
     createDefaultConfig(&masterConfig);
 
-    setProfile(masterConfig.current_profile_index);
-    setControlRateProfile(masterConfig.current_profile_index);
+    setProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
@@ -725,9 +724,9 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-    setProfile(masterConfig.current_profile_index);
-    setControlRateProfile(masterConfig.current_profile_index);
-    pgActivateProfile(masterConfig.current_profile_index);
+    setProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
+    pgActivateProfile(getCurrentProfileIndex());
 
     validateAndFixConfig();
     activateConfig();
@@ -765,9 +764,9 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-uint8_t getCurrentProfile(void)
+uint8_t getCurrentProfileIndex(void)
 {
-    return masterConfig.current_profile_index;
+    return profileSelection()->current_profile_index;
 }
 
 void setProfile(uint8_t profileIndex)
@@ -775,8 +774,8 @@ void setProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
-    masterConfig.current_profile_index = profileIndex;
-    currentProfile = &masterConfig.profile[masterConfig.current_profile_index];
+    profileSelectionMutable()->current_profile_index = profileIndex;
+    currentProfile = &masterConfig.profile[profileIndex];
 }
 
 void changeProfile(uint8_t profileIndex)
@@ -784,7 +783,7 @@ void changeProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {
         profileIndex = MAX_PROFILE_COUNT - 1;
     }
-    masterConfig.current_profile_index = profileIndex;
+    profileSelectionMutable()->current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
