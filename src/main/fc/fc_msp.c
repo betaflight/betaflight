@@ -1157,7 +1157,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, 0);    // rangefinder hardware
+#ifdef SONAR
+        sbufWriteU8(dst, rangefinderConfig()->rangefinder_hardware);
+#else
+        sbufWriteU8(dst, 0);
+#endif
         sbufWriteU8(dst, 0);    // optical flow hardware
         break;
 
