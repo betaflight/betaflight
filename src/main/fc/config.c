@@ -48,6 +48,7 @@
 #include "sensors/acceleration.h"
 #include "sensors/battery.h"
 #include "sensors/boardalignment.h"
+#include "sensors/rangefinder.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
