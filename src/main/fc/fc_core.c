@@ -253,21 +253,23 @@ void processRcCommand(void)
         }
 
         // Interpolate steps of rcCommand
-        for (int channel=ROLL; channel < interpolationChannels; channel++) {
-            if (factor > 0) {
+        int channel;
+        if (factor > 0) {
+            for (channel=ROLL; channel < interpolationChannels; channel++)
                 rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
-                readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
-            } else {
-                factor = 0;
-            }
+        } else {
+            factor = 0;
         }
+        readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
         readyToCalculateRate = true;
     } else {
         factor = 0; // reset factor in case of level modes flip flopping
-        readyToCalculateRateAxisCnt = FD_YAW;
     }
 
     if (readyToCalculateRate || isRXDataNew) {
+        if (isRXDataNew)
+            readyToCalculateRateAxisCnt = FD_YAW;
+
         // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
         if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
             scaleRcCommandToFpvCamAngle();
