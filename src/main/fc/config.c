@@ -545,7 +545,7 @@ void validateAndFixConfig(void)
 {
     // FIXME: Completely disable sonar
 #if defined(SONAR)
-    featureClear(FEATURE_SONAR);
+    rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
 #endif
 
 #ifdef USE_GYRO_NOTCH_1
@@ -684,13 +684,13 @@ void validateAndFixConfig(void)
 #endif
 
 #if defined(NAZE) && defined(SONAR)
-    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && featureConfigured(FEATURE_SONAR) && featureConfigured(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
+    if (featureConfigured(FEATURE_RX_PARALLEL_PWM) && (rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && featureConfigured(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
 #endif
 
 #if defined(OLIMEXINO) && defined(SONAR)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
+    if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_CURRENT_METER) && batteryConfig()->currentMeterType == CURRENT_SENSOR_ADC) {
         featureClear(FEATURE_CURRENT_METER);
     }
 #endif
@@ -703,20 +703,20 @@ void validateAndFixConfig(void)
 
 #if defined(CC3D)
 #if defined(CC3D_PPM1)
-#if defined(SONAR) && defined(USE_SOFTSERIAL1)
-    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
-        featureClear(FEATURE_SONAR);
-    }
-#endif
+    #if defined(SONAR) && defined(USE_SOFTSERIAL1)
+        if ((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) && feature(FEATURE_SOFTSERIAL)) {
+            rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+        }
+    #endif
 #else
-#if defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
-    // shared pin
-    if ((featureConfigured(FEATURE_SONAR) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
-       featureClear(FEATURE_SONAR);
-       featureClear(FEATURE_SOFTSERIAL);
-       featureClear(FEATURE_RSSI_ADC);
-    }
-#endif
+    #if defined(SONAR) && defined(USE_SOFTSERIAL1) && defined(RSSI_ADC_GPIO)
+        // shared pin
+        if (((rangefinderConfig()->rangefinder_hardware == RANGEFINDER_HCSR04) + featureConfigured(FEATURE_SOFTSERIAL) + featureConfigured(FEATURE_RSSI_ADC)) > 1) {
+           rangefinderConfigMutable()->rangefinder_hardware = RANGEFINDER_NONE;
+           featureClear(FEATURE_SOFTSERIAL);
+           featureClear(FEATURE_RSSI_ADC);
+        }
+    #endif
 #endif // CC3D_PPM1
 #endif // CC3D
 
