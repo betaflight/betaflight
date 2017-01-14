@@ -514,6 +514,7 @@ local function drawMenu()
 end
 
 local lastRunTS = 0
+local killEnterBreak = 0
 
 local function run(event)
 
@@ -541,8 +542,9 @@ local function run(event)
    end
 
    -- navigation
-   if event == EVT_SYS_FIRST then
+   if event == EVT_ENTER_LONG then
       menuActive = 1
+      killEnterBreak = 1
       gState = MENU_DISP
 
    -- menu is currently displayed
@@ -554,8 +556,12 @@ local function run(event)
       elseif event == EVT_MINUS_BREAK or event == EVT_ROT_RIGHT then
          incMenu(1)
       elseif event == EVT_ENTER_BREAK then
-         gState = PAGE_DISPLAY
-         menuList[menuActive].f()
+         if killEnterBreak == 1 then
+            killEnterBreak = 0
+         else
+            gState = PAGE_DISPLAY
+            menuList[menuActive].f()
+         end
       end
    -- normal page viewing
    elseif gState <= PAGE_DISPLAY then
