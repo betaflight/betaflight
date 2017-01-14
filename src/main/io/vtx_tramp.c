@@ -62,7 +62,6 @@ uint8_t trampCurBand = 0;
 uint8_t trampCurChan = 0;
 uint16_t trampCurPower = 0;       // Actual transmitting power
 uint16_t trampCurConfigPower = 0; // Configured transmitting power
-int16_t trampCurTemp = 0;
 uint8_t trampCurPitmode = 0;
 
 uint32_t trampConfFreq = 0;
@@ -204,10 +203,6 @@ void trampHandleResponse(void)
             if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
                 trampStatus = TRAMP_STATUS_SET_FREQ_PW;
         }
-        break;
-
-    case 's':
-        trampCurTemp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
         break;
     }
 
@@ -435,8 +430,6 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
-static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
-
 static const char * const trampCmsPitmodeNames[] = {
     "---", "OFF", "ON "
 };
@@ -523,7 +516,6 @@ static OSD_Entry trampMenuEntries[] =
     { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
-    { "TEMP",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
 
     { "BACK",   OME_Back, NULL, NULL, 0 },
