@@ -51,6 +51,7 @@ typedef struct vtxDevice_s {
 // {set,get}Pitmode: 0 = OFF, 1 = ON
 
 typedef struct vtxVTable_s {
+    void (*process)(uint32_t currentTimeUs);
     vtxDevType_e (*getDeviceType)(void);
     bool (*isReady)(void);
 
@@ -71,6 +72,8 @@ typedef struct vtxVTable_s {
 void vtxCommonInit(void);
 void vtxCommonRegisterDevice(vtxDevice_t *pDevice);
 
+// VTable functions
+void vtxCommonProcess(uint32_t currentTimeUs);
 uint8_t vtxCommonGetDeviceType(void);
 void vtxCommonSetBandChan(uint8_t band, uint8_t chan);
 void vtxCommonSetPowerByIndex(uint8_t level);
@@ -79,4 +82,5 @@ bool vtxCommonGetBandChan(uint8_t *pBand, uint8_t *pChan);
 bool vtxCommonGetPowerIndex(uint8_t *pIndex);
 bool vtxCommonGetPitmode(uint8_t *pOnoff);
 
+// Utilities
 bool vtx58_Freq2Bandchan(vtxDevice_t *pVtxDev, uint16_t freq, uint8_t *pBand, uint8_t *pChan);

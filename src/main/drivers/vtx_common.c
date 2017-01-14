@@ -43,6 +43,15 @@ void vtxCommonRegisterDevice(vtxDevice_t *pDevice)
     vtxDevice = pDevice;
 }
 
+void vtxCommonProcess(uint32_t currentTimeUs)
+{
+    if (!vtxDevice)
+        return;
+
+    if (vtxDevice->vTable->process)
+        vtxDevice->vTable->process(currentTimeUs);
+}
+
 vtxDevType_e vtxCommonGetDeviceType(void)
 {
     if (!vtxDevice)

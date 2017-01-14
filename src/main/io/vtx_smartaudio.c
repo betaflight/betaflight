@@ -703,7 +703,7 @@ bool smartAudioInit()
     return true;
 }
 
-void smartAudioProcess(uint32_t now)
+void vtxSAProcess(uint32_t now)
 {
     static bool initialSent = false;
 
@@ -825,6 +825,7 @@ bool vtxSAGetPitmode(uint8_t *pOnoff)
 }
 
 static vtxVTable_t saVTable = {
+    .process = vtxSAProcess,
     .getDeviceType = vtxSAGetDeviceType,
     .isReady = vtxSAIsReady,
     .setBandChan = vtxSASetBandChan,
