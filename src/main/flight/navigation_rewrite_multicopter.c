@@ -67,7 +67,7 @@ static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
         }
         else {
             // TODO: We are possible above valid range, we now descend down to attempt to get back within range
-            //updateAltitudeTargetFromClimbRate(-0.10f * posControl.navConfig->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
+            //updateAltitudeTargetFromClimbRate(-0.10f * navConfig()->emerg_descent_rate, CLIMB_RATE_KEEP_SURFACE_TARGET);
             updateAltitudeTargetFromClimbRate(-20.0f, CLIMB_RATE_KEEP_SURFACE_TARGET);
         }
     }
@@ -84,7 +84,7 @@ static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
 
     // hard limit desired target velocity to max_climb_rate
-    targetVel = constrainf(targetVel, -posControl.navConfig->general.max_climb_rate, posControl.navConfig->general.max_climb_rate);
+    targetVel = constrainf(targetVel, -navConfig()->general.max_climb_rate, navConfig()->general.max_climb_rate);
 
     // limit max vertical acceleration to 1/5G (~200 cm/s/s) if we are increasing velocity.
     // if we are decelerating - don't limit (allow better recovery from falling)
@@ -104,8 +104,8 @@ static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
 static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 {
     // Calculate min and max throttle boundaries (to compensate for integral windup)
-    const int16_t thrAdjustmentMin = (int16_t)posControl.motorConfig->minthrottle - (int16_t)posControl.navConfig->mc.hover_throttle;
-    const int16_t thrAdjustmentMax = (int16_t)posControl.motorConfig->maxthrottle - (int16_t)posControl.navConfig->mc.hover_throttle;
+    const int16_t thrAdjustmentMin = (int16_t)posControl.motorConfig->minthrottle - (int16_t)navConfig()->mc.hover_throttle;
+    const int16_t thrAdjustmentMax = (int16_t)posControl.motorConfig->maxthrottle - (int16_t)navConfig()->mc.hover_throttle;
 
     posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
 
@@ -123,11 +123,11 @@ bool adjustMulticopterAltitudeFromRCInput(void)
         // Make sure we can satisfy max_manual_climb_rate in both up and down directions
         if (rcThrottleAdjustment > 0) {
             // Scaling from altHoldThrottleRCZero to maxthrottle
-            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (posControl.motorConfig->maxthrottle - altHoldThrottleRCZero);
+            rcClimbRate = rcThrottleAdjustment * navConfig()->general.max_manual_climb_rate / (posControl.motorConfig->maxthrottle - altHoldThrottleRCZero);
         }
         else {
             // Scaling from minthrottle to altHoldThrottleRCZero
-            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (altHoldThrottleRCZero - posControl.motorConfig->minthrottle);
+            rcClimbRate = rcThrottleAdjustment * navConfig()->general.max_manual_climb_rate / (altHoldThrottleRCZero - posControl.motorConfig->minthrottle);
         }
 
         updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
@@ -148,7 +148,7 @@ void setupMulticopterAltitudeController(void)
 {
     const throttleStatus_e throttleStatus = calculateThrottleStatus(posControl.flight3DConfig->deadband3d_throttle);
 
-    if (posControl.navConfig->general.flags.use_thr_mid_for_althold) {
+    if (navConfig()->general.flags.use_thr_mid_for_althold) {
         altHoldThrottleRCZero = rcLookupThrottleMid();
     }
     else {
@@ -224,7 +224,7 @@ static void applyMulticopterAltitudeController(timeUs_t currentTimeUs)
     }
 
     // Update throttle controller
-    rcCommand[THROTTLE] = constrain((int16_t)posControl.navConfig->mc.hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.motorConfig->minthrottle, posControl.motorConfig->maxthrottle);
+    rcCommand[THROTTLE] = constrain((int16_t)navConfig()->mc.hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.motorConfig->minthrottle, posControl.motorConfig->maxthrottle);
 
     // Save processed throttle for future use
     rcCommandAdjustedThrottle = rcCommand[THROTTLE];
@@ -271,9 +271,9 @@ bool adjustMulticopterPositionFromRCInput(void)
 
     if (rcPitchAdjustment || rcRollAdjustment) {
         // If mode is GPS_CRUISE, move target position, otherwise POS controller will passthru the RC input to ANGLE PID
-        if (posControl.navConfig->general.flags.user_control_mode == NAV_GPS_CRUISE) {
-            const float rcVelX = rcPitchAdjustment * posControl.navConfig->general.max_manual_speed / 500;
-            const float rcVelY = rcRollAdjustment * posControl.navConfig->general.max_manual_speed / 500;
+        if (navConfig()->general.flags.user_control_mode == NAV_GPS_CRUISE) {
+            const float rcVelX = rcPitchAdjustment * navConfig()->general.max_manual_speed / 500;
+            const float rcVelY = rcRollAdjustment * navConfig()->general.max_manual_speed / 500;
 
             // Rotate these velocities from body frame to to earth frame
             const float neuVelX = rcVelX * posControl.actualState.cosYaw - rcVelY * posControl.actualState.sinYaw;
@@ -316,7 +316,7 @@ static float getVelocityExpoAttenuationFactor(float velTotal, float velMax)
     // Calculate factor of how velocity with applied expo is different from unchanged velocity
     const float velScale = constrainf(velTotal / velMax, 0.01f, 1.0f);
 
-    // posControl.navConfig->max_speed * ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velTotal;
+    // navConfig()->max_speed * ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velTotal;
     // ((velScale * velScale * velScale) * posControl.posResponseExpo + velScale * (1 - posControl.posResponseExpo)) / velScale
     // ((velScale * velScale) * posControl.posResponseExpo + (1 - posControl.posResponseExpo));
     return 1.0f - posControl.posResponseExpo * (1.0f - (velScale * velScale));  // x^3 expo factor
@@ -405,7 +405,7 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     const float desiredPitch = atan2_approx(accelForward, GRAVITY_CMSS);
     const float desiredRoll = atan2_approx(accelRight * cos_approx(desiredPitch), GRAVITY_CMSS);
 
-    const int16_t maxBankAngle = DEGREES_TO_DECIDEGREES(posControl.navConfig->mc.max_bank_angle);
+    const int16_t maxBankAngle = DEGREES_TO_DECIDEGREES(navConfig()->mc.max_bank_angle);
     posControl.rcAdjustment[ROLL] = constrain(RADIANS_TO_DECIDEGREES(desiredRoll), -maxBankAngle, maxBankAngle);
     posControl.rcAdjustment[PITCH] = constrain(RADIANS_TO_DECIDEGREES(desiredPitch), -maxBankAngle, maxBankAngle);
 }
@@ -420,7 +420,7 @@ static void applyMulticopterPositionController(timeUs_t currentTimeUs)
     bool bypassPositionController;
 
     // We should passthrough rcCommand is adjusting position in GPS_ATTI mode
-    bypassPositionController = (posControl.navConfig->general.flags.user_control_mode == NAV_GPS_ATTI) && posControl.flags.isAdjustingPosition;
+    bypassPositionController = (navConfig()->general.flags.user_control_mode == NAV_GPS_ATTI) && posControl.flags.isAdjustingPosition;
 
     // If last call to controller was too long in the past - ignore it (likely restarting position controller)
     if (deltaMicros > HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
@@ -529,7 +529,7 @@ bool isMulticopterLandingDetected(void)
         return false;
     }
     else {
-        return ((currentTimeUs - landingTimer) > (posControl.navConfig->mc.auto_disarm_delay * 1000)) ? true : false;
+        return ((currentTimeUs - landingTimer) > (navConfig()->mc.auto_disarm_delay * 1000)) ? true : false;
     }
 }
 
@@ -565,7 +565,7 @@ static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
 
             // Check if last correction was too log ago - ignore this update
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
-                updateAltitudeTargetFromClimbRate(-1.0f * posControl.navConfig->general.emerg_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
+                updateAltitudeTargetFromClimbRate(-1.0f * navConfig()->general.emerg_descent_rate, CLIMB_RATE_RESET_SURFACE_TARGET);
                 updateAltitudeVelocityController_MC(deltaMicrosPositionUpdate);
                 updateAltitudeThrottleController_MC(deltaMicrosPositionUpdate);
             }
@@ -579,7 +579,7 @@ static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
         }
 
         // Update throttle controller
-        rcCommand[THROTTLE] = constrain((int16_t)posControl.navConfig->mc.hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.motorConfig->minthrottle, posControl.motorConfig->maxthrottle);
+        rcCommand[THROTTLE] = constrain((int16_t)navConfig()->mc.hover_throttle + posControl.rcAdjustment[THROTTLE], posControl.motorConfig->minthrottle, posControl.motorConfig->maxthrottle);
     }
     else {
         /* Sensors has gone haywire, attempt to land regardless */

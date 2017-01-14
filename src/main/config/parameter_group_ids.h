@@ -78,6 +78,8 @@
 
 // iNav specific parameter group ids start at 1000
 #define PG_PITOTMETER_CONFIG 1000
+#define PG_POSITION_ESTIMATION_CONFIG 1001
+#define PG_NAV_CONFIG 1002
 
 // OSD configuration (subject to change)
 //#define PG_OSD_FONT_CONFIG 2047

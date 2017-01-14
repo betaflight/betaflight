@@ -528,7 +528,6 @@ void init(void)
 
 #ifdef NAV
     navigationInit(
-        &masterConfig.navConfig,
         &currentProfile->pidProfile,
         rcControlsConfig(),
         rxConfig(),
