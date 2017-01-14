@@ -70,7 +70,7 @@
 #define PG_SERVO_CONFIG 52
 //#define PG_IBUS_TELEMETRY_CONFIG 53
 //#define PG_VTX_CONFIG 54
-
+#define PG_RANGEFINDER_CONFIG 55
 
 // Driver configuration
 //#define PG_DRIVER_PWM_RX_CONFIG 100

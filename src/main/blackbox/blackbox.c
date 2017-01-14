@@ -518,7 +518,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
 
         case FLIGHT_LOG_FIELD_CONDITION_SONAR:
 #ifdef SONAR
-            return feature(FEATURE_SONAR);
+            return sensors(SENSOR_SONAR);
 #else
             return false;
 #endif

@@ -73,8 +73,7 @@ bool sensorsAutodetect(void)
 #endif
 
 #ifdef SONAR
-    const rangefinderType_e rangefinderType = rangefinderDetect();
-    rangefinderInit(rangefinderType);
+    rangefinderInit();
 #endif
 
     if (accelerometerConfig()->acc_hardware == ACC_AUTODETECT) {
