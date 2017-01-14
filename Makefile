@@ -81,7 +81,9 @@ include $(ROOT)/make/system-id.mk
 -include $(ROOT)/make/local.mk
 
 # configure some directories that are relative to wherever ROOT_DIR is located
+ifndef TOOLS_DIR
 TOOLS_DIR := $(ROOT)/tools
+endif
 BUILD_DIR := $(ROOT)/build
 DL_DIR    := $(ROOT)/downloads
 
@@ -94,7 +96,7 @@ include $(ROOT)/make/$(OSFAMILY).mk
 include $(ROOT)/make/tools.mk
 
 # default xtal value for F4 targets
-HSE_VALUE       = 8000000
+HSE_VALUE       ?= 8000000
 
 # used for turning on features like VCP and SDCARD
 FEATURES        =
