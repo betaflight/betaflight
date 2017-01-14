@@ -116,14 +116,14 @@ bool vtxCommonGetPitmode(uint8_t *pOnoff)
 
 // Utilities
 
-bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChan)
+bool vtx58_Freq2Bandchan(vtxDevice_t *pVtxDev, uint16_t freq, uint8_t *pBand, uint8_t *pChan)
 {
     uint8_t band;
     uint8_t chan;
 
-    for (band = 0 ; band < 5 ; band++) {
-        for (chan = 0 ; chan < 8 ; chan++) {
-            if (vtx58FreqTable[band][chan] == freq) {
+    for (band = 0 ; band < pVtxDev->numBand ; band++) {
+        for (chan = 0 ; chan < pVtxDev->numChan ; chan++) {
+            if (pVtxDev->freqTable[band * pVtxDev->numChan + chan] == freq) {
                 *pBand = band + 1;
                 *pChan = chan + 1;
                 return true;
