@@ -524,6 +524,8 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
+#ifdef VTX_CONTROL
+
 #ifdef VTX_SMARTAUDIO
     smartAudioInit();
 #endif
@@ -531,6 +533,8 @@ void init(void)
 #ifdef VTX_TRAMP
     trampInit();
 #endif
+
+#endif // VTX_CONTROL
 
     // start all timers
     // TODO - not implemented yet

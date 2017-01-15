@@ -97,12 +97,14 @@ static OSD_Entry menuFeaturesEntries[] =
 #if defined(VTX) || defined(USE_RTC6705)
     {"VTX", OME_Submenu, cmsMenuChange, &cmsx_menuVtx, 0},
 #endif // VTX || USE_RTC6705
+#if defined(VTX_CONTROL)
 #if defined(VTX_SMARTAUDIO)
     {"VTX SA", OME_Submenu, cmsMenuChange, &cmsx_menuVtxSmartAudio, 0},
 #endif
 #if defined(VTX_TRAMP)
     {"VTX TR", OME_Submenu, cmsMenuChange, &cmsx_menuVtxTramp, 0},
 #endif
+#endif // VTX_CONTROL
 #ifdef LED_STRIP
     {"LED STRIP", OME_Submenu, cmsMenuChange, &cmsx_menuLedstrip, 0},
 #endif // LED_STRIP
