@@ -527,14 +527,7 @@ void init(void)
 #endif
 
 #ifdef NAV
-    navigationInit(
-        &masterConfig.navConfig,
-        &currentProfile->pidProfile,
-        rcControlsConfig(),
-        rxConfig(),
-        flight3DConfig(),
-        motorConfig()
-    );
+    navigationInit();
 #endif
 
 #ifdef LED_STRIP

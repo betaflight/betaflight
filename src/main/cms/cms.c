@@ -58,6 +58,8 @@
 #include "config/config_master.h"
 #include "config/feature.h"
 
+#include "rx/rx.h"
+
 // For VISIBLE* (Actually, included by config_master.h)
 #include "io/osd.h"
 

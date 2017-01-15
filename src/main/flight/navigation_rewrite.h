@@ -18,16 +18,10 @@
 #pragma once
 
 #include "common/maths.h"
-#include "common/filter.h"
 
-#include "fc/rc_controls.h"
-#include "io/gps.h"
-
-#include "flight/pid.h"
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
 
-#include "rx/rx.h"
+#include "io/gps.h"
 
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;
@@ -65,35 +59,36 @@ enum {
     NAV_HEADING_CONTROL_MANUAL
 };
 
+typedef struct positionEstimationConfig_s {
+    uint8_t automatic_mag_declination;
+    uint8_t gps_min_sats;
+    uint8_t accz_unarmed_cal;
+    uint8_t use_gps_velned;
+    uint16_t gps_delay_ms;
+
+    float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
+
+    float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements
+    float w_z_sonar_v;  // Weight (cutoff frequency) for sonar velocity measurements
+
+    float w_z_gps_p;    // GPS altitude data is very noisy and should be used only on airplanes
+    float w_z_gps_v;    // Weight (cutoff frequency) for GPS climb rate measurements
+
+    float w_xy_gps_p;   // Weight (cutoff frequency) for GPS position measurements
+    float w_xy_gps_v;   // Weight (cutoff frequency) for GPS velocity measurements
+
+    float w_z_res_v;    // When velocity sources lost slowly decrease estimated velocity with this weight
+    float w_xy_res_v;
+
+    float w_acc_bias;   // Weight (cutoff frequency) for accelerometer bias estimation. 0 to disable.
+
+    float max_eph_epv;  // Max estimated position error acceptable for estimation (cm)
+    float baro_epv;     // Baro position error
+} positionEstimationConfig_t;
+
+PG_DECLARE(positionEstimationConfig_t, positionEstimationConfig);
+
 typedef struct navConfig_s {
-    struct {
-#if defined(NAV_AUTO_MAG_DECLINATION)
-        uint8_t automatic_mag_declination;
-#endif
-        uint8_t gps_min_sats;
-        uint8_t accz_unarmed_cal;
-        uint8_t use_gps_velned;
-        uint16_t gps_delay_ms;
-
-        float w_z_baro_p;   // Weight (cutoff frequency) for barometer altitude measurements
-
-        float w_z_sonar_p;  // Weight (cutoff frequency) for sonar altitude measurements
-        float w_z_sonar_v;  // Weight (cutoff frequency) for sonar velocity measurements
-
-        float w_z_gps_p;    // GPS altitude data is very noisy and should be used only on airplanes
-        float w_z_gps_v;    // Weight (cutoff frequency) for GPS climb rate measurements
-
-        float w_xy_gps_p;   // Weight (cutoff frequency) for GPS position measurements
-        float w_xy_gps_v;   // Weight (cutoff frequency) for GPS velocity measurements
-
-        float w_z_res_v;    // When velocity sources lost slowly decrease estimated velocity with this weight
-        float w_xy_res_v;
-
-        float w_acc_bias;   // Weight (cutoff frequency) for accelerometer bias estimation. 0 to disable.
-
-        float max_eph_epv;  // Max estimated position error acceptable for estimation (cm)
-        float baro_epv;     // Baro position error
-    } estimation;
 
     struct {
         struct {
@@ -146,6 +141,8 @@ typedef struct navConfig_s {
         uint8_t  launch_climb_angle;         // Target climb angle for launch (deg)
     } fw;
 } navConfig_t;
+
+PG_DECLARE(navConfig_t, navConfig);
 
 typedef struct gpsOrigin_s {
     bool    valid;
@@ -232,19 +229,8 @@ typedef struct {
     navWaypointActions_e    activeWpAction;
 } navSystemStatus_t;
 
-void navigationUsePIDs(const pidProfile_t *pidProfile);
-void navigationUseConfig(const navConfig_t *navConfigToUse);
-void navigationUseRcControlsConfig(const rcControlsConfig_t *initialRcControlsConfig);
-void navigationUseRxConfig(const rxConfig_t * initialRxConfig);
-struct motorConfig_s;
-void navigationUsemotorConfig(const struct motorConfig_s * initialmotorConfig);
-void navigationUseFlight3DConfig(const flight3DConfig_t * initialFlight3DConfig);
-void navigationInit(const navConfig_t *initialnavConfig,
-                    const pidProfile_t *initialPidProfile,
-                    const rcControlsConfig_t *initialRcControlsConfig,
-                    const rxConfig_t * initialRxConfig,
-                    const flight3DConfig_t * initialFlight3DConfig,
-                    const struct motorConfig_s * initialmotorConfig);
+void navigationUsePIDs(void);
+void navigationInit(void);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);

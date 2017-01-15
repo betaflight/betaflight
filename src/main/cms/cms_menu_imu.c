@@ -208,7 +208,7 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidVel, PIDVEL);
     pidProfileMutable()->P8[PIDMAG] = cmsx_pidMag[0];
 
-    navigationUsePIDs(pidProfile());
+    navigationUsePIDs();
 
     return 0;
 }
@@ -258,7 +258,7 @@ static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
     cmsx_WritebackPidFromArray(cmsx_pidPosR, PIDPOSR);
     cmsx_WritebackPidFromArray(cmsx_pidNavR, PIDNAVR);
 
-    navigationUsePIDs(pidProfile());
+    navigationUsePIDs();
 
     return 0;
 }

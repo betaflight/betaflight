@@ -27,6 +27,7 @@
 #include "build/debug.h"
 
 #include "common/axis.h"
+#include "common/filter.h"
 #include "common/maths.h"
 
 #include "sensors/sensors.h"

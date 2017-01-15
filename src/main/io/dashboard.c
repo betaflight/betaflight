@@ -54,6 +54,8 @@
 #include "io/gps.h"
 #endif
 
+#include "rx/rx.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 #include "sensors/compass.h"

@@ -66,6 +66,8 @@
 #include "flight/mixer.h"
 #include "flight/servos.h"
 
+#include "rx/rx.h"
+
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
 

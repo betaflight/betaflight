@@ -92,82 +92,6 @@ const profile_t *currentProfile;
 PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
 #ifdef NAV
-void resetNavConfig(navConfig_t * navConfig)
-{
-    // Navigation flags
-    navConfig->general.flags.use_thr_mid_for_althold = 0;
-    navConfig->general.flags.extra_arming_safety = 1;
-    navConfig->general.flags.user_control_mode = NAV_GPS_ATTI;
-    navConfig->general.flags.rth_alt_control_mode = NAV_RTH_AT_LEAST_ALT;
-    navConfig->general.flags.rth_climb_first = 1;                         // Climb first, turn after reaching safe altitude
-    navConfig->general.flags.rth_tail_first = 0;
-    navConfig->general.flags.disarm_on_landing = 0;
-
-    // Inertial position estimator parameters
-#if defined(NAV_AUTO_MAG_DECLINATION)
-    navConfig->estimation.automatic_mag_declination = 1;
-#endif
-    navConfig->estimation.gps_min_sats = 6;
-    navConfig->estimation.gps_delay_ms = 200;
-    navConfig->estimation.accz_unarmed_cal = 1;
-    navConfig->estimation.use_gps_velned = 1;         // "Disabled" is mandatory with gps_dyn_model = Pedestrian
-
-    navConfig->estimation.w_z_baro_p = 0.35f;
-
-    navConfig->estimation.w_z_gps_p = 0.2f;
-    navConfig->estimation.w_z_gps_v = 0.5f;
-
-    navConfig->estimation.w_xy_gps_p = 1.0f;
-    navConfig->estimation.w_xy_gps_v = 2.0f;
-
-    navConfig->estimation.w_z_res_v = 0.5f;
-    navConfig->estimation.w_xy_res_v = 0.5f;
-
-    navConfig->estimation.w_acc_bias = 0.01f;
-
-    navConfig->estimation.max_eph_epv = 1000.0f;
-    navConfig->estimation.baro_epv = 100.0f;
-
-    // General navigation parameters
-    navConfig->general.pos_failure_timeout = 5;     // 5 sec
-    navConfig->general.waypoint_radius = 100;       // 2m diameter
-    navConfig->general.max_speed = 300;             // 3 m/s = 10.8 km/h
-    navConfig->general.max_climb_rate = 500;        // 5 m/s
-    navConfig->general.max_manual_speed = 500;
-    navConfig->general.max_manual_climb_rate = 200;
-    navConfig->general.land_descent_rate = 200;     // 2 m/s
-    navConfig->general.land_slowdown_minalt = 500;  // 5 meters of altitude
-    navConfig->general.land_slowdown_maxalt = 2000; // 20 meters of altitude
-    navConfig->general.emerg_descent_rate = 500;    // 5 m/s
-    navConfig->general.min_rth_distance = 500;      // If closer than 5m - land immediately
-    navConfig->general.rth_altitude = 1000;         // 10m
-
-    // MC-specific
-    navConfig->mc.max_bank_angle = 30;      // 30 deg
-    navConfig->mc.hover_throttle = 1500;
-    navConfig->mc.auto_disarm_delay = 2000;
-
-    // Fixed wing
-    navConfig->fw.max_bank_angle = 20;      // 30 deg
-    navConfig->fw.max_climb_angle = 20;
-    navConfig->fw.max_dive_angle = 15;
-    navConfig->fw.cruise_throttle = 1400;
-    navConfig->fw.max_throttle = 1700;
-    navConfig->fw.min_throttle = 1200;
-    navConfig->fw.pitch_to_throttle = 10;   // pwm units per degree of pitch (10pwm units ~ 1% throttle)
-    navConfig->fw.roll_to_pitch = 75;       // percent of coupling
-    navConfig->fw.loiter_radius = 5000;     // 50m
-
-    // Fixed wing launch
-    navConfig->fw.launch_velocity_thresh = 300;         // 3 m/s
-    navConfig->fw.launch_accel_thresh = 1.9f * 981;     // cm/s/s (1.9*G)
-    navConfig->fw.launch_time_thresh = 40;              // 40ms
-    navConfig->fw.launch_throttle = 1700;
-    navConfig->fw.launch_motor_timer = 500;             // ms
-    navConfig->fw.launch_timeout = 5000;                // ms, timeout for launch procedure
-    navConfig->fw.launch_climb_angle = 10;              // 10 deg
-}
-
 void validateNavConfig(navConfig_t * navConfig)
 {
     // Make sure minAlt is not more than maxAlt, maxAlt cannot be set lower than 500.
@@ -289,10 +213,6 @@ void createDefaultConfig(master_t *config)
 
 #ifdef USE_SERVOS
     resetServoMixerConfig(&config->servoMixerConfig);
-#endif
-
-#ifdef NAV
-    resetNavConfig(&config->navConfig);
 #endif
 
     config->i2c_overclock = 0;
@@ -473,12 +393,7 @@ static void activateConfig(void)
     pidInit();
 
 #ifdef NAV
-    navigationUseConfig(&masterConfig.navConfig);
-    navigationUsePIDs(pidProfile());
-    navigationUseRcControlsConfig(rcControlsConfig());
-    navigationUseRxConfig(rxConfig());
-    navigationUseFlight3DConfig(flight3DConfig());
-    navigationUsemotorConfig(motorConfig());
+    navigationUsePIDs();
 #endif
 }
 

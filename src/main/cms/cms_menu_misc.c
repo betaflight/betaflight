@@ -44,6 +44,8 @@
 #include "cms/cms_types.h"
 #include "cms/cms_menu_ledstrip.h"
 
+#include "rx/rx.h"
+
 //
 // Misc
 //
