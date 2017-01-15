@@ -416,11 +416,25 @@ void stopPwmAllMotors()
 
 void mixTable(void)
 {
+    int16_t input[3];   // RPY, range [-500:+500]
     int i;
 
-    if (motorCount >= 4 && mixerConfig()->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
-        // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+    // Allow direct stick input to motors in passthrough mode on airplanes
+    if (STATE(FIXED_WING) && FLIGHT_MODE(PASSTHRU_MODE)) {
+        // Direct passthru from RX
+        input[ROLL] = rcCommand[ROLL];
+        input[PITCH] = rcCommand[PITCH];
+        input[YAW] = rcCommand[YAW];
+    }
+    else {
+        input[ROLL] = axisPID[ROLL];
+        input[PITCH] = axisPID[PITCH];
+        input[YAW] = axisPID[YAW];
+
+        if (motorCount >= 4 && mixerConfig()->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
+            // prevent "yaw jump" during yaw correction
+            input[YAW] = constrain(input[YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+        }
     }
 
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
@@ -431,9 +445,9 @@ void mixTable(void)
     // motors for non-servo mixes
     for (i = 0; i < motorCount; i++) {
         rpyMix[i] =
-            axisPID[PITCH] * currentMixer[i].pitch +
-            axisPID[ROLL] * currentMixer[i].roll +
-            -mixerConfig()->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+            input[PITCH] * currentMixer[i].pitch +
+            input[ROLL] * currentMixer[i].roll +
+            -mixerConfig()->yaw_motor_direction * input[YAW] * currentMixer[i].yaw;
 
         if (rpyMix[i] > rpyMixMax) rpyMixMax = rpyMix[i];
         if (rpyMix[i] < rpyMixMin) rpyMixMin = rpyMix[i];
