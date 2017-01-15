@@ -293,11 +293,20 @@ void trampProcess(uint32_t currentTimeUs)
 {
     static uint32_t lastQueryTimeUs = 0;
 
+#ifdef TRAMP_DEBUG
+    static uint16_t debugFreqReqCounter = 0;
+    static uint16_t debugPowReqCounter = 0;
+#endif
+
     if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
         return;
 
     char replyCode = trampReceive(currentTimeUs);
 
+#ifdef TRAMP_DEBUG
+    debug[0] = trampStatus;
+#endif
+    
     switch(replyCode) {
     case 'r':
         if (trampStatus <= TRAMP_STATUS_OFFLINE)
@@ -331,10 +340,16 @@ void trampProcess(uint32_t currentTimeUs)
             bool done = true;
             if (trampConfFreq != trampCurFreq) {
                 trampSendFreq(trampConfFreq);
+#ifdef TRAMP_DEBUG
+                debugFreqReqCounter++;
+#endif
                 done = false;
             }
             else if (trampConfPower != trampCurConfigPower) {
                 trampSendRFPower(trampConfPower);
+#ifdef TRAMP_DEBUG
+                debugPowReqCounter++;
+#endif
                 done = false;
             }
 
@@ -362,6 +377,12 @@ void trampProcess(uint32_t currentTimeUs)
         break;
     }
 
+#ifdef TRAMP_DEBUG
+    debug[1] = debugFreqReqCounter;
+    debug[2] = debugPowReqCounter;
+    debug[3] = 0;
+#endif
+    
 #ifdef CMS
     trampCmsUpdateStatusString();
 #endif
