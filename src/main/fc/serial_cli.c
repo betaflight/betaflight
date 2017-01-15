@@ -648,6 +648,7 @@ static const clivalue_t valueTable[] = {
 
     { "tpa_rate",                   VAR_UINT8  | CONTROL_RATE_VALUE, .config.minmax = { 0,  CONTROL_RATE_CONFIG_TPA_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, dynThrPID) },
     { "tpa_breakpoint",             VAR_UINT16 | CONTROL_RATE_VALUE, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX}, PG_CONTROL_RATE_PROFILES, offsetof(controlRateConfig_t, tpa_breakpoint) },
+
 // PG_SERIAL_CONFIG
     { "reboot_character",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 48,  126 }, PG_SERIAL_CONFIG, offsetof(serialConfig_t, reboot_character) },
 
@@ -1116,14 +1117,19 @@ static barometerConfig_t barometerConfigCopy;
 static pitotmeterConfig_t pitotmeterConfigCopy;
 #endif
 static rxConfig_t rxConfigCopy;
+#ifdef BLACKBOX
+static blackboxConfig_t blackboxConfigCopy;
+#endif
 static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
 static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
 static motorConfig_t motorConfigCopy;
+static failsafeConfig_t failsafeConfigCopy;
 static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
 static servoConfig_t servoConfigCopy;
 static gimbalConfig_t gimbalConfigCopy;
 #endif
+static batteryConfig_t batteryConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
 static mixerConfig_t mixerConfigCopy;
 static flight3DConfig_t flight3DConfigCopy;
@@ -1133,6 +1139,10 @@ static armingConfig_t armingConfigCopy;
 static rcControlsConfig_t rcControlsConfigCopy;
 #ifdef GPS
 static gpsConfig_t gpsConfigCopy;
+#endif
+#ifdef NAV
+static positionEstimationConfig_t positionEstimationConfigCopy;
+static navConfig_t navConfigCopy;
 #endif
 
 static void backupConfigs(void)
@@ -1156,12 +1166,17 @@ static void backupConfigs(void)
     for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
         rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
     }
+#ifdef BLACKBOX
+    blackboxConfigCopy = *blackboxConfig();
+#endif
     motorConfigCopy = *motorConfig();
+    failsafeConfigCopy = *failsafeConfig();
     boardAlignmentCopy = *boardAlignment();
 #ifdef USE_SERVOS
     servoConfigCopy = *servoConfig();
     gimbalConfigCopy = *gimbalConfig();
 #endif
+    batteryConfigCopy = *batteryConfig();
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
         customMotorMixerCopy[ii] = *customMotorMixer(ii);
     }
@@ -1173,6 +1188,10 @@ static void backupConfigs(void)
     armingConfigCopy = *armingConfig();
 #ifdef GPS
     gpsConfigCopy = *gpsConfig();
+#endif
+#ifdef NAV
+    positionEstimationConfigCopy = *positionEstimationConfig();
+    navConfigCopy = *navConfig();
 #endif
 }
 
@@ -1196,12 +1215,17 @@ static void restoreConfigs(void)
     for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
         *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
     }
+#ifdef BLACKBOX
+    *blackboxConfigMutable() = blackboxConfigCopy;
+#endif
     *motorConfigMutable() = motorConfigCopy;
+    *failsafeConfigMutable() = failsafeConfigCopy;
     *boardAlignmentMutable() = boardAlignmentCopy;
 #ifdef USE_SERVOS
     *servoConfigMutable() = servoConfigCopy;
     *gimbalConfigMutable() = gimbalConfigCopy;
 #endif
+    *batteryConfigMutable() = batteryConfigCopy;
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
         *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
     }
@@ -1213,6 +1237,10 @@ static void restoreConfigs(void)
     *armingConfigMutable() = armingConfigCopy;
 #ifdef GPS
     *gpsConfigMutable() = gpsConfigCopy;
+#endif
+#ifdef NAV
+    *positionEstimationConfigMutable() = positionEstimationConfigCopy;
+    *navConfigMutable() = navConfigCopy;
 #endif
 }
 
@@ -1255,7 +1283,11 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_PITOTMETER_CONFIG, &pitotmeterConfigCopy, pitotmeterConfig());
 #endif
         dumpPgValues(MASTER_VALUE, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
+#ifdef BLACKBOX
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_BLACKBOX_CONFIG, &blackboxConfigCopy, blackboxConfig());
+#endif
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_FAILSAFE_CONFIG, &failsafeConfigCopy, failsafeConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
@@ -1263,13 +1295,19 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
 #endif
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_BATTERY_CONFIG, &batteryConfigCopy, batteryConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_SERIAL_CONFIG, &serialConfigCopy, serialConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_IMU_CONFIG, &imuConfigCopy, imuConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_RC_CONTROLS_CONFIG, &rcControlsConfigCopy, rcControlsConfig());
         dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
 #ifdef GPS
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GPS_CONFIG, &gpsConfigCopy, gpsConfig());
+#endif
+#ifdef NAV
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_POSITION_ESTIMATION_CONFIG, &positionEstimationConfigCopy, positionEstimationConfig());
+        dumpPgValues(MASTER_VALUE, dumpMask, PG_NAV_CONFIG, &navConfigCopy, navConfig());
 #endif
         return;
     }
