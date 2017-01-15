@@ -21,6 +21,8 @@
 #define I2C2_OVERCLOCK false
 #define USE_I2C_PULLUP          // Enable built-in pullups on all boards in case external ones are too week
 
+#define USE_PARAMETER_GROUPS
+
 #define USE_SERVOS
 #define USE_CLI
 
@@ -44,7 +46,6 @@
 #define USE_FLM_TURN_ASSIST
 #define TELEMETRY_FRSKY
 #else
-#define USE_PARAMETER_GROUPS // !!TODO temporarily set while implementing parameter groups
 #define SKIP_TASK_STATISTICS
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_CLI_RESOURCES
