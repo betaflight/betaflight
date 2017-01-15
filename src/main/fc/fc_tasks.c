@@ -36,10 +36,11 @@
 #include "fc/config.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_tasks.h"
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
+#include "fc/cli.h"
+#include "fc/fc_dispatch.h"
 
 #include "flight/pid.h"
 #include "flight/altitudehold.h"
@@ -230,8 +231,11 @@ void fcTasksInit(void)
 
     setTaskEnabled(TASK_ATTITUDE, sensors(SENSOR_ACC));
     setTaskEnabled(TASK_SERIAL, true);
+    rescheduleTask(TASK_SERIAL, TASK_PERIOD_HZ(serialConfig()->serial_update_rate_hz));
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
     setTaskEnabled(TASK_RX, true);
+
+    setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 
 #ifdef BEEPER
     setTaskEnabled(TASK_BEEPER, true);
@@ -307,7 +311,7 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskName = "SYSTEM",
         .taskFunc = taskSystem,
         .desiredPeriod = TASK_PERIOD_HZ(10),        // 10Hz, every 100 ms
-        .staticPriority = TASK_PRIORITY_HIGH,
+        .staticPriority = TASK_PRIORITY_MEDIUM_HIGH,
     },
 
     [TASK_GYROPID] = {
@@ -345,6 +349,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .taskFunc = taskHandleSerial,
         .desiredPeriod = TASK_PERIOD_HZ(100),       // 100 Hz should be enough to flush up to 115 bytes @ 115200 baud
         .staticPriority = TASK_PRIORITY_LOW,
+    },
+
+    [TASK_DISPATCH] = {
+        .taskName = "DISPATCH",
+        .taskFunc = dispatchProcess,
+        .desiredPeriod = TASK_PERIOD_HZ(1000),
+        .staticPriority = TASK_PRIORITY_HIGH,
     },
 
     [TASK_BATTERY] = {

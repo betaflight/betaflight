@@ -36,15 +36,15 @@
 #include "serial_uart_impl.h"
 
 static void usartConfigurePinInversion(uartPort_t *uartPort) {
-#if !defined(INVERTER) && !defined(STM32F303xC)
+#if !defined(USE_INVERTER) && !defined(STM32F303xC)
     UNUSED(uartPort);
 #else
     bool inverted = uartPort->port.options & SERIAL_INVERTED;
 
-#ifdef INVERTER
-    if (inverted && uartPort->USARTx == INVERTER_USART) {
+#ifdef USE_INVERTER
+    if (inverted) {
         // Enable hardware inverter if available.
-        INVERTER_ON;
+        enableInverter(uartPort->USARTx, true);
     }
 #endif
 

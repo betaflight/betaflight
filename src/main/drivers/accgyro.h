@@ -26,10 +26,6 @@
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
 
-#if defined(USE_GYRO_SPI_MPU6500) ||  defined(USE_GYRO_SPI_MPU9250) || defined(USE_GYRO_SPI_ICM20689)
-#define GYRO_SUPPORTS_32KHZ
-#endif
-
 #define GYRO_LPF_256HZ      0
 #define GYRO_LPF_188HZ      1
 #define GYRO_LPF_98HZ       2

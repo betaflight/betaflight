@@ -341,9 +341,9 @@ STATIC_UNIT_TESTED void servoMixer(void)
         input[INPUT_STABILIZED_YAW] = rcCommand[YAW];
     } else {
         // Assisted modes (gyro only or gyro+acc according to AUX configuration in Gui
-        input[INPUT_STABILIZED_ROLL] = axisPIDf[ROLL];
-        input[INPUT_STABILIZED_PITCH] = axisPIDf[PITCH];
-        input[INPUT_STABILIZED_YAW] = axisPIDf[YAW];
+        input[INPUT_STABILIZED_ROLL] = axisPIDf[ROLL] * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_PITCH] = axisPIDf[PITCH] * PID_SERVO_MIXER_SCALING;
+        input[INPUT_STABILIZED_YAW] = axisPIDf[YAW] * PID_SERVO_MIXER_SCALING;
 
         // Reverse yaw servo when inverted in 3D mode
         if (feature(FEATURE_3D) && (rcData[THROTTLE] < rxConfig->midrc)) {

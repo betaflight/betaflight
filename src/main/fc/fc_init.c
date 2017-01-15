@@ -69,7 +69,7 @@
 #include "fc/fc_tasks.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
-#include "fc/serial_cli.h"
+#include "fc/cli.h"
 
 #include "msp/msp_serial.h"
 
@@ -308,8 +308,8 @@ void init(void)
     beeperInit(beeperConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef INVERTER
-    initInverter();
+#ifdef USE_INVERTER
+    initInverters();
 #endif
 
 #ifdef USE_BST
@@ -570,4 +570,3 @@ void init(void)
     fcTasksInit();
     systemState |= SYSTEM_STATE_READY;
 }
-

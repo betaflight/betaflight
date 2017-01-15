@@ -55,7 +55,8 @@ typedef enum {
     SERIALRX_XBUS_MODE_B_RJ01 = 6,
     SERIALRX_IBUS = 7,
     SERIALRX_JETIEXBUS = 8,
-    SERIALRX_CRSF = 9
+    SERIALRX_CRSF = 9,
+    SERIALRX_SRXL = 10,
 } SerialRXType;
 
 #define MAX_SUPPORTED_RC_PPM_CHANNEL_COUNT          12
@@ -125,6 +126,7 @@ typedef struct rxConfig_s {
     uint16_t mincheck;                      // minimum rc end
     uint16_t maxcheck;                      // maximum rc end
     uint8_t rcInterpolation;
+    uint8_t rcInterpolationChannels;
     uint8_t rcInterpolationInterval;
     uint8_t fpvCamAngleDegrees;             // Camera angle to be scaled into rc commands
     uint8_t max_aux_channel;

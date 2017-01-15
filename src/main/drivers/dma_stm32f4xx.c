@@ -124,3 +124,13 @@ dmaIdentifier_e dmaGetIdentifier(const DMA_Stream_TypeDef* stream)
     }
     return 0;
 }
+
+dmaChannelDescriptor_t* getDmaDescriptor(const DMA_Stream_TypeDef* stream)
+{
+    for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
+        if (dmaDescriptors[i].stream == stream) {
+            return &dmaDescriptors[i];
+        }
+    }
+    return NULL;
+}

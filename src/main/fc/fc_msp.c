@@ -49,7 +49,7 @@
 #include "drivers/serial_escserial.h"
 
 #include "fc/config.h"
-#include "fc/fc_main.h"
+#include "fc/fc_core.h"
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -614,7 +614,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -638,7 +638,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, getTaskDeltaTime(TASK_GYROPID));
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -1375,10 +1375,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MISC:
-        tmp = sbufReadU16(src);
-        if (tmp < 1600 && tmp > 1400)
-            rxConfig()->midrc = tmp;
-
+        rxConfig()->midrc = sbufReadU16(src);
         motorConfig()->minthrottle = sbufReadU16(src);
         motorConfig()->maxthrottle = sbufReadU16(src);
         motorConfig()->mincommand = sbufReadU16(src);

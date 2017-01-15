@@ -9,7 +9,7 @@ This fork differs from Baseflight and Cleanflight in that it focuses on flight p
 Betaflight has the following features:
 
 * Multi-color RGB LED strip support (each LED can be a different color using variable length WS2811 Addressable RGB strips - use for Orientation Indicators, Low Battery Warning, Flight Mode Status, Initialization Troubleshooting, etc)
-* DShot (600, 300 and 150), Multishot, and Oneshot (125 and 42) motor protocol support
+* DShot (150, 300, 600 and 1200), Multishot, and Oneshot (125 and 42) motor protocol support
 * Blackbox flight recorder logging (to onboard flash or external microSD card where equipped)
 * Support for targets that use the STM32 F7, F4, F3 and F1 processors
 * PWM, PPM, and Serial (SBus, SumH, SumD, Spektrum 1024/2048, XBus, etc) RX connection with failsafe detection
@@ -19,7 +19,8 @@ Betaflight has the following features:
 * OLED Displays - Display information on: Battery voltage/current/mAh, profile, rate profile, mode, version, sensors, etc
 * In-flight manual PID tuning and rate adjustment
 * Rate profiles and in-flight selection of them
-* Configurable serial ports for Serial RX, Telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
+* Configurable serial ports for Serial RX, Telemetry, ESC telemetry, MSP, GPS, OSD, Sonar, etc - Use most devices on any port, softserial included
+* VTX support for Unify Pro and IRC Tramp
 * and MUCH, MUCH more.
 
 ## Installation & Documentation

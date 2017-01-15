@@ -20,6 +20,7 @@
 #include "io/motors.h"
 #include "io/servos.h"
 #include "drivers/timer.h"
+#include "drivers/dma.h"
 
 typedef enum {
     PWM_TYPE_STANDARD = 0,
@@ -27,13 +28,29 @@ typedef enum {
     PWM_TYPE_ONESHOT42,
     PWM_TYPE_MULTISHOT,
     PWM_TYPE_BRUSHED,
-    PWM_TYPE_DSHOT600,
-    PWM_TYPE_DSHOT300,
+#ifdef USE_DSHOT
     PWM_TYPE_DSHOT150,
+    PWM_TYPE_DSHOT300,
+    PWM_TYPE_DSHOT600,
+    PWM_TYPE_DSHOT1200,
+#endif
     PWM_TYPE_MAX
 } motorPwmProtocolTypes_e;
 
 #define PWM_TIMER_MHZ         1
+
+#ifdef USE_DSHOT
+#define MAX_DMA_TIMERS        8
+
+#define MOTOR_DSHOT1200_MHZ   24
+#define MOTOR_DSHOT600_MHZ    12
+#define MOTOR_DSHOT300_MHZ    6
+#define MOTOR_DSHOT150_MHZ    3
+
+#define MOTOR_BIT_0           7
+#define MOTOR_BIT_1           14
+#define MOTOR_BITLENGTH       19
+#endif
 
 #if defined(STM32F40_41xxx) // must be multiples of timer clock
 #define ONESHOT125_TIMER_MHZ  12
@@ -70,6 +87,7 @@ typedef struct {
 #else
     uint8_t dmaBuffer[MOTOR_DMA_BUFFER_SIZE];
 #endif
+    dmaChannelDescriptor_t* dmaDescriptor;
 #if defined(STM32F7)
     TIM_HandleTypeDef TimHandle;
     DMA_HandleTypeDef hdma_tim;
@@ -98,6 +116,7 @@ void servoInit(const servoConfig_t *servoConfig);
 void pwmServoConfig(const struct timerHardware_s *timerHardware, uint8_t servoIndex, uint16_t servoPwmRate, uint16_t servoCenterPulse);
 
 #ifdef USE_DSHOT
+uint32_t getDshotHz(motorPwmProtocolTypes_e pwmProtocolType);
 void pwmWriteDigital(uint8_t index, uint16_t value);
 void pwmDigitalMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType);
 void pwmCompleteDigitalMotorUpdate(uint8_t motorCount);

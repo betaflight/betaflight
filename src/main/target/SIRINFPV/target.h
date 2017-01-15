@@ -95,6 +95,9 @@
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
 
+#define REMAP_TIM16_DMA
+#define REMAP_TIM17_DMA
+
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
 #define MAX7456_SPI_CS_PIN      PA15

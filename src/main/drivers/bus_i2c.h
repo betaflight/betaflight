@@ -33,7 +33,9 @@ typedef enum I2CDevice {
     I2CDEV_1   = 0,
     I2CDEV_2,
     I2CDEV_3,
+#ifdef USE_I2C4
     I2CDEV_4,
+#endif
     I2CDEV_COUNT
 } I2CDevice;
 

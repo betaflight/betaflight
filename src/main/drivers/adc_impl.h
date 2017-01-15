@@ -51,6 +51,10 @@ typedef struct adcDevice_s {
 #else
     DMA_Channel_TypeDef* DMAy_Channelx;
 #endif
+#if defined(STM32F7)
+    ADC_HandleTypeDef ADCHandle;
+    DMA_HandleTypeDef DmaHandle;
+#endif
 } adcDevice_t;
 
 extern const adcDevice_t adcHardware[];
