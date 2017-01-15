@@ -1526,7 +1526,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); //BF: pidProfileMutable()->deltaMethod
         sbufReadU8(src); //BF: pidProfileMutable()->vbatPidCompensation
         sbufReadU8(src); //BF: pidProfileMutable()->setpointRelaxRatio
-        pidProfileMutable()->dterm_setpoint_weight = constrainf(sbufReadU8(src) / 1.0f, 0.0f, 2.0f);
+        pidProfileMutable()->dterm_setpoint_weight = constrainf(sbufReadU8(src) / 100.0f, 0.0f, 2.0f);
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
         sbufReadU8(src); //BF: pidProfileMutable()->itermThrottleGain
