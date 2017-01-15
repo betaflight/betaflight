@@ -139,11 +139,121 @@ void trampSetPitmode(uint8_t onoff)
     trampCmdU16('I', onoff ? 0 : 1);
 }
 
-static uint8_t trampPendingQuery = 0; // XXX Assume no code/resp == 0
+// returns completed response code
+char trampHandleResponse(void)
+{
+    uint8_t respCode = trampRespBuffer[1];
+
+    switch (respCode) {
+    case 'r':
+        {
+            uint16_t min_freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+            if(min_freq != 0) {
+                trampRFFreqMin = min_freq;
+                trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+                trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
+                return 'r';
+            }
+
+            // throw bytes echoed from tx to rx in bidirectional mode away
+        }
+        break;
+
+    case 'v':
+        {
+            uint16_t freq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
+            if(freq != 0) {
+                trampCurFreq = freq;
+                trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
+                trampCurPitmode = trampRespBuffer[7];
+                trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
+                vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
+                return 'v';
+            }
+
+            // throw bytes echoed from tx to rx in bidirectional mode away
+        }
+        break;
+    }
+
+    return 0;
+}
+
+typedef enum {
+    S_WAIT_LEN = 0,   // Waiting for a packet len
+    S_WAIT_CODE,      // Waiting for a response code
+    S_DATA,           // Waiting for rest of the packet.
+} trampReceiveState_e;
+
+static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
+static int trampReceivePos = 0;
+
+static void trampResetReceiver()
+{
+    trampReceiveState = S_WAIT_LEN;
+    trampReceivePos = 0;
+}
+
+static bool trampIsValidResponseCode(uint8_t code)
+{
+    if (code == 'r' || code == 'v' || code == 's')
+        return true;
+    else
+        return false;
+}
+
+// returns completed response code or 0
+static char trampReceive(uint32_t currentTimeUs)
+{
+    UNUSED(currentTimeUs);
+
+    if (!trampSerialPort)
+        return 0;
+
+    while (serialRxBytesWaiting(trampSerialPort)) {
+        uint8_t c = serialRead(trampSerialPort);
+        trampRespBuffer[trampReceivePos++] = c;
+
+        switch(trampReceiveState) {
+        case S_WAIT_LEN:
+            if (c == 0x0F) {
+                trampReceiveState = S_WAIT_CODE;
+            } else {
+                trampReceivePos = 0;
+            }
+            break;
+
+        case S_WAIT_CODE:
+            if (trampIsValidResponseCode(c)) {
+                trampReceiveState = S_DATA;
+            } else {
+                trampResetReceiver();
+            }
+            break;
+
+        case S_DATA:
+            if (trampReceivePos == 16) {
+                uint8_t cksum = trampChecksum(trampRespBuffer);
+
+                trampResetReceiver();
+
+                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0)) {
+                    return trampHandleResponse();
+                }
+            }
+            break;
+
+        default:
+            trampResetReceiver();
+        }
+    }
+
+    return 0;
+}
 
 void trampQuery(uint8_t cmd)
 {
-    trampPendingQuery = cmd;
+    trampResetReceiver();
     trampCmdU16(cmd, 0);
 }
 
@@ -179,163 +289,77 @@ bool trampInit()
     return true;
 }
 
-void trampHandleResponse(void)
-{
-    uint8_t respCode = trampRespBuffer[1];
-
-    switch (respCode) {
-    case 'r':
-        trampRFFreqMin = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-        trampRFFreqMax = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-        trampRFPowerMax = trampRespBuffer[6]|(trampRespBuffer[7] << 8);
-        trampStatus = TRAMP_STATUS_ONLINE;
-        break;
-
-    case 'v':
-        {
-            trampCurFreq = trampRespBuffer[2]|(trampRespBuffer[3] << 8);
-            trampCurConfigPower = trampRespBuffer[4]|(trampRespBuffer[5] << 8);
-            trampCurPower = trampRespBuffer[8]|(trampRespBuffer[9] << 8);
-            vtx58_Freq2Bandchan(trampCurFreq, &trampCurBand, &trampCurChan);
-            trampCurPitmode = trampRespBuffer[7];
-
-            if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
-                trampStatus = TRAMP_STATUS_SET_FREQ_PW;
-        }
-        break;
-    }
-
-    if (trampPendingQuery == respCode)
-        trampPendingQuery = 0;
-}
-
-static bool trampIsValidResponseCode(uint8_t code)
-{
-    if (code == 'r' || code == 'v' || code == 's')
-        return true;
-    else
-        return false;
-}
-
-typedef enum {
-    S_WAIT_LEN = 0,   // Waiting for a packet len
-    S_WAIT_CODE,      // Waiting for a response code
-    S_DATA,           // Waiting for rest of the packet.
-} trampReceiveState_e;
-
-static trampReceiveState_e trampReceiveState = S_WAIT_LEN;
-static int trampReceivePos = 0;
-
-void trampReceive(uint32_t currentTimeUs)
-{
-    UNUSED(currentTimeUs);
-
-    if (!trampSerialPort)
-        return;
-
-    while (serialRxBytesWaiting(trampSerialPort)) {
-        uint8_t c = serialRead(trampSerialPort);
-        trampRespBuffer[trampReceivePos++] = c;
-
-        switch(trampReceiveState) {
-        case S_WAIT_LEN:
-            if (c == 0x0F) {
-                trampReceiveState = S_WAIT_CODE;
-            } else {
-                trampReceivePos = 0;
-            }
-            break;
-
-        case S_WAIT_CODE:
-            if (trampIsValidResponseCode(c)) {
-                trampReceiveState = S_DATA;
-            } else {
-                trampReceiveState = S_WAIT_LEN;
-                trampReceivePos = 0;
-            }
-            break;
-
-        case S_DATA:
-            if (trampReceivePos == 16) {
-                uint8_t cksum = trampChecksum(trampRespBuffer);
-                if ((trampRespBuffer[14] == cksum) && (trampRespBuffer[15] == 0)) {
-                    trampHandleResponse();
-                }
-
-                trampReceiveState = S_WAIT_LEN;
-                trampReceivePos = 0;
-            }
-            break;
-
-        default:
-            trampReceiveState = S_WAIT_LEN;
-            trampReceivePos = 0;
-        }
-
-        // Debugging...
-        if (trampReceivePos >= 16) {
-            debug[0]++;
-        }
-    }
-}
-
 void trampProcess(uint32_t currentTimeUs)
 {
-    static uint32_t lastQueryRTimeUs = 0;
-    static uint32_t lastQueryVTimeUs = 0;
+    static uint32_t lastQueryTimeUs = 0;
 
     if (trampStatus == TRAMP_STATUS_BAD_DEVICE)
         return;
 
-    trampReceive(currentTimeUs);
+    char replyCode = trampReceive(currentTimeUs);
 
-    if (trampStatus == TRAMP_STATUS_OFFLINE) {
-        if (cmp32(currentTimeUs, lastQueryRTimeUs) > 1000 * 1000) { // 1s
-            trampQueryR();
-            lastQueryRTimeUs = currentTimeUs;
+    switch(replyCode) {
+    case 'r':
+        if (trampStatus <= TRAMP_STATUS_OFFLINE)
+            trampStatus = TRAMP_STATUS_ONLINE;
+        break;
+
+    case 'v':
+         if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW)
+             trampStatus = TRAMP_STATUS_SET_FREQ_PW;
+         break;
+    }
+
+    switch(trampStatus) {
+
+    case TRAMP_STATUS_OFFLINE:
+    case TRAMP_STATUS_ONLINE:
+
+        if (cmp32(currentTimeUs, lastQueryTimeUs) > 1000 * 1000) { // 1s
+
+            if (trampStatus == TRAMP_STATUS_OFFLINE)
+                trampQueryR();
+            else
+                trampQueryV();
+                
+            lastQueryTimeUs = currentTimeUs;
         }
-    } else {
-        if (trampStatus == TRAMP_STATUS_SET_FREQ_PW) {
+        break;
 
-            bool done = false;
+    case TRAMP_STATUS_SET_FREQ_PW:
+        {
+            bool done = true;
             if (trampConfFreq != trampCurFreq) {
                 trampSendFreq(trampConfFreq);
+                done = false;
             }
-            else if (trampConfPower != trampCurPower) {
+            else if (trampConfPower != trampCurConfigPower) {
                 trampSendRFPower(trampConfPower);
+                done = false;
             }
 
             if(!done) {
                 trampStatus = TRAMP_STATUS_CHECK_FREQ_PW;
 
-                // delay next status query by 200ms
-                lastQueryVTimeUs = currentTimeUs + 200 * 1000;
+                // delay next status query by 300ms
+                lastQueryTimeUs = currentTimeUs + 300 * 1000;
             }
             else {
                 // everything has been done, let's return to original state
                 trampStatus = TRAMP_STATUS_ONLINE;
             }
         }
-        else if (trampStatus == TRAMP_STATUS_CHECK_FREQ_PW) {
-            if (cmp32(currentTimeUs, lastQueryVTimeUs) > 50 * 1000) {
-                trampQueryV();
-                lastQueryVTimeUs = currentTimeUs;
-            }
-        }
-        else if (trampStatus == TRAMP_STATUS_ONLINE) {
-            
-            if (cmp32(currentTimeUs, lastQueryVTimeUs) > 1000 * 1000) {
-                trampQueryV();
-                lastQueryVTimeUs = currentTimeUs;
-            }
-        }
+        break;
 
-        /* if (trampReceiveState == S_WAIT_LEN) { */
-        /*     if (trampPendingQuery) */
-        /*         trampQuery(trampPendingQuery); */
-        /*     else */
-        /*         trampQueryV(); */
-        /* } */
+    case TRAMP_STATUS_CHECK_FREQ_PW:
+        if (cmp32(currentTimeUs, lastQueryTimeUs) > 200 * 1000) {
+            trampQueryV();
+            lastQueryTimeUs = currentTimeUs;
+        }
+        break;
+
+    default:
+        break;
     }
 
 #ifdef CMS
