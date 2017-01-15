@@ -17,14 +17,10 @@
 
 #pragma once
 
-#ifdef INVERTER
-void inverterSet(bool on);
-#define INVERTER_OFF inverterSet(false)
-#define INVERTER_ON inverterSet(true)
-#else
-#define INVERTER_OFF do {} while(0)
-#define INVERTER_ON do {} while(0)
+#if defined(INVERTER_PIN_USART1) || defined(INVERTER_PIN_USART2) || defined(INVERTER_PIN_USART3) || defined(INVERTER_PIN_USART4) || defined(INVERTER_PIN_USART5) || defined(INVERTER_PIN_USART6)
+#define USE_INVERTER
 #endif
 
-void initInverter(void);
+void initInverters(void);
 
+void enableInverter(USART_TypeDef *USARTx, bool on);
