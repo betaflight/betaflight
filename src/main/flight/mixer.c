@@ -224,7 +224,8 @@ static const motorMixer_t mixerHex6X[] = {
 };
 #endif
 
-static const motorMixer_t mixerSingleProp[] = {
+static const motorMixer_t mixerDualProp[] = {
+    { 1.0f,  0.0f,  0.0f, 0.0f },
     { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
@@ -245,16 +246,16 @@ const mixer_t mixers[] = {
         { 0, false, NULL, false },           // MIXER_Y6
         { 0, false, NULL, false },           // MIXER_HEX6
     #endif
-    { 1, true,  mixerSingleProp, true },     // MIXER_FLYING_WING
+    { 2, true,  mixerDualProp, true },       // MIXER_FLYING_WING
     #if !defined(DISABLE_UNCOMMON_MIXERS)
         { 4, false, mixerY4, true },         // MIXER_Y4
     #else
         { 0, false, NULL, false },           // MIXER_Y4
     #endif
     #if (MAX_SUPPORTED_MOTORS >= 6)
-        { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+        { 6, false, mixerHex6X, true },      // MIXER_HEX6X
     #else
-        { 0, false, NULL, false },          // MIXER_HEX6X
+        { 0, false, NULL, false },           // MIXER_HEX6X
     #endif
     #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
         { 8, false, mixerOctoX8, true },     // MIXER_OCTOX8
@@ -265,7 +266,7 @@ const mixer_t mixers[] = {
         { 0, false, NULL, false },           // MIXER_OCTOFLATP
         { 0, false, NULL, false },           // MIXER_OCTOFLATX
     #endif
-    { 1, true,  mixerSingleProp, true },     // * MIXER_AIRPLANE
+    { 2, true,  mixerDualProp, true },       // * MIXER_AIRPLANE
     { 0, true,  NULL, false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
     { 0, true,  NULL, false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
     #if !defined(DISABLE_UNCOMMON_MIXERS)
