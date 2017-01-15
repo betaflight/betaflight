@@ -25,6 +25,8 @@
 
 #include "common/utils.h"
 
+#include "config/config_master.h"
+
 #include "drivers/system.h"
 #include "drivers/serial.h"
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
@@ -350,14 +352,12 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_SOFTSERIAL1
         case SERIAL_PORT_SOFTSERIAL1:
-            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL1, rxCallback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_SOFTSERIAL2
         case SERIAL_PORT_SOFTSERIAL2:
-            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, options);
-            serialSetMode(serialPort, mode);
+            serialPort = openSoftSerial(SOFTSERIAL2, rxCallback, baudRate, mode, options);
             break;
 #endif
         default:
