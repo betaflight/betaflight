@@ -166,10 +166,10 @@ void trampQueryS(void)
 
 bool trampInit()
 {
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
 
     if (portConfig) {
-        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 9600, MODE_RXTX, TRAMP_SERIAL_OPTIONS);
+        trampSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_TRAMP, NULL, 9600, MODE_RXTX, TRAMP_SERIAL_OPTIONS);
     }
 
     if (!trampSerialPort) {

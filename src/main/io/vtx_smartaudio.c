@@ -652,9 +652,9 @@ bool smartAudioInit()
     }
 #endif
 
-    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_CONTROL);
+    serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_SMARTAUDIO);
     if (portConfig) {
-        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_CONTROL, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
+        smartAudioSerialPort = openSerialPort(portConfig->identifier, FUNCTION_VTX_SMARTAUDIO, NULL, 4800, MODE_RXTX, SERIAL_BIDIR|SERIAL_BIDIR_PP);
     }
 
     if (!smartAudioSerialPort) {
