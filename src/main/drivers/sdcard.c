@@ -83,7 +83,7 @@ typedef struct sdcard_t {
         uint32_t callbackData;
 
 #ifdef SDCARD_PROFILING
-        uint32_t profileStartTime;
+        timeUs_t profileStartTime;
 #endif
     } pendingOperation;
 

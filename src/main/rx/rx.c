@@ -76,7 +76,7 @@ static bool rxIsInFailsafeModeNotDataDriven = true;
 
 static timeUs_t rxUpdateAt = 0;
 static timeUs_t needRxSignalBefore = 0;
-static timeUs_t needRxSignalMaxDelayUs = 0;
+static timeDelta_t needRxSignalMaxDelayUs = 0;
 static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 

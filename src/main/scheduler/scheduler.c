@@ -38,7 +38,7 @@ static cfTask_t *currentTask = NULL;
 
 static uint32_t totalWaitingTasks;
 static uint32_t totalWaitingTasksSamples;
-static timeUs_t realtimeGuardInterval;
+static timeDelta_t realtimeGuardInterval;
 
 uint16_t averageSystemLoadPercent = 0;
 
@@ -136,10 +136,10 @@ void taskSystem(timeUs_t currentTimeUs)
     }
 
     // Calculate guard interval
-    timeUs_t maxNonRealtimeTaskTime = 0;
+    timeDelta_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
-            const timeUs_t taskAverageExecutionTime = task->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+            const timeDelta_t taskAverageExecutionTime = task->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
             maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, taskAverageExecutionTime);
         }
     }
@@ -195,7 +195,7 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
     }
 }
 
-timeUs_t getTaskDeltaTime(cfTaskId_e taskId)
+timeDelta_t getTaskDeltaTime(cfTaskId_e taskId)
 {
     if (taskId == TASK_SELF || taskId < TASK_COUNT) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
@@ -217,13 +217,13 @@ void scheduler(void)
     const timeUs_t currentTimeUs = micros();
 
     // Check for realtime tasks
-    timeUs_t timeToNextRealtimeTask = TIMEUS_MAX;
+    timeDelta_t timeToNextRealtimeTask = UINT32_MAX;
     for (const cfTask_t *task = queueFirst(); task != NULL && task->staticPriority >= TASK_PRIORITY_REALTIME; task = queueNext()) {
         const timeUs_t nextExecuteAt = task->lastExecutedAt + task->desiredPeriod;
-        if ((int32_t)(currentTimeUs - nextExecuteAt) >= 0) {
+        if ((timeDelta_t)(currentTimeUs - nextExecuteAt) >= 0) {
             timeToNextRealtimeTask = 0;
         } else {
-            const timeUs_t newTimeInterval = nextExecuteAt - currentTimeUs;
+            const timeDelta_t newTimeInterval = (timeDelta_t)(nextExecuteAt - currentTimeUs);
             timeToNextRealtimeTask = MIN(timeToNextRealtimeTask, newTimeInterval);
         }
     }
@@ -288,14 +288,14 @@ void scheduler(void)
 
     if (selectedTask != NULL) {
         // Found a task that should be run
-        selectedTask->taskLatestDeltaTime = currentTimeUs - selectedTask->lastExecutedAt;
+        selectedTask->taskLatestDeltaTime = (timeDelta_t)(currentTimeUs - selectedTask->lastExecutedAt);
         selectedTask->lastExecutedAt = currentTimeUs;
         selectedTask->dynamicPriority = 0;
 
         // Execute task
         const timeUs_t currentTimeBeforeTaskCall = micros();
         selectedTask->taskFunc(currentTimeBeforeTaskCall);
-        const timeUs_t taskExecutionTime = micros() - currentTimeBeforeTaskCall;
+        const timeDelta_t taskExecutionTime = (timeDelta_t)(micros() - currentTimeBeforeTaskCall);
 
         selectedTask->movingSumExecutionTime += taskExecutionTime - selectedTask->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
 

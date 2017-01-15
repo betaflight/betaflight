@@ -90,7 +90,7 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
-timeUs_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+timeDelta_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
 float dT;
 
@@ -528,7 +528,7 @@ void filterRc(bool isRXDataNew)
         filterInitialised = true;
     }
 
-    const timeUs_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
+    const timeDelta_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
     rcInterpolationFactor = rxGetRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
@@ -556,14 +556,14 @@ void filterRc(bool isRXDataNew)
 void taskGyro(timeUs_t currentTimeUs) {
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    const timeUs_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const timeDelta_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (gyroConfig()->gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || (((timeUs_t)currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || (((timeUs_t)currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }
@@ -575,7 +575,7 @@ void taskGyro(timeUs_t currentTimeUs) {
 
 #ifdef ASYNC_GYRO_PROCESSING
     /* Update IMU for better accuracy */
-    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTimeUs));
+    imuUpdateGyroscope((timeUs_t)currentDeltaTime + (micros() - currentTimeUs));
 #endif
 }
 
@@ -709,7 +709,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 }
 
-bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeUs_t currentDeltaTime)
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 

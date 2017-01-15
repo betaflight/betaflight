@@ -208,12 +208,13 @@ static void xBusUnpackRJ01Frame(void)
 // Receive ISR callback
 static void xBusDataReceive(uint16_t c)
 {
-    uint32_t now;
-    static uint32_t xBusTimeLast, xBusTimeInterval;
+    timeUs_t now;
+    static timeUs_t xBusTimeLast;
+    timeDelta_t xBusTimeInterval;
 
     // Check if we shall reset frame position due to time
     now = micros();
-    xBusTimeInterval = now - xBusTimeLast;
+    xBusTimeInterval = (timeDelta_t)(now - xBusTimeLast);
     xBusTimeLast = now;
     if (xBusTimeInterval > XBUS_MAX_FRAME_TIME) {
         xBusFramePosition = 0;

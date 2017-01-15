@@ -73,8 +73,9 @@ static IO_t BindPlug = DEFIO_IO(NONE);
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
-    uint32_t spekTime, spekTimeInterval;
-    static uint32_t spekTimeLast = 0;
+    timeUs_t spekTime;
+    timeDelta_t spekTimeInterval;
+    static timeUs_t spekTimeLast = 0;
     static uint8_t spekFramePosition = 0;
 
     spekTime = micros();

@@ -57,8 +57,9 @@ static serialPort_t *sumhPort;
 // Receive ISR callback
 static void sumhDataReceive(uint16_t c)
 {
-    uint32_t sumhTime;
-    static uint32_t sumhTimeLast, sumhTimeInterval;
+    timeUs_t sumhTime;
+    timeDelta_t sumhTimeInterval;
+    static timeUs_t sumhTimeLast;
     static uint8_t sumhFramePosition;
 
     sumhTime = micros();

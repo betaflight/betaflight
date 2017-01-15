@@ -110,7 +110,7 @@ uint8_t cliMode = 0;
 #define PLAY_SOUND
 #endif
 
-extern timeUs_t cycleTime; // FIXME dependency on mw.c
+extern timeDelta_t cycleTime; // FIXME dependency on mw.c
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 static serialPort_t *cliPort;

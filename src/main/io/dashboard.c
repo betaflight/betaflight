@@ -129,7 +129,7 @@ static const char* const gpsFixTypeText[] = {
 static const char* tickerCharacters = "|/-\\"; // use 2/4/8 characters so that the divide is optimal.
 #define TICKER_CHARACTER_COUNT (sizeof(tickerCharacters) / sizeof(char))
 
-static uint32_t nextPageAt;
+static timeUs_t nextPageAt;
 static bool forcePageChange;
 static pageId_e currentPageId;
 
@@ -486,13 +486,13 @@ void dashboardInit(void)
 #endif
 
     dashboardSetPage(PAGE_WELCOME);
-    const uint32_t now = micros();
+    const timeUs_t now = micros();
     dashboardSetNextPageChangeAt(now + 5 * MICROSECONDS_IN_A_SECOND);
 
     dashboardUpdate(now);
 }
 
-void dashboardSetNextPageChangeAt(uint32_t futureMicros)
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros)
 {
     nextPageAt = futureMicros;
 }

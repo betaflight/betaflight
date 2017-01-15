@@ -34,11 +34,11 @@ typedef struct {
     const char * taskName;
     bool         isEnabled;
     uint8_t      staticPriority;
-    timeUs_t     desiredPeriod;
-    timeUs_t     maxExecutionTime;
+    timeDelta_t  desiredPeriod;
+    timeDelta_t  maxExecutionTime;
     timeUs_t     totalExecutionTime;
-    timeUs_t     averageExecutionTime;
-    timeUs_t     latestDeltaTime;
+    timeDelta_t  averageExecutionTime;
+    timeDelta_t  latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -102,17 +102,17 @@ typedef enum {
 } cfTaskId_e;
 
 typedef struct {
-    timeUs_t     maxExecutionTime;
-    timeUs_t     totalExecutionTime;
-    timeUs_t     averageExecutionTime;
+    timeUs_t    totalExecutionTime;
+    timeDelta_t maxExecutionTime;
+    timeDelta_t averageExecutionTime;
 } cfCheckFuncInfo_t;
 
 typedef struct {
     /* Configuration */
     const char * taskName;
-    bool (*checkFunc)(timeUs_t currentTimeUs, timeUs_t currentDeltaTime);
+    bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeUs_t desiredPeriod;         // target period of execution
+    timeDelta_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
@@ -120,12 +120,12 @@ typedef struct {
     uint16_t taskAgeCycles;
     timeUs_t lastExecutedAt;        // last time of invocation
     timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
-    timeUs_t taskLatestDeltaTime;
+    timeDelta_t taskLatestDeltaTime;
 
     /* Statistics */
-    timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
+    timeDelta_t movingSumExecutionTime;  // moving sum over 32 samples
 #ifndef SKIP_TASK_STATISTICS
-    timeUs_t maxExecutionTime;
+    timeDelta_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
 #endif
 } cfTask_t;
@@ -138,7 +138,7 @@ void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
 void rescheduleTask(cfTaskId_e taskId, timeUs_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
-timeUs_t getTaskDeltaTime(cfTaskId_e taskId);
+timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
