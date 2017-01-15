@@ -110,4 +110,4 @@
 #else
 #define SKIP_CLI_COMMAND_HELP
 #endif
-
+#define USE_SOFTSERIAL1
