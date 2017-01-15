@@ -90,7 +90,7 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+timeUs_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
 float dT;
 
@@ -528,7 +528,7 @@ void filterRc(bool isRXDataNew)
         filterInitialised = true;
     }
 
-    const uint16_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
+    const timeUs_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
     rcInterpolationFactor = rxGetRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
@@ -709,7 +709,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 }
 
-bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeUs_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 

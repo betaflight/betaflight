@@ -110,7 +110,7 @@ uint8_t cliMode = 0;
 #define PLAY_SOUND
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern timeUs_t cycleTime; // FIXME dependency on mw.c
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 static serialPort_t *cliPort;
@@ -3275,7 +3275,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", (uint16_t)cycleTime, i2cErrorCounter, sizeof(master_t));
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);

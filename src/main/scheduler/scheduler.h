@@ -33,12 +33,12 @@ typedef enum {
 typedef struct {
     const char * taskName;
     bool         isEnabled;
-    uint32_t     desiredPeriod;
     uint8_t      staticPriority;
-    uint32_t     maxExecutionTime;
-    uint32_t     totalExecutionTime;
-    uint32_t     averageExecutionTime;
-    uint32_t     latestDeltaTime;
+    timeUs_t     desiredPeriod;
+    timeUs_t     maxExecutionTime;
+    timeUs_t     totalExecutionTime;
+    timeUs_t     averageExecutionTime;
+    timeUs_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {

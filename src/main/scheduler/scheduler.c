@@ -139,7 +139,7 @@ void taskSystem(timeUs_t currentTimeUs)
     timeUs_t maxNonRealtimeTaskTime = 0;
     for (const cfTask_t *task = queueFirst(); task != NULL; task = queueNext()) {
         if (task->staticPriority != TASK_PRIORITY_REALTIME) {
-            const uint32_t taskAverageExecutionTime = task->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
+            const timeUs_t taskAverageExecutionTime = task->movingSumExecutionTime / TASK_MOVING_SUM_COUNT;
             maxNonRealtimeTaskTime = MAX(maxNonRealtimeTaskTime, taskAverageExecutionTime);
         }
     }
@@ -151,9 +151,9 @@ void taskSystem(timeUs_t currentTimeUs)
 }
 
 #ifndef SKIP_TASK_STATISTICS
-uint32_t checkFuncMaxExecutionTime;
-uint32_t checkFuncTotalExecutionTime;
-uint32_t checkFuncMovingSumExecutionTime;
+timeUs_t checkFuncMaxExecutionTime;
+timeUs_t checkFuncTotalExecutionTime;
+timeUs_t checkFuncMovingSumExecutionTime;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo)
 {
@@ -175,11 +175,11 @@ void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t * taskInfo)
 }
 #endif
 
-void rescheduleTask(cfTaskId_e taskId, uint32_t newPeriodMicros)
+void rescheduleTask(cfTaskId_e taskId, timeUs_t newPeriodMicros)
 {
     if (taskId == TASK_SELF || taskId < TASK_COUNT) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
-        task->desiredPeriod = MAX((uint32_t)100, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
+        task->desiredPeriod = MAX((timeUs_t)100, newPeriodMicros);  // Limit delay to 100us (10 kHz) to prevent scheduler clogging
     }
 }
 
@@ -195,7 +195,7 @@ void setTaskEnabled(cfTaskId_e taskId, bool enabled)
     }
 }
 
-uint32_t getTaskDeltaTime(cfTaskId_e taskId)
+timeUs_t getTaskDeltaTime(cfTaskId_e taskId)
 {
     if (taskId == TASK_SELF || taskId < TASK_COUNT) {
         cfTask_t *task = taskId == TASK_SELF ? currentTask : &cfTasks[taskId];
