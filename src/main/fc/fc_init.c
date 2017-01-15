@@ -308,8 +308,8 @@ void init(void)
     beeperInit(beeperConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef INVERTER
-    initInverter();
+#ifdef USE_INVERTER
+    initInverters();
 #endif
 
 #ifdef USE_BST
