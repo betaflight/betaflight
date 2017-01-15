@@ -35,6 +35,7 @@
 #include "drivers/serial.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_common.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
