@@ -1375,10 +1375,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MISC:
-        tmp = sbufReadU16(src);
-        if (tmp < 1600 && tmp > 1400)
-            rxConfig()->midrc = tmp;
-
+        rxConfig()->midrc = sbufReadU16(src);
         motorConfig()->minthrottle = sbufReadU16(src);
         motorConfig()->maxthrottle = sbufReadU16(src);
         motorConfig()->mincommand = sbufReadU16(src);
