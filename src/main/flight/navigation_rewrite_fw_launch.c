@@ -46,10 +46,12 @@
 
 #include "flight/pid.h"
 #include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
 
 #include "fc/config.h"
+#include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
 #include "config/feature.h"
@@ -128,7 +130,7 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
         const float timeElapsedSinceLaunchMs = US2MS(currentTimeUs- launchState.launchStartedTime);
 
         // If user moves the stick - finish the launch
-        if ((ABS(rcCommand[ROLL]) > posControl.rcControlsConfig->pos_hold_deadband) || (ABS(rcCommand[PITCH]) > posControl.rcControlsConfig->pos_hold_deadband)) {
+        if ((ABS(rcCommand[ROLL]) > rcControlsConfig()->pos_hold_deadband) || (ABS(rcCommand[PITCH]) > rcControlsConfig()->pos_hold_deadband)) {
             launchState.launchFinished = true;
         }
 
@@ -149,7 +151,7 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
 
                 // Throttle control logic
                 ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);                       // If MOTOR_STOP is enabled mixer will keep motor stopped
-                rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
+                rcCommand[THROTTLE] = motorConfig()->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
             }
         }
     }
@@ -162,7 +164,7 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
 
         // Throttle control logic
         ENABLE_STATE(NAV_MOTOR_STOP_OR_IDLE);                       // If MOTOR_STOP is enabled mixer will keep motor stopped
-        rcCommand[THROTTLE] = posControl.motorConfig->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
+        rcCommand[THROTTLE] = motorConfig()->minthrottle;  // If MOTOR_STOP is disabled, motors will spin at minthrottle
     }
 
     // Control beeper
@@ -172,7 +174,7 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
 
     // Lock out controls
     rcCommand[ROLL] = 0;
-    rcCommand[PITCH] = pidAngleToRcCommand(-DEGREES_TO_DECIDEGREES(navConfig()->fw.launch_climb_angle), posControl.pidProfile->max_angle_inclination[FD_PITCH]);
+    rcCommand[PITCH] = pidAngleToRcCommand(-DEGREES_TO_DECIDEGREES(navConfig()->fw.launch_climb_angle), pidProfile()->max_angle_inclination[FD_PITCH]);
     rcCommand[YAW] = 0;
 }
 

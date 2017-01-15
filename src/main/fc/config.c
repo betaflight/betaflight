@@ -393,11 +393,7 @@ static void activateConfig(void)
     pidInit();
 
 #ifdef NAV
-    navigationUsePIDs(pidProfile());
-    navigationUseRcControlsConfig(rcControlsConfig());
-    navigationUseRxConfig(rxConfig());
-    navigationUseFlight3DConfig(flight3DConfig());
-    navigationUsemotorConfig(motorConfig());
+    navigationUsePIDs();
 #endif
 }
 

@@ -1300,7 +1300,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         }
         schedulePidGainsUpdate();
 #if defined(NAV)
-        navigationUsePIDs(&currentProfile->pidProfile);
+        navigationUsePIDs();
 #endif
         break;
 

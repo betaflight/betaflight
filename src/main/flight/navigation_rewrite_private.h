@@ -21,8 +21,8 @@
 
 #if defined(NAV)
 
+#include "common/filter.h"
 #include "fc/runtime_config.h"
-#include "rx/rx.h"
 
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
@@ -246,7 +246,6 @@ typedef struct {
     navigationFSMState_t                onEvent[NAV_FSM_EVENT_COUNT];
 } navigationFSMStateDescriptor_t;
 
-struct motorConfig_s;
 typedef struct {
     /* Flags and navigation system state */
     navigationFSMState_t        navState;
@@ -286,11 +285,6 @@ typedef struct {
     /* Internals */
     int16_t                     rcAdjustment[4];
 
-    const rcControlsConfig_t *        rcControlsConfig;
-    const pidProfile_t *              pidProfile;
-    const rxConfig_t *                rxConfig;
-    const flight3DConfig_t *          flight3DConfig;
-    const struct motorConfig_s *      motorConfig;
 } navigationPosControl_t;
 
 extern navigationPosControl_t posControl;

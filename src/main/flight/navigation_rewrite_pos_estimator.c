@@ -35,23 +35,25 @@
 
 #include "drivers/system.h"
 
-#include "sensors/sensors.h"
-#include "sensors/rangefinder.h"
-#include "sensors/barometer.h"
-#include "sensors/pitotmeter.h"
-#include "sensors/acceleration.h"
-#include "sensors/boardalignment.h"
-#include "sensors/compass.h"
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
-#include "io/gps.h"
-
-#include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 #include "flight/navigation_rewrite_private.h"
+#include "flight/pid.h"
 
-#include "fc/config.h"
-#include "fc/runtime_config.h"
+#include "io/gps.h"
+
+#include "sensors/acceleration.h"
+#include "sensors/barometer.h"
+#include "sensors/boardalignment.h"
+#include "sensors/compass.h"
+#include "sensors/pitotmeter.h"
+#include "sensors/rangefinder.h"
+#include "sensors/sensors.h"
+
 
 /**
  * Model-identification based position estimator

@@ -18,16 +18,10 @@
 #pragma once
 
 #include "common/maths.h"
-#include "common/filter.h"
 
-#include "fc/rc_controls.h"
-#include "io/gps.h"
-
-#include "flight/pid.h"
 #include "flight/failsafe.h"
-#include "flight/mixer.h"
 
-#include "rx/rx.h"
+#include "io/gps.h"
 
 /* GPS Home location data */
 extern gpsLocation_t        GPS_home;
@@ -235,18 +229,8 @@ typedef struct {
     navWaypointActions_e    activeWpAction;
 } navSystemStatus_t;
 
-void navigationUsePIDs(const pidProfile_t *pidProfile);
-void navigationUseRcControlsConfig(const rcControlsConfig_t *initialRcControlsConfig);
-void navigationUseRxConfig(const rxConfig_t * initialRxConfig);
-struct motorConfig_s;
-void navigationUsemotorConfig(const struct motorConfig_s * initialmotorConfig);
-void navigationUseFlight3DConfig(const flight3DConfig_t * initialFlight3DConfig);
-void navigationInit(
-                    const pidProfile_t *initialPidProfile,
-                    const rcControlsConfig_t *initialRcControlsConfig,
-                    const rxConfig_t * initialRxConfig,
-                    const flight3DConfig_t * initialFlight3DConfig,
-                    const struct motorConfig_s * initialmotorConfig);
+void navigationUsePIDs(void);
+void navigationInit(void);
 
 /* Navigation system updates */
 void updateWaypointsAndNavigationMode(void);
