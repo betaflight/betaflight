@@ -563,7 +563,7 @@ void taskGyro(timeUs_t currentTimeUs) {
         #ifdef ASYNC_GYRO_PROCESSING
             if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= ((timeDelta_t)gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }

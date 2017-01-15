@@ -50,7 +50,6 @@
 #define SKIP_CLI_RESOURCES
 #endif
 
-#define USE_64BIT_TIME
 #if (FLASH_SIZE > 128)
 #define USE_64BIT_TIME
 #define USE_GYRO_NOTCH_1

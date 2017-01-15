@@ -99,7 +99,7 @@ STATIC_UNIT_TESTED uint8_t rf_ch_num;
 STATIC_UNIT_TESTED uint8_t bind_phase;
 static timeUs_t packet_timer;
 STATIC_UNIT_TESTED uint8_t txid[TXIDSIZE];
-static timeUs_t rx_timeout;
+static timeDelta_t rx_timeout;
 extern uint16_t rxSpiRcData[];
 
 static const unsigned char v2x2_channelindex[] = {RC_SPI_THROTTLE,RC_SPI_YAW,RC_SPI_PITCH,RC_SPI_ROLL,
