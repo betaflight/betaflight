@@ -23,7 +23,7 @@
 
 #include "platform.h"
 
-#ifdef VTX_SMARTAUDIO
+#if defined(VTX_SMARTAUDIO) && defined(VTX_CONTROL)
 
 #include "cms/cms.h"
 #include "cms/cms_types.h"

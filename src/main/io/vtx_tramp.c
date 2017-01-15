@@ -24,7 +24,7 @@
 
 #include "platform.h"
 
-#ifdef VTX_TRAMP
+#if defined(VTX_TRAMP) && defined(VTX_CONTROL)
 
 #include "build/debug.h"
 
