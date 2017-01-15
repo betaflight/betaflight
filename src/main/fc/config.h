@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "common/time.h"
 
 #define MAX_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
@@ -109,7 +110,7 @@ void targetConfiguration(struct master_s *config);
 
 #ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void);
-uint32_t getGyroUpdateRate(void);
+timeDelta_t getGyroUpdateRate(void);
 uint16_t getAccUpdateRate(void);
 uint16_t getAttitudeUpdateRate(void);
 uint8_t getAsyncMode(void);

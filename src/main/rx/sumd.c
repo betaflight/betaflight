@@ -75,7 +75,7 @@ static void sumdDataReceive(uint16_t c)
     static uint8_t sumdIndex;
 
     sumdTime = micros();
-    if ((timeDelta_t)(sumdTime - sumdTimeLast) > 4000)
+    if (cmpTimeUs(sumdTime, sumdTimeLast) > 4000)
         sumdIndex = 0;
     sumdTimeLast = sumdTime;
 

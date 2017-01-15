@@ -63,7 +63,7 @@ static void sumhDataReceive(uint16_t c)
     static uint8_t sumhFramePosition;
 
     sumhTime = micros();
-    sumhTimeInterval = sumhTime - sumhTimeLast;
+    sumhTimeInterval = cmpTimeUs(sumhTime, sumhTimeLast);
     sumhTimeLast = sumhTime;
     if (sumhTimeInterval > 5000) {
         sumhFramePosition = 0;

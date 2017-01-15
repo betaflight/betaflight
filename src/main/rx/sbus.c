@@ -123,7 +123,7 @@ static void sbusDataReceive(uint16_t c)
     static uint32_t sbusFrameStartAt = 0;
     timeUs_t now = micros();
 
-    timeDelta_t sbusFrameTime = now - sbusFrameStartAt;
+    timeDelta_t sbusFrameTime = cmpTimeUs(now, sbusFrameStartAt);
 
     if (sbusFrameTime > (long)(SBUS_TIME_NEEDED_PER_FRAME + 500)) {
         sbusFramePosition = 0;

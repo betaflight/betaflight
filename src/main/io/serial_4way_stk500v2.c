@@ -54,8 +54,8 @@ static uint8_t stkInBuf[16];
 #define STK_WAITCYLCES_START (STK_WAIT_TICKS / 2)  // 0.5ms
 #define STK_WAITCYLCES_EXT (STK_WAIT_TICKS * 5000) // 5s
 
-#define  WaitPinLo  while (ESC_IS_HI) { if (timeUs_t(micros(), timeout_timer) > 0) goto timeout; }
-#define  WaitPinHi  while (ESC_IS_LO) { if (timeUs_t(micros(), timeout_timer) > 0) goto timeout; }
+#define  WaitPinLo  while (ESC_IS_HI) { if (cmpTimeUs(micros(), timeout_timer) > 0) goto timeout; }
+#define  WaitPinHi  while (ESC_IS_LO) { if (cmpTimeUs(micros(), timeout_timer) > 0) goto timeout; }
 
 static timeUs_t lastBitTime;
 static uint32_t hiLoTsh;

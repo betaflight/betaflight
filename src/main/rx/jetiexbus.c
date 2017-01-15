@@ -305,7 +305,7 @@ static void jetiExBusDataReceive(uint16_t c)
     // Check if we shall reset frame position due to time
     now = micros();
 
-    jetiExBusTimeInterval = now - jetiExBusTimeLast;
+    jetiExBusTimeInterval = cmpTimeUs(now, jetiExBusTimeLast);
     jetiExBusTimeLast = now;
 
     if (jetiExBusTimeInterval > JETIEXBUS_MIN_FRAME_GAP) {

@@ -79,7 +79,7 @@ static void spektrumDataReceive(uint16_t c)
     static uint8_t spekFramePosition = 0;
 
     spekTime = micros();
-    spekTimeInterval = spekTime - spekTimeLast;
+    spekTimeInterval = cmpTimeUs(spekTime, spekTimeLast);
     spekTimeLast = spekTime;
 
     if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {

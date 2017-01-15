@@ -34,11 +34,11 @@ typedef struct {
     const char * taskName;
     bool         isEnabled;
     uint8_t      staticPriority;
-    timeDelta_t  desiredPeriod;
-    timeDelta_t  maxExecutionTime;
+    timeUs_t     desiredPeriod;
+    timeUs_t     maxExecutionTime;
     timeUs_t     totalExecutionTime;
-    timeDelta_t  averageExecutionTime;
-    timeDelta_t  latestDeltaTime;
+    timeUs_t     averageExecutionTime;
+    timeUs_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -102,9 +102,9 @@ typedef enum {
 } cfTaskId_e;
 
 typedef struct {
-    timeUs_t    totalExecutionTime;
-    timeDelta_t maxExecutionTime;
-    timeDelta_t averageExecutionTime;
+    timeUs_t     maxExecutionTime;
+    timeUs_t     totalExecutionTime;
+    timeUs_t     averageExecutionTime;
 } cfCheckFuncInfo_t;
 
 typedef struct {
@@ -112,7 +112,7 @@ typedef struct {
     const char * taskName;
     bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeDelta_t desiredPeriod;         // target period of execution
+    timeUs_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
@@ -123,9 +123,9 @@ typedef struct {
     timeDelta_t taskLatestDeltaTime;
 
     /* Statistics */
-    timeDelta_t movingSumExecutionTime;  // moving sum over 32 samples
+    timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
 #ifndef SKIP_TASK_STATISTICS
-    timeDelta_t maxExecutionTime;
+    timeUs_t maxExecutionTime;
     timeUs_t totalExecutionTime;    // total time consumed by task since boot
 #endif
 } cfTask_t;

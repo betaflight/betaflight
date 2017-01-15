@@ -62,7 +62,7 @@ static void ibusDataReceive(uint16_t c)
 
     ibusTime = micros();
 
-    if ((timeDelta_t)(ibusTime - ibusTimeLast) > 3000)
+    if (cmpTimeUs(ibusTime, ibusTimeLast) > 3000)
         ibusFramePosition = 0;
 
     ibusTimeLast = ibusTime;

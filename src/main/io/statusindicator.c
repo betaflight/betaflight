@@ -77,7 +77,7 @@ void warningLedUpdate(void)
 {
     timeUs_t now = micros();
 
-    if ((timeDelta_t)(now - warningLedTimer) < 0) {
+    if (cmpTimeUs(now, warningLedTimer) < 0) {
         return;
     }
 
