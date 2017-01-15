@@ -39,7 +39,6 @@
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
-#include "flight/pid.h"
 
 #include "io/gps.h"
 #include "io/osd.h"
@@ -141,6 +140,6 @@ typedef struct master_s {
 } master_t;
 
 extern master_t masterConfig;
-extern profile_t *currentProfile;
+extern const profile_t *currentProfile;
 
 void createDefaultConfig(master_t *config);

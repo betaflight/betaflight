@@ -87,63 +87,9 @@
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
 master_t masterConfig;                 // master config struct with data independent from profiles
-profile_t *currentProfile;
+const profile_t *currentProfile;
 
-void resetPidProfile(pidProfile_t *pidProfile)
-{
-    pidProfile->P8[ROLL] = 40;
-    pidProfile->I8[ROLL] = 30;
-    pidProfile->D8[ROLL] = 23;
-    pidProfile->P8[PITCH] = 40;
-    pidProfile->I8[PITCH] = 30;
-    pidProfile->D8[PITCH] = 23;
-    pidProfile->P8[YAW] = 85;
-    pidProfile->I8[YAW] = 45;
-    pidProfile->D8[YAW] = 0;        // not used
-    pidProfile->P8[PIDALT] = 50;    // NAV_POS_Z_P * 100
-    pidProfile->I8[PIDALT] = 0;     // not used
-    pidProfile->D8[PIDALT] = 0;     // not used
-    pidProfile->P8[PIDPOS] = 65;    // NAV_POS_XY_P * 100
-    pidProfile->I8[PIDPOS] = 120;   // posDecelerationTime * 100
-    pidProfile->D8[PIDPOS] = 10;    // posResponseExpo * 100
-    pidProfile->P8[PIDPOSR] = 180;  // NAV_VEL_XY_P * 100
-    pidProfile->I8[PIDPOSR] = 15;   // NAV_VEL_XY_I * 100
-    pidProfile->D8[PIDPOSR] = 100;  // NAV_VEL_XY_D * 100
-    pidProfile->P8[PIDNAVR] = 10;   // FW_NAV_P * 100
-    pidProfile->I8[PIDNAVR] = 5;    // FW_NAV_I * 100
-    pidProfile->D8[PIDNAVR] = 8;    // FW_NAV_D * 100
-    pidProfile->P8[PIDLEVEL] = 20;  // Self-level strength
-    pidProfile->I8[PIDLEVEL] = 15;  // Self-leveing low-pass frequency (0 - disabled)
-    pidProfile->D8[PIDLEVEL] = 75;  // 75% horizon strength
-    pidProfile->P8[PIDMAG] = 60;
-    pidProfile->P8[PIDVEL] = 100;   // NAV_VEL_Z_P * 100
-    pidProfile->I8[PIDVEL] = 50;    // NAV_VEL_Z_I * 100
-    pidProfile->D8[PIDVEL] = 10;    // NAV_VEL_Z_D * 100
-
-    pidProfile->acc_soft_lpf_hz = 15;
-#ifdef USE_DTERM_NOTCH
-    pidProfile->dterm_soft_notch_cutoff = 43;
-    pidProfile->dterm_soft_notch_hz = 86;
-#endif
-    pidProfile->dterm_lpf_hz = 40;
-    pidProfile->yaw_lpf_hz = 30;
-    pidProfile->dterm_setpoint_weight = 0.0f;
-
-    pidProfile->rollPitchItermIgnoreRate = 200;     // dps
-    pidProfile->yawItermIgnoreRate = 50;            // dps
-
-    pidProfile->axisAccelerationLimitYaw = 10000;       // dps/s
-    pidProfile->axisAccelerationLimitRollPitch = 0;     // dps/s
-
-    pidProfile->yaw_p_limit = YAW_P_LIMIT_DEFAULT;
-
-    pidProfile->max_angle_inclination[FD_ROLL] = 300;    // 30 degrees
-    pidProfile->max_angle_inclination[FD_PITCH] = 300;    // 30 degrees
-#ifdef USE_SERVOS
-    pidProfile->fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT;
-#endif
-
-}
+PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
 #ifdef NAV
 void resetNavConfig(navConfig_t * navConfig)
@@ -333,9 +279,6 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
-    // profile
-    config->current_profile_index = 0;
-
     config->debug_mode = DEBUG_NONE;
 
 #ifdef TELEMETRY
@@ -359,8 +302,6 @@ void createDefaultConfig(master_t *config)
     config->attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT;
     config->asyncMode = ASYNC_MODE_NONE;
 #endif
-
-    resetPidProfile(&config->profile[0].pidProfile);
 
     // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
@@ -420,8 +361,8 @@ void createDefaultConfig(master_t *config)
     config->motorConfig.maxthrottle = 2000;
     config->motorConfig.motorPwmRate = 32000;
     config->looptime = 2000;
-    config->profile[0].pidProfile.P8[ROLL] = 36;
-    config->profile[0].pidProfile.P8[PITCH] = 36;
+    pidProfileMutable()->P8[ROLL] = 36;
+    pidProfileMutable()->P8[PITCH] = 36;
     config->failsafeConfig.failsafe_delay = 2;
     config->failsafeConfig.failsafe_off_delay = 0;
     config->controlRateProfiles[0].rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
@@ -499,8 +440,8 @@ void resetConfigs(void)
 
     createDefaultConfig(&masterConfig);
 
-    setProfile(masterConfig.current_profile_index);
-    setControlRateProfile(masterConfig.current_profile_index);
+    setProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
@@ -512,7 +453,7 @@ static void activateConfig(void)
 
     resetAdjustmentStates();
 
-    useRcControlsConfig(masterConfig.modeActivationConditions, &currentProfile->pidProfile);
+    useRcControlsConfig(masterConfig.modeActivationConditions);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);
@@ -527,13 +468,13 @@ static void activateConfig(void)
     servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
 #endif
 
-    imuConfigure(&currentProfile->pidProfile);
+    imuConfigure();
 
     pidInit();
 
 #ifdef NAV
     navigationUseConfig(&masterConfig.navConfig);
-    navigationUsePIDs(&currentProfile->pidProfile);
+    navigationUsePIDs(pidProfile());
     navigationUseRcControlsConfig(rcControlsConfig());
     navigationUseRxConfig(rxConfig());
     navigationUseFlight3DConfig(flight3DConfig());
@@ -559,8 +500,8 @@ void validateAndFixConfig(void)
     }
 #endif
 #ifdef USE_DTERM_NOTCH
-    if (currentProfile->pidProfile.dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
-        currentProfile->pidProfile.dterm_soft_notch_hz = 0;
+    if (pidProfile()->dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
+        pidProfileMutable()->dterm_soft_notch_hz = 0;
     }
 #endif
     // Disable unused features
@@ -783,9 +724,9 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-    setProfile(masterConfig.current_profile_index);
-    setControlRateProfile(masterConfig.current_profile_index);
-    pgActivateProfile(masterConfig.current_profile_index);
+    setProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
+    pgActivateProfile(getCurrentProfileIndex());
 
     validateAndFixConfig();
     activateConfig();
@@ -823,9 +764,9 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-uint8_t getCurrentProfile(void)
+uint8_t getCurrentProfileIndex(void)
 {
-    return masterConfig.current_profile_index;
+    return profileSelection()->current_profile_index;
 }
 
 void setProfile(uint8_t profileIndex)
@@ -833,8 +774,8 @@ void setProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
-    masterConfig.current_profile_index = profileIndex;
-    currentProfile = &masterConfig.profile[masterConfig.current_profile_index];
+    profileSelectionMutable()->current_profile_index = profileIndex;
+    currentProfile = &masterConfig.profile[profileIndex];
 }
 
 void changeProfile(uint8_t profileIndex)
@@ -842,7 +783,7 @@ void changeProfile(uint8_t profileIndex)
     if (profileIndex >= MAX_PROFILE_COUNT) {
         profileIndex = MAX_PROFILE_COUNT - 1;
     }
-    masterConfig.current_profile_index = profileIndex;
+    profileSelectionMutable()->current_profile_index = profileIndex;
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);

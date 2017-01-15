@@ -247,5 +247,4 @@ bool isUsingNavigationModes(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
-struct pidProfile_s;
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);

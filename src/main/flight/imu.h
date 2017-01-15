@@ -59,8 +59,7 @@ typedef struct imuRuntimeConfig_s {
     uint8_t small_angle;
 } imuRuntimeConfig_t;
 
-struct pidProfile_s;
-void imuConfigure(struct pidProfile_s *initialPidProfile);
+void imuConfigure(void);
 
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 void imuUpdateAccelerometer(void);

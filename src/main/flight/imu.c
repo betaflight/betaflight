@@ -87,8 +87,6 @@ attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclinat
 
 static imuRuntimeConfig_t imuRuntimeConfig;
 
-static pidProfile_t *pidProfile;
-
 static float gyroScale;
 
 static bool gpsHeadingInitialized = false;
@@ -152,24 +150,21 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
-void imuConfigure(pidProfile_t *initialPidProfile)
+void imuConfigure(void)
 {
     imuRuntimeConfig.dcm_kp_acc = imuConfig()->dcm_kp_acc / 10000.0f;
     imuRuntimeConfig.dcm_ki_acc = imuConfig()->dcm_ki_acc / 10000.0f;
     imuRuntimeConfig.dcm_kp_mag = imuConfig()->dcm_kp_mag / 10000.0f;
     imuRuntimeConfig.dcm_ki_mag = imuConfig()->dcm_ki_mag / 10000.0f;
     imuRuntimeConfig.small_angle = imuConfig()->small_angle;
-    pidProfile = initialPidProfile;
 }
 
 void imuInit(void)
 {
-    int axis;
-
     smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
     gyroScale = gyro.dev.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
         imuAccelInBodyFrame.A[axis] = 0;
     }
 

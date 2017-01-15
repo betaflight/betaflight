@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #define GYRO_SATURATION_LIMIT   1800        // 1800dps
 #define PID_MAX_OUTPUT          1000
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
@@ -52,10 +54,8 @@ typedef struct pidProfile_s {
 
     uint8_t dterm_lpf_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
     uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
-#ifdef USE_DTERM_NOTCH
     uint16_t dterm_soft_notch_hz;           // Dterm Notch frequency
     uint16_t dterm_soft_notch_cutoff;       // Dterm Notch Cutoff frequency
-#endif
     uint8_t acc_soft_lpf_hz;                // Set the Low Pass Filter factor for ACC. Reducing this value would reduce ACC noise (visible in GUI), but would increase ACC lag time. Zero = no filter
 
     uint16_t yaw_p_limit;
@@ -71,10 +71,10 @@ typedef struct pidProfile_s {
 
     float dterm_setpoint_weight;
 
-    #ifdef USE_SERVOS
     uint16_t fixedWingItermThrowLimit;
-#endif
 } pidProfile_t;
+
+PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 
 extern int16_t axisPID[];
 extern int32_t axisPID_P[], axisPID_I[], axisPID_D[], axisPID_Setpoint[];
