@@ -610,7 +610,6 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             telemetry/ibus.c \
             sensors/esc_sensor.c \
-            drivers/vtx_var.c \
             io/vtx_common.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
@@ -718,8 +717,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c \
-            io/vtx_smartaudio.c
-            # io/vtx_tramp.c # makes binary bigger!?
+            io/vtx_smartaudio.c \
+            io/vtx_tramp.c
 endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))

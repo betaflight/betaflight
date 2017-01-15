@@ -33,7 +33,6 @@
 #include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/vtx_var.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 
@@ -985,7 +984,7 @@ static CMS_Menu saCmsMenuStats = {
 
 static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &vtx58ChanNames[0], NULL };
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &vtx58ChannelNames[0], NULL };
 
 static const char * const saCmsPowerNames[] = {
     "---",

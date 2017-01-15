@@ -33,7 +33,6 @@
 
 #include "io/serial.h"
 #include "drivers/serial.h"
-#include "drivers/vtx_var.h"
 #include "drivers/system.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_common.h"
@@ -358,7 +357,7 @@ static void trampCmsUpdateStatusString(void)
     trampCmsStatusString[0] = '*';
     trampCmsStatusString[1] = ' ';
     trampCmsStatusString[2] = vtx58BandLetter[trampCurBand];
-    trampCmsStatusString[3] = vtx58ChanNames[trampCurChan][0];
+    trampCmsStatusString[3] = vtx58ChannelNames[trampCurChan][0];
     trampCmsStatusString[4] = ' ';
 
     if (trampCurFreq)
@@ -380,7 +379,7 @@ uint16_t trampCmsFreqRef;
 
 static OSD_TAB_t trampCmsEntBand = { &trampCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChanNames, NULL };
+static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChannelNames, NULL };
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
 
