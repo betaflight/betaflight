@@ -1173,6 +1173,35 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, navConfig()->mc.hover_throttle);
         break;
 #endif
+
+    case MSP_CALIBRATION_DATA:
+    #ifdef ACC
+        sbufWriteU16(dst, accelerometerConfig()->accZero.raw[X]);
+        sbufWriteU16(dst, accelerometerConfig()->accZero.raw[Y]);
+        sbufWriteU16(dst, accelerometerConfig()->accZero.raw[Z]);
+        sbufWriteU16(dst, accelerometerConfig()->accGain.raw[X]);
+        sbufWriteU16(dst, accelerometerConfig()->accGain.raw[Y]);
+        sbufWriteU16(dst, accelerometerConfig()->accGain.raw[Z]);
+    #else 
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+    #endif
+
+    #ifdef MAG
+        sbufWriteU16(dst, compassConfig()->magZero.raw[X]);
+        sbufWriteU16(dst, compassConfig()->magZero.raw[Y]);
+        sbufWriteU16(dst, compassConfig()->magZero.raw[Z]);
+    #else 
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+        sbufWriteU16(dst, 0);
+    #endif
+        break;
+
     case MSP_REBOOT:
         if (!ARMING_FLAG(ARMED)) {
             if (mspPostProcessFn) {
@@ -1598,6 +1627,34 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         navConfigMutable()->mc.hover_throttle = sbufReadU16(src);
         break;
 #endif
+
+    case MSP_SET_CALIBRATION_DATA:
+    #ifdef ACC
+        accelerometerConfigMutable()->accZero.raw[X] = sbufReadU16(src);
+        accelerometerConfigMutable()->accZero.raw[Y] = sbufReadU16(src);
+        accelerometerConfigMutable()->accZero.raw[Z] = sbufReadU16(src);
+        accelerometerConfigMutable()->accGain.raw[X] = sbufReadU16(src);
+        accelerometerConfigMutable()->accGain.raw[Y] = sbufReadU16(src);
+        accelerometerConfigMutable()->accGain.raw[Z] = sbufReadU16(src);
+    #else 
+        sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
+    #endif
+
+    #ifdef MAG
+        compassConfigMutable()->magZero.raw[X] = sbufReadU16(src);
+        compassConfigMutable()->magZero.raw[Y] = sbufReadU16(src);
+        compassConfigMutable()->magZero.raw[Z] = sbufReadU16(src);
+    #else 
+        sbufReadU16(src);
+        sbufReadU16(src);
+        sbufReadU16(src);
+    #endif
+        break;
 
     case MSP_RESET_CONF:
         if (!ARMING_FLAG(ARMED)) {
