@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "common/time.h"
 
 #include "config/parameter_group.h"
 
@@ -115,7 +116,7 @@ void targetConfiguration(struct master_s *config);
 
 #ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void);
-uint32_t getGyroUpdateRate(void);
+timeDelta_t getGyroUpdateRate(void);
 uint16_t getAccUpdateRate(void);
 uint16_t getAttitudeUpdateRate(void);
 uint8_t getAsyncMode(void);

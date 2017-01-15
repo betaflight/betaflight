@@ -110,7 +110,7 @@ uint8_t cliMode = 0;
 #define PLAY_SOUND
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern timeDelta_t cycleTime; // FIXME dependency on mw.c
 extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 static serialPort_t *cliPort;
@@ -3278,7 +3278,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", (uint16_t)cycleTime, i2cErrorCounter, sizeof(master_t));
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
@@ -3306,12 +3306,12 @@ static void cliTasks(char *cmdline)
                 averageLoadSum += averageLoad;
             }
             cliPrintf("%2d - %12s  %6d   %5d   %5d %4d.%1d%% %4d.%1d%%  %8d\r\n",
-                    taskId, taskInfo.taskName, taskFrequency, taskInfo.maxExecutionTime, taskInfo.averageExecutionTime,
-                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, taskInfo.totalExecutionTime / 1000);
+                    taskId, taskInfo.taskName, taskFrequency, (uint32_t)taskInfo.maxExecutionTime, (uint32_t)taskInfo.averageExecutionTime,
+                    maxLoad/10, maxLoad%10, averageLoad/10, averageLoad%10, (uint32_t)taskInfo.totalExecutionTime / 1000);
         }
     }
     getCheckFuncInfo(&checkFuncInfo);
-    cliPrintf("Task check function %13d %7d %25d\r\n", checkFuncInfo.maxExecutionTime, checkFuncInfo.averageExecutionTime, checkFuncInfo.totalExecutionTime / 1000);
+    cliPrintf("Task check function %13d %7d %25d\r\n", (uint32_t)checkFuncInfo.maxExecutionTime, (uint32_t)checkFuncInfo.averageExecutionTime, (uint32_t)checkFuncInfo.totalExecutionTime / 1000);
     cliPrintf("Total (excluding SERIAL) %21d.%1d%% %4d.%1d%%\r\n", maxLoadSum/10, maxLoadSum%10, averageLoadSum/10, averageLoadSum%10);
 }
 #endif

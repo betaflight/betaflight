@@ -33,12 +33,12 @@ typedef enum {
 typedef struct {
     const char * taskName;
     bool         isEnabled;
-    uint32_t     desiredPeriod;
     uint8_t      staticPriority;
-    uint32_t     maxExecutionTime;
-    uint32_t     totalExecutionTime;
-    uint32_t     averageExecutionTime;
-    uint32_t     latestDeltaTime;
+    timeUs_t     desiredPeriod;
+    timeUs_t     maxExecutionTime;
+    timeUs_t     totalExecutionTime;
+    timeUs_t     averageExecutionTime;
+    timeUs_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -110,7 +110,7 @@ typedef struct {
 typedef struct {
     /* Configuration */
     const char * taskName;
-    bool (*checkFunc)(timeUs_t currentTimeUs, timeUs_t currentDeltaTime);
+    bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
     void (*taskFunc)(timeUs_t currentTimeUs);
     timeUs_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
@@ -120,7 +120,7 @@ typedef struct {
     uint16_t taskAgeCycles;
     timeUs_t lastExecutedAt;        // last time of invocation
     timeUs_t lastSignaledAt;        // time of invocation event for event-driven tasks
-    timeUs_t taskLatestDeltaTime;
+    timeDelta_t taskLatestDeltaTime;
 
     /* Statistics */
     timeUs_t movingSumExecutionTime;  // moving sum over 32 samples
@@ -138,7 +138,7 @@ void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
 void rescheduleTask(cfTaskId_e taskId, timeUs_t newPeriodMicros);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
-timeUs_t getTaskDeltaTime(cfTaskId_e taskId);
+timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);

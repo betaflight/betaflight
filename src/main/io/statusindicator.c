@@ -69,15 +69,15 @@ void warningLedRefresh(void)
             break;
     }
 
-    uint32_t now = micros();
+    timeUs_t now = micros();
     warningLedTimer = now + 500000;
 }
 
 void warningLedUpdate(void)
 {
-    uint32_t now = micros();
+    timeUs_t now = micros();
 
-    if ((int32_t)(now - warningLedTimer) < 0) {
+    if (cmpTimeUs(now, warningLedTimer) < 0) {
         return;
     }
 

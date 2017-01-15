@@ -76,7 +76,7 @@ static bool rxIsInFailsafeModeNotDataDriven = true;
 
 static timeUs_t rxUpdateAt = 0;
 static timeUs_t needRxSignalBefore = 0;
-static uint32_t needRxSignalMaxDelayUs = 0;
+static timeDelta_t needRxSignalMaxDelayUs = 0;
 static timeUs_t suspendRxSignalUntil = 0;
 static uint8_t  skipRxSamples = 0;
 
@@ -483,7 +483,7 @@ static void detectAndApplySignalLossBehaviour(void)
 {
     bool useValueFromRx = true;
     const bool rxIsDataDriven = isRxDataDriven();
-    const uint32_t currentMilliTime = millis();
+    const timeMs_t currentMilliTime = millis();
 
     if (!rxIsDataDriven) {
         rxSignalReceived = rxSignalReceivedNotDataDriven;

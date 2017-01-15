@@ -215,9 +215,9 @@ static void mpuIntExtiHandler(extiCallbackRec_t *cb)
     gyro->dataReady = true;
 
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static uint32_t lastCalledAt = 0;
-    uint32_t now = micros();
-    uint32_t callDelta = now - lastCalledAt;
+    static timeUs_t lastCalledAt = 0;
+    timeUs_t now = micros();
+    timeUs_t callDelta = now - lastCalledAt;
     debug[0] = callDelta;
     lastCalledAt = now;
 #endif

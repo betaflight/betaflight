@@ -96,7 +96,7 @@
 #include "hardware_revision.h"
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern timeDelta_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -555,7 +555,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -569,7 +569,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else

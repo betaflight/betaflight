@@ -25,4 +25,4 @@ void dashboardInit(void);
 void dashboardUpdate(timeUs_t currentTimeUs);
 
 void dashboardSetPage(pageId_e newPageId);
-void dashboardSetNextPageChangeAt(uint32_t futureMicros);
+void dashboardSetNextPageChangeAt(timeUs_t futureMicros);

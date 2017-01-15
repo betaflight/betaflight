@@ -296,16 +296,16 @@ void jetiExBusFrameReset()
 // Receive ISR callback
 static void jetiExBusDataReceive(uint16_t c)
 {
-    uint32_t now;
-    static uint32_t jetiExBusTimeLast = 0;
-    static int32_t jetiExBusTimeInterval;
+    timeUs_t now;
+    static timeUs_t jetiExBusTimeLast = 0;
+    static timeDelta_t jetiExBusTimeInterval;
 
     static uint8_t *jetiExBusFrame;
 
     // Check if we shall reset frame position due to time
     now = micros();
 
-    jetiExBusTimeInterval = now - jetiExBusTimeLast;
+    jetiExBusTimeInterval = cmpTimeUs(now, jetiExBusTimeLast);
     jetiExBusTimeLast = now;
 
     if (jetiExBusTimeInterval > JETIEXBUS_MIN_FRAME_GAP) {
