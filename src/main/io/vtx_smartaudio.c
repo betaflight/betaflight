@@ -742,6 +742,25 @@ void vtxSAProcess(uint32_t now)
         saGetSettings();
         saSendQueue();
     }
+
+#ifdef SMARTAUDIO_TEST_VTX_COMMON
+    // Testing VTX_COMMON API
+    {
+        static uint32_t lastMonitorUs = 0;
+        if (cmp32(now, lastMonitorUs) < 5 * 1000 * 1000)
+            return;
+
+        static uint8_t monBand;
+        static uint8_t monChan;
+        static uint8_t monPower;
+
+        vtxCommonGetBandChan(&monBand, &monChan);
+        vtxCommonGetPowerIndex(&monPower);
+        debug[0] = monBand;
+        debug[1] = monChan;
+        debug[2] = monPower;
+    }
+#endif
 }
 
 #ifdef VTX_COMMON
@@ -811,7 +830,7 @@ bool vtxSAGetPowerIndex(uint8_t *pIndex)
     if (!vtxSAIsReady())
         return false;
 
-    *pIndex = (saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power;
+    *pIndex = ((saDevice.version == 1) ? saDacToPowerIndex(saDevice.power) : saDevice.power) + 1;
     return true;
 }
 
@@ -938,7 +957,7 @@ if (saDevice.mode & SA_MODE_GET_OUT_RANGE_PITMODE)
 else
     saCmsPitFMode = 0;
 
-    saCmsStatusString[0] = "-FP"[(saDevice.mode & SA_MODE_GET_PITMODE) ? SACMS_OPMODEL_RACE : SACMS_OPMODEL_FREE];
+    saCmsStatusString[0] = "-FR"[saCmsOpmodel];
     saCmsStatusString[2] = "ABEFR"[saDevice.chan / 8];
     saCmsStatusString[3] = '1' + (saDevice.chan % 8);
 
@@ -978,15 +997,13 @@ static long saCmsConfigBandByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-dprintf(("saCmsConfigBand: band req %d ", saCmsBand));
-
     if (saCmsBand == 0) {
         // Bouce back, no going back to undef state
         saCmsBand = 1;
         return 0;
     }
 
-    if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
+    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
@@ -1011,7 +1028,7 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
+    if ((saCmsOpmodel == SACMS_OPMODEL_FREE) && !saDeferred)
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
     saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
@@ -1036,7 +1053,8 @@ static long saCmsConfigPowerByGvar(displayPort_t *pDisp, const void *self)
         return 0;
     }
 
-    saSetPowerByIndex(saCmsPower - 1);
+    if (saCmsOpmodel == SACMS_OPMODEL_FREE)
+        saSetPowerByIndex(saCmsPower - 1);
 
     return 0;
 }
@@ -1172,11 +1190,21 @@ static long saCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     if (saCmsOpmodel == SACMS_OPMODEL_RACE) {
+        // Race model
+        // Setup band, freq and power.
+
+        saSetBandChan(saCmsBand - 1, saCmsChan - 1);
+        saSetPowerByIndex(saCmsPower - 1);
+
+        // If in pit mode, cancel it.
+
         if (saCmsPitFMode == 0)
             saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_IN_RANGE_PITMODE);
         else
             saSetMode(SA_MODE_CLR_PITMODE|SA_MODE_SET_OUT_RANGE_PITMODE);
     } else {
+        // Freestyle model
+        // Setup band and freq / user freq
         if (saCmsFselMode == 0)
             saSetBandChan(saCmsBand - 1, saCmsChan - 1);
         else
