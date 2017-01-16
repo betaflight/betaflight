@@ -1104,6 +1104,7 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, con
 }
 #endif
 
+static featureConfig_t featureConfigCopy;
 static gyroConfig_t gyroConfigCopy;
 static accelerometerConfig_t accelerometerConfigCopy;
 #ifdef MAG
@@ -1150,6 +1151,7 @@ static telemetryConfig_t telemetryConfigCopy;
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
+    featureConfigCopy = *featureConfig();
     gyroConfigCopy = *gyroConfig();
     accelerometerConfigCopy = *accelerometerConfig();
 #ifdef MAG
@@ -1202,6 +1204,7 @@ static void backupConfigs(void)
 
 static void restoreConfigs(void)
 {
+    *featureConfigMutable() = featureConfigCopy;
     *gyroConfigMutable() = gyroConfigCopy;
     *accelerometerConfigMutable() = accelerometerConfigCopy;
 #ifdef MAG
@@ -2673,10 +2676,10 @@ static void cliFlashRead(char *cmdline)
 #endif
 
 
-static void printFeature(uint8_t dumpMask, const master_t *defaultConfig)
+static void printFeature(uint8_t dumpMask, const featureConfig_t *featureConfig, const featureConfig_t *featureConfigDefault)
 {
-    uint32_t mask = featureMask();
-    uint32_t defaultMask = defaultConfig->enabledFeatures;
+    uint32_t mask = featureConfig->enabledFeatures;
+    uint32_t defaultMask = featureConfigDefault->enabledFeatures;
     for (uint32_t i = 0; ; i++) { // disable all feature first
         if (featureNames[i] == NULL)
             break;
@@ -3484,7 +3487,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("feature");
-        printFeature(dumpMask, &defaultConfig);
+        printFeature(dumpMask, &featureConfigCopy, featureConfig());
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");

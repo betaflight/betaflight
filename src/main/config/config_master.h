@@ -65,7 +65,6 @@ typedef struct master_s {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint32_t enabledFeatures;
     uint8_t persistentFlags;
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
 
