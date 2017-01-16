@@ -162,22 +162,8 @@ void createDefaultConfig(master_t *config)
 
     config->version = EEPROM_CONF_VERSION;
 
-    uint32_t *featuresPtr = &config->enabledFeatures;
-    intFeatureClearAll(featuresPtr);
-    intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
-#ifdef DEFAULT_FEATURES
-    intFeatureSet(DEFAULT_FEATURES, featuresPtr);
-#endif
-
 #ifdef OSD
-    intFeatureSet(FEATURE_OSD, featuresPtr);
     osdResetConfig(&config->osdProfile);
-#endif
-
-#ifdef BOARD_HAS_VOLTAGE_DIVIDER
-    // only enable the VBAT feature by default if the board has a voltage divider otherwise
-    // the user may see incorrect readings and unexpected issues with pin mappings may occur.
-    intFeatureSet(FEATURE_VBAT, featuresPtr);
 #endif
 
     config->debug_mode = DEBUG_NONE;
