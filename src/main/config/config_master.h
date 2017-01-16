@@ -33,6 +33,7 @@
 #include "drivers/vcd.h"
 #include "drivers/light_led.h"
 #include "drivers/flash.h"
+#include "drivers/display.h"
 
 #include "fc/rc_controls.h"
 
@@ -105,7 +106,9 @@
 #define servoProfile(x) (&masterConfig.servoProfile)
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
-
+#define displayPortProfileMsp(x) (&masterConfig.displayPortProfileMsp)
+#define displayPortProfileMax7456(x) (&masterConfig.displayPortProfileMax7456)
+#define displayPortProfileOled(x) (&masterConfig.displayPortProfileOled)
 
 // System-wide
 typedef struct master_s {
@@ -212,6 +215,13 @@ typedef struct master_s {
 #ifdef USE_MAX7456
     vcdProfile_t vcdProfile;
 #endif
+
+# ifdef USE_MSP_DISPLAYPORT
+    displayPortProfile_t displayPortProfileMsp;
+# endif
+# ifdef USE_MAX7456
+    displayPortProfile_t displayPortProfileMax7456;
+# endif
 
 #ifdef USE_SDCARD
     sdcardConfig_t sdcardConfig;
