@@ -253,7 +253,7 @@ void processRcCommand(void)
         }
 
         // Interpolate steps of rcCommand
-        int channel;
+        int channel = PITCH;
         if (factor > 0) {
             for (channel=ROLL; channel < interpolationChannels; channel++)
                 rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
