@@ -34,8 +34,34 @@
 #include "io/serial.h"
 #include "drivers/serial.h"
 #include "drivers/system.h"
+#include "drivers/vtx_common.h"
 #include "io/vtx_tramp.h"
 #include "io/vtx_string.h"
+
+#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
+
+#if defined(CMS) || defined(VTX_COMMON)
+static const uint16_t trampPowerTable[] = {
+    25, 100, 200, 400, 600
+};
+
+static const char * const trampPowerNames[] = {
+    "25 ", "100", "200", "400", "600"
+};
+#endif
+
+#if defined(VTX_COMMON)
+static vtxVTable_t trampVTable;    // Forward
+static vtxDevice_t vtxTramp = {
+    .vTable = &trampVTable,
+    .numBand = 5,
+    .numChan = 8,
+    .numPower = sizeof(trampPowerTable),
+    .bandNames = (char **)vtx58BandNames,
+    .chanNames = (char **)vtx58ChannelNames,
+    .powerNames = (char **)trampPowerNames,
+};
+#endif
 
 static serialPort_t *trampSerialPort = NULL;
 
@@ -283,8 +309,6 @@ void trampQueryS(void)
     trampQuery('s');
 }
 
-#define TRAMP_SERIAL_OPTIONS (SERIAL_BIDIR)
-
 bool trampInit()
 {
     serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_VTX_TRAMP);
@@ -297,10 +321,15 @@ bool trampInit()
         return false;
     }
 
+#if defined(VTX_COMMON)
+    vtxTramp.vTable = &trampVTable;
+    vtxCommonRegisterDevice(&vtxTramp);
+#endif
+    
     return true;
 }
 
-void trampProcess(uint32_t currentTimeUs)
+void vtxTrampProcess(uint32_t currentTimeUs)
 {
     static uint32_t lastQueryTimeUs = 0;
 
@@ -443,17 +472,9 @@ static OSD_TAB_t trampCmsEntChan = { &trampCmsChan, 8, vtx58ChannelNames, NULL }
 
 static OSD_UINT16_t trampCmsEntFreqRef = { &trampCmsFreqRef, 5600, 5900, 0 };
 
-static const char * const trampCmsPowerNames[] = {
-    "25 ", "100", "200", "400", "600"
-};
-
-static const uint16_t trampCmsPowerTable[] = {
-    25, 100, 200, 400, 600
-};
-
 static uint8_t trampCmsPower = 0;
 
-static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampCmsPowerNames, NULL };
+static OSD_TAB_t trampCmsEntPower = { &trampCmsPower, 4, trampPowerNames, NULL };
 
 static void trampCmsUpdateFreqRef(void)
 {
@@ -518,7 +539,7 @@ static long trampCmsCommence(displayPort_t *pDisp, const void *self)
     UNUSED(self);
 
     trampSetBandChan(trampCmsBand, trampCmsChan);
-    trampSetRFPower(trampCmsPowerTable[trampCmsPower]);
+    trampSetRFPower(trampPowerTable[trampCmsPower]);
 
     // If it fails, the user should retry later
     trampCommitChanges();
@@ -536,8 +557,8 @@ static void trampCmsInitSettings()
     trampCmsPitmode = trampCurPitmode + 1;
 
     if (trampCurConfigPower > 0) {
-        for (uint8_t i = 0; i < sizeof(trampCmsPowerTable); i++) {
-            if (trampCurConfigPower <= trampCmsPowerTable[i]) {
+        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
+            if (trampCurConfigPower <= trampPowerTable[i]) {
                 trampCmsPower = i;
                 break;
             }
@@ -592,6 +613,91 @@ CMS_Menu cmsx_menuVtxTramp = {
     .onGlobalExit = NULL,
     .entries = trampMenuEntries,
 };
+#endif
+
+#ifdef VTX_COMMON
+
+// Interface to common VTX API
+
+vtxDevType_e vtxTrampGetDeviceType(void)
+{
+    return VTXDEV_TRAMP;
+}
+
+bool vtxTrampIsReady(void)
+{
+    return trampStatus > TRAMP_STATUS_OFFLINE;
+}
+
+void vtxTrampSetBandChan(uint8_t band, uint8_t chan)
+{
+    if (band && chan) {
+        trampSetBandChan(band, chan);
+        trampCommitChanges();
+    }
+}
+
+void vtxTrampSetPowerByIndex(uint8_t index)
+{
+    if (index) {
+        trampSetRFPower(trampPowerTable[index]);
+        trampCommitChanges();
+    }
+}
+
+void vtxTrampSetPitmode(uint8_t onoff)
+{
+    trampSetPitmode(onoff);
+}
+
+bool vtxTrampGetBandChan(uint8_t *pBand, uint8_t *pChan)
+{
+    if (!vtxTrampIsReady())
+        return false;
+
+    *pBand = trampCurBand;
+    *pChan = trampCurChan;
+    return true;
+}
+
+bool vtxTrampGetPowerIndex(uint8_t *pIndex)
+{
+    if (!vtxTrampIsReady())
+        return false;
+
+    if (trampCurConfigPower > 0) {
+        for (uint8_t i = 0; i < sizeof(trampPowerTable); i++) {
+            if (trampCurConfigPower <= trampPowerTable[i]) {
+                *pIndex = i;
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool vtxTrampGetPitmode(uint8_t *pOnoff)
+{
+    if (!vtxTrampIsReady())
+        return false;
+
+    *pOnoff = trampCurPitmode;
+    return true;
+}
+
+static vtxVTable_t trampVTable = {
+    .process = vtxTrampProcess,
+    .getDeviceType = vtxTrampGetDeviceType,
+    .isReady = vtxTrampIsReady,
+    .setBandChan = vtxTrampSetBandChan,
+    .setPowerByIndex = vtxTrampSetPowerByIndex,
+    .setPitmode = vtxTrampSetPitmode,
+    .getBandChan = vtxTrampGetBandChan,
+    .getPowerIndex = vtxTrampGetPowerIndex,
+    .getPitmode = vtxTrampGetPitmode,
+};
+
 #endif
 
 #endif // VTX_TRAMP
