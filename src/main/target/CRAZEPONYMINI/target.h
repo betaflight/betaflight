@@ -54,7 +54,7 @@
 #define USE_RX_NRF24
 //#define USE_RX_CX10
 //#define USE_RX_H8_3D
-#define USE_RX_SYMA
+//#define USE_RX_SYMA
 #define USE_RX_V202
 #define NRF24_DEFAULT_PROTOCOL  NRF24RX_V202_1M
 
@@ -69,6 +69,7 @@
 
 #undef USE_RX_MSP
 #define SKIP_INFLIGHT_ADJUSTMENTS
+#define SKIP_SERIAL_PASSTHROUGH
 #undef USE_RX_PWM
 #undef USE_RX_PPM
 #undef SERIAL_RX
