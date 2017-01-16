@@ -527,7 +527,7 @@ void init(void)
 #ifdef VTX_CONTROL
 
 #ifdef VTX_SMARTAUDIO
-    smartAudioInit();
+    smartAudioInit(smartAudioConfig());
 #endif
 
 #ifdef VTX_TRAMP

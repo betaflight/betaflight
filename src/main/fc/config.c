@@ -73,6 +73,7 @@
 #include "io/gps.h"
 #include "io/osd.h"
 #include "io/vtx.h"
+#include "io/vtx_smartaudio.h"
 
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
@@ -829,6 +830,11 @@ void createDefaultConfig(master_t *config)
 
 #ifdef USE_FLASHFS
     resetFlashConfig(&config->flashConfig);
+#endif
+
+#ifdef VTX_SMARTAUDIO
+    config->smartAudioConfig.autobaud_min = SMARTAUDIO_AUTOBAUD_DEFAULT_MIN;
+    config->smartAudioConfig.autobaud_max = SMARTAUDIO_AUTOBAUD_DEFAULT_MAX;
 #endif
 
     resetStatusLedConfig(&config->statusLedConfig);

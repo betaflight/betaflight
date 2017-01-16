@@ -50,6 +50,7 @@
 #include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/vtx.h"
+#include "io/vtx_smartaudio.h"
 
 #include "rx/rx.h"
 
@@ -105,6 +106,7 @@
 #define servoProfile(x) (&masterConfig.servoProfile)
 #define customMotorMixer(i) (&masterConfig.customMotorMixer[i])
 #define customServoMixer(i) (&masterConfig.customServoMixer[i])
+#define smartAudioConfig(x) (&masterConfig.smartAudioConfig)
 
 
 // System-wide
@@ -237,6 +239,10 @@ typedef struct master_s {
 
 #ifdef USE_FLASHFS
     flashConfig_t flashConfig;
+#endif
+
+#ifdef VTX_SMARTAUDIO
+    smartAudioConfig_t smartAudioConfig;
 #endif
 
     uint32_t beeper_off_flags;
