@@ -30,7 +30,7 @@
 #define BIT_TOGGLE_1 78 // (156 / 2)
 #define BIT_TOGGLE_0 0
 
-void transponderIrInit();
+bool transponderIrInit();
 void transponderIrDisable(void);
 
 void transponderIrHardwareInit(ioTag_t ioTag);
