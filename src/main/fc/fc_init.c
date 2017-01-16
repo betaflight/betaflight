@@ -92,6 +92,7 @@
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
 
 #include "scheduler/scheduler.h"
 
@@ -392,9 +393,9 @@ void init(void)
     if (feature(FEATURE_OSD)) {
 #ifdef USE_MAX7456
         // if there is a max7456 chip for the OSD then use it, otherwise use MSP
-        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile());
+        displayPort_t *osdDisplayPort = max7456DisplayPortInit(vcdProfile(), displayPortProfileMax7456());
 #else
-        displayPort_t *osdDisplayPort = displayPortMspInit();
+        displayPort_t *osdDisplayPort = displayPortMspInit(displayPortProfileMax7456());
 #endif
         osdInit(osdDisplayPort);
     }
@@ -438,7 +439,7 @@ void init(void)
     mspSerialInit();
 
 #if defined(USE_MSP_DISPLAYPORT) && defined(CMS)
-    cmsDisplayPortRegister(displayPortMspInit());
+    cmsDisplayPortRegister(displayPortMspInit(displayPortProfileMsp()));
 #endif
 
 #ifdef USE_CLI
@@ -523,9 +524,17 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
+#ifdef VTX_CONTROL
+
 #ifdef VTX_SMARTAUDIO
     smartAudioInit();
 #endif
+
+#ifdef VTX_TRAMP
+    trampInit();
+#endif
+
+#endif // VTX_CONTROL
 
     // start all timers
     // TODO - not implemented yet

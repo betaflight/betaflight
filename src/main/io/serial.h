@@ -37,8 +37,9 @@ typedef enum {
     FUNCTION_BLACKBOX            = (1 << 7),  // 128
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 9),  // 512
     FUNCTION_ESC_SENSOR          = (1 << 10), // 1024
-    FUNCTION_VTX_CONTROL         = (1 << 11), // 2048
-    FUNCTION_TELEMETRY_IBUS      = (1 << 12)  // 4096
+    FUNCTION_VTX_SMARTAUDIO      = (1 << 11), // 2048
+    FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
+    FUNCTION_VTX_TRAMP           = (1 << 13), // 8192
 } serialPortFunction_e;
 
 typedef enum {

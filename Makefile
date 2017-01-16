@@ -591,6 +591,7 @@ HIGHEND_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
+            drivers/vtx_common.c \
             flight/navigation.c \
             flight/gps_conversion.c \
             io/dashboard.c \
@@ -612,7 +613,9 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             telemetry/ibus.c \
             sensors/esc_sensor.c \
-            io/vtx_smartaudio.c
+            io/vtx_string.c \
+            io/vtx_smartaudio.c \
+            io/vtx_tramp.c
 
 SPEED_OPTIMISED_SRC := ""
 SIZE_OPTIMISED_SRC  := ""
@@ -704,6 +707,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
+            drivers/vtx_common.c \
             io/cli.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -717,7 +721,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             cms/cms_menu_misc.c \
             cms/cms_menu_osd.c \
             cms/cms_menu_vtx.c \
-            io/vtx_smartaudio.c
+            io/vtx_smartaudio.c \
+            io/vtx_tramp.c
 endif #F3
 
 ifeq ($(TARGET),$(filter $(TARGET),$(F4_TARGETS)))

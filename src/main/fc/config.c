@@ -654,6 +654,12 @@ void resetMax7456Config(vcdProfile_t *pVcdProfile)
 }
 #endif
 
+void resetDisplayPortProfile(displayPortProfile_t *pDisplayPortProfile)
+{
+    pDisplayPortProfile->colAdjust = 0;
+    pDisplayPortProfile->rowAdjust = 0;
+}
+
 void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
 {
     for (int i = 0; i < LED_NUMBER; i++) {
@@ -740,6 +746,13 @@ void createDefaultConfig(master_t *config)
     intFeatureSet(DEFAULT_RX_FEATURE | FEATURE_FAILSAFE , featuresPtr);
 #ifdef DEFAULT_FEATURES
     intFeatureSet(DEFAULT_FEATURES, featuresPtr);
+#endif
+
+#ifdef USE_MSP_DISPLAYPORT
+    resetDisplayPortProfile(&config->displayPortProfileMsp);
+#endif
+#ifdef USE_MAX7456
+    resetDisplayPortProfile(&config->displayPortProfileMax7456);
 #endif
 
 #ifdef USE_MAX7456

@@ -65,6 +65,7 @@ uint8_t cliMode = 0;
 #include "drivers/system.h"
 #include "drivers/timer.h"
 #include "drivers/vcd.h"
+#include "drivers/display.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
@@ -796,6 +797,14 @@ const clivalue_t valueTable[] = {
     { "vcd_video_system",           VAR_UINT8   | MASTER_VALUE, &vcdProfile()->video_system, .config.minmax = { 0, 2 } },
     { "vcd_h_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->h_offset, .config.minmax = { -32, 31 } },
     { "vcd_v_offset",               VAR_INT8    | MASTER_VALUE, &vcdProfile()->v_offset, .config.minmax = { -15, 16 } },
+#endif
+#ifdef USE_MSP_DISPLAYPORT
+    { "displayport_msp_col_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMsp()->colAdjust, .config.minmax = { -6, 0 } },
+    { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMsp()->rowAdjust, .config.minmax = { -3, 0 } },
+#endif
+#ifdef OSD
+    { "displayport_max7456_col_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMax7456()->colAdjust, .config.minmax = { -6, 0 } },
+    { "displayport_max7456_row_adjust", VAR_INT8    | MASTER_VALUE, &displayPortProfileMax7456()->rowAdjust, .config.minmax = { -3, 0 } },
 #endif
 };
 
