@@ -216,10 +216,6 @@ void taskVtxControl(uint32_t currentTime)
 #ifdef VTX_COMMON
     vtxCommonProcess(currentTime);
 #endif
-// Call to trampProcess() will be gone
-#ifdef VTX_TRAMP
-    trampProcess(currentTime);
-#endif
 }
 #endif
 
