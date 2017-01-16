@@ -360,7 +360,7 @@ void processRx(timeUs_t currentTimeUs)
 
     processRcStickPositions(throttleStatus, armingConfig()->disarm_kill_switch, armingConfig()->fixed_wing_auto_arm);
 
-    updateActivatedModes(masterConfig.modeActivationConditions, masterConfig.modeActivationOperator);
+    updateActivatedModes();
 
     if (!cliMode) {
         updateAdjustmentStates(masterConfig.adjustmentRanges);
