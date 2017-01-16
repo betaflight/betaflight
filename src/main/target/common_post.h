@@ -22,5 +22,4 @@
 // Targets with built-in vtx do not need external vtx
 #if defined(VTX) || defined(USE_RTC6705)
 # undef VTX_CONTROL
-# undef VTX_SMARTAUDIO
 #endif

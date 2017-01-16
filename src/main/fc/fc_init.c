@@ -92,6 +92,7 @@
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
 
 #include "scheduler/scheduler.h"
 
@@ -308,8 +309,8 @@ void init(void)
     beeperInit(beeperConfig());
 #endif
 /* temp until PGs are implemented. */
-#ifdef INVERTER
-    initInverter();
+#ifdef USE_INVERTER
+    initInverters();
 #endif
 
 #ifdef USE_BST
@@ -523,9 +524,17 @@ void init(void)
     baroSetCalibrationCycles(CALIBRATING_BARO_CYCLES);
 #endif
 
+#ifdef VTX_CONTROL
+
 #ifdef VTX_SMARTAUDIO
     smartAudioInit();
 #endif
+
+#ifdef VTX_TRAMP
+    trampInit();
+#endif
+
+#endif // VTX_CONTROL
 
     // start all timers
     // TODO - not implemented yet

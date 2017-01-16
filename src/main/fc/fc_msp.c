@@ -1237,7 +1237,6 @@ static void mspFcDataFlashReadCommand(sbuf_t *dst, sbuf_t *src)
 static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 {
     uint32_t i;
-    uint16_t tmp;
     uint8_t value;
     const unsigned int dataSize = sbufBytesRemaining(src);
 #ifdef GPS
@@ -1375,10 +1374,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_MISC:
-        tmp = sbufReadU16(src);
-        if (tmp < 1600 && tmp > 1400)
-            rxConfig()->midrc = tmp;
-
+        rxConfig()->midrc = sbufReadU16(src);
         motorConfig()->minthrottle = sbufReadU16(src);
         motorConfig()->maxthrottle = sbufReadU16(src);
         motorConfig()->mincommand = sbufReadU16(src);
@@ -1639,7 +1635,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
 #ifdef USE_RTC6705
     case MSP_SET_VTX_CONFIG:
-        tmp = sbufReadU16(src);
+        ;
+        uint16_t tmp = sbufReadU16(src);
         if  (tmp < 40)
             masterConfig.vtx_channel = tmp;
         if (current_vtx_channel != masterConfig.vtx_channel) {

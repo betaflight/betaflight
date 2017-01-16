@@ -30,8 +30,7 @@
 
 #define BEEPER                  PC13
 
-#define INVERTER                PC15
-#define INVERTER_USART          USART2 //Sbus on USART 2 of nano.
+#define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
 
 #define MPU9250_CS_PIN          PB12
 #define MPU9250_SPI_INSTANCE    SPI2

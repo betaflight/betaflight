@@ -1124,7 +1124,10 @@ static CMS_Menu saCmsMenuStats = {
 
 static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
+<<<<<<< HEAD
 static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChanNames, NULL };
+=======
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &vtx58ChannelNames[0], NULL };
 
 static const char * const saCmsPowerNames[] = {
     "---",
@@ -1133,8 +1136,9 @@ static const char * const saCmsPowerNames[] = {
     "500",
     "800",
 };
+>>>>>>> betaflight/master
 
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saCmsPowerNames};
+static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saPowerNames};
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 

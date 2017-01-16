@@ -29,8 +29,7 @@
 #define BEEPER                  PC9
 //#define BEEPER_INVERTED
 
-#define INVERTER                PB15
-#define INVERTER_USART          USART6
+#define INVERTER_PIN_USART6     PB15
 
 
 // Gyro interrupt

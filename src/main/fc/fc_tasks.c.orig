@@ -53,6 +53,11 @@
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
+<<<<<<< HEAD
+=======
+#include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
+>>>>>>> betaflight/master
 
 #include "msp/msp_serial.h"
 

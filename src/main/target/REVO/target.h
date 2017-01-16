@@ -69,8 +69,7 @@
 #endif
 
 // PC0 used as inverter select GPIO
-#define INVERTER                PC0
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_USART1     PC0
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
