@@ -322,12 +322,12 @@ void freeSmartPortTelemetryPort(void)
 
 void configureSmartPortTelemetryPort(void)
 {
-    portOptions_t portOptions = 0;
-
     if (!portConfig) {
         return;
     }
 
+    portOptions_t portOptions = 0;
+    
     if (telemetryConfig->sportHalfDuplex) {
         portOptions |= SERIAL_BIDIR;
     }
