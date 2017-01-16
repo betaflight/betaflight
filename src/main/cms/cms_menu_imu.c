@@ -38,6 +38,7 @@
 #include "common/axis.h"
 
 #include "flight/pid.h"
+#include "flight/navigation_rewrite.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
 
@@ -51,7 +52,6 @@
 #include "sensors/gyro.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 
 //

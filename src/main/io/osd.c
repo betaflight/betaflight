@@ -23,7 +23,9 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -62,8 +64,10 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "flight/pid.h"
+#include "flight/imu.h"
 #include "flight/mixer.h"
+#include "flight/navigation_rewrite.h"
+#include "flight/pid.h"
 #include "flight/servos.h"
 
 #include "rx/rx.h"

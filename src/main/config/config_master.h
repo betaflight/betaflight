@@ -19,33 +19,24 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
+#include <stddef.h>
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/maths.h"
 
 #include "config/config_profile.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 #include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
 
 #include "fc/config.h"
 #include "fc/rc_controls.h"
 
-#include "flight/mixer.h"
+#ifdef USE_SERVOS
 #include "flight/servos.h"
-#include "flight/imu.h"
-#include "flight/navigation_rewrite.h"
+#endif
 
-#include "io/gps.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
-#include "io/serial.h"
-
-#include "telemetry/telemetry.h"
 
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
@@ -97,10 +88,6 @@ typedef struct master_s {
 
 #endif
 
-#ifdef NAV
-    navConfig_t navConfig;
-#endif
-
     pwmRxConfig_t pwmRxConfig;
 
 #ifdef LED_STRIP
@@ -112,7 +99,6 @@ typedef struct master_s {
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];
-    uint8_t current_profile_index;
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
