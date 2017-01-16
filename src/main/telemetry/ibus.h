@@ -17,7 +17,7 @@
 
 #pragma once
 
-void initIbusTelemetry(telemetryConfig_t *);
+void initIbusTelemetry(void);
 
 void handleIbusTelemetry(void);
 void checkIbusTelemetryState(void);

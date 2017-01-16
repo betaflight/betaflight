@@ -191,7 +191,6 @@ static const uint8_t SENSOR_ADDRESS_TYPE_LOOKUP[] = {
 static serialPort_t *ibusSerialPort = NULL;
 static serialPortConfig_t *ibusSerialPortConfig;
 
-static telemetryConfig_t *telemetryConfig;
 static bool ibusTelemetryEnabled = false;
 static portSharing_e ibusPortSharing;
 
@@ -274,8 +273,7 @@ static void pushOntoTail(uint8_t buffer[IBUS_MIN_LEN], size_t bufferLength, uint
     ibusReceiveBuffer[bufferLength - 1] = value;
 }
 
-void initIbusTelemetry(telemetryConfig_t *initialTelemetryConfig) {
-    telemetryConfig = initialTelemetryConfig;
+void initIbusTelemetry(void) {
     ibusSerialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_IBUS);
     ibusPortSharing = determinePortSharing(ibusSerialPortConfig, FUNCTION_TELEMETRY_IBUS);
 }

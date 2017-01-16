@@ -402,10 +402,8 @@ static uint16_t jetiExBusReadRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uin
   -----------------------------------------------
 */
 
-void initJetiExBusTelemetry(telemetryConfig_t *initialTelemetryConfig)
+void initJetiExBusTelemetry(void)
 {
-    UNUSED(initialTelemetryConfig);
-
     // Init Ex Bus Frame header
     jetiExBusTelemetryFrame[EXBUS_HEADER_SYNC] = 0x3B;       // Startbytes
     jetiExBusTelemetryFrame[EXBUS_HEADER_REQ] = 0x01;
