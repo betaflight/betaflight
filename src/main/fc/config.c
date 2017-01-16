@@ -185,8 +185,6 @@ void createDefaultConfig(master_t *config)
     // for (int i = 0; i < CHECKBOXITEMS; i++)
     //     cfg.activate[i] = 0;
 
-    config->modeActivationOperator = MODE_OPERATOR_OR; // default is to OR multiple-channel mode activation conditions
-
     // Radio
 #ifdef RX_CHANNELS_TAER
     parseRcChannels("TAER1234");
@@ -331,8 +329,6 @@ static void activateConfig(void)
     activateControlRateConfig();
 
     resetAdjustmentStates();
-
-    useRcControlsConfig(masterConfig.modeActivationConditions);
 
     failsafeReset();
 

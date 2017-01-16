@@ -70,9 +70,6 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
 
-    modeActivationCondition_t modeActivationConditions[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-    modeActivationOperator_e modeActivationOperator;
-
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
     // Radio/ESC-related configuration

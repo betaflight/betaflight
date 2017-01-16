@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #include "platform.h"
@@ -58,6 +59,7 @@
 #include "io/displayport_max7456.h"
 #include "io/flashfs.h"
 #include "io/gimbal.h"
+#include "io/gps.h"
 #include "io/osd.h"
 
 #include "fc/config.h"

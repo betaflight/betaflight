@@ -123,10 +123,18 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
+PG_DECLARE_ARR(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
+
 typedef enum {
-    MODE_OPERATOR_OR,
+    MODE_OPERATOR_OR, // default
     MODE_OPERATOR_AND
 } modeActivationOperator_e;
+
+typedef struct modeActivationOperatorConfig_s {
+    modeActivationOperator_e modeActivationOperator;
+} modeActivationOperatorConfig_t;
+
+PG_DECLARE(modeActivationOperatorConfig_t, modeActivationOperatorConfig);
 
 extern int16_t rcCommand[4];
 
@@ -154,7 +162,7 @@ throttleStatus_e calculateThrottleStatus(uint16_t deadband3d_throttle);
 rollPitchStatus_e calculateRollPitchCenterStatus(void);
 void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_switch, bool fixed_wing_auto_arm);
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, modeActivationOperator_e modeActivationOperator);
+void updateActivatedModes(void);
 
 
 typedef enum {
@@ -246,5 +254,5 @@ bool isUsingSticksForArming(void);
 bool isUsingNavigationModes(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);
+bool isModeActivationConditionPresent(boxId_e modeId);
+void useRcControlsConfig(void);

@@ -87,35 +87,8 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .auto_disarm_delay = 5
 );
 
-void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
-#ifndef BLACKBOX
-    UNUSED(adjustmentFunction);
-    UNUSED(newValue);
-#else
-    if (feature(FEATURE_BLACKBOX)) {
-        flightLogEvent_inflightAdjustment_t eventData;
-        eventData.adjustmentFunction = adjustmentFunction;
-        eventData.newValue = newValue;
-        eventData.floatFlag = false;
-        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
-    }
-#endif
-}
-
-void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue) {
-#ifndef BLACKBOX
-    UNUSED(adjustmentFunction);
-    UNUSED(newFloatValue);
-#else
-    if (feature(FEATURE_BLACKBOX)) {
-        flightLogEvent_inflightAdjustment_t eventData;
-        eventData.adjustmentFunction = adjustmentFunction;
-        eventData.newFloatValue = newFloatValue;
-        eventData.floatFlag = true;
-        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
-    }
-#endif
-}
+PG_REGISTER_ARR(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
+PG_REGISTER(modeActivationOperatorConfig_t, modeActivationOperatorConfig, PG_MODE_ACTIVATION_OPERATOR_CONFIG, 0);
 
 bool isUsingSticksForArming(void)
 {
@@ -313,14 +286,10 @@ void processRcStickPositions(throttleStatus_e throttleStatus, bool disarm_kill_s
     }
 }
 
-bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId)
+bool isModeActivationConditionPresent(boxId_e modeId)
 {
-    uint8_t index;
-
-    for (index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
-        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[index];
-
-        if (modeActivationCondition->modeId == modeId && IS_RANGE_USABLE(&modeActivationCondition->range)) {
+    for (int index = 0; index < MAX_MODE_ACTIVATION_CONDITION_COUNT; index++) {
+        if (modeActivationConditions(index)->modeId == modeId && IS_RANGE_USABLE(&modeActivationConditions(index)->range)) {
             return true;
         }
     }
@@ -328,7 +297,7 @@ bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationC
     return false;
 }
 
-bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
+static bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range) {
     if (!IS_RANGE_USABLE(range)) {
         return false;
     }
@@ -338,10 +307,8 @@ bool isRangeActive(uint8_t auxChannelIndex, channelRange_t *range) {
             channelValue < 900 + (range->endStep * 25));
 }
 
-void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, modeActivationOperator_e modeActivationOperator)
+void updateActivatedModes(void)
 {
-    uint8_t modeIndex;
-
     // Unfortunately for AND logic it's not enough to simply check if any of the specified channel range conditions are valid for a mode.
     // We need to count the total number of conditions specified for each mode, and check that all those conditions are currently valid.
 
@@ -351,15 +318,14 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, m
     memset(specifiedConditionCountPerMode, 0, CHECKBOX_ITEM_COUNT);
     memset(validConditionCountPerMode, 0, CHECKBOX_ITEM_COUNT);
 
-    for (modeIndex = 0; modeIndex < MAX_MODE_ACTIVATION_CONDITION_COUNT; modeIndex++) {
-        modeActivationCondition_t *modeActivationCondition = &modeActivationConditions[modeIndex];
+    for (int modeIndex = 0; modeIndex < MAX_MODE_ACTIVATION_CONDITION_COUNT; modeIndex++) {
 
         // Increment the number of specified conditions for this mode
-        specifiedConditionCountPerMode[modeActivationCondition->modeId]++;
+        specifiedConditionCountPerMode[modeActivationConditions(modeIndex)->modeId]++;
 
-        if (isRangeActive(modeActivationCondition->auxChannelIndex, &modeActivationCondition->range)) {
+        if (isRangeActive(modeActivationConditions(modeIndex)->auxChannelIndex, &modeActivationConditions(modeIndex)->range)) {
             // Increment the number of valid conditions for this mode
-            validConditionCountPerMode[modeActivationCondition->modeId]++;
+            validConditionCountPerMode[modeActivationConditions(modeIndex)->modeId]++;
         }
     }
 
@@ -367,13 +333,13 @@ void updateActivatedModes(modeActivationCondition_t *modeActivationConditions, m
     rcModeActivationMask = 0;
 
     // Now see which modes should be enabled
-    for (modeIndex = 0; modeIndex < CHECKBOX_ITEM_COUNT; modeIndex++) {
+    for (int modeIndex = 0; modeIndex < CHECKBOX_ITEM_COUNT; modeIndex++) {
         // only modes with conditions specified are considered
         if (specifiedConditionCountPerMode[modeIndex] > 0) {
             // For AND logic, the specified condition count and valid condition count must be the same.
             // For OR logic, the valid condition count must be greater than zero.
 
-            if (modeActivationOperator == MODE_OPERATOR_AND) {
+            if (modeActivationOperatorConfig()->modeActivationOperator == MODE_OPERATOR_AND) {
                 // AND the conditions
                 if (validConditionCountPerMode[modeIndex] == specifiedConditionCountPerMode[modeIndex]) {
                     ACTIVATE_RC_MODE(modeIndex);
@@ -517,6 +483,38 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
 
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
+
+static void blackboxLogInflightAdjustmentEvent(adjustmentFunction_e adjustmentFunction, int32_t newValue) {
+#ifndef BLACKBOX
+    UNUSED(adjustmentFunction);
+    UNUSED(newValue);
+#else
+    if (feature(FEATURE_BLACKBOX)) {
+        flightLogEvent_inflightAdjustment_t eventData;
+        eventData.adjustmentFunction = adjustmentFunction;
+        eventData.newValue = newValue;
+        eventData.floatFlag = false;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
+    }
+#endif
+}
+
+#if 0
+static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustmentFunction, float newFloatValue) {
+#ifndef BLACKBOX
+    UNUSED(adjustmentFunction);
+    UNUSED(newFloatValue);
+#else
+    if (feature(FEATURE_BLACKBOX)) {
+        flightLogEvent_inflightAdjustment_t eventData;
+        eventData.adjustmentFunction = adjustmentFunction;
+        eventData.newFloatValue = newFloatValue;
+        eventData.floatFlag = true;
+        blackboxLogEvent(FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT, (flightLogEventData_t*)&eventData);
+    }
+#endif
+}
+#endif
 
 static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
@@ -735,14 +733,14 @@ int32_t getRcStickDeflection(int32_t axis, uint16_t midrc) {
     return MIN(ABS(rcData[axis] - midrc), 500);
 }
 
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions)
+void useRcControlsConfig(void)
 {
-    isUsingSticksToArm = !isModeActivationConditionPresent(modeActivationConditions, BOXARM);
+    isUsingSticksToArm = !isModeActivationConditionPresent(BOXARM);
 
 #ifdef NAV
-    isUsingNAVModes = isModeActivationConditionPresent(modeActivationConditions, BOXNAVPOSHOLD) ||
-                        isModeActivationConditionPresent(modeActivationConditions, BOXNAVRTH) ||
-                        isModeActivationConditionPresent(modeActivationConditions, BOXNAVWP);
+    isUsingNAVModes = isModeActivationConditionPresent(BOXNAVPOSHOLD) ||
+                        isModeActivationConditionPresent(BOXNAVRTH) ||
+                        isModeActivationConditionPresent(BOXNAVWP);
 #endif
 }
 

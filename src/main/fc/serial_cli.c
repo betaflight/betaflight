@@ -1147,6 +1147,7 @@ static navConfig_t navConfigCopy;
 #ifdef TELEMETRY
 static telemetryConfig_t telemetryConfigCopy;
 #endif
+static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 
 static void backupConfigs(void)
 {
@@ -1200,6 +1201,9 @@ static void backupConfigs(void)
 #ifdef TELEMETRY
     telemetryConfigCopy = *telemetryConfig();
 #endif
+    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
+        modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
+    }
 }
 
 static void restoreConfigs(void)
@@ -1253,6 +1257,9 @@ static void restoreConfigs(void)
 #ifdef TELEMETRY
     *telemetryConfigMutable() = telemetryConfigCopy;
 #endif
+    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
+        *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
+    }
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -1669,12 +1676,12 @@ static void cliAux(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAux(DUMP_MASTER, masterConfig.modeActivationConditions, NULL);
+        printAux(DUMP_MASTER, modeActivationConditions(0), NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_MODE_ACTIVATION_CONDITION_COUNT) {
-            modeActivationCondition_t *mac = &masterConfig.modeActivationConditions[i];
+            modeActivationCondition_t *mac = modeActivationConditionsMutable(i);
             uint8_t validArgumentCount = 0;
             ptr = nextArg(ptr);
             if (ptr) {
@@ -3512,7 +3519,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #endif
 
         cliPrintHashLine("aux");
-        printAux(dumpMask, masterConfig.modeActivationConditions, defaultConfig.modeActivationConditions);
+        printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
         printAdjustmentRange(dumpMask, masterConfig.adjustmentRanges, defaultConfig.adjustmentRanges);
