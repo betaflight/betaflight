@@ -61,6 +61,7 @@ uint8_t trampCurBand = 0;
 uint8_t trampCurChan = 0;
 uint16_t trampCurPower = 0;       // Actual transmitting power
 uint16_t trampCurConfigPower = 0; // Configured transmitting power
+int16_t trampCurTemp = 0;
 uint8_t trampCurPitmode = 0;
 
 uint32_t trampConfFreq = 0;
@@ -172,6 +173,16 @@ char trampHandleResponse(void)
             }
 
             // throw bytes echoed from tx to rx in bidirectional mode away
+        }
+        break;
+
+    case 's':
+        {
+            uint16_t temp = (int16_t)(trampRespBuffer[6]|(trampRespBuffer[7] << 8));
+            if(temp != 0) {
+                trampCurTemp = temp;
+                return 's';
+            }
         }
         break;
     }
@@ -323,13 +334,17 @@ void trampProcess(uint32_t currentTimeUs)
 
     case TRAMP_STATUS_OFFLINE:
     case TRAMP_STATUS_ONLINE:
-
         if (cmp32(currentTimeUs, lastQueryTimeUs) > 1000 * 1000) { // 1s
 
             if (trampStatus == TRAMP_STATUS_OFFLINE)
                 trampQueryR();
-            else
-                trampQueryV();
+            else {
+                static unsigned int cnt = 0;
+                if(((cnt++) & 1) == 0)
+                    trampQueryV();
+                else
+                    trampQueryS();
+            }
                 
             lastQueryTimeUs = currentTimeUs;
         }
@@ -474,6 +489,8 @@ static long trampCmsConfigChan(displayPort_t *pDisp, const void *self)
     return 0;
 }
 
+static OSD_INT16_t trampCmsEntTemp = { &trampCurTemp, -100, 300, 0 };
+
 static const char * const trampCmsPitmodeNames[] = {
     "---", "OFF", "ON "
 };
@@ -560,6 +577,7 @@ static OSD_Entry trampMenuEntries[] =
     { "CHAN",   OME_TAB,     trampCmsConfigChan,     &trampCmsEntChan,      0 },
     { "(FREQ)", OME_UINT16,  NULL,                   &trampCmsEntFreqRef,   DYNAMIC },
     { "POWER",  OME_TAB,     NULL,                   &trampCmsEntPower,     0 },
+    { "T(C)",   OME_INT16,   NULL,                   &trampCmsEntTemp,      DYNAMIC },
     { "SET",    OME_Submenu, cmsMenuChange,          &trampCmsMenuCommence, 0 },
 
     { "BACK",   OME_Back, NULL, NULL, 0 },
