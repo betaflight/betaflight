@@ -33,11 +33,10 @@
 #include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
-#include "drivers/vtx_var.h"
 #include "drivers/vtx_common.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
-#include "io/vtx_common.h"
+#include "io/vtx_string.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -86,7 +85,7 @@ static vtxDevice_t vtxSmartAudio = {
     .numChan = 8,
     .numPower = 4,
     .bandNames = (char **)vtx58BandNames,
-    .chanNames = (char **)vtx58ChanNames,
+    .chanNames = (char **)vtx58ChannelNames,
     .powerNames = (char **)saPowerNames,
 };
 #endif
@@ -1124,7 +1123,7 @@ static CMS_Menu saCmsMenuStats = {
 
 static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChanNames, NULL };
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChannelNames, NULL };
 
 static const char * const saCmsPowerNames[] = {
     "---",

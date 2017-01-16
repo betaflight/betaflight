@@ -53,6 +53,7 @@
 #include "io/osd.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
+#include "io/vtx_tramp.h" // Will be gone
 
 #include "msp/msp_serial.h"
 
@@ -215,6 +216,7 @@ void taskVtxControl(uint32_t currentTime)
 #ifdef VTX_COMMON
     vtxCommonProcess(currentTime);
 #endif
+// Call to trampProcess() will be gone
 #ifdef VTX_TRAMP
     trampProcess(currentTime);
 #endif

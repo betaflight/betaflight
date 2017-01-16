@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#if defined(VTX_CONTROL)
+#if defined(VTX_COMMON)
 
 extern const uint16_t vtx58FreqTable[5][8];
 extern const char * const vtx58BandNames[];

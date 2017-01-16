@@ -35,7 +35,7 @@
 #include "drivers/serial.h"
 #include "drivers/system.h"
 #include "io/vtx_tramp.h"
-#include "io/vtx_common.h"
+#include "io/vtx_string.h"
 
 static serialPort_t *trampSerialPort = NULL;
 

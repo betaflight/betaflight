@@ -591,7 +591,6 @@ HIGHEND_SRC = \
             drivers/serial_escserial.c \
             drivers/serial_softserial.c \
             drivers/sonar_hcsr04.c \
-            drivers/vtx_var.c \
             drivers/vtx_common.c \
             flight/navigation.c \
             flight/gps_conversion.c \
@@ -614,7 +613,7 @@ HIGHEND_SRC = \
             telemetry/mavlink.c \
             telemetry/ibus.c \
             sensors/esc_sensor.c \
-            io/vtx_common.c \
+            io/vtx_string.c \
             io/vtx_smartaudio.c \
             io/vtx_tramp.c
 
@@ -708,7 +707,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/serial_escserial.c \
-            drivers/vtx_var.c \
             drivers/vtx_common.c \
             io/cli.c \
             io/serial_4way.c \

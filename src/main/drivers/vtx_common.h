@@ -81,6 +81,3 @@ void vtxCommonSetPitmode(uint8_t onoff);
 bool vtxCommonGetBandChan(uint8_t *pBand, uint8_t *pChan);
 bool vtxCommonGetPowerIndex(uint8_t *pIndex);
 bool vtxCommonGetPitmode(uint8_t *pOnoff);
-
-// Utilities
-bool vtx58_Freq2Bandchan(vtxDevice_t *pVtxDev, uint16_t freq, uint8_t *pBand, uint8_t *pChan);
