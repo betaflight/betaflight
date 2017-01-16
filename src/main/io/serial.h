@@ -38,7 +38,7 @@ typedef enum {
     FUNCTION_TELEMETRY_MAVLINK   = (1 << 9),  // 512
     FUNCTION_ESC_SENSOR          = (1 << 10), // 1024
     FUNCTION_VTX_CONTROL         = (1 << 11), // 2048
-    FUNCTION_TELEMETRY_IBUS      = (1 << 12)  // 4096
+    FUNCTION_TELEMETRY_IBUS      = (1 << 12), // 4096
 } serialPortFunction_e;
 
 typedef enum {
@@ -79,6 +79,8 @@ typedef enum {
 } serialPortIdentifier_e;
 
 extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
+
+#define SERIAL_PORT_IDENTIFIER_TO_RESOURCE_INDEX(x) (((x) <= SERIAL_PORT_USART8) ? (x) : (RESOURCE_SOFT_OFFSET + ((x) - SERIAL_PORT_SOFTSERIAL1)))
 
 //
 // runtime

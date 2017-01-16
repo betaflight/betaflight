@@ -53,6 +53,7 @@
 #include "io/serial.h"
 #include "io/transponder_ir.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
 
 #include "msp/msp_serial.h"
 
@@ -215,6 +216,9 @@ void taskVtxControl(uint32_t currentTime)
 #ifdef VTX_SMARTAUDIO
     smartAudioProcess(currentTime);
 #endif
+#ifdef VTX_TRAMP
+    trampProcess(currentTime);
+#endif
 }
 #endif
 
@@ -300,7 +304,7 @@ void fcTasksInit(void)
     setTaskEnabled(TASK_STACK_CHECK, true);
 #endif
 #ifdef VTX_CONTROL
-#ifdef VTX_SMARTAUDIO
+#if defined(VTX_SMARTAUDIO) || defined(VTX_TRAMP)
     setTaskEnabled(TASK_VTXCTRL, true);
 #endif
 #endif

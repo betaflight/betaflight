@@ -33,6 +33,7 @@
 #include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/vtx_var.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
 
@@ -129,18 +130,6 @@ static smartAudioStat_t saStat = {
     .ooopresp = 0,
     .badcode = 0,
 };
-
-// The band/chan to frequency table
-// XXX Should really be consolidated among different vtx drivers
-static const uint16_t saFreqTable[5][8] =
-{
-    { 5865, 5845, 5825, 5805, 5785, 5765, 5745, 5725 }, // Boacam A
-    { 5733, 5752, 5771, 5790, 5809, 5828, 5847, 5866 }, // Boscam B
-    { 5705, 5685, 5665, 5645, 5885, 5905, 5925, 5945 }, // Boscam E
-    { 5740, 5760, 5780, 5800, 5820, 5840, 5860, 5880 }, // FatShark
-    { 5658, 5695, 5732, 5769, 5806, 5843, 5880, 5917 }, // RaceBand
-};
-// XXX Should frequencies not usable in locked state be detected?
 
 typedef struct saPowerTable_s {
     int rfpower;
@@ -767,9 +756,9 @@ void saCmsUpdate(void)
 
         saCmsBand = (saDevice.chan / 8) + 1;
         saCmsChan = (saDevice.chan % 8) + 1;
-        saCmsFreqRef = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
+        saCmsFreqRef = vtx58FreqTable[saDevice.chan / 8][saDevice.chan % 8];
 
-        saCmsDeviceFreq = saFreqTable[saDevice.chan / 8][saDevice.chan % 8];
+        saCmsDeviceFreq = vtx58FreqTable[saDevice.chan / 8][saDevice.chan % 8];
 
         if ((saDevice.mode & SA_MODE_GET_PITMODE) == 0) {
             saCmsRFState = SACMS_TXMODE_ACTIVE;
@@ -828,7 +817,7 @@ else
         tfp_sprintf(&saCmsStatusString[5], "%4d", saDevice.freq);
     else
         tfp_sprintf(&saCmsStatusString[5], "%4d",
-            saFreqTable[saDevice.chan / 8][saDevice.chan % 8]);
+            vtx58FreqTable[saDevice.chan / 8][saDevice.chan % 8]);
 
     saCmsStatusString[9] = ' ';
 
@@ -868,7 +857,7 @@ dprintf(("saCmsConfigBand: band req %d ", saCmsBand));
     if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
-    saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
+    saCmsFreqRef = vtx58FreqTable[saCmsBand - 1][saCmsChan - 1];
 
     return 0;
 }
@@ -893,7 +882,7 @@ static long saCmsConfigChanByGvar(displayPort_t *pDisp, const void *self)
     if (!(saCmsOpmodel == SACMS_OPMODEL_FREE && saDeferred))
         saSetBandChan(saCmsBand - 1, saCmsChan - 1);
 
-    saCmsFreqRef = saFreqTable[saCmsBand - 1][saCmsChan - 1];
+    saCmsFreqRef = vtx58FreqTable[saCmsBand - 1][saCmsChan - 1];
 
     return 0;
 }
@@ -994,22 +983,9 @@ static CMS_Menu saCmsMenuStats = {
     .entries = saCmsMenuStatsEntries
 };
 
-static const char * const saCmsBandNames[] = {
-    "--------",
-    "BOSCAM A",
-    "BOSCAM B",
-    "BOSCAM E",
-    "FATSHARK",
-    "RACEBAND",
-};
+static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, &saCmsBandNames[0], NULL };
-
-static const char * const saCmsChanNames[] = {
-    "-", "1", "2", "3", "4", "5", "6", "7", "8",
-};
-
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &saCmsChanNames[0], NULL };
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &vtx58ChanNames[0], NULL };
 
 static const char * const saCmsPowerNames[] = {
     "---",

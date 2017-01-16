@@ -92,6 +92,7 @@
 #include "io/displayport_msp.h"
 #include "io/vtx.h"
 #include "io/vtx_smartaudio.h"
+#include "io/vtx_tramp.h"
 
 #include "scheduler/scheduler.h"
 
@@ -525,6 +526,10 @@ void init(void)
 
 #ifdef VTX_SMARTAUDIO
     smartAudioInit();
+#endif
+
+#ifdef VTX_TRAMP
+    trampInit();
 #endif
 
     // start all timers

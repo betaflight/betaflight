@@ -15,22 +15,38 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+/* Created by jflyper */
 
-#define SOFTSERIAL_BUFFER_SIZE 256
+#include <stdbool.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <string.h>
 
-typedef enum {
-    SOFTSERIAL1 = 0,
-    SOFTSERIAL2
-} softSerialPortIndex_e;
+#include "platform.h"
+#include "build/debug.h"
 
-serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallbackPtr rxCallback, uint32_t baud, portMode_t mode, portOptions_t options);
+#if defined(VTX_TRAMP)
+#include "drivers/vtx_var.h"
 
-// serialPort API
-void softSerialWriteByte(serialPort_t *instance, uint8_t ch);
-uint32_t softSerialRxBytesWaiting(const serialPort_t *instance);
-uint32_t softSerialTxBytesFree(const serialPort_t *instance);
-uint8_t softSerialReadByte(serialPort_t *instance);
-void softSerialSetBaudRate(serialPort_t *s, uint32_t baudRate);
-bool isSoftSerialTransmitBufferEmpty(const serialPort_t *s);
+bool vtx58_Freq2Bandchan(uint16_t freq, uint8_t *pBand, uint8_t *pChan)
+{
+    uint8_t band;
+    uint8_t chan;
 
+    for (band = 0 ; band < 5 ; band++) {
+        for (chan = 0 ; chan < 8 ; chan++) {
+            if (vtx58FreqTable[band][chan] == freq) {
+                *pBand = band + 1;
+                *pChan = chan + 1;
+                return true;
+            }
+        }
+    }
+
+    *pBand = 0;
+    *pChan = 0;
+
+    return false;
+}
+
+#endif
