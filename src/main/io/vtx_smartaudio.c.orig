@@ -33,10 +33,11 @@
 #include "common/utils.h"
 #include "drivers/system.h"
 #include "drivers/serial.h"
+#include "drivers/vtx_var.h"
 #include "drivers/vtx_common.h"
 #include "io/serial.h"
 #include "io/vtx_smartaudio.h"
-#include "io/vtx_string.h"
+#include "io/vtx_common.h"
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -85,7 +86,7 @@ static vtxDevice_t vtxSmartAudio = {
     .numChan = 8,
     .numPower = 4,
     .bandNames = (char **)vtx58BandNames,
-    .chanNames = (char **)vtx58ChannelNames,
+    .chanNames = (char **)vtx58ChanNames,
     .powerNames = (char **)saPowerNames,
 };
 #endif
@@ -248,11 +249,11 @@ static int saDacToPowerIndex(int dac)
 {
     int idx;
 
-    for (idx = 3 ; idx >= 0 ; idx--) {
+    for (idx = 0 ; idx < 4 ; idx++) {
         if (saPowerTable[idx].valueV1 <= dac)
             return(idx);
     }
-    return(0);
+    return(3);
 }
 
 //
@@ -1123,7 +1124,10 @@ static CMS_Menu saCmsMenuStats = {
 
 static OSD_TAB_t saCmsEntBand = { &saCmsBand, 5, vtx58BandNames, NULL };
 
-static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChannelNames, NULL };
+<<<<<<< HEAD
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, vtx58ChanNames, NULL };
+=======
+static OSD_TAB_t saCmsEntChan = { &saCmsChan, 8, &vtx58ChannelNames[0], NULL };
 
 static const char * const saCmsPowerNames[] = {
     "---",
@@ -1132,8 +1136,9 @@ static const char * const saCmsPowerNames[] = {
     "500",
     "800",
 };
+>>>>>>> betaflight/master
 
-static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saCmsPowerNames};
+static OSD_TAB_t saCmsEntPower = { &saCmsPower, 4, saPowerNames};
 
 static OSD_UINT16_t saCmsEntFreqRef = { &saCmsFreqRef, 5600, 5900, 0 };
 

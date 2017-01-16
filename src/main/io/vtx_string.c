@@ -25,7 +25,7 @@
 #include "platform.h"
 #include "build/debug.h"
 
-#if defined(VTX_CONTROL)
+#if defined(VTX_COMMON)
 
 const uint16_t vtx58FreqTable[5][8] =
 {
