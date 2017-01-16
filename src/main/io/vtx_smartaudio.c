@@ -146,6 +146,12 @@ static saPowerTable_t saPowerTable[] = {
 
 // Last received device ('hard') states
 
+enum {
+    ST_OK = 0,
+    ST_UPDATE,
+    ST_UPDATE_ACKED
+} saDevState_e ;
+
 typedef struct smartAudioDevice_s {
     int8_t version;
     int8_t chan;
@@ -153,6 +159,7 @@ typedef struct smartAudioDevice_s {
     int8_t mode;
     uint16_t freq;
     uint16_t orfreq;
+    uint16_t state;
 } smartAudioDevice_t;
 
 static smartAudioDevice_t saDevice = {
@@ -162,6 +169,7 @@ static smartAudioDevice_t saDevice = {
     .mode = 0,
     .freq = 0,
     .orfreq = 0,
+    .state = ST_OK,
 };
 
 static smartAudioDevice_t saDevicePrev = {
@@ -228,11 +236,11 @@ static int saDacToPowerIndex(int dac)
 {
     int idx;
 
-    for (idx = 0 ; idx < 4 ; idx++) {
+    for (idx = 3 ; idx >= 0 ; idx--) {
         if (saPowerTable[idx].valueV1 <= dac)
             return(idx);
     }
-    return(3);
+    return(0);
 }
 
 //
@@ -321,6 +329,9 @@ static void saProcessResponse(uint8_t *buf, int len)
         saDevice.mode = buf[4];
         saDevice.freq = (buf[5] << 8)|buf[6];
 
+        if (saDevice.state == ST_UPDATE_ACKED)
+            saDevice.state = ST_OK;
+
 #ifdef SMARTAUDIO_DEBUG_MONITOR
         debug[0] = saDevice.version * 100 + saDevice.mode;
         debug[1] = saDevice.chan;
@@ -330,6 +341,8 @@ static void saProcessResponse(uint8_t *buf, int len)
         break;
 
     case SA_CMD_SET_POWER: // Set Power
+        if (saDevice.state == ST_UPDATE)
+            saDevice.state = ST_UPDATE_ACKED;
         break;
 
     case SA_CMD_SET_CHAN: // Set Channel
@@ -703,6 +716,41 @@ void smartAudioProcess(uint32_t now)
         saGetSettings();
         saSendQueue();
     }
+}
+
+int getSmartAudioSettings(smartAudioSettings_t *s)
+{
+    if (!smartAudioSerialPort
+            || !s
+            || saDevice.version == 0
+            || saDevice.state != ST_OK)
+        return -1;
+
+    s->band = (saDevice.chan / 8);
+    s->chan = (saDevice.chan % 8);
+
+    if (saDevice.version == 2) {
+        s->power = saDevice.power; // XXX Take care V1
+    } else {
+        s->power = saDacToPowerIndex(saDevice.power);
+    }
+
+    return 0;
+}
+
+void setSmartAudioSettings(smartAudioSettings_t s)
+{
+    if (!smartAudioSerialPort)
+        return;
+
+    saDevice.state = ST_UPDATE;
+
+    // push queue
+    saSendQueue();
+
+    saSetBandChan(s.band, s.chan);
+    saSetPowerByIndex(s.power);
+    saSendQueue();
 }
 
 #ifdef CMS
