@@ -62,3 +62,5 @@ void updateAccelerationReadings(void);
 void setAccelerationCalibrationValues(void);
 void setAccelerationFilter(void);
 bool isAccelerometerHealthy(void);
+bool getAccelerometerCalibrationAxisStatus(int axis);
+uint8_t getAccelerometerCalibrationAxisFlags(void);

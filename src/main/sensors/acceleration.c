@@ -296,17 +296,45 @@ static bool calibratedAxis[6];
 static int32_t accSamples[6][3];
 static int  calibratedAxisCount = 0;
 
+bool getAccelerometerCalibrationAxisStatus(int axis)
+{
+    if (isAccelerationCalibrationComplete()) {
+        if (STATE(ACCELEROMETER_CALIBRATED)) {
+            return true;    // if calibration is valid - all axis are calibrated
+        }
+        else {
+            return calibratedAxis[axis];
+        }
+    }
+    else {
+        return calibratedAxis[axis];
+    }
+}
+
+uint8_t getAccelerometerCalibrationAxisFlags(void)
+{
+    uint8_t flags = 0;
+    for (int i = 0; i < 6; i++) {
+        if (getAccelerometerCalibrationAxisStatus(0)) {
+            flags |= (1 << i);
+        }
+    }
+
+    return flags;
+}
+
 int getPrimaryAxisIndex(int32_t sample[3])
 {
-    if (ABS(sample[Z]) > ABS(sample[X]) && ABS(sample[Z]) > ABS(sample[Y])) {
+    // Tolerate up to atan(1 / 1.5) = 33 deg tilt (in worst case 66 deg separation between points)
+    if ((ABS(sample[Z]) / 1.5f) > ABS(sample[X]) && (ABS(sample[Z]) / 1.5f) > ABS(sample[Y])) {
         //Z-axis
         return (sample[Z] > 0) ? 0 : 1;
     }
-    else if (ABS(sample[X]) > ABS(sample[Y]) && ABS(sample[X]) > ABS(sample[Z])) {
+    else if ((ABS(sample[X]) / 1.5f) > ABS(sample[Y]) && (ABS(sample[X]) / 1.5f) > ABS(sample[Z])) {
         //X-axis
         return (sample[X] > 0) ? 2 : 3;
     }
-    else if (ABS(sample[Y]) > ABS(sample[X]) && ABS(sample[Y]) > ABS(sample[Z])) {
+    else if ((ABS(sample[Y]) / 1.5f) > ABS(sample[X]) && (ABS(sample[Y]) / 1.5f) > ABS(sample[Z])) {
         //Y-axis
         return (sample[Y] > 0) ? 4 : 5;
     }
@@ -334,6 +362,7 @@ void performAcclerationCalibration(void)
 
         calibratedAxisCount = 0;
         sensorCalibrationResetState(&calState);
+        DISABLE_STATE(ACCELEROMETER_CALIBRATED);
     }
 
     if (!calibratedAxis[axisIndex]) {
