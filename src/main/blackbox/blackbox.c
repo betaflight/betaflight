@@ -1376,15 +1376,15 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      currentProfile->pidProfile.P8[ROLL],
-                                                                            currentProfile->pidProfile.I8[ROLL],
-                                                                            currentProfile->pidProfile.D8[ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PITCH],
-                                                                            currentProfile->pidProfile.I8[PITCH],
-                                                                            currentProfile->pidProfile.D8[PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       currentProfile->pidProfile.P8[YAW],
-                                                                            currentProfile->pidProfile.I8[YAW],
-                                                                            currentProfile->pidProfile.D8[YAW]);
+        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      currentProfile->pidProfile.P8[PIDROLL],
+                                                                            currentProfile->pidProfile.I8[PIDROLL],
+                                                                            currentProfile->pidProfile.D8[PIDROLL]);
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     currentProfile->pidProfile.P8[PIDPITCH],
+                                                                            currentProfile->pidProfile.I8[PIDPITCH],
+                                                                            currentProfile->pidProfile.D8[PIDPITCH]);
+        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDYAW],
+                                                                            currentProfile->pidProfile.I8[PIDYAW],
+                                                                            currentProfile->pidProfile.D8[PIDYAW]);
         BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       currentProfile->pidProfile.P8[PIDALT],
                                                                             currentProfile->pidProfile.I8[PIDALT],
                                                                             currentProfile->pidProfile.D8[PIDALT]);
@@ -1415,7 +1415,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                       accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                      barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                       compassConfig()->mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           masterConfig.enabledFeatures);
+        BLACKBOX_PRINT_HEADER_LINE("features:%d",                           featureConfig()->enabledFeatures);
 
         default:
             return true;
