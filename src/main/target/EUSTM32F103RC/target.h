@@ -46,8 +46,8 @@
 #define ACC
 #define USE_FAKE_ACC
 #define USE_ACC_ADXL345
-#define USE_ACC_BMA280
-#define USE_ACC_MMA8452
+//#define USE_ACC_BMA280
+//#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
 //#define USE_ACC_SPI_MPU6000
 #define USE_ACC_SPI_MPU6500
