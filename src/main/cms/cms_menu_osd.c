@@ -37,8 +37,8 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/config_profile.h"
 #include "config/feature.h"
 
 #if defined(OSD) && defined(CMS)

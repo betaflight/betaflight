@@ -90,10 +90,10 @@ const profile_t *currentProfile;
 PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
 #ifdef NAV
-void validateNavConfig(navConfig_t * navConfig)
+void validateNavConfig(void)
 {
     // Make sure minAlt is not more than maxAlt, maxAlt cannot be set lower than 500.
-    navConfig->general.land_slowdown_minalt = MIN(navConfig->general.land_slowdown_minalt, navConfig->general.land_slowdown_maxalt - 100);
+    navConfigMutable()->general.land_slowdown_minalt = MIN(navConfig()->general.land_slowdown_minalt, navConfig()->general.land_slowdown_maxalt - 100);
 }
 #endif
 
@@ -548,7 +548,7 @@ void validateAndFixConfig(void)
 
 #if defined(NAV)
     // Ensure sane values of navConfig settings
-    validateNavConfig(&masterConfig.navConfig);
+    validateNavConfig();
 #endif
 
     /* Limitations of different protocols */

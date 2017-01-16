@@ -41,6 +41,8 @@
 #include "fc/runtime_config.h"
 #include "fc/serial_cli.h"
 
+#include "flight/imu.h"
+#include "flight/mixer.h"
 #include "flight/pid.h"
 
 #include "io/beeper.h"
@@ -70,7 +72,6 @@
 
 #include "config/feature.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
