@@ -59,8 +59,6 @@
 #include "rx/rx.h"
 #include "rx/rx_spi.h"
 
-#include "telemetry/telemetry.h"
-
 #include "flight/mixer.h"
 #include "flight/servos.h"
 #include "flight/pid.h"
@@ -99,27 +97,6 @@ void validateNavConfig(navConfig_t * navConfig)
 }
 #endif
 
-#ifdef TELEMETRY
-void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
-{
-#if defined(STM32F303xC)
-    telemetryConfig->telemetry_inversion = 1;
-#else
-    telemetryConfig->telemetry_inversion = 0;
-#endif
-    telemetryConfig->telemetry_switch = 0;
-    telemetryConfig->gpsNoFixLatitude = 0;
-    telemetryConfig->gpsNoFixLongitude = 0;
-    telemetryConfig->frsky_coordinate_format = FRSKY_FORMAT_DMS;
-    telemetryConfig->frsky_unit = FRSKY_UNIT_METRICS;
-    telemetryConfig->frsky_vfas_precision = 0;
-    telemetryConfig->frsky_vfas_cell_voltage = 0;
-    telemetryConfig->hottAlarmSoundInterval = 5;
-#ifdef TELEMETRY_SMARTPORT
-    telemetryConfig->smartportUartUnidirectional = 0;
-#endif
-}
-#endif
 
 #ifdef SWAP_SERIAL_PORT_0_AND_1_DEFAULTS
 #define FIRST_PORT_INDEX 1
@@ -204,10 +181,6 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->debug_mode = DEBUG_NONE;
-
-#ifdef TELEMETRY
-    resetTelemetryConfig(&config->telemetryConfig);
-#endif
 
     config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
@@ -374,10 +347,6 @@ static void activateConfig(void)
     resetAdjustmentStates();
 
     useRcControlsConfig(masterConfig.modeActivationConditions);
-
-#ifdef TELEMETRY
-    telemetryUseConfig(&masterConfig.telemetryConfig);
-#endif
 
     failsafeReset();
 

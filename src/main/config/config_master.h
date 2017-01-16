@@ -49,10 +49,6 @@
 
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
-#define navConfig(x) (&masterConfig.navConfig)
-#define navConfigMutable(x) (&masterConfig.navConfig)
-#define telemetryConfig(x) (&masterConfig.telemetryConfig)
-#define telemetryConfigMutable(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define osdProfileMutable(x) (&masterConfig.osdProfile)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
@@ -107,11 +103,6 @@ typedef struct master_s {
 #endif
 
     pwmRxConfig_t pwmRxConfig;
-
-#ifdef TELEMETRY
-    telemetryConfig_t telemetryConfig;
-#endif
-
 
 #ifdef LED_STRIP
     ledStripConfig_t ledStripConfig;
