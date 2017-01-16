@@ -238,7 +238,7 @@ void processRcCommand(void)
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {
-                for (int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
+                for(int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
                 debug[3] = rxRefreshRate;
             }
 
@@ -253,15 +253,15 @@ void processRcCommand(void)
         }
 
         // Interpolate steps of rcCommand
-        int channel;
         if (factor > 0) {
-            for (channel=ROLL; channel < interpolationChannels; channel++)
+            for (int channel=ROLL; channel < interpolationChannels; channel++) {
                 rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+                readyToCalculateRateAxisCnt = MAX(channel,FD_YAW); // throttle channel doesn't require rate calculation
+                readyToCalculateRate = true;
+            }
         } else {
             factor = 0;
         }
-        readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
-        readyToCalculateRate = true;
     } else {
         factor = 0; // reset factor in case of level modes flip flopping
     }
