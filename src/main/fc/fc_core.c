@@ -217,6 +217,10 @@ void processRcCommand(void)
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
         checkForThrottleErrorResetState(currentRxRefreshRate);
+
+        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
+        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
+            scaleRcCommandToFpvCamAngle();
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -269,10 +273,6 @@ void processRcCommand(void)
     if (readyToCalculateRate || isRXDataNew) {
         if (isRXDataNew)
             readyToCalculateRateAxisCnt = FD_YAW;
-
-        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
-            scaleRcCommandToFpvCamAngle();
 
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
             calculateSetpointRate(axis, rcCommand[axis]);
