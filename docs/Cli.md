@@ -282,7 +282,7 @@ Re-apply any new defaults as desired.
 |  fw_iterm_throw_limit  | 165 | Limits max/min I-term value in stabilization PID controller in case of Fixed Wing. It solves the problem of servo saturation before take-off/throwing the airplane into the air. By default, error accumulated in I-term can not exceed 1/3 of servo throw (around 165us). Set 0 to disable completely. |
 |  mode_range_logic_operator  | OR | Control how Mode selection works in flight modes. If you example have Angle mode configured on two different Aux channels, this controls if you need both activated ( AND ) or if you only need one activated ( OR ) to active angle mode. |
 |  default_rate_profile  | 0 | Default = profile number |
-|  mag_declination  | 0 | Current location magnetic declination in format. For example, -6deg 37min, = for Japan. Leading zero in ddd not required. Get your local magnetic declination here: http://magnetic-declination.com/ . Not in use if inav_auto_mag_decl  is turned on and you aquirre valid GPS fix. |
+|  mag_declination  | 0 | Current location magnetic declination in format. For example, -6deg 37min = -637 for Japan. Leading zero in ddd not required. Get your local magnetic declination here: http://magnetic-declination.com/ . Not in use if inav_auto_mag_decl  is turned on and you aquirre valid GPS fix. |
 |  mag_hold_rate_limit  | 90 | This setting limits yaw rotation rate that MAG_HOLD controller can request from PID inner loop controller. It is independent from manual yaw rate and used only when MAG_HOLD flight mode is enabled by pilot, RTH or WAYPOINT modes. |
 |  p_pitch  | 40 |  |
 |  i_pitch  | 30 |  |
