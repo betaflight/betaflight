@@ -64,18 +64,21 @@
 
 extern const mixer_t mixers[];
 
-servoMixerConfig_t *servoMixerConfig;
-
 PG_REGISTER_WITH_RESET_TEMPLATE(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .servoCenterPulse = 1500,
     .servoPwmRate = 50,
+    .servo_lowpass_freq = 0,
+    .flaperon_throw_offset = FLAPERON_THROW_DEFAULT,
+    .flaperon_throw_inverted = 0,
+    .tri_unarmed_servo = 1
 );
+
+int16_t servo[MAX_SUPPORTED_SERVOS];
 
 static uint8_t servoRuleCount = 0;
 static servoMixer_t currentServoMixer[MAX_SERVO_RULES];
-int16_t servo[MAX_SUPPORTED_SERVOS];
 static int servoOutputEnabled;
 
 static uint8_t mixerUsesServos;
@@ -150,9 +153,8 @@ static servoMixer_t *customServoMixers;
 // no template required since default is zero
 PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
-void servosUseConfigs(servoMixerConfig_t *servoMixerConfigToUse, servoParam_t *servoParamsToUse)
+void servosUseConfigs(servoParam_t *servoParamsToUse)
 {
-    servoMixerConfig = servoMixerConfigToUse;
     servoConf = servoParamsToUse;
 }
 
@@ -306,8 +308,32 @@ STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
     }
 }
 
+static void filterServos(void)
+{
+    if (servoConfig()->servo_lowpass_freq) {
+        // Initialize servo lowpass filter (servos are calculated at looptime rate)
+        if (!servoFilterIsSet) {
+            for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+                biquadFilterInitLPF(&servoFitlerState[i], servoConfig()->servo_lowpass_freq, gyro.targetLooptime);
+            }
+            servoFilterIsSet = true;
+        }
+
+        for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+            // Apply servo lowpass filter and do sanity cheching
+            servo[i] = (int16_t) biquadFilterApply(&servoFitlerState[i], (float)servo[i]);
+        }
+    }
+
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max);
+    }
+}
+
 void writeServos(void)
 {
+    filterServos();
+
     int servoIndex = 0;
 
     bool zeroServoValue = false;
@@ -316,7 +342,7 @@ void writeServos(void)
      * in case of tricopters, there might me a need to zero servo output when unarmed
      */
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
-    if ((currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI) && !ARMING_FLAG(ARMED) && !servoMixerConfig->tri_unarmed_servo) {
+    if ((currentMixerMode == MIXER_TRI || currentMixerMode == MIXER_CUSTOM_TRI) && !ARMING_FLAG(ARMED) && !servoConfig()->tri_unarmed_servo) {
         zeroServoValue = true;
     }
 
@@ -344,7 +370,7 @@ void writeServos(void)
     }
 }
 
-void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
+void servoMixer(void)
 {
     int16_t input[INPUT_SOURCE_COUNT]; // Range [-500:+500]
     static int16_t currentOutput[MAX_SERVO_RULES];
@@ -414,10 +440,10 @@ void servoMixer(uint16_t flaperon_throw_offset, uint8_t flaperon_throw_inverted)
         if (FLIGHT_MODE(FLAPERON) && (target == SERVO_FLAPPERON_1 || target == SERVO_FLAPPERON_2)) {
             int8_t multiplier = 1;
 
-            if (flaperon_throw_inverted == 1) {
+            if (servoConfig()->flaperon_throw_inverted == 1) {
                 multiplier = -1;
             }
-            currentOutput[i] += flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
+            currentOutput[i] += servoConfig()->flaperon_throw_offset * getFlaperonDirection(target) * multiplier;
         }
 
         servo[target] += servoDirection(target, from) * constrain(((int32_t)currentOutput[i] * currentServoMixer[i].rate) / 100, min, max);
@@ -536,30 +562,4 @@ bool isMixerUsingServos(void)
 {
     return mixerUsesServos;
 }
-
-void filterServos(void)
-{
-    int servoIdx;
-
-    if (servoMixerConfig->servo_lowpass_enable) {
-        // Initialize servo lowpass filter (servos are calculated at looptime rate)
-        if (!servoFilterIsSet) {
-            for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-                biquadFilterInitLPF(&servoFitlerState[servoIdx], servoMixerConfig->servo_lowpass_freq, gyro.targetLooptime);
-            }
-
-            servoFilterIsSet = true;
-        }
-
-        for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-            // Apply servo lowpass filter and do sanity cheching
-            servo[servoIdx] = (int16_t) biquadFilterApply(&servoFitlerState[servoIdx], (float)servo[servoIdx]);
-        }
-    }
-
-    for (servoIdx = 0; servoIdx < MAX_SUPPORTED_SERVOS; servoIdx++) {
-        servo[servoIdx] = constrain(servo[servoIdx], servoConf[servoIdx].min, servoConf[servoIdx].max);
-    }
-}
-
 #endif

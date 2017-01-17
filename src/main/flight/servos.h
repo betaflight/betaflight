@@ -77,12 +77,6 @@ typedef enum {
 #define FLAPERON_THROW_MIN 100
 #define FLAPERON_THROW_MAX 400
 
-typedef struct servoMixerConfig_s {
-    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
-    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
-    int8_t servo_lowpass_enable;            // enable/disable lowpass filter
-} servoMixerConfig_t;
-
 typedef struct servoMixer_s {
     uint8_t targetChannel;                  // servo that receives the output of the rule
     uint8_t inputSource;                    // input channel for this rule
@@ -111,6 +105,10 @@ typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
     uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
     uint16_t servoPwmRate;                  // The update rate of servo outputs (50-498Hz)
+    int16_t servo_lowpass_freq;             // lowpass servo filter frequency selection; 1/1000ths of loop freq
+    uint16_t flaperon_throw_offset;
+    uint8_t flaperon_throw_inverted;
+    uint8_t tri_unarmed_servo;              // send tail servo correction pulses even when unarmed
 } servoConfig_t;
 
 PG_DECLARE(servoConfig_t, servoConfig);
@@ -120,9 +118,9 @@ extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isServoOutputEnabled(void);
 bool isMixerUsingServos(void);
 void writeServos(void);
-void filterServos(void);
 void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servosUseConfigs(servoMixerConfig_t *servoConfigToUse, servoParam_t *servoParamsToUse);
+void servosUseConfigs(servoParam_t *servoParamsToUse);
 void servosInit(servoMixer_t *customServoMixers);
+void servoMixer(void);
