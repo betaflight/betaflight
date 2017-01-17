@@ -38,8 +38,6 @@
 #include "io/osd.h"
 #include "io/ledstrip.h"
 
-#define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
-#define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define osdProfileMutable(x) (&masterConfig.osdProfile)
 #define ledStripConfig(x) (&masterConfig.ledStripConfig)
@@ -66,7 +64,6 @@ typedef struct master_s {
 #endif
 
 #ifdef USE_SERVOS
-    servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
 
@@ -77,10 +74,6 @@ typedef struct master_s {
 #ifdef USE_SERVOS
     // Servo-related stuff
     servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-
-    uint16_t flaperon_throw_offset;
-    uint8_t flaperon_throw_inverted;
-
 #endif
 
     pwmRxConfig_t pwmRxConfig;

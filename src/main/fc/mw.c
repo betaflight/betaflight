@@ -627,7 +627,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     if (isUsingSticksForArming() && rcData[THROTTLE] <= rxConfig()->mincheck
 #ifndef USE_QUAD_MIXER_ONLY
 #ifdef USE_SERVOS
-            && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoMixerConfig()->tri_unarmed_servo)
+            && !((mixerConfig()->mixerMode == MIXER_TRI || mixerConfig()->mixerMode == MIXER_CUSTOM_TRI) && servoConfig()->tri_unarmed_servo)
 #endif
             && mixerConfig()->mixerMode != MIXER_AIRPLANE
             && mixerConfig()->mixerMode != MIXER_FLYING_WING
@@ -675,20 +675,15 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     mixTable();
 
 #ifdef USE_SERVOS
-
     if (isMixerUsingServos()) {
-        servoMixer(masterConfig.flaperon_throw_offset, masterConfig.flaperon_throw_inverted);
+        servoMixer();
     }
-
     if (feature(FEATURE_SERVO_TILT)) {
         processServoTilt();
     }
-
     processServoAutotrim();
-
     //Servos should be filtered or written only when mixer is using servos or special feaures are enabled
     if (isServoOutputEnabled()) {
-        filterServos();
         writeServos();
     }
 #endif
@@ -698,7 +693,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_SDCARD
-        afatfs_poll();
+    afatfs_poll();
 #endif
 
 #ifdef BLACKBOX
@@ -706,7 +701,6 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         handleBlackbox(micros());
     }
 #endif
-
 }
 
 bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)

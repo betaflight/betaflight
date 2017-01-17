@@ -106,15 +106,6 @@ void validateNavConfig(void)
 #define SECOND_PORT_INDEX 1
 #endif
 
-#ifdef USE_SERVOS
-static void resetServoMixerConfig(servoMixerConfig_t *servoMixerConfig)
-{
-    servoMixerConfig->tri_unarmed_servo = 1;
-    servoMixerConfig->servo_lowpass_freq = 400;
-    servoMixerConfig->servo_lowpass_enable = 0;
-}
-#endif
-
 #ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void) {
     if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
@@ -170,10 +161,6 @@ void createDefaultConfig(master_t *config)
 
     config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-#ifdef USE_SERVOS
-    resetServoMixerConfig(&config->servoMixerConfig);
-#endif
-
     config->i2c_overclock = 0;
 
 #ifdef ASYNC_GYRO_PROCESSING
@@ -205,9 +192,6 @@ void createDefaultConfig(master_t *config)
         config->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
         config->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
     }
-
-    config->flaperon_throw_offset = FLAPERON_THROW_DEFAULT;
-    config->flaperon_throw_inverted = 0;
 
 #endif
 
@@ -336,7 +320,7 @@ static void activateConfig(void)
     setAccelerationFilter();
 
 #ifdef USE_SERVOS
-    servosUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoConf);
+    servosUseConfigs(masterConfig.servoConf);
 #endif
 
     imuConfigure();
