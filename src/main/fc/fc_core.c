@@ -217,6 +217,10 @@ void processRcCommand(void)
     if (isRXDataNew) {
         currentRxRefreshRate = constrain(getTaskDeltaTime(TASK_RX),1000,20000);
         checkForThrottleErrorResetState(currentRxRefreshRate);
+
+        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
+        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
+            scaleRcCommandToFpvCamAngle();
     }
 
     if (rxConfig()->rcInterpolation || flightModeFlags) {
@@ -238,7 +242,7 @@ void processRcCommand(void)
             rcInterpolationFactor = rxRefreshRate / targetPidLooptime + 1;
 
             if (debugMode == DEBUG_RC_INTERPOLATION) {
-                for (int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
+                for(int axis = 0; axis < 2; axis++) debug[axis] = rcCommand[axis];
                 debug[3] = rxRefreshRate;
             }
 
@@ -253,15 +257,15 @@ void processRcCommand(void)
         }
 
         // Interpolate steps of rcCommand
-        int channel;
         if (factor > 0) {
-            for (channel=ROLL; channel < interpolationChannels; channel++)
+            for (int channel=ROLL; channel < interpolationChannels; channel++) {
                 rcCommand[channel] = lastCommand[channel] - deltaRC[channel] * factor/rcInterpolationFactor;
+                readyToCalculateRateAxisCnt = MAX(channel,FD_YAW); // throttle channel doesn't require rate calculation
+                readyToCalculateRate = true;
+            }
         } else {
             factor = 0;
         }
-        readyToCalculateRateAxisCnt = MAX(channel, FD_YAW); // throttle channel doesn't require rate calculation
-        readyToCalculateRate = true;
     } else {
         factor = 0; // reset factor in case of level modes flip flopping
     }
@@ -269,10 +273,6 @@ void processRcCommand(void)
     if (readyToCalculateRate || isRXDataNew) {
         if (isRXDataNew)
             readyToCalculateRateAxisCnt = FD_YAW;
-
-        // Scaling of AngleRate to camera angle (Mixing Roll and Yaw)
-        if (rxConfig()->fpvCamAngleDegrees && IS_RC_MODE_ACTIVE(BOXFPVANGLEMIX) && !FLIGHT_MODE(HEADFREE_MODE))
-            scaleRcCommandToFpvCamAngle();
 
         for (int axis = 0; axis <= readyToCalculateRateAxisCnt; axis++)
             calculateSetpointRate(axis, rcCommand[axis]);

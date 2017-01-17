@@ -45,10 +45,6 @@ static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 
 void transponderIrHardwareInit(ioTag_t ioTag)
 {
-    if (!ioTag) {
-        return;
-    }
-
     TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
     TIM_OCInitTypeDef  TIM_OCInitStructure;
     DMA_InitTypeDef DMA_InitStructure;
