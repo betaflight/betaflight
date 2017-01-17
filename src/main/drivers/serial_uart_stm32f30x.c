@@ -28,6 +28,8 @@
 
 #include <platform.h>
 
+#include "build/debug.h"
+
 #include "system.h"
 #include "io.h"
 #include "nvic.h"
@@ -37,6 +39,31 @@
 #include "serial.h"
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
+
+typedef struct uartPinPair_s {
+    ioTag_t rx;
+    ioTag_t tx;
+} uartPinPair_t;
+
+#define UART_RX_BUFFER_SIZE 256
+#define UART_TX_BUFFER_SIZE 256
+
+typedef struct uartDevice_s {
+    USART_TypeDef* dev;
+    uartPort_t port;
+    DMA_Channel_TypeDef *rxDMAChannel;
+    DMA_Channel_TypeDef *txDMAChannel;
+    uartPinPair_t pinPair[4];
+    ioTag_t rx;
+    ioTag_t tx;
+    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE]; // XXX Dynamic...
+    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE]; // XXX Dynamic...
+    rccPeriphTag_t rcc;
+    uint8_t af;
+    uint8_t rxIrq;
+    uint32_t txPriority;
+    uint32_t rxPriority;
+} uartDevice_t;
 
 #ifdef USE_UART1
 #ifndef UART1_TX_PIN
@@ -113,6 +140,51 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 }
 #endif
 
+static uartDevice_t uartHardware[] = {
+    // USART1
+    // PA10,PA9
+    // PB7,PB6
+    // PE1,PE0
+    // PC5,PC4
+    {
+        .dev = USART1,
+        .rxDMAChannel = DMA1_Channel5,
+        .txDMAChannel = DMA1_Channel4,
+        .pinPair = {
+            { IO_TAG(PA10), IO_TAG(PA9) },
+            { IO_TAG(PB7), IO_TAG(PB6) },
+#if ((TARGET_IO_PORTC & BIT(5)) && (TARGET_IO_PORTC & BIT(4)))
+            { IO_TAG(PC5), IO_TAG(PC4) },
+#else
+            { IO_TAG_NONE, IO_TAG_NONE },
+#endif
+#if ((TARGET_IO_PORTE & BIT(1)) && (TARGET_IO_PORTE & BIT(0)))
+            { IO_TAG(PE1), IO_TAG(PE0) },
+#else
+            { IO_TAG_NONE, IO_TAG_NONE },
+#endif
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .rcc = RCC_APB2(USART1),
+        .af = GPIO_AF_7,
+        .rxIrq = USART1_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART1_RXDMA,
+    }
+};
+
+static uartDevice_t *uartHardwareMap[5];
+
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
+{
+    // Force initialize only for USART1 (PA10, PA9)
+    UNUSED(pSerialPinConfig);
+    uartHardware[0].rx = uartHardware[0].pinPair[0].rx;
+    uartHardware[0].tx = uartHardware[0].pinPair[0].tx;
+    uartHardwareMap[0] = &uartHardware[0];
+}
+
 void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
 {
     if (options & SERIAL_BIDIR) {
@@ -143,11 +215,16 @@ void serialUARTInit(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, ui
 #ifdef USE_UART1
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    uartPort_t *s;
     static volatile uint8_t rx1Buffer[UART1_RX_BUFFER_SIZE];
     static volatile uint8_t tx1Buffer[UART1_TX_BUFFER_SIZE];
 
-    s = &uartPort1;
+    uartDevice_t *uart = uartHardwareMap[0];
+    if (!uart)
+        return NULL;
+
+    uartPort_t *s = &uartPort1;     // original (OK)
+    //uartPort_t *s = &(uart->port);  // NG
+
     s->port.vTable = uartVTable;
 
     s->port.baudRate = baudRate;

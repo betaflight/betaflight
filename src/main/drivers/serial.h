@@ -85,6 +85,8 @@ typedef struct serialPinConfig_s {
     ioTag_t ioTagRx[SERIAL_PORT_MAX_INDEX];
 } serialPinConfig_t;
 
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig);
+
 struct serialPortVTable {
     void (*serialWrite)(serialPort_t *instance, uint8_t ch);
 

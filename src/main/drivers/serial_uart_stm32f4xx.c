@@ -17,6 +17,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
+
+#include "build/debug.h"
 
 #include "platform.h"
 
@@ -42,182 +45,231 @@ typedef enum UARTDevice {
     UARTDEV_6 = 5
 } UARTDevice;
 
+typedef struct uartPinPair_s {
+    ioTag_t rx;
+    ioTag_t tx;
+} uartPinPair_t;
+
 typedef struct uartDevice_s {
     USART_TypeDef* dev;
     uartPort_t port;
     uint32_t DMAChannel;
     DMA_Stream_TypeDef *txDMAStream;
     DMA_Stream_TypeDef *rxDMAStream;
+    uartPinPair_t pinPair[3];
     ioTag_t rx;
     ioTag_t tx;
-    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE];
-    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE];
-    rccPeriphTag_t rcc_uart;
+    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE]; // XXX Waste if not configured...
+    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE]; // XXX Ditto
+    rccPeriphTag_t rcc;
     uint8_t af;
     uint8_t rxIrq;
     uint32_t txPriority;
     uint32_t rxPriority;
 } uartDevice_t;
 
-//static uartPort_t uartPort[MAX_UARTS];
-#ifdef USE_UART1
-static uartDevice_t uart1 =
-{
-    .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART1_RX_DMA
-    .rxDMAStream = DMA2_Stream5,
+# define UART1_RX_DMA_STREAM DMA2_Stream5
+#else
+# define UART1_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART1_TX_DMA
-    .txDMAStream = DMA2_Stream7,
-#endif
-    .dev = USART1,
-    .rx = IO_TAG(UART1_RX_PIN),
-    .tx = IO_TAG(UART1_TX_PIN),
-    .af = GPIO_AF_USART1,
-    .rcc_uart = RCC_APB2(USART1),
-    .rxIrq = USART1_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART1
-};
+# define UART1_TX_DMA_STREAM DMA2_Stream7
+#else
+# define UART1_TX_DMA_STREAM 0
 #endif
 
-#ifdef USE_UART2
-static uartDevice_t uart2 =
-{
-    .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART2_RX_DMA
-    .rxDMAStream = DMA1_Stream5,
+# define UART2_RX_DMA_STREAM DMA1_Stream5
+#else
+# define UART2_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART2_TX_DMA
-    .txDMAStream = DMA1_Stream6,
-#endif
-    .dev = USART2,
-    .rx = IO_TAG(UART2_RX_PIN),
-    .tx = IO_TAG(UART2_TX_PIN),
-    .af = GPIO_AF_USART2,
-    .rcc_uart = RCC_APB1(USART2),
-    .rxIrq = USART2_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART2
-};
+# define UART2_TX_DMA_STREAM DMA1_Stream6
+#else
+# define UART2_TX_DMA_STREAM 0
 #endif
 
-#ifdef USE_UART3
-static uartDevice_t uart3 =
-{
-    .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART3_RX_DMA
-    .rxDMAStream = DMA1_Stream1,
+# define UART3_RX_DMA_STREAM DMA1_Stream1
+#else
+# define UART3_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART3_TX_DMA
-    .txDMAStream = DMA1_Stream3,
-#endif
-    .dev = USART3,
-    .rx = IO_TAG(UART3_RX_PIN),
-    .tx = IO_TAG(UART3_TX_PIN),
-    .af = GPIO_AF_USART3,
-    .rcc_uart = RCC_APB1(USART3),
-    .rxIrq = USART3_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART3
-};
+# define UART3_TX_DMA_STREAM DMA1_Stream3
+#else
+# define UART3_TX_DMA_STREAM 0
 #endif
 
-#ifdef USE_UART4
-static uartDevice_t uart4 =
-{
-    .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART4_RX_DMA
-    .rxDMAStream = DMA1_Stream2,
+# define UART4_RX_DMA_STREAM DMA1_Stream2
+#else
+# define UART4_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART4_TX_DMA
-    .txDMAStream = DMA1_Stream4,
-#endif
-    .dev = UART4,
-    .rx = IO_TAG(UART4_RX_PIN),
-    .tx = IO_TAG(UART4_TX_PIN),
-    .af = GPIO_AF_UART4,
-    .rcc_uart = RCC_APB1(UART4),
-    .rxIrq = UART4_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART4
-};
+# define UART4_TX_DMA_STREAM DMA1_Stream4
+#else
+# define UART4_TX_DMA_STREAM 0
 #endif
 
-#ifdef USE_UART5
-static uartDevice_t uart5 =
-{
-    .DMAChannel = DMA_Channel_4,
 #ifdef USE_UART5_RX_DMA
-    .rxDMAStream = DMA1_Stream0,
+# define UART5_RX_DMA_STREAM DMA1_Stream0
+#else
+# define UART5_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART5_TX_DMA
-    .txDMAStream = DMA1_Stream7,
-#endif
-    .dev = UART5,
-    .rx = IO_TAG(UART5_RX_PIN),
-    .tx = IO_TAG(UART5_TX_PIN),
-    .af = GPIO_AF_UART5,
-    .rcc_uart = RCC_APB1(UART5),
-    .rxIrq = UART5_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART5
-};
+# define UART5_TX_DMA_STREAM DMA1_Stream7
+#else
+# define UART5_TX_DMA_STREAM 0
 #endif
 
-#ifdef USE_UART6
-static uartDevice_t uart6 =
-{
-    .DMAChannel = DMA_Channel_5,
 #ifdef USE_UART6_RX_DMA
-    .rxDMAStream = DMA2_Stream1,
+# define UART6_RX_DMA_STREAM DMA2_Stream1
+#else
+# define UART6_RX_DMA_STREAM 0
 #endif
 #ifdef USE_UART6_TX_DMA
-    .txDMAStream = DMA2_Stream6,
-#endif
-    .dev = USART6,
-    .rx = IO_TAG(UART6_RX_PIN),
-    .tx = IO_TAG(UART6_TX_PIN),
-    .af = GPIO_AF_USART6,
-    .rcc_uart = RCC_APB2(USART6),
-    .rxIrq = USART6_IRQn,
-    .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
-    .rxPriority = NVIC_PRIO_SERIALUART6
-};
+# define UART6_TX_DMA_STREAM DMA2_Stream6
+#else
+# define UART6_TX_DMA_STREAM 0
 #endif
 
-static uartDevice_t* uartHardwareMap[] = {
-#ifdef USE_UART1
-    &uart1,
+static uartDevice_t uartHardware[] = {
+    {
+        .dev = USART1,
+        .DMAChannel = DMA_Channel_4,
+        .rxDMAStream = UART1_RX_DMA_STREAM,
+        .txDMAStream = UART1_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PA10), IO_TAG(PA9) },
+            { IO_TAG(PB7), IO_TAG(PB6) },
+            { IO_TAG_NONE, IO_TAG_NONE }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_USART1,
+        .rcc = RCC_APB2(USART1),
+        .rxIrq = USART1_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART1
+    },
+    {
+        .dev = USART2,
+        .DMAChannel = DMA_Channel_4,
+        .rxDMAStream = UART2_RX_DMA_STREAM,
+        .txDMAStream = UART2_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PA3), IO_TAG(PA2) },
+            { IO_TAG(PD6), IO_TAG(PD5) },
+            { IO_TAG_NONE, IO_TAG_NONE }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_USART2,
+        .rcc = RCC_APB1(USART2),
+        .rxIrq = USART2_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART2
+    },
+    {
+        .dev = USART3,
+        .DMAChannel = DMA_Channel_4,
+        .rxDMAStream = UART3_RX_DMA_STREAM,
+        .txDMAStream = UART3_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PB11), IO_TAG(PB10) },
+            { IO_TAG(PC11), IO_TAG(PC10) },
+            { IO_TAG(PD9), IO_TAG(PD8) }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_USART3,
+        .rcc = RCC_APB1(USART3),
+        .rxIrq = USART3_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART3
+    },
+    {
+        .dev = UART4,
+        .DMAChannel = DMA_Channel_4,
+        .rxDMAStream = UART4_RX_DMA_STREAM,
+        .txDMAStream = UART4_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PA1), IO_TAG(PA0) },
+            { IO_TAG(PC11), IO_TAG(PC10) },
+            { IO_TAG_NONE, IO_TAG_NONE }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_UART4,
+        .rcc = RCC_APB1(UART4),
+        .rxIrq = UART4_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART4
+    },
+    {
+        .dev = UART5,
+        .DMAChannel = DMA_Channel_4,
+        .rxDMAStream = UART5_RX_DMA_STREAM,
+        .txDMAStream = UART5_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PD2), IO_TAG(PC12) },
+            { IO_TAG_NONE, IO_TAG_NONE },
+            { IO_TAG_NONE, IO_TAG_NONE }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_UART5,
+        .rcc = RCC_APB1(UART5),
+        .rxIrq = UART5_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART5
+    },
+    {
+        .dev = USART6,
+        .DMAChannel = DMA_Channel_5,
+        .rxDMAStream = UART6_RX_DMA_STREAM,
+        .txDMAStream = UART6_TX_DMA_STREAM,
+        .pinPair = {
+            { IO_TAG(PC7), IO_TAG(PC6) },
+#if ((TARGET_IO_PORTG & BIT(9)) && (TARGET_IO_PORTG & BIT(14)))
+            { IO_TAG(PG9), IO_TAG(PG14) },
 #else
-    NULL,
+            { IO_TAG_NONE, IO_TAG_NONE },
 #endif
-#ifdef USE_UART2
-    &uart2,
-#else
-    NULL,
-#endif
-#ifdef USE_UART3
-    &uart3,
-#else
-    NULL,
-#endif
-#ifdef USE_UART4
-    &uart4,
-#else
-    NULL,
-#endif
-#ifdef USE_UART5
-    &uart5,
-#else
-    NULL,
-#endif
-#ifdef USE_UART6
-    &uart6,
-#else
-    NULL,
-#endif
-    };
+            { IO_TAG_NONE, IO_TAG_NONE }
+        },
+        .rx = IO_TAG_NONE,
+        .tx = IO_TAG_NONE,
+        .af = GPIO_AF_USART6,
+        .rcc = RCC_APB2(USART6),
+        .rxIrq = USART6_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART6
+    },
+};
+
+static uartDevice_t* uartHardwareMap[6];
+
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
+{
+    memset(uartHardwareMap, 0, ARRAYLEN(uartHardwareMap));
+
+    for (size_t index = 0 ; index < ARRAYLEN(uartHardware) ; index++) {
+        uartDevice_t *uartDev = &uartHardware[index];
+        for (int pair = 0 ; pair < 3 ; pair++) {
+
+            if (uartDev->pinPair[pair].rx == pSerialPinConfig->ioTagRx[index]
+                    && uartDev->pinPair[pair].tx == pSerialPinConfig->ioTagTx[index]) {
+                uartDev->rx = uartDev->pinPair[pair].rx;
+                uartDev->tx = uartDev->pinPair[pair].tx;
+                uartHardwareMap[index] = uartDev;
+
+                break;
+            }
+        }
+    }
+}
 
 void uartIrqHandler(uartPort_t *s)
 {
@@ -317,8 +369,8 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     IO_t tx = IOGetByTag(uart->tx);
     IO_t rx = IOGetByTag(uart->rx);
 
-    if (uart->rcc_uart) {
-        RCC_ClockCmd(uart->rcc_uart, ENABLE);
+    if (uart->rcc) {
+        RCC_ClockCmd(uart->rcc, ENABLE);
     }
 
     if (options & SERIAL_BIDIR) {

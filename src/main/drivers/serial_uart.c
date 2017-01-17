@@ -130,10 +130,11 @@ serialPort_t *uartOpen(USART_TypeDef *USARTx, serialReceiveCallbackPtr rxCallbac
     } else if (USARTx == USART6) {
         s = serialUART6(baudRate, mode, options);
 #endif
-
-    } else {
-        return (serialPort_t *)s;
     }
+
+    if (!s)
+        return (serialPort_t *)s;
+
     s->txDMAEmpty = true;
 
     // common serial initialisation code should move to serialPort::init()
