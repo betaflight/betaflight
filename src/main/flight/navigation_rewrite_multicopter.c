@@ -63,7 +63,7 @@ static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
         if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
             // We better overshoot a little bit than undershoot
-            const float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -5.0f, +35.0f, false);
+            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -5.0f, +35.0f, 0);
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {
@@ -108,7 +108,7 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
     const int16_t thrAdjustmentMin = (int16_t)motorConfig()->minthrottle - (int16_t)navConfig()->mc.hover_throttle;
     const int16_t thrAdjustmentMax = (int16_t)motorConfig()->maxthrottle - (int16_t)navConfig()->mc.hover_throttle;
 
-    posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
+    posControl.rcAdjustment[THROTTLE] = navPidApply2(&posControl.pids.vel[Z], posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), thrAdjustmentMin, thrAdjustmentMax, 0);
 
     posControl.rcAdjustment[THROTTLE] = pt1FilterApply4(&altholdThrottleFilterState, posControl.rcAdjustment[THROTTLE], NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
@@ -387,8 +387,8 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     // Apply PID with output limiting and I-term anti-windup
     // Pre-calculated accelLimit and the logic of navPidApply2 function guarantee that our newAccel won't exceed maxAccelLimit
     // Thus we don't need to do anything else with calculated acceleration
-    const float newAccelX = navPidApply2(posControl.desiredState.vel.V.X, posControl.actualState.vel.V.X, US2S(deltaMicros), &posControl.pids.vel[X], accelLimitXMin, accelLimitXMax, false);
-    const float newAccelY = navPidApply2(posControl.desiredState.vel.V.Y, posControl.actualState.vel.V.Y, US2S(deltaMicros), &posControl.pids.vel[Y], accelLimitYMin, accelLimitYMax, false);
+    const float newAccelX = navPidApply2(&posControl.pids.vel[X], posControl.desiredState.vel.V.X, posControl.actualState.vel.V.X, US2S(deltaMicros), accelLimitXMin, accelLimitXMax, 0);
+    const float newAccelY = navPidApply2(&posControl.pids.vel[Y], posControl.desiredState.vel.V.Y, posControl.actualState.vel.V.Y, US2S(deltaMicros), accelLimitYMin, accelLimitYMax, 0);
 
     // Save last acceleration target
     lastAccelTargetX = newAccelX;

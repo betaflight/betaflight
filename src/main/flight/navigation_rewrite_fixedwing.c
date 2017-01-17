@@ -105,7 +105,7 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
     float maxVelocityClimb = forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_climb_angle));
     float maxVelocityDive = -forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_dive_angle));
 
-    posControl.desiredState.vel.V.Z = navPidApply2(posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), &posControl.pids.fw_alt, maxVelocityDive, maxVelocityClimb, false);
+    posControl.desiredState.vel.V.Z = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), maxVelocityDive, maxVelocityClimb, 0);
     posControl.desiredState.vel.V.Z = pt1FilterApply4(&velzFilterState, posControl.desiredState.vel.V.Z, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
@@ -245,8 +245,11 @@ bool adjustFixedWingPositionFromRCInput(void)
     return (rcRollAdjustment);
 }
 
-static void updatePositionHeadingController_FW(uint32_t deltaMicros)
+static void updatePositionHeadingController_FW(timeUs_t currentTimeUs, timeUs_t deltaMicros)
 {
+    static timeUs_t previousTimeMonitoringUpdate;
+    static float previousHeadingError;
+    static bool errorIsDecreasing;
     static bool forceTurnDirection = false;
 
     // We have virtual position target, calculate heading error
@@ -269,11 +272,24 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
         headingError = ABS(headingError);
     }
 
+    // Slow error monitoring (2Hz rate)
+    if ((currentTimeUs - previousTimeMonitoringUpdate) >= HZ2US(NAV_FW_CONTROL_MONITORING_RATE)) {
+        // Check if error is decreasing over time
+        errorIsDecreasing = (ABS(previousHeadingError) > ABS(headingError));
+
+        // Save values for next iteration
+        previousHeadingError = headingError;
+        previousTimeMonitoringUpdate = currentTimeUs;
+    }
+
+    // Only allow PID integrator to shrink if error is decreasing over time
+    const pidControllerFlags_e pidFlags = PID_DTERM_FROM_ERROR | (errorIsDecreasing ? PID_SHRINK_INTEGRATOR : 0);
+
     // Input error in (deg*100), output pitch angle (deg*100)
-    float rollAdjustment = navPidApply2(posControl.actualState.yaw + headingError, posControl.actualState.yaw, US2S(deltaMicros), &posControl.pids.fw_nav,
+    float rollAdjustment = navPidApply2(&posControl.pids.fw_nav, posControl.actualState.yaw + headingError, posControl.actualState.yaw, US2S(deltaMicros),
                                        -DEGREES_TO_CENTIDEGREES(navConfig()->fw.max_bank_angle),
                                         DEGREES_TO_CENTIDEGREES(navConfig()->fw.max_bank_angle),
-                                        true);
+                                        pidFlags);
 
     // Apply low-pass filter to prevent rapid correction
     rollAdjustment = pt1FilterApply4(&fwPosControllerCorrectionFilterState, rollAdjustment, NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
@@ -319,7 +335,7 @@ void applyFixedWingPositionController(timeUs_t currentTimeUs)
                 // FIXME: verify the above
                 calculateVirtualPositionTarget_FW(HZ2S(MIN_POSITION_UPDATE_RATE_HZ) * 2);
 
-                updatePositionHeadingController_FW(deltaMicrosPositionUpdate);
+                updatePositionHeadingController_FW(currentTimeUs, deltaMicrosPositionUpdate);
             }
             else {
                 resetFixedWingPositionController();

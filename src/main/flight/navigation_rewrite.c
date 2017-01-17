@@ -1487,7 +1487,7 @@ static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
 // Implementation of PID with back-calculation I-term anti-windup
 // Control System Design, Lecture Notes for ME 155A by Karl Johan Åström (p.228)
 // http://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/astrom-ch6.pdf
-float navPidApply2(float setpoint, float measurement, float dt, pidController_t *pid, float outMin, float outMax, bool dTermErrorTracking)
+float navPidApply2(pidController_t *pid, const float setpoint, const float measurement, const float dt, const float outMin, const float outMax, const pidControllerFlags_e pidFlags)
 {
     float newProportional, newDerivative;
     float error = setpoint - measurement;
@@ -1496,7 +1496,7 @@ float navPidApply2(float setpoint, float measurement, float dt, pidController_t 
     newProportional = error * pid->param.kP;
 
     /* D-term */
-    if (dTermErrorTracking) {
+    if (pidFlags & PID_DTERM_FROM_ERROR) {
         /* Error-tracking D-term */
         newDerivative = (error - pid->last_input) / dt;
         pid->last_input = error;
@@ -1509,12 +1509,28 @@ float navPidApply2(float setpoint, float measurement, float dt, pidController_t 
 
     newDerivative = pid->param.kD * pt1FilterApply4(&pid->dterm_filter_state, newDerivative, NAV_DTERM_CUT_HZ, dt);
 
+    if (pidFlags & PID_ZERO_INTEGRATOR) {
+        pid->integrator = 0.0f;
+    }
+
     /* Pre-calculate output and limit it if actuator is saturating */
     const float outVal = newProportional + pid->integrator + newDerivative;
     const float outValConstrained = constrainf(outVal, outMin, outMax);
 
     /* Update I-term */
-    pid->integrator += (error * pid->param.kI * dt) + ((outValConstrained - outVal) * pid->param.kT * dt);
+    if (!(pidFlags & PID_ZERO_INTEGRATOR)) {
+        const float newIntegrator = pid->integrator + (error * pid->param.kI * dt) + ((outValConstrained - outVal) * pid->param.kT * dt);
+
+        if (pidFlags & PID_SHRINK_INTEGRATOR) {
+            // Only allow integrator to shrink
+            if (ABS(newIntegrator) < ABS(pid->integrator)) {
+                pid->integrator = newIntegrator;
+            }
+        }
+        else {
+            pid->integrator = newIntegrator;
+        }
+    }
 
     return outValConstrained;
 }
