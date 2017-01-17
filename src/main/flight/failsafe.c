@@ -226,7 +226,7 @@ void failsafeUpdateState(void)
                     }
                 } else {
                     // When NOT armed, show rxLinkState of failsafe switch in GUI (failsafe mode)
-                    if (failsafeSwitchIsOn) {
+                    if (failsafeSwitchIsOn || !receivingRxData) {
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                     } else {
                         DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
