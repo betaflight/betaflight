@@ -26,7 +26,6 @@
 
 #include "build/build_config.h"
 #include "build/atomic.h"
-#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -386,7 +385,6 @@ void processRxState(softSerial_t *softSerial)
 
 void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
-debug[0]++;
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, timerCb);
 
