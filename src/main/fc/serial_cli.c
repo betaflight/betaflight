@@ -1148,6 +1148,7 @@ static navConfig_t navConfigCopy;
 static telemetryConfig_t telemetryConfigCopy;
 #endif
 static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 
 static void backupConfigs(void)
 {
@@ -1204,6 +1205,9 @@ static void backupConfigs(void)
     for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
         modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
     }
+    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
+        adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
+    }
 }
 
 static void restoreConfigs(void)
@@ -1259,6 +1263,9 @@ static void restoreConfigs(void)
 #endif
     for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
         *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
+    }
+    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
+        *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
     }
 }
 
@@ -1429,12 +1436,10 @@ static char *nextArg(char *currentArg)
 
 static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
 {
-    int val;
-
     for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
         ptr = nextArg(ptr);
         if (ptr) {
-            val = atoi(ptr);
+            int val = atoi(ptr);
             val = CHANNEL_VALUE_TO_STEP(val);
             if (val >= MIN_MODE_RANGE_STEP && val <= MAX_MODE_RANGE_STEP) {
                 if (argIndex == 0) {
@@ -1872,12 +1877,12 @@ static void cliAdjustmentRange(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printAdjustmentRange(DUMP_MASTER, masterConfig.adjustmentRanges, NULL);
+        printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL);
     } else {
         ptr = cmdline;
         i = atoi(ptr++);
         if (i < MAX_ADJUSTMENT_RANGE_COUNT) {
-            adjustmentRange_t *ar = &masterConfig.adjustmentRanges[i];
+            adjustmentRange_t *ar = adjustmentRangesMutable(i);
             uint8_t validArgumentCount = 0;
 
             ptr = nextArg(ptr);
@@ -3522,7 +3527,7 @@ static void printConfig(char *cmdline, bool doDiff)
         printAux(dumpMask, modeActivationConditionsCopy, modeActivationConditions(0));
 
         cliPrintHashLine("adjrange");
-        printAdjustmentRange(dumpMask, masterConfig.adjustmentRanges, defaultConfig.adjustmentRanges);
+        printAdjustmentRange(dumpMask, adjustmentRangesCopy, adjustmentRanges(0));
 
         cliPrintHashLine("rxrange");
         printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
