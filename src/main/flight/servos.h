@@ -90,7 +90,10 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
+PG_DECLARE_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
+
 typedef struct servoParam_s {
+    uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
     int16_t min;                            // servo min
     int16_t max;                            // servo max
     int16_t middle;                         // servo middle
@@ -98,8 +101,7 @@ typedef struct servoParam_s {
     uint8_t angleAtMin;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'min' value.
     uint8_t angleAtMax;                     // range [0;180] the measured angle in degrees from the middle when the servo is at the 'max' value.
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
-    uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
-} __attribute__ ((__packed__)) servoParam_t;
+} servoParam_t;
 
 typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
@@ -118,9 +120,9 @@ extern int16_t servo[MAX_SUPPORTED_SERVOS];
 bool isServoOutputEnabled(void);
 bool isMixerUsingServos(void);
 void writeServos(void);
-void servoMixerLoadMix(int index, servoMixer_t *customServoMixers);
+void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
 void servosUseConfigs(servoParam_t *servoParamsToUse);
-void servosInit(servoMixer_t *customServoMixers);
 void servoMixer(void);
+void servosInit(void);

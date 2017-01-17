@@ -242,7 +242,7 @@ void init(void)
 #endif
 
 #ifdef USE_SERVOS
-    servosInit(masterConfig.customServoMixer);
+    servosInit();
 #endif
 
     drv_pwm_config_t pwm_params;

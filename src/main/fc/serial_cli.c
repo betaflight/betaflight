@@ -1124,6 +1124,7 @@ static boardAlignment_t boardAlignmentCopy;
 #ifdef USE_SERVOS
 static servoConfig_t servoConfigCopy;
 static gimbalConfig_t gimbalConfigCopy;
+static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
 #endif
 static batteryConfig_t batteryConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
@@ -1177,6 +1178,9 @@ static void backupConfigs(void)
 #ifdef USE_SERVOS
     servoConfigCopy = *servoConfig();
     gimbalConfigCopy = *gimbalConfig();
+    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
+        customServoMixersCopy[ii] = *customServoMixers(ii);
+    }
 #endif
     batteryConfigCopy = *batteryConfig();
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
@@ -1236,6 +1240,9 @@ static void restoreConfigs(void)
 #ifdef USE_SERVOS
     *servoConfigMutable() = servoConfigCopy;
     *gimbalConfigMutable() = gimbalConfigCopy;
+    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
+        *customServoMixersMutable(ii) = customServoMixersCopy[ii];
+    }
 #endif
     *batteryConfigMutable() = batteryConfigCopy;
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
@@ -2376,18 +2383,18 @@ static void cliServo(char *cmdline)
 #endif
 
 #ifdef USE_SERVOS
-static void printServoMix(uint8_t dumpMask, const master_t *defaultConfig)
+static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixers, const servoMixer_t *defaultCustomServoMixers)
 {
     const char *format = "smix %d %d %d %d %d %d %d %d\r\n";
     for (uint32_t i = 0; i < MAX_SERVO_RULES; i++) {
-        servoMixer_t customServoMixer = *customServoMixer(i);
+        servoMixer_t customServoMixer = customServoMixers[i];
         if (customServoMixer.rate == 0) {
             break;
         }
 
         bool equalsDefault = true;
-        if (defaultConfig) {
-            servoMixer_t customServoMixerDefault = defaultConfig->customServoMixer[i];
+        if (defaultCustomServoMixers) {
+            servoMixer_t customServoMixerDefault = defaultCustomServoMixers[i];
             equalsDefault = customServoMixer.targetChannel == customServoMixerDefault.targetChannel
                 && customServoMixer.inputSource == customServoMixerDefault.inputSource
                 && customServoMixer.rate == customServoMixerDefault.rate
@@ -2428,10 +2435,10 @@ static void cliServoMix(char *cmdline)
     len = strlen(cmdline);
 
     if (len == 0) {
-        printServoMix(DUMP_MASTER, NULL);
+        printServoMix(DUMP_MASTER, customServoMixers(0), NULL);
     } else if (strncasecmp(cmdline, "reset", 5) == 0) {
         // erase custom mixer
-        memset(masterConfig.customServoMixer, 0, sizeof(masterConfig.customServoMixer));
+        pgResetCopy(customServoMixersMutable(0), PG_SERVO_MIXER);
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
             masterConfig.servoConf[i].reversedSources = 0;
         }
@@ -2445,7 +2452,7 @@ static void cliServoMix(char *cmdline)
                     break;
                 }
                 if (strncasecmp(ptr, mixerNames[i], len) == 0) {
-                    servoMixerLoadMix(i, masterConfig.customServoMixer);
+                    servoMixerLoadMix(i);
                     cliPrintf("Loaded %s\r\n", mixerNames[i]);
                     cliServoMix("");
                     break;
@@ -2515,12 +2522,12 @@ static void cliServoMix(char *cmdline)
             args[SPEED] >= 0 && args[SPEED] <= MAX_SERVO_SPEED &&
             args[MIN] >= 0 && args[MIN] <= 100 &&
             args[MAX] >= 0 && args[MAX] <= 100 && args[MIN] < args[MAX]) {
-            masterConfig.customServoMixer[i].targetChannel = args[TARGET];
-            masterConfig.customServoMixer[i].inputSource = args[INPUT];
-            masterConfig.customServoMixer[i].rate = args[RATE];
-            masterConfig.customServoMixer[i].speed = args[SPEED];
-            masterConfig.customServoMixer[i].min = args[MIN];
-            masterConfig.customServoMixer[i].max = args[MAX];
+            customServoMixersMutable(i)->targetChannel = args[TARGET];
+            customServoMixersMutable(i)->inputSource = args[INPUT];
+            customServoMixersMutable(i)->rate = args[RATE];
+            customServoMixersMutable(i)->speed = args[SPEED];
+            customServoMixersMutable(i)->min = args[MIN];
+            customServoMixersMutable(i)->max = args[MAX];
             cliServoMix("");
         } else {
             cliShowParseError();
@@ -3489,8 +3496,8 @@ static void printConfig(char *cmdline, bool doDiff)
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
-        cliDumpPrintf(dumpMask, masterConfig.customServoMixer[0].rate == 0, "smix reset\r\n\r\n");
-        printServoMix(dumpMask, &defaultConfig);
+        cliDumpPrintf(dumpMask, customServoMixers(0)->rate == 0, "smix reset\r\n\r\n");
+        printServoMix(dumpMask, customServoMixersCopy, customServoMixers(0));
 #endif
 #endif
 
