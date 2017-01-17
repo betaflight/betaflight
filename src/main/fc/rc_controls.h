@@ -187,7 +187,6 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
-
 } adjustmentFunction_e;
 
 #define ADJUSTMENT_FUNCTION_COUNT 21
@@ -244,9 +243,11 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
+PG_DECLARE_ARR(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
+
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
+void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(const struct controlRateConfig_s *controlRateConfig);
 

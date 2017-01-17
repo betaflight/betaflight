@@ -70,8 +70,6 @@ typedef struct master_s {
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
 
-    adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
-
     // Radio/ESC-related configuration
 
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.

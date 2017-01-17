@@ -90,6 +90,8 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
 PG_REGISTER_ARR(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
 PG_REGISTER(modeActivationOperatorConfig_t, modeActivationOperatorConfig, PG_MODE_ACTIVATION_OPERATOR_CONFIG, 0);
 
+PG_REGISTER_ARR(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
+
 bool isUsingSticksForArming(void)
 {
     return isUsingSticksToArm;
@@ -713,12 +715,10 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
     }
 }
 
-void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges)
+void updateAdjustmentStates(void)
 {
-    uint8_t index;
-
-    for (index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
-        adjustmentRange_t *adjustmentRange = &adjustmentRanges[index];
+    for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
+        const adjustmentRange_t *adjustmentRange = adjustmentRanges(index);
 
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
 

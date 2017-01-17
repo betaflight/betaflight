@@ -363,7 +363,7 @@ void processRx(timeUs_t currentTimeUs)
     updateActivatedModes();
 
     if (!cliMode) {
-        updateAdjustmentStates(masterConfig.adjustmentRanges);
+        updateAdjustmentStates();
         processRcAdjustments(currentControlRateProfile);
     }
 
