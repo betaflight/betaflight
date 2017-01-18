@@ -52,9 +52,6 @@ typedef struct master_s {
 
     profile_t profile[MAX_PROFILE_COUNT];
 
-    uint32_t beeper_off_flags;
-    uint32_t preferred_beeper_off_flags;
-
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
     /*

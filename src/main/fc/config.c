@@ -92,13 +92,15 @@ PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-        .debug_mode = DEBUG_NONE,
-        .i2c_overclock = 0,
-        .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
-        .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
-        .asyncMode = ASYNC_MODE_NONE,
-        .throttle_tilt_compensation_strength = 0      // 0-100, 0 - disabled
+    .debug_mode = DEBUG_NONE,
+    .i2c_overclock = 0,
+    .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
+    .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
+    .asyncMode = ASYNC_MODE_NONE,
+    .throttle_tilt_compensation_strength = 0      // 0-100, 0 - disabled
 );
+
+PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
 
 #ifdef NAV
 void validateNavConfig(void)
@@ -608,40 +610,40 @@ void changeProfile(uint8_t profileIndex)
 
 void beeperOffSet(uint32_t mask)
 {
-    masterConfig.beeper_off_flags |= mask;
+    beeperConfigMutable()->beeper_off_flags |= mask;
 }
 
 void beeperOffSetAll(uint8_t beeperCount)
 {
-    masterConfig.beeper_off_flags = (1 << beeperCount) -1;
+    beeperConfigMutable()->beeper_off_flags = (1 << beeperCount) -1;
 }
 
 void beeperOffClear(uint32_t mask)
 {
-    masterConfig.beeper_off_flags &= ~(mask);
+    beeperConfigMutable()->beeper_off_flags &= ~(mask);
 }
 
 void beeperOffClearAll(void)
 {
-    masterConfig.beeper_off_flags = 0;
+    beeperConfigMutable()->beeper_off_flags = 0;
 }
 
 uint32_t getBeeperOffMask(void)
 {
-    return masterConfig.beeper_off_flags;
+    return beeperConfig()->beeper_off_flags;
 }
 
 void setBeeperOffMask(uint32_t mask)
 {
-    masterConfig.beeper_off_flags = mask;
+    beeperConfigMutable()->beeper_off_flags = mask;
 }
 
 uint32_t getPreferredBeeperOffMask(void)
 {
-    return masterConfig.preferred_beeper_off_flags;
+    return beeperConfig()->preferred_beeper_off_flags;
 }
 
 void setPreferredBeeperOffMask(uint32_t mask)
 {
-    masterConfig.preferred_beeper_off_flags = mask;
+    beeperConfigMutable()->preferred_beeper_off_flags = mask;
 }
