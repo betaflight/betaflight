@@ -40,8 +40,6 @@
 
 #define osdProfile(x) (&masterConfig.osdProfile)
 #define osdProfileMutable(x) (&masterConfig.osdProfile)
-#define ledStripConfig(x) (&masterConfig.ledStripConfig)
-#define ledStripConfigMutable(x) (&masterConfig.ledStripConfig)
 #define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
 #define pwmRxConfigMutable(x) (&masterConfig.pwmRxConfig)
 
@@ -64,10 +62,6 @@ typedef struct master_s {
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 
     pwmRxConfig_t pwmRxConfig;
-
-#ifdef LED_STRIP
-    ledStripConfig_t ledStripConfig;
-#endif
 
 #ifdef OSD
     osd_profile_t osdProfile;

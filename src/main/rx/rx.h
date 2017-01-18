@@ -150,6 +150,7 @@ typedef struct rxRuntimeConfig_s {
 } rxRuntimeConfig_t;
 
 extern rxRuntimeConfig_t rxRuntimeConfig; //!!TODO remove this extern, only needed once for channelCount
+extern uint16_t rssi;
 
 void rxInit(void);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
