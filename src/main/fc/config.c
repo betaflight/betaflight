@@ -465,6 +465,11 @@ void resetRcControlsConfig(rcControlsConfig_t *rcControlsConfig)
 
 void resetMixerConfig(mixerConfig_t *mixerConfig)
 {
+#ifdef TARGET_DEFAULT_MIXER
+    mixerConfig->mixerMode = TARGET_DEFAULT_MIXER;
+#else
+    mixerConfig->mixerMode = MIXER_QUADX;
+#endif
     mixerConfig->yaw_motor_direction = 1;
 }
 
@@ -603,7 +608,6 @@ void createDefaultConfig(master_t *config)
 #endif
 
     config->version = EEPROM_CONF_VERSION;
-    config->mixerConfig.mixerMode = MIXER_QUADX;
 
     // global settings
     config->current_profile_index = 0;    // default profile
