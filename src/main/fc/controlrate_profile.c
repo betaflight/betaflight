@@ -33,12 +33,12 @@ static uint8_t currentControlRateProfileIndex = 0;
 const controlRateConfig_t *currentControlRateProfile;
 
 
-PG_REGISTER_ARR_WITH_RESET_FN(const controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
 
-void pgResetFn_controlRateProfiles(const controlRateConfig_t *instance)
+void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
 {
     for (int i = 0; i < MAX_CONTROL_RATE_PROFILE_COUNT; i++) {
-        RESET_CONFIG(const controlRateConfig_t, ((controlRateConfig_t*)&instance[i]),
+        RESET_CONFIG(const controlRateConfig_t, &instance[i],
             .rcExpo8 = 70,
             .thrMid8 = 50,
             .thrExpo8 = 0,

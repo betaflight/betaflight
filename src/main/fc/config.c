@@ -165,7 +165,7 @@ void createDefaultConfig(master_t *config)
     config->version = EEPROM_CONF_VERSION;
 
 
-    config ->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
+    config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -180,79 +180,8 @@ void createDefaultConfig(master_t *config)
 #endif
 #endif
 
-    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
-#ifdef ALIENFLIGHTF1
-#ifdef ALIENFLIGHTF3
-    config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
-    config->batteryConfig.vbatscale = 20;
-#else
-    config->serialConfig.portConfigs[1].functionMask = FUNCTION_RX_SERIAL;
-#endif
-    config->rxConfig.spektrum_sat_bind = 5;
-    config->motorConfig.minthrottle = 1000;
-    config->motorConfig.maxthrottle = 2000;
-    config->motorConfig.motorPwmRate = 32000;
-    config->looptime = 2000;
-    pidProfileMutable()->P8[ROLL] = 36;
-    pidProfileMutable()->P8[PITCH] = 36;
-    config->failsafeConfig.failsafe_delay = 2;
-    config->failsafeConfig.failsafe_off_delay = 0;
-    config->controlRateProfiles[0].rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
-    config->controlRateProfiles[0].rates[FD_ROLL] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
-    config->controlRateProfiles[0].rates[FD_YAW] = CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT;
-    parseRcChannels("TAER1234");
-
-    //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
-    config->customMotorMixer[0].throttle = 1.0f;
-    config->customMotorMixer[0].roll = -0.414178f;
-    config->customMotorMixer[0].pitch = 1.0f;
-    config->customMotorMixer[0].yaw = -1.0f;
-
-    //  { 1.0f, -0.414178f, -1.0f,  1.0f },          // FRONT_R
-    config->customMotorMixer[1].throttle = 1.0f;
-    config->customMotorMixer[1].roll = -0.414178f;
-    config->customMotorMixer[1].pitch = -1.0f;
-    config->customMotorMixer[1].yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f,  1.0f,  1.0f },          // REAR_L
-    config->customMotorMixer[2].throttle = 1.0f;
-    config->customMotorMixer[2].roll = 0.414178f;
-    config->customMotorMixer[2].pitch = 1.0f;
-    config->customMotorMixer[2].yaw = 1.0f;
-
-    //  { 1.0f,  0.414178f, -1.0f, -1.0f },          // FRONT_L
-    config->customMotorMixer[3].throttle = 1.0f;
-    config->customMotorMixer[3].roll = 0.414178f;
-    config->customMotorMixer[3].pitch = -1.0f;
-    config->customMotorMixer[3].yaw = -1.0f;
-
-    //  { 1.0f, -1.0f, -0.414178f, -1.0f },          // MIDFRONT_R
-    config->customMotorMixer[4].throttle = 1.0f;
-    config->customMotorMixer[4].roll = -1.0f;
-    config->customMotorMixer[4].pitch = -0.414178f;
-    config->customMotorMixer[4].yaw = -1.0f;
-
-    //  { 1.0f,  1.0f, -0.414178f,  1.0f },          // MIDFRONT_L
-    config->customMotorMixer[5].throttle = 1.0f;
-    config->customMotorMixer[5].roll = 1.0f;
-    config->customMotorMixer[5].pitch = -0.414178f;
-    config->customMotorMixer[5].yaw = 1.0f;
-
-    //  { 1.0f, -1.0f,  0.414178f,  1.0f },          // MIDREAR_R
-    config->customMotorMixer[6].throttle = 1.0f;
-    config->customMotorMixer[6].roll = -1.0f;
-    config->customMotorMixer[6].pitch = 0.414178f;
-    config->customMotorMixer[6].yaw = 1.0f;
-
-    //  { 1.0f,  1.0f,  0.414178f, -1.0f },          // MIDREAR_L
-    config->customMotorMixer[7].throttle = 1.0f;
-    config->customMotorMixer[7].roll = 1.0f;
-    config->customMotorMixer[7].pitch = 0.414178f;
-    config->customMotorMixer[7].yaw = -1.0f;
-#endif
-
 #if defined(TARGET_CONFIG)
-    targetConfiguration(&masterConfig);
+    targetConfiguration();
 #endif
 
     // copy first profile into remaining profile
