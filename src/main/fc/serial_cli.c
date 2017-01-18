@@ -1151,6 +1151,9 @@ static ledStripConfig_t ledStripConfigCopy;
 static osdConfig_t osdConfigCopy;
 #endif
 static systemConfig_t systemConfigCopy;
+#ifdef BEEPER
+static beeperConfig_t beeperConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1223,6 +1226,9 @@ static void backupConfigs(void)
     osdConfigCopy = *osdConfig();
 #endif
     systemConfigCopy = *systemConfig();
+#ifdef BEEPER
+    beeperConfigCopy = *beeperConfig();
+#endif
 }
 
 static void restoreConfigs(void)
@@ -1295,6 +1301,9 @@ static void restoreConfigs(void)
     *osdConfigMutable() = osdConfigCopy;
 #endif
     *systemConfigMutable() = systemConfigCopy;
+#ifdef BEEPER
+    *beeperConfigMutable() = beeperConfigCopy;
+#endif
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -2808,12 +2817,12 @@ static void cliFeature(char *cmdline)
 }
 
 #ifdef BEEPER
-static void printBeeper(uint8_t dumpMask, const master_t *defaultConfig)
+static void printBeeper(uint8_t dumpMask, const beeperConfig_t *beeperConfig, const beeperConfig_t *beeperConfigDefault)
 {
-    uint8_t beeperCount = beeperTableEntryCount();
-    uint32_t mask = getBeeperOffMask();
-    uint32_t defaultMask = defaultConfig->beeper_off_flags;
-    for (int32_t i = 0; i < beeperCount - 2; i++) {
+    const uint8_t beeperCount = beeperTableEntryCount();
+    const uint32_t mask = beeperConfig->beeper_off_flags;
+    const uint32_t defaultMask = beeperConfigDefault->beeper_off_flags;
+    for (int i = 0; i < beeperCount - 2; i++) {
         const char *formatOff = "beeper -%s\r\n";
         const char *formatOn = "beeper %s\r\n";
         cliDefaultPrintf(dumpMask, ~(mask ^ defaultMask) & (1 << i), mask & (1 << i) ? formatOn : formatOff, beeperNameForTableIndex(i));
@@ -3521,7 +3530,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef BEEPER
         cliPrintHashLine("beeper");
-        printBeeper(dumpMask, &defaultConfig);
+        printBeeper(dumpMask, &beeperConfigCopy, beeperConfig());
 #endif
 
         cliPrintHashLine("map");

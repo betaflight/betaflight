@@ -339,7 +339,7 @@ void init(void)
     systemState |= SYSTEM_STATE_MOTORS_READY;
 
 #ifdef BEEPER
-    beeperConfig_t beeperConfig = {
+    beeperDevConfig_t beeperDevConfig = {
         .ioTag = IO_TAG(BEEPER),
 #ifdef BEEPER_INVERTED
         .isOD = false,
@@ -353,12 +353,12 @@ void init(void)
 #if defined(NAZE) && defined(USE_HARDWARE_REVISION_DETECTION)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
-        beeperConfig.isOD = false;
-        beeperConfig.isInverted = true;
+        beeperDevConfig.isOD = false;
+        beeperDevConfig.isInverted = true;
     }
 #endif
 
-    beeperInit(&beeperConfig);
+    beeperInit(&beeperDevConfig);
 #endif
 
 #ifdef INVERTER
