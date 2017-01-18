@@ -112,10 +112,10 @@
 #define SPI3_MOSI_PIN           PC12
 
 
-#define USE_RTC6705
+/*#define USE_RTC6705
 #define RTC6705_SPIDATA_PIN     PA8
 #define RTC6705_SPILE_PIN       PC9
-#define RTC6705_SPICLK_PIN      PC8
+#define RTC6705_SPICLK_PIN      PC8*/
 
 #define USE_ADC
 #define VBAT_ADC_PIN            PC1
