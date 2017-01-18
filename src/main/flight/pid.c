@@ -141,8 +141,8 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .D8[PIDVEL] = 10,    // NAV_VEL_Z_D * 100
 
         .acc_soft_lpf_hz = 15,
-        .dterm_soft_notch_cutoff = 43,
-        .dterm_soft_notch_hz = 86,
+        .dterm_soft_notch_cutoff = 0,
+        .dterm_soft_notch_hz = 0,
         .dterm_lpf_hz = 40,
         .yaw_lpf_hz = 30,
         .dterm_setpoint_weight = 0.0f,
