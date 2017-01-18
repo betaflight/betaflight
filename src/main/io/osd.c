@@ -50,6 +50,8 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
 
 #include "drivers/display.h"
 #include "drivers/max7456.h"
@@ -123,12 +125,14 @@ static displayPort_t *osd7456DisplayPort;
 #define AH_SIDEBAR_WIDTH_POS 7
 #define AH_SIDEBAR_HEIGHT_POS 3
 
+PG_REGISTER_WITH_RESET_FN(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
+
 /**
  * Gets the correct altitude symbol for the current unit system
  */
 static char osdGetAltitudeSymbol()
 {
-    switch (osdProfile()->units) {
+    switch (osdConfig()->units) {
         case OSD_UNIT_IMPERIAL:
             return 0xF;
         default:
@@ -142,7 +146,7 @@ static char osdGetAltitudeSymbol()
  */
 static int32_t osdGetAltitude(int32_t alt)
 {
-    switch (osdProfile()->units) {
+    switch (osdConfig()->units) {
         case OSD_UNIT_IMPERIAL:
             return (alt * 328) / 100; // Convert to feet / 100
         default:
@@ -152,11 +156,11 @@ static int32_t osdGetAltitude(int32_t alt)
 
 static void osdDrawSingleElement(uint8_t item)
 {
-    if (!VISIBLE(osdProfile()->item_pos[item]) || BLINK(osdProfile()->item_pos[item]))
+    if (!VISIBLE(osdConfig()->item_pos[item]) || BLINK(osdConfig()->item_pos[item]))
         return;
 
-    uint8_t elemPosX = OSD_X(osdProfile()->item_pos[item]);
-    uint8_t elemPosY = OSD_Y(osdProfile()->item_pos[item]);
+    uint8_t elemPosX = OSD_X(osdConfig()->item_pos[item]);
+    uint8_t elemPosY = OSD_Y(osdConfig()->item_pos[item]);
     char buff[32];
 
     switch(item) {
@@ -439,34 +443,34 @@ void osdDrawElements(void)
 #endif // GPS
 }
 
-void osdResetConfig(osd_profile_t *osdProfile)
+void pgResetFn_osdConfig(osdConfig_t *instance)
 {
-    osdProfile->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_ONTIME] = OSD_POS(22, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_FLYTIME] = OSD_POS(22, 12) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_FLYMODE] = OSD_POS(12, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_CRAFT_NAME] = OSD_POS(12, 12);
-    osdProfile->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 4);
-    osdProfile->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
-    osdProfile->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3);
-    osdProfile->item_pos[OSD_MAH_DRAWN] = OSD_POS(15, 3);
-    osdProfile->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
-    osdProfile->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
-    osdProfile->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
-    osdProfile->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
-    osdProfile->item_pos[OSD_POWER] = OSD_POS(15, 1);
+    instance->item_pos[OSD_RSSI_VALUE] = OSD_POS(22, 0) | VISIBLE_FLAG;
+    instance->item_pos[OSD_MAIN_BATT_VOLTAGE] = OSD_POS(12, 0) | VISIBLE_FLAG;
+    instance->item_pos[OSD_ARTIFICIAL_HORIZON] = OSD_POS(8, 6) | VISIBLE_FLAG;
+    instance->item_pos[OSD_HORIZON_SIDEBARS] = OSD_POS(8, 6) | VISIBLE_FLAG;
+    instance->item_pos[OSD_ONTIME] = OSD_POS(22, 11) | VISIBLE_FLAG;
+    instance->item_pos[OSD_FLYTIME] = OSD_POS(22, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_FLYMODE] = OSD_POS(12, 11) | VISIBLE_FLAG;
+    instance->item_pos[OSD_CRAFT_NAME] = OSD_POS(12, 12);
+    instance->item_pos[OSD_THROTTLE_POS] = OSD_POS(1, 4);
+    instance->item_pos[OSD_VTX_CHANNEL] = OSD_POS(8, 6);
+    instance->item_pos[OSD_CURRENT_DRAW] = OSD_POS(1, 3);
+    instance->item_pos[OSD_MAH_DRAWN] = OSD_POS(15, 3);
+    instance->item_pos[OSD_GPS_SPEED] = OSD_POS(2, 2);
+    instance->item_pos[OSD_GPS_SATS] = OSD_POS(2, 12);
+    instance->item_pos[OSD_ALTITUDE] = OSD_POS(1, 5);
+    instance->item_pos[OSD_ROLL_PIDS] = OSD_POS(2, 10) | VISIBLE_FLAG;
+    instance->item_pos[OSD_PITCH_PIDS] = OSD_POS(2, 11) | VISIBLE_FLAG;
+    instance->item_pos[OSD_YAW_PIDS] = OSD_POS(2, 12) | VISIBLE_FLAG;
+    instance->item_pos[OSD_POWER] = OSD_POS(15, 1);
 
-    osdProfile->rssi_alarm = 20;
-    osdProfile->cap_alarm = 2200;
-    osdProfile->time_alarm = 10; // in minutes
-    osdProfile->alt_alarm = 100; // meters or feet depend on configuration
+    instance->rssi_alarm = 20;
+    instance->cap_alarm = 2200;
+    instance->time_alarm = 10; // in minutes
+    instance->alt_alarm = 100; // meters or feet depend on configuration
 
-    osdProfile->video_system = 0;
+    instance->video_system = 0;
 }
 
 void osdInit(void)
@@ -475,7 +479,7 @@ void osdInit(void)
 
     armState = ARMING_FLAG(ARMED);
 
-    max7456Init(osdProfile()->video_system);
+    max7456Init(osdConfig()->video_system);
 
     max7456ClearScreen();
 
@@ -512,10 +516,8 @@ void osdInit(void)
 
 void osdUpdateAlarms(void)
 {
-    osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
-
     // This is overdone?
-    // uint16_t *itemPos = osdProfile()->item_pos;
+    // uint16_t *itemPos = osdConfig()->item_pos;
 
 #ifdef NAV
     int32_t alt = osdGetAltitude(getEstimatedActualPosition(Z)) / 100;
@@ -524,46 +526,44 @@ void osdUpdateAlarms(void)
 #endif
     statRssi = rssi * 100 / 1024;
 
-    if (statRssi < pOsdProfile->rssi_alarm)
-        pOsdProfile->item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
+    if (statRssi < osdConfig()->rssi_alarm)
+        osdConfigMutable()->item_pos[OSD_RSSI_VALUE] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
 
     if (vbat <= (batteryWarningVoltage - 1))
-        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
 
     if (STATE(GPS_FIX) == 0)
-        pOsdProfile->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_GPS_SATS] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
 
-    if (flyTime / 60 >= pOsdProfile->time_alarm && ARMING_FLAG(ARMED))
-        pOsdProfile->item_pos[OSD_FLYTIME] |= BLINK_FLAG;
+    if (flyTime / 60 >= osdConfig()->time_alarm && ARMING_FLAG(ARMED))
+        osdConfigMutable()->item_pos[OSD_FLYTIME] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
 
-    if (mAhDrawn >= pOsdProfile->cap_alarm)
-        pOsdProfile->item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
+    if (mAhDrawn >= osdConfig()->cap_alarm)
+        osdConfigMutable()->item_pos[OSD_MAH_DRAWN] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 
-    if (alt >= pOsdProfile->alt_alarm)
-        pOsdProfile->item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
+    if (alt >= osdConfig()->alt_alarm)
+        osdConfigMutable()->item_pos[OSD_ALTITUDE] |= BLINK_FLAG;
     else
-        pOsdProfile->item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
+        osdConfigMutable()->item_pos[OSD_ALTITUDE] &= ~BLINK_FLAG;
 }
 
 void osdResetAlarms(void)
 {
-    osd_profile_t *pOsdProfile = &masterConfig.osdProfile;
-
-    pOsdProfile->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
-    pOsdProfile->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_RSSI_VALUE] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAIN_BATT_VOLTAGE] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_GPS_SATS] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_FLYTIME] &= ~BLINK_FLAG;
+    osdConfigMutable()->item_pos[OSD_MAH_DRAWN] &= ~BLINK_FLAG;
 }
 
 static void osdResetStats(void)
