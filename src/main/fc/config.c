@@ -137,10 +137,10 @@ static void resetControlRateConfig(controlRateConfig_t *controlRateConfig)
 
 static void resetPidProfile(pidProfile_t *pidProfile)
 {
-    pidProfile->P8[ROLL] = 43;
+    pidProfile->P8[ROLL] = 40;
     pidProfile->I8[ROLL] = 40;
     pidProfile->D8[ROLL] = 20;
-    pidProfile->P8[PITCH] = 58;
+    pidProfile->P8[PITCH] = 55;
     pidProfile->I8[PITCH] = 50;
     pidProfile->D8[PITCH] = 22;
     pidProfile->P8[YAW] = 70;
@@ -177,13 +177,14 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->dterm_notch_cutoff = 160;
     pidProfile->vbatPidCompensation = 0;
     pidProfile->pidAtMinThrottle = PID_STABILISATION_ON;
-    pidProfile->levelAngleLimit = 70;    // 70 degrees
-    pidProfile->levelSensitivity = 100;  // 100 degrees at full stick
+    pidProfile->levelAngleLimit = 55;
+    pidProfile->levelSensitivity = 55;
     pidProfile->setpointRelaxRatio = 30;
     pidProfile->dtermSetpointWeight = 200;
     pidProfile->yawRateAccelLimit = 10.0f;
     pidProfile->rateAccelLimit = 0.0f;
-    pidProfile->itermThrottleThreshold = 350;
+    pidProfile->itermThrottleThreshold = 300;
+    pidProfile->itermAcceleratorGain = 4.0f;
 }
 
 void resetProfile(profile_t *profile)
