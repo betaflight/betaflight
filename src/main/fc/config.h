@@ -34,13 +34,11 @@
 #define ATTITUDE_TASK_FREQUENCY_MIN 100
 #define ATTITUDE_TASK_FREQUENCY_MAX 1000
 
-#ifdef ASYNC_GYRO_PROCESSING
 typedef enum {
     ASYNC_MODE_NONE,
     ASYNC_MODE_GYRO,
     ASYNC_MODE_ALL
 } asyncMode_e;
-#endif
 
 typedef enum {
     FEATURE_RX_PPM = 1 << 0,
@@ -80,6 +78,18 @@ typedef struct profileSelection_s {
 } profileSelection_t;
 
 PG_DECLARE(profileSelection_t, profileSelection);
+
+typedef struct systemConfig_s {
+    uint16_t accTaskFrequency;
+    uint16_t attitudeTaskFrequency;
+    uint8_t asyncMode;
+    uint8_t debug_mode;
+    uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
+    uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
+    char name[MAX_NAME_LENGTH + 1];
+} systemConfig_t;
+
+PG_DECLARE(systemConfig_t, systemConfig);
 
 void beeperOffSet(uint32_t mask);
 void beeperOffSetAll(uint8_t beeperCount);

@@ -1116,9 +1116,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_INAV_PID:
     #ifdef ASYNC_GYRO_PROCESSING
-        sbufWriteU8(dst, masterConfig.asyncMode);
-        sbufWriteU16(dst, masterConfig.accTaskFrequency);
-        sbufWriteU16(dst, masterConfig.attitudeTaskFrequency);
+        sbufWriteU8(dst, systemConfig()->asyncMode);
+        sbufWriteU16(dst, systemConfig()->accTaskFrequency);
+        sbufWriteU16(dst, systemConfig()->attitudeTaskFrequency);
     #else
         sbufWriteU8(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1569,9 +1569,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_INAV_PID:
         #ifdef ASYNC_GYRO_PROCESSING
-            masterConfig.asyncMode = sbufReadU8(src);
-            masterConfig.accTaskFrequency = sbufReadU16(src);
-            masterConfig.attitudeTaskFrequency = sbufReadU16(src);
+            systemConfigMutable()->asyncMode = sbufReadU8(src);
+            systemConfigMutable()->accTaskFrequency = sbufReadU16(src);
+            systemConfigMutable()->attitudeTaskFrequency = sbufReadU16(src);
         #else
             sbufReadU8(src);
             sbufReadU16(src);

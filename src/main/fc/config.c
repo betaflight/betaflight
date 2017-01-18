@@ -89,6 +89,17 @@ const profile_t *currentProfile;
 
 PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
+PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
+
+PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+        .debug_mode = DEBUG_NONE,
+        .i2c_overclock = 0,
+        .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
+        .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
+        .asyncMode = ASYNC_MODE_NONE,
+        .throttle_tilt_compensation_strength = 0      // 0-100, 0 - disabled
+);
+
 #ifdef NAV
 void validateNavConfig(void)
 {
@@ -108,7 +119,7 @@ void validateNavConfig(void)
 
 #ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void) {
-    if (masterConfig.asyncMode == ASYNC_MODE_NONE) {
+    if (systemConfig()->asyncMode == ASYNC_MODE_NONE) {
         return getGyroUpdateRate();
     } else {
         return gyroConfig()->looptime;
@@ -120,23 +131,23 @@ timeDelta_t getGyroUpdateRate(void) {
 }
 
 uint16_t getAccUpdateRate(void) {
-    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
-        return 1000000 / masterConfig.accTaskFrequency;
+    if (systemConfig()->asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / systemConfig()->accTaskFrequency;
     } else {
         return getPidUpdateRate();
     }
 }
 
 uint16_t getAttitudeUpdateRate(void) {
-    if (masterConfig.asyncMode == ASYNC_MODE_ALL) {
-        return 1000000 / masterConfig.attitudeTaskFrequency;
+    if (systemConfig()->asyncMode == ASYNC_MODE_ALL) {
+        return 1000000 / systemConfig()->attitudeTaskFrequency;
     } else {
         return getPidUpdateRate();
     }
 }
 
 uint8_t getAsyncMode(void) {
-    return masterConfig.asyncMode;
+    return systemConfig()->asyncMode;
 }
 #endif
 
@@ -153,20 +164,8 @@ void createDefaultConfig(master_t *config)
 
     config->version = EEPROM_CONF_VERSION;
 
-    config->debug_mode = DEBUG_NONE;
 
-    config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
-
-    config->i2c_overclock = 0;
-
-#ifdef ASYNC_GYRO_PROCESSING
-    config->accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT;
-    config->attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT;
-    config->asyncMode = ASYNC_MODE_NONE;
-#endif
-
-    // for (int i = 0; i < CHECKBOXITEMS; i++)
-    //     cfg.activate[i] = 0;
+    config ->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
     // Radio
 #ifdef RX_CHANNELS_TAER
@@ -174,8 +173,6 @@ void createDefaultConfig(master_t *config)
 #else
     parseRcChannels("AETR1234");
 #endif
-
-    config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
 #ifdef BLACKBOX
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
@@ -607,26 +604,6 @@ void changeProfile(uint8_t profileIndex)
     writeEEPROM();
     readEEPROM();
     beeperConfirmationBeeps(profileIndex + 1);
-}
-
-void persistentFlagClearAll()
-{
-    masterConfig.persistentFlags = 0;
-}
-
-bool persistentFlag(uint8_t mask)
-{
-    return masterConfig.persistentFlags & mask;
-}
-
-void persistentFlagSet(uint8_t mask)
-{
-    masterConfig.persistentFlags |= mask;
-}
-
-void persistentFlagClear(uint8_t mask)
-{
-    masterConfig.persistentFlags &= ~(mask);
 }
 
 void beeperOffSet(uint32_t mask)

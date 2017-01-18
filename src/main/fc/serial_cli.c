@@ -853,6 +853,16 @@ static const clivalue_t valueTable[] = {
     { "osd_gps_sats_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SATS]) },
     { "osd_altitude_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ALTITUDE]) },
 #endif
+// PG_SYSTEM_CONFIG
+    { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, i2c_overclock) },
+    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_DEBUG }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, debug_mode) },
+#ifdef ASYNC_GYRO_PROCESSING
+    { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, accTaskFrequency) },
+    { "attitude_task_frequency",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { ATTITUDE_TASK_FREQUENCY_MIN,  ATTITUDE_TASK_FREQUENCY_MAX }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, attitudeTaskFrequency) },
+    { "async_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ASYNC_MODE }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, asyncMode) },
+#endif
+    { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
+    { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
 };
 
 #else
@@ -865,23 +875,7 @@ typedef struct {
 } clivalue_t;
 
 const clivalue_t valueTable[] = {
-    { "i2c_overclock",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.i2c_overclock, .config.lookup = { TABLE_OFF_ON } },
-
-    { "debug_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.debug_mode, .config.lookup = { TABLE_DEBUG } },
-
-#ifdef ASYNC_GYRO_PROCESSING
-    { "acc_task_frequency",         VAR_UINT16 | MASTER_VALUE,  &masterConfig.accTaskFrequency, .config.minmax = { ACC_TASK_FREQUENCY_MIN,  ACC_TASK_FREQUENCY_MAX } },
-    { "attitude_task_frequency",    VAR_UINT16 | MASTER_VALUE,  &masterConfig.attitudeTaskFrequency, .config.minmax = { ATTITUDE_TASK_FREQUENCY_MIN,  ATTITUDE_TASK_FREQUENCY_MAX } },
-    { "async_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.asyncMode, .config.lookup = { TABLE_ASYNC_MODE } },
-#endif
-
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmRxConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
-
-    { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, &masterConfig.throttle_tilt_compensation_strength, .config.minmax = { 0,  100 }, },
-
-
-    { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.modeActivationOperator, .config.lookup = { TABLE_AUX_OPERATOR } },
-
 };
 #endif
 
@@ -1156,6 +1150,7 @@ static ledStripConfig_t ledStripConfigCopy;
 #ifdef OSD
 static osdConfig_t osdConfigCopy;
 #endif
+static systemConfig_t systemConfigCopy;
 
 static void backupConfigs(void)
 {
@@ -1227,6 +1222,7 @@ static void backupConfigs(void)
 #ifdef OSD
     osdConfigCopy = *osdConfig();
 #endif
+    systemConfigCopy = *systemConfig();
 }
 
 static void restoreConfigs(void)
@@ -1298,6 +1294,7 @@ static void restoreConfigs(void)
 #ifdef OSD
     *osdConfigMutable() = osdConfigCopy;
 #endif
+    *systemConfigMutable() = systemConfigCopy;
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -3428,13 +3425,6 @@ static void cliVersion(char *cmdline)
     );
 }
 
-static void cliPFlags(char *cmdline)
-{
-    UNUSED(cmdline);
-
-    cliPrintf("# Persistent config flags: 0x%08x\r\n", masterConfig.persistentFlags );
-}
-
 #if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
 static void cliResource(char *cmdline)
 {
@@ -3494,9 +3484,6 @@ static void printConfig(char *cmdline, bool doDiff)
     if ((dumpMask & DUMP_MASTER) || (dumpMask & DUMP_ALL)) {
         cliPrintHashLine("version");
         cliVersion(NULL);
-
-        cliPrintHashLine("pflags");
-        cliPFlags("");
 
 #ifndef CLI_MINIMAL_VERBOSITY
         if ((dumpMask & (DUMP_ALL | DO_DIFF)) == (DUMP_ALL | DO_DIFF)) {
@@ -3709,9 +3696,7 @@ const clicmd_t cmdTable[] = {
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("servo", "configure servos", NULL, cliServo),
 #endif
-    CLI_COMMAND_DEF("set", "change setting",
-        "[<name>=<value>]", cliSet),
-    CLI_COMMAND_DEF("pflags", "get persistent flags", NULL, cliPFlags),
+    CLI_COMMAND_DEF("set", "change setting", "[<name>=<value>]", cliSet),
 #ifdef USE_SERVOS
     CLI_COMMAND_DEF("smix", "servo mixer",
         "<rule> <servo> <source> <rate> <speed> <min> <max>\r\n"

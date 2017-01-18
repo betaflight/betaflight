@@ -630,14 +630,3 @@ float calculateCosTiltAngle(void)
 {
     return rMat[2][2];
 }
-
-float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength)
-{
-    if (throttleTiltCompensationStrength) {
-        float tiltCompFactor = 1.0f / constrainf(rMat[2][2], 0.6f, 1.0f);  // max tilt about 50 deg
-        return 1.0f + (tiltCompFactor - 1.0f) * (throttleTiltCompensationStrength / 100.f);
-    }
-    else {
-        return 1.0f;
-    }
-}
