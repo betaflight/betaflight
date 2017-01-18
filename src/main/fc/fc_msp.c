@@ -1010,17 +1010,17 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 1); // OSD supported
         // send video system (AUTO/PAL/NTSC)
 #ifdef USE_MAX7456
-        sbufWriteU8(dst, osdProfile()->video_system);
+        sbufWriteU8(dst, osdConfig()->video_system);
 #else
         sbufWriteU8(dst, 0);
 #endif
-        sbufWriteU8(dst, osdProfile()->units);
-        sbufWriteU8(dst, osdProfile()->rssi_alarm);
-        sbufWriteU16(dst, osdProfile()->cap_alarm);
-        sbufWriteU16(dst, osdProfile()->time_alarm);
-        sbufWriteU16(dst, osdProfile()->alt_alarm);
+        sbufWriteU8(dst, osdConfig()->units);
+        sbufWriteU8(dst, osdConfig()->rssi_alarm);
+        sbufWriteU16(dst, osdConfig()->cap_alarm);
+        sbufWriteU16(dst, osdConfig()->time_alarm);
+        sbufWriteU16(dst, osdConfig()->alt_alarm);
         for (int i = 0; i < OSD_ITEM_COUNT; i++) {
-            sbufWriteU16(dst, osdProfile()->item_pos[i]);
+            sbufWriteU16(dst, osdConfig()->item_pos[i]);
         }
 #else
         sbufWriteU8(dst, 0); // OSD not supported
@@ -1698,20 +1698,20 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
             // set all the other settings
             if ((int8_t)addr == -1) {
 #ifdef USE_MAX7456
-                osdProfile()->video_system = sbufReadU8(src);
+                osdConfigMutable()->video_system = sbufReadU8(src);
 #else
                 sbufReadU8(src); // Skip video system
 #endif
-                osdProfile()->units = sbufReadU8(src);
-                osdProfile()->rssi_alarm = sbufReadU8(src);
-                osdProfile()->cap_alarm = sbufReadU16(src);
-                osdProfile()->time_alarm = sbufReadU16(src);
-                osdProfile()->alt_alarm = sbufReadU16(src);
+                osdConfigMutable()->units = sbufReadU8(src);
+                osdConfigMutable()->rssi_alarm = sbufReadU8(src);
+                osdConfigMutable()->cap_alarm = sbufReadU16(src);
+                osdConfigMutable()->time_alarm = sbufReadU16(src);
+                osdConfigMutable()->alt_alarm = sbufReadU16(src);
             } else {
                 // set a position setting
                 const uint16_t pos  = sbufReadU16(src);
                 if (addr < OSD_ITEM_COUNT) {
-                    osdProfile()->item_pos[addr] = pos;
+                    osdConfigMutable()->item_pos[addr] = pos;
                 }
             }
         }

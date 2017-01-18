@@ -153,10 +153,6 @@ void createDefaultConfig(master_t *config)
 
     config->version = EEPROM_CONF_VERSION;
 
-#ifdef OSD
-    osdResetConfig(&config->osdProfile);
-#endif
-
     config->debug_mode = DEBUG_NONE;
 
     config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;

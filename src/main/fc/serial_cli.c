@@ -827,6 +827,32 @@ static const clivalue_t valueTable[] = {
 #ifdef LED_STRIP
     { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
 #endif
+#ifdef OSD
+    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 2 }, PG_OSD_CONFIG, offsetof(osdConfig_t, video_system) },
+    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 1 }, PG_OSD_CONFIG, offsetof(osdConfig_t, row_shiftdown) },
+    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_UNIT }, PG_OSD_CONFIG, offsetof(osdConfig_t, units) },
+
+    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_alarm) },
+    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 20000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, cap_alarm) },
+    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 60 }, PG_OSD_CONFIG, offsetof(osdConfig_t, time_alarm) },
+    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 10000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, alt_alarm) },
+
+    { "osd_main_voltage_pos",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAIN_BATT_VOLTAGE]) },
+    { "osd_rssi_pos",               VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_RSSI_VALUE]) },
+    { "osd_flytimer_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_FLYTIME]) },
+    { "osd_ontime_pos",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ONTIME]) },
+    { "osd_flymode_pos",            VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_FLYMODE]) },
+    { "osd_throttle_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_THROTTLE_POS]) },
+    { "osd_vtx_channel_pos",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_VTX_CHANNEL]) },
+    { "osd_crosshairs",             VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CROSSHAIRS]) },
+    { "osd_artificial_horizon",     VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ARTIFICIAL_HORIZON]) },
+    { "osd_current_draw_pos",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CURRENT_DRAW]) },
+    { "osd_mah_drawn_pos",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_MAH_DRAWN]) },
+    { "osd_craft_name_pos",         VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_CRAFT_NAME]) },
+    { "osd_gps_speed_pos",          VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SPEED]) },
+    { "osd_gps_sats_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_GPS_SATS]) },
+    { "osd_altitude_pos",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, UINT16_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, item_pos[OSD_ALTITUDE]) },
+#endif
 };
 
 #else
@@ -856,32 +882,6 @@ const clivalue_t valueTable[] = {
 
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.modeActivationOperator, .config.lookup = { TABLE_AUX_OPERATOR } },
 
-#ifdef OSD
-    { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &osdProfile()->video_system, .config.minmax = { 0, 2 } },
-    { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &osdProfile()->row_shiftdown, .config.minmax = { 0, 1 } },
-    { "osd_units",                  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &osdProfile()->units, .config.lookup = { TABLE_UNIT } },
-
-    { "osd_rssi_alarm",             VAR_UINT8  | MASTER_VALUE, &osdProfile()->rssi_alarm, .config.minmax = { 0, 100 } },
-    { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->cap_alarm, .config.minmax = { 0, 20000 } },
-    { "osd_time_alarm",             VAR_UINT16 | MASTER_VALUE, &osdProfile()->time_alarm, .config.minmax = { 0, 60 } },
-    { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, &osdProfile()->alt_alarm, .config.minmax = { 0, 10000 } },
-
-    { "osd_main_voltage_pos",       VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAIN_BATT_VOLTAGE], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_rssi_pos",               VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_RSSI_VALUE], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_flytimer_pos",           VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYTIME], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_ontime_pos",             VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_ONTIME], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_flymode_pos",            VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_FLYMODE], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_throttle_pos",           VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_THROTTLE_POS], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_vtx_channel_pos",        VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_VTX_CHANNEL], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_crosshairs",             VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_CROSSHAIRS], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_artificial_horizon",     VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_ARTIFICIAL_HORIZON], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_current_draw_pos",       VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_CURRENT_DRAW], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_mah_drawn_pos",          VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_MAH_DRAWN], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_craft_name_pos",         VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_CRAFT_NAME], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_gps_speed_pos",          VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SPEED], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_gps_sats_pos",           VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_GPS_SATS], .config.minmax = { 0, UINT16_MAX } },
-    { "osd_altitude_pos",           VAR_UINT16 | MASTER_VALUE, &osdProfile()->item_pos[OSD_ALTITUDE], .config.minmax = { 0, UINT16_MAX } },
-#endif
 };
 #endif
 
@@ -1153,6 +1153,9 @@ static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
 #ifdef LED_STRIP
 static ledStripConfig_t ledStripConfigCopy;
 #endif
+#ifdef OSD
+static osdConfig_t osdConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1221,6 +1224,9 @@ static void backupConfigs(void)
 #ifdef LED_STRIP
     ledStripConfigCopy = *ledStripConfig();
 #endif
+#ifdef OSD
+    osdConfigCopy = *osdConfig();
+#endif
 }
 
 static void restoreConfigs(void)
@@ -1288,6 +1294,9 @@ static void restoreConfigs(void)
     }
 #ifdef LED_STRIP
     *ledStripConfigMutable() = ledStripConfigCopy;
+#endif
+#ifdef OSD
+    *osdConfigMutable() = osdConfigCopy;
 #endif
 }
 

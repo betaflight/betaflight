@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define VISIBLE_FLAG  0x0800
 #define BLINK_FLAG    0x0400
@@ -54,7 +55,7 @@ typedef enum {
     OSD_UNIT_METRIC
 } osd_unit_e;
 
-typedef struct osd_profile_s {
+typedef struct osdConfig_s {
     uint16_t item_pos[OSD_ITEM_COUNT];
 
     // Alarms
@@ -67,9 +68,10 @@ typedef struct osd_profile_s {
     uint8_t row_shiftdown;
 
     osd_unit_e units;
-} osd_profile_t;
+} osdConfig_t;
+
+PG_DECLARE(osdConfig_t, osdConfig);
 
 void osdInit(void);
-void osdResetConfig(osd_profile_t *osdProfile);
 void osdResetAlarms(void);
 void osdUpdate(timeUs_t currentTimeUs);

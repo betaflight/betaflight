@@ -43,18 +43,23 @@
 
 #if defined(OSD) && defined(CMS)
 
-OSD_UINT8_t entryAlarmRssi = {&osdProfile()->rssi_alarm, 5, 90, 5};
-OSD_UINT16_t entryAlarmCapacity = {&osdProfile()->cap_alarm, 50, 30000, 50};
-OSD_UINT16_t enryAlarmFlyTime = {&osdProfile()->time_alarm, 1, 200, 1};
-OSD_UINT16_t entryAlarmAltitude = {&osdProfile()->alt_alarm, 1, 200, 1};
+//!!TODO - fix up CMS menu entries to use parameter groups
+#if 0
+OSD_UINT8_t entryAlarmRssi = {&osdConfig()->rssi_alarm, 5, 90, 5};
+OSD_UINT16_t entryAlarmCapacity = {&osdConfig()->cap_alarm, 50, 30000, 50};
+OSD_UINT16_t enryAlarmFlyTime = {&osdConfig()->time_alarm, 1, 200, 1};
+OSD_UINT16_t entryAlarmAltitude = {&osdConfig()->alt_alarm, 1, 200, 1};
+#endif
 
 OSD_Entry cmsx_menuAlarmsEntries[] =
 {
     {"--- ALARMS ---", OME_Label, NULL, NULL, 0},
+#if 0
     {"RSSI", OME_UINT8, NULL, &entryAlarmRssi, 0},
     {"MAIN BAT", OME_UINT16, NULL, &entryAlarmCapacity, 0},
     {"FLY TIME", OME_UINT16, NULL, &enryAlarmFlyTime, 0},
     {"MAX ALT", OME_UINT16, NULL, &entryAlarmAltitude, 0},
+#endif
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
@@ -71,25 +76,27 @@ CMS_Menu cmsx_menuAlarms = {
 OSD_Entry menuOsdActiveElemsEntries[] =
 {
     {"--- ACTIV ELEM ---", OME_Label, NULL, NULL, 0},
-    {"RSSI", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_RSSI_VALUE], 0},
-    {"MAIN BATTERY", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
-    {"HORIZON", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ARTIFICIAL_HORIZON], 0},
-    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_HORIZON_SIDEBARS], 0},
-    {"UPTIME", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ONTIME], 0},
-    {"FLY TIME", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_FLYTIME], 0},
-    {"FLY MODE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_FLYMODE], 0},
-    {"NAME", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_CRAFT_NAME], 0},
-    {"THROTTLE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_THROTTLE_POS], 0},
+#if 0
+    {"RSSI", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_RSSI_VALUE], 0},
+    {"MAIN BATTERY", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_MAIN_BATT_VOLTAGE], 0},
+    {"HORIZON", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_ARTIFICIAL_HORIZON], 0},
+    {"HORIZON SIDEBARS", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_HORIZON_SIDEBARS], 0},
+    {"UPTIME", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_ONTIME], 0},
+    {"FLY TIME", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_FLYTIME], 0},
+    {"FLY MODE", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_FLYMODE], 0},
+    {"NAME", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_CRAFT_NAME], 0},
+    {"THROTTLE", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_THROTTLE_POS], 0},
 #ifdef VTX
-    {"VTX CHAN", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_VTX_CHANNEL]},
+    {"VTX CHAN", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_VTX_CHANNEL]},
 #endif // VTX
-    {"CURRENT (A)", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_CURRENT_DRAW], 0},
-    {"USED MAH", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_MAH_DRAWN], 0},
+    {"CURRENT (A)", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_CURRENT_DRAW], 0},
+    {"USED MAH", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_MAH_DRAWN], 0},
 #ifdef GPS
-    {"GPS SPEED", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_GPS_SPEED], 0},
-    {"GPS SATS.", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_GPS_SATS], 0},
+    {"GPS SPEED", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_GPS_SPEED], 0},
+    {"GPS SATS.", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_GPS_SATS], 0},
 #endif // GPS
-    {"ALTITUDE", OME_VISIBLE, NULL, &osdProfile()->item_pos[OSD_ALTITUDE], 0},
+    {"ALTITUDE", OME_VISIBLE, NULL, &osdConfig()->item_pos[OSD_ALTITUDE], 0},
+#endif
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
