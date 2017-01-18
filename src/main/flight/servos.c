@@ -33,6 +33,7 @@
 
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
+#include "config/config_reset.h"
 
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
@@ -77,6 +78,23 @@ PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
 
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
 
+PG_REGISTER_ARR(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
+
+void pgResetFn_servoParams(const servoParam_t *instance)
+{
+    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+        RESET_CONFIG(const servoParam_t, ((servoParam_t*)&instance[i]),
+            .min = DEFAULT_SERVO_MIN,
+            .max = DEFAULT_SERVO_MAX,
+            .middle = DEFAULT_SERVO_MIDDLE,
+            .rate = 100,
+            .angleAtMin = DEFAULT_SERVO_MIN_ANGLE,
+            .angleAtMax = DEFAULT_SERVO_MAX_ANGLE,
+            .forwardFromChannel = CHANNEL_FORWARDING_DISABLED
+        );
+    }
+}
+
 int16_t servo[MAX_SUPPORTED_SERVOS];
 
 static uint8_t servoRuleCount = 0;
@@ -87,7 +105,6 @@ static uint8_t mixerUsesServos;
 static uint8_t minServoIndex;
 static uint8_t maxServoIndex;
 
-static servoParam_t *servoConf;
 static biquadFilter_t servoFitlerState[MAX_SUPPORTED_SERVOS];
 static bool servoFilterIsSet;
 
@@ -153,11 +170,6 @@ const mixerRules_t servoMixers[] = {
 // no template required since default is zero
 PG_REGISTER(gimbalConfig_t, gimbalConfig, PG_GIMBAL_CONFIG, 0);
 
-void servosUseConfigs(servoParam_t *servoParamsToUse)
-{
-    servoConf = servoParamsToUse;
-}
-
 int16_t getFlaperonDirection(uint8_t servoPin) {
     if (servoPin == SERVO_FLAPPERON_2) {
         return -1;
@@ -168,26 +180,25 @@ int16_t getFlaperonDirection(uint8_t servoPin) {
 
 int16_t determineServoMiddleOrForwardFromChannel(servoIndex_e servoIndex)
 {
-    const uint8_t channelToForwardFrom = servoConf[servoIndex].forwardFromChannel;
+    const uint8_t channelToForwardFrom = servoParams(servoIndex)->forwardFromChannel;
 
     if (channelToForwardFrom != CHANNEL_FORWARDING_DISABLED && channelToForwardFrom < rxRuntimeConfig.channelCount) {
         return rcData[channelToForwardFrom];
     }
 
-    return servoConf[servoIndex].middle;
+    return servoParams(servoIndex)->middle;
 }
-
 
 int servoDirection(int servoIndex, int inputSource)
 {
     // determine the direction (reversed or not) from the direction bitfield of the servo
-    if (servoConf[servoIndex].reversedSources & (1 << inputSource))
+    if (servoParams(servoIndex)->reversedSources & (1 << inputSource))
         return -1;
     else
         return 1;
 }
 
-void servosInit()
+void servosInit(void)
 {
     const mixerMode_e currentMixerMode = mixerConfig()->mixerMode;
     // set flag that we're on something with wings
@@ -319,7 +330,7 @@ static void filterServos(void)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = constrain(servo[i], servoConf[i].min, servoConf[i].max);
+        servo[i] = constrain(servo[i], servoParams(i)->min, servoParams(i)->max);
     }
 }
 
@@ -411,11 +422,11 @@ void servoMixer(void)
 
     // mix servos according to rules
     for (int i = 0; i < servoRuleCount; i++) {
-        uint8_t target = currentServoMixer[i].targetChannel;
-        uint8_t from = currentServoMixer[i].inputSource;
-        uint16_t servo_width = servoConf[target].max - servoConf[target].min;
-        int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
-        int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
+        const uint8_t target = currentServoMixer[i].targetChannel;
+        const uint8_t from = currentServoMixer[i].inputSource;
+        const uint16_t servo_width = servoParams(target)->max - servoParams(target)->min;
+        const int16_t min = currentServoMixer[i].min * servo_width / 100 - servo_width / 2;
+        const int16_t max = currentServoMixer[i].max * servo_width / 100 - servo_width / 2;
 
         if (currentServoMixer[i].speed == 0) {
             currentOutput[i] = input[from];
@@ -443,7 +454,7 @@ void servoMixer(void)
     }
 
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = ((int32_t)servoConf[i].rate * servo[i]) / 100L;
+        servo[i] = ((int32_t)servoParams(i)->rate * servo[i]) / 100L;
         servo[i] += determineServoMiddleOrForwardFromChannel(i);
     }
 }
@@ -456,11 +467,11 @@ void processServoTilt(void)
 
     if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
         if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
-            servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 - (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
-            servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoConf[SERVO_GIMBAL_PITCH].rate) * attitude.values.pitch / 50 + (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll / 50;
+            servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 - (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
+            servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 + (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
         } else {
-            servo[SERVO_GIMBAL_PITCH] += (int32_t)servoConf[SERVO_GIMBAL_PITCH].rate * attitude.values.pitch / 50;
-            servo[SERVO_GIMBAL_ROLL] += (int32_t)servoConf[SERVO_GIMBAL_ROLL].rate * attitude.values.roll  / 50;
+            servo[SERVO_GIMBAL_PITCH] += (int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch / 50;
+            servo[SERVO_GIMBAL_ROLL] += (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll  / 50;
         }
     }
 }
@@ -489,7 +500,7 @@ void processServoAutotrim(void)
                 if (ARMING_FLAG(ARMED)) {
                     // We are activating servo trim - backup current middles and prepare to average the data
                     for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                        servoMiddleBackup[servoIndex] = servoConf[servoIndex].middle;
+                        servoMiddleBackup[servoIndex] = servoParams(servoIndex)->middle;
                         servoMiddleAccum[servoIndex] = 0;
                     }
 
@@ -512,7 +523,7 @@ void processServoAutotrim(void)
 
                     if ((millis() - trimStartedAt) > SERVO_AUTOTRIM_TIMER_MS) {
                         for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                            servoConf[servoIndex].middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
+                            servoParamsMutable(servoIndex)->middle = servoMiddleAccum[servoIndex] / servoMiddleAccumCount;
                         }
                         trimState = AUTOTRIM_SAVE_PENDING;
                     }
@@ -538,7 +549,7 @@ void processServoAutotrim(void)
         // We are deactivating servo trim - restore servo midpoints
         if (trimState == AUTOTRIM_SAVE_PENDING) {
             for (int servoIndex = SERVO_ELEVATOR; servoIndex <= MIN(SERVO_RUDDER, MAX_SUPPORTED_SERVOS); servoIndex++) {
-                servoConf[servoIndex].middle = servoMiddleBackup[servoIndex];
+                servoParamsMutable(servoIndex)->middle = servoMiddleBackup[servoIndex];
             }
         }
 

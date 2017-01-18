@@ -603,14 +603,14 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
     case MSP_SERVO_CONFIGURATIONS:
         for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            sbufWriteU16(dst, masterConfig.servoConf[i].min);
-            sbufWriteU16(dst, masterConfig.servoConf[i].max);
-            sbufWriteU16(dst, masterConfig.servoConf[i].middle);
-            sbufWriteU8(dst, masterConfig.servoConf[i].rate);
-            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMin);
-            sbufWriteU8(dst, masterConfig.servoConf[i].angleAtMax);
-            sbufWriteU8(dst, masterConfig.servoConf[i].forwardFromChannel);
-            sbufWriteU32(dst, masterConfig.servoConf[i].reversedSources);
+            sbufWriteU16(dst, servoParams(i)->min);
+            sbufWriteU16(dst, servoParams(i)->max);
+            sbufWriteU16(dst, servoParams(i)->middle);
+            sbufWriteU8(dst, servoParams(i)->rate);
+            sbufWriteU8(dst, servoParams(i)->angleAtMin);
+            sbufWriteU8(dst, servoParams(i)->angleAtMax);
+            sbufWriteU8(dst, servoParams(i)->forwardFromChannel);
+            sbufWriteU32(dst, servoParams(i)->reversedSources);
         }
         break;
     case MSP_SERVO_MIX_RULES:
@@ -1458,14 +1458,14 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SUPPORTED_SERVOS) {
             return MSP_RESULT_ERROR;
         } else {
-            masterConfig.servoConf[i].min = sbufReadU16(src);
-            masterConfig.servoConf[i].max = sbufReadU16(src);
-            masterConfig.servoConf[i].middle = sbufReadU16(src);
-            masterConfig.servoConf[i].rate = sbufReadU8(src);
-            masterConfig.servoConf[i].angleAtMin = sbufReadU8(src);
-            masterConfig.servoConf[i].angleAtMax = sbufReadU8(src);
-            masterConfig.servoConf[i].forwardFromChannel = sbufReadU8(src);
-            masterConfig.servoConf[i].reversedSources = sbufReadU32(src);
+            servoParamsMutable(i)->min = sbufReadU16(src);
+            servoParamsMutable(i)->max = sbufReadU16(src);
+            servoParamsMutable(i)->middle = sbufReadU16(src);
+            servoParamsMutable(i)->rate = sbufReadU8(src);
+            servoParamsMutable(i)->angleAtMin = sbufReadU8(src);
+            servoParamsMutable(i)->angleAtMax = sbufReadU8(src);
+            servoParamsMutable(i)->forwardFromChannel = sbufReadU8(src);
+            servoParamsMutable(i)->reversedSources = sbufReadU32(src);
         }
 #endif
         break;

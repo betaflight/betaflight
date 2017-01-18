@@ -63,11 +63,6 @@ typedef struct master_s {
 
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 
-#ifdef USE_SERVOS
-    // Servo-related stuff
-    servoParam_t servoConf[MAX_SUPPORTED_SERVOS]; // servo configuration
-#endif
-
     pwmRxConfig_t pwmRxConfig;
 
 #ifdef LED_STRIP
