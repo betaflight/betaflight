@@ -1103,8 +1103,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU8(dst, 0); //BF: pidProfile()->vbatPidCompensation
         sbufWriteU8(dst, 0); //BF: pidProfile()->setpointRelaxRatio
         sbufWriteU8(dst, constrain(pidProfile()->dterm_setpoint_weight * 100, 0, 255));
-        sbufWriteU8(dst, 0); // reserved
-        sbufWriteU8(dst, 0); // reserved
+        sbufWriteU16(dst, pidProfile()->pidSumLimit);
         sbufWriteU8(dst, 0); //BF: pidProfile()->itermThrottleGain
 
         /*
@@ -1557,8 +1556,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         sbufReadU8(src); //BF: pidProfileMutable()->vbatPidCompensation
         sbufReadU8(src); //BF: pidProfileMutable()->setpointRelaxRatio
         pidProfileMutable()->dterm_setpoint_weight = constrainf(sbufReadU8(src) / 100.0f, 0.0f, 2.0f);
-        sbufReadU8(src); // reserved
-        sbufReadU8(src); // reserved
+        pidProfileMutable()->pidSumLimit = sbufReadU16(src);
         sbufReadU8(src); //BF: pidProfileMutable()->itermThrottleGain
 
         /*
