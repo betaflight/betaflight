@@ -478,6 +478,15 @@ void serialEvaluateNonMspData(serialPort_t *serialPort, uint8_t receivedChar)
     }
 #endif
     if (receivedChar == serialConfig()->reboot_character) {
+        // A 100ms guard delay to make sure reboot_character is followed by silence
+        // If anything is received during the guard period - reboot_character is ignored
+        for (int i = 0; i < 10; i++) {
+            delay(10);
+            if (serialRxBytesWaiting(serialPort)) {
+                return;
+            }
+        }
+
         systemResetToBootloader();
     }
 }
