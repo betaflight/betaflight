@@ -87,6 +87,8 @@ ONE_DESCRIPTOR String_Descriptor[4] = { { (uint8_t*)Virtual_Com_Port_StringLangI
  *******************************************************************************/
 void Virtual_Com_Port_init(void)
 {
+    /* Make absolutly sure interrupts are disabled. */
+    USB_Interrupts_Disable();
 
     /* Update the serial number string descriptor with the data from the unique
      ID*/
