@@ -44,8 +44,6 @@
 #define ledStripConfigMutable(x) (&masterConfig.ledStripConfig)
 #define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
 #define pwmRxConfigMutable(x) (&masterConfig.pwmRxConfig)
-#define customServoMixer(i) (&masterConfig.customServoMixer[i])
-#define customServoMixerMutable(i) (&masterConfig.customServoMixer[i])
 
 
 // System-wide
@@ -62,12 +60,6 @@ typedef struct master_s {
     uint16_t attitudeTaskFrequency;
     uint8_t asyncMode;
 #endif
-
-#ifdef USE_SERVOS
-    servoMixer_t customServoMixer[MAX_SERVO_RULES];
-#endif
-
-    // Radio/ESC-related configuration
 
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 

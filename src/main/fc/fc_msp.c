@@ -615,12 +615,12 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
     case MSP_SERVO_MIX_RULES:
         for (int i = 0; i < MAX_SERVO_RULES; i++) {
-            sbufWriteU8(dst, customServoMixer(i)->targetChannel);
-            sbufWriteU8(dst, customServoMixer(i)->inputSource);
-            sbufWriteU8(dst, customServoMixer(i)->rate);
-            sbufWriteU8(dst, customServoMixer(i)->speed);
-            sbufWriteU8(dst, customServoMixer(i)->min);
-            sbufWriteU8(dst, customServoMixer(i)->max);
+            sbufWriteU8(dst, customServoMixers(i)->targetChannel);
+            sbufWriteU8(dst, customServoMixers(i)->inputSource);
+            sbufWriteU8(dst, customServoMixers(i)->rate);
+            sbufWriteU8(dst, customServoMixers(i)->speed);
+            sbufWriteU8(dst, customServoMixers(i)->min);
+            sbufWriteU8(dst, customServoMixers(i)->max);
             sbufWriteU8(dst, 0);
         }
         break;
@@ -1476,12 +1476,12 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         if (i >= MAX_SERVO_RULES) {
             return MSP_RESULT_ERROR;
         } else {
-            customServoMixer(i)->targetChannel = sbufReadU8(src);
-            customServoMixer(i)->inputSource = sbufReadU8(src);
-            customServoMixer(i)->rate = sbufReadU8(src);
-            customServoMixer(i)->speed = sbufReadU8(src);
-            customServoMixer(i)->min = sbufReadU8(src);
-            customServoMixer(i)->max = sbufReadU8(src);
+            customServoMixersMutable(i)->targetChannel = sbufReadU8(src);
+            customServoMixersMutable(i)->inputSource = sbufReadU8(src);
+            customServoMixersMutable(i)->rate = sbufReadU8(src);
+            customServoMixersMutable(i)->speed = sbufReadU8(src);
+            customServoMixersMutable(i)->min = sbufReadU8(src);
+            customServoMixersMutable(i)->max = sbufReadU8(src);
             sbufReadU8(src); //Read 1 byte for `box` and ignore it
             loadCustomServoMixer();
         }
