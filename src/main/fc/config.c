@@ -181,20 +181,6 @@ void createDefaultConfig(master_t *config)
 
     config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
-#ifdef USE_SERVOS
-    // servos
-    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        config->servoConf[i].min = DEFAULT_SERVO_MIN;
-        config->servoConf[i].max = DEFAULT_SERVO_MAX;
-        config->servoConf[i].middle = DEFAULT_SERVO_MIDDLE;
-        config->servoConf[i].rate = 100;
-        config->servoConf[i].angleAtMin = DEFAULT_SERVO_MIN_ANGLE;
-        config->servoConf[i].angleAtMax = DEFAULT_SERVO_MAX_ANGLE;
-        config->servoConf[i].forwardFromChannel = CHANNEL_FORWARDING_DISABLED;
-    }
-
-#endif
-
 #ifdef LED_STRIP
     applyDefaultColors(config->ledStripConfig.colors);
     applyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
@@ -318,10 +304,6 @@ static void activateConfig(void)
 
     setAccelerationCalibrationValues();
     setAccelerationFilter();
-
-#ifdef USE_SERVOS
-    servosUseConfigs(masterConfig.servoConf);
-#endif
 
     imuConfigure();
 

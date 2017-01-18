@@ -17,6 +17,12 @@
 
 #pragma once
 
+#if defined(USE_QUAD_MIXER_ONLY)
+#define MAX_SUPPORTED_SERVOS 1
+#else
+#define MAX_SUPPORTED_SERVOS 8
+#endif
+
 // These must be consecutive, see 'reversedSources'
 enum {
     INPUT_STABILIZED_ROLL = 0,
@@ -103,6 +109,8 @@ typedef struct servoParam_s {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
+PG_DECLARE_ARR(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
+
 typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
     uint16_t servoCenterPulse;              // This is the value for servos when they should be in the middle. e.g. 1500.
@@ -123,6 +131,5 @@ void writeServos(void);
 void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);
-void servosUseConfigs(servoParam_t *servoParamsToUse);
 void servoMixer(void);
 void servosInit(void);

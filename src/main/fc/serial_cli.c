@@ -1128,6 +1128,7 @@ static boardAlignment_t boardAlignmentCopy;
 static servoConfig_t servoConfigCopy;
 static gimbalConfig_t gimbalConfigCopy;
 static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
+static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
 #endif
 static batteryConfig_t batteryConfigCopy;
 static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
@@ -1183,6 +1184,9 @@ static void backupConfigs(void)
     gimbalConfigCopy = *gimbalConfig();
     for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
         customServoMixersCopy[ii] = *customServoMixers(ii);
+    }
+    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
+        servoParamsCopy[ii] = *servoParams(ii);
     }
 #endif
     batteryConfigCopy = *batteryConfig();
@@ -1245,6 +1249,9 @@ static void restoreConfigs(void)
     *gimbalConfigMutable() = gimbalConfigCopy;
     for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
         *customServoMixersMutable(ii) = customServoMixersCopy[ii];
+    }
+    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
+        *servoParamsMutable(ii) = servoParamsCopy[ii];
     }
 #endif
     *batteryConfigMutable() = batteryConfigCopy;
@@ -2250,7 +2257,7 @@ static void cliModeColor(char *cmdline)
 #endif
 
 #ifdef USE_SERVOS
-static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, servoParam_t *defaultServoParam)
+static void printServo(uint8_t dumpMask, const servoParam_t *servoParam, const servoParam_t *defaultServoParam)
 {
     // print out servo settings
     const char *format = "servo %u %d %d %d %d %d %d %d\r\n";
@@ -2319,7 +2326,7 @@ static void cliServo(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
-        printServo(DUMP_MASTER, masterConfig.servoConf, NULL);
+        printServo(DUMP_MASTER, servoParams(0), NULL);
     } else {
         int validArgumentCount = 0;
 
@@ -2358,7 +2365,7 @@ static void cliServo(char *cmdline)
             return;
         }
 
-        servo = &masterConfig.servoConf[i];
+        servo = servoParamsMutable(i);
 
         if (
             arguments[MIN] < PWM_PULSE_MIN || arguments[MIN] > PWM_PULSE_MAX ||
@@ -2443,7 +2450,7 @@ static void cliServoMix(char *cmdline)
         // erase custom mixer
         pgResetCopy(customServoMixersMutable(0), PG_SERVO_MIXER);
         for (uint32_t i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-            masterConfig.servoConf[i].reversedSources = 0;
+            servoParamsMutable(i)->reversedSources = 0;
         }
     } else if (strncasecmp(cmdline, "load", 4) == 0) {
         ptr = nextArg(cmdline);
@@ -2476,7 +2483,7 @@ static void cliServoMix(char *cmdline)
             for (uint32_t servoIndex = 0; servoIndex < MAX_SUPPORTED_SERVOS; servoIndex++) {
                 cliPrintf("%d", servoIndex);
                 for (uint32_t inputSource = 0; inputSource < INPUT_SOURCE_COUNT; inputSource++)
-                    cliPrintf("\t%s  ", (masterConfig.servoConf[servoIndex].reversedSources & (1 << inputSource)) ? "r" : "n");
+                    cliPrintf("\t%s  ", (servoParams(servoIndex)->reversedSources & (1 << inputSource)) ? "r" : "n");
                 cliPrintf("\r\n");
             }
             return;
@@ -2497,9 +2504,9 @@ static void cliServoMix(char *cmdline)
                 && args[INPUT] >= 0 && args[INPUT] < INPUT_SOURCE_COUNT
                 && (*ptr == 'r' || *ptr == 'n')) {
             if (*ptr == 'r')
-                masterConfig.servoConf[args[SERVO]].reversedSources |= 1 << args[INPUT];
+                servoParamsMutable(args[SERVO])->reversedSources |= 1 << args[INPUT];
             else
-                masterConfig.servoConf[args[SERVO]].reversedSources &= ~(1 << args[INPUT]);
+                servoParamsMutable(args[SERVO])->reversedSources &= ~(1 << args[INPUT]);
         } else
             cliShowParseError();
 
@@ -3495,7 +3502,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef USE_SERVOS
         cliPrintHashLine("servo");
-        printServo(dumpMask, masterConfig.servoConf, defaultConfig.servoConf);
+        printServo(dumpMask, servoParamsCopy, servoParams(0));
 
         cliPrintHashLine("servo mix");
         // print custom servo mixer if exists
