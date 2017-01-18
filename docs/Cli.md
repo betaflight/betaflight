@@ -302,6 +302,7 @@ Re-apply any new defaults as desired.
 |  acc_soft_lpf_hz  | 15 | Software-based filter to remove mechanical vibrations from the accelerometer measurements. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 15Hz |
 |  dterm_lpf_hz  | 40 |  |
 |  yaw_lpf_hz  | 30 |  |
+|  pidsum_limit  | 500 | A limitation to overall amount of correction Flight PID can request on each axis (Roll/Pitch/Yaw). If when doing a hard maneuver on one axis machine looses orientation on other axis - reducing this parameter may help |
 |  yaw_p_limit  | 300 |  |
 |  iterm_ignore_threshold  | 200 | Used to prevent Iterm accumulation on ROLL/PITCH axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and iterm_ignore_threshold |
 |  yaw_iterm_ignore_threshold  | 50 | Used to prevent Iterm accumulation on YAW axis during stick movements. Iterm is allowed to change fully when sticks are centered. Iterm will not change when requested rotation speed is above yaw_iterm_ignore_threshold. Iterm acumulation is scaled lineary between 0 and yaw_iterm_ignore_threshold |
