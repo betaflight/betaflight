@@ -151,18 +151,10 @@ static uartDevice_t uartHardware[] = {
         .rxDMAChannel = DMA1_Channel5,
         .txDMAChannel = DMA1_Channel4,
         .pinPair = {
-            { IO_TAG(PA10), IO_TAG(PA9) },
-            { IO_TAG(PB7), IO_TAG(PB6) },
-#if ((TARGET_IO_PORTC & BIT(5)) && (TARGET_IO_PORTC & BIT(4)))
-            { IO_TAG(PC5), IO_TAG(PC4) },
-#else
-            { IO_TAG_NONE, IO_TAG_NONE },
-#endif
-#if ((TARGET_IO_PORTE & BIT(1)) && (TARGET_IO_PORTE & BIT(0)))
-            { IO_TAG(PE1), IO_TAG(PE0) },
-#else
-            { IO_TAG_NONE, IO_TAG_NONE },
-#endif
+            { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PA9) },
+            { DEFIO_TAG_E(PB7),  DEFIO_TAG_E(PB6) },
+            { DEFIO_TAG_E(PC5),  DEFIO_TAG_E(PC4) },
+            { DEFIO_TAG_E(PE1),  DEFIO_TAG_E(PE0) },
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,

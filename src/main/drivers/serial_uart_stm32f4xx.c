@@ -141,8 +141,8 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART1_RX_DMA_STREAM,
         .txDMAStream = UART1_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PA10), IO_TAG(PA9) },
-            { IO_TAG(PB7), IO_TAG(PB6) },
+            { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PA9) },
+            { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB6) },
             { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
@@ -159,8 +159,8 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART2_RX_DMA_STREAM,
         .txDMAStream = UART2_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PA3), IO_TAG(PA2) },
-            { IO_TAG(PD6), IO_TAG(PD5) },
+            { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PA2) },
+            { DEFIO_TAG_E(PD6), DEFIO_TAG_E(PD5) },
             { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
@@ -177,9 +177,9 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART3_RX_DMA_STREAM,
         .txDMAStream = UART3_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PB11), IO_TAG(PB10) },
-            { IO_TAG(PC11), IO_TAG(PC10) },
-            { IO_TAG(PD9), IO_TAG(PD8) }
+            { DEFIO_TAG_E(PB11), DEFIO_TAG_E(PB10) },
+            { DEFIO_TAG_E(PC11), DEFIO_TAG_E(PC10) },
+            { DEFIO_TAG_E(PD9), DEFIO_TAG_E(PD8) }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -195,8 +195,8 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART4_RX_DMA_STREAM,
         .txDMAStream = UART4_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PA1), IO_TAG(PA0) },
-            { IO_TAG(PC11), IO_TAG(PC10) },
+            { DEFIO_TAG_E(PA1), DEFIO_TAG_E(PA0) },
+            { DEFIO_TAG_E(PC11), DEFIO_TAG_E(PC10) },
             { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
@@ -213,7 +213,7 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART5_RX_DMA_STREAM,
         .txDMAStream = UART5_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PD2), IO_TAG(PC12) },
+            { DEFIO_TAG_E(PD2), DEFIO_TAG_E(PC12) },
             { IO_TAG_NONE, IO_TAG_NONE },
             { IO_TAG_NONE, IO_TAG_NONE }
         },
@@ -231,12 +231,8 @@ static uartDevice_t uartHardware[] = {
         .rxDMAStream = UART6_RX_DMA_STREAM,
         .txDMAStream = UART6_TX_DMA_STREAM,
         .pinPair = {
-            { IO_TAG(PC7), IO_TAG(PC6) },
-#if ((TARGET_IO_PORTG & BIT(9)) && (TARGET_IO_PORTG & BIT(14)))
-            { IO_TAG(PG9), IO_TAG(PG14) },
-#else
-            { IO_TAG_NONE, IO_TAG_NONE },
-#endif
+            { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PC6) },
+            { DEFIO_TAG_E(PG9), DEFIO_TAG_E(PG14) },
             { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
