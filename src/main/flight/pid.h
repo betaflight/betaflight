@@ -20,7 +20,9 @@
 #include "config/parameter_group.h"
 
 #define GYRO_SATURATION_LIMIT   1800        // 1800dps
-#define PID_MAX_OUTPUT          1000
+#define PID_SUM_LIMIT_MIN       100
+#define PID_SUM_LIMIT_MAX       1000
+#define PID_SUM_LIMIT_DEFAULT   500
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_DEFAULT 300             // Default value for yaw P limiter
@@ -72,6 +74,7 @@ typedef struct pidProfile_s {
     float dterm_setpoint_weight;
 
     uint16_t fixedWingItermThrowLimit;
+    uint16_t pidSumLimit;
 } pidProfile_t;
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
