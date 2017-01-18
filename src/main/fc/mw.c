@@ -579,6 +579,16 @@ void taskGyro(timeUs_t currentTimeUs) {
 #endif
 }
 
+static float calculateThrottleTiltCompensationFactor(uint8_t throttleTiltCompensationStrength)
+{
+    if (throttleTiltCompensationStrength) {
+        float tiltCompFactor = 1.0f / constrainf(calculateCosTiltAngle(), 0.6f, 1.0f);  // max tilt about 50 deg
+        return 1.0f + (tiltCompFactor - 1.0f) * (throttleTiltCompensationStrength / 100.f);
+    } else {
+        return 1.0f;
+    }
+}
+
 void taskMainPidLoop(timeUs_t currentTimeUs)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
@@ -644,8 +654,8 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
         if (navigationRequiresThrottleTiltCompensation()) {
             thrTiltCompStrength = 100;
         }
-        else if (masterConfig.throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
-            thrTiltCompStrength = masterConfig.throttle_tilt_compensation_strength;
+        else if (systemConfig()->throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+            thrTiltCompStrength = systemConfig()->throttle_tilt_compensation_strength;
         }
 
         if (thrTiltCompStrength) {

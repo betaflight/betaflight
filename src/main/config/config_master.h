@@ -48,27 +48,12 @@ typedef struct master_s {
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
 
-    uint8_t persistentFlags;
-    uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
-
-#ifdef ASYNC_GYRO_PROCESSING
-    uint16_t accTaskFrequency;
-    uint16_t attitudeTaskFrequency;
-    uint8_t asyncMode;
-#endif
-
-    uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
-
     pwmRxConfig_t pwmRxConfig;
 
     profile_t profile[MAX_PROFILE_COUNT];
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
-
-    char name[MAX_NAME_LENGTH + 1];
-
-    uint8_t debug_mode;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
