@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 #define LED_MAX_STRIP_LENGTH           32
 #define LED_CONFIGURABLE_COLOR_COUNT   16
 #define LED_MODE_COUNT                  6
@@ -140,11 +142,7 @@ typedef struct ledStripConfig_s {
     uint8_t ledstrip_visual_beeper; // suppress LEDLOW mode if beeper is on
 } ledStripConfig_t;
 
-ledConfig_t *ledConfigs;
-struct hsvColor_s;
-struct hsvColor_s *colors;
-modeColorIndexes_t *modeColors;
-specialColorIndexes_t specialColors;
+PG_DECLARE(ledStripConfig_t, ledStripConfig);
 
 #define DEFINE_LED(x, y, col, dir, func, ol, params) (LED_MOV_POS(CALCULATE_LED_XY(x, y)) | LED_MOV_COLOR(col) | LED_MOV_DIRECTION(dir) | LED_MOV_FUNCTION(func) | LED_MOV_OVERLAY(ol) | LED_MOV_PARAMS(params))
 
@@ -171,17 +169,8 @@ bool parseLedStripConfig(int ledIndex, const char *config);
 void generateLedConfig(ledConfig_t *ledConfig, char *ledConfigBuffer, size_t bufferSize);
 void reevaluateLedConfig(void);
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, struct hsvColor_s *colorsToUse, modeColorIndexes_t *modeColorsToUse, specialColorIndexes_t *specialColorsToUse);
+void ledStripInit(void);
 void ledStripEnable(void);
 void ledStripUpdate(timeUs_t currentTimeUs);
 
 bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex);
-
-extern uint16_t rssi; // FIXME dependency on mw.c
-
-
-void applyDefaultLedStripConfig(ledConfig_t *ledConfig);
-void applyDefaultColors(struct hsvColor_s *colors);
-void applyDefaultModeColors(modeColorIndexes_t *modeColors);
-void applyDefaultSpecialColors(specialColorIndexes_t *specialColors);
-

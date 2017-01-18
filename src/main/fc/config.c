@@ -181,14 +181,6 @@ void createDefaultConfig(master_t *config)
 
     config->throttle_tilt_compensation_strength = 0;      // 0-100, 0 - disabled
 
-#ifdef LED_STRIP
-    applyDefaultColors(config->ledStripConfig.colors);
-    applyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
-    applyDefaultModeColors(config->ledStripConfig.modeColors);
-    applyDefaultSpecialColors(&(config->ledStripConfig.specialColors));
-    config->ledStripConfig.ledstrip_visual_beeper = 0;
-#endif
-
 #ifdef BLACKBOX
 #ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
     featureSet(FEATURE_BLACKBOX);

@@ -824,6 +824,9 @@ static const clivalue_t valueTable[] = {
     { "smartport_uart_unidir",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_TELEMETRY_CONFIG, offsetof(telemetryConfig_t, smartportUartUnidirectional) },
 #endif
 #endif
+#ifdef LED_STRIP
+    { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_LED_STRIP_CONFIG, offsetof(ledStripConfig_t, ledstrip_visual_beeper) },
+#endif
 };
 
 #else
@@ -853,9 +856,6 @@ const clivalue_t valueTable[] = {
 
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.modeActivationOperator, .config.lookup = { TABLE_AUX_OPERATOR } },
 
-#ifdef LED_STRIP
-    { "ledstrip_visual_beeper",     VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &ledStripConfig()->ledstrip_visual_beeper, .config.lookup = { TABLE_OFF_ON } },
-#endif
 #ifdef OSD
     { "osd_video_system",           VAR_UINT8  | MASTER_VALUE, &osdProfile()->video_system, .config.minmax = { 0, 2 } },
     { "osd_row_shiftdown",          VAR_UINT8  | MASTER_VALUE, &osdProfile()->row_shiftdown, .config.minmax = { 0, 1 } },
@@ -1150,6 +1150,9 @@ static telemetryConfig_t telemetryConfigCopy;
 #endif
 static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
 static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
+#ifdef LED_STRIP
+static ledStripConfig_t ledStripConfigCopy;
+#endif
 
 static void backupConfigs(void)
 {
@@ -1215,6 +1218,9 @@ static void backupConfigs(void)
     for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
         adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
     }
+#ifdef LED_STRIP
+    ledStripConfigCopy = *ledStripConfig();
+#endif
 }
 
 static void restoreConfigs(void)
@@ -1280,6 +1286,9 @@ static void restoreConfigs(void)
     for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
         *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
     }
+#ifdef LED_STRIP
+    *ledStripConfigMutable() = ledStripConfigCopy;
+#endif
 }
 
 static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
@@ -3527,13 +3536,13 @@ static void printConfig(char *cmdline, bool doDiff)
 
 #ifdef LED_STRIP
         cliPrintHashLine("led");
-        printLed(dumpMask, ledStripConfig()->ledConfigs, defaultConfig.ledStripConfig.ledConfigs);
+        printLed(dumpMask, ledStripConfigCopy.ledConfigs, ledStripConfig()->ledConfigs);
 
         cliPrintHashLine("color");
-        printColor(dumpMask, ledStripConfig()->colors, defaultConfig.ledStripConfig.colors);
+        printColor(dumpMask, ledStripConfigCopy.colors, ledStripConfig()->colors);
 
         cliPrintHashLine("mode_color");
-        printModeColor(dumpMask, ledStripConfig(), &defaultConfig.ledStripConfig);
+        printModeColor(dumpMask, &ledStripConfigCopy, ledStripConfig());
 #endif
 
         cliPrintHashLine("aux");
