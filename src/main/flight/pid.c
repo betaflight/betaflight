@@ -158,6 +158,7 @@ PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .max_angle_inclination[FD_ROLL] = 300,    // 30 degrees
         .max_angle_inclination[FD_PITCH] = 300,    // 30 degrees
         .fixedWingItermThrowLimit = FW_ITERM_THROW_LIMIT_DEFAULT,
+        .pidSumLimit = PID_SUM_LIMIT_DEFAULT,
 );
 
 void pidInit(void)
@@ -449,7 +450,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 
     // TODO: Get feedback from mixer on available correction range for each axis
     const float newOutput = newPTerm + newDTerm + pidState->errorGyroIf;
-    const float newOutputLimited = constrainf(newOutput, -PID_MAX_OUTPUT, +PID_MAX_OUTPUT);
+    const float newOutputLimited = constrainf(newOutput, -pidProfile->pidSumLimit, +pidProfile->pidSumLimit);
 
     // Prevent strong Iterm accumulation during stick inputs
     const float integratorThreshold = (axis == FD_YAW) ? pidProfile->yawItermIgnoreRate : pidProfile->rollPitchItermIgnoreRate;
