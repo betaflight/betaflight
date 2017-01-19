@@ -120,7 +120,7 @@ void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
 
 uint8_t getCurrentProfileIndex(void);
-void setProfile(uint8_t profileIndex);
+bool setProfile(uint8_t profileIndex);
 void changeProfile(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);

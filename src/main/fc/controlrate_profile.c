@@ -70,6 +70,9 @@ void activateControlRateConfig(void)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
+    if (currentControlRateProfileIndex == profileIndex) {
+        return;
+    }
     if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
         profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
     }
