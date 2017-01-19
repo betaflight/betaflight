@@ -69,7 +69,6 @@
 #include "fc/runtime_config.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 
 #include "fc/mw.h"

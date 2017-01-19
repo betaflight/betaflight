@@ -20,8 +20,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "common/time.h"
-
 #include "config/parameter_group.h"
+#include "drivers/pwm_rx.h"
 
 #define MAX_PROFILE_COUNT 3
 #define ONESHOT_FEATURE_CHANGED_DELAY_ON_BOOT_MS 1500
@@ -86,6 +86,7 @@ typedef struct systemConfig_s {
     uint8_t debug_mode;
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
+    inputFilteringMode_e pwmRxInputFilteringMode;
     char name[MAX_NAME_LENGTH + 1];
 } systemConfig_t;
 
@@ -127,6 +128,7 @@ void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 
 uint16_t getCurrentMinthrottle(void);
 
+void createDefaultConfig(void);
 void resetConfigs(void);
 void targetConfiguration(void);
 

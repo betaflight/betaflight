@@ -58,7 +58,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 
 
@@ -67,6 +66,7 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
+#include "io/osd.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
 
@@ -1539,7 +1539,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_DTERM_NOTCH
         pidProfileMutable()->dterm_soft_notch_hz = constrain(sbufReadU16(src), 0, 500);
         pidProfileMutable()->dterm_soft_notch_cutoff = constrain(sbufReadU16(src), 1, 500);
-        pidInitFilters(&currentProfile->pidProfile);
+        pidInitFilters(pidProfile());
 #endif
 #ifdef USE_GYRO_NOTCH_2
         gyroConfigMutable()->gyro_soft_notch_hz_2 = constrain(sbufReadU16(src), 0, 500);

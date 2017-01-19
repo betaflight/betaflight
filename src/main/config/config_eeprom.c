@@ -28,7 +28,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_streamer.h"
-#include "config/config_master.h"
 #include "config/parameter_group.h"
 
 #include "drivers/system.h"
@@ -113,9 +112,6 @@ static bool scanEEPROM(void)
     }
     chk = updateChecksum(chk, header, sizeof(*header));
     p += sizeof(*header);
-    // include the transitional masterConfig record
-    chk = updateChecksum(chk, p, sizeof(masterConfig));
-    p += sizeof(masterConfig);
 
     for (;;) {
         const configRecord_t *record = (const configRecord_t *)p;
@@ -149,7 +145,6 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 {
     const uint8_t *p = &__config_start;
     p += sizeof(configHeader_t);             // skip header
-    p += sizeof(master_t); // skip the transitional master_t record
     while (true) {
         const configRecord_t *record = (const configRecord_t *)p;
         if (record->size == 0
@@ -170,11 +165,6 @@ static const configRecord_t *findEEPROM(const pgRegistry_t *reg, configRecordFla
 //   but each PG is loaded/initialized exactly once and in defined order.
 bool loadEEPROM(void)
 {
-    // read in the transitional masterConfig record
-    const uint8_t *p = &__config_start;
-    p += sizeof(configHeader_t); // skip header
-    masterConfig = *(master_t*)p;
-
     PG_FOREACH(reg) {
         configRecordFlags_e cls_start, cls_end;
         if (pgIsSystem(reg)) {
@@ -217,9 +207,6 @@ static bool writeSettingsToEEPROM(void)
 
     config_streamer_write(&streamer, (uint8_t *)&header, sizeof(header));
     chk = updateChecksum(chk, (uint8_t *)&header, sizeof(header));
-    // write the transitional masterConfig record
-    config_streamer_write(&streamer, (uint8_t *)&masterConfig, sizeof(masterConfig));
-    chk = updateChecksum(chk, (uint8_t *)&masterConfig, sizeof(masterConfig));
     PG_FOREACH(reg) {
         const uint16_t regSize = pgSize(reg);
         configRecord_t record = {
