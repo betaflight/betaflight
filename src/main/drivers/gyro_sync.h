@@ -15,7 +15,8 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-struct gyroDev_s;
-bool gyroSyncCheckUpdate(struct gyroDev_s *gyro);
-uint8_t gyroMPU6xxxCalculateDivider(void);
-uint32_t gyroSetSampleRate(uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);
+#include "drivers/accgyro.h"
+
+bool gyroSyncCheckUpdate(gyroDev_t *gyro);
+uint8_t gyroMPU6xxxGetDividerDrops(const gyroDev_t *gyro);
+uint32_t gyroSetSampleRate(gyroDev_t *gyro, uint32_t looptime, uint8_t lpf, uint8_t gyroSync, uint8_t gyroSyncDenominator);

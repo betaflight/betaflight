@@ -237,7 +237,7 @@ bool gyroInit(void)
     // no additional condition is required
     // Set gyro sample rate before driver initialisation
     gyro.dev.lpf = gyroConfig()->gyro_lpf;
-    gyro.targetLooptime = gyroSetSampleRate(gyroConfig()->looptime, gyroConfig()->gyro_lpf, gyroConfig()->gyroSync, gyroConfig()->gyroSyncDenominator);
+    gyro.targetLooptime = gyroSetSampleRate(&gyro.dev, gyroConfig()->looptime, gyroConfig()->gyro_lpf, gyroConfig()->gyroSync, gyroConfig()->gyroSyncDenominator);
     // driver initialisation
     gyro.dev.init(&gyro.dev);
 
