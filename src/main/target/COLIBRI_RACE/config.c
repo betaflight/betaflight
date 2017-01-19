@@ -15,64 +15,23 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "platform.h"
 
-#include "blackbox/blackbox_io.h"
+#include "config/feature.h"
 
-#include "common/color.h"
-#include "common/axis.h"
-#include "common/maths.h"
-#include "common/filter.h"
+#include "fc/config.h"
 
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_output.h"
-
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
-#include "sensors/battery.h"
-
-#include "io/beeper.h"
 #include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
 
 #include "rx/rx.h"
 
-#include "telemetry/telemetry.h"
+#include "sensors/gyro.h"
 
-#include "fc/config.h"
-#include "fc/rc_controls.h"
-#include "fc/rc_curves.h"
-#include "fc/runtime_config.h"
 
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-
-#include "config/feature.h"
-
-#include "config/config_master.h"
-
-void targetConfiguration(master_t *config)
+void targetConfiguration(void)
 {
-    (void)config;
     gyroConfigMutable()->looptime = 1000;
 
     rxConfigMutable()->rcmap[0] = 1;

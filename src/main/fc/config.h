@@ -128,8 +128,7 @@ void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);
 uint16_t getCurrentMinthrottle(void);
 
 void resetConfigs(void);
-struct master_s;
-void targetConfiguration(struct master_s *config);
+void targetConfiguration(void);
 
 #ifdef ASYNC_GYRO_PROCESSING
 uint32_t getPidUpdateRate(void);

@@ -21,6 +21,7 @@
 #include <stdbool.h>
 
 #include "config/parameter_group.h"
+#include "drivers/serial.h"
 
 typedef enum {
     PORTSHARING_UNUSED = 0,

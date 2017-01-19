@@ -3483,7 +3483,7 @@ static void printConfig(char *cmdline, bool doDiff)
     // reset all configs to defaults to do differencing
     resetConfigs();
 #if defined(TARGET_CONFIG)
-    targetConfiguration(&defaultConfig);
+    targetConfiguration();
 #endif
 #endif
     if (checkCommand(options, "showdefaults")) {
