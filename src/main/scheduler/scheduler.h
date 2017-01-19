@@ -25,20 +25,27 @@ typedef enum {
     TASK_PRIORITY_IDLE = 0,     // Disables dynamic scheduling, task is executed only if no other task is active this cycle
     TASK_PRIORITY_LOW = 1,
     TASK_PRIORITY_MEDIUM = 3,
+    TASK_PRIORITY_MEDIUM_HIGH = 4,
     TASK_PRIORITY_HIGH = 5,
     TASK_PRIORITY_REALTIME = 6,
     TASK_PRIORITY_MAX = 255
 } cfTaskPriority_e;
 
 typedef struct {
-    const char * taskName;
-    bool         isEnabled;
-    uint8_t      staticPriority;
-    timeUs_t     desiredPeriod;
     timeUs_t     maxExecutionTime;
     timeUs_t     totalExecutionTime;
     timeUs_t     averageExecutionTime;
-    timeUs_t     latestDeltaTime;
+} cfCheckFuncInfo_t;
+
+typedef struct {
+    const char * taskName;
+    bool         isEnabled;
+    uint8_t      staticPriority;
+    timeDelta_t     desiredPeriod;
+    timeUs_t     maxExecutionTime;
+    timeUs_t     totalExecutionTime;
+    timeUs_t     averageExecutionTime;
+    timeDelta_t     latestDeltaTime;
 } cfTaskInfo_t;
 
 typedef enum {
@@ -52,10 +59,12 @@ typedef enum {
 #else
     TASK_GYROPID,
 #endif
-    TASK_SERIAL,
-    TASK_BEEPER,
-    TASK_BATTERY,
     TASK_RX,
+    TASK_SERIAL,
+    TASK_BATTERY,
+#ifdef BEEPER
+    TASK_BEEPER,
+#endif
 #ifdef GPS
     TASK_GPS,
 #endif
@@ -102,17 +111,11 @@ typedef enum {
 } cfTaskId_e;
 
 typedef struct {
-    timeUs_t     maxExecutionTime;
-    timeUs_t     totalExecutionTime;
-    timeUs_t     averageExecutionTime;
-} cfCheckFuncInfo_t;
-
-typedef struct {
     /* Configuration */
     const char * taskName;
-    bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
+    bool (*checkFunc)(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
     void (*taskFunc)(timeUs_t currentTimeUs);
-    timeUs_t desiredPeriod;         // target period of execution
+    timeDelta_t desiredPeriod;         // target period of execution
     const uint8_t staticPriority;   // dynamicPriority grows in steps of this size, shouldn't be zero
 
     /* Scheduling */
@@ -131,16 +134,17 @@ typedef struct {
 } cfTask_t;
 
 extern cfTask_t cfTasks[TASK_COUNT];
-extern uint16_t cpuLoad;
 extern uint16_t averageSystemLoadPercent;
 
 void getCheckFuncInfo(cfCheckFuncInfo_t *checkFuncInfo);
 void getTaskInfo(cfTaskId_e taskId, cfTaskInfo_t *taskInfo);
-void rescheduleTask(cfTaskId_e taskId, timeUs_t newPeriodMicros);
+void rescheduleTask(cfTaskId_e taskId, timeDelta_t newPeriodUs);
 void setTaskEnabled(cfTaskId_e taskId, bool newEnabledState);
 timeDelta_t getTaskDeltaTime(cfTaskId_e taskId);
+void schedulerResetTaskStatistics(cfTaskId_e taskId);
 
 void schedulerInit(void);
 void scheduler(void);
+void taskSystem(timeUs_t currentTimeUs);
 
 #define isSystemOverloaded() (averageSystemLoadPercent >= 100)

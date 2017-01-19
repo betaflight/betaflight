@@ -51,6 +51,12 @@
 #define SKIP_CLI_RESOURCES
 #endif
 
+#if defined(STM_FAST_TARGET)
+#define SCHEDULER_DELAY_LIMIT           10
+#else
+#define SCHEDULER_DELAY_LIMIT           100
+#endif
+
 #if (FLASH_SIZE > 128)
 #define USE_64BIT_TIME
 #define USE_GYRO_NOTCH_1

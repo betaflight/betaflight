@@ -53,6 +53,8 @@
 #include "io/beeper.h"
 #include "io/statusindicator.h"
 
+#include "scheduler/scheduler.h"
+
 #include "sensors/boardalignment.h"
 #include "sensors/gyro.h"
 #include "sensors/sensors.h"
@@ -353,6 +355,7 @@ static void performAcclerationCalibration(uint8_t gyroMovementCalibrationThresho
     }
 
     if (isOnFinalGyroCalibrationCycle()) {
+        schedulerResetTaskStatistics(TASK_SELF); // so calibration cycles do not pollute tasks statistics
         beeper(BEEPER_GYRO_CALIBRATED);
     }
     calibratingG--;

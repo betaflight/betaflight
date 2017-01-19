@@ -28,6 +28,8 @@
 // FIXME remove this for targets that don't need a CLI.  Perhaps use a no-op macro when USE_CLI is not enabled
 // signal that we're in cli mode
 uint8_t cliMode = 0;
+extern uint8_t __config_start;   // configured via linker script when building binaries.
+extern uint8_t __config_end;
 
 #ifdef USE_CLI
 
@@ -3285,9 +3287,8 @@ static void cliStatus(char *cmdline)
 {
     UNUSED(cmdline);
 
-    cliPrintf("System Uptime: %d seconds, Voltage: %d * 0.1V (%dS battery - %s), System load: %d.%02d\r\n",
-        millis() / 1000, vbat, batteryCellCount, getBatteryStateString(), averageSystemLoadPercent / 100, averageSystemLoadPercent % 100);
-
+    cliPrintf("System Uptime: %d seconds\r\n", millis() / 1000, vbat);
+    cliPrintf("Voltage: %d * 0.1V (%dS battery - %s)\r\n", vbat, batteryCellCount, getBatteryStateString());
     cliPrintf("CPU Clock=%dMHz", (SystemCoreClock / 1000000));
 
 #if (FLASH_SIZE > 64)
@@ -3320,6 +3321,9 @@ static void cliStatus(char *cmdline)
     
 #endif
 
+#ifdef USE_SDCARD
+    cliSdInfo(NULL);
+#endif
 #ifdef USE_I2C
     const uint16_t i2cErrorCounter = i2cGetErrorCounter();
 #else
@@ -3331,11 +3335,18 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", (uint16_t)cycleTime, i2cErrorCounter, PG_REGISTRY_SIZE);
+    cliPrintf("I2C Errors: %d, config size: %d, max available config: %d\r\n", i2cErrorCounter, getEEPROMConfigSize(), &__config_end - &__config_start);
 
-#ifdef USE_SDCARD
-    cliSdInfo(NULL);
+    cliPrintf("System load: %d", averageSystemLoadPercent);
+#ifdef ASYNC_GYRO_PROCESSING
+    const timeDelta_t pidTaskDeltaTime = getTaskDeltaTime(TASK_PID);
+#else
+    const timeDelta_t pidTaskDeltaTime = getTaskDeltaTime(TASK_GYROPID);
 #endif
+    const int pidRate = pidTaskDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)pidTaskDeltaTime));
+    const int rxRate = getTaskDeltaTime(TASK_RX) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_RX)));
+    const int systemRate = getTaskDeltaTime(TASK_SYSTEM) == 0 ? 0 : (int)(1000000.0f / ((float)getTaskDeltaTime(TASK_SYSTEM)));
+    cliPrintf(", cycle time: %d, PID rate: %d, RX rate: %d, System rate: %d\r\n",  (uint16_t)cycleTime, pidRate, rxRate, systemRate);
 }
 
 #ifndef SKIP_TASK_STATISTICS
@@ -3351,7 +3362,7 @@ static void cliTasks(char *cmdline)
         cfTaskInfo_t taskInfo;
         getTaskInfo(taskId, &taskInfo);
         if (taskInfo.isEnabled) {
-            const int taskFrequency = (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
+            const int taskFrequency = taskInfo.latestDeltaTime == 0 ? 0 : (int)(1000000.0f / ((float)taskInfo.latestDeltaTime));
             const int maxLoad = (taskInfo.maxExecutionTime * taskFrequency + 5000) / 1000;
             const int averageLoad = (taskInfo.averageExecutionTime * taskFrequency + 5000) / 1000;
             if (taskId != TASK_SERIAL) {

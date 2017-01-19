@@ -95,11 +95,6 @@ void taskHandleSerial(timeUs_t currentTimeUs)
     mspSerialProcess(ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA, mspFcProcessCommand);
 }
 
-void taskUpdateBeeper(timeUs_t currentTimeUs)
-{
-    beeperUpdate(currentTimeUs);          //call periodic beeper handler
-}
-
 void taskUpdateBattery(timeUs_t currentTimeUs)
 {
     static timeUs_t vbatLastServiced = 0;
@@ -388,12 +383,14 @@ cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_LOW,
     },
 
+#ifdef BEEPER
     [TASK_BEEPER] = {
         .taskName = "BEEPER",
-        .taskFunc = taskUpdateBeeper,
+        .taskFunc = beeperUpdate,
         .desiredPeriod = TASK_PERIOD_HZ(100),     // 100 Hz
         .staticPriority = TASK_PRIORITY_MEDIUM,
     },
+#endif
 
     [TASK_BATTERY] = {
         .taskName = "BATTERY",
