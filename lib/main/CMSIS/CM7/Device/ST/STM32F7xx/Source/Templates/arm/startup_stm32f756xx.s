@@ -1,8 +1,8 @@
 ;******************** (C) COPYRIGHT 2016 STMicroelectronics ********************
 ;* File Name          : startup_stm32f756xx.s
 ;* Author             : MCD Application Team
-;* Version            : V1.1.2
-;* Date               : 23-September-2016
+;* Version            : V1.2.0
+;* Date               : 30-December-2016
 ;* Description        : STM32F756xx devices vector table for MDK-ARM toolchain. 
 ;*                      This module performs:
 ;*                      - Set the initial SP
