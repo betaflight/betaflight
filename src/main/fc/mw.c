@@ -47,6 +47,7 @@
 
 #include "fc/config.h"
 #include "fc/controlrate_profile.h"
+#include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
