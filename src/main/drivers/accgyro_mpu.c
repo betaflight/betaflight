@@ -45,6 +45,8 @@
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 
+mpuResetFuncPtr mpuReset;
+
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE
 #endif
@@ -102,15 +104,20 @@ static void mpu6050FindRevision(gyroDev_t *gyro)
 #if defined(USE_MPU_DATA_READY_SIGNAL) && defined(USE_EXTI)
 static void mpuIntExtiHandler(extiCallbackRec_t *cb)
 {
+#ifdef DEBUG_MPU_DATA_READY_INTERRUPT
+    static uint32_t lastCalledAtUs = 0;
+    const uint32_t nowUs = micros();
+    debug[0] = (uint16_t)(nowUs - lastCalledAtUs);
+    lastCalledAtUs = nowUs;
+#endif
     gyroDev_t *gyro = container_of(cb, gyroDev_t, exti);
     gyro->dataReady = true;
-
+    if (gyro->update) {
+        gyro->update(gyro);
+    }
 #ifdef DEBUG_MPU_DATA_READY_INTERRUPT
-    static timeUs_t lastCalledAt = 0;
-    timeUs_t now = micros();
-    timeUs_t callDelta = now - lastCalledAt;
-    debug[0] = callDelta;
-    lastCalledAt = now;
+    const uint32_t now2Us = micros();
+    debug[1] = (uint16_t)(now2Us - nowUs);
 #endif
 }
 #endif
@@ -174,6 +181,13 @@ bool mpuAccRead(accDev_t *acc)
     acc->ADCRaw[Z] = (int16_t)((data[4] << 8) | data[5]);
 
     return true;
+}
+
+void mpuGyroSetIsrUpdate(gyroDev_t *gyro, sensorGyroUpdateFuncPtr updateFn)
+{
+    ATOMIC_BLOCK(NVIC_PRIO_MPU_INT_EXTI) {
+        gyro->update = updateFn;
+    }
 }
 
 bool mpuGyroRead(gyroDev_t *gyro)
