@@ -224,7 +224,8 @@ static const motorMixer_t mixerHex6X[] = {
 };
 #endif
 
-static const motorMixer_t mixerSingleProp[] = {
+static const motorMixer_t mixerDualProp[] = {
+    { 1.0f,  0.0f,  0.0f, 0.0f },
     { 1.0f,  0.0f,  0.0f, 0.0f },
 };
 
@@ -245,16 +246,16 @@ const mixer_t mixers[] = {
         { 0, false, NULL, false },           // MIXER_Y6
         { 0, false, NULL, false },           // MIXER_HEX6
     #endif
-    { 1, true,  mixerSingleProp, true },     // MIXER_FLYING_WING
+    { 2, true,  mixerDualProp, true },       // MIXER_FLYING_WING
     #if !defined(DISABLE_UNCOMMON_MIXERS)
         { 4, false, mixerY4, true },         // MIXER_Y4
     #else
         { 0, false, NULL, false },           // MIXER_Y4
     #endif
     #if (MAX_SUPPORTED_MOTORS >= 6)
-        { 6, false, mixerHex6X, true },          // MIXER_HEX6X
+        { 6, false, mixerHex6X, true },      // MIXER_HEX6X
     #else
-        { 0, false, NULL, false },          // MIXER_HEX6X
+        { 0, false, NULL, false },           // MIXER_HEX6X
     #endif
     #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
         { 8, false, mixerOctoX8, true },     // MIXER_OCTOX8
@@ -265,7 +266,7 @@ const mixer_t mixers[] = {
         { 0, false, NULL, false },           // MIXER_OCTOFLATP
         { 0, false, NULL, false },           // MIXER_OCTOFLATX
     #endif
-    { 1, true,  mixerSingleProp, true },     // * MIXER_AIRPLANE
+    { 2, true,  mixerDualProp, true },       // * MIXER_AIRPLANE
     { 0, true,  NULL, false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
     { 0, true,  NULL, false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
     #if !defined(DISABLE_UNCOMMON_MIXERS)
@@ -415,11 +416,25 @@ void stopPwmAllMotors()
 
 void mixTable(void)
 {
+    int16_t input[3];   // RPY, range [-500:+500]
     int i;
 
-    if (motorCount >= 4 && mixerConfig()->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
-        // prevent "yaw jump" during yaw correction
-        axisPID[YAW] = constrain(axisPID[YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+    // Allow direct stick input to motors in passthrough mode on airplanes
+    if (STATE(FIXED_WING) && FLIGHT_MODE(PASSTHRU_MODE)) {
+        // Direct passthru from RX
+        input[ROLL] = rcCommand[ROLL];
+        input[PITCH] = rcCommand[PITCH];
+        input[YAW] = rcCommand[YAW];
+    }
+    else {
+        input[ROLL] = axisPID[ROLL];
+        input[PITCH] = axisPID[PITCH];
+        input[YAW] = axisPID[YAW];
+
+        if (motorCount >= 4 && mixerConfig()->yaw_jump_prevention_limit < YAW_JUMP_PREVENTION_LIMIT_HIGH) {
+            // prevent "yaw jump" during yaw correction
+            input[YAW] = constrain(input[YAW], -mixerConfig()->yaw_jump_prevention_limit - ABS(rcCommand[YAW]), mixerConfig()->yaw_jump_prevention_limit + ABS(rcCommand[YAW]));
+        }
     }
 
     // Initial mixer concept by bdoiron74 reused and optimized for Air Mode
@@ -430,9 +445,9 @@ void mixTable(void)
     // motors for non-servo mixes
     for (i = 0; i < motorCount; i++) {
         rpyMix[i] =
-            axisPID[PITCH] * currentMixer[i].pitch +
-            axisPID[ROLL] * currentMixer[i].roll +
-            -mixerConfig()->yaw_motor_direction * axisPID[YAW] * currentMixer[i].yaw;
+            input[PITCH] * currentMixer[i].pitch +
+            input[ROLL] * currentMixer[i].roll +
+            -mixerConfig()->yaw_motor_direction * input[YAW] * currentMixer[i].yaw;
 
         if (rpyMix[i] > rpyMixMax) rpyMixMax = rpyMix[i];
         if (rpyMix[i] < rpyMixMin) rpyMixMin = rpyMix[i];
