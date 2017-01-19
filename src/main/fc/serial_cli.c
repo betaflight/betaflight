@@ -131,16 +131,6 @@ static void cliBootlog(char *cmdline);
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
 
-typedef enum {
-    DUMP_MASTER = (1 << 0),
-    DUMP_PROFILE = (1 << 1),
-    DUMP_RATES = (1 << 2),
-    DUMP_ALL = (1 << 3),
-    DO_DIFF = (1 << 4),
-    SHOW_DEFAULTS = (1 << 5),
-    HIDE_UNUSED = (1 << 6)
-} dumpFlags_e;
-
 static const char* const emptyName = "-";
 
 #ifndef USE_QUAD_MIXER_ONLY
@@ -704,8 +694,8 @@ static const clivalue_t valueTable[] = {
     { "i_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 }, PG_PID_PROFILE, offsetof(pidProfile_t, I8[PIDLEVEL]) },
     { "d_level",                    VAR_UINT8  | PROFILE_VALUE, .config.minmax = { 0,  100 }, PG_PID_PROFILE, offsetof(pidProfile_t, D8[PIDLEVEL]) },
 
-    { "max_angle_inclination_rll",  VAR_INT16  | PROFILE_VALUE,  .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_ROLL]) },
-    { "max_angle_inclination_pit",  VAR_INT16  | PROFILE_VALUE,  .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_PITCH]) },
+    { "max_angle_inclination_rll",  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_ROLL]) },
+    { "max_angle_inclination_pit",  VAR_INT16  | PROFILE_VALUE, .config.minmax = { 100,  900 }, PG_PID_PROFILE, offsetof(pidProfile_t, max_angle_inclination[FD_PITCH]) },
 
     { "dterm_lpf_hz",               VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, dterm_lpf_hz) },
     { "yaw_lpf_hz",                 VAR_UINT8  | PROFILE_VALUE, .config.minmax = {0, 200 }, PG_PID_PROFILE, offsetof(pidProfile_t, yaw_lpf_hz) },
@@ -891,6 +881,16 @@ static void cliPutp(void *p, char ch)
     bufWriterAppend(p, ch);
 }
 
+typedef enum {
+    DUMP_MASTER = (1 << 0),
+    DUMP_PROFILE = (1 << 1),
+    DUMP_RATES = (1 << 2),
+    DUMP_ALL = (1 << 3),
+    DO_DIFF = (1 << 4),
+    SHOW_DEFAULTS = (1 << 5),
+    HIDE_UNUSED = (1 << 6)
+} dumpFlags_e;
+
 static bool cliDumpPrintf(uint8_t dumpMask, bool equalsDefault, const char *format, ...)
 {
     if (!((dumpMask & DO_DIFF) && equalsDefault)) {
@@ -982,7 +982,6 @@ static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_
     }
 }
 
-#ifdef USE_PARAMETER_GROUPS
 static void* getValuePointer(const clivalue_t *var)
 {
     const pgRegistry_t* rec = pgFind(var->pgn);
@@ -999,26 +998,6 @@ static void* getValuePointer(const clivalue_t *var)
     }
     return NULL;
 }
-#else
-void *getValuePointer(const clivalue_t *value)
-{
-    void *ptr = value->ptr;
-
-    if ((value->type & VALUE_SECTION_MASK) == PROFILE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfileIndex());
-    }
-
-    if ((value->type & VALUE_SECTION_MASK) == PROFILE_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(profile_t) * getCurrentProfileIndex());
-    }
-
-    if ((value->type & VALUE_SECTION_MASK) == CONTROL_RATE_VALUE) {
-        ptr = ((uint8_t *)ptr) + (sizeof(controlRateConfig_t) * getCurrentControlRateProfile());
-    }
-
-    return ptr;
-}
-#endif
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
@@ -1058,33 +1037,37 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
     return result;
 }
 
-#ifdef USE_PARAMETER_GROUPS
 static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, const void *currentConfig, const void *defaultConfig)
 {
     const char *format = "set %s = ";
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         const clivalue_t *value = &valueTable[i];
         if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
-            if (dumpMask == DUMP_MASTER) {
+            switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
+            case 0:
                 cliPrintf(format, valueTable[i].name);
                 printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
                 cliPrint("\r\n");
-            } else if (dumpMask == (DUMP_MASTER | SHOW_DEFAULTS)) {
+                break;
+            case SHOW_DEFAULTS:
                 cliPrintf(format, valueTable[i].name);
                 printValuePointer(value, (uint8_t*)defaultConfig + value->offset, 0);
                 cliPrint("\r\n");
-            } else if (dumpMask == (DUMP_MASTER | DO_DIFF)) {
-                const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)currentConfig + value->offset, (uint8_t*)defaultConfig + value->offset);
-                if (!equalsDefault) {
-                    cliPrintf(format, valueTable[i].name);
-                    printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
-                    cliPrint("\r\n");
+                break;
+            case DO_DIFF:
+                {
+                    const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)currentConfig + value->offset, (uint8_t*)defaultConfig + value->offset);
+                    if (!equalsDefault) {
+                        cliPrintf(format, valueTable[i].name);
+                        printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
+                        cliPrint("\r\n");
+                    }
                 }
+                break;
             }
         }
     }
 }
-#endif
 
 static featureConfig_t featureConfigCopy;
 static gyroConfig_t gyroConfigCopy;
@@ -1143,6 +1126,8 @@ static systemConfig_t systemConfigCopy;
 #ifdef BEEPER
 static beeperConfig_t beeperConfigCopy;
 #endif
+static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
+static pidProfile_t pidProfileCopy;
 
 static void backupConfigs(void)
 {
@@ -1218,6 +1203,10 @@ static void backupConfigs(void)
 #ifdef BEEPER
     beeperConfigCopy = *beeperConfig();
 #endif
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
+    }
+    pidProfileCopy = *pidProfile();
 }
 
 static void restoreConfigs(void)
@@ -1293,55 +1282,56 @@ static void restoreConfigs(void)
 #ifdef BEEPER
     *beeperConfigMutable() = beeperConfigCopy;
 #endif
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
+    }
+    *pidProfileMutable() = pidProfileCopy;
 }
 
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask)
 {
-    if (valueSection == MASTER_VALUE) {
-        // gyroConfig() has been set to default, gyroConfigCopy contains current value
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
+    // gyroConfig() has been set to default, gyroConfigCopy contains current value
+    dumpPgValues(valueSection, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
+    dumpPgValues(valueSection, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
 #ifdef MAG
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_COMPASS_CONFIG, &compassConfigCopy, compassConfig());
+    dumpPgValues(valueSection, dumpMask, PG_COMPASS_CONFIG, &compassConfigCopy, compassConfig());
 #endif
 #ifdef BARO
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
+    dumpPgValues(valueSection, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
 #endif
 #ifdef PITOT
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_PITOTMETER_CONFIG, &pitotmeterConfigCopy, pitotmeterConfig());
+    dumpPgValues(valueSection, dumpMask, PG_PITOTMETER_CONFIG, &pitotmeterConfigCopy, pitotmeterConfig());
 #endif
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
+    dumpPgValues(valueSection, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
 #ifdef BLACKBOX
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_BLACKBOX_CONFIG, &blackboxConfigCopy, blackboxConfig());
+    dumpPgValues(valueSection, dumpMask, PG_BLACKBOX_CONFIG, &blackboxConfigCopy, blackboxConfig());
 #endif
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_FAILSAFE_CONFIG, &failsafeConfigCopy, failsafeConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
+    dumpPgValues(valueSection, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
+    dumpPgValues(valueSection, dumpMask, PG_FAILSAFE_CONFIG, &failsafeConfigCopy, failsafeConfig());
+    dumpPgValues(valueSection, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
+    dumpPgValues(valueSection, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
+    dumpPgValues(valueSection, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
 #ifdef USE_SERVOS
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
+    dumpPgValues(valueSection, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
+    dumpPgValues(valueSection, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
 #endif
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_BATTERY_CONFIG, &batteryConfigCopy, batteryConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_SERIAL_CONFIG, &serialConfigCopy, serialConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_IMU_CONFIG, &imuConfigCopy, imuConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_RC_CONTROLS_CONFIG, &rcControlsConfigCopy, rcControlsConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
+    dumpPgValues(valueSection, dumpMask, PG_BATTERY_CONFIG, &batteryConfigCopy, batteryConfig());
+    dumpPgValues(valueSection, dumpMask, PG_SERIAL_CONFIG, &serialConfigCopy, serialConfig());
+    dumpPgValues(valueSection, dumpMask, PG_IMU_CONFIG, &imuConfigCopy, imuConfig());
+    dumpPgValues(valueSection, dumpMask, PG_RC_CONTROLS_CONFIG, &rcControlsConfigCopy, rcControlsConfig());
+    dumpPgValues(valueSection, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
 #ifdef GPS
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_GPS_CONFIG, &gpsConfigCopy, gpsConfig());
+    dumpPgValues(valueSection, dumpMask, PG_GPS_CONFIG, &gpsConfigCopy, gpsConfig());
 #endif
 #ifdef NAV
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_POSITION_ESTIMATION_CONFIG, &positionEstimationConfigCopy, positionEstimationConfig());
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_NAV_CONFIG, &navConfigCopy, navConfig());
+    dumpPgValues(valueSection, dumpMask, PG_POSITION_ESTIMATION_CONFIG, &positionEstimationConfigCopy, positionEstimationConfig());
+    dumpPgValues(valueSection, dumpMask, PG_NAV_CONFIG, &navConfigCopy, navConfig());
 #endif
 #ifdef TELEMETRY
-        dumpPgValues(MASTER_VALUE, dumpMask, PG_TELEMETRY_CONFIG, &telemetryConfigCopy, telemetryConfig());
+    dumpPgValues(valueSection, dumpMask, PG_TELEMETRY_CONFIG, &telemetryConfigCopy, telemetryConfig());
 #endif
-        return;
-    }
+    dumpPgValues(valueSection, dumpMask, PG_CONTROL_RATE_PROFILES, controlRateProfilesCopy, controlRateProfiles(0));
+    dumpPgValues(valueSection, dumpMask, PG_PID_PROFILE, &pidProfileCopy, pidProfile());
     cliPrint("\r\n");
 }
 
@@ -3438,12 +3428,10 @@ static void printConfig(char *cmdline, bool doDiff)
     createDefaultConfig();
 
     backupConfigs();
-#ifdef USE_PARAMETER_GROUPS
     // reset all configs to defaults to do differencing
     resetConfigs();
 #if defined(TARGET_CONFIG)
     targetConfiguration();
-#endif
 #endif
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
