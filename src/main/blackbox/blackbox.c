@@ -1257,12 +1257,13 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("vbat_pid_compensation:%d",            currentProfile->pidProfile.vbatPidCompensation);
         BLACKBOX_PRINT_HEADER_LINE("pidAtMinThrottle:%d",                 currentProfile->pidProfile.pidAtMinThrottle);
 
-        // Betaflight PID controller parameters
-        BLACKBOX_PRINT_HEADER_LINE("itermThrottleThreshold:%d",           currentProfile->pidProfile.itermThrottleThreshold);
+        // Betaflight PID controller parameters. Outcommented is flash space saving
+        //BLACKBOX_PRINT_HEADER_LINE("anti_gravity_threshold:%d",           currentProfile->pidProfile.itermThrottleThreshold);
+        //BLACKBOX_PRINT_HEADER_LINE("anti_gravity_gain:%d",                castFloatBytesToInt(currentProfile->pidProfile.itermAcceleratorGain));
         BLACKBOX_PRINT_HEADER_LINE("setpointRelaxRatio:%d",               currentProfile->pidProfile.setpointRelaxRatio);
         BLACKBOX_PRINT_HEADER_LINE("dtermSetpointWeight:%d",              currentProfile->pidProfile.dtermSetpointWeight);
-        BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                castFloatBytesToInt(currentProfile->pidProfile.yawRateAccelLimit));
-        BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   castFloatBytesToInt(currentProfile->pidProfile.rateAccelLimit));
+        //BLACKBOX_PRINT_HEADER_LINE("yawRateAccelLimit:%d",                castFloatBytesToInt(currentProfile->pidProfile.yawRateAccelLimit));
+        //BLACKBOX_PRINT_HEADER_LINE("rateAccelLimit:%d",                   castFloatBytesToInt(currentProfile->pidProfile.rateAccelLimit));
         // End of Betaflight controller parameters
 
         BLACKBOX_PRINT_HEADER_LINE("deadband:%d",                         rcControlsConfig()->deadband);
@@ -1278,7 +1279,7 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("acc_hardware:%d",                     accelerometerConfig()->acc_hardware);
         BLACKBOX_PRINT_HEADER_LINE("baro_hardware:%d",                    barometerConfig()->baro_hardware);
         BLACKBOX_PRINT_HEADER_LINE("mag_hardware:%d",                     compassConfig()->mag_hardware);
-        BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            armingConfig()->gyro_cal_on_first_arm);
+        //BLACKBOX_PRINT_HEADER_LINE("gyro_cal_on_first_arm:%d",            armingConfig()->gyro_cal_on_first_arm);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation:%d",                 rxConfig()->rcInterpolation);
         BLACKBOX_PRINT_HEADER_LINE("rc_interpolation_interval:%d",        rxConfig()->rcInterpolationInterval);
         BLACKBOX_PRINT_HEADER_LINE("airmode_activate_throttle:%d",        rxConfig()->airModeActivateThreshold);

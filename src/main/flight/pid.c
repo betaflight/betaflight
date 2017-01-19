@@ -65,6 +65,12 @@ void pidResetErrorGyroState(void)
     }
 }
 
+static float itermAccelerator = 1.0f;
+
+void pidSetItermAccelerator(float newItermAccelerator) {
+    itermAccelerator = newItermAccelerator;
+}
+
 void pidStabilisationState(pidStabilisationState_e pidControllerState)
 {
     pidStabilisationEnabled = (pidControllerState == PID_STABILISATION_ON) ? true : false;
@@ -237,7 +243,7 @@ void pidController(const pidProfile_t *pidProfile, const rollAndPitchTrims_t *an
         const float setpointRateScaler = constrainf(1.0f - (ABS(currentPidSetpoint) / accumulationThreshold), 0.0f, 1.0f);
 
         float ITerm = previousGyroIf[axis];
-        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler;
+        ITerm += Ki[axis] * errorRate * dT * setpointRateScaler * itermAccelerator;
         // limit maximum integrator value to prevent WindUp
         ITerm = constrainf(ITerm, -250.0f, 250.0f);
         previousGyroIf[axis] = ITerm;

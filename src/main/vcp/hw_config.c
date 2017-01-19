@@ -218,6 +218,27 @@ void USB_Interrupts_Config(void)
 }
 
 /*******************************************************************************
+ * Function Name  : USB_Interrupts_Disable
+ * Description    : Disables the USB interrupts
+ * Input          : None.
+ * Return         : None.
+ *******************************************************************************/
+void USB_Interrupts_Disable(void)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    /* Disable the USB interrupt */
+    NVIC_InitStructure.NVIC_IRQChannel    = USB_LP_CAN1_RX0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    /* Disable the USB Wake-up interrupt */
+    NVIC_InitStructure.NVIC_IRQChannel    = USBWakeUp_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
+/*******************************************************************************
  * Function Name  : USB_Cable_Config
  * Description    : Software Connection/Disconnection of USB Cable
  * Input          : None.

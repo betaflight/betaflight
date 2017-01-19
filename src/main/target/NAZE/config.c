@@ -60,17 +60,16 @@ void targetConfiguration(master_t *config)
     }*/
 
     for (int profileId = 0; profileId < 2; profileId++) {
-        config->profile[profileId].pidProfile.P8[ROLL] = 95;
+        config->profile[profileId].pidProfile.P8[ROLL] = 60;
         config->profile[profileId].pidProfile.I8[ROLL] = 70;
         config->profile[profileId].pidProfile.D8[ROLL] = 17;
-        config->profile[profileId].pidProfile.P8[PITCH] = 120;
+        config->profile[profileId].pidProfile.P8[PITCH] = 80;
         config->profile[profileId].pidProfile.I8[PITCH] = 90;
         config->profile[profileId].pidProfile.D8[PITCH] = 18;
         config->profile[profileId].pidProfile.P8[YAW] = 200;
         config->profile[profileId].pidProfile.I8[YAW] = 45;
         config->profile[profileId].pidProfile.P8[PIDLEVEL] = 30;
         config->profile[profileId].pidProfile.D8[PIDLEVEL] = 30;
-        config->profile[profileId].pidProfile.levelSensitivity = 50;
 
         for (int rateProfileId = 0; rateProfileId < MAX_RATEPROFILES; rateProfileId++) {
             config->profile[profileId].controlRateProfile[rateProfileId].rcRate8 = 100;

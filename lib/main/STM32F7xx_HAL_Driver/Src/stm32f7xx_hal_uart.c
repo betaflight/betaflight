@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_uart.c
   * @author  MCD Application Team
-  * @version V1.1.2
-  * @date    23-September-2016 
+  * @version V1.2.0
+  * @date    30-December-2016
   * @brief   UART HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Universal Asynchronous Receiver Transmitter (UART) peripheral:
@@ -2025,16 +2025,6 @@ HAL_StatusTypeDef UART_CheckIdleState(UART_HandleTypeDef *huart)
   {
     /* Wait until TEACK flag is set */
     if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_TEACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
-    {
-      /* Timeout Occurred */
-      return HAL_TIMEOUT;
-    }
-  }
-  /* Check if the Receiver is enabled */
-  if((huart->Instance->CR1 & USART_CR1_RE) == USART_CR1_RE)
-  {
-    /* Wait until REACK flag is set */
-    if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_REACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
     {
       /* Timeout Occurred */
       return HAL_TIMEOUT;
