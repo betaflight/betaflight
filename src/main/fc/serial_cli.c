@@ -1402,9 +1402,9 @@ static void cliShowArgumentRangeError(char *name, int min, int max)
     cliPrintf("%s must be between %d and %d\r\n", name, min, max);
 }
 
-static char *nextArg(char *currentArg)
+static const char *nextArg(const char *currentArg)
 {
-    char *ptr = strchr(currentArg, ' ');
+    const char *ptr = strchr(currentArg, ' ');
     while (ptr && *ptr == ' ') {
         ptr++;
     }
@@ -1412,7 +1412,7 @@ static char *nextArg(char *currentArg)
     return ptr;
 }
 
-static char *processChannelRangeArgs(char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
+static const char *processChannelRangeArgs(const char *ptr, channelRange_t *range, uint8_t *validArgumentCount)
 {
     for (uint32_t argIndex = 0; argIndex < 2; argIndex++) {
         ptr = nextArg(ptr);
@@ -1489,7 +1489,7 @@ static void cliRxFail(char *cmdline)
             cliRxFail(itoa(channel, buf, 10));
         }
     } else {
-        char *ptr = cmdline;
+        const char *ptr = cmdline;
         channel = atoi(ptr++);
         if ((channel < MAX_SUPPORTED_RC_CHANNEL_COUNT)) {
 
@@ -1656,7 +1656,7 @@ static void printAux(uint8_t dumpMask, const modeActivationCondition_t *modeActi
 static void cliAux(char *cmdline)
 {
     int i, val = 0;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printAux(DUMP_MASTER, modeActivationConditions(0), NULL);
@@ -1730,13 +1730,9 @@ static void printSerial(uint8_t dumpMask, const serialConfig_t *serialConfig, co
 
 static void cliSerial(char *cmdline)
 {
-    int i, val;
-    char *ptr;
-
     if (isEmpty(cmdline)) {
         printSerial(DUMP_MASTER, serialConfig(), NULL);
-
-    return;
+        return;
     }
     serialPortConfig_t portConfig;
     memset(&portConfig, 0 , sizeof(portConfig));
@@ -1745,9 +1741,9 @@ static void cliSerial(char *cmdline)
 
     uint8_t validArgumentCount = 0;
 
-    ptr = cmdline;
+    const char *ptr = cmdline;
 
-    val = atoi(ptr++);
+    int val = atoi(ptr++);
     currentConfig = serialFindPortConfiguration(val);
     if (currentConfig) {
         portConfig.identifier = val;
@@ -1761,7 +1757,7 @@ static void cliSerial(char *cmdline)
         validArgumentCount++;
     }
 
-    for (i = 0; i < 4; i ++) {
+    for (int i = 0; i < 4; i ++) {
         ptr = nextArg(ptr);
         if (!ptr) {
             break;
@@ -1852,7 +1848,7 @@ static void printAdjustmentRange(uint8_t dumpMask, const adjustmentRange_t *adju
 static void cliAdjustmentRange(char *cmdline)
 {
     int i, val = 0;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printAdjustmentRange(DUMP_MASTER, adjustmentRanges(0), NULL);
@@ -1956,7 +1952,7 @@ static void cliMotorMix(char *cmdline)
 #else
     int check = 0;
     uint8_t len;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printMotorMix(DUMP_MASTER, customMotorMixer(0), NULL);
@@ -2043,7 +2039,7 @@ static void printRxRange(uint8_t dumpMask, const rxChannelRangeConfig_t *channel
 static void cliRxRange(char *cmdline)
 {
     int i, validArgumentCount = 0;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printRxRange(DUMP_MASTER, rxChannelRangeConfigs(0), NULL);
@@ -2105,7 +2101,7 @@ static void printLed(uint8_t dumpMask, const ledConfig_t *ledConfigs, const ledC
 static void cliLed(char *cmdline)
 {
     int i;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printLed(DUMP_MASTER, ledStripConfig()->ledConfigs, NULL);
@@ -2142,14 +2138,11 @@ static void printColor(uint8_t dumpMask, const hsvColor_t *colors, const hsvColo
 
 static void cliColor(char *cmdline)
 {
-    int i;
-    char *ptr;
-
     if (isEmpty(cmdline)) {
         printColor(DUMP_MASTER, ledStripConfig()->colors, NULL);
     } else {
-        ptr = cmdline;
-        i = atoi(ptr);
+        const char *ptr = cmdline;
+        const int i = atoi(ptr);
         if (i < LED_CONFIGURABLE_COLOR_COUNT) {
             ptr = nextArg(cmdline);
             if (!parseColor(i, ptr)) {
@@ -2197,7 +2190,7 @@ static void cliModeColor(char *cmdline)
         enum {MODE = 0, FUNCTION, COLOR, ARGS_COUNT};
         int args[ARGS_COUNT];
         int argNo = 0;
-        char* ptr = strtok(cmdline, " ");
+        const char* ptr = strtok(cmdline, " ");
         while (ptr && argNo < ARGS_COUNT) {
             args[argNo++] = atoi(ptr);
             ptr = strtok(NULL, " ");
@@ -2288,7 +2281,7 @@ static void cliServo(char *cmdline)
     servoParam_t *servo;
 
     int i;
-    char *ptr;
+    const char *ptr;
 
     if (isEmpty(cmdline)) {
         printServo(DUMP_MASTER, servoParams(0), NULL);
@@ -2405,7 +2398,7 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
 static void cliServoMix(char *cmdline)
 {
     uint8_t len;
-    char *ptr;
+    const char *ptr;
     int args[8], check = 0;
     len = strlen(cmdline);
 
@@ -2436,7 +2429,7 @@ static void cliServoMix(char *cmdline)
         }
     } else if (strncasecmp(cmdline, "reverse", 7) == 0) {
         enum {SERVO = 0, INPUT, REVERSE, ARGS_COUNT};
-        ptr = strchr(cmdline, ' ');
+        char *ptr = strchr(cmdline, ' ');
 
         len = strlen(ptr);
         if (len == 0) {
@@ -2888,7 +2881,7 @@ static void cliMap(char *cmdline)
     cliPrintf("%s\r\n", out);
 }
 
-static char *checkCommand(char *cmdLine, const char *command)
+static const char *checkCommand(const char *cmdLine, const char *command)
 {
     if(!strncasecmp(cmdLine, command, strlen(command))   // command names match
         && !isalnum((unsigned)cmdLine[strlen(command)])) {   // next characted in bufffer is not alphanumeric (command is correctly terminated)
@@ -2920,9 +2913,9 @@ static void cliReboot(void)
     cliRebootEx(false);
 }
 
-static void cliDfu(char *cmdLine)
+static void cliDfu(char *cmdline)
 {
-    UNUSED(cmdLine);
+    UNUSED(cmdline);
 #ifndef CLI_MINIMAL_VERBOSITY
     cliPrint("\r\nRestarting in DFU mode");
 #endif
@@ -3074,34 +3067,30 @@ static void cliPlaySound(char *cmdline)
 
 static void cliProfile(char *cmdline)
 {
-    int i;
-
-    if (isEmpty(cmdline)) {
+    if (!cmdline) {
         cliPrintf("profile %d\r\n", getCurrentProfileIndex());
         return;
     } else {
-        i = atoi(cmdline);
+        const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             setProfile(i);
             writeEEPROM();
             readEEPROM();
-            cliProfile("");
+            cliProfile(NULL);
         }
     }
 }
 
 static void cliRateProfile(char *cmdline)
 {
-    int i;
-
-    if (isEmpty(cmdline)) {
+    if (!cmdline) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
     } else {
-        i = atoi(cmdline);
+        const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
             changeControlRateProfile(i);
-            cliRateProfile("");
+            cliRateProfile(NULL);
         }
     }
 }
@@ -3114,7 +3103,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
     }
     changeProfile(profileIndex);
     cliPrintHashLine("profile");
-    cliProfile("");
+    cliProfile(NULL);
     cliPrint("\r\n");
     dumpValues(PROFILE_VALUE, dumpMask);
 }
@@ -3127,7 +3116,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     }
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
-    cliRateProfile("");
+    cliRateProfile(NULL);
     cliPrint("\r\n");
     dumpValues(CONTROL_RATE_VALUE, dumpMask);
 }
@@ -3405,10 +3394,10 @@ static void cliResource(char *cmdline)
 }
 #endif
 
-static void printConfig(char *cmdline, bool doDiff)
+static void printConfig(const char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
-    char *options;
+    const char *options;
     if ((options = checkCommand(cmdline, "master"))) {
         dumpMask = DUMP_MASTER; // only
     } else if ((options = checkCommand(cmdline, "profile"))) {
@@ -3430,9 +3419,7 @@ static void printConfig(char *cmdline, bool doDiff)
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
-#if defined(TARGET_CONFIG)
-    targetConfiguration();
-#endif
+
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
     }
@@ -3520,7 +3507,7 @@ static void printConfig(char *cmdline, bool doDiff)
 
             changeProfile(activeProfile);
             cliPrintHashLine("restore original profile selection");
-            cliProfile("");
+            cliProfile(NULL);
 
             uint8_t currentRateIndex = getCurrentControlRateProfile();
             for (uint32_t rateCount = 0; rateCount<MAX_CONTROL_RATE_PROFILE_COUNT; rateCount++) {
@@ -3528,7 +3515,7 @@ static void printConfig(char *cmdline, bool doDiff)
             }
             changeControlRateProfile(currentRateIndex);
             cliPrintHashLine("restore original rateprofile selection");
-            cliRateProfile("");
+            cliRateProfile(NULL);
             cliPrintHashLine("save configuration\r\nsave");
         } else {
             cliDumpProfile(getCurrentProfileIndex(), dumpMask);
