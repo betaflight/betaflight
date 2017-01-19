@@ -3532,6 +3532,7 @@ static void printConfig(const char *cmdline, bool doDiff)
     }
     // restore configs from copies
     restoreConfigs();
+    writeEEPROM(); // !! TODO temporary measure
 }
 
 static void cliDump(char *cmdline)
