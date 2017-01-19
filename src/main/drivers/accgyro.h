@@ -52,6 +52,7 @@ typedef struct gyroDev_s {
     int16_t gyroADCRaw[XYZ_AXIS_COUNT];
     uint8_t lpf;
     gyroRateKHz_e gyroRateKHz;
+    uint8_t mpuDividerDrops;
     volatile bool dataReady;
     sensor_align_e gyroAlign;
     mpuDetectionResult_t mpuDetectionResult;

@@ -83,7 +83,7 @@ void mpu6500GyroInit(gyroDev_t *gyro)
     delay(15);
     gyro->mpuConfiguration.write(MPU_RA_CONFIG, gyro->lpf);
     delay(15);
-    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxCalculateDivider()); // Get Divider
+    gyro->mpuConfiguration.write(MPU_RA_SMPLRT_DIV, gyroMPU6xxxGetDividerDrops(gyro)); // Get Divider
     delay(100);
 
     // Data ready interrupt configuration

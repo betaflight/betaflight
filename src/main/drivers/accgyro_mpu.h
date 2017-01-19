@@ -18,6 +18,7 @@
 #pragma once
 
 #include "exti.h"
+#include "sensor.h"
 
 // MPU6050
 #define MPU_RA_WHO_AM_I         0x75
