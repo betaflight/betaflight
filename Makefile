@@ -638,7 +638,6 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
-            drivers/pwm_output.c \
             drivers/rcc.c \
             drivers/rx_pwm.c \
             drivers/serial.c \
@@ -655,9 +654,7 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/altitudehold.c \
             flight/failsafe.c \
             flight/imu.c \
-            flight/mixer.c \
             flight/pid.c \
-            flight/servos.c \
             io/serial.c \
             io/statusindicator.c \
             rx/ibus.c \
@@ -705,11 +702,14 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
 SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/adc.c \
             drivers/dma.c \
+            drivers/pwm_output.c \
             drivers/serial_escserial.c \
             drivers/serial_uart_stm32f30x.c \
             drivers/vtx_common.c \
             fc/fc_init.c \
             fc/config.c \
+            flight/servos.c \
+            flight/mixer.c \
             io/beeper.c \
             io/cli.c \
             io/ledstrip.c \
