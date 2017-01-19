@@ -127,9 +127,9 @@ void resetPPMDataReceivedState(void)
 
 #define MIN_CHANNELS_BEFORE_PPM_FRAME_CONSIDERED_VALID 4
 
-void pwmRxInit(const pwmRxConfig_t *pwmRxConfig)
+void pwmRxInit(inputFilteringMode_e inputFilteringModeToUse)
 {
-    inputFilteringMode = pwmRxConfig->inputFilteringMode;
+    inputFilteringMode = inputFilteringModeToUse;
 }
 
 #ifdef DEBUG_PPM_ISR

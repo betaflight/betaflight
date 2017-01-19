@@ -32,7 +32,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -84,9 +83,6 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-master_t masterConfig;                 // master config struct with data independent from profiles
-const profile_t *currentProfile;
-
 PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
@@ -97,7 +93,8 @@ PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
     .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
     .attitudeTaskFrequency = ATTITUDE_TASK_FREQUENCY_DEFAULT,
     .asyncMode = ASYNC_MODE_NONE,
-    .throttle_tilt_compensation_strength = 0      // 0-100, 0 - disabled
+    .throttle_tilt_compensation_strength = 0,      // 0-100, 0 - disabled
+    .pwmRxInputFilteringMode = INPUT_FILTERING_DISABLED
 );
 
 PG_REGISTER(beeperConfig_t, beeperConfig, PG_BEEPER_CONFIG, 0);
@@ -159,16 +156,9 @@ uint16_t getCurrentMinthrottle(void)
 }
 
 // Default settings
-void createDefaultConfig(master_t *config)
+void createDefaultConfig(void)
 {
     // Clear all configuration
-    memset(config, 0, sizeof(master_t));
-
-    config->version = EEPROM_CONF_VERSION;
-
-
-    config->pwmRxConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
-
     // Radio
 #ifdef RX_CHANNELS_TAER
     parseRcChannels("TAER1234");
@@ -185,15 +175,6 @@ void createDefaultConfig(master_t *config)
 #if defined(TARGET_CONFIG)
     targetConfiguration();
 #endif
-
-    // copy first profile into remaining profile
-    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-        memcpy(&config->profile[i], &config->profile[0], sizeof(profile_t));
-    }
-
-    for (int i = 1; i < MAX_PROFILE_COUNT; i++) {
-        config->profile[i].defaultRateProfileIndex = i % MAX_CONTROL_RATE_PROFILE_COUNT;
-    }
 }
 
 void resetConfigs(void)
@@ -201,7 +182,7 @@ void resetConfigs(void)
     pgResetAll(MAX_PROFILE_COUNT);
     pgActivateProfile(0);
 
-    createDefaultConfig(&masterConfig);
+    createDefaultConfig();
 
     setProfile(getCurrentProfileIndex());
     setControlRateProfile(getCurrentProfileIndex());
@@ -248,7 +229,7 @@ void validateAndFixConfig(void)
     }
 #endif
 #ifdef USE_DTERM_NOTCH
-    if (pidProfile()->dterm_soft_notch_cutoff >= currentProfile->pidProfile.dterm_soft_notch_hz) {
+    if (pidProfile()->dterm_soft_notch_cutoff >= pidProfile()->dterm_soft_notch_hz) {
         pidProfileMutable()->dterm_soft_notch_hz = 0;
     }
 #endif
@@ -523,7 +504,7 @@ void setProfile(uint8_t profileIndex)
         profileIndex = 0;
     }
     profileSelectionMutable()->current_profile_index = profileIndex;
-    currentProfile = &masterConfig.profile[profileIndex];
+//!!!    currentProfile = &masterConfig.profile[profileIndex];
 }
 
 void changeProfile(uint8_t profileIndex)

@@ -77,7 +77,6 @@
 #include "flight/navigation_rewrite.h"
 
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 
 // June 2013     V2.2-dev
@@ -670,10 +669,10 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 
     // Update PID coefficients
-    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, motorConfig());
+    updatePIDCoefficients(pidProfile(), currentControlRateProfile, motorConfig());
 
     // Calculate stabilisation
-    pidController(&currentProfile->pidProfile, currentControlRateProfile, rxConfig());
+    pidController(pidProfile(), currentControlRateProfile, rxConfig());
 
 #ifdef HIL
     if (hilActive) {

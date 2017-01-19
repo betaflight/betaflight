@@ -114,7 +114,6 @@
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -314,7 +313,7 @@ void init(void)
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
 #if defined(USE_RX_PWM) || defined(USE_RX_PPM)
-    pwmRxInit(pwmRxConfig());
+    pwmRxInit(systemConfig()->pwmRxInputFilteringMode);
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
@@ -499,7 +498,7 @@ void init(void)
     flashLedsAndBeep();
 
 #ifdef USE_DTERM_NOTCH
-    pidInitFilters(&currentProfile->pidProfile);
+    pidInitFilters(pidProfile());
 #endif
     
     imuInit();

@@ -16,6 +16,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <ctype.h>
 
@@ -37,7 +38,6 @@
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 
-#include "config/config_master.h"
 #include "config/config_profile.h"
 #include "config/feature.h"
 

@@ -45,7 +45,6 @@ uint8_t cliMode = 0;
 
 #include "config/config_eeprom.h"
 #include "config/config_profile.h"
-#include "config/config_master.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -488,7 +487,6 @@ typedef union {
     cliMinMaxConfig_t minmax;
 } cliValueConfig_t;
 
-#ifdef USE_PARAMETER_GROUPS
 typedef struct {
     const char *name;
     const uint8_t type; // see cliValueFlag_e
@@ -863,21 +861,8 @@ static const clivalue_t valueTable[] = {
 #endif
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
     { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
+    { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
 };
-
-#else
-
-typedef struct {
-    const char *name;
-    const uint8_t type; // see cliValueFlag_e
-    void *ptr;
-    const cliValueConfig_t config;
-} clivalue_t;
-
-const clivalue_t valueTable[] = {
-    { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP,  &pwmRxConfig()->inputFilteringMode, .config.lookup = { TABLE_OFF_ON } },
-};
-#endif
 
 static void cliPrint(const char *str)
 {
@@ -1306,31 +1291,8 @@ static void restoreConfigs(void)
 #endif
 }
 
-static void *getDefaultPointer(const void *valuePointer, const master_t *defaultConfig)
+static void dumpValues(uint16_t valueSection, uint8_t dumpMask)
 {
-    return ((uint8_t *)valuePointer) - (uint32_t)&masterConfig + (uint32_t)defaultConfig;
-}
-
-static bool valueEqualsDefault(const clivalue_t *value, const master_t *defaultConfig)
-{
-    const void *ptr = getValuePointer(value);
-    const void *ptrDefault = getDefaultPointer(ptr, defaultConfig);
-    return valuePtrEqualsDefault(value->type, ptr, ptrDefault);
-}
-
-static void cliPrintVarDefault(const clivalue_t *var, uint32_t full, const master_t *defaultConfig)
-{
-    void *ptr = getValuePointer(var);
-
-    void *defaultPtr = getDefaultPointer(ptr, defaultConfig);
-
-    printValuePointer(var, defaultPtr, full);
-}
-
-static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *defaultConfig)
-{
-    const char *format = "set %s = ";
-#ifdef USE_PARAMETER_GROUPS
     if (valueSection == MASTER_VALUE) {
         // gyroConfig() has been set to default, gyroConfigCopy contains current value
         dumpPgValues(MASTER_VALUE, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
@@ -1375,21 +1337,6 @@ static void dumpValues(uint16_t valueSection, uint8_t dumpMask, const master_t *
         dumpPgValues(MASTER_VALUE, dumpMask, PG_TELEMETRY_CONFIG, &telemetryConfigCopy, telemetryConfig());
 #endif
         return;
-    }
-#endif
-    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
-        const clivalue_t *value = &valueTable[i];
-        if ((value->type & VALUE_SECTION_MASK) == valueSection) {
-            const bool equalsDefault = valueEqualsDefault(value, defaultConfig);
-            if (cliDefaultPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
-                cliPrintVarDefault(value, 0, defaultConfig);
-                cliPrint("\r\n");
-            }
-            if (cliDumpPrintf(dumpMask, equalsDefault, format, valueTable[i].name)) {
-                cliPrintVar(value, 0);
-                cliPrint("\r\n");
-            }
-        }
     }
     cliPrint("\r\n");
 }
@@ -3165,7 +3112,7 @@ static void cliRateProfile(char *cmdline)
     }
 }
 
-static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_t *defaultConfig)
+static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
 {
     if (profileIndex >= MAX_PROFILE_COUNT) {
         // Faulty values
@@ -3175,10 +3122,10 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask, const master_
     cliPrintHashLine("profile");
     cliProfile("");
     cliPrint("\r\n");
-    dumpValues(PROFILE_VALUE, dumpMask, defaultConfig);
+    dumpValues(PROFILE_VALUE, dumpMask);
 }
 
-static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, const master_t *defaultConfig)
+static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
 {
     if (rateProfileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
         // Faulty values
@@ -3188,7 +3135,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask, const
     cliPrintHashLine("rateprofile");
     cliRateProfile("");
     cliPrint("\r\n");
-    dumpValues(CONTROL_RATE_VALUE, dumpMask, defaultConfig);
+    dumpValues(CONTROL_RATE_VALUE, dumpMask);
 }
 
 static void cliSave(char *cmdline)
@@ -3382,7 +3329,7 @@ static void cliStatus(char *cmdline)
 #endif
     cliPrintf("Stack size: %d, Stack address: 0x%x\r\n", stackTotalSize(), stackHighMem());
 
-    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", (uint16_t)cycleTime, i2cErrorCounter, sizeof(master_t));
+    cliPrintf("Cycle Time: %d, I2C Errors: %d, config size: %d\r\n", (uint16_t)cycleTime, i2cErrorCounter, PG_REGISTRY_SIZE);
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
@@ -3475,8 +3422,7 @@ static void printConfig(char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-    static master_t defaultConfig;
-    createDefaultConfig(&defaultConfig);
+    createDefaultConfig();
 
     backupConfigs();
 #ifdef USE_PARAMETER_GROUPS
@@ -3563,12 +3509,12 @@ static void printConfig(char *cmdline, bool doDiff)
         printRxFail(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
-        dumpValues(MASTER_VALUE, dumpMask, &defaultConfig);
+        dumpValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
             const uint8_t activeProfile = getCurrentProfileIndex();
             for (uint32_t profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
-                cliDumpProfile(profileCount, dumpMask, &defaultConfig);
+                cliDumpProfile(profileCount, dumpMask);
             }
 
             changeProfile(activeProfile);
@@ -3577,24 +3523,24 @@ static void printConfig(char *cmdline, bool doDiff)
 
             uint8_t currentRateIndex = getCurrentControlRateProfile();
             for (uint32_t rateCount = 0; rateCount<MAX_CONTROL_RATE_PROFILE_COUNT; rateCount++) {
-                cliDumpRateProfile(rateCount, dumpMask, &defaultConfig);
+                cliDumpRateProfile(rateCount, dumpMask);
             }
             changeControlRateProfile(currentRateIndex);
             cliPrintHashLine("restore original rateprofile selection");
             cliRateProfile("");
             cliPrintHashLine("save configuration\r\nsave");
         } else {
-            cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
-            cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
+            cliDumpProfile(getCurrentProfileIndex(), dumpMask);
+            cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(getCurrentProfileIndex(), dumpMask, &defaultConfig);
+        cliDumpProfile(getCurrentProfileIndex(), dumpMask);
     }
 
     if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask, &defaultConfig);
+        cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
     }
     // restore configs from copies
     restoreConfigs();

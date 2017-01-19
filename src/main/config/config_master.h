@@ -38,19 +38,12 @@
 #include "io/osd.h"
 #include "io/ledstrip.h"
 
-#define pwmRxConfig(x) (&masterConfig.pwmRxConfig)
-#define pwmRxConfigMutable(x) (&masterConfig.pwmRxConfig)
-
 
 // System-wide
 typedef struct master_s {
     uint8_t version;
     uint16_t size;
     uint8_t magic_be;                       // magic number, should be 0xBE
-
-    pwmRxConfig_t pwmRxConfig;
-
-    profile_t profile[MAX_PROFILE_COUNT];
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
@@ -60,7 +53,5 @@ typedef struct master_s {
     */
 } master_t;
 
-extern master_t masterConfig;
-extern const profile_t *currentProfile;
-
-void createDefaultConfig(master_t *config);
+//extern master_t masterConfig;
+//extern const profile_t *currentProfile;
