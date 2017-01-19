@@ -1457,6 +1457,9 @@ void blackboxLogEvent(FlightLogEvent event, flightLogEventData_t *data)
             blackboxWriteUnsignedVB(data->loggingResume.logIteration);
             blackboxWriteUnsignedVB(data->loggingResume.currentTimeUs);
         break;
+        case FLIGHT_LOG_EVENT_IMU_FAILURE:
+            blackboxWrite(0);
+        break;
         case FLIGHT_LOG_EVENT_LOG_END:
             blackboxPrint("End of log");
             blackboxWrite(0);
