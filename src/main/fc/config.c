@@ -213,8 +213,8 @@ static void activateConfig(void)
 
 void validateAndFixConfig(void)
 {
-    // FIXME: Completely disable sonar
 #if defined(SONAR)
+    // FIXME: Completely disable sonar
     featureClear(FEATURE_SONAR);
 #endif
 
@@ -315,27 +315,19 @@ void validateAndFixConfig(void)
 
 #ifdef STM32F10X
     // avoid overloading the CPU on F1 targets when using gyro sync and GPS.
-
     if (featureConfigured(FEATURE_GPS)) {
         // avoid overloading the CPU when looptime < 2000 and GPS
-
         uint8_t denominatorLimit = 2;
-
         if (gyroConfig()->gyro_lpf == 0) {
             denominatorLimit = 16;
         }
-
         if (gyroConfig()->gyroSyncDenominator < denominatorLimit) {
             gyroConfigMutable()->gyroSyncDenominator = denominatorLimit;
         }
-
         if (gyroConfig()->looptime < 2000) {
             gyroConfigMutable()->looptime = 2000;
         }
-
     }
-#else
-
 #endif
 
 #if defined(LED_STRIP) && (defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2))
@@ -398,9 +390,7 @@ void validateAndFixConfig(void)
         pgResetCopy(serialConfigMutable(), PG_SERIAL_CONFIG);
     }
 
-    /*
-     * If provided predefined mixer setup is disabled, fallback to default one
-     */
+    // If provided predefined mixer setup is disabled, fallback to default one
     if (!isMixerEnabled(mixerConfig()->mixerMode)) {
         mixerConfigMutable()->mixerMode = DEFAULT_MIXER;
     }
@@ -410,7 +400,7 @@ void validateAndFixConfig(void)
     validateNavConfig();
 #endif
 
-    /* Limitations of different protocols */
+    // Limitations of different protocols
 #ifdef BRUSHED_MOTORS
     motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 500, 32000);
 #else
@@ -418,15 +408,12 @@ void validateAndFixConfig(void)
     case PWM_TYPE_STANDARD: // Limited to 490 Hz
         motorConfigMutable()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 490);
         break;
-
     case PWM_TYPE_ONESHOT125:   // Limited to 3900 Hz
         motorConfigMutable()->motorPwmRate = MIN(motorConfig()->motorPwmRate, 3900);
         break;
-
     case PWM_TYPE_ONESHOT42:    // 2-8 kHz
         motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 8000);
         break;
-
     case PWM_TYPE_MULTISHOT:    // 2-16 kHz
         motorConfigMutable()->motorPwmRate = constrain(motorConfig()->motorPwmRate, 2000, 16000);
         break;
@@ -440,7 +427,6 @@ void validateAndFixConfig(void)
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)
 {
     updateBoardAlignment(roll, pitch);
-
     saveConfigAndNotify();
 }
 
@@ -454,8 +440,8 @@ void readEEPROM(void)
     }
 
     setProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
     pgActivateProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
 
     validateAndFixConfig();
     activateConfig();
@@ -498,24 +484,28 @@ uint8_t getCurrentProfileIndex(void)
     return profileSelection()->current_profile_index;
 }
 
-void setProfile(uint8_t profileIndex)
+bool setProfile(uint8_t profileIndex)
 {
+    if (profileSelection()->current_profile_index == profileIndex) {
+        return false;
+    }
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
     profileSelectionMutable()->current_profile_index = profileIndex;
 //!!!    currentProfile = &masterConfig.profile[profileIndex];
+    // return true if current_profile_index has changed
+    return true;
 }
 
 void changeProfile(uint8_t profileIndex)
 {
-    if (profileIndex >= MAX_PROFILE_COUNT) {
-        profileIndex = MAX_PROFILE_COUNT - 1;
+    if (setProfile(profileIndex)) {
+        // profile has changed, so ensure current values saved before new profile is loaded
+        writeEEPROM();
+        readEEPROM();
+        beeperConfirmationBeeps(profileIndex + 1);
     }
-    profileSelectionMutable()->current_profile_index = profileIndex;
-    writeEEPROM();
-    readEEPROM();
-    beeperConfirmationBeeps(profileIndex + 1);
 }
 
 void beeperOffSet(uint32_t mask)

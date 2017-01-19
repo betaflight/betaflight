@@ -858,6 +858,66 @@ static const clivalue_t valueTable[] = {
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
 };
 
+static featureConfig_t featureConfigCopy;
+static gyroConfig_t gyroConfigCopy;
+static accelerometerConfig_t accelerometerConfigCopy;
+#ifdef MAG
+static compassConfig_t compassConfigCopy;
+#endif
+#ifdef BARO
+static barometerConfig_t barometerConfigCopy;
+#endif
+#ifdef PITOT
+static pitotmeterConfig_t pitotmeterConfigCopy;
+#endif
+static rxConfig_t rxConfigCopy;
+#ifdef BLACKBOX
+static blackboxConfig_t blackboxConfigCopy;
+#endif
+static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
+static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
+static motorConfig_t motorConfigCopy;
+static failsafeConfig_t failsafeConfigCopy;
+static boardAlignment_t boardAlignmentCopy;
+#ifdef USE_SERVOS
+static servoConfig_t servoConfigCopy;
+static gimbalConfig_t gimbalConfigCopy;
+static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
+static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
+#endif
+static batteryConfig_t batteryConfigCopy;
+static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
+static mixerConfig_t mixerConfigCopy;
+static flight3DConfig_t flight3DConfigCopy;
+static serialConfig_t serialConfigCopy;
+static imuConfig_t imuConfigCopy;
+static armingConfig_t armingConfigCopy;
+static rcControlsConfig_t rcControlsConfigCopy;
+#ifdef GPS
+static gpsConfig_t gpsConfigCopy;
+#endif
+#ifdef NAV
+static positionEstimationConfig_t positionEstimationConfigCopy;
+static navConfig_t navConfigCopy;
+#endif
+#ifdef TELEMETRY
+static telemetryConfig_t telemetryConfigCopy;
+#endif
+static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
+static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
+#ifdef LED_STRIP
+static ledStripConfig_t ledStripConfigCopy;
+#endif
+#ifdef OSD
+static osdConfig_t osdConfigCopy;
+#endif
+static systemConfig_t systemConfigCopy;
+#ifdef BEEPER
+static beeperConfig_t beeperConfigCopy;
+#endif
+static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
+static pidProfile_t pidProfileCopy;
+
 static void cliPrint(const char *str)
 {
     while (*str) {
@@ -934,7 +994,7 @@ static void cliPrintf(const char *format, ...)
     va_end(va);
 }
 
-static void printValuePointer(const clivalue_t *var, void *valuePointer, uint32_t full)
+static void printValuePointer(const clivalue_t *var, const void *valuePointer, uint32_t full)
 {
     int32_t value = 0;
     char buf[8];
@@ -1001,7 +1061,7 @@ static void* getValuePointer(const clivalue_t *var)
 
 static void cliPrintVar(const clivalue_t *var, uint32_t full)
 {
-    void *ptr = getValuePointer(var);
+    const void *ptr = getValuePointer(var);
 
     printValuePointer(var, ptr, full);
 }
@@ -1069,228 +1129,10 @@ static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, con
     }
 }
 
-static featureConfig_t featureConfigCopy;
-static gyroConfig_t gyroConfigCopy;
-static accelerometerConfig_t accelerometerConfigCopy;
-#ifdef MAG
-static compassConfig_t compassConfigCopy;
-#endif
-#ifdef BARO
-static barometerConfig_t barometerConfigCopy;
-#endif
-#ifdef PITOT
-static pitotmeterConfig_t pitotmeterConfigCopy;
-#endif
-static rxConfig_t rxConfigCopy;
-#ifdef BLACKBOX
-static blackboxConfig_t blackboxConfigCopy;
-#endif
-static rxFailsafeChannelConfig_t rxFailsafeChannelConfigsCopy[MAX_SUPPORTED_RC_CHANNEL_COUNT];
-static rxChannelRangeConfig_t rxChannelRangeConfigsCopy[NON_AUX_CHANNEL_COUNT];
-static motorConfig_t motorConfigCopy;
-static failsafeConfig_t failsafeConfigCopy;
-static boardAlignment_t boardAlignmentCopy;
-#ifdef USE_SERVOS
-static servoConfig_t servoConfigCopy;
-static gimbalConfig_t gimbalConfigCopy;
-static servoMixer_t customServoMixersCopy[MAX_SERVO_RULES];
-static servoParam_t servoParamsCopy[MAX_SUPPORTED_SERVOS];
-#endif
-static batteryConfig_t batteryConfigCopy;
-static motorMixer_t customMotorMixerCopy[MAX_SUPPORTED_MOTORS];
-static mixerConfig_t mixerConfigCopy;
-static flight3DConfig_t flight3DConfigCopy;
-static serialConfig_t serialConfigCopy;
-static imuConfig_t imuConfigCopy;
-static armingConfig_t armingConfigCopy;
-static rcControlsConfig_t rcControlsConfigCopy;
-#ifdef GPS
-static gpsConfig_t gpsConfigCopy;
-#endif
-#ifdef NAV
-static positionEstimationConfig_t positionEstimationConfigCopy;
-static navConfig_t navConfigCopy;
-#endif
-#ifdef TELEMETRY
-static telemetryConfig_t telemetryConfigCopy;
-#endif
-static modeActivationCondition_t modeActivationConditionsCopy[MAX_MODE_ACTIVATION_CONDITION_COUNT];
-static adjustmentRange_t adjustmentRangesCopy[MAX_ADJUSTMENT_RANGE_COUNT];
-#ifdef LED_STRIP
-static ledStripConfig_t ledStripConfigCopy;
-#endif
-#ifdef OSD
-static osdConfig_t osdConfigCopy;
-#endif
-static systemConfig_t systemConfigCopy;
-#ifdef BEEPER
-static beeperConfig_t beeperConfigCopy;
-#endif
-static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
-static pidProfile_t pidProfileCopy;
-
-static void backupConfigs(void)
-{
-    // make copies of configs to do differencing
-    featureConfigCopy = *featureConfig();
-    gyroConfigCopy = *gyroConfig();
-    accelerometerConfigCopy = *accelerometerConfig();
-#ifdef MAG
-    compassConfigCopy = *compassConfig();
-#endif
-#ifdef BARO
-    barometerConfigCopy = *barometerConfig();
-#endif
-#ifdef PITOT
-    pitotmeterConfigCopy = *pitotmeterConfig();
-#endif
-    rxConfigCopy = *rxConfig();
-    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
-        rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
-    }
-    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
-        rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
-    }
-#ifdef BLACKBOX
-    blackboxConfigCopy = *blackboxConfig();
-#endif
-    motorConfigCopy = *motorConfig();
-    failsafeConfigCopy = *failsafeConfig();
-    boardAlignmentCopy = *boardAlignment();
-#ifdef USE_SERVOS
-    servoConfigCopy = *servoConfig();
-    gimbalConfigCopy = *gimbalConfig();
-    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
-        customServoMixersCopy[ii] = *customServoMixers(ii);
-    }
-    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
-        servoParamsCopy[ii] = *servoParams(ii);
-    }
-#endif
-    batteryConfigCopy = *batteryConfig();
-    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
-        customMotorMixerCopy[ii] = *customMotorMixer(ii);
-    }
-    mixerConfigCopy = *mixerConfig();
-    flight3DConfigCopy = *flight3DConfig();
-    serialConfigCopy = *serialConfig();
-    imuConfigCopy = *imuConfig();
-    rcControlsConfigCopy = *rcControlsConfig();
-    armingConfigCopy = *armingConfig();
-#ifdef GPS
-    gpsConfigCopy = *gpsConfig();
-#endif
-#ifdef NAV
-    positionEstimationConfigCopy = *positionEstimationConfig();
-    navConfigCopy = *navConfig();
-#endif
-#ifdef TELEMETRY
-    telemetryConfigCopy = *telemetryConfig();
-#endif
-    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
-        modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
-    }
-    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
-        adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
-    }
-#ifdef LED_STRIP
-    ledStripConfigCopy = *ledStripConfig();
-#endif
-#ifdef OSD
-    osdConfigCopy = *osdConfig();
-#endif
-    systemConfigCopy = *systemConfig();
-#ifdef BEEPER
-    beeperConfigCopy = *beeperConfig();
-#endif
-    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-        controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
-    }
-    pidProfileCopy = *pidProfile();
-}
-
-static void restoreConfigs(void)
-{
-    *featureConfigMutable() = featureConfigCopy;
-    *gyroConfigMutable() = gyroConfigCopy;
-    *accelerometerConfigMutable() = accelerometerConfigCopy;
-#ifdef MAG
-    *compassConfigMutable() = compassConfigCopy;
-#endif
-#ifdef BARO
-    *barometerConfigMutable() = barometerConfigCopy;
-#endif
-#ifdef PITOT
-    *pitotmeterConfigMutable() = pitotmeterConfigCopy;
-#endif
-    *rxConfigMutable() = rxConfigCopy;
-    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
-        *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
-    }
-    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
-        *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
-    }
-#ifdef BLACKBOX
-    *blackboxConfigMutable() = blackboxConfigCopy;
-#endif
-    *motorConfigMutable() = motorConfigCopy;
-    *failsafeConfigMutable() = failsafeConfigCopy;
-    *boardAlignmentMutable() = boardAlignmentCopy;
-#ifdef USE_SERVOS
-    *servoConfigMutable() = servoConfigCopy;
-    *gimbalConfigMutable() = gimbalConfigCopy;
-    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
-        *customServoMixersMutable(ii) = customServoMixersCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
-        *servoParamsMutable(ii) = servoParamsCopy[ii];
-    }
-#endif
-    *batteryConfigMutable() = batteryConfigCopy;
-    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
-        *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
-    }
-    *mixerConfigMutable() = mixerConfigCopy;
-    *flight3DConfigMutable() = flight3DConfigCopy;
-    *serialConfigMutable() = serialConfigCopy;
-    *imuConfigMutable() = imuConfigCopy;
-    *rcControlsConfigMutable() = rcControlsConfigCopy;
-    *armingConfigMutable() = armingConfigCopy;
-#ifdef GPS
-    *gpsConfigMutable() = gpsConfigCopy;
-#endif
-#ifdef NAV
-    *positionEstimationConfigMutable() = positionEstimationConfigCopy;
-    *navConfigMutable() = navConfigCopy;
-#endif
-#ifdef TELEMETRY
-    *telemetryConfigMutable() = telemetryConfigCopy;
-#endif
-    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
-        *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
-        *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
-    }
-#ifdef LED_STRIP
-    *ledStripConfigMutable() = ledStripConfigCopy;
-#endif
-#ifdef OSD
-    *osdConfigMutable() = osdConfigCopy;
-#endif
-    *systemConfigMutable() = systemConfigCopy;
-#ifdef BEEPER
-    *beeperConfigMutable() = beeperConfigCopy;
-#endif
-    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-        *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
-    }
-    *pidProfileMutable() = pidProfileCopy;
-}
-
 static void dumpValues(uint16_t valueSection, uint8_t dumpMask)
 {
     // gyroConfig() has been set to default, gyroConfigCopy contains current value
+    // this is horribly inefficient, but it does the job. !! TODO, refactor this so it passes through the valuetable just once
     dumpPgValues(valueSection, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
     dumpPgValues(valueSection, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
 #ifdef MAG
@@ -3073,9 +2915,7 @@ static void cliProfile(char *cmdline)
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            setProfile(i);
-            writeEEPROM();
-            readEEPROM();
+            changeProfile(i);
             cliProfile(NULL);
         }
     }
@@ -3090,7 +2930,7 @@ static void cliRateProfile(char *cmdline)
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
             changeControlRateProfile(i);
-            cliRateProfile(NULL);
+            cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         }
     }
 }
@@ -3101,11 +2941,10 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    changeProfile(profileIndex);
+    setProfile(profileIndex);
     cliPrintHashLine("profile");
-    cliProfile(NULL);
-    cliPrint("\r\n");
-    dumpValues(PROFILE_VALUE, dumpMask);
+    cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
+    dumpPgValues(PROFILE_VALUE, dumpMask, PG_PID_PROFILE, &pidProfileCopy, pidProfile());
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
@@ -3116,9 +2955,8 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     }
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
-    cliRateProfile(NULL);
-    cliPrint("\r\n");
-    dumpValues(CONTROL_RATE_VALUE, dumpMask);
+    cliPrintf("rateprofile %d\r\n\r\n", getCurrentControlRateProfile());
+    dumpPgValues(CONTROL_RATE_VALUE, dumpMask, PG_CONTROL_RATE_PROFILES, controlRateProfilesCopy, controlRateProfiles(0));
 }
 
 static void cliSave(char *cmdline)
@@ -3394,6 +3232,165 @@ static void cliResource(char *cmdline)
 }
 #endif
 
+static void backupConfigs(void)
+{
+    // make copies of configs to do differencing
+    featureConfigCopy = *featureConfig();
+    gyroConfigCopy = *gyroConfig();
+    accelerometerConfigCopy = *accelerometerConfig();
+#ifdef MAG
+    compassConfigCopy = *compassConfig();
+#endif
+#ifdef BARO
+    barometerConfigCopy = *barometerConfig();
+#endif
+#ifdef PITOT
+    pitotmeterConfigCopy = *pitotmeterConfig();
+#endif
+    rxConfigCopy = *rxConfig();
+    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
+        rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
+    }
+    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
+        rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
+    }
+#ifdef BLACKBOX
+    blackboxConfigCopy = *blackboxConfig();
+#endif
+    motorConfigCopy = *motorConfig();
+    failsafeConfigCopy = *failsafeConfig();
+    boardAlignmentCopy = *boardAlignment();
+#ifdef USE_SERVOS
+    servoConfigCopy = *servoConfig();
+    gimbalConfigCopy = *gimbalConfig();
+    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
+        customServoMixersCopy[ii] = *customServoMixers(ii);
+    }
+    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
+        servoParamsCopy[ii] = *servoParams(ii);
+    }
+#endif
+    batteryConfigCopy = *batteryConfig();
+    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
+        customMotorMixerCopy[ii] = *customMotorMixer(ii);
+    }
+    mixerConfigCopy = *mixerConfig();
+    flight3DConfigCopy = *flight3DConfig();
+    serialConfigCopy = *serialConfig();
+    imuConfigCopy = *imuConfig();
+    rcControlsConfigCopy = *rcControlsConfig();
+    armingConfigCopy = *armingConfig();
+#ifdef GPS
+    gpsConfigCopy = *gpsConfig();
+#endif
+#ifdef NAV
+    positionEstimationConfigCopy = *positionEstimationConfig();
+    navConfigCopy = *navConfig();
+#endif
+#ifdef TELEMETRY
+    telemetryConfigCopy = *telemetryConfig();
+#endif
+    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
+        modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
+    }
+    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
+        adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
+    }
+#ifdef LED_STRIP
+    ledStripConfigCopy = *ledStripConfig();
+#endif
+#ifdef OSD
+    osdConfigCopy = *osdConfig();
+#endif
+    systemConfigCopy = *systemConfig();
+#ifdef BEEPER
+    beeperConfigCopy = *beeperConfig();
+#endif
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
+    }
+    pidProfileCopy = *pidProfile();
+}
+
+static void restoreConfigs(void)
+{
+    *featureConfigMutable() = featureConfigCopy;
+    *gyroConfigMutable() = gyroConfigCopy;
+    *accelerometerConfigMutable() = accelerometerConfigCopy;
+#ifdef MAG
+    *compassConfigMutable() = compassConfigCopy;
+#endif
+#ifdef BARO
+    *barometerConfigMutable() = barometerConfigCopy;
+#endif
+#ifdef PITOT
+    *pitotmeterConfigMutable() = pitotmeterConfigCopy;
+#endif
+    *rxConfigMutable() = rxConfigCopy;
+    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
+        *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
+    }
+    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
+        *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
+    }
+#ifdef BLACKBOX
+    *blackboxConfigMutable() = blackboxConfigCopy;
+#endif
+    *motorConfigMutable() = motorConfigCopy;
+    *failsafeConfigMutable() = failsafeConfigCopy;
+    *boardAlignmentMutable() = boardAlignmentCopy;
+#ifdef USE_SERVOS
+    *servoConfigMutable() = servoConfigCopy;
+    *gimbalConfigMutable() = gimbalConfigCopy;
+    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
+        *customServoMixersMutable(ii) = customServoMixersCopy[ii];
+    }
+    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
+        *servoParamsMutable(ii) = servoParamsCopy[ii];
+    }
+#endif
+    *batteryConfigMutable() = batteryConfigCopy;
+    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
+        *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
+    }
+    *mixerConfigMutable() = mixerConfigCopy;
+    *flight3DConfigMutable() = flight3DConfigCopy;
+    *serialConfigMutable() = serialConfigCopy;
+    *imuConfigMutable() = imuConfigCopy;
+    *rcControlsConfigMutable() = rcControlsConfigCopy;
+    *armingConfigMutable() = armingConfigCopy;
+#ifdef GPS
+    *gpsConfigMutable() = gpsConfigCopy;
+#endif
+#ifdef NAV
+    *positionEstimationConfigMutable() = positionEstimationConfigCopy;
+    *navConfigMutable() = navConfigCopy;
+#endif
+#ifdef TELEMETRY
+    *telemetryConfigMutable() = telemetryConfigCopy;
+#endif
+    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
+        *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
+    }
+    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
+        *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
+    }
+#ifdef LED_STRIP
+    *ledStripConfigMutable() = ledStripConfigCopy;
+#endif
+#ifdef OSD
+    *osdConfigMutable() = osdConfigCopy;
+#endif
+    *systemConfigMutable() = systemConfigCopy;
+#ifdef BEEPER
+    *beeperConfigMutable() = beeperConfigCopy;
+#endif
+    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+        *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
+    }
+    *pidProfileMutable() = pidProfileCopy;
+}
+
 static void printConfig(const char *cmdline, bool doDiff)
 {
     uint8_t dumpMask = DUMP_MASTER;
@@ -3500,22 +3497,21 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const uint8_t activeProfile = getCurrentProfileIndex();
-            for (uint32_t profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
-                cliDumpProfile(profileCount, dumpMask);
+            const int activeProfile = getCurrentProfileIndex();
+            for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
+                cliDumpProfile(ii, dumpMask);
             }
-
-            changeProfile(activeProfile);
+            setProfile(activeProfile);
             cliPrintHashLine("restore original profile selection");
-            cliProfile(NULL);
+            cliPrintf("profile %d\r\n", getCurrentProfileIndex());
 
-            uint8_t currentRateIndex = getCurrentControlRateProfile();
-            for (uint32_t rateCount = 0; rateCount<MAX_CONTROL_RATE_PROFILE_COUNT; rateCount++) {
-                cliDumpRateProfile(rateCount, dumpMask);
+            const int currentRateIndex = getCurrentControlRateProfile();
+            for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
+                cliDumpRateProfile(ii, dumpMask);
             }
             changeControlRateProfile(currentRateIndex);
             cliPrintHashLine("restore original rateprofile selection");
-            cliRateProfile(NULL);
+            cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
             cliPrintHashLine("save configuration\r\nsave");
         } else {
             cliDumpProfile(getCurrentProfileIndex(), dumpMask);
@@ -3532,7 +3528,6 @@ static void printConfig(const char *cmdline, bool doDiff)
     }
     // restore configs from copies
     restoreConfigs();
-    writeEEPROM(); // !! TODO temporary measure
 }
 
 static void cliDump(char *cmdline)
