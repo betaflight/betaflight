@@ -37,6 +37,8 @@
 extern uint8_t __config_start;   // configured via linker script when building binaries.
 extern uint8_t __config_end;
 
+static uint16_t eepromConfigSize;
+
 typedef enum {
     CR_CLASSICATION_SYSTEM   = 0,
     CR_CLASSICATION_PROFILE1 = 1,
@@ -101,7 +103,7 @@ static uint8_t updateChecksum(uint8_t chk, const void *data, uint32_t length)
 }
 
 // Scan the EEPROM config. Returns true if the config is valid.
-static bool scanEEPROM(void)
+bool isEEPROMContentValid(void)
 {
     uint8_t chk = 0;
     const uint8_t *p = &__config_start;
@@ -135,7 +137,15 @@ static bool scanEEPROM(void)
     chk = updateChecksum(chk, footer, sizeof(*footer));
     p += sizeof(*footer);
     chk = ~chk;
-    return chk == *p;
+    const uint8_t checkSum = *p;
+    p += sizeof(checkSum);
+    eepromConfigSize = p - &__config_start;
+    return chk == checkSum;
+}
+
+uint16_t getEEPROMConfigSize(void)
+{
+    return eepromConfigSize;
 }
 
 // find config record for reg + classification (profile info) in EEPROM
@@ -186,11 +196,6 @@ bool loadEEPROM(void)
         }
     }
     return true;
-}
-
-bool isEEPROMContentValid(void)
-{
-    return scanEEPROM();
 }
 
 static bool writeSettingsToEEPROM(void)
