@@ -167,8 +167,6 @@ PG_RESET_TEMPLATE(ibusTelemetryConfig_t, ibusTelemetryConfig,
                  );
 */
 
-#define IBUS_TASK_PERIOD_US (1000)
-
 #define IBUS_UART_MODE     (MODE_RXTX)
 #define IBUS_BAUDRATE      (115200)
 #define IBUS_CYCLE_TIME_MS (8)
@@ -289,7 +287,7 @@ static void dispatchMeasurementReply(ibusAddress_t address)
     switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
         value = getVbat() * 10;
-        if (ibusTelemetryConfig()->report_cell_voltage) {
+        if (telemetryConfig()->ibus_report_cell_voltage) {
             value /= batteryCellCount;
         }
         sendIbusMeasurement(address, value);
@@ -385,7 +383,7 @@ bool checkIbusTelemetryState(void)
     }
 
     if (newTelemetryEnabledValue) {
-        rescheduleTask(TASK_TELEMETRY, IBUS_TASK_PERIOD_US);
+        rescheduleTask(TASK_TELEMETRY, 1000000/telemetryConfig()->ibus_task_freq ); //convert from Hz to us
         configureIbusTelemetryPort();
     } else {
         freeIbusTelemetryPort();
