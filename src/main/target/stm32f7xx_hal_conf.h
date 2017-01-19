@@ -5,7 +5,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -72,6 +72,7 @@
 /* #define HAL_RTC_MODULE_ENABLED   */
 /* #define HAL_SAI_MODULE_ENABLED   */
 /* #define HAL_SD_MODULE_ENABLED   */
+/* #define HAL_MMC_MODULE_ENABLED   */
 /* #define HAL_SPDIFRX_MODULE_ENABLED   */
 #define HAL_SPI_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
@@ -86,6 +87,8 @@
 /* #define HAL_DSI_MODULE_ENABLED   */
 /* #define HAL_JPEG_MODULE_ENABLED   */
 /* #define HAL_MDIOS_MODULE_ENABLED   */
+/* #define HAL_SMBUS_MODULE_ENABLED   */
+/* #define HAL_MMC_MODULE_ENABLED   */
 #define HAL_GPIO_MODULE_ENABLED
 #define HAL_DMA_MODULE_ENABLED
 #define HAL_RCC_MODULE_ENABLED
@@ -355,6 +358,10 @@
  #include "stm32f7xx_hal_sd.h"
 #endif /* HAL_SD_MODULE_ENABLED */
 
+#ifdef HAL_MMC_MODULE_ENABLED
+ #include "stm32f7xx_hal_mmc.h"
+#endif /* HAL_MMC_MODULE_ENABLED */
+
 #ifdef HAL_SPDIFRX_MODULE_ENABLED
  #include "stm32f7xx_hal_spdifrx.h"
 #endif /* HAL_SPDIFRX_MODULE_ENABLED */
@@ -410,6 +417,14 @@
 #ifdef HAL_MDIOS_MODULE_ENABLED
  #include "stm32f7xx_hal_mdios.h"
 #endif /* HAL_MDIOS_MODULE_ENABLED */
+
+#ifdef HAL_SMBUS_MODULE_ENABLED
+ #include "stm32f7xx_hal_smbus.h"
+#endif /* HAL_SMBUS_MODULE_ENABLED */
+
+#ifdef HAL_MMC_MODULE_ENABLED
+ #include "stm32f7xx_hal_mmc.h"
+#endif /* HAL_MMC_MODULE_ENABLED */
 
 /* Exported macro ------------------------------------------------------------*/
 #ifdef  USE_FULL_ASSERT
