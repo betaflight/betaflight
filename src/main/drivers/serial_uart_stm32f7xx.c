@@ -30,6 +30,12 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
+{
+    // F7 isn't converted yet.
+    UNUSED(pSerialPinConfig);
+}
+
 static void handleUsartTxDma(uartPort_t *s);
 
 #define UART_RX_BUFFER_SIZE UART1_RX_BUFFER_SIZE

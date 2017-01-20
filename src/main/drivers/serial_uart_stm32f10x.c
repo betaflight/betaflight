@@ -51,6 +51,8 @@ static uartPort_t uartPort3;
 
 void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 {
+    // F1 isn't converted yet.
+    UNUSED(pSerialPinConfig);
 }
 
 void uartIrqCallback(uartPort_t *s)
