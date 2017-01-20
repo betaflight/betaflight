@@ -1218,10 +1218,12 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = telemetryConfig();
         break;
 #endif
+#ifdef LED_STRIP
     case PG_LED_STRIP_CONFIG:
         ret.currentConfig = &ledStripConfigCopy;
         ret.defaultConfig = ledStripConfig();
         break;
+#endif
 /*  something wrong with system_config
      case PG_SYSTEM_CONFIG:
         ret.currentConfig = &systemConfigCopy;
