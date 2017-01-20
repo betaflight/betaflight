@@ -22,10 +22,10 @@
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 
-#define SOFTSERIAL_MULTI_TIMER_DEBUG
-
 #include "build/build_config.h"
 #include "build/atomic.h"
+
+#include "build/debug.h"
 
 #include "common/utils.h"
 
@@ -253,9 +253,8 @@ serialPort_t *openSoftSerial(softSerialPortIndex_e portIndex, serialReceiveCallb
         // If RX is on a different timer from TX, or TX doesn't exist,
         // then initialize it's own timer.
         if (!(options & MODE_TX) || (softSerial->txTimerHardware->tim != softSerial->rxTimerHardware->tim)) {
-            // XXX Should initialize it as TX first, to set up
-            // XXX onSerialTimer() interrupt handler.
-            serialTimerConfigure(softSerial->rxTimerHardware, baud);
+            // Should initialize it as TX first, to set up onSerialTimer() interrupt handler.
+            serialTimerTxConfig(softSerial->rxTimerHardware, portIndex, baud);
         }
 
         serialTimerRxConfig(softSerial->rxTimerHardware, portIndex, options);
@@ -351,6 +350,8 @@ void extractAndStoreRxByte(softSerial_t *softSerial)
 
     uint8_t rxByte = (softSerial->internalRxBuffer >> 1) & 0xFF;
 
+debug[2] = rxByte;
+
     if (softSerial->port.rxCallback) {
         softSerial->port.rxCallback(rxByte);
     } else {
@@ -388,6 +389,7 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     UNUSED(capture);
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, timerCb);
 
+debug[0]++;
     if (softSerial->port.mode & MODE_TX)
         processTxState(softSerial);
 
@@ -398,6 +400,7 @@ void onSerialTimer(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 {
     UNUSED(capture);
+debug[1]++;
 
     softSerial_t *softSerial = container_of(cbRec, softSerial_t, edgeCb);
     bool inverted = softSerial->port.options & SERIAL_INVERTED;
