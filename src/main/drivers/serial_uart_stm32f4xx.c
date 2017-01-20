@@ -61,8 +61,8 @@ typedef struct uartDevice_s {
     uartPinPair_t pinPair[UART_PINPAIR_COUNT];
     ioTag_t rx;
     ioTag_t tx;
-    volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE]; // XXX Waste if not configured...
-    volatile uint8_t txBuffer[UART_TX_BUFFER_SIZE]; // XXX Ditto
+    volatile uint8_t *rxBuffer;
+    volatile uint8_t *txBuffer;
     rccPeriphTag_t rcc;
     uint8_t af;
     uint8_t rxIrq;
@@ -244,7 +244,15 @@ static uartDevice_t uartHardware[] = {
     },
 };
 
-static uartDevice_t* uartHardwareMap[6];
+static uartDevice_t* uartHardwareMap[ARRAYLEN(uartHardware)];
+
+// XXX What a waste...
+// XXX These could be left inside the serialUARTx() function,
+// XXX but they will eventually go away...
+// XXX ARRAYLEN(uartHardware) is overkill; What was the number (count) of UART serial ports???
+
+static volatile uint8_t rxBuffers[UART_RX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
+static volatile uint8_t txBuffers[UART_TX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
 
 void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 {
@@ -258,6 +266,8 @@ void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
                     && uartDev->pinPair[pair].tx == pSerialPinConfig->ioTagTx[index]) {
                 uartDev->rx = uartDev->pinPair[pair].rx;
                 uartDev->tx = uartDev->pinPair[pair].tx;
+                uartDev->rxBuffer = &rxBuffers[index * UART_RX_BUFFER_SIZE];
+                uartDev->txBuffer = &txBuffers[index * UART_TX_BUFFER_SIZE];
                 uartHardwareMap[index] = uartDev;
 
                 break;
