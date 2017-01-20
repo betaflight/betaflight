@@ -385,6 +385,7 @@ typedef enum {
     TABLE_OSD,
 #endif
     TABLE_DEBUG,
+    LOOKUP_TABLE_COUNT
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -435,8 +436,8 @@ static const lookupTableEntry_t lookupTables[] = {
 #endif
 #ifdef OSD
     { lookupTableOsdType, sizeof(lookupTableOsdType) / sizeof(char *) },
-    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
 #endif
+    { lookupTableDebug, sizeof(lookupTableDebug) / sizeof(char *) },
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -1102,148 +1103,179 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
 }
 
 typedef struct cliCurrentAndDefaultConfig_s {
-    const void *currentConfig;
-    const void *defaultConfig;
+    const void *currentConfig; // the copy
+    const void *defaultConfig; // the PG value as set by default
+    size_t size;
 } cliCurrentAndDefaultConfig_t;
 
 static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn)
 {
     static cliCurrentAndDefaultConfig_t ret;
+    ret.size = 0;
+
     switch (pgn) {
     case PG_GYRO_CONFIG:
         ret.currentConfig = &gyroConfigCopy;
         ret.defaultConfig = gyroConfig();
+        ret.size = sizeof(gyroConfig_t);
         break;
     case PG_ACCELEROMETER_CONFIG:
         ret.currentConfig = &accelerometerConfigCopy;
         ret.defaultConfig = accelerometerConfig();
+        ret.size = sizeof(accelerometerConfig_t);
         break;
 #ifdef MAG
     case PG_COMPASS_CONFIG:
         ret.currentConfig = &compassConfigCopy;
         ret.defaultConfig = compassConfig();
+        ret.size = sizeof(compassConfig_t);
         break;
 #endif
 #ifdef BARO
     case PG_BAROMETER_CONFIG:
         ret.currentConfig = &barometerConfigCopy;
         ret.defaultConfig = barometerConfig();
+        ret.size = sizeof(barometerConfig_t);
         break;
 #endif
 #ifdef PITOT
     case PG_PITOTMETER_CONFIG:
         ret.currentConfig = &pitotmeterConfigCopy;
         ret.defaultConfig = pitotmeterConfig();
+        ret.size = sizeof(pitotmeterConfig_t);
         break;
 #endif
     case PG_RX_CONFIG:
         ret.currentConfig = &rxConfigCopy;
         ret.defaultConfig = rxConfig();
+        ret.size = sizeof(rxConfig_t);
         break;
 #ifdef BLACKBOX
     case PG_BLACKBOX_CONFIG:
         ret.currentConfig = &blackboxConfigCopy;
         ret.defaultConfig = blackboxConfig();
+        ret.size = sizeof(blackboxConfig_t);
         break;
 #endif
     case PG_MOTOR_CONFIG:
         ret.currentConfig = &motorConfigCopy;
         ret.defaultConfig = motorConfig();
+        ret.size = sizeof(motorConfig_t);
         break;
     case PG_FAILSAFE_CONFIG:
         ret.currentConfig = &failsafeConfigCopy;
         ret.defaultConfig = failsafeConfig();
+        ret.size = sizeof(failsafeConfig_t);
         break;
     case PG_BOARD_ALIGNMENT:
         ret.currentConfig = &boardAlignmentCopy;
         ret.defaultConfig = boardAlignment();
+        ret.size = sizeof(boardAlignment_t);
         break;
     case PG_MIXER_CONFIG:
         ret.currentConfig = &mixerConfigCopy;
         ret.defaultConfig = mixerConfig();
+        ret.size = sizeof(mixerConfig_t);
         break;
     case PG_MOTOR_3D_CONFIG:
         ret.currentConfig = &flight3DConfigCopy;
         ret.defaultConfig = flight3DConfig();
+        ret.size = sizeof(flight3DConfig_t);
         break;
 #ifdef USE_SERVOS
     case PG_SERVO_CONFIG:
         ret.currentConfig = &servoConfigCopy;
         ret.defaultConfig = servoConfig();
+        ret.size = sizeof(servoConfig_t);
         break;
     case PG_GIMBAL_CONFIG:
         ret.currentConfig = &gimbalConfigCopy;
         ret.defaultConfig = gimbalConfig();
+        ret.size = sizeof(gimbalConfig_t);
         break;
 #endif
     case PG_BATTERY_CONFIG:
         ret.currentConfig = &batteryConfigCopy;
         ret.defaultConfig = batteryConfig();
+        ret.size = sizeof(batteryConfig_t);
         break;
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();
+        ret.size = sizeof(serialConfig_t);
         break;
     case PG_IMU_CONFIG:
         ret.currentConfig = &imuConfigCopy;
         ret.defaultConfig = imuConfig();
+        ret.size = sizeof(imuConfig_t);
         break;
     case PG_RC_CONTROLS_CONFIG:
         ret.currentConfig = &rcControlsConfigCopy;
         ret.defaultConfig = rcControlsConfig();
+        ret.size = sizeof(rcControlsConfig_t);
         break;
     case PG_ARMING_CONFIG:
         ret.currentConfig = &armingConfigCopy;
         ret.defaultConfig = armingConfig();
+        ret.size = sizeof(armingConfig_t);
         break;
 #ifdef GPS
     case PG_GPS_CONFIG:
         ret.currentConfig = &gpsConfigCopy;
         ret.defaultConfig = gpsConfig();
+        ret.size = sizeof(gpsConfig_t);
         break;
 #endif
 #ifdef NAV
     case PG_POSITION_ESTIMATION_CONFIG:
         ret.currentConfig = &positionEstimationConfigCopy;
         ret.defaultConfig = positionEstimationConfig();
+        ret.size = sizeof(positionEstimationConfig_t);
         break;
     case PG_NAV_CONFIG:
         ret.currentConfig = &navConfigCopy;
         ret.defaultConfig = navConfig();
+        ret.size = sizeof(navConfig_t);
         break;
 #endif
 #ifdef TELEMETRY
     case PG_TELEMETRY_CONFIG:
         ret.currentConfig = &telemetryConfigCopy;
         ret.defaultConfig = telemetryConfig();
+        ret.size = sizeof(telemetryConfig_t);
         break;
 #endif
 #ifdef LED_STRIP
     case PG_LED_STRIP_CONFIG:
         ret.currentConfig = &ledStripConfigCopy;
         ret.defaultConfig = ledStripConfig();
+        ret.size = sizeof(ledStripConfig_t);
         break;
 #endif
-/*  something wrong with system_config
      case PG_SYSTEM_CONFIG:
         ret.currentConfig = &systemConfigCopy;
         ret.defaultConfig = systemConfig();
-        break;*/
+        ret.size = sizeof(systemConfig_t);
+        break;
     case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
         ret.currentConfig = &modeActivationOperatorConfig;
         ret.defaultConfig = modeActivationOperatorConfig();
+        ret.size = sizeof(modeActivationOperatorConfig_t);
         break;
     case PG_CONTROL_RATE_PROFILES:
         ret.currentConfig = controlRateProfilesCopy;
         ret.defaultConfig = controlRateProfiles(0);
+        ret.size = sizeof(controlRateConfig_t) * MAX_CONTROL_RATE_PROFILE_COUNT;
         break;
     case PG_PID_PROFILE:
         ret.currentConfig = &pidProfileCopy;
         ret.defaultConfig = pidProfile();
+        ret.size = sizeof(pidProfile_t);
         break;
     default:
         ret.currentConfig = NULL;
         ret.defaultConfig = NULL;
+        ret.size = 0;
         break;
     }
     return &ret;
@@ -1253,7 +1285,7 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
     const char *format = "set %s = ";
     const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
-    if (config->currentConfig == NULL || config->defaultConfig == NULL) {
+    if (config->currentConfig == NULL || config->defaultConfig == NULL || config->size == 0) {
         // has not been set up properly
         cliPrintf("VALUE %s HAS NOT BEEN SET UP CORECTLY\r\n", value->name);
         return;
@@ -3366,34 +3398,25 @@ static void cliResource(char *cmdline)
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
-    featureConfigCopy = *featureConfig();
-    gyroConfigCopy = *gyroConfig();
-    accelerometerConfigCopy = *accelerometerConfig();
-#ifdef MAG
-    compassConfigCopy = *compassConfig();
-#endif
-#ifdef BARO
-    barometerConfigCopy = *barometerConfig();
-#endif
-#ifdef PITOT
-    pitotmeterConfigCopy = *pitotmeterConfig();
-#endif
-    rxConfigCopy = *rxConfig();
+    for (int ii = PG_CF_START; ii <= PG_CF_END; ++ii) {
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
+        if (cliCurrentAndDefaultConfig->size) {
+            memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, (uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, cliCurrentAndDefaultConfig->size);
+        }
+    }
+    for (int ii = PG_INAV_START; ii <= PG_INAV_END; ++ii) {
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
+        if (cliCurrentAndDefaultConfig->size) {
+            memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, (uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, cliCurrentAndDefaultConfig->size);
+        }
+    }
     for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
         rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
     }
     for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
         rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
     }
-#ifdef BLACKBOX
-    blackboxConfigCopy = *blackboxConfig();
-#endif
-    motorConfigCopy = *motorConfig();
-    failsafeConfigCopy = *failsafeConfig();
-    boardAlignmentCopy = *boardAlignment();
 #ifdef USE_SERVOS
-    servoConfigCopy = *servoConfig();
-    gimbalConfigCopy = *gimbalConfig();
     for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
         customServoMixersCopy[ii] = *customServoMixers(ii);
     }
@@ -3401,78 +3424,41 @@ static void backupConfigs(void)
         servoParamsCopy[ii] = *servoParams(ii);
     }
 #endif
-    batteryConfigCopy = *batteryConfig();
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
         customMotorMixerCopy[ii] = *customMotorMixer(ii);
     }
-    mixerConfigCopy = *mixerConfig();
-    flight3DConfigCopy = *flight3DConfig();
-    serialConfigCopy = *serialConfig();
-    imuConfigCopy = *imuConfig();
-    rcControlsConfigCopy = *rcControlsConfig();
-    armingConfigCopy = *armingConfig();
-#ifdef GPS
-    gpsConfigCopy = *gpsConfig();
-#endif
-#ifdef NAV
-    positionEstimationConfigCopy = *positionEstimationConfig();
-    navConfigCopy = *navConfig();
-#endif
-#ifdef TELEMETRY
-    telemetryConfigCopy = *telemetryConfig();
-#endif
     for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
         modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
     }
     for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
         adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
     }
-#ifdef LED_STRIP
-    ledStripConfigCopy = *ledStripConfig();
-#endif
-#ifdef OSD
-    osdConfigCopy = *osdConfig();
-#endif
-    systemConfigCopy = *systemConfig();
-#ifdef BEEPER
-    beeperConfigCopy = *beeperConfig();
-#endif
     for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
         controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
     }
-    pidProfileCopy = *pidProfile();
 }
 
 static void restoreConfigs(void)
 {
-    *featureConfigMutable() = featureConfigCopy;
-    *gyroConfigMutable() = gyroConfigCopy;
-    *accelerometerConfigMutable() = accelerometerConfigCopy;
-#ifdef MAG
-    *compassConfigMutable() = compassConfigCopy;
-#endif
-#ifdef BARO
-    *barometerConfigMutable() = barometerConfigCopy;
-#endif
-#ifdef PITOT
-    *pitotmeterConfigMutable() = pitotmeterConfigCopy;
-#endif
-    *rxConfigMutable() = rxConfigCopy;
+    for (int ii = PG_CF_START; ii <= PG_CF_END; ++ii) {
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
+        if (cliCurrentAndDefaultConfig->size) {
+            memcpy((uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, cliCurrentAndDefaultConfig->size);
+        }
+    }
+    for (int ii = PG_INAV_START; ii <= PG_INAV_END; ++ii) {
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
+        if (cliCurrentAndDefaultConfig->size) {
+            memcpy((uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, cliCurrentAndDefaultConfig->size);
+        }
+    }
     for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
         *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
     }
     for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
         *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
     }
-#ifdef BLACKBOX
-    *blackboxConfigMutable() = blackboxConfigCopy;
-#endif
-    *motorConfigMutable() = motorConfigCopy;
-    *failsafeConfigMutable() = failsafeConfigCopy;
-    *boardAlignmentMutable() = boardAlignmentCopy;
 #ifdef USE_SERVOS
-    *servoConfigMutable() = servoConfigCopy;
-    *gimbalConfigMutable() = gimbalConfigCopy;
     for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
         *customServoMixersMutable(ii) = customServoMixersCopy[ii];
     }
@@ -3480,46 +3466,18 @@ static void restoreConfigs(void)
         *servoParamsMutable(ii) = servoParamsCopy[ii];
     }
 #endif
-    *batteryConfigMutable() = batteryConfigCopy;
     for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
         *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
     }
-    *mixerConfigMutable() = mixerConfigCopy;
-    *flight3DConfigMutable() = flight3DConfigCopy;
-    *serialConfigMutable() = serialConfigCopy;
-    *imuConfigMutable() = imuConfigCopy;
-    *rcControlsConfigMutable() = rcControlsConfigCopy;
-    *armingConfigMutable() = armingConfigCopy;
-#ifdef GPS
-    *gpsConfigMutable() = gpsConfigCopy;
-#endif
-#ifdef NAV
-    *positionEstimationConfigMutable() = positionEstimationConfigCopy;
-    *navConfigMutable() = navConfigCopy;
-#endif
-#ifdef TELEMETRY
-    *telemetryConfigMutable() = telemetryConfigCopy;
-#endif
     for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
         *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
     }
     for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
         *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
     }
-#ifdef LED_STRIP
-    *ledStripConfigMutable() = ledStripConfigCopy;
-#endif
-#ifdef OSD
-    *osdConfigMutable() = osdConfigCopy;
-#endif
-    *systemConfigMutable() = systemConfigCopy;
-#ifdef BEEPER
-    *beeperConfigMutable() = beeperConfigCopy;
-#endif
     for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
         *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
     }
-    *pidProfileMutable() = pidProfileCopy;
 }
 
 static void printConfig(const char *cmdline, bool doDiff)
@@ -3933,5 +3891,6 @@ void cliEnter(serialPort_t *serialPort)
 void cliInit(const serialConfig_t *serialConfig)
 {
     UNUSED(serialConfig);
+    BUILD_BUG_ON(LOOKUP_TABLE_COUNT != ARRAYLEN(lookupTables));
 }
 #endif// USE_CLI
