@@ -41,6 +41,14 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
+typedef enum UARTDevice {
+    UARTDEV_1 = 0,
+    UARTDEV_2 = 1,
+    UARTDEV_3 = 2,
+    UARTDEV_4 = 3,
+    UARTDEV_5 = 4,
+} UARTDevice;
+
 typedef struct uartPinPair_s {
     ioTag_t rx;
     ioTag_t tx;
@@ -234,8 +242,8 @@ static uartDevice_t *uartHardwareMap[ARRAYLEN(uartHardware)];
 // XXX but they will eventually go away...
 // XXX ARRAYLEN(uartHardware) is overkill; What was the number (count) of UART serial ports???
 
-static volatile uint8_t rxBuffers[UART_RX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
-static volatile uint8_t txBuffers[UART_TX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
+static volatile uint8_t rxBuffers[ARRAYLEN(uartHardware)][UART_RX_BUFFER_SIZE];
+static volatile uint8_t txBuffers[ARRAYLEN(uartHardware)][UART_TX_BUFFER_SIZE];
 
 void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 {
@@ -249,8 +257,8 @@ void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
                     && uartDev->pinPair[pair].tx == pSerialPinConfig->ioTagTx[index]) {
                 uartDev->rx = uartDev->pinPair[pair].rx;
                 uartDev->tx = uartDev->pinPair[pair].tx;
-                uartDev->rxBuffer = &rxBuffers[index * UART_RX_BUFFER_SIZE];
-                uartDev->txBuffer = &txBuffers[index * UART_TX_BUFFER_SIZE];
+                uartDev->rxBuffer = rxBuffers[index];
+                uartDev->txBuffer = txBuffers[index];
                 uartHardwareMap[index] = uartDev;
 
                 break;
@@ -397,59 +405,59 @@ uartPort_t *serialUART(int device, uint32_t baudRate, portMode_t mode, portOptio
 #ifdef USE_UART1
 uartPort_t *serialUART1(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    return serialUART(0, baudRate, mode, options);
+    return serialUART(UARTDEV_1, baudRate, mode, options);
 }
 
 void USART1_IRQHandler(void)
 {
-    usartIrqHandler(&(uartHardwareMap[0]->port));
+    usartIrqHandler(&(uartHardwareMap[UARTDEV_1]->port));
 }
 #endif
 
 #ifdef USE_UART2
 uartPort_t *serialUART2(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    return serialUART(1, baudRate, mode, options);
+    return serialUART(UARTDEV_2, baudRate, mode, options);
 }
 
 void USART2_IRQHandler(void)
 {
-    usartIrqHandler(&(uartHardwareMap[1]->port));
+    usartIrqHandler(&(uartHardwareMap[UARTDEV_2]->port));
 }
 #endif
 
 #ifdef USE_UART3
 uartPort_t *serialUART3(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    return serialUART(2, baudRate, mode, options);
+    return serialUART(UARTDEV_3, baudRate, mode, options);
 }
 
 void USART3_IRQHandler(void)
 {
-    usartIrqHandler(&(uartHardwareMap[2]->port));
+    usartIrqHandler(&(uartHardwareMap[UARTDEV_3]->port));
 }
 #endif
 
 #ifdef USE_UART4
 uartPort_t *serialUART4(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    return serialUART(3, baudRate, mode, options);
+    return serialUART(UARTDEV_4, baudRate, mode, options);
 }
 
 void UART4_IRQHandler(void)
 {
-    usartIrqHandler(&(uartHardwareMap[3]->port));
+    usartIrqHandler(&(uartHardwareMap[UARTDEV_4]->port));
 }
 #endif
 
 #ifdef USE_UART5
 uartPort_t *serialUART5(uint32_t baudRate, portMode_t mode, portOptions_t options)
 {
-    return serialUART(4, baudRate, mode, options);
+    return serialUART(UARTDEV_5, baudRate, mode, options);
 }
 
 void UART5_IRQHandler(void)
 {
-    usartIrqHandler(&(uartHardwareMap[4]->port));
+    usartIrqHandler(&(uartHardwareMap[UARTDEV_5]->port));
 }
 #endif
