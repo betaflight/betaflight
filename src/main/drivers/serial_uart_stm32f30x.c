@@ -124,6 +124,9 @@ typedef struct uartDevice_s {
 # define UART4_TX_DMA 0
 #endif
 
+#define UART_RX_BUFFER_SIZE 256
+#define UART_TX_BUFFER_SIZE 256
+
 static uartDevice_t uartHardware[] = {
     // USART1
     // PA10,PA9
@@ -195,7 +198,7 @@ static uartDevice_t uartHardware[] = {
         .rxPriority = NVIC_PRIO_SERIALUART3_RXDMA,
     },
 
-    // UART4 XXX Not tested (yet!?)
+    // UART4 XXX Not tested (yet!?) Need 303RC, e.g. LUX for testing
     // PC11,PC10
     {
         .dev = UART4,
@@ -213,7 +216,7 @@ static uartDevice_t uartHardware[] = {
         .rxPriority = NVIC_PRIO_SERIALUART4_RXDMA,
     },
 
-    // UART5 XXX Not tested (yet!?)
+    // UART5 XXX Not tested (yet!?) Need 303RC; e.g. LUX for testing
     // PD2,PC12
     {
         .dev = UART5,
@@ -233,9 +236,6 @@ static uartDevice_t uartHardware[] = {
 };
 
 static uartDevice_t *uartHardwareMap[ARRAYLEN(uartHardware)];
-
-#define UART_RX_BUFFER_SIZE 256
-#define UART_TX_BUFFER_SIZE 256
 
 // XXX What a waste...
 // XXX These could be left inside the serialUARTx() function,

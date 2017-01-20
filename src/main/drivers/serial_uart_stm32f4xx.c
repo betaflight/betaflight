@@ -251,8 +251,8 @@ static uartDevice_t* uartHardwareMap[ARRAYLEN(uartHardware)];
 // XXX but they will eventually go away...
 // XXX ARRAYLEN(uartHardware) is overkill; What was the number (count) of UART serial ports???
 
-static volatile uint8_t rxBuffers[UART_RX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
-static volatile uint8_t txBuffers[UART_TX_BUFFER_SIZE * ARRAYLEN(uartHardware)];
+static volatile uint8_t rxBuffers[ARRAYLEN(uartHardware)][UART_RX_BUFFER_SIZE];
+static volatile uint8_t txBuffers[ARRAYLEN(uartHardware)][UART_TX_BUFFER_SIZE];
 
 void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 {
@@ -266,8 +266,8 @@ void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
                     && uartDev->pinPair[pair].tx == pSerialPinConfig->ioTagTx[index]) {
                 uartDev->rx = uartDev->pinPair[pair].rx;
                 uartDev->tx = uartDev->pinPair[pair].tx;
-                uartDev->rxBuffer = &rxBuffers[index * UART_RX_BUFFER_SIZE];
-                uartDev->txBuffer = &txBuffers[index * UART_TX_BUFFER_SIZE];
+                uartDev->rxBuffer = rxBuffers[index];
+                uartDev->txBuffer = txBuffers[index];
                 uartHardwareMap[index] = uartDev;
 
                 break;
