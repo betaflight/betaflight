@@ -16,6 +16,7 @@
  */
 
 // FC configuration
+#define PG_CF_START 1
 #define PG_FAILSAFE_CONFIG 1
 #define PG_BOARD_ALIGNMENT 2
 #define PG_GIMBAL_CONFIG 3
@@ -72,19 +73,21 @@
 #define PG_SERVO_CONFIG 52
 //#define PG_IBUS_TELEMETRY_CONFIG 53
 //#define PG_VTX_CONFIG 54
-
+#define PG_CF_END 52
 
 // Driver configuration
 //#define PG_DRIVER_PWM_RX_CONFIG 100
 //#define PG_DRIVER_FLASHCHIP_CONFIG 101
 
 // iNav specific parameter group ids start at 1000
+#define PG_INAV_START 1000
 #define PG_PITOTMETER_CONFIG 1000
 #define PG_POSITION_ESTIMATION_CONFIG 1001
 #define PG_NAV_CONFIG 1002
 #define PG_MODE_ACTIVATION_OPERATOR_CONFIG 1003
 #define PG_OSD_CONFIG 1004
 #define PG_BEEPER_CONFIG 1005
+#define PG_INAV_END 1005
 
 // OSD configuration (subject to change)
 //#define PG_OSD_FONT_CONFIG 2047
