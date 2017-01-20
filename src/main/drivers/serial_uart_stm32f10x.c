@@ -49,6 +49,10 @@ static uartPort_t uartPort2;
 static uartPort_t uartPort3;
 #endif
 
+void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
+{
+}
+
 void uartIrqCallback(uartPort_t *s)
 {
     uint16_t SR = s->USARTx->SR;

@@ -50,13 +50,15 @@ typedef struct uartPinPair_s {
     ioTag_t tx;
 } uartPinPair_t;
 
+#define UART_PINPAIR_COUNT 3
+
 typedef struct uartDevice_s {
     USART_TypeDef* dev;
     uartPort_t port;
     uint32_t DMAChannel;
     DMA_Stream_TypeDef *txDMAStream;
     DMA_Stream_TypeDef *rxDMAStream;
-    uartPinPair_t pinPair[3];
+    uartPinPair_t pinPair[UART_PINPAIR_COUNT];
     ioTag_t rx;
     ioTag_t tx;
     volatile uint8_t rxBuffer[UART_RX_BUFFER_SIZE]; // XXX Waste if not configured...
@@ -67,6 +69,9 @@ typedef struct uartDevice_s {
     uint32_t txPriority;
     uint32_t rxPriority;
 } uartDevice_t;
+
+
+// XXX Will DMA eventually be configurable?
 
 #ifdef USE_UART1_RX_DMA
 # define UART1_RX_DMA_STREAM DMA2_Stream5
@@ -143,7 +148,6 @@ static uartDevice_t uartHardware[] = {
         .pinPair = {
             { DEFIO_TAG_E(PA10), DEFIO_TAG_E(PA9) },
             { DEFIO_TAG_E(PB7), DEFIO_TAG_E(PB6) },
-            { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -161,7 +165,6 @@ static uartDevice_t uartHardware[] = {
         .pinPair = {
             { DEFIO_TAG_E(PA3), DEFIO_TAG_E(PA2) },
             { DEFIO_TAG_E(PD6), DEFIO_TAG_E(PD5) },
-            { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -197,7 +200,6 @@ static uartDevice_t uartHardware[] = {
         .pinPair = {
             { DEFIO_TAG_E(PA1), DEFIO_TAG_E(PA0) },
             { DEFIO_TAG_E(PC11), DEFIO_TAG_E(PC10) },
-            { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -214,8 +216,6 @@ static uartDevice_t uartHardware[] = {
         .txDMAStream = UART5_TX_DMA_STREAM,
         .pinPair = {
             { DEFIO_TAG_E(PD2), DEFIO_TAG_E(PC12) },
-            { IO_TAG_NONE, IO_TAG_NONE },
-            { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -233,7 +233,6 @@ static uartDevice_t uartHardware[] = {
         .pinPair = {
             { DEFIO_TAG_E(PC7), DEFIO_TAG_E(PC6) },
             { DEFIO_TAG_E(PG9), DEFIO_TAG_E(PG14) },
-            { IO_TAG_NONE, IO_TAG_NONE }
         },
         .rx = IO_TAG_NONE,
         .tx = IO_TAG_NONE,
@@ -249,11 +248,11 @@ static uartDevice_t* uartHardwareMap[6];
 
 void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 {
-    memset(uartHardwareMap, 0, ARRAYLEN(uartHardwareMap));
+    memset(uartHardwareMap, 0, sizeof(uartHardwareMap));
 
     for (size_t index = 0 ; index < ARRAYLEN(uartHardware) ; index++) {
         uartDevice_t *uartDev = &uartHardware[index];
-        for (int pair = 0 ; pair < 3 ; pair++) {
+        for (int pair = 0 ; pair < UART_PINPAIR_COUNT ; pair++) {
 
             if (uartDev->pinPair[pair].rx == pSerialPinConfig->ioTagRx[index]
                     && uartDev->pinPair[pair].tx == pSerialPinConfig->ioTagTx[index]) {

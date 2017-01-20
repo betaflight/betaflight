@@ -26,3 +26,13 @@
 # undef VTX_SMARTAUDIO
 # undef VTX_TRAMP
 #endif
+
+#if defined(USE_SOFTSERIAL1) && defined(USE_SOFTSERIAL2)
+# define SOFTSERIAL_COUNT 2
+#elif !defined(USE_SOFTSERIAL1) && defined(USE_SOFTSERIAL2)
+# define SOFTSERIAL_COUNT 1
+#elif defined(USE_SOFTSERIAL1) && !defined(USE_SOFTSERIAL2)
+# define SOFTSERIAL_COUNT 1
+#else
+# define SOFTSERIAL_COUNT 0
+#endif
