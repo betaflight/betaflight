@@ -77,12 +77,12 @@ PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
 
 PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
 
-PG_REGISTER_ARR(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
+PG_REGISTER_ARR_WITH_RESET_FN(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
 
-void pgResetFn_servoParams(const servoParam_t *instance)
+void pgResetFn_servoParams(servoParam_t *instance)
 {
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        RESET_CONFIG(const servoParam_t, ((servoParam_t*)&instance[i]),
+        RESET_CONFIG(const servoParam_t, &instance[i],
             .min = DEFAULT_SERVO_MIN,
             .max = DEFAULT_SERVO_MAX,
             .middle = DEFAULT_SERVO_MIDDLE,
