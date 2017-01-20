@@ -150,7 +150,6 @@ static serialPortConfig_t *portConfig;
 
 static telemetryConfig_t *telemetryConfig;
 static bool smartPortTelemetryEnabled =  false;
-static portSharing_e smartPortPortSharing;
 
 char smartPortState = SPSTATE_UNINITIALIZED;
 static uint8_t smartPortHasRequest = 0;
@@ -306,20 +305,7 @@ void initSmartPortTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_SMARTPORT);
-    smartPortPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_SMARTPORT);
-}
 
-void freeSmartPortTelemetryPort(void)
-{
-    closeSerialPort(smartPortSerialPort);
-    smartPortSerialPort = NULL;
-
-    smartPortState = SPSTATE_UNINITIALIZED;
-    smartPortTelemetryEnabled = false;
-}
-
-void configureSmartPortTelemetryPort(void)
-{
     if (!portConfig) {
         return;
     }
@@ -348,19 +334,6 @@ void configureSmartPortTelemetryPort(void)
 bool canSendSmartPortTelemetry(void)
 {
     return smartPortSerialPort && (smartPortState == SPSTATE_INITIALIZED || smartPortState == SPSTATE_WORKING);
-}
-
-void checkSmartPortTelemetryState(void)
-{
-    bool newTelemetryEnabledValue = (smartPortPortSharing == PORTSHARING_NOT_SHARED);
-    if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
-        return;
-    }
-
-    if (newTelemetryEnabledValue)
-        configureSmartPortTelemetryPort();
-    else
-        freeSmartPortTelemetryPort();
 }
 
 static void initSmartPortMspReply(int16_t cmd)

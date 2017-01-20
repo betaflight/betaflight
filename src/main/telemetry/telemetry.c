@@ -116,12 +116,6 @@ void telemetryCheckState(void)
 #ifdef TELEMETRY_FRSKY
     checkFrSkyTelemetryState();
 #endif
-#ifdef TELEMETRY_HOTT
-    checkHoTTTelemetryState();
-#endif
-#ifdef TELEMETRY_SMARTPORT
-    checkSmartPortTelemetryState();
-#endif
 #ifdef TELEMETRY_LTM
     checkLtmTelemetryState();
 #endif

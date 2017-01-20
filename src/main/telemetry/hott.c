@@ -110,7 +110,6 @@ static serialPortConfig_t *portConfig;
 
 static telemetryConfig_t *telemetryConfig;
 static bool hottTelemetryEnabled =  false;
-static portSharing_e hottPortSharing;
 
 static HOTT_GPS_MSG_t hottGPSMessage;
 static HOTT_EAM_MSG_t hottEAMMessage;
@@ -282,27 +281,16 @@ static void hottSerialWrite(uint8_t c)
     serialWrite(hottPort, c);
 }
 
-void freeHoTTTelemetryPort(void)
-{
-    closeSerialPort(hottPort);
-    hottPort = NULL;
-    hottTelemetryEnabled = false;
-}
-
 void initHoTTTelemetry(telemetryConfig_t *initialTelemetryConfig)
 {
     telemetryConfig = initialTelemetryConfig;
     portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_HOTT);
-    hottPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_HOTT);
 
-    initialiseMessages();
-}
-
-void configureHoTTTelemetryPort(void)
-{
     if (!portConfig) {
         return;
     }
+
+    initialiseMessages();
 
     hottPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_HOTT, NULL, HOTT_BAUDRATE, HOTT_INITIAL_PORT_MODE, SERIAL_NOT_INVERTED);
 
@@ -480,20 +468,6 @@ static inline bool shouldCheckForHoTTRequest()
         return false;
     }
     return true;
-}
-
-void checkHoTTTelemetryState(void)
-{
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(hottPortSharing);
-
-    if (newTelemetryEnabledValue == hottTelemetryEnabled) {
-        return;
-    }
-
-    if (newTelemetryEnabledValue)
-        configureHoTTTelemetryPort();
-    else
-        freeHoTTTelemetryPort();
 }
 
 void handleHoTTTelemetry(timeUs_t currentTimeUs)
