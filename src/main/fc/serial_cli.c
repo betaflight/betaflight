@@ -118,7 +118,7 @@ extern uint8_t detectedSensors[SENSOR_INDEX_COUNT];
 
 static serialPort_t *cliPort;
 static bufWriter_t *cliWriter;
-static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 16];
+static uint8_t cliWriteBuffer[sizeof(*cliWriter) + 128];
 
 #if defined(USE_ASSERT)
 static void cliAssert(char *cmdline);
@@ -129,7 +129,7 @@ static void cliBootlog(char *cmdline);
 #endif
 
 // buffer
-static char cliBuffer[48];
+static char cliBuffer[64];
 static uint32_t bufferIndex = 0;
 
 static const char* const emptyName = "-";
@@ -855,8 +855,8 @@ static const clivalue_t valueTable[] = {
     { "async_mode",                 VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_ASYNC_MODE }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, asyncMode) },
 #endif
     { "throttle_tilt_comp_str",     VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0,  100 }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, throttle_tilt_compensation_strength) },
-    { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
     { "input_filtering_mode",       VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_SYSTEM_CONFIG, offsetof(systemConfig_t, pwmRxInputFilteringMode) },
+    { "mode_range_logic_operator",  VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_AUX_OPERATOR }, PG_MODE_ACTIVATION_OPERATOR_CONFIG, offsetof(modeActivationOperatorConfig_t, modeActivationOperator) },
 };
 
 static featureConfig_t featureConfigCopy;
@@ -926,16 +926,19 @@ static void cliPrint(const char *str)
     }
 }
 
-#ifdef CLI_MINIMAL_VERBOSITY
-#define cliPrintHashLine(str)
-#else
 static void cliPrintHashLine(const char *str)
 {
+    waitForSerialPortToFinishTransmitting(cliPort);
+    delay(10);
+    bufWriterFlush(cliWriter);
+#ifdef CLI_MINIMAL_VERBOSITY
+    UNUSED(str);
+#else
     cliPrint("\r\n# ");
     cliPrint(str);
     cliPrint("\r\n");
-}
 #endif
+}
 
 static void cliPutp(void *p, char ch)
 {
@@ -1098,84 +1101,209 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
     return result;
 }
 
-static void dumpPgValues(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn, const void *currentConfig, const void *defaultConfig)
+typedef struct cliCurrentAndDefaultConfig_s {
+    const void *currentConfig;
+    const void *defaultConfig;
+} cliCurrentAndDefaultConfig_t;
+
+static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn)
+{
+    static cliCurrentAndDefaultConfig_t ret;
+    switch (pgn) {
+    case PG_GYRO_CONFIG:
+        ret.currentConfig = &gyroConfigCopy;
+        ret.defaultConfig = gyroConfig();
+        break;
+    case PG_ACCELEROMETER_CONFIG:
+        ret.currentConfig = &accelerometerConfigCopy;
+        ret.defaultConfig = accelerometerConfig();
+        break;
+#ifdef MAG
+    case PG_COMPASS_CONFIG:
+        ret.currentConfig = &compassConfigCopy;
+        ret.defaultConfig = compassConfig();
+        break;
+#endif
+#ifdef BARO
+    case PG_BAROMETER_CONFIG:
+        ret.currentConfig = &barometerConfigCopy;
+        ret.defaultConfig = barometerConfig();
+        break;
+#endif
+#ifdef PITOT
+    case PG_PITOTMETER_CONFIG:
+        ret.currentConfig = &pitotmeterConfigCopy;
+        ret.defaultConfig = pitotmeterConfig();
+        break;
+#endif
+    case PG_RX_CONFIG:
+        ret.currentConfig = &rxConfigCopy;
+        ret.defaultConfig = rxConfig();
+        break;
+#ifdef BLACKBOX
+    case PG_BLACKBOX_CONFIG:
+        ret.currentConfig = &blackboxConfigCopy;
+        ret.defaultConfig = blackboxConfig();
+        break;
+#endif
+    case PG_MOTOR_CONFIG:
+        ret.currentConfig = &motorConfigCopy;
+        ret.defaultConfig = motorConfig();
+        break;
+    case PG_FAILSAFE_CONFIG:
+        ret.currentConfig = &failsafeConfigCopy;
+        ret.defaultConfig = failsafeConfig();
+        break;
+    case PG_BOARD_ALIGNMENT:
+        ret.currentConfig = &boardAlignmentCopy;
+        ret.defaultConfig = boardAlignment();
+        break;
+    case PG_MIXER_CONFIG:
+        ret.currentConfig = &mixerConfigCopy;
+        ret.defaultConfig = mixerConfig();
+        break;
+    case PG_MOTOR_3D_CONFIG:
+        ret.currentConfig = &flight3DConfigCopy;
+        ret.defaultConfig = flight3DConfig();
+        break;
+#ifdef USE_SERVOS
+    case PG_SERVO_CONFIG:
+        ret.currentConfig = &servoConfigCopy;
+        ret.defaultConfig = servoConfig();
+        break;
+    case PG_GIMBAL_CONFIG:
+        ret.currentConfig = &gimbalConfigCopy;
+        ret.defaultConfig = gimbalConfig();
+        break;
+#endif
+    case PG_BATTERY_CONFIG:
+        ret.currentConfig = &batteryConfigCopy;
+        ret.defaultConfig = batteryConfig();
+        break;
+    case PG_SERIAL_CONFIG:
+        ret.currentConfig = &serialConfigCopy;
+        ret.defaultConfig = serialConfig();
+        break;
+    case PG_IMU_CONFIG:
+        ret.currentConfig = &imuConfigCopy;
+        ret.defaultConfig = imuConfig();
+        break;
+    case PG_RC_CONTROLS_CONFIG:
+        ret.currentConfig = &rcControlsConfigCopy;
+        ret.defaultConfig = rcControlsConfig();
+        break;
+    case PG_ARMING_CONFIG:
+        ret.currentConfig = &armingConfigCopy;
+        ret.defaultConfig = armingConfig();
+        break;
+#ifdef GPS
+    case PG_GPS_CONFIG:
+        ret.currentConfig = &gpsConfigCopy;
+        ret.defaultConfig = gpsConfig();
+        break;
+#endif
+#ifdef NAV
+    case PG_POSITION_ESTIMATION_CONFIG:
+        ret.currentConfig = &positionEstimationConfigCopy;
+        ret.defaultConfig = positionEstimationConfig();
+        break;
+    case PG_NAV_CONFIG:
+        ret.currentConfig = &navConfigCopy;
+        ret.defaultConfig = navConfig();
+        break;
+#endif
+#ifdef TELEMETRY
+    case PG_TELEMETRY_CONFIG:
+        ret.currentConfig = &telemetryConfigCopy;
+        ret.defaultConfig = telemetryConfig();
+        break;
+#endif
+    case PG_LED_STRIP_CONFIG:
+        ret.currentConfig = &ledStripConfigCopy;
+        ret.defaultConfig = ledStripConfig();
+        break;
+/*  something wrong with system_config
+     case PG_SYSTEM_CONFIG:
+        ret.currentConfig = &systemConfigCopy;
+        ret.defaultConfig = systemConfig();
+        break;*/
+    case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
+        ret.currentConfig = &modeActivationOperatorConfig;
+        ret.defaultConfig = modeActivationOperatorConfig();
+        break;
+    case PG_CONTROL_RATE_PROFILES:
+        ret.currentConfig = controlRateProfilesCopy;
+        ret.defaultConfig = controlRateProfiles(0);
+        break;
+    case PG_PID_PROFILE:
+        ret.currentConfig = &pidProfileCopy;
+        ret.defaultConfig = pidProfile();
+        break;
+    default:
+        ret.currentConfig = NULL;
+        ret.defaultConfig = NULL;
+        break;
+    }
+    return &ret;
+}
+
+static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
     const char *format = "set %s = ";
+    const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
+    if (config->currentConfig == NULL || config->defaultConfig == NULL) {
+        // has not been set up properly
+        cliPrintf("VALUE %s HAS NOT BEEN SET UP CORECTLY\r\n", value->name);
+        return;
+    }
+    switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
+    case 0:
+        cliPrintf(format, value->name);
+        printValuePointer(value, (uint8_t*)config->currentConfig + value->offset, 0);
+        cliPrint("\r\n");
+        break;
+    case SHOW_DEFAULTS:
+        cliPrintf(format, value->name);
+        printValuePointer(value, (uint8_t*)config->defaultConfig + value->offset, 0);
+        cliPrint("\r\n");
+        break;
+    case DO_DIFF:
+        {
+            const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + value->offset, (uint8_t*)config->defaultConfig + value->offset);
+            if (!equalsDefault) {
+                cliPrintf(format, value->name);
+                printValuePointer(value, (uint8_t*)config->currentConfig + value->offset, 0);
+                cliPrint("\r\n");
+            }
+        }
+        break;
+    }
+}
+
+static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
+{
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         const clivalue_t *value = &valueTable[i];
-        if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
-            switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
-            case 0:
-                cliPrintf(format, valueTable[i].name);
-                printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
-                cliPrint("\r\n");
-                break;
-            case SHOW_DEFAULTS:
-                cliPrintf(format, valueTable[i].name);
-                printValuePointer(value, (uint8_t*)defaultConfig + value->offset, 0);
-                cliPrint("\r\n");
-                break;
-            case DO_DIFF:
-                {
-                    const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)currentConfig + value->offset, (uint8_t*)defaultConfig + value->offset);
-                    if (!equalsDefault) {
-                        cliPrintf(format, valueTable[i].name);
-                        printValuePointer(value, (uint8_t*)currentConfig + value->offset, 0);
-                        cliPrint("\r\n");
-                    }
-                }
-                break;
-            }
+        waitForSerialPortToFinishTransmitting(cliPort);
+        delay(10);
+        bufWriterFlush(cliWriter);
+        if ((value->type & VALUE_SECTION_MASK) == valueSection) {
+            dumpPgValue(value, dumpMask);
         }
     }
 }
 
-static void dumpValues(uint16_t valueSection, uint8_t dumpMask)
+static void dumpValue(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn)
 {
-    // gyroConfig() has been set to default, gyroConfigCopy contains current value
-    // this is horribly inefficient, but it does the job. !! TODO, refactor this so it passes through the valuetable just once
-    dumpPgValues(valueSection, dumpMask, PG_GYRO_CONFIG, &gyroConfigCopy, gyroConfig());
-    dumpPgValues(valueSection, dumpMask, PG_ACCELEROMETER_CONFIG, &accelerometerConfigCopy, accelerometerConfig());
-#ifdef MAG
-    dumpPgValues(valueSection, dumpMask, PG_COMPASS_CONFIG, &compassConfigCopy, compassConfig());
-#endif
-#ifdef BARO
-    dumpPgValues(valueSection, dumpMask, PG_BAROMETER_CONFIG, &barometerConfigCopy, barometerConfig());
-#endif
-#ifdef PITOT
-    dumpPgValues(valueSection, dumpMask, PG_PITOTMETER_CONFIG, &pitotmeterConfigCopy, pitotmeterConfig());
-#endif
-    dumpPgValues(valueSection, dumpMask, PG_RX_CONFIG, &rxConfigCopy, rxConfig());
-#ifdef BLACKBOX
-    dumpPgValues(valueSection, dumpMask, PG_BLACKBOX_CONFIG, &blackboxConfigCopy, blackboxConfig());
-#endif
-    dumpPgValues(valueSection, dumpMask, PG_MOTOR_CONFIG, &motorConfigCopy, motorConfig());
-    dumpPgValues(valueSection, dumpMask, PG_FAILSAFE_CONFIG, &failsafeConfigCopy, failsafeConfig());
-    dumpPgValues(valueSection, dumpMask, PG_BOARD_ALIGNMENT, &boardAlignmentCopy, boardAlignment());
-    dumpPgValues(valueSection, dumpMask, PG_MIXER_CONFIG, &mixerConfigCopy, mixerConfig());
-    dumpPgValues(valueSection, dumpMask, PG_MOTOR_3D_CONFIG, &flight3DConfigCopy, flight3DConfig());
-#ifdef USE_SERVOS
-    dumpPgValues(valueSection, dumpMask, PG_SERVO_CONFIG, &servoConfigCopy, servoConfig());
-    dumpPgValues(valueSection, dumpMask, PG_GIMBAL_CONFIG, &gimbalConfigCopy, gimbalConfig());
-#endif
-    dumpPgValues(valueSection, dumpMask, PG_BATTERY_CONFIG, &batteryConfigCopy, batteryConfig());
-    dumpPgValues(valueSection, dumpMask, PG_SERIAL_CONFIG, &serialConfigCopy, serialConfig());
-    dumpPgValues(valueSection, dumpMask, PG_IMU_CONFIG, &imuConfigCopy, imuConfig());
-    dumpPgValues(valueSection, dumpMask, PG_RC_CONTROLS_CONFIG, &rcControlsConfigCopy, rcControlsConfig());
-    dumpPgValues(valueSection, dumpMask, PG_ARMING_CONFIG, &armingConfigCopy, armingConfig());
-#ifdef GPS
-    dumpPgValues(valueSection, dumpMask, PG_GPS_CONFIG, &gpsConfigCopy, gpsConfig());
-#endif
-#ifdef NAV
-    dumpPgValues(valueSection, dumpMask, PG_POSITION_ESTIMATION_CONFIG, &positionEstimationConfigCopy, positionEstimationConfig());
-    dumpPgValues(valueSection, dumpMask, PG_NAV_CONFIG, &navConfigCopy, navConfig());
-#endif
-#ifdef TELEMETRY
-    dumpPgValues(valueSection, dumpMask, PG_TELEMETRY_CONFIG, &telemetryConfigCopy, telemetryConfig());
-#endif
-    dumpPgValues(valueSection, dumpMask, PG_CONTROL_RATE_PROFILES, controlRateProfilesCopy, controlRateProfiles(0));
-    dumpPgValues(valueSection, dumpMask, PG_PID_PROFILE, &pidProfileCopy, pidProfile());
-    cliPrint("\r\n");
+    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
+        const clivalue_t *value = &valueTable[i];
+        if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
+            waitForSerialPortToFinishTransmitting(cliPort);
+            delay(10);
+            bufWriterFlush(cliWriter);
+            dumpPgValue(value, dumpMask);
+        }
+    }
 }
 
 static void cliPrintVarRange(const clivalue_t *var)
@@ -2945,7 +3073,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
     setProfile(profileIndex);
     cliPrintHashLine("profile");
     cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
-    dumpPgValues(PROFILE_VALUE, dumpMask, PG_PID_PROFILE, &pidProfileCopy, pidProfile());
+    dumpValue(PROFILE_VALUE, dumpMask, PG_PID_PROFILE);
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
@@ -2957,7 +3085,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
     cliPrintf("rateprofile %d\r\n\r\n", getCurrentControlRateProfile());
-    dumpPgValues(CONTROL_RATE_VALUE, dumpMask, PG_CONTROL_RATE_PROFILES, controlRateProfilesCopy, controlRateProfiles(0));
+    dumpValue(CONTROL_RATE_VALUE, dumpMask, PG_CONTROL_RATE_PROFILES);
 }
 
 static void cliSave(char *cmdline)
@@ -3440,7 +3568,7 @@ static void printConfig(const char *cmdline, bool doDiff)
         const bool equalsDefault = mixerConfigCopy.mixerMode == mixerConfig()->mixerMode;
         const char *formatMixer = "mixer %s\r\n";
         cliDefaultPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
-        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfig()->mixerMode - 1]);
+        cliDumpPrintf(dumpMask, equalsDefault, formatMixer, mixerNames[mixerConfigCopy.mixerMode - 1]);
 
         cliDumpPrintf(dumpMask, customMotorMixer(0)->throttle == 0.0f, "\r\nmmix reset\r\n\r\n");
 
@@ -3495,7 +3623,7 @@ static void printConfig(const char *cmdline, bool doDiff)
         printRxFail(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
-        dumpValues(MASTER_VALUE, dumpMask);
+        dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
             const int activeProfile = getCurrentProfileIndex();
