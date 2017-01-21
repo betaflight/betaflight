@@ -23,22 +23,28 @@
 // Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
-#define UART1_RX_BUFFER_SIZE    256
-#define UART1_TX_BUFFER_SIZE    256
-#define UART2_RX_BUFFER_SIZE    256
-#define UART2_TX_BUFFER_SIZE    256
-#define UART3_RX_BUFFER_SIZE    256
-#define UART3_TX_BUFFER_SIZE    256
-#define UART4_RX_BUFFER_SIZE    256
-#define UART4_TX_BUFFER_SIZE    256
-#define UART5_RX_BUFFER_SIZE    256
-#define UART5_TX_BUFFER_SIZE    256
-#define UART6_RX_BUFFER_SIZE    256
-#define UART6_TX_BUFFER_SIZE    256
-#define UART7_RX_BUFFER_SIZE    256
-#define UART7_TX_BUFFER_SIZE    256
-#define UART8_RX_BUFFER_SIZE    256
-#define UART8_TX_BUFFER_SIZE    256
+
+#define UART_RX_BUFFER_SIZE     256
+#define UART_TX_BUFFER_SIZE     256
+
+#define UART1_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART1_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART2_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART2_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART3_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART3_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART4_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART4_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART5_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART5_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART6_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART6_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART7_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART7_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+#define UART8_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
+#define UART8_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE
+
+// When common size is used
 
 typedef struct {
     serialPort_t port;

@@ -34,3 +34,25 @@
 #else
 # define SOFTSERIAL_COUNT 0
 #endif
+
+// Backward compatibility with F1 targets not specifying UART1 & UART2 pins
+
+#ifdef STM32F1
+# ifdef USE_UART1
+#  ifndef UART1_RX_PIN
+#   define UART1_RX_PIN PA10
+#  endif
+#  ifndef UART1_TX_PIN
+#   define UART1_TX_PIN PA9
+#  endif
+# endif
+
+# ifdef USE_UART2
+#  ifndef UART2_RX_PIN
+#   define UART2_RX_PIN PA3
+#  endif
+#  ifndef UART2_TX_PIN
+#   define UART2_TX_PIN PA2
+#  endif
+# endif
+#endif // STM32F1
