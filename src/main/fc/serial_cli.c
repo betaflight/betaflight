@@ -918,6 +918,7 @@ static beeperConfig_t beeperConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy;
+static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
 
 static void cliPrint(const char *str)
 {
@@ -1234,7 +1235,7 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.size = sizeof(systemConfig_t);
         break;
     case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
-        ret.currentConfig = &modeActivationOperatorConfig;
+        ret.currentConfig = &modeActivationOperatorConfigCopy;
         ret.defaultConfig = modeActivationOperatorConfig();
         ret.size = sizeof(modeActivationOperatorConfig_t);
         break;
