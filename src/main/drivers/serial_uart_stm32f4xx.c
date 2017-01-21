@@ -365,7 +365,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
         const dmaIdentifier_e identifier = dmaGetIdentifier(uart->txDMAStream);
         dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         // DMA TX Interrupt
-        dmaSetHandler(identifier, dmaIRQHandler, uart->txPriority, (uint32_t)uart);
+        dmaSetHandler(identifier, dmaIRQHandler, uart->txPriority, (uint32_t)s);
     }
 
     s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
