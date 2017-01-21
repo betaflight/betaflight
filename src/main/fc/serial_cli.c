@@ -456,8 +456,7 @@ typedef enum {
     // value section
     MASTER_VALUE = (0 << VALUE_SECTION_OFFSET),
     PROFILE_VALUE = (1 << VALUE_SECTION_OFFSET),
-    PROFILE_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
-    CONTROL_RATE_VALUE = (3 << VALUE_SECTION_OFFSET),
+    CONTROL_RATE_VALUE = (2 << VALUE_SECTION_OFFSET),
     // value mode
     MODE_DIRECT = (0 << VALUE_MODE_OFFSET),
     MODE_LOOKUP = (1 << VALUE_MODE_OFFSET)
@@ -919,6 +918,7 @@ static beeperConfig_t beeperConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
 static pidProfile_t pidProfileCopy;
+static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
 
 static void cliPrint(const char *str)
 {
@@ -927,19 +927,16 @@ static void cliPrint(const char *str)
     }
 }
 
+#ifdef CLI_MINIMAL_VERBOSITY
+#define cliPrintHashLine(str)
+#else
 static void cliPrintHashLine(const char *str)
 {
-    waitForSerialPortToFinishTransmitting(cliPort);
-    delay(10);
-    bufWriterFlush(cliWriter);
-#ifdef CLI_MINIMAL_VERBOSITY
-    UNUSED(str);
-#else
     cliPrint("\r\n# ");
     cliPrint(str);
     cliPrint("\r\n");
-#endif
 }
+#endif
 
 static void cliPutp(void *p, char ch)
 {
@@ -1042,33 +1039,13 @@ static void printValuePointer(const clivalue_t *var, const void *valuePointer, u
         }
         break;
     case MODE_LOOKUP:
-        cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+        if (var->config.lookup.tableIndex < ARRAYLEN(lookupTables)) {
+            cliPrintf(lookupTables[var->config.lookup.tableIndex].values[value]);
+        } else{
+            cliPrintf("VALUE %s OUT OF RANGE\r\n", var->name);
+        }
         break;
     }
-}
-
-static void* getValuePointer(const clivalue_t *var)
-{
-    const pgRegistry_t* rec = pgFind(var->pgn);
-
-    switch (var->type & VALUE_SECTION_MASK) {
-    case MASTER_VALUE:
-        return rec->address + var->offset;
-    case PROFILE_RATE_VALUE:
-        return rec->address + var->offset + sizeof(profile_t) * getCurrentProfileIndex();
-    case CONTROL_RATE_VALUE:
-        return rec->address + var->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
-    case PROFILE_VALUE:
-        return *rec->ptr + var->offset;
-    }
-    return NULL;
-}
-
-static void cliPrintVar(const clivalue_t *var, uint32_t full)
-{
-    const void *ptr = getValuePointer(var);
-
-    printValuePointer(var, ptr, full);
 }
 
 static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptrDefault)
@@ -1258,7 +1235,7 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.size = sizeof(systemConfig_t);
         break;
     case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
-        ret.currentConfig = &modeActivationOperatorConfig;
+        ret.currentConfig = &modeActivationOperatorConfigCopy;
         ret.defaultConfig = modeActivationOperatorConfig();
         ret.size = sizeof(modeActivationOperatorConfig_t);
         break;
@@ -1281,6 +1258,34 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
     return &ret;
 }
 
+static void *getValuePointer(const clivalue_t *value)
+{
+    const pgRegistry_t* rec = pgFind(value->pgn);
+
+    switch (value->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return rec->address + value->offset;
+    case CONTROL_RATE_VALUE:
+        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return *rec->ptr + value->offset;
+    }
+    return NULL;
+}
+
+static uint16_t getValueOffset(const clivalue_t *value)
+{
+    switch (value->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return value->offset;
+    case CONTROL_RATE_VALUE:
+        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return value->offset;
+    }
+    return 0;
+}
+
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
     const char *format = "set %s = ";
@@ -1293,20 +1298,20 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
     switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
     case 0:
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->currentConfig + value->offset, 0);
+        printValuePointer(value, (uint8_t*)config->currentConfig + getValueOffset(value), 0);
         cliPrint("\r\n");
         break;
     case SHOW_DEFAULTS:
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->defaultConfig + value->offset, 0);
+        printValuePointer(value, (uint8_t*)config->defaultConfig + getValueOffset(value), 0);
         cliPrint("\r\n");
         break;
     case DO_DIFF:
         {
-            const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + value->offset, (uint8_t*)config->defaultConfig + value->offset);
+            const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + getValueOffset(value), (uint8_t*)config->defaultConfig + getValueOffset(value));
             if (!equalsDefault) {
                 cliPrintf(format, value->name);
-                printValuePointer(value, (uint8_t*)config->currentConfig + value->offset, 0);
+                printValuePointer(value, (uint8_t*)config->currentConfig + getValueOffset(value), 0);
                 cliPrint("\r\n");
             }
         }
@@ -1318,8 +1323,6 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
 {
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         const clivalue_t *value = &valueTable[i];
-        waitForSerialPortToFinishTransmitting(cliPort);
-        delay(10);
         bufWriterFlush(cliWriter);
         if ((value->type & VALUE_SECTION_MASK) == valueSection) {
             dumpPgValue(value, dumpMask);
@@ -1332,12 +1335,18 @@ static void dumpValue(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn)
     for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
         const clivalue_t *value = &valueTable[i];
         if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
-            waitForSerialPortToFinishTransmitting(cliPort);
-            delay(10);
             bufWriterFlush(cliWriter);
             dumpPgValue(value, dumpMask);
+            break;
         }
     }
+}
+
+static void cliPrintVar(const clivalue_t *var, uint32_t full)
+{
+    const void *ptr = getValuePointer(var);
+
+    printValuePointer(var, ptr, full);
 }
 
 static void cliPrintVarRange(const clivalue_t *var)
@@ -1441,7 +1450,7 @@ static const char *processChannelRangeArgs(const char *ptr, channelRange_t *rang
 // Check if a string's length is zero
 static bool isEmpty(const char *string)
 {
-    return *string == '\0';
+    return (string == NULL || *string == '\0') ? true : false;
 }
 
 static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultRxFailsafeChannelConfigs)
