@@ -453,6 +453,8 @@ void osdResetConfig(osd_profile_t *osdProfile)
 
 void osdInit(displayPort_t *osdDisplayPortToUse)
 {
+    BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
+
     osdDisplayPort = osdDisplayPortToUse;
 #ifdef CMS
     cmsDisplayPortRegister(osdDisplayPort);
