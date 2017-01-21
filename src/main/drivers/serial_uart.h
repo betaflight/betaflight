@@ -24,8 +24,13 @@
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
 
-#define UART_RX_BUFFER_SIZE     256
-#define UART_TX_BUFFER_SIZE     256
+#if defined(STM32F4) || defined(STM32F7)
+#  define UART_RX_BUFFER_SIZE     512
+#  define UART_TX_BUFFER_SIZE     512
+#else
+#  define UART_RX_BUFFER_SIZE     256
+#  define UART_TX_BUFFER_SIZE     256
+#endif
 
 #define UART1_RX_BUFFER_SIZE    UART_RX_BUFFER_SIZE
 #define UART1_TX_BUFFER_SIZE    UART_TX_BUFFER_SIZE

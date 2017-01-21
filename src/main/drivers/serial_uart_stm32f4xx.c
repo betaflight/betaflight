@@ -33,9 +33,6 @@
 #include "serial_uart.h"
 #include "serial_uart_impl.h"
 
-#define UART_RX_BUFFER_SIZE 512
-#define UART_TX_BUFFER_SIZE 512
-
 typedef enum UARTDevice {
     UARTDEV_1 = 0,
     UARTDEV_2 = 1,
@@ -397,7 +394,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
         }
     }
 
-    if (!(s->rxDMAChannel)) {
+    if (!s->rxDMAChannel || !s->txDMAChannel) {
         NVIC_InitStructure.NVIC_IRQChannel = uart->rxIrq;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(uart->rxPriority);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(uart->rxPriority);

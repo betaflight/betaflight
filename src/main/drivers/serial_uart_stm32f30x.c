@@ -389,7 +389,7 @@ uartPort_t *serialUART(int device, uint32_t baudRate, portMode_t mode, portOptio
 
     serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, uartDev->af, device);
 
-    if (!uartDev->rxDMAChannel) {
+    if (!uartDev->rxDMAChannel || !uartDev->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;
 
         NVIC_InitStructure.NVIC_IRQChannel = uartDev->irqn;

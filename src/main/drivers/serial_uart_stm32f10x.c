@@ -83,17 +83,6 @@ typedef struct uartDevice_s {
 static uartPort_t uartPort3;
 #endif
 
-// When using RX DMA, TX DMA must be enabled.
-#if defined(USE_UART1_RX_DMA) && !defined(USE_UART1_TX_DMA)
-# error USE_UART1_RX_DMA requires USE_UART1_TX_DMA
-#endif
-#if defined(USE_UART2_RX_DMA) && !defined(USE_UART2_TX_DMA)
-# error USE_UART2_RX_DMA requires USE_UART2_TX_DMA
-#endif
-#if defined(USE_UART3_RX_DMA) && !defined(USE_UART3_TX_DMA)
-# error USE_UART3_RX_DMA requires USE_UART3_TX_DMA
-#endif
-
 #ifdef USE_UART1_RX_DMA
 # define UART1_RX_DMA_CHANNEL DMA1_Channel5
 #else
@@ -286,7 +275,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     }
 
     // RX/TX Interrupt
-    if (!uartDev->rxDMAChannel) {
+    if (!uartDev->rxDMAChannel || !uartDev->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;
 
         NVIC_InitStructure.NVIC_IRQChannel = uartDev->irqn;
