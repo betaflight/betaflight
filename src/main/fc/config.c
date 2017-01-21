@@ -31,7 +31,6 @@
 #include "common/filter.h"
 
 #include "config/config_eeprom.h"
-#include "config/config_profile.h"
 #include "config/feature.h"
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
@@ -151,67 +150,6 @@ uint8_t getAsyncMode(void) {
     return systemConfig()->asyncMode;
 }
 #endif
-
-uint16_t getCurrentMinthrottle(void)
-{
-    return motorConfig()->minthrottle;
-}
-
-// Default settings
-void createDefaultConfig(void)
-{
-    // Clear all configuration
-    // Radio
-#ifdef RX_CHANNELS_TAER
-    parseRcChannels("TAER1234");
-#else
-    parseRcChannels("AETR1234");
-#endif
-
-#ifdef BLACKBOX
-#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-    featureSet(FEATURE_BLACKBOX);
-#endif
-#endif
-
-#if defined(TARGET_CONFIG)
-    targetConfiguration();
-#endif
-}
-
-void resetConfigs(void)
-{
-    pgResetAll(MAX_PROFILE_COUNT);
-    pgActivateProfile(0);
-
-    createDefaultConfig();
-
-    setProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
-#ifdef LED_STRIP
-    reevaluateLedConfig();
-#endif
-}
-
-static void activateConfig(void)
-{
-    activateControlRateConfig();
-
-    resetAdjustmentStates();
-
-    failsafeReset();
-
-    setAccelerationCalibrationValues();
-    setAccelerationFilter();
-
-    imuConfigure();
-
-    pidInit();
-
-#ifdef NAV
-    navigationUsePIDs();
-#endif
-}
 
 void validateAndFixConfig(void)
 {
@@ -432,6 +370,62 @@ void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)
     saveConfigAndNotify();
 }
 
+// Default settings
+void createDefaultConfig(void)
+{
+    // Clear all configuration
+    // Radio
+#ifdef RX_CHANNELS_TAER
+    parseRcChannels("TAER1234");
+#else
+    parseRcChannels("AETR1234");
+#endif
+
+#ifdef BLACKBOX
+#ifdef ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
+    featureSet(FEATURE_BLACKBOX);
+#endif
+#endif
+
+#if defined(TARGET_CONFIG)
+    targetConfiguration();
+#endif
+}
+
+void resetConfigs(void)
+{
+    pgResetAll(MAX_PROFILE_COUNT);
+    pgActivateProfile(0);
+
+    createDefaultConfig();
+
+    setProfile(getCurrentProfileIndex());
+    setControlRateProfile(getCurrentProfileIndex());
+#ifdef LED_STRIP
+    reevaluateLedConfig();
+#endif
+}
+
+static void activateConfig(void)
+{
+    activateControlRateConfig();
+
+    resetAdjustmentStates();
+
+    failsafeReset();
+
+    setAccelerationCalibrationValues();
+    setAccelerationFilter();
+
+    imuConfigure();
+
+    pidInit();
+
+#ifdef NAV
+    navigationUsePIDs();
+#endif
+}
+
 void readEEPROM(void)
 {
     suspendRxSignal();
@@ -460,18 +454,18 @@ void writeEEPROM(void)
     resumeRxSignal();
 }
 
+void resetEEPROM(void)
+{
+    resetConfigs();
+    writeEEPROM();
+}
+
 void ensureEEPROMContainsValidData(void)
 {
     if (isEEPROMContentValid()) {
         return;
     }
     resetEEPROM();
-}
-
-void resetEEPROM(void)
-{
-    resetConfigs();
-    writeEEPROM();
 }
 
 void saveConfigAndNotify(void)

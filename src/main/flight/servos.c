@@ -58,7 +58,6 @@
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 
 

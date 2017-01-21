@@ -77,7 +77,6 @@
 #include "flight/failsafe.h"
 #include "flight/navigation_rewrite.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 
 // June 2013     V2.2-dev
