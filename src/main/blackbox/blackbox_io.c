@@ -76,8 +76,6 @@
 #include "fc/config.h"
 #include "fc/runtime_config.h"
 
-#include "config/config_profile.h"
-
 #include "io/flashfs.h"
 #include "io/asyncfatfs/asyncfatfs.h"
 

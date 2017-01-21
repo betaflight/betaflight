@@ -51,7 +51,6 @@
 
 #include "sensors/gyro.h"
 
-#include "config/config_profile.h"
 #include "config/feature.h"
 
 //

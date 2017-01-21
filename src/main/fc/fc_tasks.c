@@ -71,7 +71,6 @@
 #include "telemetry/telemetry.h"
 
 #include "config/feature.h"
-#include "config/config_profile.h"
 
 #define TASK_PERIOD_HZ(hz) (1000000 / (hz))
 #define TASK_PERIOD_MS(ms) ((ms) * 1000)
