@@ -352,7 +352,7 @@ bool canSendSmartPortTelemetry(void)
 
 void checkSmartPortTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = (smartPortPortSharing == PORTSHARING_NOT_SHARED);
+    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(smartPortPortSharing);
     if (newTelemetryEnabledValue == smartPortTelemetryEnabled) {
         return;
     }
