@@ -96,7 +96,7 @@ typedef struct servoMixer_s {
 #define MAX_SERVO_SPEED UINT8_MAX
 #define MAX_SERVO_BOXES 3
 
-PG_DECLARE_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
+PG_DECLARE_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers);
 
 typedef struct servoParam_s {
     uint32_t reversedSources;               // the direction of servo movement for each input source of the servo mixer, bit set=inverted
@@ -109,7 +109,7 @@ typedef struct servoParam_s {
     int8_t forwardFromChannel;              // RX channel index, 0 based.  See CHANNEL_FORWARDING_DISABLED
 } servoParam_t;
 
-PG_DECLARE_ARR(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
+PG_DECLARE_ARRAY(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams);
 
 typedef struct servoConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)

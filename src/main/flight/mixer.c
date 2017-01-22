@@ -103,7 +103,7 @@ PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
 
 static motorMixer_t currentMixer[MAX_SUPPORTED_MOTORS];
 
-PG_REGISTER_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
+PG_REGISTER_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer, PG_MOTOR_MIXER, 0);
 
 static const motorMixer_t mixerQuadX[] = {
     { 1.0f, -1.0f,  1.0f, -1.0f },          // REAR_R

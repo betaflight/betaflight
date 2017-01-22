@@ -87,7 +87,7 @@ PG_RESET_TEMPLATE(armingConfig_t, armingConfig,
     .auto_disarm_delay = 5
 );
 
-PG_REGISTER_ARR(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
+PG_REGISTER_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions, PG_MODE_ACTIVATION_PROFILE, 0);
 PG_REGISTER(modeActivationOperatorConfig_t, modeActivationOperatorConfig, PG_MODE_ACTIVATION_OPERATOR_CONFIG, 0);
 
 bool isUsingSticksForArming(void)

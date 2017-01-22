@@ -76,7 +76,7 @@ typedef struct motorMixer_s {
     float yaw;
 } motorMixer_t;
 
-PG_DECLARE_ARR(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
+PG_DECLARE_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
 
 // Custom mixer configuration
 typedef struct mixer_s {

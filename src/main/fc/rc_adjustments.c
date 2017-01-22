@@ -45,7 +45,7 @@
 
 #include "rx/rx.h"
 
-PG_REGISTER_ARR(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
+PG_REGISTER_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges, PG_ADJUSTMENT_RANGE_CONFIG, 0);
 
 uint8_t adjustmentStateMask = 0;
 
