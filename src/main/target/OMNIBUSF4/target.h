@@ -63,10 +63,10 @@
 
 #define BARO
 #define USE_BARO_BMP085
+#define USE_BARO_BMP280
 #define USE_BARO_MS5611
 
 #ifdef OMNIBUSF4SD
-  #define USE_BARO_BMP280
   #define USE_BARO_SPI_BMP280
   #define BMP280_SPI_INSTANCE     SPI3
   #define BMP280_CS_PIN           PB3 // v1
