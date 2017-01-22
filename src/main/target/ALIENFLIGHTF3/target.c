@@ -28,7 +28,7 @@
 // Motor 7 is only working if battery monitoring is disabled
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    // up to 10 Motor Outputs     
+    // up to 10 Motor Outputs
 /*
     DEF_TIM(TIM15, CH2, PB15, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED ), // PWM1  - PB15 - DMA_NONE - TIM1_CH3N, TIM15_CH1N, *TIM15_CH2
     DEF_TIM(TIM15, CH1, PB14, TIM_USE_MOTOR, TIMER_OUTPUT_ENABLED ), // PWM2  - PB14 - DMA1_CH5 - TIM1_CH2N, *TIM15_CH1

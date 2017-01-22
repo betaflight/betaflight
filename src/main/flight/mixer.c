@@ -254,7 +254,7 @@ bool isMotorProtocolDshot(void) {
     case PWM_TYPE_DSHOT150:
         return true;
     default:
-        return false;        
+        return false;
     }
 #else
     return false;

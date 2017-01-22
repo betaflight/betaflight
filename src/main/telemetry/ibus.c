@@ -50,7 +50,7 @@
 #include "fc/rc_controls.h"
 #include "scheduler/scheduler.h"
 
-#include "telemetry/telemetry.h"    
+#include "telemetry/telemetry.h"
 #include "telemetry/ibus.h"
 
 /*
@@ -197,7 +197,7 @@ typedef enum {
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE = 0x03
 } ibusSensorType_e;
 
-/* Address lookup relative to the sensor base address which is the lowest address seen by the FC 
+/* Address lookup relative to the sensor base address which is the lowest address seen by the FC
    The actual lowest value is likely to change when sensors are daisy chained */
 static const uint8_t sensorAddressTypeLookup[] = {
     IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE,
@@ -285,7 +285,7 @@ static ibusAddress_t getAddress(const uint8_t *ibusPacket)
 static void dispatchMeasurementReply(ibusAddress_t address)
 {
     int value;
-    
+
     switch (sensorAddressTypeLookup[address - ibusBaseAddress]) {
     case IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE:
         value = getVbat() * 10;

@@ -435,7 +435,7 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableSuperExpoYaw, sizeof(lookupTableSuperExpoYaw) / sizeof(char *) },
     { lookupTablePwmProtocol, sizeof(lookupTablePwmProtocol) / sizeof(char *) },
     { lookupTableRcInterpolation, sizeof(lookupTableRcInterpolation) / sizeof(char *) },
-    { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },    
+    { lookupTableRcInterpolationChannels, sizeof(lookupTableRcInterpolationChannels) / sizeof(char *) },
     { lookupTableLowpassType, sizeof(lookupTableLowpassType) / sizeof(char *) },
     { lookupTableFailsafe, sizeof(lookupTableFailsafe) / sizeof(char *) },
 #ifdef OSD
@@ -3582,7 +3582,7 @@ static void printConfig(char *cmdline, bool doDiff)
 #ifdef USE_RESOURCE_MGMT
         cliPrintHashLine("resources");
         printResource(dumpMask, &defaultConfig);
-#endif 
+#endif
 
 #ifndef USE_QUAD_MIXER_ONLY
         cliPrintHashLine("mixer");
@@ -3772,7 +3772,7 @@ const clicmd_t cmdTable[] = {
 #ifdef LED_STRIP
     CLI_COMMAND_DEF("mode_color", "configure mode and special colors", NULL, cliModeColor),
 #endif
-    CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor), 
+    CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),
     CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
 #if (FLASH_SIZE > 128)
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),

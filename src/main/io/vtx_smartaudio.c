@@ -118,7 +118,7 @@ enum {
 
 // opmode flags, SET side
 #define SA_MODE_SET_IN_RANGE_PITMODE        1 // Immediate
-#define SA_MODE_SET_OUT_RANGE_PITMODE	    2 // Immediate
+#define SA_MODE_SET_OUT_RANGE_PITMODE        2 // Immediate
 #define SA_MODE_CLR_PITMODE                 4 // Immediate
 #define SA_MODE_SET_UNLOCK                  8
 #define SA_MODE_SET_LOCK                    0 // ~UNLOCK

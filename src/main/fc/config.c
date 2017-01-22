@@ -527,7 +527,7 @@ void resetStatusLedConfig(statusLedConfig_t *statusLedConfig)
 #ifdef LED2_INVERTED
     | BIT(2)
 #endif
-    ;    
+    ;
 }
 
 #ifdef USE_FLASHFS
@@ -857,7 +857,7 @@ void createDefaultConfig(master_t *config)
 
     /* merely to force a reset if the person inadvertently flashes the wrong target */
     strncpy(config->boardIdentifier, TARGET_BOARD_IDENTIFIER, sizeof(TARGET_BOARD_IDENTIFIER));
-    
+
 #if defined(TARGET_CONFIG)
     targetConfiguration(config);
 #endif
