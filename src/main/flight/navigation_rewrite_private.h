@@ -27,6 +27,7 @@
 #define MIN_POSITION_UPDATE_RATE_HZ         5       // Minimum position update rate at which XYZ controllers would be applied
 #define NAV_THROTTLE_CUTOFF_FREQENCY_HZ     4       // low-pass filter on throttle output
 #define NAV_ACCEL_CUTOFF_FREQUENCY_HZ       2       // low-pass filter on XY-acceleration target
+#define NAV_FW_CONTROL_MONITORING_RATE      2
 #define NAV_FW_VEL_CUTOFF_FREQENCY_HZ       2       // low-pass filter on Z-velocity for fixed wing
 #define NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ     20      // low-pass filter on roll correction for fixed wing
 #define NAV_DTERM_CUT_HZ                    10
@@ -92,6 +93,12 @@ typedef struct {
 typedef struct {
     float kP;
 } pControllerParam_t;
+
+typedef enum {
+    PID_DTERM_FROM_ERROR            = 1 << 0,
+    PID_ZERO_INTEGRATOR             = 1 << 1,
+    PID_SHRINK_INTEGRATOR           = 1 << 2,
+} pidControllerFlags_e;
 
 typedef struct {
     pidControllerParam_t param;
@@ -290,7 +297,7 @@ typedef struct {
 extern navigationPosControl_t posControl;
 
 /* Internally used functions */
-float navPidApply2(float setpoint, float measurement, float dt, pidController_t *pid, float outMin, float outMax, bool dTermErrorTracking);
+float navPidApply2(pidController_t *pid, const float setpoint, const float measurement, const float dt, const float outMin, const float outMax, const pidControllerFlags_e pidFlags);
 void navPidReset(pidController_t *pid);
 void navPidInit(pidController_t *pid, float _kP, float _kI, float _kD);
 void navPInit(pController_t *p, float _kP);

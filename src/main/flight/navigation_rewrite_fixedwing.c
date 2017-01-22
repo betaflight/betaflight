@@ -91,7 +91,7 @@ bool adjustFixedWingAltitudeFromRCInput(void)
 }
 
 // Position to velocity controller for Z axis
-static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
+static void updateAltitudeVelocityAndPitchController_FW(timeDelta_t deltaMicros)
 {
     static pt1Filter_t velzFilterState;
 
@@ -105,7 +105,7 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
     float maxVelocityClimb = forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_climb_angle));
     float maxVelocityDive = -forwardVelocity * sin_approx(DEGREES_TO_RADIANS(navConfig()->fw.max_dive_angle));
 
-    posControl.desiredState.vel.V.Z = navPidApply2(posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), &posControl.pids.fw_alt, maxVelocityDive, maxVelocityClimb, false);
+    posControl.desiredState.vel.V.Z = navPidApply2(&posControl.pids.fw_alt, posControl.desiredState.pos.V.Z, posControl.actualState.pos.V.Z, US2S(deltaMicros), maxVelocityDive, maxVelocityClimb, 0);
     posControl.desiredState.vel.V.Z = pt1FilterApply4(&velzFilterState, posControl.desiredState.vel.V.Z, NAV_FW_VEL_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
 
     // Calculate climb angle ( >0 - climb, <0 - dive)
@@ -121,10 +121,10 @@ static void updateAltitudeVelocityAndPitchController_FW(uint32_t deltaMicros)
 
 void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
+    static timeUs_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
     // If last time Z-controller was called is too far in the past - ignore it (likely restarting altitude controller)
@@ -138,7 +138,7 @@ void applyFixedWingAltitudeController(timeUs_t currentTimeUs)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have an update on vertical position data - update velocity and accel targets
         if (posControl.flags.verticalPositionDataNew) {
-            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             // Check if last correction was too log ago - ignore this update
@@ -245,8 +245,11 @@ bool adjustFixedWingPositionFromRCInput(void)
     return (rcRollAdjustment);
 }
 
-static void updatePositionHeadingController_FW(uint32_t deltaMicros)
+static void updatePositionHeadingController_FW(timeUs_t currentTimeUs, timeDelta_t deltaMicros)
 {
+    static timeUs_t previousTimeMonitoringUpdate;
+    static float previousHeadingError;
+    static bool errorIsDecreasing;
     static bool forceTurnDirection = false;
 
     // We have virtual position target, calculate heading error
@@ -269,11 +272,24 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
         headingError = ABS(headingError);
     }
 
+    // Slow error monitoring (2Hz rate)
+    if ((currentTimeUs - previousTimeMonitoringUpdate) >= HZ2US(NAV_FW_CONTROL_MONITORING_RATE)) {
+        // Check if error is decreasing over time
+        errorIsDecreasing = (ABS(previousHeadingError) > ABS(headingError));
+
+        // Save values for next iteration
+        previousHeadingError = headingError;
+        previousTimeMonitoringUpdate = currentTimeUs;
+    }
+
+    // Only allow PID integrator to shrink if error is decreasing over time
+    const pidControllerFlags_e pidFlags = PID_DTERM_FROM_ERROR | (errorIsDecreasing ? PID_SHRINK_INTEGRATOR : 0);
+
     // Input error in (deg*100), output pitch angle (deg*100)
-    float rollAdjustment = navPidApply2(posControl.actualState.yaw + headingError, posControl.actualState.yaw, US2S(deltaMicros), &posControl.pids.fw_nav,
+    float rollAdjustment = navPidApply2(&posControl.pids.fw_nav, posControl.actualState.yaw + headingError, posControl.actualState.yaw, US2S(deltaMicros),
                                        -DEGREES_TO_CENTIDEGREES(navConfig()->fw.max_bank_angle),
                                         DEGREES_TO_CENTIDEGREES(navConfig()->fw.max_bank_angle),
-                                        true);
+                                        pidFlags);
 
     // Apply low-pass filter to prevent rapid correction
     rollAdjustment = pt1FilterApply4(&fwPosControllerCorrectionFilterState, rollAdjustment, NAV_FW_ROLL_CUTOFF_FREQUENCY_HZ, US2S(deltaMicros));
@@ -291,10 +307,10 @@ static void updatePositionHeadingController_FW(uint32_t deltaMicros)
 
 void applyFixedWingPositionController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
+    static timeUs_t previousTimePositionUpdate;         // Occurs @ GPS update rate
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
@@ -309,7 +325,7 @@ void applyFixedWingPositionController(timeUs_t currentTimeUs)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {
@@ -319,7 +335,7 @@ void applyFixedWingPositionController(timeUs_t currentTimeUs)
                 // FIXME: verify the above
                 calculateVirtualPositionTarget_FW(HZ2S(MIN_POSITION_UPDATE_RATE_HZ) * 2);
 
-                updatePositionHeadingController_FW(deltaMicrosPositionUpdate);
+                updatePositionHeadingController_FW(currentTimeUs, deltaMicrosPositionUpdate);
             }
             else {
                 resetFixedWingPositionController();
@@ -339,10 +355,10 @@ void applyFixedWingPositionController(timeUs_t currentTimeUs)
 
 int16_t applyFixedWingMinSpeedController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
+    static timeUs_t previousTimePositionUpdate;         // Occurs @ GPS update rate
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
@@ -357,7 +373,7 @@ int16_t applyFixedWingMinSpeedController(timeUs_t currentTimeUs)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             if (deltaMicrosPositionUpdate < HZ2US(MIN_POSITION_UPDATE_RATE_HZ)) {

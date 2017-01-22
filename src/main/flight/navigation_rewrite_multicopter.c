@@ -57,13 +57,13 @@ static pt1Filter_t altholdThrottleFilterState;
 static bool prepareForTakeoffOnReset = false;
 
 /* Calculate global altitude setpoint based on surface setpoint */
-static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
+static void updateSurfaceTrackingAltitudeSetpoint(timeDelta_t deltaMicros)
 {
     /* If we have a surface offset target and a valid surface offset reading - recalculate altitude target */
     if (posControl.flags.isTerrainFollowEnabled && posControl.desiredState.surface >= 0) {
         if (posControl.actualState.surface >= 0 && posControl.flags.hasValidSurfaceSensor) {
             // We better overshoot a little bit than undershoot
-            const float targetAltitudeError = navPidApply2(posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), &posControl.pids.surface, -5.0f, +35.0f, false);
+            const float targetAltitudeError = navPidApply2(&posControl.pids.surface, posControl.desiredState.surface, posControl.actualState.surface, US2S(deltaMicros), -5.0f, +35.0f, 0);
             posControl.desiredState.pos.V.Z = posControl.actualState.pos.V.Z + targetAltitudeError;
         }
         else {
@@ -79,7 +79,7 @@ static void updateSurfaceTrackingAltitudeSetpoint(uint32_t deltaMicros)
 }
 
 // Position to velocity controller for Z axis
-static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
+static void updateAltitudeVelocityController_MC(timeDelta_t deltaMicros)
 {
     const float altitudeError = posControl.desiredState.pos.V.Z - posControl.actualState.pos.V.Z;
     float targetVel = altitudeError * posControl.pids.pos[Z].param.kP;
@@ -102,13 +102,13 @@ static void updateAltitudeVelocityController_MC(uint32_t deltaMicros)
 #endif
 }
 
-static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
+static void updateAltitudeThrottleController_MC(timeDelta_t deltaMicros)
 {
     // Calculate min and max throttle boundaries (to compensate for integral windup)
     const int16_t thrAdjustmentMin = (int16_t)motorConfig()->minthrottle - (int16_t)navConfig()->mc.hover_throttle;
     const int16_t thrAdjustmentMax = (int16_t)motorConfig()->maxthrottle - (int16_t)navConfig()->mc.hover_throttle;
 
-    posControl.rcAdjustment[THROTTLE] = navPidApply2(posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), &posControl.pids.vel[Z], thrAdjustmentMin, thrAdjustmentMax, false);
+    posControl.rcAdjustment[THROTTLE] = navPidApply2(&posControl.pids.vel[Z], posControl.desiredState.vel.V.Z, posControl.actualState.vel.V.Z, US2S(deltaMicros), thrAdjustmentMin, thrAdjustmentMax, 0);
 
     posControl.rcAdjustment[THROTTLE] = pt1FilterApply4(&altholdThrottleFilterState, posControl.rcAdjustment[THROTTLE], NAV_THROTTLE_CUTOFF_FREQENCY_HZ, US2S(deltaMicros));
     posControl.rcAdjustment[THROTTLE] = constrain(posControl.rcAdjustment[THROTTLE], thrAdjustmentMin, thrAdjustmentMax);
@@ -190,10 +190,10 @@ void resetMulticopterAltitudeController(void)
 
 static void applyMulticopterAltitudeController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
+    static timeUs_t previousTimePositionUpdate;         // Occurs @ altitude sensor update rate (max MAX_ALTITUDE_UPDATE_RATE_HZ)
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    const const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
     // If last position update was too long in the past - ignore it (likely restarting altitude controller)
@@ -206,7 +206,7 @@ static void applyMulticopterAltitudeController(timeUs_t currentTimeUs)
 
     // If we have an update on vertical position data - update velocity and accel targets
     if (posControl.flags.verticalPositionDataNew) {
-        const uint32_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+        const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
         previousTimePositionUpdate = currentTimeUs;
 
         // Check if last correction was too log ago - ignore this update
@@ -355,7 +355,7 @@ static void updatePositionVelocityController_MC(void)
 #endif
 }
 
-static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAccelLimit)
+static void updatePositionAccelController_MC(timeDelta_t deltaMicros, float maxAccelLimit)
 {
 
     // Calculate velocity error
@@ -387,8 +387,8 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
     // Apply PID with output limiting and I-term anti-windup
     // Pre-calculated accelLimit and the logic of navPidApply2 function guarantee that our newAccel won't exceed maxAccelLimit
     // Thus we don't need to do anything else with calculated acceleration
-    const float newAccelX = navPidApply2(posControl.desiredState.vel.V.X, posControl.actualState.vel.V.X, US2S(deltaMicros), &posControl.pids.vel[X], accelLimitXMin, accelLimitXMax, false);
-    const float newAccelY = navPidApply2(posControl.desiredState.vel.V.Y, posControl.actualState.vel.V.Y, US2S(deltaMicros), &posControl.pids.vel[Y], accelLimitYMin, accelLimitYMax, false);
+    const float newAccelX = navPidApply2(&posControl.pids.vel[X], posControl.desiredState.vel.V.X, posControl.actualState.vel.V.X, US2S(deltaMicros), accelLimitXMin, accelLimitXMax, 0);
+    const float newAccelY = navPidApply2(&posControl.pids.vel[Y], posControl.desiredState.vel.V.Y, posControl.actualState.vel.V.Y, US2S(deltaMicros), accelLimitYMin, accelLimitYMax, 0);
 
     // Save last acceleration target
     lastAccelTargetX = newAccelX;
@@ -413,10 +413,10 @@ static void updatePositionAccelController_MC(uint32_t deltaMicros, float maxAcce
 
 static void applyMulticopterPositionController(timeUs_t currentTimeUs)
 {
-    static uint32_t previousTimePositionUpdate;         // Occurs @ GPS update rate
+    static timeUs_t previousTimePositionUpdate;         // Occurs @ GPS update rate
     static timeUs_t previousTimeUpdate;                 // Occurs @ looptime rate
 
-    const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
     bool bypassPositionController;
 
@@ -436,7 +436,7 @@ static void applyMulticopterPositionController(timeUs_t currentTimeUs)
     if (posControl.flags.hasValidPositionSensor) {
         // If we have new position - update velocity and acceleration controllers
         if (posControl.flags.horizontalPositionDataNew) {
-            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             if (!bypassPositionController) {
@@ -470,8 +470,8 @@ static void applyMulticopterPositionController(timeUs_t currentTimeUs)
 /*-----------------------------------------------------------
  * Multicopter land detector
  *-----------------------------------------------------------*/
-static uint32_t landingTimer;
-static uint32_t landingDetectorStartedAt;
+static timeUs_t landingTimer;
+static timeUs_t landingDetectorStartedAt;
 static int32_t landingThrSum;
 static int32_t landingThrSamples;
 
@@ -541,7 +541,7 @@ static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
 {
     static timeUs_t previousTimeUpdate;
     static timeUs_t previousTimePositionUpdate;
-    const timeUs_t deltaMicros = currentTimeUs - previousTimeUpdate;
+    const timeDelta_t deltaMicros = currentTimeUs - previousTimeUpdate;
     previousTimeUpdate = currentTimeUs;
 
     /* Attempt to stabilise */
@@ -561,7 +561,7 @@ static void applyMulticopterEmergencyLandingController(timeUs_t currentTimeUs)
         }
 
         if (posControl.flags.verticalPositionDataNew) {
-            timeUs_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
+            const timeDelta_t deltaMicrosPositionUpdate = currentTimeUs - previousTimePositionUpdate;
             previousTimePositionUpdate = currentTimeUs;
 
             // Check if last correction was too log ago - ignore this update
