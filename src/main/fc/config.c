@@ -800,6 +800,9 @@ void createDefaultConfig(master_t *config)
 
     // gimbal
     config->gimbalConfig.mode = GIMBAL_MODE_NORMAL;
+
+    // Channel forwarding;
+    config->channelForwardingConfig.startChannel = AUX1;
 #endif
 
 #ifdef GPS
@@ -918,9 +921,8 @@ void activateConfig(void)
     );
 
 #ifdef USE_SERVOS
-    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig);
+    servoUseConfigs(&masterConfig.servoMixerConfig, masterConfig.servoProfile.servoConf, &masterConfig.gimbalConfig, &masterConfig.channelForwardingConfig);
 #endif
-
 
     imuConfigure(
         &masterConfig.imuConfig,
