@@ -357,7 +357,7 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 {
     TIM_HandleTypeDef* Handle = timerFindTimerHandle(tim);
     if(Handle == NULL) return;
-    
+
     TIM_IC_InitTypeDef TIM_ICInitStructure;
 
     TIM_ICInitStructure.ICPolarity = polarity;

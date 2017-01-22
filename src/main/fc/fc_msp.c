@@ -1080,11 +1080,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #ifdef USE_DTERM_NOTCH
         sbufWriteU16(dst, pidProfile()->dterm_soft_notch_hz); //BF: pidProfile()->dterm_notch_hz
         sbufWriteU16(dst, pidProfile()->dterm_soft_notch_cutoff); //pidProfile()->dterm_notch_cutoff
-#else       
+#else
         sbufWriteU16(dst, 0); //BF: pidProfile()->dterm_notch_hz
         sbufWriteU16(dst, 1); //pidProfile()->dterm_notch_cutoff
 #endif
-            
+
 #ifdef USE_GYRO_NOTCH_2
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2); //BF: masterConfig.gyro_soft_notch_hz_2
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2); //BF: masterConfig.gyro_soft_notch_cutoff_2
@@ -1181,7 +1181,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, accelerometerConfig()->accGain.raw[X]);
         sbufWriteU16(dst, accelerometerConfig()->accGain.raw[Y]);
         sbufWriteU16(dst, accelerometerConfig()->accGain.raw[Z]);
-    #else 
+    #else
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1194,7 +1194,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, compassConfig()->magZero.raw[X]);
         sbufWriteU16(dst, compassConfig()->magZero.raw[Y]);
         sbufWriteU16(dst, compassConfig()->magZero.raw[Z]);
-    #else 
+    #else
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
         sbufWriteU16(dst, 0);
@@ -1634,7 +1634,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         accelerometerConfigMutable()->accGain.raw[X] = sbufReadU16(src);
         accelerometerConfigMutable()->accGain.raw[Y] = sbufReadU16(src);
         accelerometerConfigMutable()->accGain.raw[Z] = sbufReadU16(src);
-    #else 
+    #else
         sbufReadU16(src);
         sbufReadU16(src);
         sbufReadU16(src);
@@ -1647,7 +1647,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         compassConfigMutable()->magZero.raw[X] = sbufReadU16(src);
         compassConfigMutable()->magZero.raw[Y] = sbufReadU16(src);
         compassConfigMutable()->magZero.raw[Z] = sbufReadU16(src);
-    #else 
+    #else
         sbufReadU16(src);
         sbufReadU16(src);
         sbufReadU16(src);

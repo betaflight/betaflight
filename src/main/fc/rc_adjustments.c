@@ -164,7 +164,7 @@ adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
 void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
-    
+
     if (adjustmentState->config == adjustmentConfig) {
         // already configured
         return;
@@ -172,7 +172,7 @@ void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adj
     adjustmentState->auxChannelIndex = auxSwitchChannelIndex;
     adjustmentState->config = adjustmentConfig;
     adjustmentState->timeoutAt = 0;
-    
+
     MARK_ADJUSTMENT_FUNCTION_AS_READY(index);
 }
 
@@ -210,7 +210,7 @@ static void blackboxLogInflightAdjustmentEventFloat(adjustmentFunction_e adjustm
 
 static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t adjustmentFunction, int delta) {
     int newValue;
-    
+
     if (delta > 0) {
         beeperConfirmationBeeps(2);
     } else {
@@ -324,7 +324,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
 void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
-    
+
     switch(adjustmentFunction) {
         case ADJUSTMENT_RATE_PROFILE:
             if (getCurrentControlRateProfile() != position) {
@@ -334,7 +334,7 @@ void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
             }
             break;
     }
-    
+
     if (applied) {
         beeperConfirmationBeeps(position + 1);
     }
@@ -346,13 +346,13 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
 {
     uint8_t adjustmentIndex;
     uint32_t now = millis();
-    
+
     bool canUseRxData = rxIsReceivingSignal();
-    
-    
+
+
     for (adjustmentIndex = 0; adjustmentIndex < MAX_SIMULTANEOUS_ADJUSTMENT_COUNT; adjustmentIndex++) {
         adjustmentState_t *adjustmentState = &adjustmentStates[adjustmentIndex];
-        
+
         if (!adjustmentState->config) {
             continue;
         }
@@ -360,21 +360,21 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
         if (adjustmentFunction == ADJUSTMENT_NONE) {
             continue;
         }
-        
+
         int32_t signedDiff = now - adjustmentState->timeoutAt;
         bool canResetReadyStates = signedDiff >= 0L;
-        
+
         if (canResetReadyStates) {
             adjustmentState->timeoutAt = now + RESET_FREQUENCY_2HZ;
             MARK_ADJUSTMENT_FUNCTION_AS_READY(adjustmentIndex);
         }
-        
+
         if (!canUseRxData) {
             continue;
         }
-        
+
         uint8_t channelIndex = NON_AUX_CHANNEL_COUNT + adjustmentState->auxChannelIndex;
-        
+
         if (adjustmentState->config->mode == ADJUSTMENT_MODE_STEP) {
             int delta;
             if (rcData[channelIndex] > rxConfig()->midrc + 200) {
@@ -390,13 +390,13 @@ void processRcAdjustments(const controlRateConfig_t *controlRateConfig)
             if (IS_ADJUSTMENT_FUNCTION_BUSY(adjustmentIndex)) {
                 continue;
             }
-            
+
             // it is legitimate to adjust an otherwise const item here
             applyStepAdjustment((controlRateConfig_t*)controlRateConfig, adjustmentFunction, delta);
         } else if (adjustmentState->config->mode == ADJUSTMENT_MODE_SELECT) {
             uint16_t rangeWidth = ((2100 - 900) / adjustmentState->config->data.selectConfig.switchPositions);
             uint8_t position = (constrain(rcData[channelIndex], 900, 2100 - 1) - 900) / rangeWidth;
-            
+
             applySelectAdjustment(adjustmentFunction, position);
         }
         MARK_ADJUSTMENT_FUNCTION_AS_BUSY(adjustmentIndex);
@@ -412,11 +412,11 @@ void updateAdjustmentStates(void)
 {
     for (int index = 0; index < MAX_ADJUSTMENT_RANGE_COUNT; index++) {
         const adjustmentRange_t *adjustmentRange = adjustmentRanges(index);
-        
+
         if (isRangeActive(adjustmentRange->auxChannelIndex, &adjustmentRange->range)) {
-            
+
             const adjustmentConfig_t *adjustmentConfig = &defaultAdjustmentConfigs[adjustmentRange->adjustmentFunction - ADJUSTMENT_FUNCTION_CONFIG_INDEX_OFFSET];
-            
+
             configureAdjustment(adjustmentRange->adjustmentIndex, adjustmentRange->auxSwitchChannelIndex, adjustmentConfig);
         }
     }

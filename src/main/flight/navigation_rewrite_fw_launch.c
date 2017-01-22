@@ -147,7 +147,7 @@ void applyFixedWingLaunchController(timeUs_t currentTimeUs)
                 if (navConfig()->fw.launch_motor_spinup_time > 0) {
                     const float timeSinceMotorStartMs = constrainf(timeElapsedSinceLaunchMs - navConfig()->fw.launch_motor_timer, 0.0f, navConfig()->fw.launch_motor_spinup_time);
                     rcCommand[THROTTLE] = scaleRangef(timeSinceMotorStartMs,
-                                                      0.0f, navConfig()->fw.launch_motor_spinup_time, 
+                                                      0.0f, navConfig()->fw.launch_motor_spinup_time,
                                                       motorConfig()->minthrottle, navConfig()->fw.launch_throttle);
                 }
                 else {

@@ -73,7 +73,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 
     __DMA1_CLK_ENABLE();
 
-    
+
     /* Set the parameters to be configured */
     hdma_tim.Init.Channel  = WS2811_DMA_CHANNEL;
     hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
