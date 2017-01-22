@@ -51,10 +51,6 @@ static uint8_t tmpProfileIndex;
 static uint8_t profileIndex;
 static char profileIndexString[] = " p";
 
-static uint8_t tmpRateProfileIndex;
-static uint8_t rateProfileIndex;
-static char rateProfileIndexString[] = " r";
-
 static void cmsx_ReadPidToArray(uint8_t *dst, int pidIndex)
 {
     dst[0] = pidProfile()->P8[pidIndex];
@@ -75,10 +71,6 @@ static long cmsx_menuImu_onEnter(void)
     tmpProfileIndex = profileIndex + 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
 
-    rateProfileIndex = getCurrentControlRateProfile();
-    tmpRateProfileIndex = rateProfileIndex + 1;
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
-
     return 0;
 }
 
@@ -87,7 +79,6 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
     UNUSED(self);
 
     setProfile(profileIndex);
-    changeControlRateProfile(rateProfileIndex); // XXX setControlRateProfile???
 
     return 0;
 }
@@ -99,17 +90,6 @@ static long cmsx_profileIndexOnChange(displayPort_t *displayPort, const void *pt
 
     profileIndex = tmpProfileIndex - 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
-
-    return 0;
-}
-
-static long cmsx_rateProfileIndexOnChange(displayPort_t *displayPort, const void *ptr)
-{
-    UNUSED(displayPort);
-    UNUSED(ptr);
-
-    rateProfileIndex = tmpRateProfileIndex - 1;
-    rateProfileIndexString[1] = '0' + tmpProfileIndex;
 
     return 0;
 }

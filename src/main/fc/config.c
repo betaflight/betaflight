@@ -408,7 +408,6 @@ void resetConfigs(void)
     createDefaultConfig();
 
     setProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
@@ -445,7 +444,6 @@ void readEEPROM(void)
 
     setProfile(getCurrentProfileIndex());
     pgActivateProfile(getCurrentProfileIndex());
-    setControlRateProfile(getCurrentProfileIndex());
 
     validateAndFixConfig();
     activateConfig();
@@ -497,6 +495,8 @@ bool setProfile(uint8_t profileIndex)
         profileIndex = 0;
     }
     systemConfigMutable()->current_profile_index = profileIndex;
+    // set the control rate profile to match
+    setControlRateProfile(profileIndex);
     // return true if current_profile_index has changed
     return true;
 }

@@ -52,17 +52,11 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
     }
 }
 
-uint8_t getCurrentControlRateProfile(void)
-{
-    return systemConfig()->currentControlRateProfileIndex;
-}
-
 void setControlRateProfile(uint8_t profileIndex)
 {
     if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
+        profileIndex = 0;
     }
-    systemConfigMutable()->currentControlRateProfileIndex = profileIndex;
     currentControlRateProfile = controlRateProfiles(profileIndex);
 }
 
@@ -73,9 +67,6 @@ void activateControlRateConfig(void)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (systemConfig()->currentControlRateProfileIndex == profileIndex) {
-        return;
-    }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();
 }

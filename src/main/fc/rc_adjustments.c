@@ -162,7 +162,7 @@ static const adjustmentConfig_t defaultAdjustmentConfigs[ADJUSTMENT_FUNCTION_COU
 
 adjustmentState_t adjustmentStates[MAX_SIMULTANEOUS_ADJUSTMENT_COUNT];
 
-void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
+static void configureAdjustment(uint8_t index, uint8_t auxSwitchChannelIndex, const adjustmentConfig_t *adjustmentConfig) {
     adjustmentState_t *adjustmentState = &adjustmentStates[index];
 
     if (adjustmentState->config == adjustmentConfig) {
@@ -321,7 +321,7 @@ static void applyStepAdjustment(controlRateConfig_t *controlRateConfig, uint8_t 
     };
 }
 
-void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
+static void applySelectAdjustment(uint8_t adjustmentFunction, uint8_t position)
 {
     bool applied = false;
 

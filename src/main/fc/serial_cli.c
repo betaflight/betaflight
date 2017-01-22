@@ -1284,11 +1284,10 @@ static uint16_t getValueOffset(const clivalue_t *value)
 {
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
+    case PROFILE_VALUE:
         return value->offset;
     case CONTROL_RATE_VALUE:
         return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
-    case PROFILE_VALUE:
-        return value->offset;
     }
     return 0;
 }
@@ -1299,11 +1298,10 @@ static void *getValuePointer(const clivalue_t *value)
 
     switch (value->type & VALUE_SECTION_MASK) {
     case MASTER_VALUE:
+    case PROFILE_VALUE:
         return rec->address + value->offset;
     case CONTROL_RATE_VALUE:
         return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
-    case PROFILE_VALUE:
-        return *rec->ptr + value->offset;
     }
     return NULL;
 }
@@ -3089,24 +3087,10 @@ static void cliProfile(char *cmdline)
         cliPrintf("profile %d\r\n", getCurrentProfileIndex());
         return;
     } else {
-        const int i = atoi(cmdline);
+        const int i = atoi(cmdline) - 1; // make CLI index 1-based
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             changeProfile(i);
             cliProfile("");
-        }
-    }
-}
-
-static void cliRateProfile(char *cmdline)
-{
-    if (isEmpty(cmdline)) {
-        cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
-        return;
-    } else {
-        const int i = atoi(cmdline);
-        if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
-            changeControlRateProfile(i);
-            cliRateProfile("");
         }
     }
 }
@@ -3121,17 +3105,6 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
     cliPrintHashLine("profile");
     cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
     dumpAllValues(PROFILE_VALUE, dumpMask);
-}
-
-static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
-{
-    if (rateProfileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        // Faulty values
-        return;
-    }
-    changeControlRateProfile(rateProfileIndex);
-    cliPrintHashLine("rateprofile");
-    cliPrintf("rateprofile %d\r\n\r\n", getCurrentControlRateProfile());
     dumpAllValues(CONTROL_RATE_VALUE, dumpMask);
 }
 
@@ -3462,8 +3435,6 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpMask = DUMP_MASTER; // only
     } else if ((options = checkCommand(cmdline, "profile"))) {
         dumpMask = DUMP_PROFILE; // only
-    } else if ((options = checkCommand(cmdline, "rates"))) {
-        dumpMask = DUMP_RATES; // only
     } else if ((options = checkCommand(cmdline, "all"))) {
         dumpMask = DUMP_ALL;   // all profiles and rates
     } else {
@@ -3475,13 +3446,11 @@ static void printConfig(const char *cmdline, bool doDiff)
     }
 
     const int currentProfileIndexSave = getCurrentProfileIndex();
-    const int currentControlRateProfileSave = getCurrentControlRateProfile();
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
     // restore the profile indices, since they should not be reset for proper comparison
     setProfile(currentProfileIndexSave);
-    setControlRateProfile(currentControlRateProfileSave);
 
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -3563,34 +3532,24 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpAllValues(MASTER_VALUE, dumpMask);
 
         if (dumpMask & DUMP_ALL) {
-            const int activeProfile = getCurrentProfileIndex();
+            // dump all profiles
+            const int currentProfileIndexSave = getCurrentProfileIndex();
             for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
                 cliDumpProfile(ii, dumpMask);
             }
-            setProfile(activeProfile);
+            setProfile(currentProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
-            cliPrintf("profile %d\r\n", getCurrentProfileIndex());
+            cliPrintf("profile %d\r\n", currentProfileIndexSave);
 
-            const int currentRateIndex = getCurrentControlRateProfile();
-            for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-                cliDumpRateProfile(ii, dumpMask);
-            }
-            changeControlRateProfile(currentRateIndex);
-            cliPrintHashLine("restore original rateprofile selection");
-            cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
             cliPrintHashLine("save configuration\r\nsave");
         } else {
+            // dump just the current profile
             cliDumpProfile(getCurrentProfileIndex(), dumpMask);
-            cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
         cliDumpProfile(getCurrentProfileIndex(), dumpMask);
-    }
-
-    if (dumpMask & DUMP_RATES) {
-        cliDumpRateProfile(getCurrentControlRateProfile(), dumpMask);
     }
     // restore configs from copies
     restoreConfigs();
@@ -3694,7 +3653,6 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
-    CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
 #if !defined(SKIP_TASK_STATISTICS) && !defined(SKIP_CLI_RESOURCES)
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif

@@ -102,7 +102,6 @@ typedef struct adjustmentState_s {
 PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
 
 void resetAdjustmentStates(void);
-void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(void);
 struct controlRateConfig_s;
 void processRcAdjustments(const struct controlRateConfig_s *controlRateConfig);

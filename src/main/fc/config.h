@@ -76,7 +76,6 @@ typedef enum {
 typedef struct systemConfig_s {
     uint16_t accTaskFrequency;
     uint16_t attitudeTaskFrequency;
-    uint8_t currentControlRateProfileIndex;
     uint8_t current_profile_index;
     uint8_t asyncMode;
     uint8_t debug_mode;
