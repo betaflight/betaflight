@@ -123,7 +123,7 @@ typedef struct modeActivationCondition_s {
 
 #define IS_RANGE_USABLE(range) ((range)->startStep < (range)->endStep)
 
-PG_DECLARE_ARR(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
+PG_DECLARE_ARRAY(modeActivationCondition_t, MAX_MODE_ACTIVATION_CONDITION_COUNT, modeActivationConditions);
 
 typedef enum {
     MODE_OPERATOR_OR, // default

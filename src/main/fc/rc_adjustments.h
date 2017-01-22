@@ -99,7 +99,7 @@ typedef struct adjustmentState_s {
 
 #define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
 
-PG_DECLARE_ARR(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
+PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges);
 
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);

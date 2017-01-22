@@ -74,9 +74,9 @@ PG_RESET_TEMPLATE(servoConfig_t, servoConfig,
     .tri_unarmed_servo = 1
 );
 
-PG_REGISTER_ARR(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
+PG_REGISTER_ARRAY(servoMixer_t, MAX_SERVO_RULES, customServoMixers, PG_SERVO_MIXER, 0);
 
-PG_REGISTER_ARR_WITH_RESET_FN(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(servoParam_t, MAX_SUPPORTED_SERVOS, servoParams, PG_SERVO_PARAMS, 0);
 
 void pgResetFn_servoParams(servoParam_t *instance)
 {

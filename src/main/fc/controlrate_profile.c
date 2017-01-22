@@ -33,7 +33,7 @@
 const controlRateConfig_t *currentControlRateProfile;
 
 
-PG_REGISTER_ARR_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
+PG_REGISTER_ARRAY_WITH_RESET_FN(controlRateConfig_t, MAX_CONTROL_RATE_PROFILE_COUNT, controlRateProfiles, PG_CONTROL_RATE_PROFILES, 0);
 
 void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
 {
