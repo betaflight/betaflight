@@ -62,9 +62,9 @@ typedef struct uartDevice_s {
     volatile uint8_t *txBuffer;
     rccPeriphTag_t rcc;
     uint8_t af;
-    uint8_t rxIrq;
-    uint32_t txPriority;
-    uint32_t rxPriority;
+    uint8_t irq;
+    uint8_t txPriority;
+    uint8_t rxPriority;
 } uartDevice_t;
 
 
@@ -150,7 +150,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_USART1,
         .rcc = RCC_APB2(USART1),
-        .rxIrq = USART1_IRQn,
+        .irq = USART1_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART1
     },
@@ -167,7 +167,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_USART2,
         .rcc = RCC_APB1(USART2),
-        .rxIrq = USART2_IRQn,
+        .irq = USART2_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART2
     },
@@ -185,7 +185,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_USART3,
         .rcc = RCC_APB1(USART3),
-        .rxIrq = USART3_IRQn,
+        .irq = USART3_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART3
     },
@@ -202,7 +202,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_UART4,
         .rcc = RCC_APB1(UART4),
-        .rxIrq = UART4_IRQn,
+        .irq = UART4_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART4
     },
@@ -218,7 +218,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_UART5,
         .rcc = RCC_APB1(UART5),
-        .rxIrq = UART5_IRQn,
+        .irq = UART5_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART5
     },
@@ -235,7 +235,7 @@ static uartDevice_t uartHardware[] = {
         .tx = IO_TAG_NONE,
         .af = GPIO_AF_USART6,
         .rcc = RCC_APB2(USART6),
-        .rxIrq = USART6_IRQn,
+        .irq = USART6_IRQn,
         .txPriority = NVIC_PRIO_SERIALUART6_TXDMA,
         .rxPriority = NVIC_PRIO_SERIALUART6
     },
@@ -351,6 +351,9 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     s->port.txBufferSize = sizeof(uart->txBuffer);
 
     s->USARTx = uart->dev;
+
+    RCC_ClockCmd(uart->rcc, ENABLE);
+
     if (uart->rxDMAStream) {
         s->rxDMAChannel = uart->DMAChannel;
         s->rxDMAStream = uart->rxDMAStream;
@@ -370,10 +373,6 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     IO_t tx = IOGetByTag(uart->tx);
     IO_t rx = IOGetByTag(uart->rx);
-
-    if (uart->rcc) {
-        RCC_ClockCmd(uart->rcc, ENABLE);
-    }
 
     if (options & SERIAL_BIDIR) {
         IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
@@ -395,7 +394,7 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
     }
 
     if (!s->rxDMAChannel || !s->txDMAChannel) {
-        NVIC_InitStructure.NVIC_IRQChannel = uart->rxIrq;
+        NVIC_InitStructure.NVIC_IRQChannel = uart->irq;
         NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_PRIORITY_BASE(uart->rxPriority);
         NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_PRIORITY_SUB(uart->rxPriority);
         NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;

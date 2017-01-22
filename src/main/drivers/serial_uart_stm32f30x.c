@@ -17,6 +17,7 @@
 
 /*
  * Authors:
+ * jflyper - Reconfigurable pins, fixes and enhancements
  * Dominic Clifton - Port baseflight STM32F10x to STM32F30x for cleanflight
  * J. Ihlein - Code from FocusFlight32
  * Bill Nesbitt - Code from AutoQuad
@@ -69,9 +70,12 @@ typedef struct uartDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     uint8_t irqn;
-    uint32_t txPriority;
-    uint32_t rxPriority;
+    uint8_t txPriority;
+    uint8_t rxPriority;
 } uartDevice_t;
+
+#define USE_UART1_RX_DMA
+#define USE_UART1_TX_DMA
 
 // XXX Will DMA eventually be configurable?
 // XXX Do these belong here?
@@ -124,15 +128,7 @@ typedef struct uartDevice_s {
 # define UART4_TX_DMA 0
 #endif
 
-#define UART_RX_BUFFER_SIZE 256
-#define UART_TX_BUFFER_SIZE 256
-
 static uartDevice_t uartHardware[] = {
-    // USART1
-    // PA10,PA9
-    // PB7,PB6
-    // PE1,PE0
-    // PC5,PC4
     {
         .dev = USART1,
         .rxDMAChannel = UART1_RX_DMA,
@@ -152,11 +148,6 @@ static uartDevice_t uartHardware[] = {
         .rxPriority = NVIC_PRIO_SERIALUART1_RXDMA,
     },
 
-    // USART2
-    // PA3, PA2
-    // PA15, PA14
-    // PD6, PD5
-    // PB4, PB3
     {
         .dev = USART2,
         .rxDMAChannel = UART2_RX_DMA,
@@ -176,10 +167,6 @@ static uartDevice_t uartHardware[] = {
         .rxPriority = NVIC_PRIO_SERIALUART2_RXDMA,
     },
 
-    // USART3
-    // PB11,PB10
-    // PC11,PC10
-    // PD9,PD8
     {
         .dev = USART3,
         .rxDMAChannel = UART3_RX_DMA,
@@ -199,7 +186,6 @@ static uartDevice_t uartHardware[] = {
     },
 
     // UART4 XXX Not tested (yet!?) Need 303RC, e.g. LUX for testing
-    // PC11,PC10
     {
         .dev = UART4,
         .rxDMAChannel = UART4_RX_DMA,
@@ -217,7 +203,6 @@ static uartDevice_t uartHardware[] = {
     },
 
     // UART5 XXX Not tested (yet!?) Need 303RC; e.g. LUX for testing
-    // PD2,PC12
     {
         .dev = UART5,
         .rxDMAChannel = 0,
@@ -269,9 +254,9 @@ void serialInitHardwareMap(serialPinConfig_t *pSerialPinConfig)
 
 void usartIrqHandler(uartPort_t *s)
 {
-    uint32_t ISR = s->USARTx->ISR;
+    uint32_t isr = s->USARTx->ISR;
 
-    if (!s->rxDMAChannel && (ISR & USART_FLAG_RXNE)) {
+    if (!s->rxDMAChannel && (isr & USART_FLAG_RXNE)) {
         if (s->port.rxCallback) {
             s->port.rxCallback(s->USARTx->RDR);
         } else {
@@ -282,7 +267,7 @@ void usartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (!s->txDMAChannel && (ISR & USART_FLAG_TXE)) {
+    if (!s->txDMAChannel && (isr & USART_FLAG_TXE)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
             USART_SendData(s->USARTx, s->port.txBuffer[s->port.txBufferTail++]);
             if (s->port.txBufferTail >= s->port.txBufferSize) {
@@ -293,7 +278,7 @@ void usartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (ISR & USART_FLAG_ORE)
+    if (isr & USART_FLAG_ORE)
     {
         USART_ClearITPendingBit (s->USARTx, USART_IT_ORE);
     }
@@ -359,37 +344,29 @@ uartPort_t *serialUART(int device, uint32_t baudRate, portMode_t mode, portOptio
 
     s->USARTx = uartDev->dev;
 
-#if defined(USE_UART1_RX_DMA) || defined(USE_UART2_RX_DMA) || defined(USE_UART3_RX_DMA)
-    // This doesn't work... Was original RX DMA working at all???
+    RCC_ClockCmd(uartDev->rcc, ENABLE);
+
+    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, uartDev->af, device);
+
     if (uartDev->rxDMAChannel) {
         s->rxDMAChannel = uartDev->rxDMAChannel;
         s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
         dmaInit(dmaGetIdentifier(uartDev->rxDMAChannel), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
     }
-#endif
 
-// Get rid of this when DMA become configurable
-#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA)
     if (uartDev->txDMAChannel) {
         s->txDMAChannel = uartDev->txDMAChannel;
         s->txDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->TDR;
         const dmaIdentifier_e identifier = dmaGetIdentifier(uartDev->txDMAChannel);
-
         dmaInit(identifier, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         dmaSetHandler(identifier, handleUsartTxDma, uartDev->txPriority, (uint32_t)s);
     }
-#endif
 
-    RCC_ClockCmd(uartDev->rcc, ENABLE);
-
-#if defined(USE_UART1_TX_DMA) || defined(USE_UART1_RX_DMA)
-// Is this handled in dmaInit or dmaSetHandler?
+    // dmaInit doesn't do this atm.
+    // When it does, UART4&5 (on DMA2) will be handled correctly there.
     RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
-#endif
 
-    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, uartDev->af, device);
-
-    if (!uartDev->rxDMAChannel || !uartDev->txDMAChannel) {
+    if (!s->rxDMAChannel || !s->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;
 
         NVIC_InitStructure.NVIC_IRQChannel = uartDev->irqn;

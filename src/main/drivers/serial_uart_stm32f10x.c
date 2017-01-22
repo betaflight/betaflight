@@ -67,8 +67,8 @@ typedef struct uartDevice_s {
     rccPeriphTag_t rcc;
     uint8_t af;
     uint8_t irqn;
-    uint32_t txPriority;
-    uint32_t rxPriority;
+    uint8_t txPriority;
+    uint8_t rxPriority;
 } uartDevice_t;
 
 #ifdef USE_UART1
@@ -240,13 +240,13 @@ uartPort_t *serialUART(UARTDevice device, uint32_t baudRate, portMode_t mode, po
 
     s->USARTx = uartDev->dev;
 
+    RCC_ClockCmd(uartDev->rcc, ENABLE);
+
     if (uartDev->rxDMAChannel) {
         dmaInit(dmaGetIdentifier(uartDev->rxDMAChannel), OWNER_SERIAL_RX, RESOURCE_INDEX(device));
         s->rxDMAChannel = uartDev->rxDMAChannel;
         s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->DR;
     }
-
-    RCC_ClockCmd(uartDev->rcc, ENABLE);
 
     if (uartDev->txDMAChannel) {
         const dmaIdentifier_e identifier = dmaGetIdentifier(uartDev->txDMAChannel);
