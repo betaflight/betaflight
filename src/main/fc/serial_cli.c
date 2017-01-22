@@ -779,7 +779,7 @@ static const clivalue_t valueTable[] = {
     { "nav_rth_climb_first",        VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_CONFIG, offsetof(navConfig_t, general.flags.rth_climb_first) },
     { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_NAV_CONFIG, offsetof(navConfig_t, general.flags.rth_tail_first) },
     { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_NAV_RTH_ALT_MODE }, PG_NAV_CONFIG, offsetof(navConfig_t, general.flags.rth_alt_control_mode) },
-    { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 100,  65000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.rth_altitude) },
+    { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE | MODE_MAX, .config.max = { 65000 }, PG_NAV_CONFIG, offsetof(navConfig_t, general.rth_altitude) },
 
     { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, .config.minmax = { 15,  45 }, PG_NAV_CONFIG, offsetof(navConfig_t, mc.max_bank_angle) },
     { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000,  2000 }, PG_NAV_CONFIG, offsetof(navConfig_t, mc.hover_throttle) },
@@ -1314,23 +1314,20 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
     const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
     if (config->currentConfig == NULL || config->defaultConfig == NULL) {
         // has not been set up properly
-        cliPrintf("VALUE %s HAS NOT BEEN SET UP CORECTLY\r\n", value->name);
+        cliPrintf("VALUE %s ERROR\r\n", value->name);
         return;
     }
+    const int valueOffset = getValueOffset(value);
     switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
     case DO_DIFF:
-        if (valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + getValueOffset(value), (uint8_t*)config->defaultConfig + getValueOffset(value))) {
+        if (valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + valueOffset, (uint8_t*)config->defaultConfig + valueOffset)) {
             break;
         }
         // drop through, since not equal to default
     case 0:
-        cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->currentConfig + getValueOffset(value), 0);
-        cliPrint("\r\n");
-        break;
     case SHOW_DEFAULTS:
         cliPrintf(format, value->name);
-        printValuePointer(value, (uint8_t*)config->defaultConfig + getValueOffset(value), 0);
+        printValuePointer(value, (uint8_t*)config->currentConfig + valueOffset, 0);
         cliPrint("\r\n");
         break;
     }
@@ -1343,18 +1340,6 @@ static void dumpAllValues(uint16_t valueSection, uint8_t dumpMask)
         bufWriterFlush(cliWriter);
         if ((value->type & VALUE_SECTION_MASK) == valueSection) {
             dumpPgValue(value, dumpMask);
-        }
-    }
-}
-
-static void dumpValue(uint16_t valueSection, uint8_t dumpMask, pgn_t pgn)
-{
-    for (uint32_t i = 0; i < ARRAYLEN(valueTable); i++) {
-        const clivalue_t *value = &valueTable[i];
-        if ((value->type & VALUE_SECTION_MASK) == valueSection && value->pgn == pgn) {
-            bufWriterFlush(cliWriter);
-            dumpPgValue(value, dumpMask);
-            break;
         }
     }
 }
@@ -1533,16 +1518,15 @@ static void cliRxFailsafe(char *cmdline)
             // const cast
             rxFailsafeChannelConfig_t *channelFailsafeConfig = rxFailsafeChannelConfigsMutable(channel);
 
-            uint16_t value;
-            rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
+            const rxFailsafeChannelType_e type = (channel < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_TYPE_FLIGHT : RX_FAILSAFE_TYPE_AUX;
             rxFailsafeChannelMode_e mode = channelFailsafeConfig->mode;
             bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
 
             ptr = nextArg(ptr);
             if (ptr) {
-                char *p = strchr(rxFailsafeModeCharacters, *(ptr));
+                const char *p = strchr(rxFailsafeModeCharacters, *(ptr));
                 if (p) {
-                    uint8_t requestedMode = p - rxFailsafeModeCharacters;
+                    const uint8_t requestedMode = p - rxFailsafeModeCharacters;
                     mode = rxFailsafeModesTable[type][requestedMode];
                 } else {
                     mode = RX_FAILSAFE_MODE_INVALID;
@@ -1560,7 +1544,7 @@ static void cliRxFailsafe(char *cmdline)
                         cliShowParseError();
                         return;
                     }
-                    value = atoi(ptr);
+                    uint16_t value = atoi(ptr);
                     value = CHANNEL_VALUE_TO_RXFAIL_STEP(value);
                     if (value > MAX_RXFAIL_RANGE_STEP) {
                         cliPrint("Value out of range\r\n");
@@ -3439,37 +3423,12 @@ static void backupConfigs(void)
             } else {
                 memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size);
             }
+#ifdef SERIAL_CLI_DEBUG
         } else {
-            cliPrintf("BACKUP %d HAS NOT BEEN SET UP CORECTLY\r\n", pgN(reg));
+            cliPrintf("BACKUP %d SET UP INCORRECTLY\r\n", pgN(reg));
+#endif
         }
     }
-/*    // !!TODO set up getCurrentAndDefaultConfigs to return array values
-    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
-        rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
-    }
-    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
-        rxChannelRangeConfigsCopy[ii] = *rxChannelRangeConfigs(ii);
-    }
-#ifdef USE_SERVOS
-    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
-        customServoMixersCopy[ii] = *customServoMixers(ii);
-    }
-    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
-        servoParamsCopy[ii] = *servoParams(ii);
-    }
-#endif
-    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
-        customMotorMixerCopy[ii] = *customMotorMixer(ii);
-    }
-    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
-        modeActivationConditionsCopy[ii] = *modeActivationConditions(ii);
-    }
-    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
-        adjustmentRangesCopy[ii] = *adjustmentRanges(ii);
-    }
-    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-        controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
-    }*/
     const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
     memcpy(&pidProfileCopy[0], reg->address, sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
@@ -3485,37 +3444,12 @@ static void restoreConfigs(void)
             } else {
                 memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size);
             }
+#ifdef SERIAL_CLI_DEBUG
         } else {
-            cliPrintf("REG %d HAS NOT BEEN SET UP CORECTLY\r\n", pgN(reg));
+            cliPrintf("RESTORE %d SET UP INCORRECTLY\r\n", pgN(reg));
+#endif
         }
     }
-/*    // !!TODO set up getCurrentAndDefaultConfigs to return array values
-    for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
-        *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
-    }
-    for (int ii = 0; ii < NON_AUX_CHANNEL_COUNT; ++ii) {
-        *rxChannelRangeConfigsMutable(ii) = rxChannelRangeConfigsCopy[ii];
-    }
-#ifdef USE_SERVOS
-    for (int ii = 0; ii < MAX_SERVO_RULES; ++ii) {
-        *customServoMixersMutable(ii) = customServoMixersCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_SUPPORTED_SERVOS; ++ii) {
-        *servoParamsMutable(ii) = servoParamsCopy[ii];
-    }
-#endif
-    for (int ii = 0; ii < MAX_SUPPORTED_MOTORS; ++ii) {
-        *customMotorMixerMutable(ii) = customMotorMixerCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_MODE_ACTIVATION_CONDITION_COUNT; ++ii) {
-        *modeActivationConditionsMutable(ii) = modeActivationConditionsCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_ADJUSTMENT_RANGE_COUNT; ++ii) {
-        *adjustmentRangesMutable(ii) = adjustmentRangesCopy[ii];
-    }
-    for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
-        *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
-    }*/
     const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
     memcpy(reg->address, &pidProfileCopy[0], sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
