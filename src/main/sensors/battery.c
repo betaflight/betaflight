@@ -61,7 +61,7 @@ uint16_t vbat = 0;                  // battery voltage in 0.1V steps (filtered)
 uint16_t vbatLatest = 0;            // most recent unsmoothed value
 
 int32_t amperage = 0;               // amperage read by current sensor in centiampere (1/100th A)
-uint16_t amperageLatest = 0;        // most recent value
+int32_t amperageLatest = 0;        // most recent value
 
 int32_t mAhDrawn = 0;               // milliampere hours drawn from the battery since start
 
