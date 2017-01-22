@@ -105,15 +105,17 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 0);
 #define SERIALRX_PROVIDER 0
 #endif
 
+#define RX_MIDRC 1500
+#define RX_MIN_USEX 885
 PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .serialrx_provider = SERIALRX_PROVIDER,
     .rx_spi_protocol = RX_SPI_DEFAULT_PROTOCOL,
     .spektrum_sat_bind = 0,
     .sbus_inversion = 1,
-    .midrc = 1500,
+    .midrc = RX_MIDRC,
     .mincheck = 1100,
     .maxcheck = 1900,
-    .rx_min_usec = 885,          // any of first 4 channels below this value will trigger rx loss detection
+    .rx_min_usec = RX_MIN_USEX,          // any of first 4 channels below this value will trigger rx loss detection
     .rx_max_usec = 2115,         // any of first 4 channels above this value will trigger rx loss detection
     .rssi_channel = 0,
     .rssi_scale = RSSI_SCALE_DEFAULT,
@@ -148,10 +150,10 @@ void pgResetFn_rxFailsafeChannelConfigs(rxFailsafeChannelConfig_t *rxFailsafeCha
     for (int i = 0; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
         if (i== THROTTLE) {
             rxFailsafeChannelConfigs[i].mode = RX_FAILSAFE_MODE_HOLD;
-            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->rx_min_usec);
+            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIN_USEX);
         } else {
             rxFailsafeChannelConfigs[i].mode = (i < NON_AUX_CHANNEL_COUNT) ? RX_FAILSAFE_MODE_AUTO : RX_FAILSAFE_MODE_HOLD;
-            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(rxConfig()->midrc);
+            rxFailsafeChannelConfigs[i].step = CHANNEL_VALUE_TO_RXFAIL_STEP(RX_MIDRC);
         }
     }
 }

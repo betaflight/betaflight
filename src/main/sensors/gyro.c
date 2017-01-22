@@ -93,10 +93,10 @@ PG_RESET_TEMPLATE(gyroConfig_t, gyroConfig,
     .looptime = 2000,
     .gyroSync = 0,
     .gyroSyncDenominator = 2,
-    .gyro_soft_notch_cutoff_1 = 0,
     .gyro_soft_notch_hz_1 = 0,
-    .gyro_soft_notch_cutoff_2 = 0,
-    .gyro_soft_notch_hz_2 = 0
+    .gyro_soft_notch_cutoff_1 = 1,
+    .gyro_soft_notch_hz_2 = 0,
+    .gyro_soft_notch_cutoff_2 = 1
 );
 
 static const extiConfig_t *selectMPUIntExtiConfig(void)

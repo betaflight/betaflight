@@ -1073,7 +1073,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1); //masterConfig.gyro_soft_notch_hz_1
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1); //BF: masterConfig.gyro_soft_notch_cutoff_1
 #else
-        sbufWriteU16(dst, 1); //masterConfig.gyro_soft_notch_hz_1
+        sbufWriteU16(dst, 0); //masterConfig.gyro_soft_notch_hz_1
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_1
 #endif
 
@@ -1081,7 +1081,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, pidProfile()->dterm_soft_notch_hz); //BF: pidProfile()->dterm_notch_hz
         sbufWriteU16(dst, pidProfile()->dterm_soft_notch_cutoff); //pidProfile()->dterm_notch_cutoff
 #else       
-        sbufWriteU16(dst, 1); //BF: pidProfile()->dterm_notch_hz
+        sbufWriteU16(dst, 0); //BF: pidProfile()->dterm_notch_hz
         sbufWriteU16(dst, 1); //pidProfile()->dterm_notch_cutoff
 #endif
             
@@ -1089,7 +1089,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_2); //BF: masterConfig.gyro_soft_notch_hz_2
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_2); //BF: masterConfig.gyro_soft_notch_cutoff_2
 #else
-        sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_hz_2
+        sbufWriteU16(dst, 0); //BF: masterConfig.gyro_soft_notch_hz_2
         sbufWriteU16(dst, 1); //BF: masterConfig.gyro_soft_notch_cutoff_2
 #endif
         break;

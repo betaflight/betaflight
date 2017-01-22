@@ -76,6 +76,9 @@
 #ifndef DEFAULT_RX_FEATURE
 #define DEFAULT_RX_FEATURE FEATURE_RX_PARALLEL_PWM
 #endif
+#ifndef DEFAULT_FEATURES
+#define DEFAULT_FEATURES 0
+#endif
 #ifndef RX_SPI_DEFAULT_PROTOCOL
 #define RX_SPI_DEFAULT_PROTOCOL 0
 #endif
@@ -83,11 +86,17 @@
 #define BRUSHED_MOTORS_PWM_RATE 16000
 #define BRUSHLESS_MOTORS_PWM_RATE 400
 
-PG_REGISTER(profileSelection_t, profileSelection, PG_PROFILE_SELECTION, 0);
+PG_REGISTER_WITH_RESET_TEMPLATE(featureConfig_t, featureConfig, PG_FEATURE_CONFIG, 0);
+
+PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
+    .enabledFeatures = DEFAULT_FEATURES | DEFAULT_RX_FEATURE | FEATURE_FAILSAFE
+);
 
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
+    .currentControlRateProfileIndex = 0,
+    .current_profile_index = 0,
     .debug_mode = DEBUG_NONE,
     .i2c_overclock = 0,
     .accTaskFrequency = ACC_TASK_FREQUENCY_DEFAULT,
@@ -373,7 +382,6 @@ void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch)
 // Default settings
 void createDefaultConfig(void)
 {
-    // Clear all configuration
     // Radio
 #ifdef RX_CHANNELS_TAER
     parseRcChannels("TAER1234");
@@ -477,19 +485,18 @@ void saveConfigAndNotify(void)
 
 uint8_t getCurrentProfileIndex(void)
 {
-    return profileSelection()->current_profile_index;
+    return systemConfig()->current_profile_index;
 }
 
 bool setProfile(uint8_t profileIndex)
 {
-    if (profileSelection()->current_profile_index == profileIndex) {
+    if (systemConfig()->current_profile_index == profileIndex) {
         return false;
     }
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
-    profileSelectionMutable()->current_profile_index = profileIndex;
-//!!!    currentProfile = &masterConfig.profile[profileIndex];
+    systemConfigMutable()->current_profile_index = profileIndex;
     // return true if current_profile_index has changed
     return true;
 }
@@ -500,8 +507,8 @@ void changeProfile(uint8_t profileIndex)
         // profile has changed, so ensure current values saved before new profile is loaded
         writeEEPROM();
         readEEPROM();
-        beeperConfirmationBeeps(profileIndex + 1);
     }
+    beeperConfirmationBeeps(profileIndex + 1);
 }
 
 void beeperOffSet(uint32_t mask)

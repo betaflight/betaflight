@@ -91,7 +91,7 @@ PG_RESET_TEMPLATE(mixerConfig_t, mixerConfig,
 #define DEFAULT_MIN_THROTTLE    1150
 #endif
 
-PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 1);
+PG_REGISTER_WITH_RESET_TEMPLATE(motorConfig_t, motorConfig, PG_MOTOR_CONFIG, 0);
 
 PG_RESET_TEMPLATE(motorConfig_t, motorConfig,
     .minthrottle = DEFAULT_MIN_THROTTLE,
