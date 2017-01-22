@@ -25,8 +25,6 @@ __Stage 2__ is entered when your craft is __armed__ and __stage 1__ persists lon
 
 __Stage 2__ is not activated until 5 seconds after the flight controller boots up.  This is to prevent unwanted activation, as in the case of TX/RX gear with long bind procedures, before the RX sends out valid data.
 
-__Stage 2__ can also directly be activated when a transmitter switch that is configured to control the failsafe mode is switched ON (and `failsafe_kill_switch` is set to OFF).
-
 __Stage 2__ will be aborted when it was due to:
 
 * a lost RC signal and the RC signal has recovered.
