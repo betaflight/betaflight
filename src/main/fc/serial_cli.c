@@ -869,6 +869,7 @@ static barometerConfig_t barometerConfigCopy;
 #ifdef PITOT
 static pitotmeterConfig_t pitotmeterConfigCopy;
 #endif
+static featureConfig_t featureConfigCopy;
 static rxConfig_t rxConfigCopy;
 #ifdef BLACKBOX
 static blackboxConfig_t blackboxConfigCopy;
@@ -915,8 +916,9 @@ static systemConfig_t systemConfigCopy;
 static beeperConfig_t beeperConfigCopy;
 #endif
 static controlRateConfig_t controlRateProfilesCopy[MAX_CONTROL_RATE_PROFILE_COUNT];
-static pidProfile_t pidProfileCopy;
+static pidProfile_t pidProfileCopy[MAX_PROFILE_COUNT];
 static modeActivationOperatorConfig_t modeActivationOperatorConfigCopy;
+static beeperConfig_t beeperConfigCopy;
 
 static void cliPrint(const char *str)
 {
@@ -1080,180 +1082,200 @@ static bool valuePtrEqualsDefault(uint8_t type, const void *ptr, const void *ptr
 typedef struct cliCurrentAndDefaultConfig_s {
     const void *currentConfig; // the copy
     const void *defaultConfig; // the PG value as set by default
-    size_t size;
 } cliCurrentAndDefaultConfig_t;
 
 static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn)
 {
     static cliCurrentAndDefaultConfig_t ret;
-    ret.size = 0;
 
     switch (pgn) {
     case PG_GYRO_CONFIG:
         ret.currentConfig = &gyroConfigCopy;
         ret.defaultConfig = gyroConfig();
-        ret.size = sizeof(gyroConfig_t);
         break;
     case PG_ACCELEROMETER_CONFIG:
         ret.currentConfig = &accelerometerConfigCopy;
         ret.defaultConfig = accelerometerConfig();
-        ret.size = sizeof(accelerometerConfig_t);
         break;
 #ifdef MAG
     case PG_COMPASS_CONFIG:
         ret.currentConfig = &compassConfigCopy;
         ret.defaultConfig = compassConfig();
-        ret.size = sizeof(compassConfig_t);
         break;
 #endif
 #ifdef BARO
     case PG_BAROMETER_CONFIG:
         ret.currentConfig = &barometerConfigCopy;
         ret.defaultConfig = barometerConfig();
-        ret.size = sizeof(barometerConfig_t);
         break;
 #endif
 #ifdef PITOT
     case PG_PITOTMETER_CONFIG:
         ret.currentConfig = &pitotmeterConfigCopy;
         ret.defaultConfig = pitotmeterConfig();
-        ret.size = sizeof(pitotmeterConfig_t);
         break;
 #endif
+    case PG_FEATURE_CONFIG:
+        ret.currentConfig = &featureConfigCopy;
+        ret.defaultConfig = featureConfig();
+        break;
     case PG_RX_CONFIG:
         ret.currentConfig = &rxConfigCopy;
         ret.defaultConfig = rxConfig();
-        ret.size = sizeof(rxConfig_t);
         break;
 #ifdef BLACKBOX
     case PG_BLACKBOX_CONFIG:
         ret.currentConfig = &blackboxConfigCopy;
         ret.defaultConfig = blackboxConfig();
-        ret.size = sizeof(blackboxConfig_t);
         break;
 #endif
     case PG_MOTOR_CONFIG:
         ret.currentConfig = &motorConfigCopy;
         ret.defaultConfig = motorConfig();
-        ret.size = sizeof(motorConfig_t);
         break;
     case PG_FAILSAFE_CONFIG:
         ret.currentConfig = &failsafeConfigCopy;
         ret.defaultConfig = failsafeConfig();
-        ret.size = sizeof(failsafeConfig_t);
         break;
     case PG_BOARD_ALIGNMENT:
         ret.currentConfig = &boardAlignmentCopy;
         ret.defaultConfig = boardAlignment();
-        ret.size = sizeof(boardAlignment_t);
         break;
     case PG_MIXER_CONFIG:
         ret.currentConfig = &mixerConfigCopy;
         ret.defaultConfig = mixerConfig();
-        ret.size = sizeof(mixerConfig_t);
         break;
     case PG_MOTOR_3D_CONFIG:
         ret.currentConfig = &flight3DConfigCopy;
         ret.defaultConfig = flight3DConfig();
-        ret.size = sizeof(flight3DConfig_t);
         break;
 #ifdef USE_SERVOS
     case PG_SERVO_CONFIG:
         ret.currentConfig = &servoConfigCopy;
         ret.defaultConfig = servoConfig();
-        ret.size = sizeof(servoConfig_t);
         break;
     case PG_GIMBAL_CONFIG:
         ret.currentConfig = &gimbalConfigCopy;
         ret.defaultConfig = gimbalConfig();
-        ret.size = sizeof(gimbalConfig_t);
         break;
 #endif
     case PG_BATTERY_CONFIG:
         ret.currentConfig = &batteryConfigCopy;
         ret.defaultConfig = batteryConfig();
-        ret.size = sizeof(batteryConfig_t);
         break;
     case PG_SERIAL_CONFIG:
         ret.currentConfig = &serialConfigCopy;
         ret.defaultConfig = serialConfig();
-        ret.size = sizeof(serialConfig_t);
         break;
     case PG_IMU_CONFIG:
         ret.currentConfig = &imuConfigCopy;
         ret.defaultConfig = imuConfig();
-        ret.size = sizeof(imuConfig_t);
         break;
     case PG_RC_CONTROLS_CONFIG:
         ret.currentConfig = &rcControlsConfigCopy;
         ret.defaultConfig = rcControlsConfig();
-        ret.size = sizeof(rcControlsConfig_t);
         break;
     case PG_ARMING_CONFIG:
         ret.currentConfig = &armingConfigCopy;
         ret.defaultConfig = armingConfig();
-        ret.size = sizeof(armingConfig_t);
         break;
 #ifdef GPS
     case PG_GPS_CONFIG:
         ret.currentConfig = &gpsConfigCopy;
         ret.defaultConfig = gpsConfig();
-        ret.size = sizeof(gpsConfig_t);
         break;
 #endif
 #ifdef NAV
     case PG_POSITION_ESTIMATION_CONFIG:
         ret.currentConfig = &positionEstimationConfigCopy;
         ret.defaultConfig = positionEstimationConfig();
-        ret.size = sizeof(positionEstimationConfig_t);
         break;
     case PG_NAV_CONFIG:
         ret.currentConfig = &navConfigCopy;
         ret.defaultConfig = navConfig();
-        ret.size = sizeof(navConfig_t);
         break;
 #endif
 #ifdef TELEMETRY
     case PG_TELEMETRY_CONFIG:
         ret.currentConfig = &telemetryConfigCopy;
         ret.defaultConfig = telemetryConfig();
-        ret.size = sizeof(telemetryConfig_t);
         break;
 #endif
 #ifdef LED_STRIP
     case PG_LED_STRIP_CONFIG:
         ret.currentConfig = &ledStripConfigCopy;
         ret.defaultConfig = ledStripConfig();
-        ret.size = sizeof(ledStripConfig_t);
         break;
 #endif
      case PG_SYSTEM_CONFIG:
         ret.currentConfig = &systemConfigCopy;
         ret.defaultConfig = systemConfig();
-        ret.size = sizeof(systemConfig_t);
         break;
     case PG_MODE_ACTIVATION_OPERATOR_CONFIG:
         ret.currentConfig = &modeActivationOperatorConfigCopy;
         ret.defaultConfig = modeActivationOperatorConfig();
-        ret.size = sizeof(modeActivationOperatorConfig_t);
         break;
     case PG_CONTROL_RATE_PROFILES:
-        ret.currentConfig = controlRateProfilesCopy;
+        ret.currentConfig = &controlRateProfilesCopy[0];
         ret.defaultConfig = controlRateProfiles(0);
-        ret.size = sizeof(controlRateConfig_t) * MAX_CONTROL_RATE_PROFILE_COUNT;
         break;
     case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy;
+        ret.currentConfig = &pidProfileCopy[getCurrentProfileIndex()];
         ret.defaultConfig = pidProfile();
-        ret.size = sizeof(pidProfile_t);
         break;
+    case PG_RX_FAILSAFE_CHANNEL_CONFIG:
+        ret.currentConfig = &rxFailsafeChannelConfigsCopy[0];
+        ret.defaultConfig = rxFailsafeChannelConfigs(0);
+        break;
+    case PG_RX_CHANNEL_RANGE_CONFIG:
+        ret.currentConfig = &rxChannelRangeConfigsCopy[0];
+        ret.defaultConfig = rxChannelRangeConfigs(0);
+        break;
+#ifdef USE_SERVOS
+    case PG_SERVO_MIXER:
+        ret.currentConfig = &customServoMixersCopy[0];
+        ret.defaultConfig = customServoMixers(0);
+        break;
+    case PG_SERVO_PARAMS:
+        ret.currentConfig = &servoParamsCopy[0];
+        ret.defaultConfig = servoParams(0);
+        break;
+#endif
+    case PG_MOTOR_MIXER:
+        ret.currentConfig = &customMotorMixerCopy[0];
+        ret.defaultConfig = customMotorMixer(0);
+        break;
+    case PG_MODE_ACTIVATION_PROFILE:
+        ret.currentConfig = &modeActivationConditionsCopy[0];
+        ret.defaultConfig = modeActivationConditions(0);
+        break;
+    case PG_ADJUSTMENT_RANGE_CONFIG:
+        ret.currentConfig = &adjustmentRangesCopy[0];
+        ret.defaultConfig = adjustmentRanges(0);
+        break;
+    case PG_BEEPER_CONFIG:
+       ret.currentConfig = &beeperConfigCopy;
+       ret.defaultConfig = beeperConfig();
+       break;
     default:
         ret.currentConfig = NULL;
         ret.defaultConfig = NULL;
-        ret.size = 0;
         break;
     }
     return &ret;
+}
+
+static uint16_t getValueOffset(const clivalue_t *value)
+{
+    switch (value->type & VALUE_SECTION_MASK) {
+    case MASTER_VALUE:
+        return value->offset;
+    case CONTROL_RATE_VALUE:
+        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+    case PROFILE_VALUE:
+        return value->offset;
+    }
+    return 0;
 }
 
 static void *getValuePointer(const clivalue_t *value)
@@ -1271,29 +1293,21 @@ static void *getValuePointer(const clivalue_t *value)
     return NULL;
 }
 
-static uint16_t getValueOffset(const clivalue_t *value)
-{
-    switch (value->type & VALUE_SECTION_MASK) {
-    case MASTER_VALUE:
-        return value->offset;
-    case CONTROL_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
-    case PROFILE_VALUE:
-        return value->offset;
-    }
-    return 0;
-}
-
 static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
 {
     const char *format = "set %s = ";
     const cliCurrentAndDefaultConfig_t *config = getCurrentAndDefaultConfigs(value->pgn);
-    if (config->currentConfig == NULL || config->defaultConfig == NULL || config->size == 0) {
+    if (config->currentConfig == NULL || config->defaultConfig == NULL) {
         // has not been set up properly
         cliPrintf("VALUE %s HAS NOT BEEN SET UP CORECTLY\r\n", value->name);
         return;
     }
     switch (dumpMask & (DO_DIFF | SHOW_DEFAULTS)) {
+    case DO_DIFF:
+        if (valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + getValueOffset(value), (uint8_t*)config->defaultConfig + getValueOffset(value))) {
+            break;
+        }
+        // drop through, since not equal to default
     case 0:
         cliPrintf(format, value->name);
         printValuePointer(value, (uint8_t*)config->currentConfig + getValueOffset(value), 0);
@@ -1303,16 +1317,6 @@ static void dumpPgValue(const clivalue_t *value, uint8_t dumpMask)
         cliPrintf(format, value->name);
         printValuePointer(value, (uint8_t*)config->defaultConfig + getValueOffset(value), 0);
         cliPrint("\r\n");
-        break;
-    case DO_DIFF:
-        {
-            const bool equalsDefault = valuePtrEqualsDefault(value->type, (uint8_t*)config->currentConfig + getValueOffset(value), (uint8_t*)config->defaultConfig + getValueOffset(value));
-            if (!equalsDefault) {
-                cliPrintf(format, value->name);
-                printValuePointer(value, (uint8_t*)config->currentConfig + getValueOffset(value), 0);
-                cliPrint("\r\n");
-            }
-        }
         break;
     }
 }
@@ -1451,7 +1455,7 @@ static bool isEmpty(const char *string)
     return (string == NULL || *string == '\0') ? true : false;
 }
 
-static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultRxFailsafeChannelConfigs)
+static void printRxFailsafe(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFailsafeChannelConfigs, const rxFailsafeChannelConfig_t *defaultRxFailsafeChannelConfigs)
 {
     // print out rxConfig failsafe settings
     for (uint32_t channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
@@ -1460,17 +1464,19 @@ static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFai
         bool equalsDefault = true;
         if (defaultRxFailsafeChannelConfigs) {
             channelFailsafeConfigDefault = &defaultRxFailsafeChannelConfigs[channel];
-            equalsDefault = channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode
-                    && channelFailsafeConfig->step == channelFailsafeConfigDefault->step;
+            equalsDefault = (channelFailsafeConfig->mode == channelFailsafeConfigDefault->mode)
+                    && (channelFailsafeConfig->step == channelFailsafeConfigDefault->step);
         }
         const bool requireValue = channelFailsafeConfig->mode == RX_FAILSAFE_MODE_SET;
         if (requireValue) {
             const char *format = "rxfail %u %c %d\r\n";
-            cliDefaultPrintf(dumpMask, equalsDefault, format,
-                channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
-                RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
-            );
+            if (defaultRxFailsafeChannelConfigs) {
+                cliDefaultPrintf(dumpMask, equalsDefault, format,
+                    channel,
+                    rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode],
+                    RXFAIL_STEP_TO_CHANNEL_VALUE(channelFailsafeConfigDefault->step)
+                );
+            }
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
                 rxFailsafeModeCharacters[channelFailsafeConfig->mode],
@@ -1478,10 +1484,12 @@ static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFai
             );
         } else {
             const char *format = "rxfail %u %c\r\n";
-            cliDefaultPrintf(dumpMask, equalsDefault, format,
-                channel,
-                rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
-            );
+            if (defaultRxFailsafeChannelConfigs) {
+                cliDefaultPrintf(dumpMask, equalsDefault, format,
+                    channel,
+                    rxFailsafeModeCharacters[channelFailsafeConfigDefault->mode]
+                );
+            }
             cliDumpPrintf(dumpMask, equalsDefault, format,
                 channel,
                 rxFailsafeModeCharacters[channelFailsafeConfig->mode]
@@ -1490,7 +1498,7 @@ static void printRxFail(uint8_t dumpMask, const rxFailsafeChannelConfig_t *rxFai
     }
 }
 
-static void cliRxFail(char *cmdline)
+static void cliRxFailsafe(char *cmdline)
 {
     uint8_t channel;
     char buf[3];
@@ -1498,7 +1506,7 @@ static void cliRxFail(char *cmdline)
     if (isEmpty(cmdline)) {
         // print out rxConfig failsafe settings
         for (channel = 0; channel < MAX_SUPPORTED_RC_CHANNEL_COUNT; channel++) {
-            cliRxFail(itoa(channel, buf, 10));
+            cliRxFailsafe(itoa(channel, buf, 10));
         }
     } else {
         const char *ptr = cmdline;
@@ -2402,9 +2410,6 @@ static void printServoMix(uint8_t dumpMask, const servoMixer_t *customServoMixer
             customServoMixer.max
         );
     }
-
-    cliPrint("\r\n");
-
 }
 
 static void cliServoMix(char *cmdline)
@@ -3079,28 +3084,28 @@ static void cliPlaySound(char *cmdline)
 
 static void cliProfile(char *cmdline)
 {
-    if (!cmdline) {
+    if (isEmpty(cmdline)) {
         cliPrintf("profile %d\r\n", getCurrentProfileIndex());
         return;
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
             changeProfile(i);
-            cliProfile(NULL);
+            cliProfile("");
         }
     }
 }
 
 static void cliRateProfile(char *cmdline)
 {
-    if (!cmdline) {
+    if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
     } else {
         const int i = atoi(cmdline);
         if (i >= 0 && i < MAX_CONTROL_RATE_PROFILE_COUNT) {
             changeControlRateProfile(i);
-            cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
+            cliRateProfile("");
         }
     }
 }
@@ -3114,7 +3119,7 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
     setProfile(profileIndex);
     cliPrintHashLine("profile");
     cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
-    dumpValue(PROFILE_VALUE, dumpMask, PG_PID_PROFILE);
+    dumpAllValues(PROFILE_VALUE, dumpMask);
 }
 
 static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
@@ -3126,7 +3131,7 @@ static void cliDumpRateProfile(uint8_t rateProfileIndex, uint8_t dumpMask)
     changeControlRateProfile(rateProfileIndex);
     cliPrintHashLine("rateprofile");
     cliPrintf("rateprofile %d\r\n\r\n", getCurrentControlRateProfile());
-    dumpValue(CONTROL_RATE_VALUE, dumpMask, PG_CONTROL_RATE_PROFILES);
+    dumpAllValues(CONTROL_RATE_VALUE, dumpMask);
 }
 
 static void cliSave(char *cmdline)
@@ -3405,18 +3410,20 @@ static void cliResource(char *cmdline)
 static void backupConfigs(void)
 {
     // make copies of configs to do differencing
-    for (int ii = PG_CF_START; ii <= PG_CF_END; ++ii) {
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
-        if (cliCurrentAndDefaultConfig->size) {
-            memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, (uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, cliCurrentAndDefaultConfig->size);
+    PG_FOREACH(reg) {
+        // currentConfig is the copy
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
+        if (cliCurrentAndDefaultConfig->currentConfig) {
+            if (pgIsProfile(reg)) {
+                //memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size * MAX_PROFILE_COUNT);
+            } else {
+                memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->address, reg->size);
+            }
+        } else {
+            cliPrintf("BACKUP %d HAS NOT BEEN SET UP CORECTLY\r\n", pgN(reg));
         }
     }
-    for (int ii = PG_INAV_START; ii <= PG_INAV_END; ++ii) {
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
-        if (cliCurrentAndDefaultConfig->size) {
-            memcpy((uint8_t *)cliCurrentAndDefaultConfig->currentConfig, (uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, cliCurrentAndDefaultConfig->size);
-        }
-    }
+/*    // !!TODO set up getCurrentAndDefaultConfigs to return array values
     for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
         rxFailsafeChannelConfigsCopy[ii] = *rxFailsafeChannelConfigs(ii);
     }
@@ -3442,23 +3449,27 @@ static void backupConfigs(void)
     }
     for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
         controlRateProfilesCopy[ii] = *controlRateProfiles(ii);
-    }
+    }*/
+    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
+    memcpy(&pidProfileCopy[0], reg->address, sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void restoreConfigs(void)
 {
-    for (int ii = PG_CF_START; ii <= PG_CF_END; ++ii) {
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
-        if (cliCurrentAndDefaultConfig->size) {
-            memcpy((uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, cliCurrentAndDefaultConfig->size);
+    PG_FOREACH(reg) {
+        // currentConfig is the copy
+        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(pgN(reg));
+        if (cliCurrentAndDefaultConfig->currentConfig) {
+            if (pgIsProfile(reg)) {
+                //memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size * MAX_PROFILE_COUNT);
+            } else {
+                memcpy(reg->address, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, reg->size);
+            }
+        } else {
+            cliPrintf("REG %d HAS NOT BEEN SET UP CORECTLY\r\n", pgN(reg));
         }
     }
-    for (int ii = PG_INAV_START; ii <= PG_INAV_END; ++ii) {
-        const cliCurrentAndDefaultConfig_t *cliCurrentAndDefaultConfig = getCurrentAndDefaultConfigs(ii);
-        if (cliCurrentAndDefaultConfig->size) {
-            memcpy((uint8_t *)cliCurrentAndDefaultConfig->defaultConfig, (uint8_t *)cliCurrentAndDefaultConfig->currentConfig, cliCurrentAndDefaultConfig->size);
-        }
-    }
+/*    // !!TODO set up getCurrentAndDefaultConfigs to return array values
     for (int ii = 0; ii < MAX_SUPPORTED_RC_CHANNEL_COUNT; ++ii) {
         *rxFailsafeChannelConfigsMutable(ii) = rxFailsafeChannelConfigsCopy[ii];
     }
@@ -3484,7 +3495,9 @@ static void restoreConfigs(void)
     }
     for (int ii = 0; ii < MAX_CONTROL_RATE_PROFILE_COUNT; ++ii) {
         *controlRateProfilesMutable(ii) = controlRateProfilesCopy[ii];
-    }
+    }*/
+    const pgRegistry_t* reg = pgFind(PG_PID_PROFILE);
+    memcpy(reg->address, &pidProfileCopy[0], sizeof(pidProfile_t) * MAX_PROFILE_COUNT);
 }
 
 static void printConfig(const char *cmdline, bool doDiff)
@@ -3507,11 +3520,14 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-    createDefaultConfig();
-
+    const int currentProfileIndexSave = getCurrentProfileIndex();
+    const int currentControlRateProfileSave = getCurrentControlRateProfile();
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
+    // restore the profile indices, since they should not be reset for proper comparison
+    setProfile(currentProfileIndexSave);
+    setControlRateProfile(currentControlRateProfileSave);
 
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -3587,7 +3603,7 @@ static void printConfig(const char *cmdline, bool doDiff)
         printRxRange(dumpMask, rxChannelRangeConfigsCopy, rxChannelRangeConfigs(0));
 
         cliPrintHashLine("rxfail");
-        printRxFail(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
+        printRxFailsafe(dumpMask, rxFailsafeChannelConfigsCopy, rxFailsafeChannelConfigs(0));
 
         cliPrintHashLine("master");
         dumpAllValues(MASTER_VALUE, dumpMask);
@@ -3725,7 +3741,7 @@ const clicmd_t cmdTable[] = {
     CLI_COMMAND_DEF("resource", "view currently used resources", NULL, cliResource),
 #endif
     CLI_COMMAND_DEF("rxrange", "configure rx channel ranges", NULL, cliRxRange),
-    CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFail),
+    CLI_COMMAND_DEF("rxfail", "show/set rx failsafe settings", NULL, cliRxFailsafe),
     CLI_COMMAND_DEF("save", "save and reboot", NULL, cliSave),
     CLI_COMMAND_DEF("serial", "configure serial ports", NULL, cliSerial),
 #ifdef USE_SERVOS

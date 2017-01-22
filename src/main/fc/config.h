@@ -73,15 +73,11 @@ typedef enum {
     FEATURE_OSD = 1 << 29,
 } features_e;
 
-typedef struct profileSelection_s {
-    uint8_t current_profile_index;
-} profileSelection_t;
-
-PG_DECLARE(profileSelection_t, profileSelection);
-
 typedef struct systemConfig_s {
     uint16_t accTaskFrequency;
     uint16_t attitudeTaskFrequency;
+    uint8_t currentControlRateProfileIndex;
+    uint8_t current_profile_index;
     uint8_t asyncMode;
     uint8_t debug_mode;
     uint8_t i2c_overclock;                  // Overclock i2c Bus for faster IMU readings

@@ -26,10 +26,10 @@
 #include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 
+#include "fc/config.h"
 #include "fc/controlrate_profile.h"
 #include "fc/rc_curves.h"
 
-static uint8_t currentControlRateProfileIndex = 0;
 const controlRateConfig_t *currentControlRateProfile;
 
 
@@ -54,12 +54,15 @@ void pgResetFn_controlRateProfiles(controlRateConfig_t *instance)
 
 uint8_t getCurrentControlRateProfile(void)
 {
-    return currentControlRateProfileIndex;
+    return systemConfig()->currentControlRateProfileIndex;
 }
 
 void setControlRateProfile(uint8_t profileIndex)
 {
-    currentControlRateProfileIndex = profileIndex;
+    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
+        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
+    }
+    systemConfigMutable()->currentControlRateProfileIndex = profileIndex;
     currentControlRateProfile = controlRateProfiles(profileIndex);
 }
 
@@ -70,11 +73,8 @@ void activateControlRateConfig(void)
 
 void changeControlRateProfile(uint8_t profileIndex)
 {
-    if (currentControlRateProfileIndex == profileIndex) {
+    if (systemConfig()->currentControlRateProfileIndex == profileIndex) {
         return;
-    }
-    if (profileIndex >= MAX_CONTROL_RATE_PROFILE_COUNT) {
-        profileIndex = MAX_CONTROL_RATE_PROFILE_COUNT - 1;
     }
     setControlRateProfile(profileIndex);
     activateControlRateConfig();

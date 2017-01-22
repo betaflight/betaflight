@@ -56,6 +56,7 @@ static inline uint16_t pgN(const pgRegistry_t* reg) {return reg->pgn & PGR_PGN_M
 static inline uint8_t pgVersion(const pgRegistry_t* reg) {return reg->pgn >> 12;}
 static inline uint16_t pgSize(const pgRegistry_t* reg) {return reg->size & PGR_SIZE_MASK;}
 static inline uint16_t pgIsSystem(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == 0;}
+static inline uint16_t pgIsProfile(const pgRegistry_t* reg) {return (reg->size & PGR_SIZE_PROFILE_FLAG) == PGR_SIZE_PROFILE_FLAG;}
 
 #define PG_PACKED __attribute__((packed))
 
