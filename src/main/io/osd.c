@@ -470,6 +470,8 @@ void pgResetFn_osdConfig(osdConfig_t *instance)
 
 void osdInit(void)
 {
+    BUILD_BUG_ON(OSD_POS_MAX != OSD_POS(31,31));
+
     char string_buffer[30];
 
     armState = ARMING_FLAG(ARMED);
