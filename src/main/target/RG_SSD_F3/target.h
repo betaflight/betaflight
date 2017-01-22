@@ -96,7 +96,7 @@
 #define UART4_TX_PIN             PC10
 #define UART4_RX_PIN             PC11
 #define UART5_TX_PIN             PC12
-#define UART5_RX_PIN             PD2 
+#define UART5_RX_PIN             PD2
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2) // SDA (PA14/AF4), SCL (PA15/AF4)

@@ -325,7 +325,7 @@ bool trampInit()
     vtxTramp.vTable = &trampVTable;
     vtxCommonRegisterDevice(&vtxTramp);
 #endif
-    
+
     return true;
 }
 
@@ -346,7 +346,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
 #ifdef TRAMP_DEBUG
     debug[0] = trampStatus;
 #endif
-    
+
     switch(replyCode) {
     case 'r':
         if (trampStatus <= TRAMP_STATUS_OFFLINE)
@@ -374,7 +374,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
                 else
                     trampQueryS();
             }
-                
+
             lastQueryTimeUs = currentTimeUs;
         }
         break;
@@ -426,7 +426,7 @@ void vtxTrampProcess(uint32_t currentTimeUs)
     debug[2] = debugPowReqCounter;
     debug[3] = 0;
 #endif
-    
+
 #ifdef CMS
     trampCmsUpdateStatusString();
 #endif
@@ -552,7 +552,7 @@ static void trampCmsInitSettings()
 {
     if(trampCurBand > 0) trampCmsBand = trampCurBand;
     if(trampCurChan > 0) trampCmsChan = trampCurChan;
-    
+
     trampCmsUpdateFreqRef();
     trampCmsPitmode = trampCurPitmode + 1;
 

@@ -145,7 +145,7 @@ bool rtc6705Init(void)
     vtxPowerPin = IOGetByTag(IO_TAG(RTC6705_POWER_PIN));
     IOInit(vtxPowerPin, OWNER_VTX, 0);
     IOConfigGPIO(vtxPowerPin, IOCFG_OUT_PP);
-    
+
     ENABLE_VTX_POWER;
 #endif
 

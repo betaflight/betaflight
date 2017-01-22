@@ -36,11 +36,11 @@ void targetPreInit(void)
     default:
         return;
     }
-    
+
     IO_t inverter = IOGetByTag(IO_TAG(UART1_INVERTER));
     IOInit(inverter, OWNER_INVERTER, 1);
     IOConfigGPIO(inverter, IOCFG_OUT_PP);
-    
+
     bool high = false;
     serialPortConfig_t *portConfig = serialFindPortConfiguration(SERIAL_PORT_USART1);
     if (portConfig) {
@@ -54,12 +54,12 @@ void targetPreInit(void)
         high = !high;
     }
     IOWrite(inverter, high);
-    
+
     /* ensure the CS pin for the flash is pulled hi so any SD card initialisation does not impact the chip */
     if (hardwareRevision == BJF4_REV3) {
         IO_t io = IOGetByTag(IO_TAG(M25P16_CS_PIN));
         IOConfigGPIO(io, IOCFG_OUT_PP);
         IOHi(io);
-    }    
+    }
 }
 

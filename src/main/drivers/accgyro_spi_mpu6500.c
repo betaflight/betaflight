@@ -141,7 +141,7 @@ bool mpu6500SpiGyroDetect(gyroDev_t *gyro)
     if (gyro->mpuDetectionResult.sensor != mpuDetected || !mpuDetected) {
         return false;
     }
-    
+
     gyro->init = mpu6500SpiGyroInit;
     gyro->read = mpuGyroRead;
     gyro->intStatus = mpuCheckDataReady;
