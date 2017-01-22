@@ -821,7 +821,7 @@ static void cliPrint(const char *str)
     bufWriterFlush(cliWriter);
 }
 
-#ifdef CLI_MINIMAL_VERBOSITY
+#ifdef MINIMAL_CLI
 #define cliPrintHashLine(str)
 #else
 static void cliPrintHashLine(const char *str)
@@ -1082,7 +1082,7 @@ static void cliSetVar(const clivalue_t *var, const int_float_value_t value)
     }
 }
 
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
 static void cliRepeat(char ch, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
@@ -1104,7 +1104,7 @@ static void cliShowParseError(void)
 
 static void cliShowArgumentRangeError(char *name, int min, int max)
 {
-    cliPrintf("%s must be between %d and %d\r\n", name, min, max);
+    cliPrintf("%s not between %d and %d\r\n", name, min, max);
 }
 
 static char *nextArg(char *currentArg)
@@ -1497,7 +1497,7 @@ static void cliSerialPassthrough(char *cmdline)
     serialPortUsage_t *passThroughPortUsage = findSerialPortUsageByIdentifier(id);
     if (!passThroughPortUsage || passThroughPortUsage->serialPort == NULL) {
         if (!baud) {
-            printf("Port %d is not open, you must specify baud\r\n", id);
+            printf("Port %d is closed, must specify baud.\r\n", id);
             return;
         }
         if (!mode)
@@ -1507,30 +1507,29 @@ static void cliSerialPassthrough(char *cmdline)
                                          baud, mode,
                                          SERIAL_NOT_INVERTED);
         if (!passThroughPort) {
-            printf("Port %d could not be opened\r\n", id);
+            printf("Port %d could not be opened.\r\n", id);
             return;
         }
-        printf("Port %d opened, baud=%d\r\n", id, baud);
+        printf("Port %d opened, baud = %d.\r\n", id, baud);
     } else {
         passThroughPort = passThroughPortUsage->serialPort;
         // If the user supplied a mode, override the port's mode, otherwise
         // leave the mode unchanged. serialPassthrough() handles one-way ports.
-        printf("Port %d already open\r\n", id);
+        printf("Port %d already open.\r\n", id);
         if (mode && passThroughPort->mode != mode) {
-            printf("Adjusting mode from configured value %d to %d\r\n",
+            printf("Adjusting mode from %d to %d.\r\n",
                    passThroughPort->mode, mode);
             serialSetMode(passThroughPort, mode);
         }
         // If this port has a rx callback associated we need to remove it now.
         // Otherwise no data will be pushed in the serial port buffer!
         if (passThroughPort->rxCallback) {
-            printf("Removing rxCallback from port\r\n");
+            printf("Removing rxCallback\r\n");
             passThroughPort->rxCallback = 0;
         }
     }
 
-    printf("Relaying data to device on port %d, Reset your board to exit "
-           "serial passthrough mode.\r\n", id);
+    printf("Forwarding data to %d, power cycle to exit.\r\n", id);
 
     serialPassthrough(cliPort, passThroughPort, NULL, NULL);
 }
@@ -2343,7 +2342,7 @@ static void cliFlashErase(char *cmdline)
 {
     UNUSED(cmdline);
 
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
     uint32_t i;
     cliPrintf("Erasing, please wait ... \r\n");
 #else
@@ -2354,7 +2353,7 @@ static void cliFlashErase(char *cmdline)
     flashfsEraseCompletely();
 
     while (!flashfsIsReady()) {
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
         cliPrintf(".");
         if (i++ > 120) {
             i=0;
@@ -2855,14 +2854,14 @@ static void cliEscPassthrough(char *cmdline)
                 index = atoi(pch);
                 if(mode == 2 && index == 255)
                 {
-                    printf("passthru on all pwm outputs enabled\r\n");
+                    printf("passthrough on all outputs enabled\r\n");
                 }
                 else{
                     if ((index >= 0) && (index < USABLE_TIMER_CHANNEL_COUNT)) {
-                        printf("passthru at pwm output %d enabled\r\n", index);
+                        printf("passthrough on output %d enabled\r\n", index);
                     }
                     else {
-                        printf("invalid pwm output, valid range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
+                        printf("invalid output, range: 1 to %d\r\n", USABLE_TIMER_CHANNEL_COUNT);
                         return;
                     }
                 }
@@ -2955,7 +2954,7 @@ static void cliMotor(char *cmdline)
     cliPrintf("motor %d: %d\r\n", motor_index, convertMotorToExternal(motor_disarmed[motor_index]));
 }
 
-#if (FLASH_SIZE > 128)
+#ifndef MINIMAL_CLI
 static void cliPlaySound(char *cmdline)
 {
     int i;
@@ -3247,11 +3246,11 @@ static void cliTasks(char *cmdline)
     int maxLoadSum = 0;
     int averageLoadSum = 0;
 
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
     if (masterConfig.task_statistics) {
         cliPrintf("Task list           rate/hz  max/us  avg/us maxload avgload     total/ms\r\n");
     } else {
-        cliPrintf("Task list           rate/hz\r\n");
+        cliPrintf("Task list\r\n");
     }
 #endif
     for (cfTaskId_e taskId = 0; taskId < TASK_COUNT; taskId++) {
@@ -3393,7 +3392,6 @@ static void printResource(uint8_t dumpMask, const master_t *defaultConfig)
     }
 }
 
-#ifndef CLI_MINIMAL_VERBOSITY
 static bool resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
 {
     const char * format = "\r\n* %s * %c%d also used by %s";
@@ -3421,7 +3419,6 @@ static bool resourceCheck(uint8_t resourceIndex, uint8_t index, ioTag_t tag)
     }
     return true;
 }
-#endif
 
 static void cliResource(char *cmdline)
 {
@@ -3432,7 +3429,9 @@ static void cliResource(char *cmdline)
 
         return;
     } else if (strncasecmp(cmdline, "list", len) == 0) {
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifdef MINIMAL_CLI
+        cliPrintf("Resources:\r\n");
+#else
         cliPrintf("Currently active IO resource assignments:\r\n(reboot to update)\r\n");
         cliRepeat('-', 20);
 #endif
@@ -3447,8 +3446,10 @@ static void cliResource(char *cmdline)
             }
         }
 
+#ifdef MINIMAL_CLI
+        cliPrintf("\r\n\r\nDMA:\r\n");
+#else
         cliPrintf("\r\n\r\nCurrently active DMA:\r\n");
-#ifndef CLI_MINIMAL_VERBOSITY
         cliRepeat('-', 20);
 #endif
         for (int i = 0; i < DMA_MAX_DESCRIPTORS; i++) {
@@ -3464,7 +3465,7 @@ static void cliResource(char *cmdline)
             }
         }
 
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
         cliPrintf("\r\nUse: 'resource' to see how to change resources.\r\n");
 #endif
 
@@ -3506,7 +3507,7 @@ static void cliResource(char *cmdline)
     if (strlen(pch) > 0) {
         if (strcasecmp(pch, "NONE") == 0) {
             *tag = IO_TAG_NONE;
-            cliPrintf("Resource is freed!\r\n");
+            cliPrintf("Resource freed.\r\n");
             return;
         } else {
             uint8_t port = (*pch) - 'A';
@@ -3520,17 +3521,14 @@ static void cliResource(char *cmdline)
                 if (pin < 16) {
                     ioRec_t *rec = IO_Rec(IOGetByTag(DEFIO_TAG_MAKE(port, pin)));
                     if (rec) {
-#ifndef CLI_MINIMAL_VERBOSITY
                         if (!resourceCheck(resourceIndex, index, DEFIO_TAG_MAKE(port, pin))) {
                             return;
                         }
-                        cliPrintf("\r\nResource is set to %c%02d!\r\n", port + 'A', pin);
-#else
-                        cliPrintf("Set to %c%02d!", port + 'A', pin);
-#endif
+                        cliPrintf("\r\nResource set to %c%02d!\r\n", port + 'A', pin);
+
                         *tag = DEFIO_TAG_MAKE(port, pin);
                     } else {
-                        cliPrintf("Resource is invalid!\r\n");
+                        cliPrintf("Resource invalid!\r\n");
                     }
                     return;
                 }
@@ -3701,14 +3699,14 @@ static void cliDiff(char *cmdline)
 
 typedef struct {
     const char *name;
-#ifndef SKIP_CLI_COMMAND_HELP
+#ifndef MINIMAL_CLI
     const char *description;
     const char *args;
 #endif
     void (*func)(char *cmdline);
 } clicmd_t;
 
-#ifndef SKIP_CLI_COMMAND_HELP
+#ifndef MINIMAL_CLI
 #define CLI_COMMAND_DEF(name, description, args, method) \
 { \
     name , \
@@ -3776,7 +3774,7 @@ const clicmd_t cmdTable[] = {
 #endif
     CLI_COMMAND_DEF("motor",  "get/set motor", "<index> [<value>]", cliMotor),
     CLI_COMMAND_DEF("name", "name of craft", NULL, cliName),
-#if (FLASH_SIZE > 128)
+#ifndef MINIMAL_CLI
     CLI_COMMAND_DEF("play_sound", NULL, "[<index>]", cliPlaySound),
 #endif
     CLI_COMMAND_DEF("profile", "change profile", "[<index>]", cliProfile),
@@ -3821,7 +3819,7 @@ static void cliHelp(char *cmdline)
 
     for (uint32_t i = 0; i < CMD_COUNT; i++) {
         cliPrint(cmdTable[i].name);
-#ifndef SKIP_CLI_COMMAND_HELP
+#ifndef MINIMAL_CLI
         if (cmdTable[i].description) {
             cliPrintf(" - %s", cmdTable[i].description);
         }
@@ -3952,7 +3950,7 @@ void cliEnter(serialPort_t *serialPort)
 
     schedulerSetCalulateTaskStatistics(masterConfig.task_statistics);
 
-#ifndef CLI_MINIMAL_VERBOSITY
+#ifndef MINIMAL_CLI
     cliPrint("\r\nEntering CLI Mode, type 'exit' to return, or 'help'\r\n");
 #else
     cliPrint("\r\nCLI\r\n");
