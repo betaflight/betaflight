@@ -499,7 +499,7 @@ void init(void)
 #ifdef USE_DTERM_NOTCH
     pidInitFilters(pidProfile());
 #endif
-    
+
     imuInit();
 
     mspFcInit();

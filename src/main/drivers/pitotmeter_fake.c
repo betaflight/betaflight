@@ -40,7 +40,7 @@ static void fakePitotRead(void)
 static void fakePitotCalculate(float *pressure, float *temperature)
 {
     if (pressure)
-        *pressure = fakePressure;	// Pa
+        *pressure = fakePressure;    // Pa
     if (temperature)
         *temperature = fakeTemperature; // K
 }

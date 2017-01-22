@@ -79,7 +79,7 @@ typedef struct {
     rateLimitFilter_t axisAccelFilter;
     pt1Filter_t ptermLpfState;
     pt1Filter_t deltaLpfState;
-    
+
     // Dterm notch filtering
 #ifdef USE_DTERM_NOTCH
     biquadFilter_t deltaNotchFilter;
@@ -443,7 +443,7 @@ static void pidApplyRateController(const pidProfile_t *pidProfile, pidState_t *p
 #ifdef USE_DTERM_NOTCH
         newDTerm = notchFilterApplyFn(&pidState->deltaNotchFilter, newDTerm);
 #endif
-        
+
         // Additionally constrain D
         newDTerm = constrainf(newDTerm, -300.0f, 300.0f);
     }

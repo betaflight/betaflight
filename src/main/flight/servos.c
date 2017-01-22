@@ -487,11 +487,11 @@ void processServoAutotrim(void)
 {
     static servoAutotrimState_e trimState = AUTOTRIM_IDLE;
     static timeMs_t trimStartedAt;
-    
+
     static int16_t servoMiddleBackup[MAX_SUPPORTED_SERVOS];
     static int32_t servoMiddleAccum[MAX_SUPPORTED_SERVOS];
     static int32_t servoMiddleAccumCount;
-    
+
     if (IS_RC_MODE_ACTIVE(BOXAUTOTRIM)) {
         switch (trimState) {
             case AUTOTRIM_IDLE:

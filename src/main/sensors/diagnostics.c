@@ -221,5 +221,5 @@ bool isHardwareHealthy(void)
     if (gpsStatus == HW_SENSOR_UNAVAILABLE || gpsStatus == HW_SENSOR_UNHEALTHY)
         return false;
 
-	return true;
+    return true;
 }

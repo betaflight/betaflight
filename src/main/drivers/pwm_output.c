@@ -268,7 +268,7 @@ void pwmWriteServo(uint8_t index, uint16_t value)
 
     /*
      *  If PCA9685 is enabled and but not detected, we do not want to write servo
-     * output anywhere 
+     * output anywhere
      */
     if (feature(FEATURE_PWM_SERVO_DRIVER) && STATE(PWM_DRIVER_AVAILABLE)) {
         pwmDriverSetPulse(index, value);

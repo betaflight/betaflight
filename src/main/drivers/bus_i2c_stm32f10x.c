@@ -165,7 +165,7 @@ static void i2cStateMachine(i2cBusState_t * i2cBusState, const uint32_t currentT
 
         case I2C_STATE_STOPPING:
             // Wait for stop bit to clear
-            // RM0090: When the STOP, START or PEC bit is set, the software must not perform any write access 
+            // RM0090: When the STOP, START or PEC bit is set, the software must not perform any write access
             // to I2C_CR1 before this bit is cleared by hardware. Otherwise there is a risk of setting a second STOP, START or PEC request.
             if ((I2Cx->CR1 & I2C_CR1_STOP) == 0) {
                 i2cBusState->state = I2C_STATE_STOPPED;

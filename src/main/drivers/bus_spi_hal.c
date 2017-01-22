@@ -257,11 +257,11 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     HAL_StatusTypeDef status;
 
 #define SPI_DEFAULT_TIMEOUT 10
-    
+
     if(!out) // Tx only
     {
         status = HAL_SPI_Transmit(&spiHardwareMap[device].hspi, (uint8_t *)in, len, SPI_DEFAULT_TIMEOUT);
-    } 
+    }
     else if(!in) // Rx only
     {
         status = HAL_SPI_Receive(&spiHardwareMap[device].hspi, out, len, SPI_DEFAULT_TIMEOUT);
@@ -270,10 +270,10 @@ bool spiTransfer(SPI_TypeDef *instance, uint8_t *out, const uint8_t *in, int len
     {
         status = HAL_SPI_TransmitReceive(&spiHardwareMap[device].hspi, (uint8_t *)in, out, len, SPI_DEFAULT_TIMEOUT);
     }
-    
+
     if( status != HAL_OK)
         spiTimeoutUserCallback(instance);
-    
+
     return true;
 }
 
