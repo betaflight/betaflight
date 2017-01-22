@@ -346,8 +346,6 @@ uartPort_t *serialUART(int device, uint32_t baudRate, portMode_t mode, portOptio
 
     RCC_ClockCmd(uartDev->rcc, ENABLE);
 
-    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, uartDev->af, device);
-
     if (uartDev->rxDMAChannel) {
         s->rxDMAChannel = uartDev->rxDMAChannel;
         s->rxDMAPeripheralBaseAddr = (uint32_t)&s->USARTx->RDR;
@@ -362,9 +360,7 @@ uartPort_t *serialUART(int device, uint32_t baudRate, portMode_t mode, portOptio
         dmaSetHandler(identifier, handleUsartTxDma, uartDev->txPriority, (uint32_t)s);
     }
 
-    // dmaInit doesn't do this atm.
-    // When it does, UART4&5 (on DMA2) will be handled correctly there.
-    RCC_ClockCmd(RCC_AHB(DMA1), ENABLE);
+    serialUARTInitIO(IOGetByTag(uartDev->tx), IOGetByTag(uartDev->rx), mode, options, uartDev->af, device);
 
     if (!s->rxDMAChannel || !s->txDMAChannel) {
         NVIC_InitTypeDef NVIC_InitStructure;
