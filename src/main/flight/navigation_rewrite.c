@@ -2557,41 +2557,43 @@ void updateWaypointsAndNavigationMode(void)
  *-----------------------------------------------------------*/
 void navigationUsePIDs(void)
 {
+    /** Multicopter PIDs */
     // Brake time parameter
-    posControl.posDecelerationTime = (float)pidProfile()->I8[PIDPOS] / 100.0f;
+    posControl.posDecelerationTime = (float)pidProfile()->bank_mc.pid[PID_POS_XY].I / 100.0f;
 
     // Position controller expo (taret vel expo for MC)
-    posControl.posResponseExpo = constrainf((float)pidProfile()->D8[PIDPOS] / 100.0f, 0.0f, 1.0f);
+    posControl.posResponseExpo = constrainf((float)pidProfile()->bank_mc.pid[PID_POS_XY].D / 100.0f, 0.0f, 1.0f);
 
     // Initialize position hold P-controller
     for (int axis = 0; axis < 2; axis++) {
-        navPInit(&posControl.pids.pos[axis], (float)pidProfile()->P8[PIDPOS] / 100.0f);
+        navPInit(&posControl.pids.pos[axis], (float)pidProfile()->bank_mc.pid[PID_POS_XY].P / 100.0f);
 
-        navPidInit(&posControl.pids.vel[axis], (float)pidProfile()->P8[PIDPOSR] / 100.0f,
-                                               (float)pidProfile()->I8[PIDPOSR] / 100.0f,
-                                               (float)pidProfile()->D8[PIDPOSR] / 100.0f);
+        navPidInit(&posControl.pids.vel[axis], (float)pidProfile()->bank_mc.pid[PID_VEL_XY].P / 100.0f,
+                                               (float)pidProfile()->bank_mc.pid[PID_VEL_XY].I / 100.0f,
+                                               (float)pidProfile()->bank_mc.pid[PID_VEL_XY].D / 100.0f);
     }
 
     // Initialize altitude hold PID-controllers (pos_z, vel_z, acc_z
-    navPInit(&posControl.pids.pos[Z], (float)pidProfile()->P8[PIDALT] / 100.0f);
+    navPInit(&posControl.pids.pos[Z], (float)pidProfile()->bank_mc.pid[PID_POS_Z].P / 100.0f);
 
-    navPidInit(&posControl.pids.vel[Z], (float)pidProfile()->P8[PIDVEL] / 66.7f,
-                                        (float)pidProfile()->I8[PIDVEL] / 20.0f,
-                                        (float)pidProfile()->D8[PIDVEL] / 100.0f);
+    navPidInit(&posControl.pids.vel[Z], (float)pidProfile()->bank_mc.pid[PID_VEL_Z].P / 66.7f,
+                                        (float)pidProfile()->bank_mc.pid[PID_VEL_Z].I / 20.0f,
+                                        (float)pidProfile()->bank_mc.pid[PID_VEL_Z].D / 100.0f);
 
     // Initialize surface tracking PID
     navPidInit(&posControl.pids.surface, 2.0f,
                                          1.0f,
                                          0.0f);
 
+    /** Airplane PIDs */
     // Initialize fixed wing PID controllers
-    navPidInit(&posControl.pids.fw_nav, (float)pidProfile()->P8[PIDNAVR] / 100.0f,
-                                        (float)pidProfile()->I8[PIDNAVR] / 100.0f,
-                                        (float)pidProfile()->D8[PIDNAVR] / 100.0f);
+    navPidInit(&posControl.pids.fw_nav, (float)pidProfile()->bank_fw.pid[PID_POS_XY].P / 100.0f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_XY].I / 100.0f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_XY].D / 100.0f);
 
-    navPidInit(&posControl.pids.fw_alt, (float)pidProfile()->P8[PIDALT] / 100.0f,
-                                        (float)pidProfile()->I8[PIDALT] / 100.0f,
-                                        (float)pidProfile()->D8[PIDALT] / 100.0f);
+    navPidInit(&posControl.pids.fw_alt, (float)pidProfile()->bank_fw.pid[PID_POS_Z].P / 100.0f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].I / 100.0f,
+                                        (float)pidProfile()->bank_fw.pid[PID_POS_Z].D / 100.0f);
 }
 
 void navigationInit(void)

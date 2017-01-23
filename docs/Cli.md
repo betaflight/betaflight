@@ -287,18 +287,30 @@ Re-apply any new defaults as desired.
 |  default_rate_profile  | 0 | Default = profile number |
 |  mag_declination  | 0 | Current location magnetic declination in format. For example, -6deg 37min = -637 for Japan. Leading zero in ddd not required. Get your local magnetic declination here: http://magnetic-declination.com/ . Not in use if inav_auto_mag_decl  is turned on and you aquirre valid GPS fix. |
 |  mag_hold_rate_limit  | 90 | This setting limits yaw rotation rate that MAG_HOLD controller can request from PID inner loop controller. It is independent from manual yaw rate and used only when MAG_HOLD flight mode is enabled by pilot, RTH or WAYPOINT modes. |
-|  p_pitch  | 40 |  |
-|  i_pitch  | 30 |  |
-|  d_pitch  | 23 |  |
-|  p_roll  | 40 |  |
-|  i_roll  | 30 |  |
-|  d_roll  | 23 |  |
-|  p_yaw  | 85 |  |
-|  i_yaw  | 45 |  |
-|  d_yaw  | 0 |  |
-|  p_level  | 20 |  |
-|  i_level  | 15 |  |
-|  d_level  | 75 |  |
+| `mc_p_pitch` | 40 | Multicopter rate stabilisation P-gain for PITCH               |
+| `mc_i_pitch` | 30 | Multicopter rate stabilisation I-gain for PITCH               |
+| `mc_d_pitch` | 23 | Multicopter rate stabilisation D-gain for PITCH               |
+| `mc_p_roll`  | 40 | Multicopter rate stabilisation P-gain for ROLL                |
+| `mc_i_roll`  | 30 | Multicopter rate stabilisation I-gain for ROLL                |
+| `mc_d_roll`  | 23 | Multicopter rate stabilisation D-gain for ROLL                |
+| `mc_p_yaw`   | 85 | Multicopter rate stabilisation P-gain for YAW                 |
+| `mc_i_yaw`   | 45 | Multicopter rate stabilisation I-gain for YAW                 |
+| `mc_d_yaw`   | 0  | Multicopter rate stabilisation D-gain for YAW                 |
+| `mc_p_level` | 20 | Multicopter attitude stabilisation P-gain                     |
+| `mc_i_level` | 15 | Multicopter attitude stabilisation low-pass filter cutoff     |
+| `mc_d_level` | 75 | Multicopter attitude stabilisation HORIZON transition point   |
+| `fw_p_pitch` | 20 | Fixed-wing rate stabilisation P-gain for PITCH                |
+| `fw_i_pitch` | 30 | Fixed-wing rate stabilisation I-gain for PITCH                |
+| `fw_ff_pitch`| 10 | Fixed-wing rate stabilisation FF-gain for PITCH               |
+| `fw_p_roll`  | 25 | Fixed-wing rate stabilisation P-gain for ROLL                 |
+| `fw_i_roll`  | 30 | Fixed-wing rate stabilisation I-gain for ROLL                 |
+| `fw_ff_roll` | 10 | Fixed-wing rate stabilisation FF-gain for ROLL                |
+| `fw_p_yaw`   | 50 | Fixed-wing rate stabilisation P-gain for YAW                  |
+| `fw_i_yaw`   | 45 | Fixed-wing rate stabilisation I-gain for YAW                  |
+| `fw_ff_yaw`  | 0  | Fixed-wing rate stabilisation FF-gain for YAW                 |
+| `fw_p_level` | 20 | Fixed-wing attitude stabilisation P-gain                      |
+| `fw_i_level` | 15 | Fixed-wing attitude stabilisation low-pass filter cutoff      |
+| `fw_d_level` | 75 | Fixed-wing attitude stabilisation HORIZON transition point    |
 |  max_angle_inclination_rll  | 300 | Maximum inclination in level (angle) mode (ROLL axis). 100=10° |
 |  max_angle_inclination_pit  | 300 | Maximum inclination in level (angle) mode (PITCH axis). 100=10° |
 |  gyro_soft_lpf_hz  | 60 | Software-based filter to remove mechanical vibrations from the gyro signal. Value is cutoff frequency (Hz). For larger frames with bigger props set to lower value. Default 60Hz |
