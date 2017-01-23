@@ -1222,7 +1222,13 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = ledStripConfig();
         break;
 #endif
-     case PG_SYSTEM_CONFIG:
+#ifdef OSD
+    case PG_OSD_CONFIG:
+       ret.currentConfig = &osdConfigCopy;
+       ret.defaultConfig = osdConfig();
+       break;
+#endif
+    case PG_SYSTEM_CONFIG:
         ret.currentConfig = &systemConfigCopy;
         ret.defaultConfig = systemConfig();
         break;
@@ -1287,7 +1293,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     case PROFILE_VALUE:
         return value->offset;
     case CONTROL_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+        return value->offset + sizeof(controlRateConfig_t) * getCurrentProfileIndex();
     }
     return 0;
 }
@@ -1301,7 +1307,7 @@ static void *getValuePointer(const clivalue_t *value)
     case PROFILE_VALUE:
         return rec->address + value->offset;
     case CONTROL_RATE_VALUE:
-        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentControlRateProfile();
+        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentProfileIndex();
     }
     return NULL;
 }
