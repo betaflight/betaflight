@@ -74,8 +74,8 @@ typedef struct uartDevice_s {
     uint8_t rxPriority;
 } uartDevice_t;
 
-#define USE_UART1_RX_DMA
-#define USE_UART1_TX_DMA
+//#define USE_UART1_RX_DMA
+//#define USE_UART1_TX_DMA
 
 // XXX Will DMA eventually be configurable?
 // XXX Do these belong here?
@@ -284,7 +284,6 @@ void usartIrqHandler(uartPort_t *s)
     }
 }
 
-#if defined(USE_UART1_TX_DMA) || defined(USE_UART2_TX_DMA) || defined(USE_UART3_TX_DMA)
 static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
 {
     uartPort_t *s = (uartPort_t*)(descriptor->userParam);
@@ -296,9 +295,8 @@ static void handleUsartTxDma(dmaChannelDescriptor_t* descriptor)
     else
         s->txDMAEmpty = true;
 }
-#endif
 
-void serialUARTInitIO(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t index)
+void serialUARTInitIO(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, uint8_t af, uint8_t device)
 {
     if (options & SERIAL_BIDIR) {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz,
@@ -306,7 +304,7 @@ void serialUARTInitIO(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, 
             ((options & SERIAL_INVERTED) || (options & SERIAL_BIDIR_PP)) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP
         );
 
-        IOInit(tx, OWNER_SERIAL_TX, index);
+        IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
         IOConfigGPIOAF(tx, ioCfg, af);
 
         if (!(options & SERIAL_INVERTED))
@@ -314,12 +312,12 @@ void serialUARTInitIO(IO_t tx, IO_t rx, portMode_t mode, portOptions_t options, 
     } else {
         ioConfig_t ioCfg = IO_CONFIG(GPIO_Mode_AF, GPIO_Speed_50MHz, GPIO_OType_PP, (options & SERIAL_INVERTED) ? GPIO_PuPd_DOWN : GPIO_PuPd_UP);
         if (mode & MODE_TX) {
-            IOInit(tx, OWNER_SERIAL_TX, index);
+            IOInit(tx, OWNER_SERIAL_TX, RESOURCE_INDEX(device));
             IOConfigGPIOAF(tx, ioCfg, af);
         }
 
         if (mode & MODE_RX) {
-            IOInit(rx, OWNER_SERIAL_RX, index);
+            IOInit(rx, OWNER_SERIAL_RX, RESOUCE_INDEX(device));
             IOConfigGPIOAF(rx, ioCfg, af);
         }
     }
