@@ -95,7 +95,6 @@ PG_RESET_TEMPLATE(featureConfig_t, featureConfig,
 PG_REGISTER_WITH_RESET_TEMPLATE(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
 
 PG_RESET_TEMPLATE(systemConfig_t, systemConfig,
-    .currentControlRateProfileIndex = 0,
     .current_profile_index = 0,
     .debug_mode = DEBUG_NONE,
     .i2c_overclock = 0,

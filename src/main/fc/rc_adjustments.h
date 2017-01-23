@@ -21,6 +21,8 @@
 
 #include "fc/rc_controls.h"
 
+//#define USE_INFLIGHT_PROFILE_ADJUSTMENT - not currently enabled
+
 typedef enum {
     ADJUSTMENT_NONE = 0,
     ADJUSTMENT_RC_RATE,
@@ -34,7 +36,6 @@ typedef enum {
     ADJUSTMENT_YAW_P,
     ADJUSTMENT_YAW_I,
     ADJUSTMENT_YAW_D,
-    ADJUSTMENT_RATE_PROFILE,
     ADJUSTMENT_PITCH_RATE,
     ADJUSTMENT_ROLL_RATE,
     ADJUSTMENT_PITCH_P,
@@ -43,9 +44,11 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+#ifdef USE_INFLIGHT_PROFILE_ADJUSTMENT
+    ADJUSTMENT_PROFILE,
+#endif
+    ADJUSTMENT_FUNCTION_COUNT // must be last
 } adjustmentFunction_e;
-
-#define ADJUSTMENT_FUNCTION_COUNT 21
 
 typedef enum {
     ADJUSTMENT_MODE_STEP,
@@ -104,4 +107,4 @@ PG_DECLARE_ARRAY(adjustmentRange_t, MAX_ADJUSTMENT_RANGE_COUNT, adjustmentRanges
 void resetAdjustmentStates(void);
 void updateAdjustmentStates(void);
 struct controlRateConfig_s;
-void processRcAdjustments(const struct controlRateConfig_s *controlRateConfig);
+void processRcAdjustments(struct controlRateConfig_s *controlRateConfig);
