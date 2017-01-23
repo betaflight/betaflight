@@ -23,8 +23,6 @@
 
 #define LED0                    PB3
 
-#define USABLE_TIMER_CHANNEL_COUNT 17
-
 #define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready only, no MAG
 
 #define USE_MPU_DATA_READY_SIGNAL
@@ -42,6 +40,9 @@
 #define USE_UART2
 #define USE_UART3
 #define SERIAL_PORT_COUNT 3
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
@@ -99,5 +100,6 @@
 #define TARGET_IO_PORTC     (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF     (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 17
 #define USED_TIMERS         (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(15) | TIM_N(16) |TIM_N(17))
 
