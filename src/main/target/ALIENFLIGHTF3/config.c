@@ -44,8 +44,8 @@ void targetConfiguration(void)
     motorConfigMutable()->minthrottle = 1000;
     motorConfigMutable()->maxthrottle = 2000;
     motorConfigMutable()->motorPwmRate = 32000;
-    pidProfileMutable()->P8[ROLL] = 36;
-    pidProfileMutable()->P8[PITCH] = 36;
+    pidProfileMutable()->bank_mc.pid[ROLL].P = 36;
+    pidProfileMutable()->bank_mc.pid[PITCH].P = 36;
     failsafeConfigMutable()->failsafe_delay = 2;
     failsafeConfigMutable()->failsafe_off_delay = 0;
     controlRateProfilesMutable(0)->rates[FD_PITCH] = CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT;
