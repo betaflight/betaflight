@@ -19,6 +19,8 @@
  * Initial FrSky Telemetry implementation by silpstream @ rcgroups.
  * Addition protocol work by airmamaf @ github.
  */
+
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -28,14 +30,18 @@
 
 #include "common/maths.h"
 #include "common/axis.h"
+#include "common/utils.h"
+
+#include "config/feature.h"
 
 #include "drivers/system.h"
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
-#include "drivers/gpio.h"
-#include "drivers/timer.h"
 #include "drivers/serial.h"
 
+#include "fc/config.h"
+#include "fc/rc_controls.h"
+#include "fc/runtime_config.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -44,21 +50,21 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
-#include "io/rc_controls.h"
 #include "io/gps.h"
-
-#include "rx/rx.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
 #include "flight/imu.h"
 #include "flight/altitudehold.h"
 
-#include "config/runtime_config.h"
-#include "config/config.h"
+#include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
 #include "telemetry/frsky.h"
+
+#ifdef USE_ESC_SENSOR
+#include "sensors/esc_sensor.h"
+#endif
 
 static serialPort_t *frskyPort = NULL;
 static serialPortConfig_t *portConfig;
@@ -72,8 +78,6 @@ static portSharing_e frskyPortSharing;
 
 
 extern batteryConfig_t *batteryConfig;
-
-extern int16_t telemTemperature1; // FIXME dependency on mw.c
 
 #define CYCLETIME             125
 
@@ -165,16 +169,16 @@ static void sendAccel(void)
 
     for (i = 0; i < 3; i++) {
         sendDataHead(ID_ACC_X + i);
-        serialize16(((float)accSmooth[i] / acc.acc_1G) * 1000);
+        serialize16(((float)acc.accSmooth[i] / acc.dev.acc_1G) * 1000);
     }
 }
 
 static void sendBaro(void)
 {
     sendDataHead(ID_ALTITUDE_BP);
-    serialize16(BaroAlt / 100);
+    serialize16(baro.BaroAlt / 100);
     sendDataHead(ID_ALTITUDE_AP);
-    serialize16(ABS(BaroAlt % 100));
+    serialize16(ABS(baro.BaroAlt % 100));
 }
 
 #ifdef GPS
@@ -194,24 +198,34 @@ static void sendGpsAltitude(void)
 
 static void sendThrottleOrBatterySizeAsRpm(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
 {
-    uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
     sendDataHead(ID_RPM);
+#ifdef USE_ESC_SENSOR
+    UNUSED(rxConfig);
+    UNUSED(deadband3d_throttle);
+
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->rpm : 0);
+#else
     if (ARMING_FLAG(ARMED)) {
         throttleStatus_e throttleStatus = calculateThrottleStatus(rxConfig, deadband3d_throttle);
+        uint16_t throttleForRPM = rcCommand[THROTTLE] / BLADE_NUMBER_DIVIDER;
         if (throttleStatus == THROTTLE_LOW && feature(FEATURE_MOTOR_STOP))
                     throttleForRPM = 0;
         serialize16(throttleForRPM);
     } else {
         serialize16((batteryConfig->batteryCapacity / BLADE_NUMBER_DIVIDER));
     }
-
+#endif
 }
 
 static void sendTemperature1(void)
 {
     sendDataHead(ID_TEMPRATURE1);
-#ifdef BARO
-    serialize16((baroTemperature + 50)/ 100); //Airmamaf
+#if defined(USE_ESC_SENSOR)
+    escSensorData_t *escData = getEscSensorData(ESC_SENSOR_COMBINED);
+    serialize16(escData->dataAge < ESC_DATA_INVALID ? escData->temperature : 0);
+#elif defined(BARO)
+    serialize16((baro.baroTemperature + 50)/ 100); //Airmamaf
 #else
     serialize16(telemTemperature1 / 10);
 #endif
@@ -372,7 +386,7 @@ static void sendVoltage(void)
      * The actual value sent for cell voltage has resolution of 0.002 volts
      * Since vbat has resolution of 0.1 volts it has to be multiplied by 50
      */
-    cellVoltage = ((uint32_t)vbat * 100 + batteryCellCount) / (batteryCellCount * 2);
+    cellVoltage = ((uint32_t)getVbat() * 100 + batteryCellCount) / (batteryCellCount * 2);
 
     // Cell number is at bit 9-12
     payload = (currentCell << 4);
@@ -400,9 +414,9 @@ static void sendVoltageAmp(void)
          * Use new ID 0x39 to send voltage directly in 0.1 volts resolution
          */
         sendDataHead(ID_VOLTAGE_AMP);
-        serialize16(vbat);
+        serialize16(getVbat());
     } else {
-        uint16_t voltage = (vbat * 110) / 21;
+        uint16_t voltage = (getVbat() * 110) / 21;
         uint16_t vfasVoltage;
         if (telemetryConfig->frsky_vfas_cell_voltage) {
             vfasVoltage = voltage / batteryCellCount;
@@ -427,7 +441,7 @@ static void sendFuelLevel(void)
     sendDataHead(ID_FUEL_LEVEL);
 
     if (batteryConfig->batteryCapacity > 0) {
-        serialize16((uint16_t)calculateBatteryCapacityRemainingPercentage());
+        serialize16((uint16_t)calculateBatteryPercentage());
     } else {
         serialize16((uint16_t)constrain(mAhDrawn, 0, 0xFFFF));
     }
@@ -528,7 +542,7 @@ void handleFrSkyTelemetry(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
         sendTemperature1();
         sendThrottleOrBatterySizeAsRpm(rxConfig, deadband3d_throttle);
 
-        if (feature(FEATURE_VBAT)) {
+        if ((feature(FEATURE_VBAT) || feature(FEATURE_ESC_SENSOR)) && batteryCellCount > 0) {
             sendVoltage();
             sendVoltageAmp();
             sendAmperage();

@@ -19,8 +19,7 @@
 
 #define LED0                    PB3
 
-#define INVERTER                PB2 // PB2 (BOOT1) used as inverter select GPIO
-#define INVERTER_USART          USART1
+#define INVERTER_PIN_USART1     PB2 // PB2 (BOOT1) used as inverter select GPIO
 
 #define BEEPER                  PA15
 #define BEEPER_OPT              PA2
@@ -60,14 +59,14 @@
 #define USE_MPU_DATA_READY_SIGNAL
 
 // External I2C BARO
-#define BARO
-#define USE_BARO_MS5611
-#define USE_BARO_BMP085
-#define USE_BARO_BMP280
+//#define BARO
+//#define USE_BARO_MS5611
+//#define USE_BARO_BMP085
+//#define USE_BARO_BMP280
 
 // External I2C MAG
-#define MAG
-#define USE_MAG_HMC5883
+//#define MAG
+//#define USE_MAG_HMC5883
 
 #define USE_VCP
 #define USE_UART1
@@ -96,12 +95,6 @@
 #define VBAT_ADC_PIN            PA0
 #define RSSI_ADC_PIN            PB0
 
-#define LED_STRIP
-#define WS2811_PIN                      PB4
-#define WS2811_TIMER                    TIM3
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH6_HANDLER
-
 #define SPEKTRUM_BIND
 // USART3, PB11 (Flexport)
 #define BIND_PIN   PB11
@@ -113,15 +106,22 @@
 //#define SONAR_TRIGGER_PIN       PB5
 
 #undef GPS
-#define CLI_MINIMAL_VERBOSITY
 #undef MAG
 
 #ifdef CC3D_OPBL
 #define SKIP_CLI_COMMAND_HELP
-#define SKIP_PID_FLOAT
+//#undef USE_SERVOS
 #undef BARO
 #undef SONAR
 #undef LED_STRIP
+#undef USE_SERIAL_4WAY_BLHELI_INTERFACE
+//#undef USE_SERIALRX_SPEKTRUM   // SRXL, DSM2 and DSMX protocol
+//#undef USE_SERIALRX_SBUS       // Frsky and Futaba receivers
+//#undef USE_SERIALRX_IBUS       // FlySky and Turnigy receivers
+#undef USE_SERIALRX_CRSF       // Team Black Sheep Crossfire protocol
+#undef USE_SERIALRX_SUMD       // Graupner Hott protocol
+#undef USE_SERIALRX_SUMH       // Graupner legacy protocol
+#undef USE_SERIALRX_XBUS       // JR
 #endif
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM

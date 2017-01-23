@@ -22,7 +22,7 @@
 
 #define USBD_PRODUCT_STRING "Sparky 2.0"
 #ifdef OPBL
-	#define USBD_SERIALNUMBER_STRING "0x8020000"
+    #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
 #define LED0                    PB5
@@ -32,14 +32,13 @@
 #define BEEPER                  PC9
 #define BEEPER_INVERTED
 
+#define INVERTER_PIN_USART6     PC6
 
-#define INVERTER                PC6
-#define INVERTER_USART          USART6
+#define USE_ESC_SENSOR
 
 // MPU9250 interrupt
 #define USE_EXTI
 #define MPU_INT_EXTI            PC5
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -94,6 +93,9 @@
 
 #define SERIAL_PORT_COUNT 4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1 //MPU9250
@@ -113,9 +115,8 @@
 //#define I2C_DEVICE_EXT          (I2CDEV_2)
 
 #define USE_ADC
-
-#define LED_STRIP
-#define LED_STRIP_TIMER         TIM5
+#define VBAT_ADC_PIN            PC3
+#define CURRENT_METER_ADC_PIN   PC2
 
 #define DEFAULT_FEATURES        FEATURE_BLACKBOX
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
@@ -130,4 +131,3 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS  ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9))
-

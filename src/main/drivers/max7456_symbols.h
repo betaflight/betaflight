@@ -21,8 +21,6 @@
 
 #pragma once
 
-#ifdef USE_MAX7456
-
 // Character Symbols
 #define SYM_BLANK 0x20
 
@@ -219,5 +217,3 @@
 //sport
 #define SYM_MIN 0xB3
 #define SYM_AVG 0xB4
-
-#endif // USE_MAX7456

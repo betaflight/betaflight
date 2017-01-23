@@ -61,6 +61,9 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT       4
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -91,6 +94,9 @@
 #define SPI3_SCK_PIN            PB3
 #define SPI3_MISO_PIN           PB4
 #define SPI3_MOSI_PIN           PB5
+
+#define REMAP_TIM16_DMA
+#define REMAP_TIM17_DMA
 
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI3
@@ -139,6 +145,10 @@
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_SERVOS
+
+#define SPEKTRUM_BIND
+// USART3, PB11
+#define BIND_PIN                PB11
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_PPM
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX | FEATURE_RX_SERIAL | FEATURE_OSD | FEATURE_VTX)

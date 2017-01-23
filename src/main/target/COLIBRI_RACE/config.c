@@ -15,70 +15,85 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <platform.h>
 
-#include "build_config.h"
+#include "io/motors.h"
 
-#include "blackbox/blackbox_io.h"
-
-#include "common/color.h"
-#include "common/axis.h"
-#include "common/filter.h"
-
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
-#include "drivers/system.h"
-#include "drivers/timer.h"
-#include "drivers/pwm_rx.h"
-#include "drivers/serial.h"
-#include "drivers/pwm_output.h"
-#include "drivers/max7456.h"
-#include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
-
-#include "sensors/sensors.h"
-#include "sensors/gyro.h"
-#include "sensors/compass.h"
-#include "sensors/acceleration.h"
-#include "sensors/barometer.h"
-#include "sensors/boardalignment.h"
 #include "sensors/battery.h"
 
-#include "io/beeper.h"
-#include "io/serial.h"
-#include "io/gimbal.h"
-#include "io/escservo.h"
-#include "io/rc_controls.h"
-#include "io/rc_curves.h"
-#include "io/ledstrip.h"
-#include "io/gps.h"
-#include "io/osd.h"
-#include "io/vtx.h"
-
-#include "rx/rx.h"
-
-#include "telemetry/telemetry.h"
-
-#include "flight/mixer.h"
-#include "flight/pid.h"
-#include "flight/imu.h"
-#include "flight/failsafe.h"
-#include "flight/altitudehold.h"
-#include "flight/navigation.h"
-
-#include "config/runtime_config.h"
-#include "config/config.h"
-
-#include "config/config_profile.h"
 #include "config/config_master.h"
+#include "config/feature.h"
+#include "io/ledstrip.h"
+
+void targetApplyDefaultLedStripConfig(ledConfig_t *ledConfigs)
+{
+    const ledConfig_t defaultLedStripConfig[] = {
+        DEFINE_LED( 0,   0,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 0,   1,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 0,   8,     6,  LD(WEST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 7,  15,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 8,  15,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 7,  14,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 8,  14,     6,  0,        LF(COLOR), 0,             0 ),
+        DEFINE_LED( 15,  8,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 15,  1,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+        DEFINE_LED( 15,  0,     6,  LD(EAST), LF(COLOR), LO(WARNING),   0 ),
+    };
+    memcpy(ledConfigs, &defaultLedStripConfig, MIN(LED_MAX_STRIP_LENGTH, sizeof(defaultLedStripConfig)));
+}
 
 // alternative defaults settings for COLIBRI RACE targets
-void targetConfiguration(master_t *config) {
-    config->escAndServoConfig.minthrottle = 1025;
-    config->escAndServoConfig.maxthrottle = 1980;
+void targetConfiguration(master_t *config)
+{
+    config->motorConfig.minthrottle = 1025;
+    config->motorConfig.maxthrottle = 1980;
+    config->motorConfig.mincommand = 1000;
+    config->servoConfig.servoCenterPulse = 1500;
+
     config->batteryConfig.vbatmaxcellvoltage = 45;
     config->batteryConfig.vbatmincellvoltage = 30;
+    config->batteryConfig.vbatwarningcellvoltage = 35;
+
+    config->flight3DConfig.deadband3d_low = 1406;
+    config->flight3DConfig.deadband3d_high = 1514;
+    config->flight3DConfig.neutral3d = 1460;
+    config->flight3DConfig.deadband3d_throttle = 0;
+
+    config->failsafeConfig.failsafe_procedure = 1;
+    config->failsafeConfig.failsafe_throttle_low_delay = 10;
+
+    config->gyroConfig.gyro_sync_denom = 1;
+    config->pidConfig.pid_process_denom = 3;
+    config->blackboxConfig.rate_num = 1;
+    config->blackboxConfig.rate_denom = 1;
+
+    config->rcControlsConfig.deadband = 5;
+    config->rcControlsConfig.yaw_deadband = 5;
+
+    config->failsafeConfig.failsafe_delay = 10;
+
+    config->telemetryConfig.telemetry_inversion = 1;
+
+    config->profile[0].pidProfile.vbatPidCompensation = 1;
+
+    config->profile[0].pidProfile.P8[ROLL] = 46;     // new PID with preliminary defaults test carefully
+    config->profile[0].pidProfile.I8[ROLL] = 48;
+    config->profile[0].pidProfile.D8[ROLL] = 23;
+    config->profile[0].pidProfile.P8[PITCH] = 89;
+    config->profile[0].pidProfile.I8[PITCH] = 59;
+    config->profile[0].pidProfile.D8[PITCH] = 25;
+    config->profile[0].pidProfile.P8[YAW] = 129;
+    config->profile[0].pidProfile.I8[YAW] = 50;
+    config->profile[0].pidProfile.D8[YAW] = 20;
+
+    config->profile[0].controlRateProfile[0].rates[FD_ROLL] = 86;
+    config->profile[0].controlRateProfile[0].rates[FD_PITCH] = 86;
+    config->profile[0].controlRateProfile[0].rates[FD_YAW] = 80;
+
+    targetApplyDefaultLedStripConfig(config->ledStripConfig.ledConfigs);
+
 }

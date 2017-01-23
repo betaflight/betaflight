@@ -19,8 +19,8 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "build_config.h"
-#include "debug.h"
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/maths.h"
 
@@ -76,7 +76,7 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     UNUSED(SPIx); // FIXME
 
     mpul3gd20CsPin = IOGetByTag(IO_TAG(L3GD20_CS_PIN));
-    IOInit(mpul3gd20CsPin, OWNER_MPU, RESOURCE_SPI_CS, 0);
+    IOInit(mpul3gd20CsPin, OWNER_MPU_CS, 0);
     IOConfigGPIO(mpul3gd20CsPin, SPI_IO_CS_CFG);
 
     DISABLE_L3GD20;
@@ -84,9 +84,9 @@ static void l3gd20SpiInit(SPI_TypeDef *SPIx)
     spiSetDivisor(L3GD20_SPI, SPI_CLOCK_STANDARD);
 }
 
-void l3gd20GyroInit(uint8_t lpf)
+void l3gd20GyroInit(gyroDev_t *gyro)
 {
-    UNUSED(lpf); // FIXME use it!
+    UNUSED(gyro); // FIXME use it!
 
     l3gd20SpiInit(L3GD20_SPI);
 
@@ -120,7 +120,7 @@ void l3gd20GyroInit(uint8_t lpf)
     delay(100);
 }
 
-static bool l3gd20GyroRead(int16_t *gyroADC)
+static bool l3gd20GyroRead(gyroDev_t *gyro)
 {
     uint8_t buf[6];
 
@@ -134,9 +134,9 @@ static bool l3gd20GyroRead(int16_t *gyroADC)
 
     DISABLE_L3GD20;
 
-    gyroADC[0] = (int16_t)((buf[0] << 8) | buf[1]);
-    gyroADC[1] = (int16_t)((buf[2] << 8) | buf[3]);
-    gyroADC[2] = (int16_t)((buf[4] << 8) | buf[5]);
+    gyro->gyroADCRaw[0] = (int16_t)((buf[0] << 8) | buf[1]);
+    gyro->gyroADCRaw[1] = (int16_t)((buf[2] << 8) | buf[3]);
+    gyro->gyroADCRaw[2] = (int16_t)((buf[4] << 8) | buf[5]);
 
 #if 0
     debug[0] = (int16_t)((buf[1] << 8) | buf[0]);
@@ -150,7 +150,7 @@ static bool l3gd20GyroRead(int16_t *gyroADC)
 // Page 9 in datasheet, So - Sensitivity, Full Scale = 2000, 70 mdps/digit
 #define L3GD20_GYRO_SCALE_FACTOR  0.07f
 
-bool l3gd20Detect(gyro_t *gyro)
+bool l3gd20Detect(gyroDev_t *gyro)
 {
     gyro->init = l3gd20GyroInit;
     gyro->read = l3gd20GyroRead;

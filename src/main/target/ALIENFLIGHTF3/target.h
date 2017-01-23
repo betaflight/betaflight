@@ -19,11 +19,14 @@
 
 #define TARGET_BOARD_IDENTIFIER "AFF3" // AlienFlight F3.
 #define TARGET_CONFIG
+#define TARGET_BUS_INIT
+#define REMAP_TIM17_DMA
 
 #define CONFIG_FASTLOOP_PREFERRED_ACC ACC_DEFAULT
 
 #define USE_HARDWARE_REVISION_DETECTION
 #define HW_PIN                  PB2
+#define BRUSHED_ESC_AUTODETECT
 
 // LED's V1
 #define LED0                    PB4
@@ -34,10 +37,6 @@
 #define LED1_A                  PB9
 
 #define BEEPER                  PA5
-
-#define USABLE_TIMER_CHANNEL_COUNT 11
-
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready
 
 #define USE_EXTI
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
@@ -73,6 +72,9 @@
 #define USE_UART3 // Not connected - 10/RX (PB11) 11/TX (PB10)
 #define SERIAL_PORT_COUNT       4
 #define AVOID_UART2_FOR_PWM_PPM
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define UART1_TX_PIN            PB6
 #define UART1_RX_PIN            PB7
@@ -115,12 +117,13 @@
 // Hardware bind plug at PB12 (Pin 25)
 #define BINDPLUG_PIN            PB12
 
-#define BRUSHED_MOTORS
 #define DEFAULT_FEATURES        FEATURE_MOTOR_STOP
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM2048
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 #define RX_CHANNELS_TAER
+
+#define LED_STRIP
 
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 
@@ -130,5 +133,6 @@
 #define TARGET_IO_PORTC         (BIT(13)|BIT(14)|BIT(15))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 11
 #define USED_TIMERS             ( TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(15) | TIM_N(17) )
 

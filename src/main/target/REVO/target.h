@@ -17,55 +17,119 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "REVO"
-
 #define CONFIG_START_FLASH_ADDRESS (0x08080000) //0x08080000 to 0x080A0000 (FLASH_Sector_8)
 
+#if defined(AIRBOTF4)
+#define TARGET_BOARD_IDENTIFIER "AIR4"
+#define USBD_PRODUCT_STRING     "AirbotF4"
+
+#elif defined(REVOLT)
+#define TARGET_BOARD_IDENTIFIER "RVLT"
+#define USBD_PRODUCT_STRING     "Revolt"
+#define TARGET_DEFAULT_MIXER    MIXER_QUADX_1234
+
+#elif defined(SOULF4)
+#define TARGET_BOARD_IDENTIFIER "SOUL"
+#define USBD_PRODUCT_STRING     "DemonSoulF4"
+
+#elif defined(PODIUMF4)
+#define TARGET_BOARD_IDENTIFIER "PODI"
+#define USBD_PRODUCT_STRING     "PodiumF4"
+
+#else
+#define TARGET_BOARD_IDENTIFIER "REVO"
 #define USBD_PRODUCT_STRING     "Revolution"
+
 #ifdef OPBL
 #define USBD_SERIALNUMBER_STRING "0x8020000"
 #endif
 
-#define LED0                    PB5
-// Disable LED1, conflicts with AirbotF4/Flip32F4 beeper
-//#define LED1                    PB4
+#endif
 
+#define USE_ESC_SENSOR
+
+#define LED0                    PB5
+#if defined(PODIUMF4)
+#define LED1                    PB4
+#define LED2                    PB6
+#endif
+
+// Disable LED1, conflicts with AirbotF4/Flip32F4/Revolt beeper
+#if defined(AIRBOTF4)
 #define BEEPER                  PB4
 #define BEEPER_INVERTED
+#elif defined(REVOLT)
+#define BEEPER                  PB4
+#elif defined(SOULF4)
+#define BEEPER                  PB6
+#define BEEPER_INVERTED
+#else
+#define LED1                    PB4
+// Leave beeper here but with none as io - so disabled unless mapped.
+#define BEEPER                  NONE
+#endif
 
-#define INVERTER                PC0 // PC0 used as inverter select GPIO
-#define INVERTER_USART          USART1
+// PC0 used as inverter select GPIO
+#define INVERTER_PIN_USART1     PC0
 
 #define MPU6000_CS_PIN          PA4
 #define MPU6000_SPI_INSTANCE    SPI1
 
+#define MPU6500_CS_PIN          PA4
+#define MPU6500_SPI_INSTANCE    SPI1
+
+#if defined(SOULF4)
+#define ACC
+#define USE_ACC_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN      CW180_DEG
+
+#define GYRO
+#define USE_GYRO_SPI_MPU6000
+#define ACC_MPU6000_ALIGN       CW180_DEG
+
+#elif defined(REVOLT) || defined(PODIUMF4)
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW0_DEG
+
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW0_DEG
+
+#else
 #define ACC
 #define USE_ACC_SPI_MPU6000
 #define GYRO_MPU6000_ALIGN      CW270_DEG
+
+#define USE_ACC_MPU6500
+#define USE_ACC_SPI_MPU6500
+#define ACC_MPU6500_ALIGN       CW270_DEG
 
 #define GYRO
 #define USE_GYRO_SPI_MPU6000
 #define ACC_MPU6000_ALIGN       CW270_DEG
 
+#define USE_GYRO_MPU6500
+#define USE_GYRO_SPI_MPU6500
+#define GYRO_MPU6500_ALIGN      CW270_DEG
+
+#endif
+
 // MPU6000 interrupts
 #define USE_EXTI
 #define MPU_INT_EXTI            PC4
 #define USE_MPU_DATA_READY_SIGNAL
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready (mag disabled)
 
+#if !defined(AIRBOTF4) && !defined(REVOLT) && !defined(SOULF4) && !defined(PODIUMF4)
 #define MAG
 #define USE_MAG_HMC5883
 #define MAG_HMC5883_ALIGN       CW90_DEG
 
-//#define USE_MAG_NAZA
-//#define MAG_NAZA_ALIGN          CW180_DEG_FLIP
-
 #define BARO
 #define USE_BARO_MS5611
 
-//#define PITOT
-//#define USE_PITOT_MS4525
-//#define MS4525_BUS I2C_DEVICE_EXT
+#endif
 
 #define M25P16_CS_PIN           PB3
 #define M25P16_SPI_INSTANCE     SPI3
@@ -74,11 +138,15 @@
 #define USE_FLASH_M25P16
 
 #define USE_VCP
+#if defined(PODIUMF4)
+#define VBUS_SENSING_PIN        PA8
+#else
 #define VBUS_SENSING_PIN        PC5
+#endif
 
 #define USE_UART1
-#define UART1_RX_PIN PA10
-#define UART1_TX_PIN PA9
+#define UART1_RX_PIN            PA10
+#define UART1_TX_PIN            PA9
 #define UART1_AHB1_PERIPHERALS  RCC_AHB1Periph_DMA2
 
 #define USE_UART3
@@ -91,6 +159,9 @@
 
 #define SERIAL_PORT_COUNT       4 //VCP, USART1, USART3, USART6
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define USE_SPI
 
 #define USE_SPI_DEVICE_1
@@ -102,30 +173,29 @@
 #define SPI3_MOSI_PIN           PC12
 
 #define USE_I2C
-#define I2C_DEVICE (I2CDEV_1)
+#define I2C_DEVICE              (I2CDEV_1)
 
 #define USE_ADC
+#if !defined(PODIUMF4)
 #define CURRENT_METER_ADC_PIN   PC1
 #define VBAT_ADC_PIN            PC2
-//#define RSSI_ADC_PIN            PA0
+#else
+#define VBAT_ADC_PIN            PC3
+#define VBAT_ADC_CHANNEL        ADC_Channel_13
+#endif
 
 #define LED_STRIP
-// LED Strip can run off Pin 5 (PA1) of the MOTOR outputs.
-#define WS2811_GPIO_AF                  GPIO_AF_TIM5
-#define WS2811_PIN                      PA1 
-#define WS2811_TIMER                    TIM5
-#define WS2811_TIMER_CHANNEL            TIM_Channel_2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_ST4_HANDLER
-#define WS2811_DMA_STREAM               DMA1_Stream4
-#define WS2811_DMA_CHANNEL              DMA_Channel_6
-#define WS2811_DMA_IRQ                  DMA1_Stream4_IRQn
-#define WS2811_DMA_FLAG                 DMA_FLAG_TCIF4
-#define WS2811_DMA_IT                   DMA_IT_TCIF4
 
-#define SENSORS_SET (SENSOR_ACC)
+#define SENSORS_SET             (SENSOR_ACC)
 
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#if defined(PODIUMF4)
+#define SERIALRX_PROVIDER       SERIALRX_SBUS
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define DEFAULT_FEATURES        FEATURE_TELEMETRY
+#else
 #define DEFAULT_FEATURES        (FEATURE_BLACKBOX)
+#endif
 
 #define SPEKTRUM_BIND
 // USART3,
@@ -136,7 +206,12 @@
 #define TARGET_IO_PORTA         0xffff
 #define TARGET_IO_PORTB         0xffff
 #define TARGET_IO_PORTC         0xffff
-#define TARGET_IO_PORTD         0xffff
+#define TARGET_IO_PORTD         (BIT(2))
 
+#ifdef REVOLT
+#define USABLE_TIMER_CHANNEL_COUNT 11
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 12
+#endif
+
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(3) | TIM_N(5) | TIM_N(12) | TIM_N(8) | TIM_N(9) )

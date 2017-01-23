@@ -23,16 +23,14 @@
 
 #include "common/maths.h"
 
-#include "build_config.h"
 #include "platform.h"
-#include "debug.h"
+
+#include "build/build_config.h"
+#include "build/debug.h"
 
 #include "common/axis.h"
 
 #include "drivers/system.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
-#include "drivers/compass.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -47,7 +45,8 @@
 
 #include "io/gps.h"
 
-#include "config/runtime_config.h"
+#include "fc/runtime_config.h"
+
 
 // the limit (in degrees/second) beyond which we stop integrating
 // omega_I. At larger spin rates the DCM PI controller can get 'dizzy'
@@ -66,18 +65,14 @@ float fc_acc;
 float smallAngleCosZ = 0;
 
 float magneticDeclination = 0.0f;       // calculated at startup from config
-static bool isAccelUpdatedAtLeastOnce = false;
 
-static imuRuntimeConfig_t *imuRuntimeConfig;
+static imuRuntimeConfig_t imuRuntimeConfig;
 static pidProfile_t *pidProfile;
-static accDeadband_t *accDeadband;
 
 STATIC_UNIT_TESTED float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;    // quaternion of sensor frame relative to earth frame
 static float rMat[3][3];
 
 attitudeEulerAngles_t attitude = { { 0, 0, 0 } };     // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-
-static float gyroScale;
 
 STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 {
@@ -106,24 +101,25 @@ STATIC_UNIT_TESTED void imuComputeRotationMatrix(void)
 }
 
 void imuConfigure(
-    imuRuntimeConfig_t *initialImuRuntimeConfig,
+    imuConfig_t *imuConfig,
     pidProfile_t *initialPidProfile,
-    accDeadband_t *initialAccDeadband,
     uint16_t throttle_correction_angle
 )
 {
-    imuRuntimeConfig = initialImuRuntimeConfig;
+    imuRuntimeConfig.dcm_kp = imuConfig->dcm_kp / 10000.0f;
+    imuRuntimeConfig.dcm_ki = imuConfig->dcm_ki / 10000.0f;
+    imuRuntimeConfig.acc_unarmedcal = imuConfig->acc_unarmedcal;
+    imuRuntimeConfig.small_angle = imuConfig->small_angle;
+
     pidProfile = initialPidProfile;
-    accDeadband = initialAccDeadband;
     fc_acc = calculateAccZLowPassFilterRCTimeConstant(5.0f); // Set to fix value
     throttleAngleScale = calculateThrottleAngleScale(throttle_correction_angle);
 }
 
 void imuInit(void)
 {
-    smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig->small_angle));
-    gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
-    accVelScale = 9.80665f / acc.acc_1G / 10000.0f;
+    smallAngleCosZ = cos_approx(degreesToRadians(imuRuntimeConfig.small_angle));
+    accVelScale = 9.80665f / acc.dev.acc_1G / 10000.0f;
 
     imuComputeRotationMatrix();
 }
@@ -175,27 +171,27 @@ void imuCalculateAcceleration(uint32_t deltaT)
     // deltaT is measured in us ticks
     dT = (float)deltaT * 1e-6f;
 
-    accel_ned.V.X = accSmooth[0];
-    accel_ned.V.Y = accSmooth[1];
-    accel_ned.V.Z = accSmooth[2];
+    accel_ned.V.X = acc.accSmooth[X];
+    accel_ned.V.Y = acc.accSmooth[Y];
+    accel_ned.V.Z = acc.accSmooth[Z];
 
     imuTransformVectorBodyToEarth(&accel_ned);
 
-    if (imuRuntimeConfig->acc_unarmedcal == 1) {
+    if (imuRuntimeConfig.acc_unarmedcal == 1) {
         if (!ARMING_FLAG(ARMED)) {
             accZoffset -= accZoffset / 64;
             accZoffset += accel_ned.V.Z;
         }
         accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
     } else
-        accel_ned.V.Z -= acc.acc_1G;
+        accel_ned.V.Z -= acc.dev.acc_1G;
 
     accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
 
     // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), accDeadband->xy);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), accDeadband->xy);
-    accSum[Z] += applyDeadband(lrintf(accz_smooth), accDeadband->z);
+    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), imuRuntimeConfig.accDeadband.xy);
+    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), imuRuntimeConfig.accDeadband.xy);
+    accSum[Z] += applyDeadband(lrintf(accz_smooth), imuRuntimeConfig.accDeadband.z);
 
     // sum up Values for later integration to get velocity and distance
     accTimeSum += deltaT;
@@ -287,10 +283,10 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Compute and apply integral feedback if enabled
-    if(imuRuntimeConfig->dcm_ki > 0.0f) {
+    if(imuRuntimeConfig.dcm_ki > 0.0f) {
         // Stop integrating if spinning beyond the certain limit
         if (spin_rate < DEGREES_TO_RADIANS(SPIN_RATE_LIMIT)) {
-            float dcmKiGain = imuRuntimeConfig->dcm_ki;
+            float dcmKiGain = imuRuntimeConfig.dcm_ki;
             integralFBx += dcmKiGain * ex * dt;    // integral error scaled by Ki
             integralFBy += dcmKiGain * ey * dt;
             integralFBz += dcmKiGain * ez * dt;
@@ -303,7 +299,7 @@ static void imuMahonyAHRSupdate(float dt, float gx, float gy, float gz,
     }
 
     // Calculate kP gain. If we are acquiring initial attitude (not armed and within 20 sec from powerup) scale the kP to converge faster
-    float dcmKpGain = imuRuntimeConfig->dcm_kp * imuGetPGainScaleFactor();
+    float dcmKpGain = imuRuntimeConfig.dcm_kp * imuGetPGainScaleFactor();
 
     // Apply proportional and integral feedback
     gx += dcmKpGain * ex + integralFBx;
@@ -358,10 +354,10 @@ static bool imuIsAccelerometerHealthy(void)
     int32_t accMagnitude = 0;
 
     for (axis = 0; axis < 3; axis++) {
-        accMagnitude += (int32_t)accSmooth[axis] * accSmooth[axis];
+        accMagnitude += (int32_t)acc.accSmooth[axis] * acc.accSmooth[axis];
     }
 
-    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.acc_1G));
+    accMagnitude = accMagnitude * 100 / (sq((int32_t)acc.dev.acc_1G));
 
     // Accept accel readings only in range 0.90g - 1.10g
     return (81 < accMagnitude) && (accMagnitude < 121);
@@ -369,10 +365,10 @@ static bool imuIsAccelerometerHealthy(void)
 
 static bool isMagnetometerHealthy(void)
 {
-    return (magADC[X] != 0) && (magADC[Y] != 0) && (magADC[Z] != 0);
+    return (mag.magADC[X] != 0) && (mag.magADC[Y] != 0) && (mag.magADC[Z] != 0);
 }
 
-static void imuCalculateEstimatedAttitude(void)
+static void imuCalculateEstimatedAttitude(timeUs_t currentTimeUs)
 {
     static uint32_t previousIMUUpdateTime;
     float rawYawError = 0;
@@ -380,9 +376,8 @@ static void imuCalculateEstimatedAttitude(void)
     bool useMag = false;
     bool useYaw = false;
 
-    uint32_t currentTime = micros();
-    uint32_t deltaT = currentTime - previousIMUUpdateTime;
-    previousIMUUpdateTime = currentTime;
+    uint32_t deltaT = currentTimeUs - previousIMUUpdateTime;
+    previousIMUUpdateTime = currentTimeUs;
 
     if (imuIsAccelerometerHealthy()) {
         useAcc = true;
@@ -400,9 +395,9 @@ static void imuCalculateEstimatedAttitude(void)
 #endif
 
     imuMahonyAHRSupdate(deltaT * 1e-6f,
-                        gyroADC[X] * gyroScale, gyroADC[Y] * gyroScale, gyroADC[Z] * gyroScale,
-                        useAcc, accSmooth[X], accSmooth[Y], accSmooth[Z],
-                        useMag, magADC[X], magADC[Y], magADC[Z],
+                        DEGREES_TO_RADIANS(gyro.gyroADCf[X]), DEGREES_TO_RADIANS(gyro.gyroADCf[Y]), DEGREES_TO_RADIANS(gyro.gyroADCf[Z]),
+                        useAcc, acc.accSmooth[X], acc.accSmooth[Y], acc.accSmooth[Z],
+                        useMag, mag.magADC[X], mag.magADC[Y], mag.magADC[Z],
                         useYaw, rawYawError);
 
     imuUpdateEulerAngles();
@@ -410,22 +405,14 @@ static void imuCalculateEstimatedAttitude(void)
     imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
-void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
+void imuUpdateAttitude(timeUs_t currentTimeUs)
 {
-    if (sensors(SENSOR_ACC)) {
-        updateAccelerationReadings(accelerometerTrims);
-        isAccelUpdatedAtLeastOnce = true;
-    }
-}
-
-void imuUpdateAttitude(void)
-{
-    if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
-        imuCalculateEstimatedAttitude();
+    if (sensors(SENSOR_ACC) && acc.isAccelUpdatedAtLeastOnce) {
+        imuCalculateEstimatedAttitude(currentTimeUs);
     } else {
-        accSmooth[X] = 0;
-        accSmooth[Y] = 0;
-        accSmooth[Z] = 0;
+        acc.accSmooth[X] = 0;
+        acc.accSmooth[Y] = 0;
+        acc.accSmooth[Z] = 0;
     }
 }
 

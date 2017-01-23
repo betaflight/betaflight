@@ -39,7 +39,7 @@
 #include "drivers/system.h"
 #include "drivers/nvic.h"
 
-#include "build_config.h"
+#include "common/utils.h"
 
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +68,7 @@ void Set_System(void)
 {
 #if !defined(STM32L1XX_MD) && !defined(STM32L1XX_HD) && !defined(STM32L1XX_MD_PLUS)
     GPIO_InitTypeDef GPIO_InitStructure;
-#endif /* STM32L1XX_MD && STM32L1XX_XD */ 
+#endif /* STM32L1XX_MD && STM32L1XX_XD */
 
 #if defined(USB_USE_EXTERNAL_PULLUP)
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -217,6 +217,30 @@ void USB_Interrupts_Config(void)
     NVIC_Init(&NVIC_InitStructure);
 }
 
+#ifdef STM32F10X
+
+/*******************************************************************************
+ * Function Name  : USB_Interrupts_Disable
+ * Description    : Disables the USB interrupts
+ * Input          : None.
+ * Return         : None.
+ *******************************************************************************/
+void USB_Interrupts_Disable(void)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    /* Disable the USB interrupt */
+    NVIC_InitStructure.NVIC_IRQChannel    = USB_LP_CAN1_RX0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    /* Disable the USB Wake-up interrupt */
+    NVIC_InitStructure.NVIC_IRQChannel    = USBWakeUp_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+#endif
+
 /*******************************************************************************
  * Function Name  : USB_Cable_Config
  * Description    : Software Connection/Disconnection of USB Cable
@@ -277,12 +301,12 @@ static void IntToUnicode(uint32_t value, uint8_t *pbuf, uint8_t len)
 
 /*******************************************************************************
  * Function Name  : Send DATA .
- * Description    : send the data received from the STM32 to the PC through USB 
+ * Description    : send the data received from the STM32 to the PC through USB
  * Input          : None.
  * Output         : None.
  * Return         : None.
  *******************************************************************************/
-uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
+uint32_t CDC_Send_DATA(const uint8_t *ptrBuffer, uint32_t sendLength)
 {
     /* Last transmission hasn't finished, abort */
     if (packetSent) {
@@ -303,6 +327,12 @@ uint32_t CDC_Send_DATA(uint8_t *ptrBuffer, uint8_t sendLength)
     }
 
     return sendLength;
+}
+
+uint32_t CDC_Send_FreeBytes(void)
+{
+    /* this driver is blocking, so the buffer is unlimited */
+    return 255;
 }
 
 /*******************************************************************************
@@ -336,6 +366,11 @@ uint32_t CDC_Receive_DATA(uint8_t* recvBuf, uint32_t len)
     }
 
     return len;
+}
+
+uint32_t CDC_Receive_BytesAvailable(void)
+{
+    return receiveLength;
 }
 
 /*******************************************************************************

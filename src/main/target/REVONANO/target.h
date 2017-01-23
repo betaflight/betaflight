@@ -30,8 +30,7 @@
 
 #define BEEPER                  PC13
 
-#define INVERTER                PC15
-#define INVERTER_USART          USART2 //Sbus on USART 2 of nano.
+#define INVERTER_PIN_USART2     PC15 //Sbus on USART 2 of nano.
 
 #define MPU9250_CS_PIN          PB12
 #define MPU9250_SPI_INSTANCE    SPI2
@@ -57,7 +56,6 @@
 #define MPU_INT_EXTI            PA15
 #define USE_MPU_DATA_READY_SIGNAL
 //#define ENSURE_MPU_DATA_READY_IS_LOW
-#define EXTI_CALLBACK_HANDLER_COUNT 1 // MPU data ready (mag disabled)
 
 #define USE_VCP
 #define VBUS_SENSING_PIN        PA9
@@ -71,6 +69,9 @@
 #define UART2_TX_PIN            PA2
 
 #define SERIAL_PORT_COUNT       3 //VCP, USART1, USART2
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
 
 #define USE_SPI
 //#define USE_SPI_DEVICE_1

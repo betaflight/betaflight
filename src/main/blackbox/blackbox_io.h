@@ -17,11 +17,6 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-
-#include "platform.h"
-
 typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_SERIAL = 0,
 
@@ -32,7 +27,6 @@ typedef enum BlackboxDevice {
     BLACKBOX_DEVICE_SDCARD = 2,
 #endif
 
-    BLACKBOX_DEVICE_END
 } BlackboxDevice;
 
 typedef enum {

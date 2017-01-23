@@ -19,90 +19,43 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-#include "drivers/pwm_mapping.h"
 
-const uint16_t multiPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1 or servo #1 (swap to servo if needed)
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2 or servo #2 (swap to servo if needed)
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #3 or #1
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #4 or #2
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #5 or #3
-    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #6 or #4
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #7 or #5
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #8 or #6
-    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),  // Swap to servo if needed
-    0xFFFF
-};
+#include "drivers/dma.h"
+#include "drivers/timer.h"
+#include "drivers/timer_def.h"
 
-const uint16_t multiPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),     // input #2
-    PWM3  | (MAP_TO_PWM_INPUT << 8),     // input #3
-    PWM4  | (MAP_TO_PWM_INPUT << 8),     // input #4
-    PWM5  | (MAP_TO_PWM_INPUT << 8),     // input #5
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1 or servo #1 (swap to servo if needed)
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2 or servo #2 (swap to servo if needed)
-    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #3 or #1
-    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #4 or #2
-    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #5 or #3
-    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #6 or #4
-    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #7 or #5
-    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #8 or #6
-    0xFFFF
-};
-
-const uint16_t airPPM[] = {
-    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2
-    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #1
-    PWM9  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #2
-    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #3
-    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #4
-    PWM12 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #5
-    PWM13 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #6
-    PWM2  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #7
-    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #8
-    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #9
-    PWM5  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #10
-    0xFFFF
-};
-
-const uint16_t airPWM[] = {
-    PWM1  | (MAP_TO_PWM_INPUT << 8),     // input #1
-    PWM2  | (MAP_TO_PWM_INPUT << 8),     // input #2
-    PWM3  | (MAP_TO_PWM_INPUT << 8),     // input #3
-    PWM4  | (MAP_TO_PWM_INPUT << 8),     // input #4
-    PWM5  | (MAP_TO_PWM_INPUT << 8),     // input #5
-    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #1
-    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),  // motor #2
-    PWM8  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #1
-    PWM9  | (MAP_TO_SERVO_OUTPUT << 8),  // servo #2
-    PWM10 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #3
-    PWM11 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #4
-    PWM12 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #5
-    PWM13 | (MAP_TO_SERVO_OUTPUT << 8),  // servo #6
-    0xFFFF
-};
+// DSHOT will work for motor 1,3,4,5,6,7 and 8.
+// Motor 2 pin timers have no DMA channel assigned in the hardware.
+// If the ADC is used motor 7 will not work.
+// If UART1 is used motor 8 will not work.
 
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    { TIM1, IO_TAG(PA8), TIM_Channel_1, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1 },            // PWM1  - PA8  RC1
-    { TIM1, IO_TAG(PB0), TIM_Channel_2, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1 },            // PWM2  - PB0  RC2
-    { TIM1, IO_TAG(PB1), TIM_Channel_3, TIM1_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM1 },            // PWM3  - PB1  RC3
-    { TIM8, IO_TAG(PB14),TIM_Channel_2, TIM8_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM8 },            // PWM4  - PA14 RC4
-    { TIM8, IO_TAG(PB15),TIM_Channel_3, TIM8_CC_IRQn, 0, IOCFG_AF_PP, GPIO_AF_TIM8 },            // PWM5  - PA15 RC5
-
-    { TIM4, IO_TAG(PB8), TIM_Channel_3, TIM4_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM4 },               // PWM6  - PB8  OUT1
-    { TIM4, IO_TAG(PB9), TIM_Channel_4, TIM4_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM4 },               // PWM7  - PB9  OUT2
-    { TIM5, IO_TAG(PA0), TIM_Channel_1, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5 },               // PWM8  - PA0  OUT3
-    { TIM5, IO_TAG(PA1), TIM_Channel_2, TIM5_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM5 },               // PWM9  - PA1  OUT4
-    { TIM3, IO_TAG(PC6), TIM_Channel_1, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3 },               // PWM10 - PC6  OUT5
-    { TIM3, IO_TAG(PC7), TIM_Channel_2, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3 },               // PWM11 - PC7  OUT6
-    { TIM3, IO_TAG(PC8), TIM_Channel_3, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3 },               // PWM13 - PC8  OUT7
-    { TIM3, IO_TAG(PC9), TIM_Channel_4, TIM3_IRQn, 1, IOCFG_AF_PP, GPIO_AF_TIM3 },               // PWM13 - PC9  OUT8
+/*
+    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_PWM | TIM_USE_PPM, TIMER_INPUT_ENABLED,  0), // PWM1  - PA8  RC1
+    DEF_TIM(TIM1, CH2, PB0,  TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM2  - PB0  RC2
+    DEF_TIM(TIM1, CH3, PB1,  TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM3  - PB1  RC3
+    DEF_TIM(TIM8, CH2, PB14, TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM4  - PA14 RC4
+    DEF_TIM(TIM8, CH3, PB15, TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM5  - PA15 RC5
+    DEF_TIM(TIM4, CH3, PB8,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM6  - PB8  OUT1 - DMA1_ST7
+    DEF_TIM(TIM4, CH4, PB9,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM7  - PB9  OUT2 - DMA1_ST3
+    DEF_TIM(TIM5, CH1, PA0,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM8  - PA0  OUT3 - DMA1_ST2
+    DEF_TIM(TIM5, CH2, PA1,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM9  - PA1  OUT4 - DMA1_ST4
+    DEF_TIM(TIM3, CH1, PC6,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM10 - PC6  OUT5 - (DMA1_ST4)
+    DEF_TIM(TIM3, CH2, PC7,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM11 - PC7  OUT6 - DMA1_ST5
+    DEF_TIM(TIM3, CH3, PC8,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM13 - PC8  OUT7 - (DMA1_ST7)
+    DEF_TIM(TIM3, CH4, PC9,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM13 - PC9  OUT8 - (DMA1_ST2)
+*/
+    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_PWM | TIM_USE_PPM, TIMER_INPUT_ENABLED,  1), // PWM1  - PA8  RC1  - DMA2_ST6, *DMA2_ST1, DMA2_ST3
+    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM2  - PB0  RC2  - DMA1_ST5
+    DEF_TIM(TIM3, CH4, PB1,  TIM_USE_PWM,               TIMER_INPUT_ENABLED,  0), // PWM3  - PB1  RC3  - DMA1_ST7
+    DEF_TIM(TIM1, CH2, PB14, TIM_USE_PWM,               TIMER_INPUT_ENABLED,  1), // PWM4  - PA14 RC4  - DMA2_ST6, *DMA2_ST2
+    DEF_TIM(TIM1, CH3, PB15, TIM_USE_PWM | TIM_USE_LED, TIMER_INPUT_ENABLED,  0), // PWM5  - PA15 RC5  - DMA2_ST6, DMA2_ST6
+    DEF_TIM(TIM4, CH3, PB8,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM6  - PB8  OUT1 - DMA1_ST7
+    DEF_TIM(TIM4, CH4, PB9,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM7  - PB9  OUT2 - DMA_NONE
+    DEF_TIM(TIM5, CH1, PA0,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM8  - PA0  OUT3 - DMA1_ST2
+    DEF_TIM(TIM5, CH2, PA1,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM9  - PA1  OUT4 - DMA1_ST4
+    DEF_TIM(TIM8, CH1, PC6,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM10 - PC6  OUT5 - DMA2_ST2, DMA2_ST2
+    DEF_TIM(TIM8, CH2, PC7,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM11 - PC7  OUT6 - DMA2_ST3, DMA2_ST2
+    DEF_TIM(TIM8, CH3, PC8,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 1), // PWM13 - PC8  OUT7 - DMA2_ST2, *DMA2_ST4
+    DEF_TIM(TIM8, CH4, PC9,  TIM_USE_MOTOR,             TIMER_OUTPUT_ENABLED, 0), // PWM13 - PC9  OUT8 - DMA2_ST7
 };
-

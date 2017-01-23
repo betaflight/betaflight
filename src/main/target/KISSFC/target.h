@@ -23,12 +23,16 @@
 
 #define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED | SERIAL_BIDIR)
 
+#define USE_ESC_SENSOR
+
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 6
+#define REMAP_TIM17_DMA
+
 #define LED0                    PB1
 
 #define BEEPER                  PB13
 #define BEEPER_INVERTED
-
-#define USABLE_TIMER_CHANNEL_COUNT 12
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PB2
@@ -71,7 +75,7 @@
 #define DEFAULT_FEATURES        FEATURE_VBAT
 #define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
-#define SERIALRX_UART           SERIAL_PORT_USART3
+#define SERIALRX_UART           SERIAL_PORT_USART2
 
 #define AVOID_UART2_FOR_PWM_PPM
 
@@ -84,4 +88,5 @@
 #define TARGET_IO_PORTD         0xffff
 #define TARGET_IO_PORTF         (BIT(4))
 
+#define USABLE_TIMER_CHANNEL_COUNT 10
 #define USED_TIMERS             (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) | TIM_N(17))

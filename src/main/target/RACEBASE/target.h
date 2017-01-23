@@ -54,6 +54,9 @@
 #define USE_UART3
 #define SERIAL_PORT_COUNT       3
 
+#define USE_ESCSERIAL
+#define ESCSERIAL_TIMER_TX_HARDWARE 0 // PWM 1
+
 #define UART1_TX_PIN            PA9
 #define UART1_RX_PIN            PA10
 
@@ -95,13 +98,6 @@
 #define RSSI_ADC_PIN            PA6
 
 #define LED_STRIP
-#define USE_LED_STRIP_ON_DMA1_CHANNEL2
-#define WS2811_PIN                      PA8
-#define WS2811_TIMER                    TIM1
-#define WS2811_DMA_CHANNEL              DMA1_Channel2
-#define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
 #define OSD
 
@@ -120,9 +116,12 @@
 #define TARGET_IO_PORTC         (BIT(5))
 #define TARGET_IO_PORTF         (BIT(0)|BIT(1)|BIT(3)|BIT(4))
 
-#define USABLE_TIMER_CHANNEL_COUNT 5
-#define USED_TIMERS  (TIM_N(2) | TIM_N(4))
-#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM4)
-#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB)
+#if defined(USE_UART3_RX_DMA) && defined(USE_DSHOT)
+#undef USE_UART3_RX_DMA
+#endif
+
+#define USABLE_TIMER_CHANNEL_COUNT 6
+#define USED_TIMERS  (TIM_N(2) | TIM_N(3)| TIM_N(4) | TIM_N(8) | TIM_N(17))
+
 
 

@@ -20,13 +20,13 @@
 
 #include <platform.h>
 
+#include "build/build_config.h"
+
 #include "barometer.h"
 
 #include "gpio.h"
 #include "system.h"
 #include "bus_i2c.h"
-
-#include "build_config.h"
 
 // MS5611, Standard address 0x77
 #define MS5611_ADDR                 0x77
@@ -59,16 +59,14 @@ STATIC_UNIT_TESTED uint32_t ms5611_up;  // static result of pressure measurement
 STATIC_UNIT_TESTED uint16_t ms5611_c[PROM_NB];  // on-chip ROM
 static uint8_t ms5611_osr = CMD_ADC_4096;
 
-bool ms5611Detect(baro_t *baro)
+bool ms5611Detect(baroDev_t *baro)
 {
-    bool ack = false;
     uint8_t sig;
     int i;
 
     delay(10); // No idea how long the chip takes to power-up, but let's make it 10ms
 
-    ack = i2cRead(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_PROM_RD, 1, &sig);
-    if (!ack)
+    if (!i2cRead(BARO_I2C_INSTANCE, MS5611_ADDR, CMD_PROM_RD, 1, &sig))
         return false;
 
     ms5611_reset();
