@@ -17,9 +17,6 @@
 
 #pragma once
 
-// !!Temporarily remove blackbox until ROM recovered for NAZE target
-#undef BLACKBOX
-
 #define TARGET_BOARD_IDENTIFIER "AFNA" // AFroNAze - NAZE might be considered misleading on Naze clones like the flip32.
 
 #define LED0                    PB3
@@ -31,8 +28,10 @@
 #define INVERTER_USART          USART2
 
 #define USE_EXTI
-#define MAG_INT_EXTI            PC14
+#define MPU_INT_EXTI            PC13
 #define USE_MPU_DATA_READY_SIGNAL
+#define MAG_INT_EXTI            PC14
+#define USE_MAG_DATA_READY_SIGNAL
 
 // SPI2
 // PB15 28 SPI2_MOSI
