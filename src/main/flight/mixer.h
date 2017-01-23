@@ -80,9 +80,9 @@ PG_DECLARE_ARRAY(motorMixer_t, MAX_SUPPORTED_MOTORS, customMotorMixer);
 
 // Custom mixer configuration
 typedef struct mixer_s {
+    const motorMixer_t *motor;
     uint8_t motorCount;
     uint8_t useServo;
-    const motorMixer_t *motor;
     bool enabled;
 } mixer_t;
 

@@ -231,65 +231,65 @@ static const motorMixer_t mixerDualProp[] = {
 // Keep synced with mixerMode_e
 const mixer_t mixers[] = {
     // motors, use servo, motor mixer
-    { 0, false, NULL, true },                // entry 0
-    { 3, true,  mixerTricopter, true },      // MIXER_TRI
-    { 4, false, mixerQuadP, true },          // MIXER_QUADP
-    { 4, false, mixerQuadX, true },          // MIXER_QUADX
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=true },                // entry 0
+    { .motorCount=3, .useServo=true,  .motor=mixerTricopter, .enabled=true },      // MIXER_TRI
+    { .motorCount=4, .useServo=false, .motor=mixerQuadP, .enabled=true },          // MIXER_QUADP
+    { .motorCount=4, .useServo=false, .motor=mixerQuadX, .enabled=true },          // MIXER_QUADX
 
-    { 0, false, NULL, false },               // MIXER_BICOPTER
-    { 0, false, NULL, false },               // MIXER_GIMBAL -> this mixer was never implemented in CF, use feature(FEATURE_SERVO_TILT) instead
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_BICOPTER
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_GIMBAL -> this mixer was never implemented in CF, use feature(FEATURE_SERVO_TILT) instead
     #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 6)
-        { 6, false, mixerY6, true },         // MIXER_Y6
-        { 6, false, mixerHex6P, true },      // MIXER_HEX6
+        { .motorCount=6, .useServo=false, .motor=mixerY6, .enabled=true },         // MIXER_Y6
+        { .motorCount=6, .useServo=false, .motor=mixerHex6P, .enabled=true },      // MIXER_HEX6
     #else
-        { 0, false, NULL, false },           // MIXER_Y6
-        { 0, false, NULL, false },           // MIXER_HEX6
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_Y6
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6
     #endif
-    { 2, true,  mixerDualProp, true },       // MIXER_FLYING_WING
+    { .motorCount=2, .useServo=true,  .motor=mixerDualProp, .enabled=true },       // MIXER_FLYING_WING
     #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { 4, false, mixerY4, true },         // MIXER_Y4
+        { .motorCount=4, .useServo=false, .motor=mixerY4, .enabled=true },         // MIXER_Y4
     #else
-        { 0, false, NULL, false },           // MIXER_Y4
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_Y4
     #endif
     #if (MAX_SUPPORTED_MOTORS >= 6)
-        { 6, false, mixerHex6X, true },      // MIXER_HEX6X
+        { .motorCount=6, .useServo=false, .motor=mixerHex6X, .enabled=true },      // MIXER_HEX6X
     #else
-        { 0, false, NULL, false },           // MIXER_HEX6X
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6X
     #endif
     #if !defined(DISABLE_UNCOMMON_MIXERS) && (MAX_SUPPORTED_MOTORS >= 8)
-        { 8, false, mixerOctoX8, true },     // MIXER_OCTOX8
-        { 8, false, mixerOctoFlatP, true },  // MIXER_OCTOFLATP
-        { 8, false, mixerOctoFlatX, true },  // MIXER_OCTOFLATX
+        { .motorCount=8, .useServo=false, .motor=mixerOctoX8, .enabled=true },     // MIXER_OCTOX8
+        { .motorCount=8, .useServo=false, .motor=mixerOctoFlatP, .enabled=true },  // MIXER_OCTOFLATP
+        { .motorCount=8, .useServo=false, .motor=mixerOctoFlatX, .enabled=true },  // MIXER_OCTOFLATX
     #else
-        { 0, false, NULL, false },           // MIXER_OCTOX8
-        { 0, false, NULL, false },           // MIXER_OCTOFLATP
-        { 0, false, NULL, false },           // MIXER_OCTOFLATX
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOX8
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOFLATP
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_OCTOFLATX
     #endif
-    { 2, true,  mixerDualProp, true },       // * MIXER_AIRPLANE
-    { 0, true,  NULL, false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
-    { 0, true,  NULL, false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
+    { .motorCount=2, .useServo=true,  .motor=mixerDualProp, .enabled=true },       // * MIXER_AIRPLANE
+    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_HELI_120_CCPM -> disabled, never fully implemented in CF
+    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_HELI_90_DEG -> disabled, never fully implemented in CF
     #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { 4, false, mixerVtail4, true },     // MIXER_VTAIL4
+        { .motorCount=4, .useServo=false, .motor=mixerVtail4, .enabled=true },     // MIXER_VTAIL4
     #if (MAX_SUPPORTED_MOTORS >= 6)
-        { 6, false, mixerHex6H, true },      // MIXER_HEX6H
+        { .motorCount=6, .useServo=false, .motor=mixerHex6H, .enabled=true },      // MIXER_HEX6H
     #else
-        { 0, false, NULL, false },           // MIXER_HEX6H
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6H
     #endif
     #else
-        { 0, false, NULL, false },           // MIXER_VTAIL4
-        { 0, false, NULL, false },           // MIXER_HEX6H
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_VTAIL4
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_HEX6H
     #endif
-    { 0, true,  NULL, false },               // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
-    { 0, false, NULL, false },               // MIXER_DUALCOPTER
-    { 0, false, NULL, false },               // MIXER_SINGLECOPTER
+    { .motorCount=0, .useServo=true,  .motor=NULL, .enabled=false },               // * MIXER_PPM_TO_SERVO -> looks like this is not implemented at all
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_DUALCOPTER
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },               // MIXER_SINGLECOPTER
     #if !defined(DISABLE_UNCOMMON_MIXERS)
-        { 4, false, mixerAtail4, true },     // MIXER_ATAIL4
+        { .motorCount=4, .useServo=false, .motor=mixerAtail4, .enabled=true },     // MIXER_ATAIL4
     #else
-        { 0, false, NULL, false },           // MIXER_ATAIL4
+        { .motorCount=0, .useServo=false, .motor=NULL, .enabled=false },           // MIXER_ATAIL4
     #endif
-    { 0, false, NULL, true },                // MIXER_CUSTOM
-    { 2, true,  NULL, true },                // MIXER_CUSTOM_AIRPLANE
-    { 3, true,  NULL, true },                // MIXER_CUSTOM_TRI
+    { .motorCount=0, .useServo=false, .motor=NULL, .enabled=true },                // MIXER_CUSTOM
+    { .motorCount=2, .useServo=true,  .motor=NULL, .enabled=true },                // MIXER_CUSTOM_AIRPLANE
+    { .motorCount=3, .useServo=true,  .motor=NULL, .enabled=true },                // MIXER_CUSTOM_TRI
 };
 #endif // USE_QUAD_MIXER_ONLY
 

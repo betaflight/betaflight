@@ -73,8 +73,8 @@ typedef struct adjustmentConfig_s {
 
 typedef struct adjustmentRange_s {
     // when aux channel is in range...
-    uint8_t auxChannelIndex;
     channelRange_t range;
+    uint8_t auxChannelIndex;
 
     // ..then apply the adjustment function to the auxSwitchChannel ...
     uint8_t adjustmentFunction;
@@ -87,9 +87,9 @@ typedef struct adjustmentRange_s {
 #define ADJUSTMENT_INDEX_OFFSET 1
 
 typedef struct adjustmentState_s {
-    uint8_t auxChannelIndex;
     const adjustmentConfig_t *config;
     uint32_t timeoutAt;
+    uint8_t auxChannelIndex;
 } adjustmentState_t;
 
 
