@@ -1241,7 +1241,7 @@ static const cliCurrentAndDefaultConfig_t *getCurrentAndDefaultConfigs(pgn_t pgn
         ret.defaultConfig = controlRateProfiles(0);
         break;
     case PG_PID_PROFILE:
-        ret.currentConfig = &pidProfileCopy[getCurrentProfileIndex()];
+        ret.currentConfig = &pidProfileCopy[getConfigProfile()];
         ret.defaultConfig = pidProfile();
         break;
     case PG_RX_FAILSAFE_CHANNEL_CONFIG:
@@ -1293,7 +1293,7 @@ static uint16_t getValueOffset(const clivalue_t *value)
     case PROFILE_VALUE:
         return value->offset;
     case CONTROL_RATE_VALUE:
-        return value->offset + sizeof(controlRateConfig_t) * getCurrentProfileIndex();
+        return value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
     return 0;
 }
@@ -1307,7 +1307,7 @@ static void *getValuePointer(const clivalue_t *value)
     case PROFILE_VALUE:
         return rec->address + value->offset;
     case CONTROL_RATE_VALUE:
-        return rec->address + value->offset + sizeof(controlRateConfig_t) * getCurrentProfileIndex();
+        return rec->address + value->offset + sizeof(controlRateConfig_t) * getConfigProfile();
     }
     return NULL;
 }
@@ -3090,12 +3090,12 @@ static void cliPlaySound(char *cmdline)
 static void cliProfile(char *cmdline)
 {
     if (isEmpty(cmdline)) {
-        cliPrintf("profile %d\r\n", getCurrentProfileIndex());
+        cliPrintf("profile %d\r\n", getConfigProfile());
         return;
     } else {
         const int i = atoi(cmdline) - 1; // make CLI index 1-based
         if (i >= 0 && i < MAX_PROFILE_COUNT) {
-            changeProfile(i);
+            setConfigProfileAndWriteEEPROM(i);
             cliProfile("");
         }
     }
@@ -3107,9 +3107,9 @@ static void cliDumpProfile(uint8_t profileIndex, uint8_t dumpMask)
         // Faulty values
         return;
     }
-    setProfile(profileIndex);
+    setConfigProfile(profileIndex);
     cliPrintHashLine("profile");
-    cliPrintf("profile %d\r\n\r\n", getCurrentProfileIndex());
+    cliPrintf("profile %d\r\n\r\n", getConfigProfile());
     dumpAllValues(PROFILE_VALUE, dumpMask);
     dumpAllValues(CONTROL_RATE_VALUE, dumpMask);
 }
@@ -3119,7 +3119,7 @@ static void cliSave(char *cmdline)
     UNUSED(cmdline);
 
     cliPrint("Saving");
-    //copyCurrentProfileToProfileSlot(getCurrentProfileIndex();
+    //copyCurrentProfileToProfileSlot(getConfigProfile();
     writeEEPROM();
     cliReboot();
 }
@@ -3451,12 +3451,12 @@ static void printConfig(const char *cmdline, bool doDiff)
         dumpMask = dumpMask | DO_DIFF;
     }
 
-    const int currentProfileIndexSave = getCurrentProfileIndex();
+    const int currentProfileIndexSave = getConfigProfile();
     backupConfigs();
     // reset all configs to defaults to do differencing
     resetConfigs();
     // restore the profile indices, since they should not be reset for proper comparison
-    setProfile(currentProfileIndexSave);
+    setConfigProfile(currentProfileIndexSave);
 
     if (checkCommand(options, "showdefaults")) {
         dumpMask = dumpMask | SHOW_DEFAULTS;   // add default values as comments for changed values
@@ -3539,23 +3539,23 @@ static void printConfig(const char *cmdline, bool doDiff)
 
         if (dumpMask & DUMP_ALL) {
             // dump all profiles
-            const int currentProfileIndexSave = getCurrentProfileIndex();
+            const int currentProfileIndexSave = getConfigProfile();
             for (int ii = 0; ii < MAX_PROFILE_COUNT; ++ii) {
                 cliDumpProfile(ii, dumpMask);
             }
-            setProfile(currentProfileIndexSave);
+            setConfigProfile(currentProfileIndexSave);
             cliPrintHashLine("restore original profile selection");
             cliPrintf("profile %d\r\n", currentProfileIndexSave);
 
             cliPrintHashLine("save configuration\r\nsave");
         } else {
             // dump just the current profile
-            cliDumpProfile(getCurrentProfileIndex(), dumpMask);
+            cliDumpProfile(getConfigProfile(), dumpMask);
         }
     }
 
     if (dumpMask & DUMP_PROFILE) {
-        cliDumpProfile(getCurrentProfileIndex(), dumpMask);
+        cliDumpProfile(getConfigProfile(), dumpMask);
     }
     // restore configs from copies
     restoreConfigs();

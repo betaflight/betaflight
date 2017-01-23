@@ -114,9 +114,9 @@ void ensureEEPROMContainsValidData(void);
 void saveConfigAndNotify(void);
 void validateAndFixConfig(void);
 
-uint8_t getCurrentProfileIndex(void);
-bool setProfile(uint8_t profileIndex);
-void changeProfile(uint8_t profileIndex);
+uint8_t getConfigProfile(void);
+bool setConfigProfile(uint8_t profileIndex);
+void setConfigProfileAndWriteEEPROM(uint8_t profileIndex);
 
 bool canSoftwareSerialBeUsed(void);
 void applyAndSaveBoardAlignmentDelta(int16_t roll, int16_t pitch);

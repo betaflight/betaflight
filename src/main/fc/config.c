@@ -406,7 +406,7 @@ void resetConfigs(void)
 
     createDefaultConfig();
 
-    setProfile(getCurrentProfileIndex());
+    setConfigProfile(getConfigProfile());
 #ifdef LED_STRIP
     reevaluateLedConfig();
 #endif
@@ -441,8 +441,7 @@ void readEEPROM(void)
         failureMode(FAILURE_INVALID_EEPROM_CONTENTS);
     }
 
-    setProfile(getCurrentProfileIndex());
-    pgActivateProfile(getCurrentProfileIndex());
+    setConfigProfile(getConfigProfile());
 
     validateAndFixConfig();
     activateConfig();
@@ -480,29 +479,30 @@ void saveConfigAndNotify(void)
     beeperConfirmationBeeps(1);
 }
 
-uint8_t getCurrentProfileIndex(void)
+uint8_t getConfigProfile(void)
 {
     return systemConfig()->current_profile_index;
 }
 
-bool setProfile(uint8_t profileIndex)
+bool setConfigProfile(uint8_t profileIndex)
 {
+    bool ret = true; // return true if current_profile_index has changed
     if (systemConfig()->current_profile_index == profileIndex) {
-        return false;
+        ret =  false;
     }
     if (profileIndex >= MAX_PROFILE_COUNT) {// sanity check
         profileIndex = 0;
     }
+    pgActivateProfile(profileIndex);
     systemConfigMutable()->current_profile_index = profileIndex;
     // set the control rate profile to match
     setControlRateProfile(profileIndex);
-    // return true if current_profile_index has changed
-    return true;
+    return ret;
 }
 
-void changeProfile(uint8_t profileIndex)
+void setConfigProfileAndWriteEEPROM(uint8_t profileIndex)
 {
-    if (setProfile(profileIndex)) {
+    if (setConfigProfile(profileIndex)) {
         // profile has changed, so ensure current values saved before new profile is loaded
         writeEEPROM();
         readEEPROM();

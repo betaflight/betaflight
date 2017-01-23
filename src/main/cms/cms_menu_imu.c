@@ -67,7 +67,7 @@ static void cmsx_WritebackPidFromArray(uint8_t *src, int pidIndex)
 
 static long cmsx_menuImu_onEnter(void)
 {
-    profileIndex = getCurrentProfileIndex();
+    profileIndex = getConfigProfile();
     tmpProfileIndex = profileIndex + 1;
     profileIndexString[1] = '0' + tmpProfileIndex;
 
@@ -78,7 +78,7 @@ static long cmsx_menuImu_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    setProfile(profileIndex);
+    setConfigProfile(profileIndex);
 
     return 0;
 }
